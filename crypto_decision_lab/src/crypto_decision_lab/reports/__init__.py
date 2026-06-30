@@ -13,3 +13,14 @@ from crypto_decision_lab.reports.edge import (  # noqa: F401
     summarize_edge_report_for_console,
     validate_edge_report_v1,
 )
+from crypto_decision_lab.reports.export import (  # noqa: F401
+    EDGE_REPORT_EXPORT_INDEX_SCHEMA_VERSION,
+    EdgeReportExportError,
+    assert_edge_report_exportable,
+    build_edge_report_export_index,
+    compute_file_sha256,
+    compute_json_payload_sha256,
+    load_edge_report_artifacts,
+    validate_edge_report_export_index,
+    write_edge_report_artifacts,
+)
