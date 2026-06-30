@@ -15,3 +15,15 @@ from crypto_decision_lab.runs.bundle import (  # noqa: F401
     compute_sha256,
     validate_research_bundle,
 )
+from crypto_decision_lab.runs.registry import (  # noqa: F401
+    RESEARCH_RUN_REGISTRY_ENTRY_SCHEMA_VERSION,
+    RESEARCH_RUN_REGISTRY_SCHEMA_VERSION,
+    ResearchRunRegistryError,
+    assert_research_only_payload,
+    build_research_run_registry,
+    build_research_run_registry_entry,
+    build_research_run_registry_report,
+    load_research_run_registry,
+    validate_registry_entries,
+    write_research_run_registry,
+)
