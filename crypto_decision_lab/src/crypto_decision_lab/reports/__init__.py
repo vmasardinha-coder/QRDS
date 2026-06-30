@@ -24,3 +24,15 @@ from crypto_decision_lab.reports.export import (  # noqa: F401
     validate_edge_report_export_index,
     write_edge_report_artifacts,
 )
+
+from crypto_decision_lab.reports.pack import (  # noqa: F401
+    RESEARCH_REPORT_PACK_INDEX_SCHEMA_VERSION,
+    RESEARCH_REPORT_PACK_SCHEMA_VERSION,
+    ResearchReportPackError,
+    build_research_report_pack,
+    load_full_research_artifacts,
+    load_research_report_pack,
+    render_research_report_markdown,
+    validate_research_report_pack,
+    write_research_report_pack,
+)
