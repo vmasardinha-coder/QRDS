@@ -13,3 +13,19 @@ from crypto_decision_lab.models.baseline import (  # noqa: F401
     infer_baseline_target_columns,
     predict_baseline_model,
 )
+
+from crypto_decision_lab.models.benchmarks import (  # noqa: F401
+    BENCHMARK_COMPARISON_REPORT_SCHEMA_VERSION,
+    BENCHMARK_EVALUATION_SCHEMA_VERSION,
+    BENCHMARK_MODEL_KINDS,
+    BENCHMARK_PREDICTION_SCHEMA_VERSION,
+    BENCHMARK_SPLIT_REPORT_SCHEMA_VERSION,
+    BenchmarkModelError,
+    build_benchmark_comparison_report,
+    build_benchmark_predictions,
+    build_benchmark_split_report,
+    evaluate_benchmark_predictions,
+    extract_benchmark_target_values,
+    infer_benchmark_target_columns,
+    validate_benchmark_comparison_report,
+)
