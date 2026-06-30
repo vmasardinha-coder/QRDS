@@ -29,3 +29,23 @@ def safe_context():
 def binance_sim():
     from crypto_decision_lab.exchanges.binance_sim import BinanceSimConnector
     return BinanceSimConnector(seed=42)
+
+
+@pytest.fixture()
+def fixtures_dir():
+    import pathlib
+    return pathlib.Path(__file__).resolve().parents[1] / "data" / "fixtures"
+
+
+@pytest.fixture()
+def clean_candles(fixtures_dir):
+    import json
+    data = json.loads((fixtures_dir / "dql_sample_candles.json").read_text())
+    return data
+
+
+@pytest.fixture()
+def corrupted_candles(fixtures_dir):
+    import json
+    data = json.loads((fixtures_dir / "dql_corrupted_candles.json").read_text())
+    return data
