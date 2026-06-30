@@ -1,0 +1,67 @@
+Metadata-Version: 2.4
+Name: crypto_decision_lab
+Version: 1.0.0
+Summary: QRDS/QOS — Quant Research & Design Specification / Quant Operating System
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: requests>=2.31
+Requires-Dist: pandas>=2.0
+Requires-Dist: numpy>=1.24
+Requires-Dist: scikit-learn>=1.3
+Requires-Dist: jinja2>=3.1
+Provides-Extra: dashboard
+Requires-Dist: streamlit>=1.32; extra == "dashboard"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0; extra == "dev"
+
+# crypto_decision_lab — QRDS/QOS v1.0
+
+Quant Research & Design Specification / Quant Operating System.
+
+**Mode: `INTERACTIVE_RESEARCH_ONLY`** — no real API keys, no real accounts,
+no real orders, no real capital, no operational execution. Ever.
+
+## Status
+
+This is the consolidated repository scaffold (Sprint 6A). Core safety gates
+and the exchange connector layer are implemented and tested. Research modules
+(`dql/`, `features/`, `regimes/`, `targets/`, `research/`, `backtest/`,
+`risk/`, `paper/`, `pipelines/`, `dashboard/`, `export/`) are stubs awaiting
+migration from prior sprint packages — see `docs/gates/sprint_gate_log.md`
+for migration progress.
+
+## Exchange roles
+
+| Exchange | Role |
+|---|---|
+| Binance | `SIMULATION_FIXTURE_REPLAY` |
+| OKX | `PUBLIC_HTTP_LIVE_RESEARCH_PIPELINE_APPROVED_NO_AUTH` |
+| Bybit | `PENDING_BLOCKED_BY_403` |
+
+See `docs/EXCHANGE_ROLE_POLICY.md` and `docs/BYBIT_403_BACKLOG.md`.
+
+## Setup
+
+```bash
+python -m pip install -e ".[dev]"
+pytest -q
+```
+
+## Run the safety test suite
+
+```bash
+pytest tests/safety -v
+```
+
+## Optional dashboard
+
+```bash
+python -m pip install -e ".[dashboard]"
+streamlit run scripts/run_interactive_research_dashboard.py
+```
+
+## Safety policy
+
+See `docs/SAFETY_POLICY.md` — read this before touching `exchanges/` or
+`safety/`.
