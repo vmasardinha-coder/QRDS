@@ -36,3 +36,15 @@ from crypto_decision_lab.reports.pack import (  # noqa: F401
     validate_research_report_pack,
     write_research_report_pack,
 )
+
+from crypto_decision_lab.reports.multi_asset import (  # noqa: F401
+    MULTI_ASSET_REPORT_INDEX_SCHEMA_VERSION,
+    MULTI_ASSET_REPORT_SCHEMA_VERSION,
+    MultiAssetReportError,
+    build_multi_asset_report,
+    load_multi_asset_report,
+    load_report_pack_entries,
+    render_multi_asset_report_markdown,
+    validate_multi_asset_report,
+    write_multi_asset_report,
+)
