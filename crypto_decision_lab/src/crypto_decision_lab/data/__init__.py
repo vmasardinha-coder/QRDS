@@ -22,3 +22,20 @@ from crypto_decision_lab.data.okx_public import (  # noqa: F401
     parse_okx_candle_row,
     parse_okx_public_candles,
 )
+from crypto_decision_lab.data.cache import (  # noqa: F401
+    PUBLIC_DATA_CACHE_INDEX_SCHEMA_VERSION,
+    PUBLIC_DATA_CACHE_RECORD_SCHEMA_VERSION,
+    PublicDataCacheError,
+    assert_public_batch_cacheable,
+    build_public_data_cache_index,
+    build_public_data_cache_key,
+    build_public_data_cache_record,
+    compute_file_sha256,
+    compute_payload_sha256,
+    compute_public_batch_content_sha256,
+    load_public_candle_batch_cache,
+    load_public_data_cache_record,
+    validate_public_data_cache_index,
+    validate_public_data_cache_record,
+    write_public_candle_batch_cache,
+)
