@@ -48,3 +48,19 @@ from crypto_decision_lab.reports.multi_asset import (  # noqa: F401
     validate_multi_asset_report,
     write_multi_asset_report,
 )
+
+from crypto_decision_lab.reports.stress import (  # noqa: F401
+    SCENARIO_STRESS_PACK_INDEX_SCHEMA_VERSION,
+    SCENARIO_STRESS_PACK_SCHEMA_VERSION,
+    SCENARIO_STRESS_RESULT_SCHEMA_VERSION,
+    SCENARIO_STRESS_SCENARIO_SCHEMA_VERSION,
+    ScenarioStressPackError,
+    apply_stress_scenario_to_entry,
+    build_default_stress_scenarios,
+    build_scenario_stress_pack,
+    load_scenario_stress_pack,
+    render_scenario_stress_markdown,
+    validate_scenario_stress_pack,
+    validate_stress_scenario,
+    write_scenario_stress_pack,
+)
