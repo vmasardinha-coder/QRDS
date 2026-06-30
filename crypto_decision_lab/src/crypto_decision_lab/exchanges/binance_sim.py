@@ -1,76 +1,120 @@
-"""
-Binance connector — SIMULATION_FIXTURE_REPLAY role.
+"""Binance simulation connector.
 
-This connector NEVER makes real HTTP calls to Binance.
-It returns fixture/synthetic data for offline simulation, benchmarking,
-and baseline model training.
-
-Policy: Binance must not become a real execution account or live data source.
+Research-only fixture replay.
+No HTTP. No API key. No account. No orders. No real capital.
 """
 
 from __future__ import annotations
-import time
+
 import random
 from typing import Any
 
 from crypto_decision_lab.exchanges.roles import ExchangeRole
-from crypto_decision_lab.exchanges.public_contracts import PublicConnectorBase
 from crypto_decision_lab.safety.gates import assert_exchange_role
 
 
-class BinanceSimConnector(PublicConnectorBase):
-    """
-    Simulation-only Binance connector.
+class BinanceSimConnector:
+    """Deterministic simulation-only Binance connector."""
 
-    Returns synthetic OHLCV candles based on a seeded random walk.
-    Suitable for offline research, DQL validation, and feature engineering tests.
-    """
+    ROLE = ExchangeRole.SIMULATION_FIXTURE_REPLAY
+    role = ExchangeRole.SIMULATION_FIXTURE_REPLAY
 
-    ROLE: ExchangeRole = ExchangeRole.SIMULATION_FIXTURE_REPLAY
+    def __init__(self, seed: int = 42, **kwargs: Any) -> None:
+        forbidden = {
+            "api_key",
+            "secret",
+            "api_secret",
+            "passphrase",
+            "account",
+            "account_id",
+            "order",
+            "orders",
+            "real_capital",
+        }
 
-    def __init__(self, seed: int = 42) -> None:
-        # Hard-check role before doing anything.
+        bad = forbidden.intersection(kwargs)
+        if bad:
+            raise TypeError(
+                "BinanceSimConnector does not accept credentials, account data, "
+                f"orders, or real-capital parameters: {sorted(bad)}"
+            )
+
+        if kwargs:
+            raise TypeError("BinanceSimConnector only accepts seed=<int>.")
+
+        self.seed = int(seed)
+
         assert_exchange_role(
             exchange="binance",
             expected_role=ExchangeRole.SIMULATION_FIXTURE_REPLAY.value,
-            actual_role=self.ROLE.value,
+            actual_role=self.role.value,
         )
-        self._seed = seed
-        self._rng = random.Random(seed)
 
     def fetch_candles(
         self,
-        symbol: str,
+        symbol: str = "BTC-USDT",
         interval: str = "1h",
         limit: int = 100,
+        timeframe: str | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Return synthetic OHLCV candle dicts.
+        if timeframe is not None:
+            interval = timeframe
 
-        Data is deterministic (seeded) and suitable for offline research only.
-        No HTTP calls are made.
-        """
+        interval_ms = {
+            "1m": 60000,
+            "5m": 300000,
+            "15m": 900000,
+            "1h": 3600000,
+            "4h": 14400000,
+            "1d": 86400000,
+        }.get(interval, 3600000)
+
+        rng = random.Random(f"{self.seed}:{symbol}:{interval}:{limit}")
+
+        ts0 = 1700000000000
+        price = 30000.0
         candles: list[dict[str, Any]] = []
-        price = 30_000.0  # synthetic BTC-like starting price
-        ts = int(time.time() * 1000) - limit * 3_600_000
 
-        for i in range(limit):
-            open_ = price
-            close = price * (1 + self._rng.uniform(-0.02, 0.02))
-            high = max(open_, close) * (1 + self._rng.uniform(0, 0.01))
-            low = min(open_, close) * (1 - self._rng.uniform(0, 0.01))
-            volume = self._rng.uniform(100, 1000)
-            candles.append({
-                "ts": ts + i * 3_600_000,
-                "open": round(open_, 2),
-                "high": round(high, 2),
-                "low": round(low, 2),
-                "close": round(close, 2),
-                "volume": round(volume, 4),
-                "source": "binance_sim",
-                "symbol": symbol,
-                "interval": interval,
-            })
-            price = close
+        for i in range(int(limit)):
+            open_price = price
+            close_price = open_price * (1.0 + rng.uniform(-0.02, 0.02))
+            high_price = max(open_price, close_price) * (1.0 + rng.uniform(0.0, 0.01))
+            low_price = min(open_price, close_price) * (1.0 - rng.uniform(0.0, 0.01))
+            volume = rng.uniform(100.0, 1000.0)
+
+            candles.append(
+                {
+                    "ts": ts0 + i * interval_ms,
+                    "open": round(open_price, 2),
+                    "high": round(high_price, 2),
+                    "low": round(low_price, 2),
+                    "close": round(close_price, 2),
+                    "volume": round(volume, 4),
+                    "source": "binance_sim",
+                    "symbol": symbol,
+                    "interval": interval,
+                }
+            )
+
+            price = close_price
 
         return candles
+
+    def get_candles(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        return self.fetch_candles(*args, **kwargs)
+
+    def fetch_public_candles(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        return self.fetch_candles(*args, **kwargs)
+
+    def fetch_ohlcv(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        return self.fetch_candles(*args, **kwargs)
+
+
+BinanceSimulationConnector = BinanceSimConnector
+BinanceFixtureReplayConnector = BinanceSimConnector
+
+__all__ = [
+    "BinanceSimConnector",
+    "BinanceSimulationConnector",
+    "BinanceFixtureReplayConnector",
+]
