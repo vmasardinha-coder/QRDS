@@ -28,9 +28,22 @@ edge report export
 integration health report
 ```
 
-## Command
+## Command from repository root
 
 ```bash
+cd /workspaces/QRDS
+
+bash qrds_full_research.sh \
+  --output-dir artifacts/full_research \
+  --run-id full-research-run \
+  --report-id edge-report
+```
+
+## Direct Python command from project directory
+
+```bash
+cd /workspaces/QRDS/crypto_decision_lab
+
 python -m crypto_decision_lab.cli.full_research \
   --output-dir artifacts/full_research \
   --run-id full-research-run \
