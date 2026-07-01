@@ -16,7 +16,7 @@ Open via the printed server command.
 ## Output
 
 ```text
-artifacts/dashboard_portal/portal/index.html
+artifacts/dashboard_portal/index.html
 artifacts/dashboard_portal/dashboard_serve_plan.json
 ```
 

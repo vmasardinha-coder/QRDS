@@ -31,7 +31,7 @@ def test_dashboard_portal_cli_plan_only_with_serve_flag(tmp_path):
     assert "=== UNIFIED PORTAL READY ===" in result.stdout
     assert "=== SERVE COMMAND ===" in result.stdout
     assert "=== CODESPACES PORT HINT ===" in result.stdout
-    assert (output_dir / "portal" / "index.html").exists()
+    assert (output_dir / "index.html").exists()
     assert (output_dir / "dashboard_serve_plan.json").exists()
 
 
@@ -61,7 +61,7 @@ def test_qrds_portal_serve_wrapper_starts_server(tmp_path):
     try:
         time.sleep(4)
         assert proc.poll() is None
-        assert (output_dir / "portal" / "index.html").exists()
+        assert (output_dir / "index.html").exists()
         assert (output_dir / "dashboard_serve_plan.json").exists()
     finally:
         proc.terminate()

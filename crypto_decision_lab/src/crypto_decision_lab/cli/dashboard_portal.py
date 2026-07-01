@@ -50,7 +50,7 @@ def run_dashboard_portal_from_fixtures(
         guide_index_path=guide_index["index_path"],
         interactive_index_path=ui_index["index_path"],
         visual_index_path=charts_index["index_path"],
-        output_dir=root / "portal",
+        output_dir=root,
         portal_name=portal_name,
     )
 
