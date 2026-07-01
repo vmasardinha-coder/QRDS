@@ -75,3 +75,14 @@ from crypto_decision_lab.reports.dashboard import (  # noqa: F401
     validate_static_dashboard_payload,
     write_static_dashboard,
 )
+
+from crypto_decision_lab.reports.dashboard_ui import (  # noqa: F401
+    INTERACTIVE_DASHBOARD_INDEX_SCHEMA_VERSION,
+    INTERACTIVE_DASHBOARD_SCHEMA_VERSION,
+    InteractiveDashboardError,
+    build_interactive_dashboard_payload,
+    load_interactive_dashboard,
+    render_interactive_dashboard_html,
+    validate_interactive_dashboard_payload,
+    write_interactive_dashboard,
+)
