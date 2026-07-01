@@ -64,3 +64,14 @@ from crypto_decision_lab.reports.stress import (  # noqa: F401
     validate_stress_scenario,
     write_scenario_stress_pack,
 )
+
+from crypto_decision_lab.reports.dashboard import (  # noqa: F401
+    STATIC_DASHBOARD_INDEX_SCHEMA_VERSION,
+    STATIC_DASHBOARD_SCHEMA_VERSION,
+    StaticResearchDashboardError,
+    build_static_dashboard_payload,
+    load_static_dashboard,
+    render_static_dashboard_html,
+    validate_static_dashboard_payload,
+    write_static_dashboard,
+)
