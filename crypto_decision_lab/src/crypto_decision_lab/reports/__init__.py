@@ -97,3 +97,14 @@ from crypto_decision_lab.reports.dashboard_charts import (  # noqa: F401
     validate_visual_dashboard_payload,
     write_visual_dashboard,
 )
+
+from crypto_decision_lab.reports.dashboard_hub import (  # noqa: F401
+    DASHBOARD_HUB_INDEX_SCHEMA_VERSION,
+    DASHBOARD_HUB_SCHEMA_VERSION,
+    DashboardHubError,
+    build_dashboard_hub_payload,
+    load_dashboard_hub,
+    render_dashboard_hub_html,
+    validate_dashboard_hub_payload,
+    write_dashboard_hub,
+)
