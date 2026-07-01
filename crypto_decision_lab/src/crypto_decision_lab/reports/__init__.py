@@ -119,3 +119,14 @@ from crypto_decision_lab.reports.dashboard_guide import (  # noqa: F401
     validate_dashboard_guide_payload,
     write_dashboard_guide,
 )
+
+from crypto_decision_lab.reports.dashboard_portal import (  # noqa: F401
+    DASHBOARD_PORTAL_INDEX_SCHEMA_VERSION,
+    DASHBOARD_PORTAL_SCHEMA_VERSION,
+    DashboardPortalError,
+    build_dashboard_portal_payload,
+    load_dashboard_portal,
+    render_dashboard_portal_html,
+    validate_dashboard_portal_payload,
+    write_dashboard_portal,
+)
