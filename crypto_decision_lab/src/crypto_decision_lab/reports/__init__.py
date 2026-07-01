@@ -86,3 +86,14 @@ from crypto_decision_lab.reports.dashboard_ui import (  # noqa: F401
     validate_interactive_dashboard_payload,
     write_interactive_dashboard,
 )
+
+from crypto_decision_lab.reports.dashboard_charts import (  # noqa: F401
+    VISUAL_DASHBOARD_INDEX_SCHEMA_VERSION,
+    VISUAL_DASHBOARD_SCHEMA_VERSION,
+    VisualDashboardChartsError,
+    build_visual_dashboard_payload,
+    load_visual_dashboard,
+    render_visual_dashboard_html,
+    validate_visual_dashboard_payload,
+    write_visual_dashboard,
+)
