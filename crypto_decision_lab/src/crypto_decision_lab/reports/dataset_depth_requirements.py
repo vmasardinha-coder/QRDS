@@ -82,19 +82,31 @@ def _is_canonical_data_path(path: Path) -> bool:
 
 
 def _count_json_rows(path: Path) -> int:
+    def count_payload(obj: Any) -> int:
+        if isinstance(obj, list):
+            return len(obj)
+        if isinstance(obj, dict):
+            for key in ("candles", "klines", "rows", "records", "items", "data", "bars", "ohlcv", "prices"):
+                value = obj.get(key)
+                if isinstance(value, list):
+                    return len(value)
+                if isinstance(value, dict):
+                    nested = count_payload(value)
+                    if nested:
+                        return nested
+            payload = obj.get("payload")
+            if isinstance(payload, (dict, list)):
+                nested = count_payload(payload)
+                if nested:
+                    return nested
+            return 0
+        return 0
+
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return 0
-    if isinstance(payload, list):
-        return len(payload)
-    if isinstance(payload, dict):
-        for key in ("data", "rows", "records", "items", "candles", "klines", "prices", "bars"):
-            value = payload.get(key)
-            if isinstance(value, list):
-                return len(value)
-        return 1
-    return 0
+    return count_payload(payload)
 
 
 def _count_rows(path: Path) -> int:
@@ -309,7 +321,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     md = f"""# QRDS/QOS • Gate BTC • Research-only
 ## Dataset Depth Requirements
 
-Formal research-data depth target packet. This page turns canonical local dataset evidence into explicit minimum-depth gaps; it cannot unlock operational use.
+Formal research-data depth target packet. This page turns explicit upstream dataset evidence into minimum-depth gaps; optional canonical local scan is available for diagnostics. It cannot unlock operational use.
 
 **Gate answer:** {payload["gate_answer"]}
 
@@ -378,7 +390,7 @@ th{{background:#eef2ff}}
 </style></head><body>
 <h1>QRDS/QOS • Gate BTC • Research-only</h1>
 <h2>Dataset Depth Requirements</h2>
-<p>Formal research-data depth target packet. This page uses only canonical local data under <code>crypto_decision_lab/data/</code>; it cannot unlock operational use.</p>
+<p>Formal research-data depth target packet. This page uses explicit upstream dataset evidence or optional canonical local data under <code>crypto_decision_lab/data/</code>; it cannot unlock operational use.</p>
 <div class="card">
 <p><b>Gate answer:</b> {esc(payload["gate_answer"])}</p>
 <p><b>Policy lock:</b> {esc(payload["policy_lock"])} • <b>Mode:</b> {esc(payload["app_mode"])}</p>
@@ -415,23 +427,29 @@ def build_dataset_depth_requirements(
     symbol_list = _symbols(symbols)
     input_reports = normalize_reports(reports)
 
-    # Default mode: use explicit upstream report summaries only.
-    # Optional scan_local is retained for manual diagnostics, but the acceptance path should not auto-walk artifacts.
+    # Source contract for 9M:
+    # - Default/from_stack path uses explicit upstream dataset evidence summaries from 9K/9L.
+    # - Optional --scan-local path uses canonical local files under crypto_decision_lab/data/.
+    # - No reports and no scan means no usable evidence.
     dataset_files: list[dict[str, Any]] = []
-    if scan_local and not no_scan_local:
-        dataset_files = _scan_canonical_data(symbol_list)
 
-    summary = _summary_from_reports(input_reports)
-    if dataset_files:
+    if input_reports:
+        summary = _summary_from_reports(input_reports)
+        total_rows = int(summary["total_rows"])
+        dataset_file_count = int(summary["dataset_file_count"])
+        symbols_with_files_count = int(summary["symbols_with_files_count"])
+        symbols_with_files = symbol_list[:symbols_with_files_count] if symbols_with_files_count else []
+    elif scan_local and not no_scan_local:
+        dataset_files = _scan_canonical_data(symbol_list)
         total_rows = sum(int(r["row_count"]) for r in dataset_files)
         symbols_with_files = sorted({r["symbol"] for r in dataset_files})
         dataset_file_count = len(dataset_files)
         symbols_with_files_count = len(symbols_with_files)
     else:
-        total_rows = int(summary["total_rows"])
-        dataset_file_count = int(summary["dataset_file_count"])
-        symbols_with_files_count = int(summary["symbols_with_files_count"])
-        symbols_with_files = symbol_list[:symbols_with_files_count] if symbols_with_files_count else []
+        total_rows = 0
+        dataset_file_count = 0
+        symbols_with_files_count = 0
+        symbols_with_files = []
 
     min_rows_per_symbol = 1000
 
