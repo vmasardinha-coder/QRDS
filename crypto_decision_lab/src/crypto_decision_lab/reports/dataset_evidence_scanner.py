@@ -469,7 +469,7 @@ def build_dataset_evidence_scan(
     if total_files == 0:
         gate_answer = 'NO_LOCAL_DATASET_EVIDENCE_FOUND_RESEARCH_ONLY'
     elif score >= 0.80:
-        gate_answer = 'DATASET_EVIDENCE_SCANNER_PROFILED_WITH_REMAINING_RESEARCH_GAPS'
+        gate_answer = 'DATASET_EVIDENCE_SCANNER_PROFILED_WITH_REMAINING_RESEARCH_GAPS_RESEARCH_ONLY'
     else:
         gate_answer = 'DATASET_EVIDENCE_SCANNER_CREATED_WITH_PROFILE_GAPS_RESEARCH_ONLY'
 
