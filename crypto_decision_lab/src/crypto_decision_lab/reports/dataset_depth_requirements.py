@@ -172,7 +172,14 @@ def _scan_canonical_data(symbols: list[str]) -> list[dict[str, Any]]:
 
 
 def _report_kind(payload: dict[str, Any], path: str | Path) -> str:
-    name = str(payload.get("report_name") or payload.get("schema") or Path(path).stem)
+    nested = payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+    name = str(
+        payload.get("report_name")
+        or payload.get("schema")
+        or nested.get("report_name")
+        or nested.get("schema")
+        or Path(path).stem
+    )
     low = name.lower().replace("-", "_").replace(".", "_")
     mapping = {
         "dataset_evidence_scan": "dataset_evidence_scan",
@@ -231,6 +238,22 @@ def _as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _field(payload: dict[str, Any], *names: str, default: Any = 0) -> Any:
+    nested = payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+    for name in names:
+        if name in payload:
+            value = payload.get(name)
+            if isinstance(value, list):
+                return len(value)
+            return value
+        if name in nested:
+            value = nested.get(name)
+            if isinstance(value, list):
+                return len(value)
+            return value
+    return default
+
+
 def normalize_reports(reports: Iterable[str | Path] | None) -> list[dict[str, Any]]:
     """Normalize only explicitly provided reports.
 
@@ -254,38 +277,68 @@ def normalize_reports(reports: Iterable[str | Path] | None) -> list[dict[str, An
                 "kind": _report_kind(payload, resolved),
                 "path": resolved,
                 "status": "REPORT_PRESENT" if Path(resolved).exists() else "MISSING_FILE",
-                "ready": bool(payload.get("ready") or payload.get("formal_data_coverage_ready") == "YES"),
-                "gate_answer": str(payload.get("gate_answer") or "UNKNOWN_RESEARCH_ONLY"),
-                "dataset_file_count": _as_int(payload.get("dataset_file_count") or payload.get("dataset_files") or 0),
-                "symbols_with_files_count": _as_int(payload.get("symbols_with_files_count") or payload.get("symbols_with_files") or 0),
-                "total_rows": _as_int(payload.get("total_rows") or 0),
-                "score": _as_float(
-                    payload.get("mean_scanner_score")
-                    or payload.get("mean_explorer_score")
-                    or payload.get("mean_manifest_score")
-                    or payload.get("mean_profile_score")
-                    or payload.get("mean_readiness_score")
-                    or payload.get("mean_remediation_score")
-                    or 0.0
+                "ready": bool(payload.get("ready") or _field(payload, "ready", default=False)),
+                "gate_answer": str(_field(payload, "gate_answer", default="UNKNOWN_RESEARCH_ONLY")),
+                "dataset_file_count": _as_int(
+                    _field(payload, "dataset_file_count", "dataset_files", default=0)
                 ),
-                "sha256": str(payload.get("report_payload_sha256") or payload.get("sha256") or "MISSING")[:16],
+                "symbols_with_files_count": _as_int(
+                    _field(payload, "symbols_with_files_count", "symbols_with_files", default=0)
+                ),
+                "total_rows": _as_int(
+                    _field(payload, "total_rows", "row_count", default=0)
+                ),
+                "score": _as_float(
+                    _field(
+                        payload,
+                        "mean_scanner_score",
+                        "mean_explorer_score",
+                        "mean_manifest_score",
+                        "mean_profile_score",
+                        "mean_readiness_score",
+                        "mean_remediation_score",
+                        default=0.0,
+                    )
+                ),
+                "sha256": str(_field(payload, "report_payload_sha256", "sha256", default="MISSING"))[:16],
             }
         )
     return rows
 
 
+
 def _summary_from_reports(input_reports: list[dict[str, Any]]) -> dict[str, int]:
-    """Use explicit upstream evidence summaries, without walking nested artifact paths."""
-    preferred = [
+    """Use explicit upstream dataset evidence summaries, without walking nested artifact paths.
+
+    Priority:
+    1. Dataset Evidence Scanner / Explorer, because they are the direct upstream source.
+    2. Other data packets as fallback.
+    """
+    direct = [
         r for r in input_reports
-        if r.get("kind") in {"dataset_evidence_scan", "dataset_evidence_explorer", "dataset_manifest", "data_profile"}
+        if r.get("kind") in {"dataset_evidence_scan", "dataset_evidence_explorer"}
     ]
-    pool = preferred or input_reports
+    fallback = [
+        r for r in input_reports
+        if r.get("kind") in {
+            "dataset_manifest",
+            "data_profile",
+            "data_readiness",
+            "data_gap_remediation",
+            "data_coverage",
+            "data_quality",
+            "data_audit",
+        }
+    ]
+
+    pool = direct or fallback or input_reports
+
     return {
         "dataset_file_count": max([_as_int(r.get("dataset_file_count")) for r in pool] or [0]),
         "symbols_with_files_count": max([_as_int(r.get("symbols_with_files_count")) for r in pool] or [0]),
         "total_rows": max([_as_int(r.get("total_rows")) for r in pool] or [0]),
     }
+
 
 
 def _criterion(criterion_id: str, status: str, ready: bool, observed: Any, threshold: str, blocker: str = "") -> dict[str, Any]:
