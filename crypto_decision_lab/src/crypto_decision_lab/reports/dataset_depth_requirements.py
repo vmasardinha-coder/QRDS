@@ -286,7 +286,7 @@ def normalize_reports(reports: Iterable[str | Path] | None) -> list[dict[str, An
                     _field(payload, "symbols_with_files_count", "symbols_with_files", default=0)
                 ),
                 "total_rows": _as_int(
-                    _field(payload, "total_rows", "row_count", default=0)
+                    _field(payload, "total_rows", "total_observed_rows", "row_count", default=0)
                 ),
                 "score": _as_float(
                     _field(

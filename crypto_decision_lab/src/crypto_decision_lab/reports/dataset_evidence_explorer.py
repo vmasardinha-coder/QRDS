@@ -101,51 +101,78 @@ def _infer_symbol(path: Path, symbols: list[str]) -> str:
 
 
 def _count_rows(path: Path) -> tuple[int, list[str], bool, str]:
-    suffix = path.suffix.lower()
+    """Count rows and infer columns/time hints for CSV/JSON/JSONL.
+
+    JSON counting is recursive to avoid treating fixture wrappers as one row.
+    """
+    time_names = {"time", "timestamp", "datetime", "date", "open_time", "close_time", "ts"}
+    row_keys = ("candles", "klines", "rows", "records", "items", "data", "bars", "ohlcv", "prices")
+
+    def sample_columns(rows: list[Any]) -> list[str]:
+        if not rows:
+            return []
+        first = rows[0]
+        if isinstance(first, dict):
+            return [str(k) for k in first.keys()]
+        if isinstance(first, (list, tuple)):
+            return [f"col_{i}" for i in range(len(first))]
+        return ["value"]
+
+    def has_time(cols: list[str]) -> bool:
+        low = {c.lower() for c in cols}
+        return bool(low.intersection(time_names))
+
+    def find_rows(obj: Any) -> tuple[int, list[str], bool]:
+        if isinstance(obj, list):
+            cols = sample_columns(obj)
+            return len(obj), cols, has_time(cols)
+        if isinstance(obj, dict):
+            for key in row_keys:
+                value = obj.get(key)
+                if isinstance(value, list):
+                    cols = sample_columns(value)
+                    return len(value), cols, has_time(cols)
+                if isinstance(value, dict):
+                    count, cols, time_col = find_rows(value)
+                    if count:
+                        return count, cols, time_col
+            payload = obj.get("payload")
+            if isinstance(payload, (dict, list)):
+                count, cols, time_col = find_rows(payload)
+                if count:
+                    return count, cols, time_col
+        return 0, [], False
+
     try:
+        suffix = path.suffix.lower()
         if suffix == ".csv":
-            with path.open("r", encoding="utf-8", errors="ignore", newline="") as f:
-                reader = csv.reader(f)
-                header = next(reader, [])
-                rows = sum(1 for _ in reader)
-            cols = [str(c) for c in header]
-            time_col = any(c.lower() in {"time", "timestamp", "datetime", "date", "open_time", "close_time"} for c in cols)
-            return rows, cols[:12], time_col, "READABLE"
-        if suffix in {".jsonl", ".ndjson"}:
-            rows = 0
-            first: dict[str, Any] = {}
-            with path.open("r", encoding="utf-8", errors="ignore") as f:
+            with path.open("r", encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                cols = list(reader.fieldnames or [])
+                count = sum(1 for _ in reader)
+                return count, cols, has_time(cols), "OK"
+        if suffix == ".jsonl":
+            count = 0
+            cols: list[str] = []
+            with path.open("r", encoding="utf-8") as f:
                 for line in f:
                     if not line.strip():
                         continue
-                    rows += 1
-                    if not first:
+                    count += 1
+                    if not cols:
                         try:
                             obj = json.loads(line)
-                            if isinstance(obj, dict):
-                                first = obj
+                            cols = sample_columns([obj])
                         except Exception:
-                            pass
-            cols = list(first.keys())[:12]
-            time_col = any(c.lower() in {"time", "timestamp", "datetime", "date", "open_time", "close_time"} for c in cols)
-            return rows, cols, time_col, "READABLE"
+                            cols = []
+            return count, cols, has_time(cols), "OK"
         if suffix == ".json":
             obj = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(obj, list):
-                rows = len(obj)
-                first = obj[0] if obj and isinstance(obj[0], dict) else {}
-                cols = list(first.keys())[:12]
-            elif isinstance(obj, dict):
-                # Treat dict reports as one structured artifact, not market rows.
-                rows = int(obj.get("total_rows") or obj.get("row_count") or obj.get("dataset_row_count") or 1)
-                cols = list(obj.keys())[:12]
-            else:
-                rows, cols = 1, []
-            time_col = any(str(c).lower() in {"time", "timestamp", "datetime", "date", "open_time", "close_time"} for c in cols)
-            return rows, [str(c) for c in cols], time_col, "READABLE"
-    except Exception:
-        return 0, [], False, "UNREADABLE"
-    return 0, [], False, "UNSUPPORTED"
+            count, cols, time_col = find_rows(obj)
+            return count, cols, time_col, "OK" if count else "NO_ROWS_FOUND"
+        return 0, [], False, "UNSUPPORTED_SUFFIX"
+    except Exception as exc:  # pragma: no cover - defensive explorer reader
+        return 0, [], False, f"READ_ERROR:{type(exc).__name__}"
 
 
 def _extract_scan_rows(obj: Any) -> list[dict[str, Any]]:

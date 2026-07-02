@@ -106,22 +106,52 @@ def _file_sha256(path: Path, max_bytes: int = 8_000_000) -> str:
 
 
 def _safe_read_json_rows(path: Path, max_rows: int) -> tuple[int, list[dict[str, Any]], str]:
-    try:
-        text = path.read_text(encoding="utf-8")
-        parsed = json.loads(text)
-        if isinstance(parsed, list):
-            rows = [x for x in parsed[:max_rows] if isinstance(x, dict)]
-            return len(parsed), rows, ""
-        if isinstance(parsed, dict):
-            # Prefer common container keys; otherwise treat the dict as one row.
-            for key in ("rows", "data", "records", "candles", "items"):
-                value = parsed.get(key)
+    """Read JSON rows recursively for QRDS fixtures/cache.
+
+    Supported shapes include:
+    - [{...}, {...}]
+    - {"candles": [...]}
+    - {"payload": {"data": [...]}}
+    - {"payload": [...]}
+    - {"data"/"rows"/"records"/"items"/"bars"/"ohlcv"/"klines"/"prices": [...]}
+    """
+    row_keys = ("candles", "klines", "rows", "records", "items", "data", "bars", "ohlcv", "prices")
+
+    def coerce_sample(items: list[Any]) -> list[dict[str, Any]]:
+        sample: list[dict[str, Any]] = []
+        for item in items[:max_rows]:
+            if isinstance(item, dict):
+                sample.append(item)
+            elif isinstance(item, (list, tuple)):
+                sample.append({f"col_{i}": value for i, value in enumerate(item)})
+            else:
+                sample.append({"value": item})
+        return sample
+
+    def find_rows(obj: Any) -> tuple[int, list[dict[str, Any]]]:
+        if isinstance(obj, list):
+            return len(obj), coerce_sample(obj)
+        if isinstance(obj, dict):
+            for key in row_keys:
+                value = obj.get(key)
                 if isinstance(value, list):
-                    rows = [x for x in value[:max_rows] if isinstance(x, dict)]
-                    return len(value), rows, ""
-            return 1, [parsed], ""
-        return 0, [], "json_root_not_tabular"
-    except Exception as exc:
+                    return len(value), coerce_sample(value)
+                if isinstance(value, dict):
+                    count, rows = find_rows(value)
+                    if count:
+                        return count, rows
+            payload = obj.get("payload")
+            if isinstance(payload, (dict, list)):
+                count, rows = find_rows(payload)
+                if count:
+                    return count, rows
+        return 0, []
+
+    try:
+        obj = json.loads(path.read_text(encoding="utf-8"))
+        row_count, rows = find_rows(obj)
+        return row_count, rows, ""
+    except Exception as exc:  # pragma: no cover - defensive fixture reader
         return 0, [], f"json_read_error:{type(exc).__name__}"
 
 
@@ -515,6 +545,7 @@ def build_dataset_evidence_scan(
         'dataset_file_count': payload['dataset_file_count'],
         'symbols_with_files': payload['symbols_with_files'],
         'total_observed_rows': payload['total_observed_rows'],
+        'total_rows': payload['total_observed_rows'],
         'criteria_ready_count': payload['criteria_ready_count'],
         'criteria_total_count': payload['criteria_total_count'],
         'mean_scanner_score': payload['mean_scanner_score'],
