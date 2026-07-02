@@ -106,11 +106,15 @@ def _report_kind(payload: dict[str, Any], path: str | Path) -> str:
         "operational_security": "operational_security",
         "evidence_stack": "evidence_stack",
     }
-    low = name.lower()
+    low = name.lower().replace("-", "_").replace(".", "_")
     for needle, kind in mapping.items():
         if needle in low:
             return kind
-    return Path(path).stem
+    fallback = Path(path).stem.lower().replace("-", "_").replace(".", "_")
+    for needle, kind in mapping.items():
+        if needle in fallback:
+            return kind
+    return fallback
 
 
 def _as_float(value: Any, default: float = 0.0) -> float:
