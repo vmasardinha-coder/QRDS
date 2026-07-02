@@ -46,8 +46,41 @@ def _symbols(symbols: str | Iterable[str]) -> list[str]:
     return [str(s).strip() for s in symbols if str(s).strip()]
 
 
-def _load_json(path: str | Path) -> dict[str, Any]:
+def _resolve_report_path(path: str | Path) -> Path:
+    """Resolve report paths from repo root or package cwd.
+
+    Wrappers may pass paths like crypto_decision_lab/artifacts/...
+    while the CLI may run from /workspaces/QRDS/crypto_decision_lab.
+    This resolver keeps the Python layer tolerant without auto-discovering reports.
+    """
     p = Path(path)
+    if p.exists():
+        return p
+
+    candidates = [
+        Path.cwd() / p,
+        Path.cwd().parent / p,
+        Path.cwd() / "crypto_decision_lab" / p,
+        Path.cwd().parent / "crypto_decision_lab" / p,
+    ]
+
+    raw = str(p)
+    if raw.startswith("crypto_decision_lab/"):
+        stripped = Path(raw.split("/", 1)[1])
+        candidates.extend([
+            Path.cwd() / stripped,
+            Path.cwd().parent / stripped,
+        ])
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return p
+
+
+def _load_json(path: str | Path) -> dict[str, Any]:
+    p = _resolve_report_path(path)
     try:
         return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
@@ -105,7 +138,7 @@ def _collect_reports(reports: Iterable[str | Path] | None) -> list[dict[str, Any
 
     seen: set[str] = set()
     for report in reports:
-        p = Path(report)
+        p = _resolve_report_path(report)
         key = str(p)
         if key in seen:
             continue
