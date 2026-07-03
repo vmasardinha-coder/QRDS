@@ -110,6 +110,27 @@ def _discover_rows(root: Path) -> tuple[list[dict[str, Any]], list[str]]:
     paths_checked: list[str] = []
     rows: list[dict[str, Any]] = []
 
+    # Prefer the latest normalizer manifest outputs over directory globbing.
+    # This prevents stale normalized artifacts from prior fallback/sample modes
+    # from being included in Phase 13 metrics.
+    normalizer_index = root / "crypto_decision_lab" / "artifacts" / "phase11_offline_source_normalizer_pack" / "phase11_offline_source_normalizer_pack_index.json"
+    try:
+        index = json.loads(normalizer_index.read_text(encoding="utf-8"))
+        payload = index.get("payload") if isinstance(index.get("payload"), dict) else {}
+        outputs = payload.get("normalization_outputs") if isinstance(payload.get("normalization_outputs"), list) else []
+        for item in outputs:
+            path_value = item.get("path") if isinstance(item, dict) else None
+            if not path_value:
+                continue
+            p = Path(path_value)
+            if p.exists() and p.suffix.lower() == ".jsonl":
+                paths_checked.append(str(p))
+                rows.extend(_read_jsonl(p))
+        if rows:
+            return rows, paths_checked
+    except Exception:
+        pass
+
     preferred_dirs = [
         root / "crypto_decision_lab" / "artifacts" / "phase11_offline_source_normalizer_pack" / "normalized",
         root / "crypto_decision_lab" / "artifacts" / "phase10_offline_sample_intake_promotion_pack" / "validated_staging",

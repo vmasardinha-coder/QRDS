@@ -119,6 +119,10 @@ def _files(root: Path):
 
 def _normalize(paths, out: Path, fallback: bool):
     nd=out/"normalized"; nd.mkdir(parents=True, exist_ok=True)
+    # Clear stale normalized files from prior modes/runs before writing current outputs.
+    # This prevents fallback/sample artifacts from being mixed with public inbox data.
+    for old_file in nd.glob("*.jsonl"):
+        old_file.unlink()
     summaries=[]; outputs=[]
     for p in paths:
         raw=_read_rows(p); headers=list(raw[0].keys()) if raw else []; m=_map(headers)
