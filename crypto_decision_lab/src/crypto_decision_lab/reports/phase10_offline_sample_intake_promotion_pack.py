@@ -234,14 +234,28 @@ def _write_artifact_samples(out: Path, templates: list[dict[str, Any]]) -> list[
 
 
 def _discover_input_files(root: Path, out: Path) -> list[Path]:
+    # If manual_intake/inbox has CSV/JSONL files, use ONLY inbox files.
+    # If inbox is empty, use artifact sample inputs as fallback.
+    # This prevents public/real inbox data from being contaminated by fallback samples.
     inbox = root / "crypto_decision_lab" / "manual_intake" / "inbox"
-    files: list[Path] = []
+    inbox_files: list[Path] = []
     if inbox.exists():
-        files.extend(sorted([p for p in inbox.glob("*") if p.is_file() and p.suffix.lower() in {".jsonl", ".csv"}]))
+        inbox_files = sorted([
+            p for p in inbox.glob("*")
+            if p.is_file() and p.suffix.lower() in {".jsonl", ".csv"}
+        ])
+    if inbox_files:
+        return inbox_files
+
     sample_dir = out / "sample_inputs"
+    sample_files: list[Path] = []
     if sample_dir.exists():
-        files.extend(sorted([p for p in sample_dir.glob("*") if p.is_file() and p.suffix.lower() in {".jsonl", ".csv"}]))
-    return files
+        sample_files = sorted([
+            p for p in sample_dir.glob("*")
+            if p.is_file() and p.suffix.lower() in {".jsonl", ".csv"}
+        ])
+    return sample_files
+
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
