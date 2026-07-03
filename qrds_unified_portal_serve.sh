@@ -1,38 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="${QRDS_ROOT:-/workspaces/QRDS}"
-if [ ! -d "$ROOT/crypto_decision_lab" ]; then
-  ROOT="$(pwd)"
-fi
-cd "$ROOT/crypto_decision_lab"
-python -m crypto_decision_lab.cli.portal_unification_suite --output-dir artifacts/unified_portal_suite --repo-root "$ROOT"
-cd "$ROOT"
-PORT="${QRDS_PORT:-}"
-if [ -z "$PORT" ]; then
-  PORT=$(python - <<'PY'
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT="$ROOT/crypto_decision_lab"
+OUT="$PROJECT/artifacts/unified_portal_suite"
+
+export PYTHONPATH="$PROJECT/src:${PYTHONPATH:-}"
+
+mkdir -p "$OUT"
+
+echo "[QRDS 9U] Building Unified Portal Suite..."
+cd "$PROJECT"
+python -m crypto_decision_lab.cli.portal_unification_suite \
+  --output-dir "$OUT"
+
+PORT="$(python - <<'PY'
 import socket
-for port in range(8134, 8199):
-    s = socket.socket()
-    try:
-        s.bind(("0.0.0.0", port))
-        s.close()
+for port in range(8134, 8200):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("0.0.0.0", port))
+        except OSError:
+            continue
         print(port)
         break
-    except OSError:
-        s.close()
+else:
+    raise SystemExit("NO_FREE_PORT")
 PY
-)
-fi
-ENTRY="/crypto_decision_lab/artifacts/unified_portal_suite/index.html"
-echo "[QRDS 9U] Unified Portal Launcher ready."
-echo "[QRDS 9U] Serve root: $ROOT"
+)"
+
+echo
+echo "[QRDS 9U] Unified Portal Suite ready."
+echo "[QRDS 9U] Serve directory: $OUT"
 echo "[QRDS 9U] Port: $PORT"
 echo
 echo "Codespaces:"
 echo "  Ports -> $PORT -> Open in Browser / Open Preview"
 echo
-echo "Open path: $ENTRY"
-echo "Full URL after opening port: http://localhost:$PORT$ENTRY"
-echo
+echo "This should open the portal directly at /"
 echo "Stop server with Ctrl+C."
+
+cd "$OUT"
 python -m http.server "$PORT" --bind 0.0.0.0

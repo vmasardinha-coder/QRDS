@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "${QRDS_ROOT:-/workspaces/QRDS}"
-bash qrds_unified_portal_serve.sh
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$ROOT/qrds_unified_portal_serve.sh" "$@"

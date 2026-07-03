@@ -319,7 +319,7 @@ a{{color:#1d4ed8}}
 <div class='kpi'><b>Criteria ready</b><br>{esc(payload['criteria_ready_count'])}/{esc(payload['criteria_total_count'])}</div>
 <div class='kpi'><b>Mean launcher score</b><br>{esc(payload['mean_launcher_score'])}</div>
 <p class='badge'>Research-only guardrail active</p>
-<p>No exchange account, no orders, no research output, no execution-style instruction, no live-fund workflow marker.</p>
+<p>Safety lock remains active for account access, order flow, execution-style instructions, and live-fund workflow markers.</p>
 </div>
 <h2>Primary portal families</h2>
 {''.join(family_cards)}
