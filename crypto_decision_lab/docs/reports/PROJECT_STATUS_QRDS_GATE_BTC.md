@@ -88,7 +88,7 @@ Phase 20 establishes null/baseline metrics only. It does not train a model or ge
 
 ## Latest Phase 21 update
 
-Updated at: 2026-07-04T19:48:46.238840+00:00
+Updated at: 2026-07-04T19:58:47.027384+00:00
 
 - Phase 21 gate: `PHASE21_BASELINE_AUDIT_INTERPRETABLE_MODEL_BENCHMARK_READY_RESEARCH_ONLY`
 - Phase 20 audit ready: `True`
@@ -101,3 +101,19 @@ Updated at: 2026-07-04T19:48:46.238840+00:00
 - Canonical writes: `0`
 
 Phase 21 trains simple offline interpretable research models only for benchmark metrics. These outputs are not trading signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 22 update
+
+Updated at: 2026-07-04T20:06:05.508268+00:00
+
+- Phase 22 gate: `PHASE22_MODEL_PERFORMANCE_TRIAGE_RESEARCH_GATE_READY_RESEARCH_ONLY`
+- Model performance triage ready: `True`
+- Research path forward: `VOLATILITY_FIRST_RESEARCH_PATH`
+- Return model research gate: `BLOCK_RETURN_MODEL_ADVANCEMENT_RESEARCH_ONLY`
+- Return holdout beat rate: `0.16666667`
+- Abs-return holdout beat rate: `0.66666667`
+- Volatility holdout beat rate: `0.83333333`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 22 is a research triage gate only. It does not create trading signals, recommendations, allocations, or operational decisions.
