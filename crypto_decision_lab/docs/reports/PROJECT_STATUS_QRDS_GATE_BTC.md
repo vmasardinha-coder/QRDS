@@ -58,7 +58,7 @@ Diagnostic labels are research-only descriptors, not trading signals, recommenda
 
 ## Latest Phase 19 update
 
-Updated at: 2026-07-04T19:11:20.963585+00:00
+Updated at: 2026-07-04T19:11:34.876295+00:00
 
 - Phase 19 gate: `PHASE19_OFFLINE_EXPERIMENT_HARNESS_READY_RESEARCH_ONLY`
 - Offline experiment harness ready: `True`
@@ -70,3 +70,18 @@ Updated at: 2026-07-04T19:11:20.963585+00:00
 - Canonical writes: `0`
 
 The harness contains research targets and chronological splits only. It does not train models or generate predictions, signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 20 update
+
+Updated at: 2026-07-04T19:28:08.719688+00:00
+
+- Phase 20 gate: `PHASE20_BASELINE_METRICS_NULL_MODELS_READY_RESEARCH_ONLY`
+- Baseline metrics ready: `True`
+- Baseline metric rows total: `117`
+- Baseline families count: `13`
+- Model training run: `False`
+- Model predictions generated: `0`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 20 establishes null/baseline metrics only. It does not train a model or generate model predictions, signals, recommendations, allocations, or operational decisions.
