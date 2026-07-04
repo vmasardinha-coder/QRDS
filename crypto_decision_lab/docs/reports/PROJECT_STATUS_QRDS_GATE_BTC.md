@@ -163,7 +163,7 @@ Phase 25 strengthens volatility baselines/features only. It creates no trading s
 
 ## Latest Phase 26 update
 
-Updated at: 2026-07-04T21:23:22.271500+00:00
+Updated at: 2026-07-04T21:23:36.530818+00:00
 
 - Phase 26 gate: `PHASE26_REGIME_SEGMENTED_VOLATILITY_EDGE_AUDIT_READY_RESEARCH_ONLY`
 - Regime edge audit ready: `True`
@@ -174,3 +174,18 @@ Updated at: 2026-07-04T21:23:22.271500+00:00
 - Canonical writes: `0`
 
 Phase 26 audits potential edge by regime. Research candidates are not operational edge and do not authorize signals, recommendations, allocations, or decisions.
+
+## Latest Phase 27 update
+
+Updated at: 2026-07-04T21:29:05.185749+00:00
+
+- Phase 27 gate: `PHASE27_EDGE_CANDIDATE_STABILITY_ANTI_OVERFIT_READY_RESEARCH_ONLY`
+- Candidate stability ready: `True`
+- Candidates tested: `4`
+- Stable research candidates: `0`
+- Operational edge validated: `False`
+- Decision layer allowed: `False`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 27 tests anti-overfit stability of Phase 26 edge candidates. Stable candidates remain research-only and do not authorize decisions.
