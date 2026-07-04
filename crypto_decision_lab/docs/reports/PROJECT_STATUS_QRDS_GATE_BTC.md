@@ -207,7 +207,7 @@ Phase 28 converts unstable fine-grained edge candidates into compressed-regime r
 
 ## Latest Phase 29 update
 
-Updated at: 2026-07-04T23:02:01.938327+00:00
+Updated at: 2026-07-04T23:02:39.676708+00:00
 
 - Phase 29 gate: `PHASE29_COMPRESSED_REGIME_EDGE_RETEST_READY_RESEARCH_ONLY`
 - Compressed retest ready: `True`
@@ -220,3 +220,19 @@ Updated at: 2026-07-04T23:02:01.938327+00:00
 - Canonical writes: `0`
 
 Phase 29 retests compressed-regime candidates. Stable compressed candidates remain research-only and do not authorize decisions.
+
+## Latest Phase 30 update
+
+Updated at: 2026-07-04T23:15:38.702243+00:00
+
+- Phase 30 gate: `PHASE30_NO_EDGE_CHECKPOINT_RISK_REGIME_DASHBOARD_READINESS_NEEDS_REVIEW_RESEARCH_ONLY`
+- No-edge checkpoint ready: `False`
+- Edge validated: `False`
+- Risk/regime dashboard research ready: `False`
+- Shadow decision allowed: `False`
+- Decision layer allowed: `False`
+- Next research path: `REPAIR_RESEARCH_FOUNDATION_BEFORE_DASHBOARD`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 30 records no validated edge from the current volatility/regime path and opens the research-only risk/regime dashboard path. No shadow or operational decision is allowed.
