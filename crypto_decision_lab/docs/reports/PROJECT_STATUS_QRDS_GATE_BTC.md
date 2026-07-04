@@ -104,7 +104,7 @@ Phase 21 trains simple offline interpretable research models only for benchmark 
 
 ## Latest Phase 22 update
 
-Updated at: 2026-07-04T20:06:05.508268+00:00
+Updated at: 2026-07-04T20:06:10.466908+00:00
 
 - Phase 22 gate: `PHASE22_MODEL_PERFORMANCE_TRIAGE_RESEARCH_GATE_READY_RESEARCH_ONLY`
 - Model performance triage ready: `True`
@@ -117,3 +117,17 @@ Updated at: 2026-07-04T20:06:05.508268+00:00
 - Canonical writes: `0`
 
 Phase 22 is a research triage gate only. It does not create trading signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 23 update
+
+Updated at: 2026-07-04T20:14:19.575856+00:00
+
+- Phase 23 gate: `PHASE23_VOLATILITY_FIRST_RESEARCH_BENCHMARK_READY_RESEARCH_ONLY`
+- Volatility-first benchmark ready: `True`
+- Phase 22 triage ready: `True`
+- Holdout beats total: `1`
+- Coins with best model improvement: `1`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 23 is volatility-first research benchmarking only. It creates no trading signals, recommendations, allocations, or operational decisions.
