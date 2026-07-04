@@ -40,3 +40,18 @@ Updated at: 2026-07-04T18:36:10.467836+00:00
 - If Phase 17 is READY: build research feature layer / regime diagnostics on consensus data.
 - If Phase 17 is NEEDS_REVIEW: inspect dispersion/outlier gates before adding new feature layers.
 - Keep documentation updates bundled into larger sprint/hotfix packages instead of separate packages.
+
+## Latest Phase 18 update
+
+Updated at: 2026-07-04T19:01:19.171895+00:00
+
+- Phase 18 gate: `PHASE18_RESEARCH_FEATURE_REGIME_DIAGNOSTICS_READY_RESEARCH_ONLY`
+- Feature/regime diagnostics ready: `True`
+- Feature rows total: `14937`
+- Min feature rows per coin: `4979`
+- Min mature feature rows per coin: `4812`
+- Diagnostic labels are signals: `False`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Diagnostic labels are research-only descriptors, not trading signals, recommendations, allocations, or operational decisions.
