@@ -134,7 +134,7 @@ Phase 23 is volatility-first research benchmarking only. It creates no trading s
 
 ## Latest Phase 24 update
 
-Updated at: 2026-07-04T20:39:20.668615+00:00
+Updated at: 2026-07-04T20:39:56.025254+00:00
 
 - Phase 24 gate: `PHASE24_VOLATILITY_RESIDUAL_DIAGNOSTICS_BASELINE_ROBUSTNESS_READY_RESEARCH_ONLY`
 - Diagnostics ready: `True`
@@ -146,3 +146,17 @@ Updated at: 2026-07-04T20:39:20.668615+00:00
 - Canonical writes: `0`
 
 Phase 24 is diagnostics only and recommends no operational action. It blocks complex-model escalation when robustness is weak.
+
+## Latest Phase 25 update
+
+Updated at: 2026-07-04T20:58:19.573547+00:00
+
+- Phase 25 gate: `PHASE25_VOLATILITY_FEATURE_BASELINE_STRENGTHENING_READY_RESEARCH_ONLY`
+- Strengthening ready: `True`
+- Metric rows total: `99`
+- Holdout beats vs Phase 20: `4`
+- Holdout beats vs Phase 23: `5`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 25 strengthens volatility baselines/features only. It creates no trading signals, recommendations, allocations, or operational decisions.
