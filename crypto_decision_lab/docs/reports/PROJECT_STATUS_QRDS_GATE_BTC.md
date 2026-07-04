@@ -120,7 +120,7 @@ Phase 22 is a research triage gate only. It does not create trading signals, rec
 
 ## Latest Phase 23 update
 
-Updated at: 2026-07-04T20:14:19.575856+00:00
+Updated at: 2026-07-04T20:19:11.420903+00:00
 
 - Phase 23 gate: `PHASE23_VOLATILITY_FIRST_RESEARCH_BENCHMARK_READY_RESEARCH_ONLY`
 - Volatility-first benchmark ready: `True`
@@ -131,3 +131,18 @@ Updated at: 2026-07-04T20:14:19.575856+00:00
 - Canonical writes: `0`
 
 Phase 23 is volatility-first research benchmarking only. It creates no trading signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 24 update
+
+Updated at: 2026-07-04T20:39:20.668615+00:00
+
+- Phase 24 gate: `PHASE24_VOLATILITY_RESIDUAL_DIAGNOSTICS_BASELINE_ROBUSTNESS_READY_RESEARCH_ONLY`
+- Diagnostics ready: `True`
+- Diagnostic path forward: `STRENGTHEN_VOLATILITY_BASELINES_AND_FEATURES_RESEARCH_ONLY`
+- Complex model allowed by triage: `False`
+- Holdout beats total: `1`
+- Coins with best model improvement: `1`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 24 is diagnostics only and recommends no operational action. It blocks complex-model escalation when robustness is weak.
