@@ -149,7 +149,7 @@ Phase 24 is diagnostics only and recommends no operational action. It blocks com
 
 ## Latest Phase 25 update
 
-Updated at: 2026-07-04T20:58:19.573547+00:00
+Updated at: 2026-07-04T20:58:30.057919+00:00
 
 - Phase 25 gate: `PHASE25_VOLATILITY_FEATURE_BASELINE_STRENGTHENING_READY_RESEARCH_ONLY`
 - Strengthening ready: `True`
@@ -160,3 +160,17 @@ Updated at: 2026-07-04T20:58:19.573547+00:00
 - Canonical writes: `0`
 
 Phase 25 strengthens volatility baselines/features only. It creates no trading signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 26 update
+
+Updated at: 2026-07-04T21:23:22.271500+00:00
+
+- Phase 26 gate: `PHASE26_REGIME_SEGMENTED_VOLATILITY_EDGE_AUDIT_READY_RESEARCH_ONLY`
+- Regime edge audit ready: `True`
+- Research edge candidates: `4`
+- Operational edge validated: `False`
+- Decision layer allowed: `False`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 26 audits potential edge by regime. Research candidates are not operational edge and do not authorize signals, recommendations, allocations, or decisions.
