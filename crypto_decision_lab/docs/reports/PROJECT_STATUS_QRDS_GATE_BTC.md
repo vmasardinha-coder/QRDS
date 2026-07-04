@@ -55,3 +55,18 @@ Updated at: 2026-07-04T19:01:19.171895+00:00
 - Canonical writes: `0`
 
 Diagnostic labels are research-only descriptors, not trading signals, recommendations, allocations, or operational decisions.
+
+## Latest Phase 19 update
+
+Updated at: 2026-07-04T19:11:20.963585+00:00
+
+- Phase 19 gate: `PHASE19_OFFLINE_EXPERIMENT_HARNESS_READY_RESEARCH_ONLY`
+- Offline experiment harness ready: `True`
+- Eligible rows total: `14364`
+- Min eligible rows per coin: `4788`
+- Target horizon hours: `24`
+- Prediction rows generated: `0`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+The harness contains research targets and chronological splits only. It does not train models or generate predictions, signals, recommendations, allocations, or operational decisions.
