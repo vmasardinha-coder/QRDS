@@ -101,37 +101,8 @@ def _http_get_json(url: str, timeout: int = 25) -> Any:
         }
 
 
-def fetch_okx_candles(inst_id: str, bar: str, rows: int) -> list[dict[str, Any]]:
-    collected: dict[int, list[Any]] = {}
-    after: str | None = None
-    attempts = 0
-
-    while len(collected) < rows and attempts < 30:
-        attempts += 1
-        params = {"instId": inst_id, "bar": bar, "limit": "300"}
-        if after:
-            params["after"] = after
-        url = API_BASE + "/api/v5/market/candles?" + urllib.parse.urlencode(params)
-        data = _http_get_json(url)
-        if isinstance(data, dict) and data.get("__network_error__"):
-            return []
-        if not isinstance(data, dict) or data.get("code") != "0":
-            return []
-        batch = data.get("data") if isinstance(data.get("data"), list) else []
-        if not batch:
-            break
-
-        for row in batch:
-            if isinstance(row, list) and len(row) >= 6:
-                collected[int(row[0])] = row
-
-        oldest = min(int(row[0]) for row in batch if isinstance(row, list) and row)
-        after = str(oldest)
-        if len(batch) < 2:
-            break
-        time.sleep(0.12)
-
-    ordered = [collected[k] for k in sorted(collected.keys())][-rows:]
+def _normalize_okx_candle_rows(inst_id: str, rows_raw: list[list[Any]], rows: int) -> list[dict[str, Any]]:
+    ordered = [rows_raw_item for rows_raw_item in sorted(rows_raw, key=lambda r: int(r[0]))][-rows:]
     normalized: list[dict[str, Any]] = []
     for row in ordered:
         # OKX candle row shape: ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm
@@ -154,6 +125,74 @@ def fetch_okx_candles(inst_id: str, bar: str, rows: int) -> list[dict[str, Any]]
             }
         )
     return normalized
+
+
+def _fetch_okx_endpoint_pages(inst_id: str, bar: str, rows: int, endpoint_path: str, page_limit: str, after_start: str | None = None, attempts_limit: int = 80) -> dict[int, list[Any]]:
+    collected: dict[int, list[Any]] = {}
+    after = after_start
+    attempts = 0
+
+    while len(collected) < rows and attempts < attempts_limit:
+        attempts += 1
+        params = {"instId": inst_id, "bar": bar, "limit": page_limit}
+        if after:
+            params["after"] = after
+        url = API_BASE + endpoint_path + "?" + urllib.parse.urlencode(params)
+        data = _http_get_json(url)
+        if isinstance(data, dict) and data.get("__network_error__"):
+            break
+        if not isinstance(data, dict) or data.get("code") != "0":
+            break
+        batch = data.get("data") if isinstance(data.get("data"), list) else []
+        if not batch:
+            break
+
+        usable = [row for row in batch if isinstance(row, list) and len(row) >= 6]
+        if not usable:
+            break
+        before_count = len(collected)
+        for row in usable:
+            collected[int(row[0])] = row
+
+        oldest = min(int(row[0]) for row in usable)
+        after = str(oldest)
+
+        if len(collected) == before_count or len(usable) < 2:
+            break
+        time.sleep(0.12)
+
+    return collected
+
+
+def fetch_okx_candles(inst_id: str, bar: str, rows: int) -> list[dict[str, Any]]:
+    # OKX recent candles can be shallower than our 5000-row research target.
+    # Start with recent candles, then extend backwards with history-candles.
+    recent = _fetch_okx_endpoint_pages(
+        inst_id=inst_id,
+        bar=bar,
+        rows=rows,
+        endpoint_path="/api/v5/market/candles",
+        page_limit="300",
+        after_start=None,
+        attempts_limit=12,
+    )
+
+    all_rows: dict[int, list[Any]] = dict(recent)
+    after_start = str(min(all_rows.keys())) if all_rows else None
+
+    if len(all_rows) < rows:
+        history = _fetch_okx_endpoint_pages(
+            inst_id=inst_id,
+            bar=bar,
+            rows=rows - len(all_rows),
+            endpoint_path="/api/v5/market/history-candles",
+            page_limit="100",
+            after_start=after_start,
+            attempts_limit=80,
+        )
+        all_rows.update(history)
+
+    return _normalize_okx_candle_rows(inst_id, list(all_rows.values()), rows)
 
 
 def _read_csv(path: Path) -> list[dict[str, Any]]:
@@ -385,7 +424,7 @@ def build_phase14_okx_public_data_adapter_pack(
         "okx_adapter_ready": adapter_ready,
         "data_nature": "OKX_PUBLIC_MARKET_DATA_RESEARCH_ONLY",
         "source_label": SOURCE_LABEL,
-        "source_endpoint_family": "OKX_V5_MARKET_CANDLES",
+        "source_endpoint_family": "OKX_V5_MARKET_CANDLES_AND_HISTORY_CANDLES",
         "api_base": API_BASE,
         "endpoint_access_status": endpoint_status,
         "endpoint_blocked_or_unavailable": endpoint_blocked,
