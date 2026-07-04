@@ -192,7 +192,7 @@ Phase 27 tests anti-overfit stability of Phase 26 edge candidates. Stable candid
 
 ## Latest Phase 28 update
 
-Updated at: 2026-07-04T21:37:33.298232+00:00
+Updated at: 2026-07-04T21:38:04.658012+00:00
 
 - Phase 28 gate: `PHASE28_REGIME_TAXONOMY_COMPRESSION_FAILURE_ANALYSIS_READY_RESEARCH_ONLY`
 - Regime compression ready: `True`
@@ -204,3 +204,19 @@ Updated at: 2026-07-04T21:37:33.298232+00:00
 - Canonical writes: `0`
 
 Phase 28 converts unstable fine-grained edge candidates into compressed-regime retest inputs. It validates no operational edge.
+
+## Latest Phase 29 update
+
+Updated at: 2026-07-04T23:02:01.938327+00:00
+
+- Phase 29 gate: `PHASE29_COMPRESSED_REGIME_EDGE_RETEST_READY_RESEARCH_ONLY`
+- Compressed retest ready: `True`
+- Retests: `4`
+- Stable compressed candidates: `0`
+- Operational edge validated: `False`
+- Decision layer allowed: `False`
+- Next research path: `REBUILD_FEATURES_AND_BASELINES_NO_EDGE_RESEARCH_ONLY`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 29 retests compressed-regime candidates. Stable compressed candidates remain research-only and do not authorize decisions.
