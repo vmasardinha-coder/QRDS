@@ -288,7 +288,7 @@ Phase 33 adds freshness and drilldown status panels to the research-only dashboa
 
 ## Latest Phase 34 update
 
-Updated at: 2026-07-05T01:19:04.346081+00:00
+Updated at: 2026-07-05T01:19:43.257435+00:00
 
 - Phase 34 gate: `PHASE34_LATEST_OBSERVATION_REGIME_SNAPSHOT_READY_RESEARCH_ONLY`
 - Latest/regime snapshot ready: `True`
@@ -302,3 +302,20 @@ Updated at: 2026-07-05T01:19:04.346081+00:00
 - Canonical writes: `0`
 
 Phase 34 adds latest observation and regime snapshot panels to the research-only dashboard. It remains non-decision, non-signal, and non-operational.
+
+## Latest Phase 35 update
+
+Updated at: 2026-07-05T01:35:12.118142+00:00
+
+- Phase 35 gate: `PHASE35_RECENT_HISTORY_SPARKLINE_PANELS_READY_RESEARCH_ONLY`
+- Recent history/sparkline panels ready: `True`
+- Recent history rows: `288`
+- Sparkline rows: `9`
+- Transition summary rows: `3`
+- Edge validated: `False`
+- Decision layer allowed: `False`
+- Next research path: `ADD_DASHBOARD_EXPORT_AND_REVIEW_BUNDLE_RESEARCH_ONLY`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 35 adds recent-history and sparkline panels to the research-only dashboard. It remains non-decision, non-signal, and non-operational.
