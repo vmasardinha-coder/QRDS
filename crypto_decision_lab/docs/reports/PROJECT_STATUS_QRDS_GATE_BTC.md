@@ -305,7 +305,7 @@ Phase 34 adds latest observation and regime snapshot panels to the research-only
 
 ## Latest Phase 35 update
 
-Updated at: 2026-07-05T01:35:12.118142+00:00
+Updated at: 2026-07-05T01:35:19.266010+00:00
 
 - Phase 35 gate: `PHASE35_RECENT_HISTORY_SPARKLINE_PANELS_READY_RESEARCH_ONLY`
 - Recent history/sparkline panels ready: `True`
@@ -319,3 +319,19 @@ Updated at: 2026-07-05T01:35:12.118142+00:00
 - Canonical writes: `0`
 
 Phase 35 adds recent-history and sparkline panels to the research-only dashboard. It remains non-decision, non-signal, and non-operational.
+
+## Latest Phase 36 update
+
+Updated at: 2026-07-05T01:48:17.534301+00:00
+
+- Phase 36 gate: `PHASE36_UNIFIED_RISK_REGIME_RESEARCH_PORTAL_SHELL_READY_RESEARCH_ONLY`
+- Unified portal ready: `True`
+- Navigation pages: `11`
+- Required sections present: `11`
+- Edge validated: `False`
+- Decision layer allowed: `False`
+- Next research path: `ADD_EXPORT_REVIEW_BUNDLE_AND_SINGLE_PORTAL_INDEX_RESEARCH_ONLY`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 36 consolidates the Phase 31–35 mini-portals into one unified research-only portal shell. It remains non-decision, non-signal, and non-operational.
