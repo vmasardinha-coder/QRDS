@@ -239,7 +239,7 @@ Phase 30 records no validated edge from the current volatility/regime path and o
 
 ## Latest Phase 31 update
 
-Updated at: 2026-07-05T00:39:02.788084+00:00
+Updated at: 2026-07-05T00:48:20.566059+00:00
 
 - Phase 31 gate: `PHASE31_RISK_REGIME_RESEARCH_DASHBOARD_MVP_READY_RESEARCH_ONLY`
 - Dashboard MVP ready: `True`
@@ -252,3 +252,19 @@ Updated at: 2026-07-05T00:39:02.788084+00:00
 - Canonical writes: `0`
 
 Phase 31 delivers the first research-only risk/regime dashboard MVP. It remains non-decision, non-signal, and non-operational.
+
+## Latest Phase 32 update
+
+Updated at: 2026-07-05T01:00:51.825304+00:00
+
+- Phase 32 gate: `PHASE32_RISK_REGIME_DASHBOARD_NAVIGATION_HARDENING_READY_RESEARCH_ONLY`
+- Navigation hardening ready: `True`
+- Navigation pages: `7`
+- Edge validated: `False`
+- Shadow decision allowed: `False`
+- Decision layer allowed: `False`
+- Next research path: `ADD_FRESHNESS_AND_DRILLDOWN_STATUS_PANELS_RESEARCH_ONLY`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 32 hardens the research-only dashboard into a navigable portal with module pages and manifests. It remains non-decision, non-signal, and non-operational.
