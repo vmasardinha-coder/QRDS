@@ -255,7 +255,7 @@ Phase 31 delivers the first research-only risk/regime dashboard MVP. It remains 
 
 ## Latest Phase 32 update
 
-Updated at: 2026-07-05T01:00:51.825304+00:00
+Updated at: 2026-07-05T01:01:00.919524+00:00
 
 - Phase 32 gate: `PHASE32_RISK_REGIME_DASHBOARD_NAVIGATION_HARDENING_READY_RESEARCH_ONLY`
 - Navigation hardening ready: `True`
@@ -268,3 +268,20 @@ Updated at: 2026-07-05T01:00:51.825304+00:00
 - Canonical writes: `0`
 
 Phase 32 hardens the research-only dashboard into a navigable portal with module pages and manifests. It remains non-decision, non-signal, and non-operational.
+
+## Latest Phase 33 update
+
+Updated at: 2026-07-05T01:09:31.060611+00:00
+
+- Phase 33 gate: `PHASE33_FRESHNESS_DRILLDOWN_STATUS_PANELS_READY_RESEARCH_ONLY`
+- Freshness/drilldown panels ready: `True`
+- Freshness rows: `12`
+- Page drilldown rows: `7`
+- Module drilldown rows: `5`
+- Edge validated: `False`
+- Decision layer allowed: `False`
+- Next research path: `ADD_LATEST_OBSERVATION_AND_REGIME_SNAPSHOT_PANELS_RESEARCH_ONLY`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Canonical writes: `0`
+
+Phase 33 adds freshness and drilldown status panels to the research-only dashboard. It remains non-decision, non-signal, and non-operational.
