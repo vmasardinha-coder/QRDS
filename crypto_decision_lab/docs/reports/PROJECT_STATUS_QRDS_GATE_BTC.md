@@ -342,7 +342,7 @@ Phase 36 consolidates the Phase 31–35 mini-portals into one unified research-o
 
 Gate: `PHASE37_EXPORT_REVIEW_BUNDLE_SINGLE_PORTAL_INDEX_READY_RESEARCH_ONLY`
 
-Generated at UTC: `2026-07-05T01:56:42+00:00`
+Generated at UTC: `2026-07-05T01:57:38+00:00`
 
 Research-only safety state:
 
@@ -376,4 +376,27 @@ Interpretation:
 Phase 37 only packages and indexes the Phase 36 unified research portal for review. It does not validate edge, does not create a shadow decision layer, and does not permit operational use.
 
 <!-- PHASE37_EXPORT_REVIEW_BUNDLE_SINGLE_PORTAL_INDEX:END -->
+
+<!-- PHASE38_MODERN_RESEARCH_PORTAL_LAYOUT_UX_POLISH_START -->
+
+## Phase 38 — Modern Research Portal Layout / UX Polish
+
+- Gate: `PHASE38_MODERN_RESEARCH_PORTAL_LAYOUT_UX_POLISH_READY_RESEARCH_ONLY`
+- Modern portal ready: `True`
+- Phase 37 ready: `True`
+- Required sections present: `11 / 11`
+- Source files copied: `32`
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Edge validated: `False`
+- Shadow decision allowed: `False`
+- Decision layer allowed: `False`
+- Trading signal generated: `False`
+- Recommendation generated: `False`
+- Allocation generated: `False`
+- Canonical data writes: `0`
+- Generated at UTC: `2026-07-05T02:03:50+00:00`
+
+Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cria interpretação operacional, recomendação, sinal, alocação, ordem, safe-apply ou promoção canônica.
+
+<!-- PHASE38_MODERN_RESEARCH_PORTAL_LAYOUT_UX_POLISH_END -->
 
