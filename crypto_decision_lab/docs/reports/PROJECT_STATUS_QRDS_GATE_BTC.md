@@ -322,7 +322,7 @@ Phase 35 adds recent-history and sparkline panels to the research-only dashboard
 
 ## Latest Phase 36 update
 
-Updated at: 2026-07-05T01:48:17.534301+00:00
+Updated at: 2026-07-05T01:48:22.971293+00:00
 
 - Phase 36 gate: `PHASE36_UNIFIED_RISK_REGIME_RESEARCH_PORTAL_SHELL_READY_RESEARCH_ONLY`
 - Unified portal ready: `True`
@@ -335,3 +335,45 @@ Updated at: 2026-07-05T01:48:17.534301+00:00
 - Canonical writes: `0`
 
 Phase 36 consolidates the Phase 31–35 mini-portals into one unified research-only portal shell. It remains non-decision, non-signal, and non-operational.
+
+<!-- PHASE37_EXPORT_REVIEW_BUNDLE_SINGLE_PORTAL_INDEX:START -->
+
+## Phase 37 — Export Review Bundle + Single Portal Index
+
+Gate: `PHASE37_EXPORT_REVIEW_BUNDLE_SINGLE_PORTAL_INDEX_READY_RESEARCH_ONLY`
+
+Generated at UTC: `2026-07-05T01:56:42+00:00`
+
+Research-only safety state:
+
+- app_mode: `INTERACTIVE_RESEARCH_ONLY`
+- policy_lock: `ACTIVE`
+- operational_status: `BLOCKED_RESEARCH_ONLY`
+- edge_validated: `False`
+- edge_operationally_validated: `False`
+- shadow_decision_allowed: `False`
+- decision_layer_allowed: `False`
+- trading_signal_generated: `False`
+- recommendation_generated: `False`
+- allocation_generated: `False`
+- operational_decision_allowed: `False`
+- safe_apply_allowed: `False`
+- promotion_allowed: `False`
+- canonical_data_writes: `0`
+
+Review bundle:
+
+- review_bundle_ready: `True`
+- required_phase36_page_count: `11`
+- present_phase36_page_count: `11`
+- source_file_count: `20`
+- checksum_file_count: `20`
+- zip_created: `True`
+- output_dir: `/workspaces/QRDS/artifacts/phase37_export_review_bundle_single_portal_index`
+
+Interpretation:
+
+Phase 37 only packages and indexes the Phase 36 unified research portal for review. It does not validate edge, does not create a shadow decision layer, and does not permit operational use.
+
+<!-- PHASE37_EXPORT_REVIEW_BUNDLE_SINGLE_PORTAL_INDEX:END -->
+
