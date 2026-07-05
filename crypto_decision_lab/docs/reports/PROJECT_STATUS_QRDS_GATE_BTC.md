@@ -223,15 +223,15 @@ Phase 29 retests compressed-regime candidates. Stable compressed candidates rema
 
 ## Latest Phase 30 update
 
-Updated at: 2026-07-04T23:15:38.702243+00:00
+Updated at: 2026-07-05T00:28:22.730872+00:00
 
-- Phase 30 gate: `PHASE30_NO_EDGE_CHECKPOINT_RISK_REGIME_DASHBOARD_READINESS_NEEDS_REVIEW_RESEARCH_ONLY`
-- No-edge checkpoint ready: `False`
+- Phase 30 gate: `PHASE30_NO_EDGE_CHECKPOINT_RISK_REGIME_DASHBOARD_READINESS_READY_RESEARCH_ONLY`
+- No-edge checkpoint ready: `True`
 - Edge validated: `False`
-- Risk/regime dashboard research ready: `False`
+- Risk/regime dashboard research ready: `True`
 - Shadow decision allowed: `False`
 - Decision layer allowed: `False`
-- Next research path: `REPAIR_RESEARCH_FOUNDATION_BEFORE_DASHBOARD`
+- Next research path: `BUILD_RISK_REGIME_RESEARCH_DASHBOARD_MVP_RESEARCH_ONLY`
 - Operational status: `BLOCKED_RESEARCH_ONLY`
 - Canonical writes: `0`
 
