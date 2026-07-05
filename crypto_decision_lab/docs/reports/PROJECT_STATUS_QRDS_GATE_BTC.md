@@ -385,7 +385,7 @@ Phase 37 only packages and indexes the Phase 36 unified research portal for revi
 - Modern portal ready: `True`
 - Phase 37 ready: `True`
 - Required sections present: `11 / 11`
-- Source files copied: `32`
+- Source files copied: `0`
 - Operational status: `BLOCKED_RESEARCH_ONLY`
 - Edge validated: `False`
 - Shadow decision allowed: `False`
@@ -394,9 +394,30 @@ Phase 37 only packages and indexes the Phase 36 unified research portal for revi
 - Recommendation generated: `False`
 - Allocation generated: `False`
 - Canonical data writes: `0`
-- Generated at UTC: `2026-07-05T02:03:50+00:00`
+- Generated at UTC: `2026-07-05T02:04:40+00:00`
 
 Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cria interpretação operacional, recomendação, sinal, alocação, ordem, safe-apply ou promoção canônica.
 
 <!-- PHASE38_MODERN_RESEARCH_PORTAL_LAYOUT_UX_POLISH_END -->
+
+<!-- PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE -->
+
+## Phase 39 — Interpretation Readiness + Information Architecture
+
+- Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
+- Generated at: `2026-07-05T02:46:31.084321+00:00`
+- Phase 38 ready: `True`
+- Interpretation pages: `8`
+- Metric dimensions: `7`
+- Candidate history: 4 research candidates from Phase 26, 0 stable after Phases 27–29.
+- Operational status: `BLOCKED_RESEARCH_ONLY`
+- Edge validated: `False`
+- Shadow decision allowed: `False`
+- Decision layer allowed: `False`
+- Trading signal generated: `False`
+- Recommendation generated: `False`
+- Allocation generated: `False`
+- Canonical data writes: `0`
+
+Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
