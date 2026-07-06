@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T20:51:50.495032+00:00`
+- Generated at: `2026-07-06T21:03:34.746368+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 61 — Agent Report Intake Validator Research-Only
+## Phase 62 — Agent Change Review Ledger Research-Only
 
-Gate: `PHASE61_AGENT_REPORT_INTAKE_VALIDATOR_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE62_AGENT_CHANGE_REVIEW_LEDGER_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -432,4 +432,4 @@ Decision layer allowed: `False`
 Promotion allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: validates reports returned by auxiliary AI agents before human review. This phase rejects missing fields, failed tests, safety flag mismatches and forbidden operational language. It does not auto-apply agent changes, validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion, canonical writes or operational decisions.
+Scope: creates a research-only review ledger for auxiliary AI agent contributions. Every accepted agent report still requires human review, and auto-apply remains disabled. This phase does not validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion, canonical writes or operational decisions.
