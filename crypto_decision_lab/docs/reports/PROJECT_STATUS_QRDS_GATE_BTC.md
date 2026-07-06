@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-05T13:12:23.599460+00:00`
+- Generated at: `2026-07-05T13:17:56.961684+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,13 +422,11 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 40 Hotfix — Repo Hygiene / Untracked Script Cleanup
+## Phase 41 — Guided Research Portal Help System
 
-Gate: `PHASE40_HOTFIX_REPO_HYGIENE_UNTRACKED_SCRIPT_CLEANUP_READY_RESEARCH_ONLY`
+Gate: `PHASE41_GUIDED_RESEARCH_PORTAL_HELP_SYSTEM_READY_RESEARCH_ONLY`  
+Operational: `BLOCKED_RESEARCH_ONLY`  
+Edge validated: `False`  
+canonical_data_writes: `0`  
 
-- Scope: technical repository hygiene after Phase 40 package bridge.
-- Loose root installers archived under `crypto_decision_lab/scripts/archive/installers/`.
-- Root serve/verify wrappers tracked when present.
-- Operational status remains `BLOCKED_RESEARCH_ONLY`.
-- Edge remains `False`.
-- canonical_data_writes: `0`.
+Scope: guided help system for reading the QRDS Gate BTC research portal. This phase adds a help center, metric dictionary, reading paths, candidate status explanation, forbidden inference page, audit checklist and safety lock. It does not create trading signals, recommendations, allocations, shadow decisions, safe-apply, promotions, canonical writes, or operational decisions.
