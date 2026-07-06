@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T19:37:05.576423+00:00`
+- Generated at: `2026-07-06T19:46:10.916798+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 56 — Research Promotion Gate Checklist Research-Only
+## Phase 57 — Canonical Journal Input Validator Research-Only
 
-Gate: `PHASE56_RESEARCH_PROMOTION_GATE_CHECKLIST_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE57_CANONICAL_JOURNAL_INPUT_VALIDATOR_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -432,4 +432,4 @@ Decision layer allowed: `False`
 Promotion allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: research-only promotion gate checklist documenting blockers before any future discussion of shadow or decision layers. This phase does not validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion, canonical writes or operational decisions.
+Scope: validates manual journal input shape for research replay only. This phase does not write canonical data and does not validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion or operational decisions.
