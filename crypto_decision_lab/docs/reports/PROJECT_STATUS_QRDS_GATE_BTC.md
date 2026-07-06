@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-05T13:17:56.961684+00:00`
+- Generated at: `2026-07-06T15:50:11.605706+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,11 +422,11 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 41 — Guided Research Portal Help System
+## Phase 42 — Architecture Review + System Map
 
-Gate: `PHASE41_GUIDED_RESEARCH_PORTAL_HELP_SYSTEM_READY_RESEARCH_ONLY`  
+Gate: `PHASE42_ARCHITECTURE_REVIEW_SYSTEM_MAP_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 canonical_data_writes: `0`  
 
-Scope: guided help system for reading the QRDS Gate BTC research portal. This phase adds a help center, metric dictionary, reading paths, candidate status explanation, forbidden inference page, audit checklist and safety lock. It does not create trading signals, recommendations, allocations, shadow decisions, safe-apply, promotions, canonical writes, or operational decisions.
+Scope: architecture review and system map for QRDS Gate BTC. This phase documents the 12-layer future architecture, data flow, research pipeline, portal architecture, safety architecture and candidate lifecycle. It does not create trading signals, recommendations, allocations, shadow decisions, safe-apply, promotions, canonical writes, or operational decisions.
