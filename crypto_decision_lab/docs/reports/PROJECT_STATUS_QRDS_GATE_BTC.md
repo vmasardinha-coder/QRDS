@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T21:10:40.030608+00:00`
+- Generated at: `2026-07-06T21:16:34.414442+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 63 — Agent Safe Patch Protocol Research-Only
+## Phase 64 — Agent Patch Diff Guard Research-Only
 
-Gate: `PHASE63_AGENT_SAFE_PATCH_PROTOCOL_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE64_AGENT_PATCH_DIFF_GUARD_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: defines a research-only safe patch protocol for auxiliary AI agents. Safe technical patches may be reviewed by humans, but auto-apply remains disabled. Architecture, decision, safety-lock, edge, shadow, promotion and canonical-write patches remain blocked.
+Scope: scans auxiliary AI agent patch diffs for forbidden safety, decision, operational, edge, promotion or canonical-write changes. Watched files require human review. Auto-apply and safe-apply remain disabled.
