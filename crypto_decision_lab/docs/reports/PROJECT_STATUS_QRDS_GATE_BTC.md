@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T17:10:27.485642+00:00`
+- Generated at: `2026-07-06T17:35:28.858342+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,15 +422,13 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 48 — Portfolio Context Schema Research-Only
+## Phase 49 — Risk Budget Framework Research-Only
 
-Gate: `PHASE48_PORTFOLIO_CONTEXT_SCHEMA_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE49_RISK_BUDGET_FRAMEWORK_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
-Shadow decision allowed: `False`  
-Decision layer allowed: `False`  
 Allocation generated: `False`  
 Portfolio recommendation generated: `False`  
 canonical_data_writes: `0`  
 
-Scope: portfolio context schema for future human review. It structures capital buckets, high-risk crypto context, position metadata, liquidity/risk notes and forbidden outputs. It does not generate allocation, recommendation, signal, order, safe-apply, shadow decision, canonical write, or operational decision.
+Scope: risk budget framework for future manual/paper/shadow review of the crypto high-risk bucket. It documents risk dimensions, review thresholds and future controls without generating allocation, recommendation, signal, order, safe-apply or operational decision.
