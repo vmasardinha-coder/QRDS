@@ -45,6 +45,11 @@ echo "[QRDS][Runner] Root: $ROOT_DIR"
 echo "[QRDS][Runner] Phase: $PHASE"
 echo "[QRDS][Runner] Mode: $MODE"
 
+if [[ -x "$ROOT_DIR/qrds_local_preflight.sh" ]]; then
+  echo "[QRDS][Runner] Running local preflight..."
+  bash "$ROOT_DIR/qrds_local_preflight.sh" >/tmp/qrds_runner_preflight.out
+fi
+
 if [[ "$MODE" == "run-and-verify" ]]; then
   if [[ -z "$PACK" ]]; then
     echo "[QRDS][Runner][ERROR] Pack not found for phase $PHASE:"

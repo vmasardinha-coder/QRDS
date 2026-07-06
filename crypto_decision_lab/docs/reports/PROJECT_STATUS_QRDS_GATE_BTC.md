@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T21:27:37.091794+00:00`
+- Generated at: `2026-07-06T21:38:30.991357+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 66 — Unified Local Preflight CLI Research-Only
+## Phase 67 — Runner Preflight Integration Research-Only
 
-Gate: `PHASE66_UNIFIED_LOCAL_PREFLIGHT_CLI_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE67_RUNNER_PREFLIGHT_INTEGRATION_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: adds a unified local preflight CLI for phase/agent patches. It checks focused/full-suite status, safety flags, forbidden operational terms and watched files. Auto-apply, safe-apply, promotion and canonical writes remain disabled.
+Scope: integrates the local preflight command into the QRDS next-phase runner. Future runner executions invoke preflight when available before validation. Auto-apply, safe-apply, promotion and canonical writes remain disabled.
