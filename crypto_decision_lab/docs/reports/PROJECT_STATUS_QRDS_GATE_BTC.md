@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T18:03:42.968537+00:00`
+- Generated at: `2026-07-06T18:12:19.287865+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,13 +422,35 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 51 — Validation Automation Harness
+## Phase 52 — Manual Shadow Journal Workflow Research-Only
 
-Gate: `PHASE51_VALIDATION_AUTOMATION_HARNESS_READY_RESEARCH_ONLY`  
+Gate: `PHASE52_MANUAL_SHADOW_JOURNAL_WORKFLOW_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
 Decision layer allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: automate phase validation through a reusable runner, log/gate checks, required safety flags and full-suite verification. No trading signal, recommendation, allocation, shadow decision, safe-apply, promotion, canonical write, or operational decision was created.
+Scope: manual shadow journal workflow and replay review schema. This remains research-only and does not allow shadow decisions, trading signals, recommendations, allocations, orders, safe-apply, canonical writes or operational decisions.
+
+## Phase 52 — Manual Shadow Journal Workflow Research-Only
+
+Gate: `PHASE52_MANUAL_SHADOW_JOURNAL_WORKFLOW_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Operational: `BLOCKED_RESEARCH_ONLY`  
+Edge validated: `False`  
+Shadow decision allowed: `False`  
+Decision layer allowed: `False`  
+canonical_data_writes: `0`
+
+Scope: manual shadow journal workflow and replay review schema. This remains research-only and does not allow shadow decisions, trading signals, recommendations, allocations, orders, safe-apply, canonical writes or operational decisions.
+
+## Phase 52 — Manual Shadow Journal Workflow Research-Only
+
+Gate: `PHASE52_MANUAL_SHADOW_JOURNAL_WORKFLOW_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Operational: `BLOCKED_RESEARCH_ONLY`  
+Edge validated: `False`  
+Shadow decision allowed: `False`  
+Decision layer allowed: `False`  
+canonical_data_writes: `0`
+
+Scope: manual shadow journal workflow and replay review schema. This remains research-only and does not allow shadow decisions, trading signals, recommendations, allocations, orders, safe-apply, canonical writes or operational decisions.
