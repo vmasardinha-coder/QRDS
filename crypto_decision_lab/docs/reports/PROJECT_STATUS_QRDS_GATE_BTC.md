@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T20:01:24.875325+00:00`
+- Generated at: `2026-07-06T20:27:27.445210+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 58 — Journal Batch Staging Validator Research-Only
+## Phase 59 — Journal Replay Dry-Run Manifest Research-Only
 
-Gate: `PHASE58_JOURNAL_BATCH_STAGING_VALIDATOR_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE59_JOURNAL_REPLAY_DRY_RUN_MANIFEST_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -432,4 +432,4 @@ Decision layer allowed: `False`
 Promotion allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: validates batches of manual journal entries for research-only staging/replay. This phase does not write staging/canonical data and does not validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion or operational decisions.
+Scope: creates a research-only dry-run manifest for validated journal batches using stable hashes. This phase does not execute replay, write staging/canonical data, validate edge, generate signal, recommend allocation, allow shadow decisions, safe-apply, promotion or operational decisions.
