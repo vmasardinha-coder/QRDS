@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T21:23:23.857958+00:00`
+- Generated at: `2026-07-06T21:27:37.091794+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 65 — Local Safety Preflight Guard Research-Only
+## Phase 66 — Unified Local Preflight CLI Research-Only
 
-Gate: `PHASE65_LOCAL_SAFETY_PREFLIGHT_GUARD_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE66_UNIFIED_LOCAL_PREFLIGHT_CLI_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: creates a local preflight guard for phase/agent patches. It checks tests, safety flags, forbidden operational terms and watched paths before human research review. Auto-apply, safe-apply, promotion and canonical writes remain disabled.
+Scope: adds a unified local preflight CLI for phase/agent patches. It checks focused/full-suite status, safety flags, forbidden operational terms and watched files. Auto-apply, safe-apply, promotion and canonical writes remain disabled.
