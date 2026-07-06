@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T16:16:20.463343+00:00`
+- Generated at: `2026-07-06T16:44:27.700000+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,11 +422,12 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 45 — Data Requirements Matrix
+## Phase 46 — Shadow Journal Schema + Integrated Repo Hygiene
 
-Gate: `PHASE45_DATA_REQUIREMENTS_MATRIX_READY_RESEARCH_ONLY`  
+Gate: `PHASE46_SHADOW_JOURNAL_SCHEMA_INTEGRATED_REPO_HYGIENE_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
+shadow_decision_allowed: `False`  
 canonical_data_writes: `0`  
 
-Scope: maps research hypotheses to required data, missing blockers and readiness levels. It explicitly keeps volatility, microstructure, Polymarket-like, shadow journal and portfolio risk-budget work as research/hypothesis/data-requirement items only. No signal, recommendation, allocation, shadow decision, safe-apply, promotion, canonical write or operational decision was created.
+Scope: manual research-only shadow journal schema plus integrated repository hygiene. This phase creates schema/template/documentation for what-if journal entries without enabling shadow decisions, signals, recommendations, allocations, safe-apply, promotions, canonical writes, or operational decisions.
