@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-06T22:44:23.864091+00:00`
+- Generated at: `2026-07-06T23:03:54.732942+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 73 — Journal Replay Aggregate Metrics Research-Only
+## Phase 74 — Journal Replay Distribution Diagnostics Research-Only
 
-Gate: `PHASE73_JOURNAL_REPLAY_AGGREGATE_METRICS_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE74_JOURNAL_REPLAY_DISTRIBUTION_DIAGNOSTICS_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: aggregates dry-run journal replay results into descriptive-only metrics such as paper PnL, win/loss counts and by-asset summaries. It does not validate edge, generate signals, recommendations, allocations, shadow decisions, safe-apply, promotion or canonical writes.
+Scope: adds descriptive-only distribution diagnostics for dry-run journal replay. It computes mean, median, min, max, concentration, outlier and drawdown-like paper diagnostics while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
