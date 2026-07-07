@@ -648,3 +648,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive preflight for the Phase 96–100 replay evidence batch, requiring Phase 96 inventory, Phase 97 digest and Phase 98 drift sentinel to pass before checkpointing.
+
+## Phase 100 — Replay Evidence Batch Checkpoint Research-Only
+
+Gate: PHASE100_REPLAY_EVIDENCE_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 96–100 replay evidence batch checkpoint, requiring inventory, digest, drift sentinel and preflight checks to pass while preserving research-only locks.
