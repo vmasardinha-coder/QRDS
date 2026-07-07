@@ -461,3 +461,8 @@ canonical_data_writes: `0`
 Full suite: `SKIPPED_LOCAL_ECONOMICAL`
 
 Scope: runs a local/economical QA smoke over the Phase 84 journal replay batch report portal artifacts, checking required JSON/HTML files, research-only safety markers, and forbidden operational language while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 86 — Larger Synthetic Batch Fixture Research-Only
+Gate: PHASE86_LARGER_SYNTHETIC_BATCH_FIXTURE_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
