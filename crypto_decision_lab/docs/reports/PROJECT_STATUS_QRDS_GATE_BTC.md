@@ -774,3 +774,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive package index for the Phase 106–107 query export layer while preserving blocked trading signal and allocation exports.
+
+## Phase 109 — Replay Evidence Query Export Preflight Research-Only
+
+Gate: PHASE109_REPLAY_EVIDENCE_QUERY_EXPORT_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive preflight for the Phase 106–110 query export batch, requiring export manifest, export dry-run and export package index to pass while preserving blocked trading signal and allocation exports.
