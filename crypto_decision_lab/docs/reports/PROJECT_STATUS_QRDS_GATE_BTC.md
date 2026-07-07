@@ -606,3 +606,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive inventory for replay evidence artifacts across phases 84–95, checking script/test/doc presence while preserving research-only locks.
+
+## Phase 97 — Replay Evidence Artifact Integrity Digest Research-Only
+
+Gate: PHASE97_REPLAY_EVIDENCE_ARTIFACT_INTEGRITY_DIGEST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive SHA-256 integrity digest for replay evidence artifacts across phases 84–96 while preserving research-only locks.
