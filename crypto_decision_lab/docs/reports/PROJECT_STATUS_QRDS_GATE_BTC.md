@@ -704,3 +704,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a dry-run local query layer for evidence lookup while blocking decision, signal and allocation routes.
+
+## Phase 104 — Replay Evidence Query Portal Stub Research-Only
+
+Gate: PHASE104_REPLAY_EVIDENCE_QUERY_PORTAL_STUB_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive HTML portal stub for replay evidence query navigation, linking the Phase 101 query index, Phase 102 query manifest and Phase 103 dry-run while preserving research-only locks.
