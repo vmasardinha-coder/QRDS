@@ -480,3 +480,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: defines explicit descriptive thresholds for replay evidence interpretation, separating insufficient sample, needs-review and research-candidate-threshold-pass statuses while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 88 — Negative Case Registry Research-Only
+
+Gate: PHASE88_NEGATIVE_CASE_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: registers negative replay evidence cases that must not be interpreted as edge, covering small sample, invalid rows, concentration, outliers and drawdown-like warnings while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
