@@ -522,3 +522,73 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: checkpoints phases 84–89 of the journal replay evidence track, confirming focused local validation coverage for batch report index, portal QA smoke, larger synthetic fixture, threshold registry, negative case registry and false-positive no-edge guard while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 91 — Evidence Checkpoint Portal Index Research-Only
+
+Gate: PHASE91_EVIDENCE_CHECKPOINT_PORTAL_INDEX_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive portal index for checkpoint phases 84–90 without enabling edge validation, signals, recommendations, allocation, decision layer, promotion, safe-apply or canonical writes.
+
+## Phase 92 — Replay Evidence Runbook Research-Only
+
+Gate: PHASE92_REPLAY_EVIDENCE_RUNBOOK_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive replay evidence runbook with explicit forbidden actions and closed research-only locks.
+
+## Phase 93 — Human Review Evidence Checklist Research-Only
+
+Gate: PHASE93_HUMAN_REVIEW_EVIDENCE_CHECKLIST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a human review checklist for replay evidence with approval effect NONE_RESEARCH_ONLY and no operational side effects.
+
+## Phase 94 — Evidence Readiness Matrix Research-Only
+
+Gate: PHASE94_EVIDENCE_READINESS_MATRIX_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive evidence readiness matrix with operation readiness blocked and promotion score fixed at zero.
+
+## Phase 95 — Local Economical Runner Stabilization Checkpoint Research-Only
+
+Gate: PHASE95_LOCAL_ECONOMICAL_RUNNER_STABILIZATION_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a local economical runner stabilization checkpoint for batch phases 91–95 with focused tests, backup before push and closed research-only locks.
