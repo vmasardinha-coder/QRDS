@@ -732,3 +732,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 101–105 replay evidence query batch checkpoint, requiring query index, query manifest, CLI dry-run and portal stub checks to pass while preserving research-only locks.
+
+## Phase 106 — Replay Evidence Query Export Manifest Research-Only
+
+Gate: PHASE106_REPLAY_EVIDENCE_QUERY_EXPORT_MANIFEST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive export manifest for the Phase 101–105 replay evidence query batch while blocking trading signal and allocation export targets.
