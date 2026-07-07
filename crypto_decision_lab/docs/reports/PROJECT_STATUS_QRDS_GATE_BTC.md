@@ -494,3 +494,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: registers negative replay evidence cases that must not be interpreted as edge, covering small sample, invalid rows, concentration, outliers and drawdown-like warnings while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 89 — Replay False Positive / No-Edge Guard Research-Only
+
+Gate: PHASE89_REPLAY_FALSE_POSITIVE_NO_EDGE_GUARD_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: adds a no-edge guard against false positives from replay evidence, ensuring threshold pass remains descriptive research-candidate only while preventing escalation into edge, signal, recommendation, allocation, shadow decision, operation, promotion, safe-apply or canonical write.
