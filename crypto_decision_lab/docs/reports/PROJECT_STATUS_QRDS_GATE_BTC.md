@@ -746,3 +746,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive export manifest for the Phase 101–105 replay evidence query batch while blocking trading signal and allocation export targets.
+
+## Phase 107 — Replay Evidence Query Export Dry-Run Research-Only
+
+Gate: PHASE107_REPLAY_EVIDENCE_QUERY_EXPORT_DRY_RUN_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive export dry-run for the Phase 106 export manifest, allowing JSON/Markdown/HTML descriptive exports while blocking trading signal and allocation exports.
