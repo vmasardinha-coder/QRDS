@@ -690,3 +690,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive query manifest on top of the Phase 101 query index, allowing evidence lookup routes while explicitly blocking decision, signal and allocation query routes.
+
+## Phase 103 — Replay Evidence Query CLI Dry-Run Research-Only
+
+Gate: PHASE103_REPLAY_EVIDENCE_QUERY_CLI_DRY_RUN_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a dry-run local query layer for evidence lookup while blocking decision, signal and allocation routes.
