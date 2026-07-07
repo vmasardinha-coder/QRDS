@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-07T11:04:04.079575+00:00`
+- Generated at: `2026-07-07T11:26:10.019588+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 82 — Journal Replay Batch Intake Checkpoint Research-Only
+## Phase 83 — Journal Replay Batch Report Research-Only
 
-Gate: `PHASE82_JOURNAL_REPLAY_BATCH_INTAKE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE83_JOURNAL_REPLAY_BATCH_REPORT_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: consolidates the journal replay batch intake track from Phase 79 through Phase 81. It confirms loader, quarantine and quarantine index are research-only guardrails while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+Scope: generates a consolidated descriptive report for a journal replay batch. It combines batch validation, replay dry-run, aggregate metrics, distribution diagnostics, quality flags and evidence scorecard while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
