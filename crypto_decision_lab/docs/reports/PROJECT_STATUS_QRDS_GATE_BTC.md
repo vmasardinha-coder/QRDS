@@ -508,3 +508,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: adds a no-edge guard against false positives from replay evidence, ensuring threshold pass remains descriptive research-candidate only while preventing escalation into edge, signal, recommendation, allocation, shadow decision, operation, promotion, safe-apply or canonical write.
+
+## Phase 90 — Journal Replay Evidence Checkpoint Research-Only
+
+Gate: PHASE90_JOURNAL_REPLAY_EVIDENCE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: checkpoints phases 84–89 of the journal replay evidence track, confirming focused local validation coverage for batch report index, portal QA smoke, larger synthetic fixture, threshold registry, negative case registry and false-positive no-edge guard while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
