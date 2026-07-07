@@ -718,3 +718,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive HTML portal stub for replay evidence query navigation, linking the Phase 101 query index, Phase 102 query manifest and Phase 103 dry-run while preserving research-only locks.
+
+## Phase 105 — Replay Evidence Query Batch Checkpoint Research-Only
+
+Gate: PHASE105_REPLAY_EVIDENCE_QUERY_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 101–105 replay evidence query batch checkpoint, requiring query index, query manifest, CLI dry-run and portal stub checks to pass while preserving research-only locks.
