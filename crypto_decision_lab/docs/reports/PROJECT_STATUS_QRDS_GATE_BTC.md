@@ -620,3 +620,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive SHA-256 integrity digest for replay evidence artifacts across phases 84–96 while preserving research-only locks.
+
+## Phase 98 — Replay Evidence Drift Sentinel Research-Only
+
+Gate: PHASE98_REPLAY_EVIDENCE_DRIFT_SENTINEL_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive drift sentinel linking Phase 96 inventory and Phase 97 digest, classifying any drift as NEEDS_REVIEW_RESEARCH_ONLY while preserving research-only locks.
