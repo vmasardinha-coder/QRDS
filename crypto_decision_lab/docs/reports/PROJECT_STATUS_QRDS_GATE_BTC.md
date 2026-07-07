@@ -466,3 +466,17 @@ Scope: runs a local/economical QA smoke over the Phase 84 journal replay batch r
 Gate: PHASE86_LARGER_SYNTHETIC_BATCH_FIXTURE_RESEARCH_ONLY_READY_RESEARCH_ONLY
 Operational: BLOCKED_RESEARCH_ONLY
 Operational: BLOCKED_RESEARCH_ONLY
+
+## Phase 87 — Replay Evidence Threshold Registry Research-Only
+
+Gate: PHASE87_REPLAY_EVIDENCE_THRESHOLD_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: defines explicit descriptive thresholds for replay evidence interpretation, separating insufficient sample, needs-review and research-candidate-threshold-pass statuses while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
