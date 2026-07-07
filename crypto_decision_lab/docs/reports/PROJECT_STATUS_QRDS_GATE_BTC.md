@@ -447,3 +447,17 @@ safe_apply_allowed: `False`
 canonical_data_writes: `0`
 
 Scope: builds a descriptive index of journal replay batch reports. It surfaces batch ID, report status, row counts, evidence status and human review requirement while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 85 — Journal Replay Batch Portal QA Smoke Research-Only
+
+Gate: `PHASE85_JOURNAL_REPLAY_BATCH_PORTAL_QA_SMOKE_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Operational: `BLOCKED_RESEARCH_ONLY`  
+Edge validated: `False`  
+Shadow decision allowed: `False`  
+Decision layer allowed: `False`  
+Promotion allowed: `False`  
+safe_apply_allowed: `False`  
+canonical_data_writes: `0`  
+Full suite: `SKIPPED_LOCAL_ECONOMICAL`
+
+Scope: runs a local/economical QA smoke over the Phase 84 journal replay batch report portal artifacts, checking required JSON/HTML files, research-only safety markers, and forbidden operational language while keeping edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
