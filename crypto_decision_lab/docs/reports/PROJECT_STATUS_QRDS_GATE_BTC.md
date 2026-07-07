@@ -676,3 +676,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive query index for replay evidence artifacts across phases 84–100, enabling evidence lookup by phase and tag while preserving research-only locks.
+
+## Phase 102 — Replay Evidence Query Manifest Research-Only
+
+Gate: PHASE102_REPLAY_EVIDENCE_QUERY_MANIFEST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive query manifest on top of the Phase 101 query index, allowing evidence lookup routes while explicitly blocking decision, signal and allocation query routes.
