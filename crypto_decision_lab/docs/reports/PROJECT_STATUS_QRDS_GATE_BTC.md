@@ -634,3 +634,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive drift sentinel linking Phase 96 inventory and Phase 97 digest, classifying any drift as NEEDS_REVIEW_RESEARCH_ONLY while preserving research-only locks.
+
+## Phase 99 — Replay Evidence Batch Preflight Research-Only
+
+Gate: PHASE99_REPLAY_EVIDENCE_BATCH_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive preflight for the Phase 96–100 replay evidence batch, requiring Phase 96 inventory, Phase 97 digest and Phase 98 drift sentinel to pass before checkpointing.
