@@ -592,3 +592,17 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a local economical runner stabilization checkpoint for batch phases 91–95 with focused tests, backup before push and closed research-only locks.
+
+## Phase 96 — Replay Evidence Artifact Inventory Research-Only
+
+Gate: PHASE96_REPLAY_EVIDENCE_ARTIFACT_INVENTORY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive inventory for replay evidence artifacts across phases 84–95, checking script/test/doc presence while preserving research-only locks.
