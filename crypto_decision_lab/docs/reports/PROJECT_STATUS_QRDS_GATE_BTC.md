@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-07T00:32:01.434002+00:00`
+- Generated at: `2026-07-07T00:48:08.945067+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 78 — Journal Replay Release Checkpoint Research-Only
+## Phase 79 — Journal Replay Batch Loader Research-Only
 
-Gate: `PHASE78_JOURNAL_REPLAY_RELEASE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE79_JOURNAL_REPLAY_BATCH_LOADER_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: consolidates the journal replay track from Phase 72 through Phase 77. It confirms dry-run replay, aggregate metrics, diagnostics, quality flags, evidence scorecard and portal are research-only while keeping replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+Scope: loads external/staging JSON batches for journal replay dry-run, validates batch structure and entries, and runs descriptive replay/scorecard outputs. It keeps loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
