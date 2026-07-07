@@ -434,3 +434,16 @@ safe_apply_allowed: `False`
 canonical_data_writes: `0`
 
 Scope: generates a consolidated descriptive report for a journal replay batch. It combines batch validation, replay dry-run, aggregate metrics, distribution diagnostics, quality flags and evidence scorecard while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+
+## Phase 84 — Journal Replay Batch Report Index Research-Only
+
+Gate: `PHASE84_JOURNAL_REPLAY_BATCH_REPORT_INDEX_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Operational: `BLOCKED_RESEARCH_ONLY`  
+Edge validated: `False`  
+Shadow decision allowed: `False`  
+Decision layer allowed: `False`  
+Promotion allowed: `False`  
+safe_apply_allowed: `False`  
+canonical_data_writes: `0`
+
+Scope: builds a descriptive index of journal replay batch reports. It surfaces batch ID, report status, row counts, evidence status and human review requirement while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
