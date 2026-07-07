@@ -405,7 +405,7 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 ## Phase 39 — Interpretation Readiness + Information Architecture
 
 - Gate: `PHASE39_INTERPRETATION_READINESS_INFORMATION_ARCHITECTURE_READY_RESEARCH_ONLY`
-- Generated at: `2026-07-07T01:19:13.841937+00:00`
+- Generated at: `2026-07-07T01:26:55.591840+00:00`
 - Phase 38 ready: `True`
 - Interpretation pages: `8`
 - Metric dimensions: `7`
@@ -422,9 +422,9 @@ Interpretação: a Phase 38 moderniza layout e UX do portal de pesquisa. Não cr
 Phase 39 adds a non-operational reading architecture over the modern research portal. It improves comprehension, glossary, metric mapping, evidence boundaries, and candidate-failure history. It does not create a signal, recommendation, allocation, shadow decision, safe-apply, canonical promotion, or operational decision.
 
 
-## Phase 80 — Journal Replay Batch Quarantine Research-Only
+## Phase 81 — Journal Replay Quarantine Index Research-Only
 
-Gate: `PHASE80_JOURNAL_REPLAY_BATCH_QUARANTINE_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
+Gate: `PHASE81_JOURNAL_REPLAY_QUARANTINE_INDEX_RESEARCH_ONLY_READY_RESEARCH_ONLY`  
 Operational: `BLOCKED_RESEARCH_ONLY`  
 Edge validated: `False`  
 Shadow decision allowed: `False`  
@@ -433,4 +433,4 @@ Promotion allowed: `False`
 safe_apply_allowed: `False`  
 canonical_data_writes: `0`
 
-Scope: quarantines invalid external/staging journal replay batches and preserves validation errors/invalid entries for human review. It prevents invalid batches from being interpreted as evidence while keeping loader execution, replay execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes disabled.
+Scope: builds a navigable index of journal replay quarantine bundles. It surfaces batch ID, quarantine status, invalid entries and human review requirement while keeping invalid or quarantined batches from being interpreted as edge evidence. Replay execution, loader execution, edge validation, signals, recommendations, allocations, shadow decisions, promotion, safe-apply and canonical writes remain disabled.
