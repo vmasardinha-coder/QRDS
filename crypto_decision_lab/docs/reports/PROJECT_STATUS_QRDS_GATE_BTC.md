@@ -1012,3 +1012,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a local portal link smoke test for index.html, review page and serve script while preserving research-only boundaries.
+
+## Phase 124 - One-command Review Portal Runner Research-Only
+
+Gate: PHASE124_ONE_COMMAND_REVIEW_PORTAL_RUNNER_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a one-command local runner for the review portal while preserving research-only boundaries.
