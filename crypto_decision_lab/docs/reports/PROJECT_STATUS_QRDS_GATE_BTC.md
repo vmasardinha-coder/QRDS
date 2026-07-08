@@ -1172,3 +1172,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds descriptive research-only evidence quality thresholds with no decision authority.
+
+## Phase 134 - Evidence Quality Preflight Research-Only
+
+Gate: PHASE134_EVIDENCE_QUALITY_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds evidence quality preflight while preserving all research-only locks.
