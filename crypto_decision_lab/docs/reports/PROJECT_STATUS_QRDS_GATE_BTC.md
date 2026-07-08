@@ -868,3 +868,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive portal stub for export review evidence, linking audit trail, review notes schema and scorecard while preserving research-only locks.
+
+## Phase 115 — Replay Evidence Export Review Batch Checkpoint Research-Only
+
+Gate: PHASE115_REPLAY_EVIDENCE_EXPORT_REVIEW_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 111–115 export review batch checkpoint, validating audit trail, review notes schema, review scorecard and portal stub while preserving research-only locks.
