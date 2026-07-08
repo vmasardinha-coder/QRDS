@@ -1221,3 +1221,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds unvalidated research-only edge candidates linked to the Phase 131-135 evidence quality checkpoint.
+
+## Phase 137 - Edge Candidate Eligibility Filter Research-Only
+
+Gate: PHASE137_EDGE_CANDIDATE_ELIGIBILITY_FILTER_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds research-only eligibility filtering for unvalidated edge candidates without trading or decision authority.
