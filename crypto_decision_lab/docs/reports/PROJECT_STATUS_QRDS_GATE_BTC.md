@@ -932,3 +932,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a local PowerShell serve script for the review portal with research-only boundaries preserved.
+
+## Phase 119 — Local Review Portal Smoke Test Research-Only
+
+Gate: PHASE119_LOCAL_REVIEW_PORTAL_SMOKE_TEST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a local smoke test for the review portal package and serve script while preserving research-only boundaries.
