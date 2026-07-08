@@ -836,3 +836,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive human review notes schema for export audit evidence with approval effect NONE_RESEARCH_ONLY and no operational side effects.
+
+## Phase 113 — Replay Evidence Export Review Scorecard Research-Only
+
+Gate: PHASE113_REPLAY_EVIDENCE_EXPORT_REVIEW_SCORECARD_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive export review scorecard with operational score fixed at zero and approval effect NONE_RESEARCH_ONLY.
