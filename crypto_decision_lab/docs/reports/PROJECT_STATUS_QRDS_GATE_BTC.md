@@ -1272,3 +1272,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds research-only preflight for unvalidated edge candidates without trading or decision authority.
+
+## Phase 140 - Edge Candidate Batch Checkpoint Research-Only
+
+Gate: PHASE140_EDGE_CANDIDATE_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 136-140 edge candidate batch checkpoint while keeping candidates unvalidated and research-only.
