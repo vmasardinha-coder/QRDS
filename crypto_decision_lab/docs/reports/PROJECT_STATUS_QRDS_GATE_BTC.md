@@ -804,3 +804,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 106–110 replay evidence query export batch checkpoint while preserving blocked trading signal and allocation exports.
+
+## Phase 111 — Replay Evidence Export Audit Trail Research-Only
+
+Gate: PHASE111_REPLAY_EVIDENCE_EXPORT_AUDIT_TRAIL_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive audit trail for the Phase 106–110 replay evidence export batch while preserving blocked trading signal and allocation exports.
