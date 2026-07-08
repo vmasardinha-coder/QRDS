@@ -980,3 +980,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a local index page for the review portal with research-only boundaries preserved.
+
+## Phase 122 - Serve Root Fix Research-Only
+
+Gate: PHASE122_SERVE_ROOT_FIX_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Updates the local review portal serve script to point first to index.html while preserving research-only boundaries.
