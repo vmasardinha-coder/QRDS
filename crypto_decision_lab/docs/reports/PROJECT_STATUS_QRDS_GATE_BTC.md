@@ -964,3 +964,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 116-120 local review portal batch checkpoint, validating runbook, asset index, local serve script and smoke test while preserving research-only locks.
+
+## Phase 121 - Review Portal Index Page Research-Only
+
+Gate: PHASE121_REVIEW_PORTAL_INDEX_PAGE_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a local index page for the review portal with research-only boundaries preserved.
