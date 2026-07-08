@@ -1076,3 +1076,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a research-only timestamp freshness check with no decision authority and no operational side effects.
+
+## Phase 128 - Data Gap Sentinel Research-Only
+
+Gate: PHASE128_DATA_GAP_SENTINEL_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a research-only data gap sentinel with no decision authority and no operational side effects.
