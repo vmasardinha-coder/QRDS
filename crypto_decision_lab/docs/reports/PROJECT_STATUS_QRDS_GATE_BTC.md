@@ -996,3 +996,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Updates the local review portal serve script to point first to index.html while preserving research-only boundaries.
+
+## Phase 123 - Portal Link Smoke Test Research-Only
+
+Gate: PHASE123_PORTAL_LINK_SMOKE_TEST_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a local portal link smoke test for index.html, review page and serve script while preserving research-only boundaries.
