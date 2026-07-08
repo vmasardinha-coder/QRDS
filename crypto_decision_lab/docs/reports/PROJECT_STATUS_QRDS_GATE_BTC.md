@@ -1238,3 +1238,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds research-only eligibility filtering for unvalidated edge candidates without trading or decision authority.
+
+## Phase 138 - Edge Candidate Evidence Linker Research-Only
+
+Gate: PHASE138_EDGE_CANDIDATE_EVIDENCE_LINKER_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Links unvalidated edge candidates to research-only evidence checkpoints without trading or decision authority.
