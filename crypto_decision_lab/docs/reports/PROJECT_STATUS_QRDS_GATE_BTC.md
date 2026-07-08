@@ -884,3 +884,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 111–115 export review batch checkpoint, validating audit trail, review notes schema, review scorecard and portal stub while preserving research-only locks.
+
+## Phase 116 — Export Review Runbook Research-Only
+
+Gate: PHASE116_EXPORT_REVIEW_RUNBOOK_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive export review runbook for human review with approval effect NONE_RESEARCH_ONLY and no operational side effects.
