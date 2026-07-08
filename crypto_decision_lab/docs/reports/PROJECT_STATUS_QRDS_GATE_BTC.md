@@ -1092,3 +1092,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a research-only data gap sentinel with no decision authority and no operational side effects.
+
+## Phase 129 - Data Trust Preflight Research-Only
+
+Gate: PHASE129_DATA_TRUST_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a research-only data trust preflight combining source registry, freshness and gap sentinel while preserving all locks.
