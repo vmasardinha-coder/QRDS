@@ -1108,3 +1108,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a research-only data trust preflight combining source registry, freshness and gap sentinel while preserving all locks.
+
+## Phase 130 - Data Trust Batch Checkpoint Research-Only
+
+Gate: PHASE130_DATA_TRUST_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 126-130 data trust batch checkpoint while preserving all research-only locks.
