@@ -1140,3 +1140,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a research-only evidence quality dimension registry based on the Phase 126-130 data trust checkpoint.
+
+## Phase 132 - Evidence Quality Scoring Model Research-Only
+
+Gate: PHASE132_EVIDENCE_QUALITY_SCORING_MODEL_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a research-only evidence quality scoring model with no decision authority.
