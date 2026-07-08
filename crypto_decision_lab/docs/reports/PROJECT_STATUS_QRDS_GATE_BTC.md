@@ -1044,3 +1044,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 121-125 review portal UX batch checkpoint, validating index page, serve root fix, link smoke test and one-command runner while preserving research-only locks.
+
+## Phase 126 - Data Source Trust Registry Research-Only
+
+Gate: PHASE126_DATA_SOURCE_TRUST_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a research-only data source trust registry with no decision authority and no operational side effects.
