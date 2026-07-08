@@ -820,3 +820,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive audit trail for the Phase 106–110 replay evidence export batch while preserving blocked trading signal and allocation exports.
+
+## Phase 112 — Replay Evidence Export Review Notes Schema Research-Only
+
+Gate: PHASE112_REPLAY_EVIDENCE_EXPORT_REVIEW_NOTES_SCHEMA_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive human review notes schema for export audit evidence with approval effect NONE_RESEARCH_ONLY and no operational side effects.
