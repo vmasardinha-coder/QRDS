@@ -916,3 +916,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive asset index for local review portal artifacts with approval effect NONE_RESEARCH_ONLY.
+
+## Phase 118 - Local Review Serve Script Research-Only
+
+Gate: PHASE118_LOCAL_REVIEW_SERVE_SCRIPT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a local PowerShell serve script for the review portal with research-only boundaries preserved.
