@@ -1391,3 +1391,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds research-only risk requirements after replay validity checkpoint.
+
+## Phase 147 - Ruin Scenario Model Research-Only
+
+Gate: PHASE147_RUIN_SCENARIO_MODEL_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive research-only ruin scenario model with no position sizing or allocation export.
