@@ -1357,3 +1357,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds replay validity preflight while preserving all research-only locks.
+
+## Phase 145 - Replay Validity Batch Checkpoint Research-Only
+
+Gate: PHASE145_REPLAY_VALIDITY_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 141-145 replay validity batch checkpoint while preserving all research-only locks.
