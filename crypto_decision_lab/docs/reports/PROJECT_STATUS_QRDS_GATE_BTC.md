@@ -1624,3 +1624,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 156-160 shadow simulation batch checkpoint while preserving all locks.
+
+## Phase 161 - Shadow Evidence Replay Requirement Registry Research-Only
+
+Gate: PHASE161_SHADOW_EVIDENCE_REPLAY_REQUIREMENT_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow evidence replay requirements without enabling outputs.
