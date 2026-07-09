@@ -1408,3 +1408,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds a descriptive research-only ruin scenario model with no position sizing or allocation export.
+
+## Phase 148 - Exposure Limit Guard Research-Only
+
+Gate: PHASE148_EXPOSURE_LIMIT_GUARD_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a descriptive research-only exposure limit guard with no position sizing or allocation export.
