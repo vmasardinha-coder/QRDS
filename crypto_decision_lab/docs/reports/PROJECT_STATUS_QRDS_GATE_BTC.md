@@ -1442,3 +1442,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds risk preflight while preserving all research-only locks.
+
+## Phase 150 - Risk / Ruin Batch Checkpoint Research-Only
+
+Gate: PHASE150_RISK_RUIN_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 146-150 risk / ruin batch checkpoint while preserving all research-only locks.
