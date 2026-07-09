@@ -1306,3 +1306,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds research-only replay/backtest validity requirements for unvalidated edge candidates.
+
+## Phase 142 - Backtest Window Integrity Check Research-Only
+
+Gate: PHASE142_BACKTEST_WINDOW_INTEGRITY_CHECK_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds research-only backtest window integrity checks without decision authority.
