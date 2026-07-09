@@ -1640,3 +1640,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow evidence replay requirements without enabling outputs.
+
+## Phase 162 - Shadow Evidence Replay Input Builder Research-Only
+
+Gate: PHASE162_SHADOW_EVIDENCE_REPLAY_INPUT_BUILDER_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow evidence replay input builder without enabling outputs.
