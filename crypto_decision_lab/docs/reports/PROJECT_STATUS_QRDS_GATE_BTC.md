@@ -1544,3 +1544,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 151-155 shadow decision readiness batch checkpoint while preserving all locks.
+
+## Phase 156 - Shadow Simulation Requirement Registry Research-Only
+
+Gate: PHASE156_SHADOW_SIMULATION_REQUIREMENT_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow simulation requirements without enabling shadow decision or simulation outputs.
