@@ -1688,3 +1688,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow evidence replay preflight without enabling outputs.
+
+## Phase 165 - Shadow Evidence Replay Batch Checkpoint Research-Only
+
+Gate: PHASE165_SHADOW_EVIDENCE_REPLAY_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 161-165 shadow evidence replay batch checkpoint while preserving all locks.
