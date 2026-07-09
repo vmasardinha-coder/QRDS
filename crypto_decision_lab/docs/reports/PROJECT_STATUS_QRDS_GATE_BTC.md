@@ -1526,3 +1526,21 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow decision readiness preflight without enabling shadow decision.
+
+## Phase 155 - Shadow Decision Readiness Batch Checkpoint Research-Only
+
+Gate: PHASE155_SHADOW_DECISION_READINESS_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds the Phase 151-155 shadow decision readiness batch checkpoint while preserving all locks.
