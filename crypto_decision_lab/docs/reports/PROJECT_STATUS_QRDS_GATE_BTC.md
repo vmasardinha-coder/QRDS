@@ -1323,3 +1323,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds research-only backtest window integrity checks without decision authority.
+
+## Phase 143 - Replay Leakage Guard Research-Only
+
+Gate: PHASE143_REPLAY_LEAKAGE_GUARD_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a research-only replay leakage guard without decision authority.
