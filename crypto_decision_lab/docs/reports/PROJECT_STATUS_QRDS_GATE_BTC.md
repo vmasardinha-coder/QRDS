@@ -1672,3 +1672,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds null evaluation for shadow evidence replay without enabling outputs.
+
+## Phase 164 - Shadow Evidence Replay Preflight Research-Only
+
+Gate: PHASE164_SHADOW_EVIDENCE_REPLAY_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow evidence replay preflight without enabling outputs.
