@@ -1592,3 +1592,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds descriptive-only audit trail for null shadow simulation without enabling outputs.
+
+## Phase 159 - Shadow Simulation Preflight Research-Only
+
+Gate: PHASE159_SHADOW_SIMULATION_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow simulation preflight without enabling outputs.
