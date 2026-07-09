@@ -1476,3 +1476,20 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow decision readiness requirements without enabling shadow decision.
+
+## Phase 152 - Decision Input Contract Research-Only
+
+Gate: PHASE152_DECISION_INPUT_CONTRACT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Edge validated: False
+Edge operationally validated: False
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds decision input contract without enabling shadow decision.
