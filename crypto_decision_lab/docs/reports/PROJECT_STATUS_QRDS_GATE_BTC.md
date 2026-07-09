@@ -1510,3 +1510,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds output null guard without enabling shadow decision.
+
+## Phase 154 - Shadow Decision Readiness Preflight Research-Only
+
+Gate: PHASE154_SHADOW_DECISION_READINESS_PREFLIGHT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow decision readiness preflight without enabling shadow decision.

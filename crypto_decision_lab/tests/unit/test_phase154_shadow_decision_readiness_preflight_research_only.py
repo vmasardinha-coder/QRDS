@@ -1,0 +1,46 @@
+﻿from crypto_decision_lab.scripts.phase154_shadow_decision_readiness_preflight_research_only import (
+    READY_GATE,
+    build_phase154,
+    build_shadow_decision_readiness_preflight,
+)
+
+def test_phase154_preflight_passes():
+    preflight = build_shadow_decision_readiness_preflight()
+    assert preflight["gate"] == READY_GATE
+    assert preflight["preflight_pass"] is True
+    assert preflight["preflight_status"] == "PASS_RESEARCH_ONLY"
+    assert preflight["failed_checks"] == []
+    assert preflight["boundaries_ok"] is True
+    assert preflight["approval_effect"] == "NONE_RESEARCH_ONLY"
+
+def test_phase154_checks_are_expected():
+    preflight = build_shadow_decision_readiness_preflight()
+    assert [item["id"] for item in preflight["checks"]] == [
+        "PHASE151_SHADOW_DECISION_REQUIREMENT_REGISTRY",
+        "PHASE152_DECISION_INPUT_CONTRACT",
+        "PHASE153_DECISION_OUTPUT_NULL_GUARD",
+    ]
+    assert all(item["status"] is True for item in preflight["checks"])
+
+def test_phase154_locks_are_closed():
+    preflight = build_shadow_decision_readiness_preflight()
+    assert preflight["operational_status"] == "BLOCKED_RESEARCH_ONLY"
+    assert preflight["shadow_decision_allowed"] is False
+    assert preflight["decision_layer_allowed"] is False
+    assert preflight["safe_apply_allowed"] is False
+    assert preflight["canonical_data_writes"] == 0
+    assert preflight["trading_signal_generated"] is False
+    assert preflight["allocation_generated"] is False
+
+def test_phase154_no_decision_or_trading_effect():
+    preflight = build_shadow_decision_readiness_preflight()
+    assert preflight["operational_decision_allowed"] is False
+    assert preflight["recommendation_generated"] is False
+    assert preflight["promotion_allowed"] is False
+    assert preflight["descriptive_only"] is True
+
+def test_phase154_builds_artifact(tmp_path):
+    result = build_phase154(tmp_path / "phase154")
+    assert result["gate"] == READY_GATE
+    assert result["ready"] is True
+    assert (tmp_path / "phase154" / "phase154_shadow_decision_readiness_preflight.json").exists()
