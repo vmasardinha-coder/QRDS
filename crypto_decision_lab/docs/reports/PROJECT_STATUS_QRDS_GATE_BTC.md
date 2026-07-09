@@ -1560,3 +1560,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow simulation requirements without enabling shadow decision or simulation outputs.
+
+## Phase 157 - Shadow Simulation Null Runner Research-Only
+
+Gate: PHASE157_SHADOW_SIMULATION_NULL_RUNNER_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds a null-only shadow simulation runner without enabling decisions or outputs.
