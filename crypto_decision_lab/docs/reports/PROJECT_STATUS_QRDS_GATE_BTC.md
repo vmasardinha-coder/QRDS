@@ -1784,3 +1784,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds the Phase 166-170 shadow score batch checkpoint while preserving all locks.
+
+## Phase 171 - Shadow Readiness Requirement Registry Research-Only
+
+Gate: PHASE171_SHADOW_READINESS_REQUIREMENT_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow readiness requirements without enabling approval, signals, recommendations, allocations, or orders.
