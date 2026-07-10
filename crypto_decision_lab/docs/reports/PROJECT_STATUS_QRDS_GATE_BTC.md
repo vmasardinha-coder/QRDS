@@ -1928,3 +1928,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds promotion blocker preflight while preserving all null outputs and locks.
+
+## Phase 180 - Promotion Blocker Batch Checkpoint Research-Only
+
+Gate: PHASE180_PROMOTION_BLOCKER_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds artifact-based promotion blocker batch checkpoint for phases 176-180 while preserving all locks.
