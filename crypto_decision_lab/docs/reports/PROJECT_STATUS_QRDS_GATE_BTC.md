@@ -1816,3 +1816,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds shadow readiness synthesis without enabling approval, signals, recommendations, allocations, or orders.
+
+## Phase 173 - Shadow Readiness Explanation Research-Only
+
+Gate: PHASE173_SHADOW_READINESS_EXPLANATION_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds shadow readiness explanation without enabling approval, signals, recommendations, allocations, or orders.
