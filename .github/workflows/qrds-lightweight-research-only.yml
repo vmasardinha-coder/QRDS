@@ -1,0 +1,108 @@
+﻿name: QRDS Lightweight Research-Only CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "crypto_decision_lab/**"
+      - ".github/workflows/qrds-lightweight-research-only.yml"
+  pull_request:
+    paths:
+      - "crypto_decision_lab/**"
+      - ".github/workflows/qrds-lightweight-research-only.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qrds-lightweight-research-only-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lightweight-regression:
+    name: Lightweight regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: crypto_decision_lab
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}/crypto_decision_lab/src
+      QRDS_APP_MODE: INTERACTIVE_RESEARCH_ONLY
+      QRDS_POLICY_LOCK: ACTIVE
+      QRDS_OPERATIONAL_STATUS: BLOCKED_RESEARCH_ONLY
+      QRDS_PROMOTION_ALLOWED: "false"
+      QRDS_DECISION_LAYER_ALLOWED: "false"
+      QRDS_SHADOW_DECISION_ALLOWED: "false"
+      QRDS_CANONICAL_DATA_WRITES: "0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            crypto_decision_lab/pyproject.toml
+            crypto_decision_lab/requirements*.txt
+
+      - name: Install lightweight test environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+
+          if [[ -f requirements-ci.txt ]]; then
+            python -m pip install -r requirements-ci.txt
+          elif [[ -f requirements.txt ]]; then
+            python -m pip install -r requirements.txt
+          elif [[ -f pyproject.toml ]]; then
+            python -m pip install -e .
+          else
+            python -m pip install pytest
+          fi
+
+          python -m pip install pytest
+
+      - name: Compile source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q src tests
+
+      - name: Collect tests only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest --collect-only -q
+
+      - name: Verify research-only CI locks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          expected = {
+              "QRDS_APP_MODE": "INTERACTIVE_RESEARCH_ONLY",
+              "QRDS_POLICY_LOCK": "ACTIVE",
+              "QRDS_OPERATIONAL_STATUS": "BLOCKED_RESEARCH_ONLY",
+              "QRDS_PROMOTION_ALLOWED": "false",
+              "QRDS_DECISION_LAYER_ALLOWED": "false",
+              "QRDS_SHADOW_DECISION_ALLOWED": "false",
+              "QRDS_CANONICAL_DATA_WRITES": "0",
+          }
+
+          for key, value in expected.items():
+              actual = os.environ.get(key)
+              assert actual == value, f"{key}={actual!r}; expected {value!r}"
+
+          print("LIGHTWEIGHT_CI_RESEARCH_ONLY_LOCKS_PASS")
+          PY
