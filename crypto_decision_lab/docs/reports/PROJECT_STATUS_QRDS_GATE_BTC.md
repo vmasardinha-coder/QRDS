@@ -2008,3 +2008,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds evidence-to-promotion gap preflight without enabling approval, signals, recommendations, allocations, or orders.
+
+## Phase 185 - Gap Batch Checkpoint Research-Only
+
+Gate: PHASE185_GAP_BATCH_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds artifact-based evidence-to-promotion gap batch checkpoint for phases 181-185 while preserving all locks.
