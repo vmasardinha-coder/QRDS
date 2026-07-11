@@ -1944,3 +1944,19 @@ canonical_data_writes: 0
 Full suite: SKIPPED_LOCAL_ECONOMICAL
 
 Scope: Adds artifact-based promotion blocker batch checkpoint for phases 176-180 while preserving all locks.
+
+## Phase 181 - Gap Requirement Registry Research-Only
+
+Gate: PHASE181_GAP_REQUIREMENT_REGISTRY_RESEARCH_ONLY_READY_RESEARCH_ONLY
+Operational: BLOCKED_RESEARCH_ONLY
+Shadow decision allowed: False
+Decision layer allowed: False
+Promotion allowed: False
+trading_signal_generated: False
+recommendation_generated: False
+allocation_generated: False
+safe_apply_allowed: False
+canonical_data_writes: 0
+Full suite: SKIPPED_LOCAL_ECONOMICAL
+
+Scope: Adds evidence-to-promotion gap requirement registry without enabling approval, signals, recommendations, allocations, or orders.
