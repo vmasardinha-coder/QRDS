@@ -81,12 +81,21 @@ def _assert_research_payload(payload: dict[str, Any], *, name: str) -> None:
         raise DashboardPortalError(f"{name} violates research-only contract: {errors}")
 
 
-def _relpath(target: str | Path, *, start: str | Path) -> str:
+def _relpath(
+    target: str | Path,
+    *,
+    start: str | Path,
+) -> str:
+    """Return a portable relative path suitable for HTML links."""
     try:
-        return os.path.relpath(Path(target).resolve(), Path(start).resolve())
+        relative = os.path.relpath(
+            Path(target).resolve(),
+            Path(start).resolve(),
+        )
     except ValueError:
-        return str(Path(target).resolve())
+        relative = str(Path(target).resolve())
 
+    return Path(relative).as_posix()
 
 def build_dashboard_portal_payload(
     *,

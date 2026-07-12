@@ -1,6 +1,8 @@
 """CLI for QRDS Unified Dashboard Portal v1."""
-
 from __future__ import annotations
+import sys
+
+
 
 import argparse
 import json
@@ -84,6 +86,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
+
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
@@ -95,7 +100,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         preferred_port=args.preferred_port,
     )
 
-    print(json.dumps(index, indent=2, sort_keys=True, ensure_ascii=False))
+    print(json.dumps(index, indent=2, sort_keys=True, ensure_ascii=True))
     print()
     print("=== UNIFIED PORTAL READY ===")
     print(index["html_path"])
