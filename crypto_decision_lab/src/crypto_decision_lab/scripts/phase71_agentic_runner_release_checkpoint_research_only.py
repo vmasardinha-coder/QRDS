@@ -164,7 +164,10 @@ def _load_manifest_index(project: Path) -> dict[str, Any] | None:
 def _load_report_text(project: Path) -> str:
     path = project / "docs" / "reports" / "PROJECT_STATUS_QRDS_GATE_BTC.md"
     if path.exists():
-        return path.read_text(encoding="utf-8")
+        try:
+            return path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return path.read_text(encoding="cp1252")
     return ""
 
 def render_checkpoint_html(result: dict[str, Any]) -> str:

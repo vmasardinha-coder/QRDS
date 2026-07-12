@@ -14,6 +14,7 @@ non-blocking and only writes/prints instructions.
 """
 
 from __future__ import annotations
+import sys
 
 import argparse
 import http.server
@@ -288,6 +289,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
+
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
