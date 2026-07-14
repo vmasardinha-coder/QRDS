@@ -1,0 +1,3 @@
+from crypto_decision_lab.scripts.phase246_255_public_shadow_decision_common import p255,tracking
+def test_phase255_checkpoint():
+ xs=[{"phase":p,"passed":True} for p in range(246,255)];xs[-1]["shadow_packet"]={"evidence_fingerprint":"a"*64,"providers":["A","B"],"market_state":"RANGE_DESCRIPTIVE","latest_median_close":100,"snapshot_data_trust_validated":True,"cross_source_consensus_passed":True,"action":"NO_ACTION_RESEARCH_ONLY","position_size":0};p=p255(xs,{"returncode":0,"test_files":20,"tests":30,"failures":0,"errors":0},{"batch_236_245":{"passed":True,"tests":1390}});assert p["passed"] and not p["data_trust_validated"] and not p["decision_layer_allowed"] and len(tracking(p))==6

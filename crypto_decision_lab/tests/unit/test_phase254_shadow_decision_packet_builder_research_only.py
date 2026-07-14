@@ -1,0 +1,3 @@
+from crypto_decision_lab.scripts.phase246_255_public_shadow_decision_common import p254
+def test_phase254_safe_packet():
+ n={"evidence_fingerprint":"a"*64,"normalized_sources":[{"provider":"A"},{"provider":"B"}]};m={"as_of_timestamp_ms":1,"market_state":"RANGE_DESCRIPTIVE","latest_median_close":100,"return_6h":0,"return_24h":0,"return_72h":0,"annualized_realized_volatility":.5};p=p254(n,{"snapshot_data_trust_validated":True},{"consensus_passed":True},m,{"action":"NO_ACTION_RESEARCH_ONLY","reason_codes":["X"]});q=p["shadow_packet"];assert p["passed"] and q["position_size"]==0 and q["entry"] is None and not p["decision_layer_allowed"]
