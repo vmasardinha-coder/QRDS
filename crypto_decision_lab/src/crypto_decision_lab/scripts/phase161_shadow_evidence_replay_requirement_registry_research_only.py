@@ -1,5 +1,7 @@
 ﻿from __future__ import annotations
 
+from functools import lru_cache
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -66,6 +68,7 @@ SHADOW_EVIDENCE_REPLAY_REQUIREMENTS = [
     },
 ]
 
+@lru_cache(maxsize=16)
 def build_shadow_evidence_replay_requirement_registry(project_root: str | Path | None = None) -> dict[str, Any]:
     shadow = build_shadow_simulation_checkpoint(project_root)
 

@@ -1,5 +1,7 @@
 ﻿from __future__ import annotations
 
+from functools import lru_cache
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -66,6 +68,7 @@ RISK_REQUIREMENTS = [
     },
 ]
 
+@lru_cache(maxsize=16)
 def build_risk_requirement_registry(project_root: str | Path | None = None) -> dict[str, Any]:
     replay = build_replay_validity_checkpoint(project_root)
 
