@@ -75,7 +75,8 @@ def test_phase171_reuses_same_project_root_dependency(monkeypatch, tmp_path):
         tmp_path
     )
 
-    assert first is second
+    assert first is not second
+    assert first == second
     assert calls["count"] == 1
     assert first["registry_pass"] is True
     assert first["operational_status"] == "BLOCKED_RESEARCH_ONLY"

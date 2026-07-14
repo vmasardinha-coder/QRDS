@@ -1,6 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-from functools import lru_cache
+from crypto_decision_lab.scripts.phase226_235_technical_reliability_common import (
+    copy_on_read_lru_cache,
+)
 
 import json
 from datetime import datetime, timezone
@@ -68,7 +70,7 @@ REPLAY_VALIDITY_REQUIREMENTS = [
     },
 ]
 
-@lru_cache(maxsize=16)
+@copy_on_read_lru_cache(maxsize=16)
 def build_replay_validity_requirement_registry(project_root: str | Path | None = None) -> dict[str, Any]:
     edge_checkpoint = build_edge_candidate_checkpoint(project_root)
 
