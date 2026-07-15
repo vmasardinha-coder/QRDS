@@ -1,0 +1,3 @@
+from crypto_decision_lab.scripts.phase286_295_calibration_shadow_readiness_common import p292
+def test_phase292_plain_language():
+ m={"dependencies":{"dataset_rows":2000,"hypothesis_count":108}};g={"search_validated":False};r={"robust_candidate":False,"central_scenario":{"mean_net_return":-.002,"lower_95_mean_net_return":-.003}};c={"calibration_validated":False};s={"selection_stable":False};a={"modal_hypothesis_id":"X"};gate={"eligible_for_forward_shadow":False,"reason_codes":["X"]};p=p292(m,g,r,c,s,a,gate);i=p["interpretation"];assert p["passed"] and i["candidate_found"]=="NO_VALIDATED_CANDIDATE" and i["mean_result_per_10000_brl"]==-20
