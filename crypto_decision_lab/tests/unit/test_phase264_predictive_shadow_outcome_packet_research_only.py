@@ -1,0 +1,4 @@
+from crypto_decision_lab.scripts.phase256_265_predictive_edge_validation_common import p264
+def test_phase264_packet_is_never_operational():
+ d={"dataset_fingerprint":"a"*64};b={"best_baseline_name":"B","best_baseline_brier_score":.25};c={"selected_candidate_name":"C","selected_candidate":{"observations":72,"brier_score":.24,"directional_accuracy":.55,"brier_improvement_vs_best_baseline":.01,"accuracy_improvement_vs_best_baseline":.03}};x={"calibration_proxy_error":.05,"fold_accuracy_stdev":.02};cost={"total_round_trip_cost_bps":25};e={"mean_gross_return":.001,"mean_net_return":-.0015,"lower_95_mean_net_return":-.002};g={"predictive_validity_established":True,"edge_validated":False,"reason_codes":["EDGE"]}
+ p=p264(d,b,c,x,cost,e,g);q=p["shadow_outcome_packet"];assert p["passed"] and q["action"]=="NO_ACTION_RESEARCH_ONLY" and q["position_size"]==0 and q["operational_status"]=="BLOCKED_RESEARCH_ONLY"
