@@ -1,0 +1,4 @@
+from crypto_decision_lab.scripts.phase276_285_strategy_search_common import p284
+def test_phase284_visual_portal(tmp_path):
+ sm={"search_stages":[]};h={"consensus_hours":2160};d={"dataset_rows":2000};f={"hypothesis_count":108};n={"total_outer_oos_rows":480};g={"modal_hypothesis_id":"X","selection_stable":False,"adjusted_brier_improvement":-.01,"search_validated":False};r={"modal_hypothesis_id":"X","modal_spec":{"family":"MOMENTUM","lookback_hours":6,"forecast_horizon_hours":1,"probability_strength":.58},"central_scenario":{"mean_net_return":-.001,"lower_95_mean_net_return":-.002},"robust_candidate":False};z={"eligible_for_forward_shadow":False}
+ p=p284(sm,h,d,f,n,g,r,z,tmp_path/"index.html");assert p["passed"] and (tmp_path/"index.html").is_file() and p["product_packet"]["action"]=="NO_ACTION_RESEARCH_ONLY"
