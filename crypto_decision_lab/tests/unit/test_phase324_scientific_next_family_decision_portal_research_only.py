@@ -1,0 +1,6 @@
+from crypto_decision_lab.scripts import phase324_scientific_next_family_decision_portal_research_only as module
+from crypto_decision_lab.scripts.phase301_305_evidence_v2_common import REQUIRED_PORTAL_HEADINGS
+from tests.unit._phase316_325_fixtures import patch_roots,payload,phase304_fixture,write_json
+
+def test_phase324_portal_is_visual_and_keeps_family_closed(monkeypatch,tmp_path):
+    patch_roots(monkeypatch,tmp_path,module); values=[phase304_fixture(),payload(316,negative_result_registered=True,hypothesis_count=24),payload(318,failure_category_count=5),payload(319,dataset_count=5,coverage_audit_pass=True),payload(320,disagreement_context_available=True),payload(321,derivatives_context_usable=True),payload(322,genuinely_different_question_justified=True),payload(323,preregistration_draft_created=True)]; phases=[304,316,318,319,320,321,322,323]; paths=[write_json(tmp_path/f'p{p}.json',v) for p,v in zip(phases,values)]; result=module.build(*paths,tmp_path/'artifacts/phase324'); assert result['new_family_opened'] is False; assert result['experiment_budget_opened'] is False; html=(tmp_path/result['portal_path']).read_text(encoding='utf-8-sig'); assert 'VOCE ESTA AQUI' in html; [(_ for _ in ()).throw(AssertionError(h)) for h in REQUIRED_PORTAL_HEADINGS if h not in html]

@@ -1,0 +1,5 @@
+from crypto_decision_lab.scripts import phase322_new_scientific_question_novelty_audit_research_only as module
+from tests.unit._phase316_325_fixtures import patch_roots,payload,write_json
+
+def test_phase322_allows_only_non_directional_question_review(monkeypatch,tmp_path):
+    patch_roots(monkeypatch,tmp_path,module); vals={316:payload(316,negative_result_registered=True,current_family_decision='CLOSE_CURRENT_FAMILY_RESEARCH_ONLY'),317:payload(317,registry_closed=True,prohibited_signature_count=24),318:payload(318,failure_record_count=5,failure_category_counts={'A':5}),319:payload(319,coverage_audit_pass=True,candle_datasets_meeting_threshold=3),320:payload(320,disagreement_context_available=True,common_hour_count=800),321:payload(321,derivatives_context_usable=True,dataset_audits=[])}; paths={p:write_json(tmp_path/f'p{p}.json',v) for p,v in vals.items()}; result=module.build(paths,tmp_path/'artifacts/phase322'); assert result['genuinely_different_question_justified'] is True; assert result['target_type'].startswith('ABSTENTION'); assert result['hypotheses_registered']==0; assert result['experiment_budget_opened'] is False
