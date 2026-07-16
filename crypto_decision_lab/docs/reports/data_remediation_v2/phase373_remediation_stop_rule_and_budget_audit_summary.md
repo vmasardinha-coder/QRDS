@@ -2,15 +2,15 @@
 
 Gate: `PHASE373_REMEDIATION_STOP_RULE_AND_BUDGET_AUDIT_READY_RESEARCH_ONLY`
 
-- Governance mode: `MANUAL_REJECTION_NO_EVALUATION`
+- Governance mode: `EXECUTED_ONE_EVALUATION`
 - Governance pass: `True`
-- Data-quality contract applicable: `False`
-- Data-quality contract pass: `False`
-- Budget consumed: `0/1`
-- Unused frozen budget discarded: `1`
+- Data-quality contract applicable: `True`
+- Data-quality contract pass: `True`
+- Budget consumed: `1/1`
+- Unused frozen budget discarded: `0`
 - Failed checks: `[]`
 - Registry open: `False`
-- Next decision: `REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`
+- Next decision: `MANUAL_REMEDIATED_RESEARCH_DATASET_ADOPTION_REVIEW_ONLY_RESEARCH_ONLY`
 
 ## Permanent locks
 

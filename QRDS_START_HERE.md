@@ -51,14 +51,14 @@ DADOS → TESTES FINITOS → 0 SOBREVIVENTES → EVIDÊNCIA NEGATIVA SELADA
 <!-- QRDS_CURRENT_STATUS_BEGIN -->
 ## Status atual — Fase 374
 
-- Modo do resultado: `MANUAL_REJECTION_NO_EVALUATION`
-- Decisão manual: `REJECT_REAL_DATA_REMEDIATION_EVALUATION`
-- Avaliação de remediação executada: `False`
-- Contrato de qualidade aplicável: `False`
-- Contrato de qualidade aprovado: `False`
+- Modo do resultado: `EXECUTED_QUALITY_EVALUATION`
+- Decisão manual: `APPROVE_ONE_FROZEN_REMEDIATION_EVALUATION`
+- Avaliação de remediação executada: `True`
+- Contrato de qualidade aplicável: `True`
+- Contrato de qualidade aprovado: `True`
 - Governança aprovada: `True`
 - Métricas de estratégia usadas: `False`
-- Próxima decisão: `REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`
+- Próxima decisão: `MANUAL_REMEDIATED_RESEARCH_DATASET_ADOPTION_REVIEW_ONLY_RESEARCH_ONLY`
 - Estratégia aprovada: `False`
 - Capital utilizado: `R$ 0`
 - Abra o portal com `C:\QRDS\ABRIR_QRDS.ps1`.

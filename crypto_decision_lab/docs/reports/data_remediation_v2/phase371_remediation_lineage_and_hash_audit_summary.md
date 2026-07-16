@@ -2,11 +2,11 @@
 
 Gate: `PHASE371_REMEDIATION_LINEAGE_AND_HASH_AUDIT_READY_RESEARCH_ONLY`
 
-- Audit mode: `SKIPPED_NO_EVALUATION`
+- Audit mode: `EXECUTED_LINEAGE_AND_HASH_AUDIT`
 - Lineage audit pass: `True`
-- Input datasets: `0`
-- Input hash audit applicable: `False`
-- Output hash audit applicable: `False`
+- Input datasets: `4`
+- Input hash audit applicable: `True`
+- Output hash audit applicable: `True`
 - Contract fingerprint verified: `True`
 - Failed checks: `[]`
 - Canonical data writes: `0`

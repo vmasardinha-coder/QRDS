@@ -3,7 +3,7 @@
 Gate: `PHASE369_NO_CLOSED_FAMILY_PERFORMANCE_METRIC_PROOF_READY_RESEARCH_ONLY`
 
 - Proof pass: `True`
-- Proof mode: `SKIPPED_NO_EVALUATION`
+- Proof mode: `EXECUTED_QUALITY_ONLY_EVALUATION`
 - Failed checks: `0`
 - Forbidden metric hits: `0`
 - Unknown metric names: `0`

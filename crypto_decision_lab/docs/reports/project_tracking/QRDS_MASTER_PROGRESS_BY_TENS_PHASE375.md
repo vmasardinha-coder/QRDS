@@ -2,15 +2,15 @@
 
 ## Current decision
 
-`REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`
+`MANUAL_REMEDIATED_RESEARCH_DATASET_ADOPTION_REVIEW_ONLY_RESEARCH_ONLY`
 
 ## Window 366–375
 
-- Result mode: `MANUAL_REJECTION_NO_EVALUATION`
-- Frozen remediation review decision: `REJECT_REAL_DATA_REMEDIATION_EVALUATION`
-- One real-data quality evaluation executed: `False`
-- Data-quality contract applicable: `False`
-- Data-quality contract pass: `False`
+- Result mode: `EXECUTED_QUALITY_EVALUATION`
+- Frozen remediation review decision: `APPROVE_ONE_FROZEN_REMEDIATION_EVALUATION`
+- One real-data quality evaluation executed: `True`
+- Data-quality contract applicable: `True`
+- Data-quality contract pass: `True`
 - Governance pass: `True`
 - Closed-family performance metrics used: `False`
 - Public recollection started: `False`

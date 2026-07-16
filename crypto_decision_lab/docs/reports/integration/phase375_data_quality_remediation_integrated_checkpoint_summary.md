@@ -2,11 +2,11 @@
 
 Gate: `PHASE375_DATA_QUALITY_REMEDIATION_INTEGRATED_CHECKPOINT_READY_RESEARCH_ONLY`
 
-- Result mode: `MANUAL_REJECTION_NO_EVALUATION`
+- Result mode: `EXECUTED_QUALITY_EVALUATION`
 - Targeted tests: `10`
-- Evaluation executed: `False`
-- Data-quality contract applicable: `False`
-- Data-quality contract pass: `False`
+- Evaluation executed: `True`
+- Data-quality contract applicable: `True`
+- Data-quality contract pass: `True`
 - Closed-family performance metrics used: `False`
 - Global suite run in this batch: `False`
 - Last global checkpoint: `Phase 365`

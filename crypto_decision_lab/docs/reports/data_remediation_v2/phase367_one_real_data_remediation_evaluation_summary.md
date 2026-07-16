@@ -2,10 +2,10 @@
 
 Gate: `PHASE367_ONE_REAL_DATA_REMEDIATION_EVALUATION_READY_RESEARCH_ONLY`
 
-- Evaluation executed: `False`
-- Real historical rows used: `0`
-- Raw valid-hour ratio: `0.000000`
-- Remediated valid-hour ratio: `0.000000`
+- Evaluation executed: `True`
+- Real historical rows used: `105110`
+- Raw valid-hour ratio: `0.999619`
+- Remediated valid-hour ratio: `1.000000`
 - Strategy or return metric evaluated: `False`
 - Public collection started: `False`
 

@@ -4,7 +4,7 @@
 flowchart TD
  A[Two closed scientific families] --> B[Frozen timestamp-consensus remediation]
  B --> C[Manual one-evaluation review]
- C --> D[Manual rejection preserved; no evaluation]
+ C --> D[One real-data quality evaluation]
  D --> E[Quality comparison or not-applicable record]
  E --> F[No closed-family metric proof]
  F --> G[Lineage/reproducibility audit for selected path]
@@ -13,4 +13,4 @@ flowchart TD
  I --> J[NO_ACTION_RESEARCH_ONLY]
 ```
 
-**VOCE ESTA AQUI:** `REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`. Capital authorized: `R$ 0`.
+**VOCE ESTA AQUI:** `MANUAL_REMEDIATED_RESEARCH_DATASET_ADOPTION_REVIEW_ONLY_RESEARCH_ONLY`. Capital authorized: `R$ 0`.

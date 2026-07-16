@@ -2,10 +2,10 @@
 
 Gate: `PHASE370_PUBLIC_RECOLLECTION_NEED_DECISION_READY_RESEARCH_ONLY`
 
-- Evaluation executed: `False`
-- Recollection assessment applicable: `False`
+- Evaluation executed: `True`
+- Recollection assessment applicable: `True`
 - Public recollection needed: `False`
-- Decision: `NO_PUBLIC_RECOLLECTION_EVALUATION_REJECTED_RESEARCH_ONLY`
+- Decision: `NO_PUBLIC_RECOLLECTION_REQUIRED_EXISTING_DATA_SUFFICIENT_RESEARCH_ONLY`
 - Public collection authorized: `False`
 - Silent network action allowed: `False`
 

@@ -2,9 +2,9 @@
 
 Gate: `PHASE366_MANUAL_FROZEN_REMEDIATION_EXECUTION_REVIEW_READY_RESEARCH_ONLY`
 
-- Decision: `REJECT_REAL_DATA_REMEDIATION_EVALUATION`
+- Decision: `APPROVE_ONE_FROZEN_REMEDIATION_EVALUATION`
 - Contract review eligible: `True`
-- One data-quality evaluation approved: `False`
+- One data-quality evaluation approved: `True`
 - Strategy metrics authorized: `False`
 - Capital authorized: `R$ 0`
 

@@ -2,9 +2,9 @@
 
 Gate: `PHASE372_REMEDIATION_REPRODUCIBILITY_AUDIT_READY_RESEARCH_ONLY`
 
-- Audit mode: `SKIPPED_NO_EVALUATION`
+- Audit mode: `EXECUTED_SAME_INPUT_REPLAY`
 - Reproducibility pass: `True`
-- Reason: `MANUAL_REJECTION_REPRODUCIBLY_PRESERVED`
+- Reason: `SAME_INPUTS_SAME_RESULT`
 - Failed checks: `[]`
 - Network calls: `0`
 - New experiment budget consumed: `0`

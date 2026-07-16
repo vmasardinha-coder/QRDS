@@ -2,12 +2,16 @@
 
 ## Entering decision
 
-`REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`
+`MANUAL_REMEDIATED_RESEARCH_DATASET_ADOPTION_REVIEW_ONLY_RESEARCH_ONLY`
 
 ## Recommended sequence
 
-- **376:** register the explicit manual rejection and the valid no-evaluation governance path.
-- **377–383:** preserve raw datasets and closed families; no adoption or recollection experiment without a new explicit manual review.
+- **376:** register the successful data-quality remediation result without promoting it to canonical data.
+- **377:** manual review of whether the remediated dataset may become a research-only candidate input.
+- **378:** verify that adoption would not reopen any closed family.
+- **379:** freeze a candidate research-dataset schema and lineage contract.
+- **380:** execute synthetic/fixture adoption dry-runs only.
+- **381–383:** integrity, rollback and coexistence audit against the raw datasets.
 - **384:** update the unified portal.
 - **385:** mandatory global full-suite and integrated checkpoint.
 
