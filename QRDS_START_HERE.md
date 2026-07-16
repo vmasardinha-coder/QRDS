@@ -49,11 +49,16 @@ DADOS → TESTES FINITOS → 0 SOBREVIVENTES → EVIDÊNCIA NEGATIVA SELADA
 > Esta página organiza a navegação. Ela não altera nenhum resultado científico.
 
 <!-- QRDS_CURRENT_STATUS_BEGIN -->
-## Status atual — Fase 364
+## Status atual — Fase 374
 
-- Remediação selecionada: `TIMESTAMP_CONSENSUS_ALIGNMENT_REMEDIATION_V1`
-- Contrato futuro congelado: `True`
-- Avaliação em dados reais iniciada: `False`
+- Modo do resultado: `MANUAL_REJECTION_NO_EVALUATION`
+- Decisão manual: `REJECT_REAL_DATA_REMEDIATION_EVALUATION`
+- Avaliação de remediação executada: `False`
+- Contrato de qualidade aplicável: `False`
+- Contrato de qualidade aprovado: `False`
+- Governança aprovada: `True`
+- Métricas de estratégia usadas: `False`
+- Próxima decisão: `REAL_DATA_REMEDIATION_EVALUATION_REJECTED_NO_GO_PRESERVED_RESEARCH_ONLY`
 - Estratégia aprovada: `False`
 - Capital utilizado: `R$ 0`
 - Abra o portal com `C:\QRDS\ABRIR_QRDS.ps1`.
