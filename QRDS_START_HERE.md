@@ -47,3 +47,14 @@ DADOS → TESTES FINITOS → 0 SOBREVIVENTES → EVIDÊNCIA NEGATIVA SELADA
 - [Roadmap 346–355](crypto_decision_lab/docs/reports/project_tracking/QRDS_ROADMAP_346_355_RESEARCH_ONLY.md)
 
 > Esta página organiza a navegação. Ela não altera nenhum resultado científico.
+
+<!-- QRDS_CURRENT_STATUS_BEGIN -->
+## Status atual — Fase 364
+
+- Remediação selecionada: `TIMESTAMP_CONSENSUS_ALIGNMENT_REMEDIATION_V1`
+- Contrato futuro congelado: `True`
+- Avaliação em dados reais iniciada: `False`
+- Estratégia aprovada: `False`
+- Capital utilizado: `R$ 0`
+- Abra o portal com `C:\QRDS\ABRIR_QRDS.ps1`.
+<!-- QRDS_CURRENT_STATUS_END -->
