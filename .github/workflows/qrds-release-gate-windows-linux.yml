@@ -1,0 +1,51 @@
+name: QRDS Release Gate Windows Linux
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "crypto_decision_lab/src/crypto_decision_lab/scripts/phase37*.py"
+      - "crypto_decision_lab/src/crypto_decision_lab/scripts/phase38*.py"
+      - "crypto_decision_lab/tests/unit/test_phase37*.py"
+      - "crypto_decision_lab/tests/unit/test_phase38*.py"
+      - "crypto_decision_lab/scripts/qrds_release_gate_376_385.ps1"
+      - ".github/workflows/qrds-release-gate-windows-linux.yml"
+permissions:
+  contents: read
+jobs:
+  python-targeted:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: crypto_decision_lab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q tests/unit/test_phase376_successful_data_quality_remediation_result_registry_research_only.py tests/unit/test_phase377_manual_noncanonical_research_input_adoption_review_research_only.py tests/unit/test_phase378_closed_family_isolation_audit_research_only.py tests/unit/test_phase379_noncanonical_research_dataset_schema_and_lineage_contract_research_only.py tests/unit/test_phase380_synthetic_noncanonical_adoption_dry_run_research_only.py tests/unit/test_phase381_noncanonical_research_dataset_integrity_audit_research_only.py tests/unit/test_phase382_rollback_and_raw_coexistence_audit_research_only.py tests/unit/test_phase383_release_harness_and_repetitive_failure_scanner_research_only.py tests/unit/test_phase384_noncanonical_research_dataset_adoption_portal_research_only.py tests/unit/test_phase385_noncanonical_research_dataset_adoption_full_integration_checkpoint_research_only.py
+  powershell-parse:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: powershell
+        run: |
+          $paths = @(
+            "crypto_decision_lab/scripts/qrds_release_gate_376_385.ps1",
+            "crypto_decision_lab/scripts/serve_phase384_remediated_dataset_adoption_portal.ps1"
+          )
+          $errors = @()
+          foreach ($path in $paths) {
+            [System.Management.Automation.Language.Token[]]$tokens = @()
+            [System.Management.Automation.Language.ParseError[]]$parseErrors = @()
+            $null = [System.Management.Automation.Language.Parser]::ParseFile(
+              [string]$path,
+              [ref]$tokens,
+              [ref]$parseErrors
+            )
+            foreach ($parseError in $parseErrors) { $errors += $parseError }
+          }
+          if ($errors.Count -gt 0) { $errors | Format-List; throw "PowerShell parse errors found." }

@@ -1,0 +1,22 @@
+from __future__ import annotations
+import argparse
+from pathlib import Path
+from typing import Any
+from crypto_decision_lab.scripts.phase376_385_remediated_dataset_adoption_common import CANDIDATE_SCHEMA, ROOT, base_payload, fingerprint, phase_summary, read_gzip_header, read_json, resolve_recorded_path, sha256_file, validate_phase, write_json, write_summary
+
+def build(phase367_path:Path,phase371_path:Path,phase377_path:Path,phase378_path:Path,output_dir:Path,*,project_root:Path|None=None)->dict[str,Any]:
+    items={367:read_json(phase367_path),371:read_json(phase371_path),377:read_json(phase377_path),378:read_json(phase378_path)}
+    for phase,p in items.items(): validate_phase(p,phase)
+    p367,p371,p377,p378=(items[367],items[371],items[377],items[378]); root=(project_root or ROOT).resolve()
+    path=resolve_recorded_path(root,p377.get("candidate_dataset_path")); expected=p377.get("candidate_dataset_sha256")
+    checks={"manual_adoption_approved":p377.get("candidate_adoption_approved") is True,"closed_family_isolation_pass":p378.get("isolation_pass") is True,"lineage_audit_pass":p371.get("lineage_audit_pass") is True,"candidate_file_exists":path is not None and path.is_file(),"candidate_hash_matches":path is not None and path.is_file() and sha256_file(path)==expected,"candidate_schema_matches":path is not None and path.is_file() and read_gzip_header(path)==CANDIDATE_SCHEMA}
+    failed=sorted(k for k,v in checks.items() if not v)
+    if failed: raise RuntimeError(f"Phase 379 candidate contract freeze failed; failed_checks={failed!r}.")
+    contract={"contract_version":"NONCANONICAL_RESEARCH_INPUT_V1","candidate_status":"ADOPTED_NONCANONICAL_RESEARCH_INPUT","evaluation_id":p367.get("evaluation_id"),"candidate_dataset_path":p377.get("candidate_dataset_path"),"candidate_dataset_sha256":expected,"schema_fields":list(CANDIDATE_SCHEMA),"input_lineage":p367.get("input_lineage",[]),"allowed_uses":["DATA_QUALITY_RESEARCH","FEATURE_ENGINEERING_FIXTURE_DRY_RUN","READ_ONLY_OBSERVATION"],"forbidden_uses":["CANONICAL_REPLACEMENT","CLOSED_FAMILY_RETEST","STRATEGY_SIGNAL","ALLOCATION","ORDER","CAPITAL"],"rollback_method":"REMOVE_METADATA_REGISTRY_REFERENCE_ONLY","canonical_data_writes":0}
+    payload=base_payload(379,"NONCANONICAL_RESEARCH_DATASET_CONTRACT_FROZEN_RESEARCH_ONLY"); payload.update({"gate":"PHASE379_NONCANONICAL_RESEARCH_DATASET_SCHEMA_AND_LINEAGE_CONTRACT_READY_RESEARCH_ONLY","freeze_checks":checks,"failed_checks":[],"candidate_contract_frozen":True,"candidate_contract":contract,"candidate_contract_fingerprint":fingerprint(contract),"candidate_dataset_adopted_noncanonical":True,"candidate_dataset_adopted_canonical":False,"canonical_data_writes":0})
+    payload["artifact_fingerprint"]=fingerprint(payload); output_dir.mkdir(parents=True,exist_ok=True); write_json(output_dir/"phase379_noncanonical_research_dataset_schema_and_lineage_contract.json",payload)
+    write_summary(phase_summary(379,"noncanonical_research_dataset_schema_and_lineage_contract"),title="Phase 379 — Noncanonical Research-dataset Schema and Lineage Contract",gate=payload["gate"],bullets=["Candidate contract frozen: `True`",f"Schema fields: `{len(CANDIDATE_SCHEMA)}`",f"Raw lineage inputs: `{len(contract['input_lineage'])}`","Canonical adoption: `False`","Canonical data writes: `0`"]) ; return payload
+
+def main()->int:
+    a=argparse.ArgumentParser(); art=ROOT/"artifacts"; a.add_argument("--phase367-artifact",type=Path,default=art/"phase367_one_real_data_remediation_evaluation_research_only/phase367_one_real_data_remediation_evaluation.json"); a.add_argument("--phase371-artifact",type=Path,default=art/"phase371_remediation_lineage_and_hash_audit_research_only/phase371_remediation_lineage_and_hash_audit.json"); a.add_argument("--phase377-artifact",type=Path,default=art/"phase377_manual_noncanonical_research_input_adoption_review_research_only/phase377_manual_noncanonical_research_input_adoption_review.json"); a.add_argument("--phase378-artifact",type=Path,default=art/"phase378_closed_family_isolation_audit_research_only/phase378_closed_family_isolation_audit.json"); a.add_argument("--output-dir",type=Path,default=art/"phase379_noncanonical_research_dataset_schema_and_lineage_contract_research_only"); x=a.parse_args(); p=build(x.phase367_artifact,x.phase371_artifact,x.phase377_artifact,x.phase378_artifact,x.output_dir); print(p["gate"]); print("Candidate contract frozen:",p["candidate_contract_frozen"]); return 0
+if __name__=="__main__": raise SystemExit(main())

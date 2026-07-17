@@ -63,3 +63,10 @@ DADOS → TESTES FINITOS → 0 SOBREVIVENTES → EVIDÊNCIA NEGATIVA SELADA
 - Capital utilizado: `R$ 0`
 - Abra o portal com `C:\QRDS\ABRIR_QRDS.ps1`.
 <!-- QRDS_CURRENT_STATUS_END -->
+
+<!-- BEGIN QRDS CURRENT WINDOW -->
+## Janela atual — Fase 384
+
+- Phase 384 — Dataset remediado adotado somente como entrada não canônica de pesquisa: `artifacts/phase384_noncanonical_research_dataset_adoption_portal_research_only/index.html`
+- Abrir pelo launcher: `& 'C:\QRDS\ABRIR_QRDS.ps1'`
+<!-- END QRDS CURRENT WINDOW -->

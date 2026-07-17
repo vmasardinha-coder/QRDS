@@ -13,3 +13,8 @@ Detected local portals: **5**
 | 304 | `artifacts/phase304_nested_walk_forward_v2_research_only/portal/index.html` | `7492dbb67c33b448014941cb1475764cab8c6463bff7134730f57654eef6231a` |
 
 Use the root launcher `ABRIR_QRDS.ps1` after Phase 354 to open the current portal automatically.
+
+<!-- BEGIN QRDS CURRENT PORTAL -->
+- Phase 384 — Dataset remediado adotado somente como entrada não canônica de pesquisa: `artifacts/phase384_noncanonical_research_dataset_adoption_portal_research_only/index.html`
+- Abrir pelo launcher: `& 'C:\QRDS\ABRIR_QRDS.ps1'`
+<!-- END QRDS CURRENT PORTAL -->
