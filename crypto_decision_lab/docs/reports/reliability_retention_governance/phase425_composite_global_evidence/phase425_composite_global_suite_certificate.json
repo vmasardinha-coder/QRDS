@@ -1,0 +1,53 @@
+{
+    "schema":  "qrds.phase425.composite_global_suite_certificate.v1",
+    "phase":  425,
+    "generated_at":  "2026-07-19T12:22:25.3771552-03:00",
+    "base_head":  "26b8cee8041b4132434c3d3aa9849905017441bf",
+    "branch":  "main",
+    "evidence_type":  "COMPOSITE_SPLIT_ENVIRONMENT",
+    "verdict":  "VALIDATED_PASS_WITH_SCOPE_NOTE",
+    "full_manifest":  {
+                          "files":  664,
+                          "fingerprint_sha256":  "502fb3a3a38d871677ca9a5bf4d39488f96fc9ce049fbc100d0021fbd1769e4c"
+                      },
+    "local_windows":  {
+                          "range":  "1-603",
+                          "files":  603,
+                          "tests":  1315,
+                          "failures":  0,
+                          "errors":  0,
+                          "skipped":  0,
+                          "continuous_single_environment":  false
+                      },
+    "remote_anthropic_linux":  {
+                                   "range":  "604-664",
+                                   "files":  61,
+                                   "tests":  268,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0,
+                                   "duration_seconds":  20.637,
+                                   "archive_sha256":  "6c6d2d3a5a671d2385971bd24c87d5b90c393c462140c3fb047f153e30a0bc64"
+                               },
+    "composite":  {
+                      "files":  664,
+                      "tests":  1583,
+                      "failures":  0,
+                      "errors":  0,
+                      "skipped":  0
+                  },
+    "scope_note":  "Composite coverage only: files 1-603 were certified on Windows and files 604-664 in an Anthropic-managed Linux VM. This is not one uninterrupted run on a single operating system.",
+    "documentation_gap":  "The remote ZIP did not include a final cloud git status/diff artifact. No cloud source changes are imported.",
+    "strategy":  {
+                     "strategy_approved":  false,
+                     "selection_stable":  false,
+                     "paper_trading_started":  false,
+                     "real_orders":  0,
+                     "capital_used_brl":  0
+                 },
+    "safety":  [
+                   "BLOCKED_RESEARCH_ONLY",
+                   "NO_ACTION_RESEARCH_ONLY",
+                   "decision_layer_allowed=False"
+               ]
+}

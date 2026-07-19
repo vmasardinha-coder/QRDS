@@ -1,0 +1,95 @@
+QRDS/GATE BTC - PHASE 425 REMOTE RESULTS INDEPENDENT VALIDATION
+================================================================
+Validation date: 2026-07-19
+Validator: ChatGPT independent archive inspection
+
+INPUTS
+------
+Remote archive: phase425_remote_604_664_results.zip
+Archive size: 85,571 bytes
+Archive SHA-256: 6c6d2d3a5a671d2385971bd24c87d5b90c393c462140c3fb047f153e30a0bc64
+External summary: summary.txt
+External summary SHA-256: ba5dcd9e091159abd85e43e8e8c4c9c834a200ae9ffe86fa24a155ae283b8454
+The external summary is byte-identical to summary.txt inside the ZIP.
+
+ARCHIVE INTEGRITY
+-----------------
+ZIP CRC/integrity test: PASS
+Unsafe or path-traversal entries: 0
+Archive entries: 127
+  - JUnit XML files: 61
+  - Per-file logs: 61
+  - Control/metadata files: 5
+
+CONTROL FILES
+-------------
+manifest_604_664.json SHA-256: 52e67a039b86f00748d72137db5c5587a4a466f8d435553114b9f6b154dbd1f2
+summary.json SHA-256: f4cf6462b81d245f9f9a0601061e59f80be8414b4ef5fb3664c4e545a1aae474
+progress/progress.json SHA-256: f8c3fb1dc7ad85b803161aa552be64c2e53856113ccfcb8e06b1d30b53afdd5a
+full_manifest_fingerprint.txt SHA-256: e3ef8cada15061248f8f0108d5655d197ba18757c78e7aca9c1f5f131dbf4c82
+summary.txt SHA-256: ba5dcd9e091159abd85e43e8e8c4c9c834a200ae9ffe86fa24a155ae283b8454
+
+EXECUTION IDENTITY
+------------------
+Base HEAD: 26b8cee8041b4132434c3d3aa9849905017441bf
+Full sorted manifest count reported: 664 files
+Full manifest fingerprint reported:
+502fb3a3a38d871677ca9a5bf4d39488f96fc9ce049fbc100d0021fbd1769e4c
+Remote range: 604-664 inclusive
+Expected remote files: 61
+Executed remote files: 61
+Index sequence complete and unique: PASS (604 through 664, no gaps)
+
+CROSS-VALIDATION PERFORMED
+--------------------------
+- Every result entry matched the corresponding manifest index, path, and source SHA-256.
+- Every result entry matched progress/progress.json.
+- Every referenced JUnit XML and log existed.
+- Every JUnit XML parsed successfully.
+- Every JUnit SHA-256 matched the actual archived XML bytes.
+- Every log SHA-256 matched the actual archived log bytes.
+- XML counts independently summed to the summary totals.
+- All 61 return codes were zero.
+- No environment error was recorded.
+- Per-file durations summed exactly to 20.637 seconds.
+
+REMOTE RESULT
+-------------
+Files: 61 / 61
+Tests: 268
+Failures: 0
+Errors: 0
+Skipped: 0
+Duration: 20.637 seconds
+Verdict: PASS
+
+COMPOSITE GLOBAL COVERAGE
+-------------------------
+Previously stabilized local certificate: 603 files / 1,315 tests / 0 failures / 0 errors.
+New remote certificate: 61 files / 268 tests / 0 failures / 0 errors.
+Composite coverage: 664 files / 1,583 tests / 0 failures / 0 errors / 0 skipped.
+
+IMPORTANT SCOPE NOTE
+--------------------
+This is a COMPOSITE/SPLIT-ENVIRONMENT global certificate, not one uninterrupted
+664-file execution in a single process or on one operating system:
+- files 1-603 were certified locally on Windows before the BSOD boundary;
+- files 604-664 were certified in the Anthropic-managed Linux cloud VM.
+
+The ZIP does not contain a final Git status/diff artifact proving that no cloud
+workspace path outside claude_phase425_remote_results changed. The summaries also
+do not include that requested field. This is an evidence-documentation gap only;
+it does not invalidate the JUnit results. No cloud source changes are being imported,
+and the local dispatcher independently confirmed no local tests, commit, or push and
+returned the local staging area to zero.
+
+FINAL INDEPENDENT VERDICT
+-------------------------
+VALIDATED_PASS_WITH_SCOPE_NOTE
+
+The 61 remote files and 268 remote tests are independently validated as PASS.
+The project may record full 664-file / 1,583-test composite coverage, but should label
+it explicitly as split-environment evidence and retain the scope note above.
+
+Permanent safety remains unchanged:
+BLOCKED_RESEARCH_ONLY | NO_ACTION_RESEARCH_ONLY | capital R$0 | position 0
