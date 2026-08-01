@@ -1,0 +1,43 @@
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QRDS Journal Replay Release Checkpoint</title>
+  <style>
+    body{font-family:system-ui;background:#07111f;color:#e7edf8;padding:32px}
+    table{border-collapse:collapse;width:100%;background:#101f35}
+    th,td{border:1px solid #28415f;padding:10px;text-align:left;vertical-align:top}
+    .badge{display:inline-block;padding:6px 10px;border:1px solid #28415f;border-radius:999px;margin:4px}
+  </style>
+</head>
+<body>
+  <h1>QRDS Journal Replay Release Checkpoint</h1>
+  <p>PHASE78_JOURNAL_REPLAY_RELEASE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY</p>
+  <p class="badge">Operational: BLOCKED_RESEARCH_ONLY</p>
+  <p class="badge">dry_run_only: True</p>
+  <p class="badge">replay_execution_allowed: False</p>
+  <p class="badge">Edge: False</p>
+  <p class="badge">Shadow decision allowed: False</p>
+  <p class="badge">Decision layer allowed: False</p>
+  <p class="badge">Promotion allowed: False</p>
+  <p class="badge">safe_apply_allowed: False</p>
+  <p class="badge">canonical_data_writes: 0</p>
+
+  <h2>Checkpoint</h2>
+  <p>Ready: False</p>
+  <p>Required phases: 6</p>
+  <p>Detected phases: 0</p>
+  <p>Missing phases: [72, 73, 74, 75, 76, 77]</p>
+
+  <h2>Capabilities</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Capability</th><th>Status</th><th>Purpose</th></tr></thead>
+    <tbody><tr><td>72</td><td>journal_replay_dry_run_engine</td><td>READY_RESEARCH_ONLY</td><td>Paper-only replay calculation without execution.</td></tr><tr><td>73</td><td>journal_replay_aggregate_metrics</td><td>READY_RESEARCH_ONLY</td><td>Descriptive aggregate paper metrics.</td></tr><tr><td>74</td><td>journal_replay_distribution_diagnostics</td><td>READY_RESEARCH_ONLY</td><td>Distribution, outlier, concentration and drawdown-like diagnostics.</td></tr><tr><td>75</td><td>journal_replay_quality_flags</td><td>READY_RESEARCH_ONLY</td><td>Quality flags that prevent false edge interpretation.</td></tr><tr><td>76</td><td>journal_replay_evidence_scorecard_v2</td><td>READY_RESEARCH_ONLY</td><td>Unified descriptive evidence scorecard and blockers to edge.</td></tr><tr><td>77</td><td>journal_replay_portal_index</td><td>READY_RESEARCH_ONLY</td><td>Navigable research portal for replay artifacts.</td></tr></tbody>
+  </table>
+
+  <h2>Boundary</h2>
+  <p>This checkpoint confirms the replay layer is descriptive research only. It does not validate edge,
+  generate trading signals, recommendations, allocations, shadow decisions, operational decisions,
+  safe-apply, promotion or canonical writes.</p>
+</body>
+</html>
