@@ -61,3 +61,36 @@ jobs:
           path: artifacts/
           retention-days: 14
           if-no-files-found: error
+
+  public-data-close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            migration/canonical/v2a/requirements.txt
+            migration/canonical/delta/requirements.txt
+      - name: Install canonical research dependencies
+        run: pip install -r migration/canonical/v2a/requirements.txt -r migration/canonical/delta/requirements.txt
+      - name: Prepare public-close artifact directories
+        run: mkdir -p artifacts
+      - name: Run unified QOS public-close orchestration
+        run: python tools/qos_orchestrator.py --public-data --output-dir artifacts/qos_public_close
+      - name: Generate dated migration evidence
+        if: always()
+        run: python tools/gate_btc_migration_runner.py --output-dir artifacts/gate_btc_migration
+      - name: Upload public-close evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-public-close-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 14
+          if-no-files-found: error
