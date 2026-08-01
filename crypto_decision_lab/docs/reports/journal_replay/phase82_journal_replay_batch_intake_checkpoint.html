@@ -1,0 +1,43 @@
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QRDS Journal Replay Batch Intake Checkpoint</title>
+  <style>
+    body{font-family:system-ui;background:#07111f;color:#e7edf8;padding:32px}
+    table{border-collapse:collapse;width:100%;background:#101f35}
+    th,td{border:1px solid #28415f;padding:10px;text-align:left;vertical-align:top}
+    .badge{display:inline-block;padding:6px 10px;border:1px solid #28415f;border-radius:999px;margin:4px}
+  </style>
+</head>
+<body>
+  <h1>QRDS Journal Replay Batch Intake Checkpoint</h1>
+  <p>PHASE82_JOURNAL_REPLAY_BATCH_INTAKE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY</p>
+  <p class="badge">Operational: BLOCKED_RESEARCH_ONLY</p>
+  <p class="badge">loader_execution_allowed: False</p>
+  <p class="badge">replay_execution_allowed: False</p>
+  <p class="badge">Edge: False</p>
+  <p class="badge">Shadow decision allowed: False</p>
+  <p class="badge">Decision layer allowed: False</p>
+  <p class="badge">Promotion allowed: False</p>
+  <p class="badge">safe_apply_allowed: False</p>
+  <p class="badge">canonical_data_writes: 0</p>
+
+  <h2>Checkpoint</h2>
+  <p>Ready: False</p>
+  <p>Required phases: 3</p>
+  <p>Detected phases: 0</p>
+  <p>Missing phases: [79, 80, 81]</p>
+
+  <h2>Capabilities</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Capability</th><th>Status</th><th>Purpose</th></tr></thead>
+    <tbody><tr><td>79</td><td>journal_replay_batch_loader</td><td>READY_RESEARCH_ONLY</td><td>Loads external/staging JSON batches and validates structure.</td></tr><tr><td>80</td><td>journal_replay_batch_quarantine</td><td>READY_RESEARCH_ONLY</td><td>Creates quarantine bundles for invalid batches or entries.</td></tr><tr><td>81</td><td>journal_replay_quarantine_index</td><td>READY_RESEARCH_ONLY</td><td>Indexes quarantine bundles for human review.</td></tr></tbody>
+  </table>
+
+  <h2>Boundary</h2>
+  <p>This checkpoint confirms batch intake is descriptive research only. It does not unlock replay execution,
+  edge validation, trading signals, recommendations, allocations, shadow decisions, operational decisions,
+  safe-apply, promotion or canonical writes.</p>
+</body>
+</html>
