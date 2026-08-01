@@ -1,0 +1,32 @@
+{
+  "version": "QOS_V2A_INTEGRITY_0.4",
+  "execution_lag_daily_bars": 1,
+  "exclude_partial_current_month_from_backtest": true,
+  "operational_status": "NOT_APPROVED_RESEARCH_ONLY",
+  "top_n_coingecko": 250,
+  "max_assets_to_fetch": 150,
+  "start_date": "2020-01-01",
+  "initial_brl": 173000,
+  "stable_return_annual": 0.045,
+  "fee_bps_per_rebalance_trade": 10,
+  "slippage_bps_per_rebalance_trade": 15,
+  "monte_carlo_paths": 10000,
+  "monte_carlo_horizon_days": 365,
+  "monte_carlo_block_days": 5,
+  "random_seed": 20260719,
+  "stable_symbols": ["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDD", "USDE", "BUSD", "USDS", "PYUSD", "USD1", "FRAX", "LUSD", "SUSD", "USDP", "GUSD", "EURS", "EURC", "UST", "USTC"],
+  "strategies": {
+    "QOS_Conservadora": {"btc": 0.49, "eth": 0.21, "alts": 0.15, "cash": 0.15, "n_alts": 5},
+    "QOS_Moderada": {"btc": 0.42, "eth": 0.18, "alts": 0.30, "cash": 0.10, "n_alts": 8},
+    "QOS_Agressiva_Controlada": {"btc": 0.315, "eth": 0.135, "alts": 0.45, "cash": 0.10, "n_alts": 10},
+    "QOS_Ultra": {"btc": 0.21, "eth": 0.09, "alts": 0.60, "cash": 0.10, "n_alts": 12}
+  },
+  "score_weights": {
+    "mom90": 0.25,
+    "mom180": 0.20,
+    "relbtc90": 0.20,
+    "vol_growth": 0.15,
+    "risk_adj": 0.10,
+    "liquidity": 0.10
+  }
+}
