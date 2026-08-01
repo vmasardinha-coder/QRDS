@@ -32,6 +32,24 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _provenance() -> dict[str, str]:
+    checked_out_commit = os.environ.get("GITHUB_SHA") or _git("rev-parse", "HEAD")
+    checked_out_ref = os.environ.get("GITHUB_REF_NAME") or _git("branch", "--show-current")
+    return {
+        "checked_out_commit": checked_out_commit,
+        "checked_out_ref": checked_out_ref,
+        "source_head_sha": os.environ.get("GATE_BTC_SOURCE_HEAD_SHA") or checked_out_commit,
+        "source_head_ref": (
+            os.environ.get("GATE_BTC_SOURCE_HEAD_REF")
+            or os.environ.get("GITHUB_HEAD_REF")
+            or checked_out_ref
+        ),
+        "base_sha": os.environ.get("GATE_BTC_BASE_SHA", ""),
+        "base_ref": os.environ.get("GATE_BTC_BASE_REF", ""),
+        "github_event_name": os.environ.get("GITHUB_EVENT_NAME", "LOCAL"),
+    }
+
+
 def run(output_dir: Path) -> tuple[dict, Path, Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
@@ -50,12 +68,16 @@ def run(output_dir: Path) -> tuple[dict, Path, Path, Path]:
         errors.append(traceback.format_exc())
     finished = datetime.now(timezone.utc)
     status = "PASS" if not errors else "ERROR"
+    provenance = _provenance()
     manifest = {
         "schema": "gate-btc-migration-evidence-v1", "status": status,
         "stage_reached": "REMOTE_RUNNER_SAFETY_SMOKE",
         "started_at_utc": started.isoformat(), "finished_at_utc": finished.isoformat(),
-        "git_commit": os.environ.get("GITHUB_SHA") or _git("rev-parse", "HEAD"),
-        "git_ref": os.environ.get("GITHUB_REF_NAME") or _git("branch", "--show-current"),
+        "git_commit": provenance["checked_out_commit"],
+        "git_ref": provenance["checked_out_ref"],
+        "source_head_sha": provenance["source_head_sha"],
+        "source_head_ref": provenance["source_head_ref"],
+        "provenance": provenance,
         "github_run_id": os.environ.get("GITHUB_RUN_ID", "LOCAL"),
         "network_actions": "NONE_BY_RUNNER", "locks": LOCKS, "errors": errors,
         "next_action": "COMPARE_WITH_LOCAL_REFERENCE" if status == "PASS" else "REPAIR_BEFORE_MIGRATION",
@@ -64,7 +86,12 @@ def run(output_dir: Path) -> tuple[dict, Path, Path, Path]:
     lines = ["GATE BTC — QRDS/QOS MIGRATION REPORT", f"STATUS={status}",
              "STAGE_REACHED=REMOTE_RUNNER_SAFETY_SMOKE",
              f"STARTED_AT_UTC={manifest['started_at_utc']}", f"FINISHED_AT_UTC={manifest['finished_at_utc']}",
-             f"GIT_COMMIT={manifest['git_commit']}", f"GIT_REF={manifest['git_ref']}",
+             f"CHECKED_OUT_COMMIT={provenance['checked_out_commit']}",
+             f"CHECKED_OUT_REF={provenance['checked_out_ref']}",
+             f"SOURCE_HEAD_SHA={provenance['source_head_sha']}",
+             f"SOURCE_HEAD_REF={provenance['source_head_ref']}",
+             f"BASE_SHA={provenance['base_sha']}", f"BASE_REF={provenance['base_ref']}",
+             f"GITHUB_EVENT_NAME={provenance['github_event_name']}",
              f"GITHUB_RUN_ID={manifest['github_run_id']}", "RESEARCH_ONLY=True",
              "ORDERS_ALLOWED=False", "ORDERS_GENERATED=0", "REAL_CAPITAL_USED=0",
              "PROMOTION_ALLOWED=False", "OPERATIONAL_STATUS=NOT_APPROVED",
