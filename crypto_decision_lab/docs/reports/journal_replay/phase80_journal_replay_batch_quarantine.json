@@ -1,0 +1,86 @@
+{
+  "allocation_generated": false,
+  "app_mode": "INTERACTIVE_RESEARCH_ONLY",
+  "canonical_data_writes": 0,
+  "created_at_utc": "2026-07-07T14:19:47.662380+00:00",
+  "decision_layer_allowed": false,
+  "edge_operationally_validated": false,
+  "edge_validated": false,
+  "gate": "PHASE80_JOURNAL_REPLAY_BATCH_QUARANTINE_RESEARCH_ONLY_READY_RESEARCH_ONLY",
+  "operational_decision_allowed": false,
+  "operational_status": "BLOCKED_RESEARCH_ONLY",
+  "policy_lock": "ACTIVE",
+  "promotion_allowed": false,
+  "ready": true,
+  "recommendation_generated": false,
+  "safe_apply_allowed": false,
+  "sample_bad_batch_quarantine": {
+    "allocation_generated": false,
+    "batch_id": "sample-bad-batch-80",
+    "batch_loader_descriptive_only": true,
+    "batch_validation_errors": [
+      "batch_research_only_ack_must_be_true"
+    ],
+    "canonical_data_writes": 0,
+    "decision_layer_allowed": false,
+    "edge_operationally_validated": false,
+    "edge_validated": false,
+    "human_review_required": true,
+    "invalid_entries": [
+      {
+        "errors": [
+          "research_only_ack_must_be_true",
+          "action_must_be_paper_only"
+        ],
+        "index": 0,
+        "raw_entry": {
+          "asset": "BTC",
+          "entry_reference_price": 100000.0,
+          "exit_reference_price": 101000.0,
+          "journal_id": "bad-001",
+          "paper_size_notional": 1000.0,
+          "research_only_ack": false,
+          "would_have_action": "buy"
+        }
+      }
+    ],
+    "invalid_entry_count": 1,
+    "loader_execution_allowed": false,
+    "operational_decision_allowed": false,
+    "operational_status": "BLOCKED_RESEARCH_ONLY",
+    "promotion_allowed": false,
+    "quarantine_reason": "batch_or_entry_validation_failed",
+    "quarantine_required": true,
+    "recommendation_generated": false,
+    "replay_execution_allowed": false,
+    "safe_apply_allowed": false,
+    "shadow_decision_allowed": false,
+    "trading_signal_generated": false
+  },
+  "sample_safe_batch_quarantine": {
+    "allocation_generated": false,
+    "batch_id": "sample-batch-79",
+    "batch_loader_descriptive_only": true,
+    "batch_validation_errors": [],
+    "canonical_data_writes": 0,
+    "decision_layer_allowed": false,
+    "edge_operationally_validated": false,
+    "edge_validated": false,
+    "human_review_required": true,
+    "invalid_entries": [],
+    "invalid_entry_count": 0,
+    "loader_execution_allowed": false,
+    "operational_decision_allowed": false,
+    "operational_status": "BLOCKED_RESEARCH_ONLY",
+    "promotion_allowed": false,
+    "quarantine_reason": "not_required",
+    "quarantine_required": false,
+    "recommendation_generated": false,
+    "replay_execution_allowed": false,
+    "safe_apply_allowed": false,
+    "shadow_decision_allowed": false,
+    "trading_signal_generated": false
+  },
+  "shadow_decision_allowed": false,
+  "trading_signal_generated": false
+}

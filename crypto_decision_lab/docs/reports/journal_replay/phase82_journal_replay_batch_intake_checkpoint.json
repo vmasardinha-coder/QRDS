@@ -1,0 +1,72 @@
+{
+  "allocation_generated": false,
+  "app_mode": "INTERACTIVE_RESEARCH_ONLY",
+  "canonical_data_writes": 0,
+  "capability_map": [
+    {
+      "capability": "journal_replay_batch_loader",
+      "phase": 79,
+      "purpose": "Loads external/staging JSON batches and validates structure.",
+      "status": "READY_RESEARCH_ONLY"
+    },
+    {
+      "capability": "journal_replay_batch_quarantine",
+      "phase": 80,
+      "purpose": "Creates quarantine bundles for invalid batches or entries.",
+      "status": "READY_RESEARCH_ONLY"
+    },
+    {
+      "capability": "journal_replay_quarantine_index",
+      "phase": 81,
+      "purpose": "Indexes quarantine bundles for human review.",
+      "status": "READY_RESEARCH_ONLY"
+    }
+  ],
+  "checkpoint": {
+    "allocation_generated": false,
+    "batch_intake_checkpoint_ready_for_research_only": false,
+    "batch_loader_descriptive_only": true,
+    "canonical_data_writes": 0,
+    "decision_layer_allowed": false,
+    "detected_phase_count": 0,
+    "detected_phases": [],
+    "edge_operationally_validated": false,
+    "edge_validated": false,
+    "human_review_required": true,
+    "loader_execution_allowed": false,
+    "missing_phases": [
+      79,
+      80,
+      81
+    ],
+    "operational_decision_allowed": false,
+    "operational_status": "BLOCKED_RESEARCH_ONLY",
+    "promotion_allowed": false,
+    "quarantine_index_descriptive_only": true,
+    "recommendation_generated": false,
+    "replay_execution_allowed": false,
+    "required_phase_count": 3,
+    "safe_apply_allowed": false,
+    "shadow_decision_allowed": false,
+    "trading_signal_generated": false
+  },
+  "created_at_utc": "2026-07-07T14:19:47.723553+00:00",
+  "decision_layer_allowed": false,
+  "edge_operationally_validated": false,
+  "edge_validated": false,
+  "gate": "PHASE82_JOURNAL_REPLAY_BATCH_INTAKE_CHECKPOINT_RESEARCH_ONLY_READY_RESEARCH_ONLY",
+  "operational_decision_allowed": false,
+  "operational_status": "BLOCKED_RESEARCH_ONLY",
+  "policy_lock": "ACTIVE",
+  "promotion_allowed": false,
+  "ready": true,
+  "recommendation_generated": false,
+  "required_phases": {
+    "79": "PHASE79_JOURNAL_REPLAY_BATCH_LOADER_RESEARCH_ONLY_READY_RESEARCH_ONLY",
+    "80": "PHASE80_JOURNAL_REPLAY_BATCH_QUARANTINE_RESEARCH_ONLY_READY_RESEARCH_ONLY",
+    "81": "PHASE81_JOURNAL_REPLAY_QUARANTINE_INDEX_RESEARCH_ONLY_READY_RESEARCH_ONLY"
+  },
+  "safe_apply_allowed": false,
+  "shadow_decision_allowed": false,
+  "trading_signal_generated": false
+}
