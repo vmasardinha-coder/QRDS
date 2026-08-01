@@ -51,6 +51,31 @@ class QOSParityTests(unittest.TestCase):
             self.assertEqual(result["status"], "ERROR")
             self.assertFalse(result["equivalence_claim"])
 
+    def test_public_mode_vocabulary_and_delta_close_are_normalized(self):
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            root = Path(directory)
+            local = root / "local.zip"
+            remote = root / "remote.zip"
+            _zip(local, "RUN_STATUS.json", {
+                "mode": "public_data_no_api_key_no_orders", "operational_status": "NOT_APPROVED",
+                "real_orders": 0, "capital_used": 0,
+                "component_status": {"delta": {"data_as_of": "2026-07-31"}},
+            })
+            _zip(remote, "QOS_ORCHESTRATION_MANIFEST_1.json", {
+                "status": "PASS_WITH_GATEWAY_PENDING",
+                "mode": "public_data_no_private_api_no_orders",
+                "component_data_as_of": {"v2a": "2026-08-01", "delta": "2026-07-31"},
+                "engines": [{"name": "V2A", "status": "PASS"}, {"name": "Delta", "status": "PASS"}],
+                "gateway": {"state": "PENDING_SOURCE"},
+                "locks": {"operational_status": "NOT_APPROVED", "orders_generated": 0,
+                          "real_capital_used": 0},
+            })
+            result = compare(local, remote)
+            self.assertTrue(result["checks"]["matched_mode"])
+            self.assertTrue(result["checks"]["matched_close"])
+            self.assertFalse(result["checks"]["gateway_executed_remote"])
+            self.assertEqual(result["status"], "STRUCTURAL_PASS_VALUE_PARITY_PENDING")
+
 
 if __name__ == "__main__":
     unittest.main()
