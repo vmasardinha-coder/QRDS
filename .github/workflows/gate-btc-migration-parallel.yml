@@ -1,0 +1,43 @@
+name: GATE BTC Migration Parallel Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/gate-btc-actions-migration]
+    paths:
+      - .github/workflows/gate-btc-migration-parallel.yml
+      - tools/gate_btc_migration_runner.py
+      - tests/test_gate_btc_migration_runner.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-migration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  research-only-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate fail-closed runner
+        run: python -m unittest -v tests/test_gate_btc_migration_runner.py
+      - name: Generate dated evidence
+        if: always()
+        run: python tools/gate_btc_migration_runner.py --output-dir artifacts/gate_btc_migration
+      - name: Upload TXT JSON and ZIP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-migration-${{ github.run_id }}
+          path: artifacts/gate_btc_migration/
+          retention-days: 14
+          if-no-files-found: error
