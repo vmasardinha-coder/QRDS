@@ -7,8 +7,13 @@ on:
     paths:
       - .github/workflows/gate-btc-migration-parallel.yml
       - tools/gate_btc_migration_runner.py
+      - tools/qos_orchestrator.py
+      - tools/validate_gateway_output_contract.py
       - tests/test_gate_btc_migration_runner.py
+      - tests/test_qos_orchestrator.py
+      - tests/test_gateway_output_contract.py
       - migration/canonical/**
+      - migration/gateway/**
 
 permissions:
   contents: read
@@ -20,7 +25,7 @@ concurrency:
 jobs:
   research-only-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       GATE_BTC_RESEARCH_ONLY: "true"
       PYTHONDONTWRITEBYTECODE: "1"
@@ -35,22 +40,20 @@ jobs:
             migration/canonical/delta/requirements.txt
       - name: Install canonical research dependencies
         run: pip install -r migration/canonical/v2a/requirements.txt -r migration/canonical/delta/requirements.txt
-      - name: Validate fail-closed runner
-        run: python -m unittest -v tests/test_gate_btc_migration_runner.py
-      - name: Prepare canonical fixture artifacts
+      - name: Validate repository safety and contracts
+        run: python -m unittest -v tests/test_gate_btc_migration_runner.py tests/test_gateway_output_contract.py tests/test_qos_orchestrator.py
+      - name: Prepare artifact directories
         run: mkdir -p artifacts
-      - name: Validate canonical V2A offline fixture
-        run: python migration/canonical/v2a/scripts/00_run_all_v2a.py --fixture-mode --output-zip artifacts/v2a_fixture.zip
-      - name: Validate canonical Delta offline fixture
-        run: python migration/canonical/delta/scripts/00_run_delta_v11.py --fixture-mode --output-zip artifacts/delta_fixture.zip
-      - name: Generate dated evidence
+      - name: Run unified QOS fixture orchestration
+        run: python tools/qos_orchestrator.py --output-dir artifacts/qos_orchestration
+      - name: Generate dated migration evidence
         if: always()
         run: python tools/gate_btc_migration_runner.py --output-dir artifacts/gate_btc_migration
-      - name: Upload TXT JSON and ZIP
+      - name: Upload QOS and migration evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-migration-${{ github.run_id }}
-          path: artifacts/gate_btc_migration/
+          path: artifacts/
           retention-days: 14
           if-no-files-found: error
