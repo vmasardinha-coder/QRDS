@@ -11,9 +11,11 @@ on:
       - tools/gate_btc_migration_runner.py
       - tools/qos_orchestrator.py
       - tools/validate_gateway_output_contract.py
+      - tools/compare_qos_runs.py
       - tests/test_gate_btc_migration_runner.py
       - tests/test_qos_orchestrator.py
       - tests/test_gateway_output_contract.py
+      - tests/test_compare_qos_runs.py
       - migration/canonical/**
       - migration/gateway/**
 
@@ -43,7 +45,7 @@ jobs:
       - name: Install canonical research dependencies
         run: pip install -r migration/canonical/v2a/requirements.txt -r migration/canonical/delta/requirements.txt
       - name: Validate repository safety and contracts
-        run: python -m unittest -v tests/test_gate_btc_migration_runner.py tests/test_gateway_output_contract.py tests/test_qos_orchestrator.py
+        run: python -m unittest -v tests/test_gate_btc_migration_runner.py tests/test_gateway_output_contract.py tests/test_qos_orchestrator.py tests/test_compare_qos_runs.py
       - name: Prepare artifact directories
         run: mkdir -p artifacts
       - name: Run unified QOS fixture orchestration

@@ -13,8 +13,12 @@ The existing Google/Windows routine remains the reference implementation during 
 ## Pending before local shutdown
 
 6. Recover and wire the canonical Gateway/QOS calculation entrypoints.
-7. Run Google/Windows and GitHub in parallel on matching close dates.
-8. Compare hashes, observations, compositions, metrics and timestamps.
+7. Run Google/Windows and GitHub in parallel on matching close dates. The
+   fail-closed package comparator is implemented; a fixture run may validate
+   structure but can never claim value parity.
+8. Compare hashes, observations, compositions, metrics and timestamps. The
+   2026-07-31 local package is admitted as the trusted baseline; the matched
+   public-data remote close is still pending.
 9. Enable the daily schedule only after equivalence passes.
 10. Produce the single MacroQuant Markdown handoff and retire only proven-redundant local routines.
 
