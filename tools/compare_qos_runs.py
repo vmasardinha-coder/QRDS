@@ -22,6 +22,15 @@ SAFETY_EXPECTED = {
 }
 
 
+def _mode_class(mode: object) -> str | None:
+    value = str(mode or "").lower()
+    if "fixture" in value:
+        return "fixture"
+    if "public" in value and "no" in value and "order" in value:
+        return "public_research_only"
+    return None
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -83,9 +92,9 @@ def compare(local_package: Path, remote_package: Path) -> dict:
     if remote_engines and remote_engines != {"V2A": "PASS", "Delta": "PASS"}:
         structural_errors.append(f"remote engines={remote_engines!r}")
 
-    matched_mode = local_mode == remote_mode
+    matched_mode = _mode_class(local_mode) == _mode_class(remote_mode) == "public_research_only"
     local_as_of = local.get("component_status", {}).get("delta", {}).get("data_as_of")
-    remote_as_of = remote.get("data_as_of")
+    remote_as_of = remote.get("component_data_as_of", {}).get("delta") or remote.get("data_as_of")
     matched_close = bool(local_as_of and remote_as_of and local_as_of == remote_as_of)
     gateway_executed = remote.get("gateway", {}).get("state") == "EXECUTED_REMOTE"
     value_ready = matched_mode and matched_close and gateway_executed
