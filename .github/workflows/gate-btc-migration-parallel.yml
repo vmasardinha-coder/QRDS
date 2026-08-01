@@ -26,6 +26,12 @@ concurrency:
   group: gate-btc-migration-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GATE_BTC_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  GATE_BTC_SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+  GATE_BTC_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+  GATE_BTC_BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
+
 jobs:
   research-only-smoke:
     runs-on: ubuntu-latest
