@@ -57,10 +57,21 @@ def _run_engine(name: str, command: list[str], output_zip: Path) -> dict:
         with zipfile.ZipFile(output_zip) as archive:
             bad = archive.testzip()
             members = archive.namelist()
+            manifest_suffix = "v2a_run_manifest.json" if name == "V2A" else "delta_v11_run_manifest.json"
+            manifest_members = [member for member in members if member.endswith(manifest_suffix)]
+            engine_manifest = (
+                json.loads(archive.read(manifest_members[0]).decode("utf-8-sig"))
+                if len(manifest_members) == 1 else None
+            )
         if bad:
             record.update(status="ERROR", error=f"corrupt ZIP member: {bad}")
         else:
             record.update(status="PASS", sha256=_sha256(output_zip), members=len(members))
+            if engine_manifest is not None:
+                record["manifest"] = {
+                    key: engine_manifest.get(key)
+                    for key in ("version", "mode", "technical_status", "data_quality_status", "data_as_of")
+                }
     except zipfile.BadZipFile as exc:
         record.update(status="ERROR", error=str(exc))
     return record
@@ -120,6 +131,10 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
         errors.append(traceback.format_exc())
 
     status = "ERROR" if errors else ("PASS_WITH_GATEWAY_PENDING" if gateway["status"] == "PENDING" else "PASS")
+    component_data_as_of = {
+        item["name"].lower(): item.get("manifest", {}).get("data_as_of")
+        for item in engines
+    }
     manifest = {
         "schema": "qos-orchestration-migration-v1",
         "status": status,
@@ -127,6 +142,8 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
         "started_at_utc": started.isoformat(),
         "finished_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "offline_fixture_no_network" if fixture_mode else "public_data_no_private_api_no_orders",
+        "data_as_of": component_data_as_of.get("delta"),
+        "component_data_as_of": component_data_as_of,
         "engines": engines,
         "gateway": gateway,
         "locks": LOCKS,
