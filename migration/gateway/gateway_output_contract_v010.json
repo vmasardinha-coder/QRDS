@@ -1,0 +1,22 @@
+{
+  "contract_version": "1.0",
+  "gateway_version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
+  "required_files": {
+    "v2a1_run_manifest.json": ["version", "mode", "technical_status", "data_quality_status", "snapshot_status", "evidence_status", "operational_status", "data_as_of"],
+    "scanner_snapshot_status.json": ["snapshot_status", "evidence_status", "operational_status", "critical_failed_checks", "warning_failed_checks", "all_failed_checks"],
+    "scanner_approval_checks.csv": ["check", "passed", "severity", "detail"],
+    "source_quality_summary.csv": ["source", "rows", "role"],
+    "strategy_compositions.csv": ["strategy", "asset", "weight", "role"],
+    "strategy_execution_profiles.csv": ["strategy", "gross_long", "gross_short_abs", "net_exposure", "gross_exposure", "manual_operability", "stop_rules_backtested", "walk_forward_backtested", "notes"],
+    "delta_stop_trade_rules.csv": ["strategy", "asset", "side", "paper_stop_loss_pct", "paper_take_profit_pct", "paper_trailing_stop_pct", "backtested_trade_rule", "rule"],
+    "gateway_decision_log.csv": ["base", "decision", "reasons", "rows", "date"]
+  },
+  "safety_invariants": {
+    "mode": "public_data_no_api_key_no_orders",
+    "operational_status": "NOT_APPROVED",
+    "evidence_status": "SNAPSHOT_ONLY_NO_WALK_FORWARD_BACKTEST",
+    "forbid_private_api_credentials": true,
+    "forbid_orders": true,
+    "forbid_real_capital": true
+  }
+}
