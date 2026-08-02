@@ -29,6 +29,7 @@ $TempRoot = Join-Path ([IO.Path]::GetTempPath()) "GATE_BTC_WINDOWS_LOCAL_VERIFY_
 $RuntimeRoot = Join-Path $TempRoot "runtime"
 $LogRoot = Join-Path $TempRoot "logs"
 $EvidenceRoot = Join-Path $TempRoot "evidence"
+New-Item -ItemType Directory -Force -Path $TempRoot, $RuntimeRoot, $LogRoot, $EvidenceRoot | Out-Null
 
 $Result = [ordered]@{
     schema = "gate-btc-windows-local-verifier-v1"
@@ -78,6 +79,48 @@ function Add-VerifierError([string]$Message) {
     $script:Result.errors += $Message
 }
 
+function ConvertTo-WindowsCommandLineArgument {
+    param([AllowEmptyString()][string]$Argument)
+
+    if ($null -eq $Argument -or $Argument.Length -eq 0) {
+        return '""'
+    }
+    if ($Argument -notmatch '[\s"]') {
+        return $Argument
+    }
+
+    $Builder = New-Object System.Text.StringBuilder
+    [void]$Builder.Append([char]34)
+    $Backslashes = 0
+    foreach ($Character in $Argument.ToCharArray()) {
+        if ($Character -eq [char]92) {
+            $Backslashes += 1
+            continue
+        }
+        if ($Character -eq [char]34) {
+            if ($Backslashes -gt 0) {
+                [void]$Builder.Append([string]::new([char]92, (2 * $Backslashes) + 1))
+            }
+            else {
+                [void]$Builder.Append([char]92)
+            }
+            [void]$Builder.Append([char]34)
+            $Backslashes = 0
+            continue
+        }
+        if ($Backslashes -gt 0) {
+            [void]$Builder.Append([string]::new([char]92, $Backslashes))
+            $Backslashes = 0
+        }
+        [void]$Builder.Append($Character)
+    }
+    if ($Backslashes -gt 0) {
+        [void]$Builder.Append([string]::new([char]92, 2 * $Backslashes))
+    }
+    [void]$Builder.Append([char]34)
+    return $Builder.ToString()
+}
+
 function Invoke-CheckedProcess {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
@@ -90,36 +133,24 @@ function Invoke-CheckedProcess {
     $SafeName = $Name -replace '[^A-Za-z0-9_.-]', '_'
     $StdoutPath = Join-Path $LogRoot "$SafeName.stdout.txt"
     $StderrPath = Join-Path $LogRoot "$SafeName.stderr.txt"
+    Remove-Item -LiteralPath $StdoutPath, $StderrPath -Force -ErrorAction SilentlyContinue
 
-    $StartInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $StartInfo.FileName = $FilePath
-    $StartInfo.WorkingDirectory = $WorkingDirectory
-    $StartInfo.UseShellExecute = $false
-    $StartInfo.CreateNoWindow = $true
-    $StartInfo.RedirectStandardOutput = $true
-    $StartInfo.RedirectStandardError = $true
-    foreach ($Argument in $Arguments) {
-        [void]$StartInfo.ArgumentList.Add([string]$Argument)
-    }
+    $ArgumentLine = (@($Arguments) | ForEach-Object {
+        ConvertTo-WindowsCommandLineArgument -Argument ([string]$_)
+    }) -join ' '
 
-    $Process = [System.Diagnostics.Process]::new()
-    $Process.StartInfo = $StartInfo
-    try {
-        if (-not $Process.Start()) {
-            throw "$Name could not be started"
-        }
-        $StdoutTask = $Process.StandardOutput.ReadToEndAsync()
-        $StderrTask = $Process.StandardError.ReadToEndAsync()
-        $Process.WaitForExit()
-        $Stdout = $StdoutTask.GetAwaiter().GetResult()
-        $Stderr = $StderrTask.GetAwaiter().GetResult()
-        $ExitCode = $Process.ExitCode
-        [IO.File]::WriteAllText($StdoutPath, $Stdout, [Text.UTF8Encoding]::new($false))
-        [IO.File]::WriteAllText($StderrPath, $Stderr, [Text.UTF8Encoding]::new($false))
-    }
-    finally {
-        $Process.Dispose()
-    }
+    $Process = Start-Process \
+        -FilePath $FilePath \
+        -ArgumentList $ArgumentLine \
+        -WorkingDirectory $WorkingDirectory \
+        -RedirectStandardOutput $StdoutPath \
+        -RedirectStandardError $StderrPath \
+        -NoNewWindow \
+        -Wait \
+        -PassThru
+    $Process.Refresh()
+    $ExitCode = $Process.ExitCode
+    $Process.Dispose()
 
     if ($ExitCode -ne 0) {
         $StdoutTail = if (Test-Path -LiteralPath $StdoutPath) {
@@ -131,6 +162,12 @@ function Invoke-CheckedProcess {
         }
         else { "" }
         throw "$Name failed with exit code $ExitCode.`nSTDOUT_TAIL:`n$StdoutTail`nSTDERR_TAIL:`n$StderrTail"
+    }
+
+    return [pscustomobject]@{
+        exit_code = $ExitCode
+        stdout_path = $StdoutPath
+        stderr_path = $StderrPath
     }
 }
 
@@ -199,19 +236,29 @@ try {
     $PythonCandidates = @()
     $PyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
     if ($null -ne $PyLauncher) {
-        $PythonCandidates += [pscustomobject]@{ Exe = $PyLauncher.Source; Prefix = @("-3.12") }
+        $PythonCandidates += [pscustomobject]@{ Name = "py312"; Exe = $PyLauncher.Source; Prefix = @("-3.12") }
     }
     $PythonCommand = Get-Command "python.exe" -ErrorAction SilentlyContinue
     if ($null -ne $PythonCommand) {
-        $PythonCandidates += [pscustomobject]@{ Exe = $PythonCommand.Source; Prefix = @() }
+        $PythonCandidates += [pscustomobject]@{ Name = "python"; Exe = $PythonCommand.Source; Prefix = @() }
     }
     foreach ($Candidate in $PythonCandidates) {
-        $CandidateOutput = (& $Candidate.Exe @($Candidate.Prefix) -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>&1 | Out-String).Trim()
-        if ($LASTEXITCODE -eq 0 -and $CandidateOutput.StartsWith("3.12.")) {
-            $PythonExe = $Candidate.Exe
-            $PythonPrefix = @($Candidate.Prefix)
-            $Result.python_version = $CandidateOutput
-            break
+        try {
+            $VersionProcess = Invoke-CheckedProcess \
+                -Name ("detect_" + $Candidate.Name) \
+                -FilePath $Candidate.Exe \
+                -Arguments @($Candidate.Prefix + @("-c", "import sys; print('.'.join(map(str, sys.version_info[:3])))")) \
+                -WorkingDirectory $TempRoot
+            $CandidateOutput = (Get-Content -LiteralPath $VersionProcess.stdout_path -Raw -ErrorAction Stop).Trim()
+            if ($CandidateOutput.StartsWith("3.12.")) {
+                $PythonExe = $Candidate.Exe
+                $PythonPrefix = @($Candidate.Prefix)
+                $Result.python_version = $CandidateOutput
+                break
+            }
+        }
+        catch {
+            continue
         }
     }
     if ([string]::IsNullOrWhiteSpace($PythonExe)) {
@@ -219,7 +266,6 @@ try {
     }
 
     $Result.stage_reached = "PREPARE_ISOLATED_RUNTIME"
-    New-Item -ItemType Directory -Force -Path $TempRoot, $RuntimeRoot, $LogRoot, $EvidenceRoot | Out-Null
     $BundledRuntime = Join-Path $BundleRoot "payload\runtime"
     if (-not (Test-Path -LiteralPath $BundledRuntime -PathType Container)) {
         throw "Missing bundled runtime: $BundledRuntime"
@@ -227,7 +273,11 @@ try {
     Copy-Item -Path (Join-Path $BundledRuntime "*") -Destination $RuntimeRoot -Recurse -Force
 
     $VenvRoot = Join-Path $TempRoot ".venv"
-    Invoke-CheckedProcess -Name "create_venv" -FilePath $PythonExe -Arguments @($PythonPrefix + @("-m", "venv", $VenvRoot)) -WorkingDirectory $TempRoot
+    Invoke-CheckedProcess \
+        -Name "create_venv" \
+        -FilePath $PythonExe \
+        -Arguments @($PythonPrefix + @("-m", "venv", $VenvRoot)) \
+        -WorkingDirectory $TempRoot | Out-Null
     $VenvPython = Join-Path $VenvRoot "Scripts\python.exe"
     if (-not (Test-Path -LiteralPath $VenvPython -PathType Leaf)) {
         throw "Isolated Python was not created: $VenvPython"
@@ -240,10 +290,14 @@ try {
     }
     $V2ARequirements = Join-Path $RuntimeRoot "migration\canonical\v2a\requirements.txt"
     $DeltaRequirements = Join-Path $RuntimeRoot "migration\canonical\delta\requirements.txt"
-    Invoke-CheckedProcess -Name "install_offline_dependencies" -FilePath $VenvPython -Arguments @(
-        "-m", "pip", "install", "--disable-pip-version-check", "--no-index", "--find-links", $Wheelhouse,
-        "-r", $V2ARequirements, "-r", $DeltaRequirements
-    ) -WorkingDirectory $RuntimeRoot
+    Invoke-CheckedProcess \
+        -Name "install_offline_dependencies" \
+        -FilePath $VenvPython \
+        -Arguments @(
+            "-m", "pip", "install", "--disable-pip-version-check", "--no-index", "--find-links", $Wheelhouse,
+            "-r", $V2ARequirements, "-r", $DeltaRequirements
+        ) \
+        -WorkingDirectory $RuntimeRoot | Out-Null
     $Result.dependency_install = "PASS_OFFLINE_NO_INDEX"
 
     $ReferenceRoot = Join-Path $BundleRoot "payload\reference"
@@ -260,16 +314,24 @@ try {
     $V2AEvidence = Join-Path $EvidenceRoot "v2a_replay_evidence"
     $V2AParity = Join-Path $EvidenceRoot "v2a_windows_parity"
     $Result.stage_reached = "REPLAY_V2A_SAME_INPUT"
-    Invoke-CheckedProcess -Name "v2a_frozen_replay" -FilePath $VenvPython -Arguments @(
-        "tools/v2a_frozen_replay.py", $ReferenceV2A,
-        "--data-cutoff", [string]$Manifest.data_cutoff,
-        "--output-zip", $V2AOutput,
-        "--evidence-dir", $V2AEvidence
-    ) -WorkingDirectory $RuntimeRoot
-    Invoke-CheckedProcess -Name "v2a_cross_platform_compare" -FilePath $VenvPython -Arguments @(
-        "tools/compare_cross_platform_outputs.py", "v2a", $ReferenceV2A, $V2AOutput,
-        "--output-dir", $V2AParity
-    ) -WorkingDirectory $RuntimeRoot
+    Invoke-CheckedProcess \
+        -Name "v2a_frozen_replay" \
+        -FilePath $VenvPython \
+        -Arguments @(
+            "tools/v2a_frozen_replay.py", $ReferenceV2A,
+            "--data-cutoff", [string]$Manifest.data_cutoff,
+            "--output-zip", $V2AOutput,
+            "--evidence-dir", $V2AEvidence
+        ) \
+        -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess \
+        -Name "v2a_cross_platform_compare" \
+        -FilePath $VenvPython \
+        -Arguments @(
+            "tools/compare_cross_platform_outputs.py", "v2a", $ReferenceV2A, $V2AOutput,
+            "--output-dir", $V2AParity
+        ) \
+        -WorkingDirectory $RuntimeRoot | Out-Null
     $V2AResult = Get-LatestJson $V2AParity "V2A_CROSS_PLATFORM_PARITY_*.json"
     if ($V2AResult.status -ne "PASS" -or $V2AResult.equivalence_claim -ne $true) {
         throw "V2A semantic parity did not pass"
@@ -284,19 +346,27 @@ try {
     $DeltaEvidence = Join-Path $EvidenceRoot "delta_replay_evidence"
     $DeltaParity = Join-Path $EvidenceRoot "delta_windows_parity"
     $Result.stage_reached = "REPLAY_DELTA_SAME_INPUT"
-    Invoke-CheckedProcess -Name "delta_frozen_replay" -FilePath $VenvPython -Arguments @(
-        "tools/delta_frozen_replay.py", $ReferenceDeltaInput,
-        "--data-cutoff", [string]$Manifest.data_cutoff,
-        "--output-zip", $DeltaOutput,
-        "--input-snapshot-zip", $DeltaInputReplay,
-        "--evidence-dir", $DeltaEvidence
-    ) -WorkingDirectory $RuntimeRoot
-    Invoke-CheckedProcess -Name "delta_cross_platform_compare" -FilePath $VenvPython -Arguments @(
-        "tools/compare_cross_platform_outputs.py", "delta", $ReferenceDelta, $DeltaOutput,
-        "--reference-input-snapshot", $ReferenceDeltaInput,
-        "--replay-input-snapshot", $DeltaInputReplay,
-        "--output-dir", $DeltaParity
-    ) -WorkingDirectory $RuntimeRoot
+    Invoke-CheckedProcess \
+        -Name "delta_frozen_replay" \
+        -FilePath $VenvPython \
+        -Arguments @(
+            "tools/delta_frozen_replay.py", $ReferenceDeltaInput,
+            "--data-cutoff", [string]$Manifest.data_cutoff,
+            "--output-zip", $DeltaOutput,
+            "--input-snapshot-zip", $DeltaInputReplay,
+            "--evidence-dir", $DeltaEvidence
+        ) \
+        -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess \
+        -Name "delta_cross_platform_compare" \
+        -FilePath $VenvPython \
+        -Arguments @(
+            "tools/compare_cross_platform_outputs.py", "delta", $ReferenceDelta, $DeltaOutput,
+            "--reference-input-snapshot", $ReferenceDeltaInput,
+            "--replay-input-snapshot", $DeltaInputReplay,
+            "--output-dir", $DeltaParity
+        ) \
+        -WorkingDirectory $RuntimeRoot | Out-Null
     $DeltaResult = Get-LatestJson $DeltaParity "DELTA_CROSS_PLATFORM_PARITY_*.json"
     if ($DeltaResult.status -ne "PASS" -or $DeltaResult.equivalence_claim -ne $true) {
         throw "Delta semantic parity did not pass"
