@@ -8,67 +8,80 @@ ROOT = Path(__file__).resolve().parents[1]
 PS1 = ROOT / "windows_local_verifier" / "Invoke-GateBtcLocalVerify.ps1"
 CMD = ROOT / "windows_local_verifier" / "RUN_GATE_BTC_LOCAL_VERIFY.cmd"
 WORKFLOW = ROOT / ".github" / "workflows" / "gate-btc-migration-parallel.yml"
+PS51_WORKFLOW = ROOT / ".github" / "workflows" / "gate-btc-windows-powershell51-smoke.yml"
 
 
 class WindowsLocalVerifierBundleTests(unittest.TestCase):
     def test_powershell_verifier_is_fail_closed_and_offline(self) -> None:
         text = PS1.read_text(encoding="utf-8")
         required = (
-            'GATE_BTC_RESEARCH_ONLY must remain true',
-            'EXCHANGE_API_SECRET',
-            'EXCHANGE_PRIVATE_KEY',
-            'TRADING_API_KEY',
-            '--no-index',
-            'NETWORK_ACTIONS=NONE',
-            'PROJECT_FILES_MODIFIED=0',
-            'LOCAL_COLLECTION_READ=False',
-            'LOCAL_COLLECTION_MODIFIED=False',
-            'ORDERS_GENERATED=0',
-            'REAL_CAPITAL_USED=0',
-            'OPERATIONAL_STATUS=NOT_APPROVED',
-            'SEND_THIS_TXT_TO_CHAT',
-            'Compress-Archive',
-            'Downloads',
-            'exit 1',
+            "GATE_BTC_RESEARCH_ONLY must remain true",
+            "EXCHANGE_API_SECRET",
+            "EXCHANGE_PRIVATE_KEY",
+            "TRADING_API_KEY",
+            "--no-index",
+            "NETWORK_ACTIONS=NONE",
+            "PROJECT_FILES_MODIFIED=0",
+            "LOCAL_COLLECTION_READ=False",
+            "LOCAL_COLLECTION_MODIFIED=False",
+            "ORDERS_GENERATED=0",
+            "REAL_CAPITAL_USED=0",
+            "OPERATIONAL_STATUS=NOT_APPROVED",
+            "SEND_THIS_TXT_TO_CHAT",
+            "Compress-Archive",
+            "Downloads",
+            "exit 1",
         )
         for token in required:
             self.assertIn(token, text)
 
-    def test_native_process_wrapper_uses_exit_code_and_async_stream_draining(self) -> None:
+    def test_native_process_wrapper_uses_ps51_compatible_redirection_and_exit_code(self) -> None:
         text = PS1.read_text(encoding="utf-8")
         required = (
-            '[System.Diagnostics.ProcessStartInfo]::new()',
-            'RedirectStandardOutput = $true',
-            'RedirectStandardError = $true',
-            '$Process.StandardOutput.ReadToEndAsync()',
-            '$Process.StandardError.ReadToEndAsync()',
-            '$StdoutTask.GetAwaiter().GetResult()',
-            '$StderrTask.GetAwaiter().GetResult()',
-            '$ExitCode = $Process.ExitCode',
+            "ConvertTo-WindowsCommandLineArgument",
+            "$ArgumentLine",
+            "Start-Process @StartProcessParameters",
+            "RedirectStandardOutput = $StdoutPath",
+            "RedirectStandardError = $StderrPath",
+            "Wait = $true",
+            "PassThru = $true",
+            "$ExitCode = $Process.ExitCode",
         )
         for token in required:
             self.assertIn(token, text)
-        self.assertNotIn('& $FilePath @Arguments 1> $StdoutPath 2> $StderrPath', text)
-        self.assertNotIn('$Process.StandardOutput.ReadToEnd()', text)
-        self.assertNotIn('$Process.StandardError.ReadToEnd()', text)
+        self.assertNotIn("$StartInfo.ArgumentList.Add", text)
+        self.assertNotIn("& $FilePath @Arguments 1> $StdoutPath 2> $StderrPath", text)
 
     def test_launcher_is_relative_and_returns_verifier_exit_code(self) -> None:
         text = CMD.read_text(encoding="utf-8")
-        self.assertIn('%~dp0', text)
-        self.assertIn('ExecutionPolicy Bypass', text)
-        self.assertIn('Invoke-GateBtcLocalVerify.ps1', text)
-        self.assertIn('exit /b %RC%', text)
+        self.assertIn("%~dp0", text)
+        self.assertIn("ExecutionPolicy Bypass", text)
+        self.assertIn("Invoke-GateBtcLocalVerify.ps1", text)
+        self.assertIn("exit /b %RC%", text)
 
     def test_workflow_builds_and_self_tests_offline_bundle(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
         required = (
-            'tests/test_windows_local_verifier_bundle.py',
-            'Build offline Windows local verifier bundle',
-            'Self-test packaged Windows local verifier',
-            'gate-btc-windows-local-verifier-${{ github.run_id }}',
-            'BUNDLE_MANIFEST.json',
-            'pip download',
-            '$PSNativeCommandUseErrorActionPreference = $true',
+            "tests/test_windows_local_verifier_bundle.py",
+            "Build offline Windows local verifier bundle",
+            "Self-test packaged Windows local verifier",
+            "gate-btc-windows-local-verifier-${{ github.run_id }}",
+            "BUNDLE_MANIFEST.json",
+            "pip download",
+            "$PSNativeCommandUseErrorActionPreference = $true",
+        )
+        for token in required:
+            self.assertIn(token, text)
+
+    def test_separate_workflow_runs_parser_and_wrapper_smoke_under_windows_powershell(self) -> None:
+        text = PS51_WORKFLOW.read_text(encoding="utf-8")
+        required = (
+            "windows-latest",
+            "powershell.exe",
+            "Windows PowerShell 5.1 parser check",
+            "Windows PowerShell 5.1 native process smoke",
+            "RedirectStandardOutput",
+            "RedirectStandardError",
         )
         for token in required:
             self.assertIn(token, text)
