@@ -37,7 +37,12 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _run_engine(name: str, command: list[str], output_zip: Path) -> dict:
+def _run_engine(
+    name: str,
+    command: list[str],
+    output_zip: Path,
+    manifest_suffix: str | None = None,
+) -> dict:
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
     record = {
         "name": name,
@@ -57,27 +62,38 @@ def _run_engine(name: str, command: list[str], output_zip: Path) -> dict:
         with zipfile.ZipFile(output_zip) as archive:
             bad = archive.testzip()
             members = archive.namelist()
-            manifest_suffix = "v2a_run_manifest.json" if name == "V2A" else "delta_v11_run_manifest.json"
-            manifest_members = [member for member in members if member.endswith(manifest_suffix)]
+            suffix = manifest_suffix or (
+                "v2a_run_manifest.json" if name == "V2A" else "delta_v11_run_manifest.json"
+            )
+            manifest_members = [member for member in members if member.endswith(suffix)]
             engine_manifest = (
                 json.loads(archive.read(manifest_members[0]).decode("utf-8-sig"))
                 if len(manifest_members) == 1 else None
             )
         if bad:
             record.update(status="ERROR", error=f"corrupt ZIP member: {bad}")
+        elif engine_manifest is None:
+            record.update(status="ERROR", error=f"missing or ambiguous {suffix}")
         else:
             record.update(status="PASS", sha256=_sha256(output_zip), members=len(members))
-            if engine_manifest is not None:
-                record["manifest"] = {
-                    key: engine_manifest.get(key)
-                    for key in ("version", "mode", "technical_status", "data_quality_status", "data_as_of")
-                }
+            record["manifest"] = {
+                key: engine_manifest.get(key)
+                for key in (
+                    "version", "wrapper_version", "mode", "technical_status",
+                    "data_quality_status", "data_as_of", "input_snapshot_id",
+                )
+            }
     except zipfile.BadZipFile as exc:
         record.update(status="ERROR", error=str(exc))
     return record
 
 
-def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | None = None) -> tuple[dict, Path, Path, Path]:
+def run(
+    output_dir: Path,
+    fixture_mode: bool = True,
+    gateway_reference: Path | None = None,
+    data_cutoff: str | None = None,
+) -> tuple[dict, Path, Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
     stamp = started.strftime("%Y%m%d_%H%M%S")
@@ -86,8 +102,10 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
     zip_path = output_dir / f"QOS_ORCHESTRATION_EVIDENCE_{stamp}.zip"
     v2a_zip = output_dir / "qos_v2a_outputs.zip"
     delta_zip = output_dir / "delta_walk_forward_outputs.zip"
+    public_collection_zip = output_dir / "qos_v2a_public_collection.zip"
     errors: list[str] = []
     engines: list[dict] = []
+    input_collections: list[dict] = []
     gateway = {"name": "Gateway v0.10", "state": "PENDING_SOURCE", "status": "PENDING"}
 
     try:
@@ -97,13 +115,49 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
             if os.environ.get(forbidden):
                 raise RuntimeError(f"forbidden operational credential present: {forbidden}")
 
+        if fixture_mode:
+            engines.append(_run_engine(
+                "V2A",
+                [sys.executable, "migration/canonical/v2a/scripts/00_run_all_v2a.py",
+                 "--fixture-mode", "--output-zip", str(v2a_zip)],
+                v2a_zip,
+            ))
+        elif data_cutoff:
+            collection = _run_engine(
+                "V2A public collection",
+                [sys.executable, "migration/canonical/v2a/scripts/00_run_all_v2a.py",
+                 "--output-zip", str(public_collection_zip)],
+                public_collection_zip,
+                "v2a_run_manifest.json",
+            )
+            input_collections.append(collection)
+            if collection["status"] == "PASS":
+                engines.append(_run_engine(
+                    "V2A",
+                    [sys.executable, "tools/v2a_frozen_replay.py", str(public_collection_zip),
+                     "--data-cutoff", data_cutoff,
+                     "--output-zip", str(v2a_zip),
+                     "--evidence-dir", str(output_dir / "v2a_frozen_replay_evidence")],
+                    v2a_zip,
+                    "v2a_run_manifest.json",
+                ))
+            else:
+                engines.append({
+                    "name": "V2A",
+                    "state": "BLOCKED_BY_PUBLIC_COLLECTION",
+                    "status": "ERROR",
+                    "return_code": collection.get("return_code"),
+                    "error": "public V2A collection failed before frozen replay",
+                })
+        else:
+            engines.append(_run_engine(
+                "V2A",
+                [sys.executable, "migration/canonical/v2a/scripts/00_run_all_v2a.py",
+                 "--output-zip", str(v2a_zip)],
+                v2a_zip,
+            ))
+
         fixture_flag = ["--fixture-mode"] if fixture_mode else []
-        engines.append(_run_engine(
-            "V2A",
-            [sys.executable, "migration/canonical/v2a/scripts/00_run_all_v2a.py", *fixture_flag,
-             "--output-zip", str(v2a_zip)],
-            v2a_zip,
-        ))
         engines.append(_run_engine(
             "Delta",
             [sys.executable, "migration/canonical/delta/scripts/00_run_delta_v11.py", *fixture_flag,
@@ -123,14 +177,19 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
                 "status": "PASS" if result.returncode == 0 else "ERROR",
                 "validator_output": result.stdout[-4000:] or result.stderr[-4000:],
             }
-        errors.extend(f"{item['name']}: {item.get('error', item.get('stderr_tail', 'failed'))}"
-                      for item in engines if item["status"] != "PASS")
+        errors.extend(
+            f"{item['name']}: {item.get('error', item.get('stderr_tail', 'failed'))}"
+            for item in [*input_collections, *engines]
+            if item["status"] != "PASS"
+        )
         if gateway["status"] == "ERROR":
             errors.append("Gateway reference failed the canonical output contract")
     except Exception:
         errors.append(traceback.format_exc())
 
-    status = "ERROR" if errors else ("PASS_WITH_GATEWAY_PENDING" if gateway["status"] == "PENDING" else "PASS")
+    status = "ERROR" if errors else (
+        "PASS_WITH_GATEWAY_PENDING" if gateway["status"] == "PENDING" else "PASS"
+    )
     component_data_as_of = {
         item["name"].lower(): item.get("manifest", {}).get("data_as_of")
         for item in engines
@@ -142,20 +201,24 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
         "started_at_utc": started.isoformat(),
         "finished_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "offline_fixture_no_network" if fixture_mode else "public_data_no_private_api_no_orders",
+        "requested_data_cutoff": data_cutoff,
         "data_as_of": component_data_as_of.get("delta"),
         "component_data_as_of": component_data_as_of,
+        "input_collections": input_collections,
         "engines": engines,
         "gateway": gateway,
         "locks": LOCKS,
         "errors": errors,
         "equivalence_claim": False,
-        "next_action": "RECOVER_GATEWAY_SOURCE_AND_RUN_MATCHED_CLOSE_PARITY",
+        "next_action": "RECOVER_GATEWAY_SOURCE_AND_RUN_LOCAL_SAME_INPUT_V2A_PARITY",
     }
     json_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     lines = [
         "GATE BTC — QOS ORCHESTRATION MIGRATION REPORT",
         f"STATUS={status}",
         f"STAGE_REACHED={manifest['stage_reached']}",
+        f"REQUESTED_DATA_CUTOFF={data_cutoff or 'NONE'}",
+        f"DATA_AS_OF={manifest['data_as_of']}",
         "RESEARCH_ONLY=True",
         "ORDERS_GENERATED=0",
         "REAL_CAPITAL_USED=0",
@@ -163,6 +226,9 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
         "EQUIVALENCE_CLAIM=False",
         f"GATEWAY_STATE={gateway['state']}",
         f"NEXT_ACTION={manifest['next_action']}",
+        "",
+        "INPUT_COLLECTIONS:",
+        *([f"{item['name']}={item['status']}" for item in input_collections] or ["NONE"]),
         "",
         "ENGINES:",
         *[f"{item['name']}={item['status']} STATE={item['state']}" for item in engines],
@@ -172,7 +238,7 @@ def run(output_dir: Path, fixture_mode: bool = True, gateway_reference: Path | N
     ]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
-        for path in (txt_path, json_path, v2a_zip, delta_zip):
+        for path in (txt_path, json_path, public_collection_zip, v2a_zip, delta_zip):
             if path.is_file():
                 archive.write(path, path.name)
     return manifest, txt_path, json_path, zip_path
@@ -182,10 +248,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/qos_orchestration"))
     parser.add_argument("--public-data", action="store_true")
+    parser.add_argument("--data-cutoff")
     parser.add_argument("--gateway-reference", type=Path)
     args = parser.parse_args()
-    manifest, *_ = run(args.output_dir, fixture_mode=not args.public_data,
-                       gateway_reference=args.gateway_reference)
+    manifest, *_ = run(
+        args.output_dir,
+        fixture_mode=not args.public_data,
+        gateway_reference=args.gateway_reference,
+        data_cutoff=args.data_cutoff,
+    )
     print(json.dumps(manifest, ensure_ascii=False))
     return 1 if manifest["status"] == "ERROR" else 0
 
