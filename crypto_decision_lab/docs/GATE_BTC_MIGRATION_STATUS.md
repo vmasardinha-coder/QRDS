@@ -50,6 +50,16 @@ Last updated: 2026-08-02.
 21. The daily reporting contract is frozen at exactly three Shadow PDFs:
     Master Analytic, Comparativos Completos and Profit Preservation. Auxiliary
     TXT files are not a fourth Shadow report.
+22. Full pre-deployment daily branch run `30759775067` completed successfully.
+    Data cutoff was 2026-08-01; V2A PASS, Delta PASS, Gateway upstream PASS,
+    Gateway downstream PASS, 835 HTTP responses captured and 835 replayed,
+    zero orders, zero real capital and methodology changes zero. The handoff
+    result was `PASS_WITH_DATA_WARNINGS` because Gateway reported documented
+    partial public-source redundancy; report delivery inputs were READY.
+23. Daily evidence artifact `8837195468`, named
+    `gate-btc-daily-research-30759775067`, was retained for 30 days with size
+    22,720,280 bytes and SHA-256
+    `2fd589c41c09f6ba71f4b434941b84fcdd9b248a7fb9e9d2234a82176bd024d8`.
 
 ## Current classification
 
@@ -61,6 +71,7 @@ Last updated: 2026-08-02.
 - Gateway deterministic downstream equivalence: **PASS**.
 - Safety equivalence: **PASS**.
 - `TOTAL_SYSTEM_EQUIVALENCE`: **PASS_RESEARCH_ONLY**.
+- Pre-deployment daily branch execution: **PASS_WITH_DATA_WARNINGS**.
 - Runtime public-source quality may be `PASS` or a documented partial-redundancy
   warning. A warning remains reportable only with explicit disclosure;
   technical failure fails closed.
@@ -74,12 +85,12 @@ Last updated: 2026-08-02.
 
 ## Remaining irreversible decision
 
-The technical migration has reached its last pre-deployment boundary. The next
-step requiring explicit user authorization is to merge draft PR #3 into
-`main`. That merge would activate the prepared daily schedule on the default
-branch. After the first scheduled collection passes, the Chat delivery task can
-be activated for the three daily Shadow PDFs. Only then should any Google or
-local routine be classified as redundant.
+All reversible technical migration and pre-deployment validation work is now
+complete. The next step requiring explicit user authorization is to merge draft
+PR #3 into `main`. That merge activates the prepared daily schedule on the
+default branch. After the first scheduled collection passes, automatic delivery
+of the three Shadow PDFs can be activated and only then may any Google/local
+routine be classified as redundant.
 
 MacroQuant remains a separate later consolidation. It is not mixed into this
 migration and does not block the current research-only equivalence decision.
