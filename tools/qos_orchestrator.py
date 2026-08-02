@@ -103,6 +103,8 @@ def run(
     v2a_zip = output_dir / "qos_v2a_outputs.zip"
     delta_zip = output_dir / "delta_walk_forward_outputs.zip"
     public_collection_zip = output_dir / "qos_v2a_public_collection.zip"
+    delta_collection_zip = output_dir / "delta_public_collection_outputs.zip"
+    delta_input_snapshot_zip = output_dir / "delta_public_input_snapshot.zip"
     errors: list[str] = []
     engines: list[dict] = []
     input_collections: list[dict] = []
@@ -157,13 +159,49 @@ def run(
                 v2a_zip,
             ))
 
-        fixture_flag = ["--fixture-mode"] if fixture_mode else []
-        engines.append(_run_engine(
-            "Delta",
-            [sys.executable, "migration/canonical/delta/scripts/00_run_delta_v11.py", *fixture_flag,
-             "--output-zip", str(delta_zip)],
-            delta_zip,
-        ))
+        if fixture_mode:
+            engines.append(_run_engine(
+                "Delta",
+                [sys.executable, "migration/canonical/delta/scripts/00_run_delta_v11.py",
+                 "--fixture-mode", "--output-zip", str(delta_zip)],
+                delta_zip,
+            ))
+        elif data_cutoff:
+            delta_collection = _run_engine(
+                "Delta public collection",
+                [sys.executable, "migration/canonical/delta/scripts/00_run_delta_v11.py",
+                 "--output-zip", str(delta_collection_zip)],
+                delta_collection_zip,
+                "delta_v11_run_manifest.json",
+            )
+            input_collections.append(delta_collection)
+            if delta_collection["status"] == "PASS":
+                engines.append(_run_engine(
+                    "Delta",
+                    [sys.executable, "tools/delta_frozen_replay.py", str(delta_collection_zip),
+                     "--source-data-dir", "migration/canonical/delta/data",
+                     "--data-cutoff", data_cutoff,
+                     "--output-zip", str(delta_zip),
+                     "--input-snapshot-zip", str(delta_input_snapshot_zip),
+                     "--evidence-dir", str(output_dir / "delta_frozen_replay_evidence")],
+                    delta_zip,
+                    "delta_v11_run_manifest.json",
+                ))
+            else:
+                engines.append({
+                    "name": "Delta",
+                    "state": "BLOCKED_BY_PUBLIC_COLLECTION",
+                    "status": "ERROR",
+                    "return_code": delta_collection.get("return_code"),
+                    "error": "public Delta collection failed before frozen replay",
+                })
+        else:
+            engines.append(_run_engine(
+                "Delta",
+                [sys.executable, "migration/canonical/delta/scripts/00_run_delta_v11.py",
+                 "--output-zip", str(delta_zip)],
+                delta_zip,
+            ))
 
         if gateway_reference is not None:
             validator = ROOT / "tools" / "validate_gateway_output_contract.py"
@@ -194,6 +232,15 @@ def run(
         item["name"].lower(): item.get("manifest", {}).get("data_as_of")
         for item in engines
     }
+    matched_component_close = len({value for value in component_data_as_of.values() if value}) == 1
+    if not fixture_mode and data_cutoff:
+        close_mismatches = {
+            name: value for name, value in component_data_as_of.items()
+            if value != data_cutoff
+        }
+        if close_mismatches:
+            errors.append(f"matched-close requirement failed: {close_mismatches}")
+            status = "ERROR"
     manifest = {
         "schema": "qos-orchestration-migration-v1",
         "status": status,
@@ -204,6 +251,7 @@ def run(
         "requested_data_cutoff": data_cutoff,
         "data_as_of": component_data_as_of.get("delta"),
         "component_data_as_of": component_data_as_of,
+        "matched_component_close": matched_component_close,
         "input_collections": input_collections,
         "engines": engines,
         "gateway": gateway,
@@ -219,6 +267,7 @@ def run(
         f"STAGE_REACHED={manifest['stage_reached']}",
         f"REQUESTED_DATA_CUTOFF={data_cutoff or 'NONE'}",
         f"DATA_AS_OF={manifest['data_as_of']}",
+        f"MATCHED_COMPONENT_CLOSE={matched_component_close}",
         "RESEARCH_ONLY=True",
         "ORDERS_GENERATED=0",
         "REAL_CAPITAL_USED=0",
@@ -238,7 +287,10 @@ def run(
     ]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
-        for path in (txt_path, json_path, public_collection_zip, v2a_zip, delta_zip):
+        for path in (
+            txt_path, json_path, public_collection_zip, v2a_zip,
+            delta_collection_zip, delta_input_snapshot_zip, delta_zip,
+        ):
             if path.is_file():
                 archive.write(path, path.name)
     return manifest, txt_path, json_path, zip_path
