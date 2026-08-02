@@ -1,6 +1,6 @@
 {
-  "schema": "gate-btc-gateway-source-intake-v3",
-  "status": "SOURCE_ADMITTED_CANONICALITY_CONFIRMED_REMOTE_REPLAY_PENDING",
+  "schema": "gate-btc-gateway-source-intake-v4",
+  "status": "GATEWAY_DOWNSTREAM_EQUIVALENCE_PASS_UPSTREAM_BOUNDARY_REVIEW",
   "discovered_at_local": "2026-08-02T10:57:32-03:00",
   "discovery_evidence": {
     "files_examined": 5003,
@@ -21,6 +21,7 @@
     "canonical_entrypoint": "scripts/00_run_all_v2a1.py",
     "canonical_entrypoint_sha256": "835e4ecb118c3ba2796c4e74c39a9025351b14415a2ddd1efb5465b82a724a20",
     "canonicality_review": "PASS",
+    "repository_payload": "CHUNKED_BASE64_EXACT_SHA256",
     "methodology_changes": 0
   },
   "historical_sources": [
@@ -79,8 +80,10 @@
       "history_rows": 36755,
       "feature_assets": 174,
       "selected_rows": 118,
+      "composition_rows": 132,
       "execution_profile_rows": 8,
-      "delta_stop_rule_rows": 80
+      "delta_stop_rule_rows": 80,
+      "decision_log_rows": 80
     }
   },
   "local_validation": {
@@ -95,6 +98,26 @@
     "public_source_acquisition_reconstructed": false,
     "feature_construction_reconstructed": false
   },
+  "remote_validation": {
+    "status": "PASS",
+    "workflow": "GATE BTC Gateway v0.10 Frozen Replay",
+    "run_id": 30757134021,
+    "head_sha": "a91407d98508563a1a0162e60de8eb6d9af190be",
+    "stage_reached": "CANONICAL_FIXTURE_AND_FROZEN_DOWNSTREAM_REPLAY_PASS",
+    "tests": "PASS_2_OF_2",
+    "source_canonicality": "PASS",
+    "reference_integrity": "PASS",
+    "fixture_contract": "PASS",
+    "frozen_downstream_replay": "PASS_118_132_8_80_80",
+    "artifact_id": 8836278329,
+    "artifact_name": "gate-btc-gateway-v010-30757134021",
+    "artifact_size_bytes": 149662,
+    "artifact_sha256": "bff305886ca5392c3e277905bf5e9f8decdef2931692694499f18ea52633010c",
+    "research_only": true,
+    "orders": 0,
+    "real_capital": 0,
+    "operational_status": "NOT_APPROVED"
+  },
   "admission_policy": {
     "no_source_reconstruction_by_assumption": true,
     "no_methodology_formula_weight_threshold_stop_or_strategy_change": true,
@@ -106,10 +129,10 @@
     "cron_on_main_allowed": false
   },
   "equivalence_boundary": {
-    "downstream_functional_equivalence": "PASS_LOCALLY_REMOTE_PENDING",
+    "downstream_functional_equivalence": "PASS_LOCAL_AND_GITHUB_ACTIONS",
     "public_source_acquisition_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
     "feature_construction_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
-    "total_system_equivalence": "BLOCKED_BY_UPSTREAM_INPUT_SNAPSHOT_BOUNDARY"
+    "total_system_equivalence": "BLOCKED_ONLY_BY_UPSTREAM_INPUT_SNAPSHOT_BOUNDARY"
   },
-  "next_state_on_successful_remote_replay": "GATEWAY_DOWNSTREAM_EQUIVALENCE_PASS_UPSTREAM_BOUNDARY_REVIEW"
+  "next_state": "UPSTREAM_INPUT_SNAPSHOT_BOUNDARY_REVIEW"
 }
