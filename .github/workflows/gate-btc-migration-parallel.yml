@@ -10,10 +10,14 @@ on:
       - .github/workflows/gate-btc-migration-parallel.yml
       - tools/gate_btc_migration_runner.py
       - tools/qos_orchestrator.py
+      - tools/v2a_frozen_replay.py
+      - tools/compare_v2a_outputs.py
       - tools/validate_gateway_output_contract.py
       - tools/compare_qos_runs.py
       - tests/test_gate_btc_migration_runner.py
       - tests/test_qos_orchestrator.py
+      - tests/test_v2a_frozen_replay.py
+      - tests/test_compare_v2a_outputs.py
       - tests/test_gateway_output_contract.py
       - tests/test_compare_qos_runs.py
       - migration/canonical/**
@@ -51,7 +55,14 @@ jobs:
       - name: Install canonical research dependencies
         run: pip install -r migration/canonical/v2a/requirements.txt -r migration/canonical/delta/requirements.txt
       - name: Validate repository safety and contracts
-        run: python -m unittest -v tests/test_gate_btc_migration_runner.py tests/test_gateway_output_contract.py tests/test_qos_orchestrator.py tests/test_compare_qos_runs.py
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_migration_runner.py
+          tests/test_gateway_output_contract.py
+          tests/test_qos_orchestrator.py
+          tests/test_v2a_frozen_replay.py
+          tests/test_compare_v2a_outputs.py
+          tests/test_compare_qos_runs.py
       - name: Prepare artifact directories
         run: mkdir -p artifacts
       - name: Run unified QOS fixture orchestration
@@ -88,7 +99,22 @@ jobs:
       - name: Prepare public-close artifact directories
         run: mkdir -p artifacts
       - name: Run unified QOS public-close orchestration
-        run: python tools/qos_orchestrator.py --public-data --output-dir artifacts/qos_public_close
+        run: >-
+          python tools/qos_orchestrator.py
+          --public-data
+          --data-cutoff 2026-07-31
+          --output-dir artifacts/qos_public_close
+      - name: Verify deterministic V2A replay on identical bytes
+        run: |
+          python tools/v2a_frozen_replay.py \
+            artifacts/qos_public_close/qos_v2a_outputs.zip \
+            --data-cutoff 2026-07-31 \
+            --output-zip artifacts/qos_public_close/qos_v2a_frozen_replay.zip \
+            --evidence-dir artifacts/qos_public_close/v2a_replay_evidence
+          python tools/compare_v2a_outputs.py \
+            artifacts/qos_public_close/qos_v2a_outputs.zip \
+            artifacts/qos_public_close/qos_v2a_frozen_replay.zip \
+            --output-dir artifacts/qos_public_close/v2a_frozen_parity
       - name: Generate dated migration evidence
         if: always()
         run: python tools/gate_btc_migration_runner.py --output-dir artifacts/gate_btc_migration
