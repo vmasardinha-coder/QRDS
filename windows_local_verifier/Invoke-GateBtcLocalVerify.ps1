@@ -91,13 +91,32 @@ function Invoke-CheckedProcess {
     $StdoutPath = Join-Path $LogRoot "$SafeName.stdout.txt"
     $StderrPath = Join-Path $LogRoot "$SafeName.stderr.txt"
 
-    Push-Location $WorkingDirectory
+    $StartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $StartInfo.FileName = $FilePath
+    $StartInfo.WorkingDirectory = $WorkingDirectory
+    $StartInfo.UseShellExecute = $false
+    $StartInfo.CreateNoWindow = $true
+    $StartInfo.RedirectStandardOutput = $true
+    $StartInfo.RedirectStandardError = $true
+    foreach ($Argument in $Arguments) {
+        [void]$StartInfo.ArgumentList.Add([string]$Argument)
+    }
+
+    $Process = [System.Diagnostics.Process]::new()
+    $Process.StartInfo = $StartInfo
     try {
-        & $FilePath @Arguments 1> $StdoutPath 2> $StderrPath
-        $ExitCode = $LASTEXITCODE
+        if (-not $Process.Start()) {
+            throw "$Name could not be started"
+        }
+        $Stdout = $Process.StandardOutput.ReadToEnd()
+        $Stderr = $Process.StandardError.ReadToEnd()
+        $Process.WaitForExit()
+        $ExitCode = $Process.ExitCode
+        [IO.File]::WriteAllText($StdoutPath, $Stdout, [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($StderrPath, $Stderr, [Text.UTF8Encoding]::new($false))
     }
     finally {
-        Pop-Location
+        $Process.Dispose()
     }
 
     if ($ExitCode -ne 0) {
