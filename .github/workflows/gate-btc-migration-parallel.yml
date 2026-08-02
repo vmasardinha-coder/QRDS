@@ -28,6 +28,7 @@ on:
       - migration/gateway/**
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -142,5 +143,64 @@ jobs:
         with:
           name: gate-btc-public-close-${{ github.run_id }}
           path: artifacts/
+          retention-days: 14
+          if-no-files-found: error
+
+  windows-same-input-parity:
+    needs: public-data-close
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            migration/canonical/v2a/requirements.txt
+            migration/canonical/delta/requirements.txt
+      - name: Install canonical research dependencies
+        run: pip install -r migration/canonical/v2a/requirements.txt -r migration/canonical/delta/requirements.txt
+      - name: Download Linux matched-close evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-public-close-${{ github.run_id }}
+          path: artifacts
+      - name: Replay V2A and Delta on Windows with identical frozen bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path artifacts/windows_same_input | Out-Null
+          python tools/v2a_frozen_replay.py `
+            artifacts/qos_public_close/qos_v2a_outputs.zip `
+            --data-cutoff 2026-07-31 `
+            --output-zip artifacts/windows_same_input/windows_v2a_outputs.zip `
+            --evidence-dir artifacts/windows_same_input/v2a_replay_evidence
+          python tools/compare_v2a_outputs.py `
+            artifacts/qos_public_close/qos_v2a_outputs.zip `
+            artifacts/windows_same_input/windows_v2a_outputs.zip `
+            --output-dir artifacts/windows_same_input/v2a_windows_parity
+          python tools/delta_frozen_replay.py `
+            artifacts/qos_public_close/delta_public_input_snapshot.zip `
+            --data-cutoff 2026-07-31 `
+            --output-zip artifacts/windows_same_input/windows_delta_outputs.zip `
+            --input-snapshot-zip artifacts/windows_same_input/windows_delta_input_snapshot.zip `
+            --evidence-dir artifacts/windows_same_input/delta_replay_evidence
+          python tools/compare_delta_outputs.py `
+            artifacts/qos_public_close/delta_walk_forward_outputs.zip `
+            artifacts/windows_same_input/windows_delta_outputs.zip `
+            --output-dir artifacts/windows_same_input/delta_windows_parity
+      - name: Generate Windows dated migration evidence
+        if: always()
+        run: python tools/gate_btc_migration_runner.py --output-dir artifacts/windows_same_input/migration_evidence
+      - name: Upload Windows same-input evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-same-input-${{ github.run_id }}
+          path: artifacts/windows_same_input/
           retention-days: 14
           if-no-files-found: error
