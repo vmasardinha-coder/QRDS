@@ -108,9 +108,11 @@ function Invoke-CheckedProcess {
         if (-not $Process.Start()) {
             throw "$Name could not be started"
         }
-        $Stdout = $Process.StandardOutput.ReadToEnd()
-        $Stderr = $Process.StandardError.ReadToEnd()
+        $StdoutTask = $Process.StandardOutput.ReadToEndAsync()
+        $StderrTask = $Process.StandardError.ReadToEndAsync()
         $Process.WaitForExit()
+        $Stdout = $StdoutTask.GetAwaiter().GetResult()
+        $Stderr = $StderrTask.GetAwaiter().GetResult()
         $ExitCode = $Process.ExitCode
         [IO.File]::WriteAllText($StdoutPath, $Stdout, [Text.UTF8Encoding]::new($false))
         [IO.File]::WriteAllText($StderrPath, $Stderr, [Text.UTF8Encoding]::new($false))
