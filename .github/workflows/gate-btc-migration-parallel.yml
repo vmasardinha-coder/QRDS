@@ -17,6 +17,7 @@ on:
       - tools/compare_cross_platform_outputs.py
       - tools/validate_gateway_output_contract.py
       - tools/compare_qos_runs.py
+      - windows_local_verifier/**
       - tests/test_gate_btc_migration_runner.py
       - tests/test_qos_orchestrator.py
       - tests/test_v2a_frozen_replay.py
@@ -24,6 +25,7 @@ on:
       - tests/test_delta_frozen_replay.py
       - tests/test_compare_delta_outputs.py
       - tests/test_compare_cross_platform_outputs.py
+      - tests/test_windows_local_verifier_bundle.py
       - tests/test_gateway_output_contract.py
       - tests/test_compare_qos_runs.py
       - migration/canonical/**
@@ -72,6 +74,7 @@ jobs:
           tests/test_delta_frozen_replay.py
           tests/test_compare_delta_outputs.py
           tests/test_compare_cross_platform_outputs.py
+          tests/test_windows_local_verifier_bundle.py
           tests/test_compare_qos_runs.py
       - name: Prepare artifact directories
         run: mkdir -p artifacts
@@ -152,7 +155,7 @@ jobs:
   windows-same-input-parity:
     needs: public-data-close
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       GATE_BTC_RESEARCH_ONLY: "true"
       PYTHONDONTWRITEBYTECODE: "1"
@@ -205,6 +208,75 @@ jobs:
       - name: Generate Windows dated migration evidence
         if: always()
         run: python tools/gate_btc_migration_runner.py --output-dir artifacts/windows_same_input/migration_evidence
+      - name: Build offline Windows local verifier bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundle = Join-Path $PWD "artifacts/windows_local_verifier_bundle"
+          $payload = Join-Path $bundle "payload"
+          $runtime = Join-Path $payload "runtime"
+          $reference = Join-Path $payload "reference"
+          $wheelhouse = Join-Path $payload "wheelhouse"
+          New-Item -ItemType Directory -Force -Path $bundle, $payload, $runtime, $reference, $wheelhouse | Out-Null
+
+          Copy-Item -Path "windows_local_verifier/*" -Destination $bundle -Recurse -Force
+          New-Item -ItemType Directory -Force -Path (Join-Path $runtime "tools") | Out-Null
+          foreach ($tool in @(
+            "v2a_frozen_replay.py",
+            "delta_frozen_replay.py",
+            "compare_cross_platform_outputs.py"
+          )) {
+            Copy-Item -LiteralPath (Join-Path "tools" $tool) -Destination (Join-Path $runtime "tools") -Force
+          }
+
+          foreach ($engine in @("v2a", "delta")) {
+            $source = Join-Path "migration/canonical" $engine
+            $destination = Join-Path $runtime "migration/canonical/$engine"
+            New-Item -ItemType Directory -Force -Path $destination | Out-Null
+            Copy-Item -LiteralPath (Join-Path $source "scripts") -Destination $destination -Recurse -Force
+            foreach ($name in @("README.md", "requirements.txt")) {
+              Copy-Item -LiteralPath (Join-Path $source $name) -Destination $destination -Force
+            }
+            Get-ChildItem -LiteralPath $source -Filter "config*.json" -File | Copy-Item -Destination $destination -Force
+            New-Item -ItemType Directory -Force -Path `
+              (Join-Path $destination "data/raw"), `
+              (Join-Path $destination "data/processed"), `
+              (Join-Path $destination "outputs") | Out-Null
+          }
+
+          Copy-Item -LiteralPath "artifacts/qos_public_close/qos_v2a_outputs.zip" -Destination $reference -Force
+          Copy-Item -LiteralPath "artifacts/qos_public_close/delta_walk_forward_outputs.zip" -Destination $reference -Force
+          Copy-Item -LiteralPath "artifacts/qos_public_close/delta_public_input_snapshot.zip" -Destination $reference -Force
+
+          python -m pip download --disable-pip-version-check --only-binary=:all: `
+            --dest $wheelhouse `
+            -r migration/canonical/v2a/requirements.txt `
+            -r migration/canonical/delta/requirements.txt
+
+          $hashes = [ordered]@{}
+          Get-ChildItem -LiteralPath $payload -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $relative = $_.FullName.Substring($bundle.Length + 1).Replace('\', '/')
+            $hashes[$relative] = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
+          }
+          $manifest = [ordered]@{
+            schema = "gate-btc-windows-local-verifier-bundle-v1"
+            created_at_utc = (Get-Date).ToUniversalTime().ToString("o")
+            source_head_sha = $env:GATE_BTC_SOURCE_HEAD_SHA
+            source_head_ref = $env:GATE_BTC_SOURCE_HEAD_REF
+            github_run_id = "${{ github.run_id }}"
+            data_cutoff = "2026-07-31"
+            research_only = $true
+            orders_generated = 0
+            real_capital_used = 0
+            operational_status = "NOT_APPROVED"
+            files_sha256 = $hashes
+          }
+          $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $bundle "BUNDLE_MANIFEST.json") -Encoding UTF8
+      - name: Self-test packaged Windows local verifier
+        shell: pwsh
+        run: |
+          & "artifacts/windows_local_verifier_bundle/Invoke-GateBtcLocalVerify.ps1" `
+            -OutputDirectory "artifacts/windows_local_verifier_selftest"
       - name: Upload Windows same-input evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -213,3 +285,18 @@ jobs:
           path: artifacts/windows_same_input/
           retention-days: 14
           if-no-files-found: error
+      - name: Upload offline Windows local verifier bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-local-verifier-${{ github.run_id }}
+          path: artifacts/windows_local_verifier_bundle/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Upload packaged verifier self-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-local-verifier-selftest-${{ github.run_id }}
+          path: artifacts/windows_local_verifier_selftest/
+          retention-days: 14
+          if-no-files-found: warn
