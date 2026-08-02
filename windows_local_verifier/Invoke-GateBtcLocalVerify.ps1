@@ -154,7 +154,7 @@ try {
     $Result.github_run_id = $Manifest.github_run_id
     $Result.data_cutoff = $Manifest.data_cutoff
 
-    $ManifestFiles = $Manifest.files_sha256.PSObject.Properties
+    $ManifestFiles = @($Manifest.files_sha256.PSObject.Properties)
     if ($ManifestFiles.Count -lt 1) {
         throw "Bundle manifest contains no file hashes"
     }
@@ -175,25 +175,27 @@ try {
     $Result.stage_reached = "LOCATE_PYTHON_312"
     $PythonExe = $null
     $PythonPrefix = @()
+    $PythonCandidates = @()
     $PyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
     if ($null -ne $PyLauncher) {
-        $PythonExe = $PyLauncher.Source
-        $PythonPrefix = @("-3.12")
+        $PythonCandidates += [pscustomobject]@{ Exe = $PyLauncher.Source; Prefix = @("-3.12") }
     }
-    else {
-        $PythonCommand = Get-Command "python.exe" -ErrorAction SilentlyContinue
-        if ($null -ne $PythonCommand) {
-            $PythonExe = $PythonCommand.Source
+    $PythonCommand = Get-Command "python.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $PythonCommand) {
+        $PythonCandidates += [pscustomobject]@{ Exe = $PythonCommand.Source; Prefix = @() }
+    }
+    foreach ($Candidate in $PythonCandidates) {
+        $CandidateOutput = (& $Candidate.Exe @($Candidate.Prefix) -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -eq 0 -and $CandidateOutput.StartsWith("3.12.")) {
+            $PythonExe = $Candidate.Exe
+            $PythonPrefix = @($Candidate.Prefix)
+            $Result.python_version = $CandidateOutput
+            break
         }
     }
     if ([string]::IsNullOrWhiteSpace($PythonExe)) {
         throw "Python 3.12 was not found. The existing GATE BTC environment normally provides it."
     }
-    $VersionText = (& $PythonExe @PythonPrefix -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or -not $VersionText.StartsWith("3.12.")) {
-        throw "Python 3.12 is required; detected output: $VersionText"
-    }
-    $Result.python_version = $VersionText
 
     $Result.stage_reached = "PREPARE_ISOLATED_RUNTIME"
     New-Item -ItemType Directory -Force -Path $TempRoot, $RuntimeRoot, $LogRoot, $EvidenceRoot | Out-Null
@@ -201,7 +203,7 @@ try {
     if (-not (Test-Path -LiteralPath $BundledRuntime -PathType Container)) {
         throw "Missing bundled runtime: $BundledRuntime"
     }
-    Copy-Item -LiteralPath (Join-Path $BundledRuntime "*") -Destination $RuntimeRoot -Recurse -Force
+    Copy-Item -Path (Join-Path $BundledRuntime "*") -Destination $RuntimeRoot -Recurse -Force
 
     $VenvRoot = Join-Path $TempRoot ".venv"
     Invoke-CheckedProcess -Name "create_venv" -FilePath $PythonExe -Arguments @($PythonPrefix + @("-m", "venv", $VenvRoot)) -WorkingDirectory $TempRoot
