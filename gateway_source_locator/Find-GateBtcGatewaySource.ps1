@@ -72,7 +72,7 @@ $Result = [ordered]@{
 
 function Add-UniqueRoot {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$List,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$List,
         [Parameter(Mandatory = $true)][hashtable]$Seen,
         [string]$Path
     )
