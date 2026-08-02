@@ -1,5 +1,5 @@
 {
-  "schema": "gate-btc-gateway-v010-admission-v2",
+  "schema": "gate-btc-gateway-v010-admission-v3",
   "admission_status": "PASS",
   "source_package": {
     "name": "qos_master_pipeline_v1_3_RECONCILED_FULLSET_READY.zip",
@@ -27,7 +27,9 @@
     }
   },
   "repository_payload": {
-    "archive_file": "gateway_v010_canonical_source.zip.b64",
+    "archive_parts_glob": "payload/gateway_v010_canonical_source.zip.b64.part-*",
+    "materialized_archive_file": "gateway_v010_canonical_source.zip.b64",
+    "materialized_archive_tracked": false,
     "decoded_archive_size_bytes": 19542,
     "decoded_archive_sha256": "d90c140b18792bffb147f62fdaf2b5245437637ef2f59f21bbdf68435df01d54"
   },
@@ -93,83 +95,27 @@
       "files": {
         "all_strategy_selections.csv": {
           "rows": 118,
-          "columns": [
-            "base",
-            "date",
-            "last_price",
-            "rows",
-            "ret7",
-            "ret14",
-            "ret30",
-            "ret90",
-            "ret180",
-            "vol30",
-            "liquidity_log",
-            "score",
-            "strategy",
-            "side",
-            "execution_layer"
-          ],
+          "columns": ["base", "date", "last_price", "rows", "ret7", "ret14", "ret30", "ret90", "ret180", "vol30", "liquidity_log", "score", "strategy", "side", "execution_layer"],
           "sha256": "c9555bb51b7d47d065fb82708aa068c7bbc54945d0bb678fcd7d2ec855e195d5"
         },
         "strategy_compositions.csv": {
           "rows": 132,
-          "columns": [
-            "strategy",
-            "asset",
-            "weight",
-            "role"
-          ],
+          "columns": ["strategy", "asset", "weight", "role"],
           "sha256": "b024ecadc3d43d7ca6a6a674b8c8eadc84e7ea8939b7474c216426fb63a70ee8"
         },
         "strategy_execution_profiles.csv": {
           "rows": 8,
-          "columns": [
-            "strategy",
-            "gross_long",
-            "gross_short_abs",
-            "net_exposure",
-            "gross_exposure",
-            "unallocated_gross_capacity_vs_100pct",
-            "estimated_daily_turnover",
-            "estimated_trading_cost_bps_per_day",
-            "estimated_short_funding_bps_per_day",
-            "estimated_total_drag_bps_per_day",
-            "manual_operability",
-            "recommended_rebalance",
-            "stop_rules_backtested",
-            "walk_forward_backtested",
-            "notes"
-          ],
+          "columns": ["strategy", "gross_long", "gross_short_abs", "net_exposure", "gross_exposure", "unallocated_gross_capacity_vs_100pct", "estimated_daily_turnover", "estimated_trading_cost_bps_per_day", "estimated_short_funding_bps_per_day", "estimated_total_drag_bps_per_day", "manual_operability", "recommended_rebalance", "stop_rules_backtested", "walk_forward_backtested", "notes"],
           "sha256": "9567bf0848f420f1de5c6f65ade34c82b07f45cc2aad792014db3343129bb51b"
         },
         "delta_stop_trade_rules.csv": {
           "rows": 80,
-          "columns": [
-            "strategy",
-            "asset",
-            "side",
-            "vol30_daily",
-            "paper_stop_loss_pct",
-            "paper_take_profit_pct",
-            "paper_trailing_stop_pct",
-            "backtested_trade_rule",
-            "rule"
-          ],
+          "columns": ["strategy", "asset", "side", "vol30_daily", "paper_stop_loss_pct", "paper_take_profit_pct", "paper_trailing_stop_pct", "backtested_trade_rule", "rule"],
           "sha256": "805c25fc6af63d1cfecfa27dfd825e0277d31cc36b9b86da5be1a4e7cf7101b7"
         },
         "gateway_decision_log.csv": {
           "rows": 80,
-          "columns": [
-            "base",
-            "decision",
-            "reasons",
-            "score_qos_base",
-            "score_dynamic_defense",
-            "score_vol_target",
-            "rows",
-            "date"
-          ],
+          "columns": ["base", "decision", "reasons", "score_qos_base", "score_dynamic_defense", "score_vol_target", "rows", "date"],
           "sha256": "621ab14a68361d04ffb95819281ca6fc344c89e482b1e403720384d585a080c8"
         }
       }
@@ -197,10 +143,27 @@
       "gateway_decision_log": "PASS_80_ROWS"
     }
   },
+  "remote_admission_checks": {
+    "status": "PASS",
+    "workflow": "GATE BTC Gateway v0.10 Frozen Replay",
+    "run_id": 30757134021,
+    "head_sha": "a91407d98508563a1a0162e60de8eb6d9af190be",
+    "python": "3.12.13",
+    "tests": "PASS_2_OF_2",
+    "stage_reached": "CANONICAL_FIXTURE_AND_FROZEN_DOWNSTREAM_REPLAY_PASS",
+    "source_canonicality": "PASS",
+    "reference_integrity": "PASS",
+    "fixture_contract": "PASS",
+    "frozen_downstream_replay": "PASS_118_132_8_80_80",
+    "artifact_id": 8836278329,
+    "artifact_name": "gate-btc-gateway-v010-30757134021",
+    "artifact_size_bytes": 149662,
+    "artifact_sha256": "bff305886ca5392c3e277905bf5e9f8decdef2931692694499f18ea52633010c"
+  },
   "equivalence_boundary": {
-    "downstream_functional_equivalence": "PASS",
+    "downstream_functional_equivalence": "PASS_LOCAL_AND_GITHUB_ACTIONS",
     "public_source_acquisition_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
     "feature_construction_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
-    "total_system_equivalence": "BLOCKED_BY_UPSTREAM_INPUT_SNAPSHOT_BOUNDARY"
+    "total_system_equivalence": "BLOCKED_ONLY_BY_UPSTREAM_INPUT_SNAPSHOT_BOUNDARY"
   }
 }
