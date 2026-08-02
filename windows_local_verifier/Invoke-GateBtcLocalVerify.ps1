@@ -139,15 +139,17 @@ function Invoke-CheckedProcess {
         ConvertTo-WindowsCommandLineArgument -Argument ([string]$_)
     }) -join ' '
 
-    $Process = Start-Process \
-        -FilePath $FilePath \
-        -ArgumentList $ArgumentLine \
-        -WorkingDirectory $WorkingDirectory \
-        -RedirectStandardOutput $StdoutPath \
-        -RedirectStandardError $StderrPath \
-        -NoNewWindow \
-        -Wait \
-        -PassThru
+    $StartProcessParameters = @{
+        FilePath = $FilePath
+        ArgumentList = $ArgumentLine
+        WorkingDirectory = $WorkingDirectory
+        RedirectStandardOutput = $StdoutPath
+        RedirectStandardError = $StderrPath
+        NoNewWindow = $true
+        Wait = $true
+        PassThru = $true
+    }
+    $Process = Start-Process @StartProcessParameters
     $Process.Refresh()
     $ExitCode = $Process.ExitCode
     $Process.Dispose()
@@ -244,11 +246,7 @@ try {
     }
     foreach ($Candidate in $PythonCandidates) {
         try {
-            $VersionProcess = Invoke-CheckedProcess \
-                -Name ("detect_" + $Candidate.Name) \
-                -FilePath $Candidate.Exe \
-                -Arguments @($Candidate.Prefix + @("-c", "import sys; print('.'.join(map(str, sys.version_info[:3])))")) \
-                -WorkingDirectory $TempRoot
+            $VersionProcess = Invoke-CheckedProcess -Name ("detect_" + $Candidate.Name) -FilePath $Candidate.Exe -Arguments @($Candidate.Prefix + @("-c", "import sys; print('.'.join(map(str, sys.version_info[:3])))")) -WorkingDirectory $TempRoot
             $CandidateOutput = (Get-Content -LiteralPath $VersionProcess.stdout_path -Raw -ErrorAction Stop).Trim()
             if ($CandidateOutput.StartsWith("3.12.")) {
                 $PythonExe = $Candidate.Exe
@@ -273,11 +271,7 @@ try {
     Copy-Item -Path (Join-Path $BundledRuntime "*") -Destination $RuntimeRoot -Recurse -Force
 
     $VenvRoot = Join-Path $TempRoot ".venv"
-    Invoke-CheckedProcess \
-        -Name "create_venv" \
-        -FilePath $PythonExe \
-        -Arguments @($PythonPrefix + @("-m", "venv", $VenvRoot)) \
-        -WorkingDirectory $TempRoot | Out-Null
+    Invoke-CheckedProcess -Name "create_venv" -FilePath $PythonExe -Arguments @($PythonPrefix + @("-m", "venv", $VenvRoot)) -WorkingDirectory $TempRoot | Out-Null
     $VenvPython = Join-Path $VenvRoot "Scripts\python.exe"
     if (-not (Test-Path -LiteralPath $VenvPython -PathType Leaf)) {
         throw "Isolated Python was not created: $VenvPython"
@@ -290,14 +284,7 @@ try {
     }
     $V2ARequirements = Join-Path $RuntimeRoot "migration\canonical\v2a\requirements.txt"
     $DeltaRequirements = Join-Path $RuntimeRoot "migration\canonical\delta\requirements.txt"
-    Invoke-CheckedProcess \
-        -Name "install_offline_dependencies" \
-        -FilePath $VenvPython \
-        -Arguments @(
-            "-m", "pip", "install", "--disable-pip-version-check", "--no-index", "--find-links", $Wheelhouse,
-            "-r", $V2ARequirements, "-r", $DeltaRequirements
-        ) \
-        -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess -Name "install_offline_dependencies" -FilePath $VenvPython -Arguments @("-m", "pip", "install", "--disable-pip-version-check", "--no-index", "--find-links", $Wheelhouse, "-r", $V2ARequirements, "-r", $DeltaRequirements) -WorkingDirectory $RuntimeRoot | Out-Null
     $Result.dependency_install = "PASS_OFFLINE_NO_INDEX"
 
     $ReferenceRoot = Join-Path $BundleRoot "payload\reference"
@@ -314,24 +301,8 @@ try {
     $V2AEvidence = Join-Path $EvidenceRoot "v2a_replay_evidence"
     $V2AParity = Join-Path $EvidenceRoot "v2a_windows_parity"
     $Result.stage_reached = "REPLAY_V2A_SAME_INPUT"
-    Invoke-CheckedProcess \
-        -Name "v2a_frozen_replay" \
-        -FilePath $VenvPython \
-        -Arguments @(
-            "tools/v2a_frozen_replay.py", $ReferenceV2A,
-            "--data-cutoff", [string]$Manifest.data_cutoff,
-            "--output-zip", $V2AOutput,
-            "--evidence-dir", $V2AEvidence
-        ) \
-        -WorkingDirectory $RuntimeRoot | Out-Null
-    Invoke-CheckedProcess \
-        -Name "v2a_cross_platform_compare" \
-        -FilePath $VenvPython \
-        -Arguments @(
-            "tools/compare_cross_platform_outputs.py", "v2a", $ReferenceV2A, $V2AOutput,
-            "--output-dir", $V2AParity
-        ) \
-        -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess -Name "v2a_frozen_replay" -FilePath $VenvPython -Arguments @("tools/v2a_frozen_replay.py", $ReferenceV2A, "--data-cutoff", [string]$Manifest.data_cutoff, "--output-zip", $V2AOutput, "--evidence-dir", $V2AEvidence) -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess -Name "v2a_cross_platform_compare" -FilePath $VenvPython -Arguments @("tools/compare_cross_platform_outputs.py", "v2a", $ReferenceV2A, $V2AOutput, "--output-dir", $V2AParity) -WorkingDirectory $RuntimeRoot | Out-Null
     $V2AResult = Get-LatestJson $V2AParity "V2A_CROSS_PLATFORM_PARITY_*.json"
     if ($V2AResult.status -ne "PASS" -or $V2AResult.equivalence_claim -ne $true) {
         throw "V2A semantic parity did not pass"
@@ -346,27 +317,8 @@ try {
     $DeltaEvidence = Join-Path $EvidenceRoot "delta_replay_evidence"
     $DeltaParity = Join-Path $EvidenceRoot "delta_windows_parity"
     $Result.stage_reached = "REPLAY_DELTA_SAME_INPUT"
-    Invoke-CheckedProcess \
-        -Name "delta_frozen_replay" \
-        -FilePath $VenvPython \
-        -Arguments @(
-            "tools/delta_frozen_replay.py", $ReferenceDeltaInput,
-            "--data-cutoff", [string]$Manifest.data_cutoff,
-            "--output-zip", $DeltaOutput,
-            "--input-snapshot-zip", $DeltaInputReplay,
-            "--evidence-dir", $DeltaEvidence
-        ) \
-        -WorkingDirectory $RuntimeRoot | Out-Null
-    Invoke-CheckedProcess \
-        -Name "delta_cross_platform_compare" \
-        -FilePath $VenvPython \
-        -Arguments @(
-            "tools/compare_cross_platform_outputs.py", "delta", $ReferenceDelta, $DeltaOutput,
-            "--reference-input-snapshot", $ReferenceDeltaInput,
-            "--replay-input-snapshot", $DeltaInputReplay,
-            "--output-dir", $DeltaParity
-        ) \
-        -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess -Name "delta_frozen_replay" -FilePath $VenvPython -Arguments @("tools/delta_frozen_replay.py", $ReferenceDeltaInput, "--data-cutoff", [string]$Manifest.data_cutoff, "--output-zip", $DeltaOutput, "--input-snapshot-zip", $DeltaInputReplay, "--evidence-dir", $DeltaEvidence) -WorkingDirectory $RuntimeRoot | Out-Null
+    Invoke-CheckedProcess -Name "delta_cross_platform_compare" -FilePath $VenvPython -Arguments @("tools/compare_cross_platform_outputs.py", "delta", $ReferenceDelta, $DeltaOutput, "--reference-input-snapshot", $ReferenceDeltaInput, "--replay-input-snapshot", $DeltaInputReplay, "--output-dir", $DeltaParity) -WorkingDirectory $RuntimeRoot | Out-Null
     $DeltaResult = Get-LatestJson $DeltaParity "DELTA_CROSS_PLATFORM_PARITY_*.json"
     if ($DeltaResult.status -ne "PASS" -or $DeltaResult.equivalence_claim -ne $true) {
         throw "Delta semantic parity did not pass"
