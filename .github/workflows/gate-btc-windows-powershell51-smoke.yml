@@ -16,6 +16,7 @@ on:
       - .github/workflows/gate-btc-windows-powershell51-smoke.yml
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   powershell51-compatibility:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       GATE_BTC_RESEARCH_ONLY: "true"
     steps:
@@ -132,6 +133,48 @@ jobs:
           Write-Host "EXIT_CODE_AUTHORITY=PASS"
           Write-Host "NONZERO_FAIL_CLOSED=PASS"
 
+      - name: Download exact packaged verifier from validated run
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-windows-local-verifier-30747556555
+          path: artifacts/full_ps51_bundle
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: vmasardinha-coder/QRDS
+          run-id: 30747556555
+
+      - name: Full packaged verifier under Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundleScript = Join-Path $PWD "artifacts/full_ps51_bundle/Invoke-GateBtcLocalVerify.ps1"
+          $output = Join-Path $PWD "artifacts/full_ps51_selftest"
+          & $bundleScript -OutputDirectory $output
+          if ($LASTEXITCODE -ne 0) {
+            throw "Full Windows PowerShell 5.1 verifier returned exit code $LASTEXITCODE"
+          }
+          $json = Get-ChildItem -LiteralPath $output -Filter "GATE_BTC_WINDOWS_LOCAL_VERIFY_*.json" -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if ($null -eq $json) {
+            throw "Full verifier did not produce JSON evidence"
+          }
+          $result = Get-Content -LiteralPath $json.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($result.status -ne "PASS") {
+            throw "Full verifier status is $($result.status)"
+          }
+          if ($result.v2a_status -ne "PASS" -or $result.v2a_output_members -ne "14/14") {
+            throw "Full verifier V2A parity did not pass"
+          }
+          if ($result.delta_status -ne "PASS" -or $result.delta_output_members -ne "15/15") {
+            throw "Full verifier Delta parity did not pass"
+          }
+          if ($result.network_actions -ne "NONE" -or $result.project_files_modified -ne 0) {
+            throw "Full verifier violated offline or zero-modification contract"
+          }
+          Write-Host "FULL_PS51_PACKAGE_STATUS=PASS"
+          Write-Host "FULL_PS51_V2A=14/14"
+          Write-Host "FULL_PS51_DELTA=15/15"
+
       - name: Upload PowerShell 5.1 smoke logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -140,3 +183,12 @@ jobs:
           path: ${{ runner.temp }}/gate btc ps51 smoke logs/
           retention-days: 14
           if-no-files-found: warn
+
+      - name: Upload full PowerShell 5.1 verifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-full-ps51-selftest-${{ github.run_id }}
+          path: artifacts/full_ps51_selftest/
+          retention-days: 14
+          if-no-files-found: error
