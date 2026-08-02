@@ -1,0 +1,67 @@
+name: GATE BTC Gateway v0.10 Frozen Replay
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-gateway-v010-replay.yml
+      - tools/gateway_frozen_replay.py
+      - tests/test_gateway_frozen_replay.py
+      - migration/canonical/gateway/**
+      - migration/gateway/gateway_output_contract_v010.json
+      - migration/gateway/source_intake_manifest.json
+      - crypto_decision_lab/docs/GATE_BTC_MIGRATION_STATUS.md
+  push:
+    branches: [agent/gate-btc-actions-migration]
+    paths:
+      - .github/workflows/gate-btc-gateway-v010-replay.yml
+      - tools/gateway_frozen_replay.py
+      - tests/test_gateway_frozen_replay.py
+      - migration/canonical/gateway/**
+      - migration/gateway/gateway_output_contract_v010.json
+      - migration/gateway/source_intake_manifest.json
+      - crypto_decision_lab/docs/GATE_BTC_MIGRATION_STATUS.md
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-gateway-v010-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  canonical-gateway-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: migration/canonical/gateway/requirements.txt
+      - name: Install canonical Gateway dependencies
+        run: pip install -r migration/canonical/gateway/requirements.txt
+      - name: Materialize byte-preserving source payload
+        run: |
+          cat migration/canonical/gateway/payload/gateway_v010_canonical_source.zip.b64.part-* \
+            > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
+          mkdir -p artifacts/gateway_v010_replay
+      - name: Test frozen replay and fail-closed boundary
+        run: python -m unittest -v tests/test_gateway_frozen_replay.py
+      - name: Run canonical fixture and August 2 frozen replay
+        run: >-
+          python tools/gateway_frozen_replay.py
+          --output-dir artifacts/gateway_v010_replay
+      - name: Upload Gateway admission and replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-v010-${{ github.run_id }}
+          path: artifacts/gateway_v010_replay/
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,163 @@
+{
+  "schema": "gate-btc-gateway-source-intake-v5",
+  "status": "GATEWAY_TOTAL_EQUIVALENCE_PASS_RESEARCH_ONLY",
+  "discovered_at_local": "2026-08-02T10:57:32-03:00",
+  "discovery_evidence": {
+    "files_examined": 5003,
+    "zip_files_examined": 219,
+    "network_actions": "NONE",
+    "searched_files_modified": 0,
+    "project_files_modified": 0,
+    "local_collection_read": false,
+    "local_collection_modified": false
+  },
+  "current_source": {
+    "name": "qos_master_pipeline_v1_3_RECONCILED_FULLSET_READY.zip",
+    "role": "current_unified_pipeline_with_gateway_v0_10_source",
+    "size_bytes": 288306,
+    "sha256": "f861fc31461a39713d98f4d4ad4c7aa9468df8fa9744e2eab1fb084ef4d8cf89",
+    "zip_integrity": "PASS",
+    "canonical_subtree": "qos_master_pipeline_v1_3/qos_v2a1_gateway_scanner_v0_10",
+    "canonical_entrypoint": "scripts/00_run_all_v2a1.py",
+    "canonical_entrypoint_sha256": "835e4ecb118c3ba2796c4e74c39a9025351b14415a2ddd1efb5465b82a724a20",
+    "canonicality_review": "PASS",
+    "repository_payload": "CHUNKED_BASE64_EXACT_SHA256",
+    "repository_payload_decoded_sha256": "d90c140b18792bffb147f62fdaf2b5245437637ef2f59f21bbdf68435df01d54",
+    "methodology_changes": 0
+  },
+  "historical_sources": [
+    {
+      "name": "qos_v2a1_gateway_scanner_v0_9.zip",
+      "role": "optional_historical_gateway_baseline_source",
+      "size_bytes": 19394,
+      "sha256": "08e0cc09376bc1e174e3aa86b835571246622eefe9f80b4197d34183313d3a0d",
+      "required_now": false
+    },
+    {
+      "name": "qos_master_pipeline_v0_2.zip",
+      "role": "optional_historical_master_pipeline_source",
+      "size_bytes": 5043,
+      "sha256": "3e510cb7e871d23a0546b2e248b06efd2c38ca160cbe840a749afdbc4b7ad388",
+      "required_now": false
+    }
+  ],
+  "reference_run": {
+    "reference_local_date": "2026-08-02",
+    "role": "canonical_prospective_gateway_snapshot",
+    "binary_admission": "PASS",
+    "full_outputs": {
+      "name": "qos_full_outputs_v13(7).zip",
+      "size_bytes": 5875437,
+      "sha256": "e72e8b91978f0cae6076bcde9cdccb62eee975024474fbfb00db26d9e4ddc313",
+      "zip_integrity": "PASS"
+    },
+    "review_bundle": {
+      "name": "qos_review_bundle_v13(7).zip",
+      "size_bytes": 901393,
+      "sha256": "1da97730152c489bc09586bded4fd0008c01a5d0bd740705e51edcd727618e51",
+      "zip_integrity": "PASS"
+    },
+    "pdf": {
+      "name": "Shadow_Watch_Executive_2026-08-02_Reconciled_FullSet_v13_Master.pdf",
+      "size_bytes": 695861,
+      "sha256": "8e5bd10a85001c83c9a2fbb0e9c5ee3480ba194e5539bffe74c8e597fe1e950e"
+    },
+    "master_txt": {
+      "name": "QOS_MASTER_V13_REPORT_20260802_151028.txt",
+      "size_bytes": 5709,
+      "sha256": "15926b9043a2c25cca4b7884e367da5ec465d7329d40115c4237b0973c3c8f7d"
+    },
+    "gateway": {
+      "version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
+      "technical_status": "PASS",
+      "data_quality_status": "PASS",
+      "snapshot_status": "SNAPSHOT_USABLE_RESEARCH_ONLY",
+      "evidence_status": "SNAPSHOT_ONLY_NO_WALK_FORWARD_BACKTEST",
+      "operational_status": "NOT_APPROVED",
+      "retrospective_performance_status": "PROHIBITED_CURRENT_COMPOSITION",
+      "errors": [],
+      "data_as_of": "2026-08-02",
+      "universe_rows": 1741,
+      "history_rows": 36755,
+      "feature_assets": 174,
+      "selected_rows": 118,
+      "composition_rows": 132,
+      "execution_profile_rows": 8,
+      "delta_stop_rule_rows": 80,
+      "decision_log_rows": 80
+    }
+  },
+  "downstream_validation": {
+    "status": "PASS_LOCAL_AND_GITHUB_ACTIONS",
+    "scope": "DETERMINISTIC_DOWNSTREAM_REPLAY_FROM_ADMITTED_FEATURE_SNAPSHOT",
+    "canonical_fixture": "PASS",
+    "output_contract": "PASS",
+    "all_strategy_selections": "PASS_118_ROWS",
+    "strategy_compositions": "PASS_132_ROWS",
+    "strategy_execution_profiles": "PASS_8_ROWS",
+    "delta_stop_trade_rules": "PASS_80_ROWS",
+    "gateway_decision_log": "PASS_80_ROWS",
+    "workflow": "GATE BTC Gateway v0.10 Frozen Replay",
+    "first_pass_run_id": 30757134021,
+    "first_pass_artifact_id": 8836278329,
+    "first_pass_artifact_sha256": "bff305886ca5392c3e277905bf5e9f8decdef2931692694499f18ea52633010c"
+  },
+  "upstream_validation": {
+    "status": "PASS",
+    "workflow": "GATE BTC Gateway Upstream Equivalence",
+    "evidence_run_id": 30759445898,
+    "linux_public_capture": "PASS",
+    "public_http_response_count": 835,
+    "linux_offline_replay": "PASS_835_OF_835_RESPONSES_CONSUMED_ZERO_REMAINING",
+    "linux_semantic_parity": "PASS",
+    "windows_offline_replay": "PASS_835_OF_835_RESPONSES_CONSUMED_ZERO_REMAINING",
+    "windows_cross_platform_parity": "PASS",
+    "cross_platform_numeric_rtol": 1e-12,
+    "cross_platform_numeric_atol": 1e-12,
+    "cross_platform_max_abs_diff": 0.0,
+    "cross_platform_max_rel_diff": 0.0,
+    "public_source_acquisition_equivalence": "PASS_PUBLIC_CAPTURE_WITH_COMPLETE_RESPONSE_CASSETTE",
+    "feature_construction_equivalence_linux": "PASS_LINUX_OFFLINE_SAME_INPUT_REPLAY",
+    "feature_construction_equivalence_windows": "PASS_WINDOWS_OFFLINE_SAME_INPUT_REPLAY_WITH_FROZEN_1E-12_NUMERIC_TOLERANCE",
+    "linux_artifact_id": 8837004243,
+    "linux_artifact_sha256": "54e67cb680ad013c204094234ca24809dd10819ac63d3186bca4b41e9ab48f75",
+    "windows_artifact_id": 8837018058,
+    "windows_artifact_sha256": "c3f7eb561b7bbb1e6cd21a5085d372b8ed5dad40573587f131f94ad7f84504e4",
+    "decision_artifact_id": 8837020585,
+    "decision_artifact_sha256": "2b2d0e664f79ad8d8b259e87ba6f75bc82a6c7726e6f10c43abedd49080d9a70",
+    "decision": "GATEWAY_TOTAL_EQUIVALENCE_PASS"
+  },
+  "runtime_source_quality_policy": {
+    "clean_states": {
+      "data_quality_status": "PASS",
+      "snapshot_status": "SNAPSHOT_USABLE_RESEARCH_ONLY"
+    },
+    "documented_warning_states": {
+      "data_quality_status": "PASS_PARTIAL_REDUNDANCY_WARNING",
+      "snapshot_status": "SNAPSHOT_USABLE_WITH_DATA_WARNINGS"
+    },
+    "warning_effect": "RESEARCH_OUTPUT_ALLOWED_WITH_EXPLICIT_WARNING_OPERATIONAL_PROMOTION_REMAINS_BLOCKED",
+    "technical_failure_effect": "FAIL_CLOSED_NO_REPORT_PROMOTION"
+  },
+  "admission_policy": {
+    "no_source_reconstruction_by_assumption": true,
+    "no_methodology_formula_weight_threshold_stop_or_strategy_change": true,
+    "research_only": true,
+    "orders_allowed": false,
+    "real_capital_allowed": false,
+    "operational_promotion_allowed": false,
+    "merge_allowed": false,
+    "cron_on_main_allowed": false
+  },
+  "equivalence_boundary": {
+    "source_canonicality": "PASS",
+    "binary_admission": "PASS",
+    "downstream_functional_equivalence": "PASS_LOCAL_LINUX_WINDOWS",
+    "public_source_acquisition_equivalence": "PASS_LINUX_CAPTURE_COMPLETE_CASSETTE",
+    "feature_construction_equivalence": "PASS_LINUX_AND_WINDOWS_SAME_INPUT",
+    "safety_equivalence": "PASS",
+    "gateway_total_equivalence": "PASS_RESEARCH_ONLY",
+    "operational_approval": "NOT_APPROVED"
+  },
+  "next_state": "READY_FOR_DAILY_RESEARCH_PIPELINE_VALIDATION_THEN_EXPLICIT_MERGE_DECISION"
+}

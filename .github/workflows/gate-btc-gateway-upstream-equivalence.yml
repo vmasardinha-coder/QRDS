@@ -1,0 +1,199 @@
+name: GATE BTC Gateway Upstream Equivalence
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
+      - tools/gateway_upstream_equivalence.py
+      - tools/gateway_upstream_equivalence_v2.py
+      - tools/gateway_upstream_equivalence_v3.py
+      - tools/gateway_capture_site/**
+      - tools/gateway_frozen_replay.py
+      - migration/canonical/gateway/**
+      - migration/gateway/gateway_output_contract_v010.json
+  push:
+    branches: [agent/gate-btc-actions-migration]
+    paths:
+      - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
+      - tools/gateway_upstream_equivalence.py
+      - tools/gateway_upstream_equivalence_v2.py
+      - tools/gateway_upstream_equivalence_v3.py
+      - tools/gateway_capture_site/**
+      - tools/gateway_frozen_replay.py
+      - migration/canonical/gateway/**
+      - migration/gateway/gateway_output_contract_v010.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-gateway-upstream-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  linux-public-capture-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: migration/canonical/gateway/requirements.txt
+      - name: Install canonical Gateway dependencies
+        run: pip install -r migration/canonical/gateway/requirements.txt
+      - name: Materialize canonical source payload
+        run: >-
+          cat migration/canonical/gateway/payload/gateway_v010_canonical_source.zip.b64.part-*
+          > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
+      - name: Capture public responses and replay offline on Linux
+        run: >-
+          python tools/gateway_upstream_equivalence_v3.py capture-replay
+          --output-dir artifacts/gateway_upstream_linux
+          --timeout-seconds 1800
+      - name: Revalidate admitted downstream reference
+        run: >-
+          python tools/gateway_frozen_replay.py
+          --output-dir artifacts/gateway_downstream_reference
+      - name: Upload Linux capture and replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-upstream-linux-${{ github.run_id }}
+          path: |
+            artifacts/gateway_upstream_linux/
+            artifacts/gateway_downstream_reference/
+          retention-days: 14
+          if-no-files-found: error
+
+  windows-offline-replay:
+    needs: linux-public-capture-replay
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: migration/canonical/gateway/requirements.txt
+      - name: Install canonical Gateway dependencies
+        run: pip install -r migration/canonical/gateway/requirements.txt
+      - name: Download Linux public capture
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-gateway-upstream-linux-${{ github.run_id }}
+          path: artifacts/linux
+      - name: Replay identical public HTTP cassette offline on Windows
+        shell: pwsh
+        run: >-
+          python tools/gateway_upstream_equivalence_v3.py replay-only
+          --cassette artifacts/linux/gateway_upstream_linux/gateway_public_http_cassette.jsonl
+          --reference-output-zip artifacts/linux/gateway_upstream_linux/linux_public_capture_outputs.zip
+          --output-dir artifacts/gateway_upstream_windows
+          --timeout-seconds 1800
+      - name: Upload Windows replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-upstream-windows-${{ github.run_id }}
+          path: artifacts/gateway_upstream_windows/
+          retention-days: 14
+          if-no-files-found: error
+
+  gateway-equivalence-decision:
+    needs: [linux-public-capture-replay, windows-offline-replay]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-gateway-upstream-linux-${{ github.run_id }}
+          path: artifacts/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-gateway-upstream-windows-${{ github.run_id }}
+          path: artifacts/windows
+      - name: Issue fail-closed Gateway equivalence decision
+        shell: bash
+        run: |
+          mkdir -p artifacts/decision
+          python - <<'PY'
+          import json, pathlib, zipfile
+          from datetime import datetime, timezone
+
+          root = pathlib.Path('artifacts')
+          linux = json.loads((root/'linux/gateway_upstream_linux/GATE_BTC_GATEWAY_UPSTREAM_EQUIVALENCE.json').read_text(encoding='utf-8'))
+          windows = json.loads((root/'windows/GATE_BTC_GATEWAY_WINDOWS_UPSTREAM_REPLAY.json').read_text(encoding='utf-8'))
+          downstream = json.loads((root/'linux/gateway_downstream_reference/GATE_BTC_GATEWAY_V010_REPLAY.json').read_text(encoding='utf-8'))
+          checks = {
+              'linux_public_capture_replay': linux.get('status') == 'PASS',
+              'linux_public_source_acquisition': str(linux.get('public_source_acquisition_equivalence', '')).startswith('PASS'),
+              'linux_feature_construction': str(linux.get('feature_construction_equivalence', '')).startswith('PASS'),
+              'windows_identical_input_replay': windows.get('status') == 'PASS',
+              'windows_feature_construction': str(windows.get('feature_construction_equivalence', '')).startswith('PASS'),
+              'windows_cross_platform_numeric_tolerance': windows.get('cross_platform_parity', {}).get('status') == 'PASS',
+              'gateway_downstream_reference': downstream.get('status') == 'PASS',
+              'source_canonicality': downstream.get('source_canonicality', {}).get('status') == 'PASS',
+              'reference_integrity': downstream.get('reference_integrity', {}).get('status') == 'PASS',
+              'research_only': linux.get('research_only') is True and windows.get('research_only') is True and downstream.get('research_only') is True,
+              'zero_orders': linux.get('orders_generated') == 0 and windows.get('orders_generated') == 0 and downstream.get('orders_generated') == 0,
+              'zero_real_capital': linux.get('real_capital_used') == 0 and windows.get('real_capital_used') == 0 and downstream.get('real_capital_used') == 0,
+              'methodology_unchanged': linux.get('methodology_changes') == 0 and windows.get('methodology_changes') == 0 and downstream.get('methodology_changes') == 0,
+          }
+          status = 'PASS' if all(checks.values()) else 'FAIL'
+          payload = {
+              'schema': 'gate-btc-gateway-total-equivalence-v1',
+              'generated_utc': datetime.now(timezone.utc).isoformat(),
+              'status': status,
+              'gateway_total_equivalence': 'PASS' if status == 'PASS' else 'FAIL',
+              'checks': checks,
+              'cross_platform_max_abs_diff': windows.get('cross_platform_parity', {}).get('max_abs_diff'),
+              'cross_platform_max_rel_diff': windows.get('cross_platform_parity', {}).get('max_rel_diff'),
+              'cross_platform_rtol': windows.get('cross_platform_parity', {}).get('numeric_rtol'),
+              'cross_platform_atol': windows.get('cross_platform_parity', {}).get('numeric_atol'),
+              'research_only': True,
+              'orders_generated': 0,
+              'real_capital_used': 0,
+              'operational_status': 'NOT_APPROVED',
+              'methodology_changes': 0,
+              'merge_authorized': False,
+              'cron_on_main_enabled': False,
+          }
+          out = root/'decision'
+          (out/'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.json').write_text(json.dumps(payload, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          lines = [
+              'GATE BTC - GATEWAY TOTAL EQUIVALENCE',
+              f'STATUS={status}',
+              f'GATEWAY_TOTAL_EQUIVALENCE={payload["gateway_total_equivalence"]}',
+          ] + [f'{key.upper()}={"PASS" if value else "FAIL"}' for key, value in checks.items()] + [
+              f'CROSS_PLATFORM_MAX_ABS_DIFF={payload["cross_platform_max_abs_diff"]}',
+              f'CROSS_PLATFORM_MAX_REL_DIFF={payload["cross_platform_max_rel_diff"]}',
+              f'CROSS_PLATFORM_RTOL={payload["cross_platform_rtol"]}',
+              f'CROSS_PLATFORM_ATOL={payload["cross_platform_atol"]}',
+              'RESEARCH_ONLY=True', 'ORDERS_GENERATED=0', 'REAL_CAPITAL_USED=0',
+              'OPERATIONAL_STATUS=NOT_APPROVED', 'METHODOLOGY_CHANGES=0',
+              'MERGE_AUTHORIZED=False', 'CRON_ON_MAIN_ENABLED=False',
+          ]
+          (out/'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.txt').write_text('\n'.join(lines)+'\n', encoding='utf-8')
+          with zipfile.ZipFile(out/'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE_EVIDENCE.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              archive.write(out/'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.json', 'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.json')
+              archive.write(out/'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.txt', 'GATE_BTC_GATEWAY_TOTAL_EQUIVALENCE.txt')
+          print('\n'.join(lines))
+          raise SystemExit(0 if status == 'PASS' else 1)
+          PY
+      - name: Upload Gateway total-equivalence decision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-total-equivalence-${{ github.run_id }}
+          path: artifacts/decision/
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,101 @@
+{
+  "schema": "gate-btc-gateway-v010-admission-v3",
+  "admission_status": "PASS",
+  "source_package": {
+    "name": "qos_master_pipeline_v1_3_RECONCILED_FULLSET_READY.zip",
+    "size_bytes": 288306,
+    "sha256": "f861fc31461a39713d98f4d4ad4c7aa9468df8fa9744e2eab1fb084ef4d8cf89",
+    "zip_integrity": "PASS",
+    "canonical_subtree": "qos_master_pipeline_v1_3/qos_v2a1_gateway_scanner_v0_10"
+  },
+  "canonical_files": {
+    "README.md": {"size_bytes": 440, "sha256": "5c6ccfb54d7d1b7a32a65d0122ac9cf1f50d3d1d9cd3371352c06db615ddf755"},
+    "requirements.txt": {"size_bytes": 101, "sha256": "5387b8e1e7ba9fa6c07bfabc1e8573a5ff0fc804918e24bd86590dfb958a1c90"},
+    "config/manual_watchlist.csv": {"size_bytes": 986, "sha256": "8199aac89f82ab4a6ea604b710b1e36f6e02dd247f65e4187d5b99722d5da9d6"},
+    "scripts/00_run_all_v2a1.py": {"size_bytes": 72649, "sha256": "835e4ecb118c3ba2796c4e74c39a9025351b14415a2ddd1efb5465b82a724a20"}
+  },
+  "repository_payload": {
+    "archive_parts_glob": "payload/gateway_v010_canonical_source.zip.b64.part-*",
+    "materialized_archive_file": "gateway_v010_canonical_source.zip.b64",
+    "materialized_archive_tracked": false,
+    "decoded_archive_size_bytes": 19542,
+    "decoded_archive_sha256": "d90c140b18792bffb147f62fdaf2b5245437637ef2f59f21bbdf68435df01d54"
+  },
+  "reference_run": {
+    "reference_date": "2026-08-02",
+    "gateway_data_as_of": "2026-08-02",
+    "delta_data_as_of": "2026-08-01",
+    "full_outputs": {"original_name": "qos_full_outputs_v13(7).zip", "size_bytes": 5875437, "sha256": "e72e8b91978f0cae6076bcde9cdccb62eee975024474fbfb00db26d9e4ddc313", "zip_integrity": "PASS"},
+    "review_bundle": {"original_name": "qos_review_bundle_v13(7).zip", "size_bytes": 901393, "sha256": "1da97730152c489bc09586bded4fd0008c01a5d0bd740705e51edcd727618e51", "zip_integrity": "PASS"},
+    "pdf": {"name": "Shadow_Watch_Executive_2026-08-02_Reconciled_FullSet_v13_Master.pdf", "size_bytes": 695861, "sha256": "8e5bd10a85001c83c9a2fbb0e9c5ee3480ba194e5539bffe74c8e597fe1e950e"},
+    "master_txt": {"name": "QOS_MASTER_V13_REPORT_20260802_151028.txt", "size_bytes": 5709, "sha256": "15926b9043a2c25cca4b7884e367da5ec465d7329d40115c4237b0973c3c8f7d"},
+    "gateway_manifest": {
+      "version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
+      "technical_status": "PASS",
+      "data_quality_status": "PASS",
+      "snapshot_status": "SNAPSHOT_USABLE_RESEARCH_ONLY",
+      "evidence_status": "SNAPSHOT_ONLY_NO_WALK_FORWARD_BACKTEST",
+      "operational_status": "NOT_APPROVED",
+      "retrospective_performance_status": "PROHIBITED_CURRENT_COMPOSITION",
+      "errors": [],
+      "universe_rows": 1741,
+      "history_rows": 36755,
+      "feature_assets": 174,
+      "selected_rows": 118,
+      "execution_profile_rows": 8,
+      "delta_stop_rule_rows": 80
+    },
+    "repository_payload": {
+      "archive_parts_glob": "reference/payload/gateway_reference_minimal_2026-08-02.zip.b64.part-*",
+      "decoded_archive_size_bytes": 22701,
+      "decoded_archive_sha256": "85c06c9d07df880861fde8bbc9cee7518bb24930da7820d272a4930af8a6071d"
+    },
+    "reference_files": {"inputs/scanner_top500_features_minimal.csv": {"size_bytes": 52119, "sha256": "024845cf487f63b96cc7eadd4266bb8ad291005ec97b7858196e6b0443128e76"}},
+    "semantic_replay": {
+      "scope": "DETERMINISTIC_DOWNSTREAM_REPLAY_FROM_ADMITTED_FEATURE_SNAPSHOT",
+      "input_file": "inputs/scanner_top500_features_minimal.csv",
+      "float_significant_digits": 11,
+      "public_source_acquisition_reconstructed": false,
+      "feature_construction_reconstructed": false,
+      "files": {
+        "all_strategy_selections.csv": {"rows": 118, "columns": ["base", "date", "last_price", "rows", "ret7", "ret14", "ret30", "ret90", "ret180", "vol30", "liquidity_log", "score", "strategy", "side", "execution_layer"], "sha256": "c9555bb51b7d47d065fb82708aa068c7bbc54945d0bb678fcd7d2ec855e195d5"},
+        "strategy_compositions.csv": {"rows": 132, "columns": ["strategy", "asset", "weight", "role"], "sha256": "b024ecadc3d43d7ca6a6a674b8c8eadc84e7ea8939b7474c216426fb63a70ee8"},
+        "strategy_execution_profiles.csv": {"rows": 8, "columns": ["strategy", "gross_long", "gross_short_abs", "net_exposure", "gross_exposure", "unallocated_gross_capacity_vs_100pct", "estimated_daily_turnover", "estimated_trading_cost_bps_per_day", "estimated_short_funding_bps_per_day", "estimated_total_drag_bps_per_day", "manual_operability", "recommended_rebalance", "stop_rules_backtested", "walk_forward_backtested", "notes"], "sha256": "9567bf0848f420f1de5c6f65ade34c82b07f45cc2aad792014db3343129bb51b"},
+        "delta_stop_trade_rules.csv": {"rows": 80, "columns": ["strategy", "asset", "side", "vol30_daily", "paper_stop_loss_pct", "paper_take_profit_pct", "paper_trailing_stop_pct", "backtested_trade_rule", "rule"], "sha256": "805c25fc6af63d1cfecfa27dfd825e0277d31cc36b9b86da5be1a4e7cf7101b7"},
+        "gateway_decision_log.csv": {"rows": 80, "columns": ["base", "decision", "reasons", "score_qos_base", "score_dynamic_defense", "score_vol_target", "rows", "date"], "sha256": "621ab14a68361d04ffb95819281ca6fc344c89e482b1e403720384d585a080c8"}
+      }
+    }
+  },
+  "safety": {"research_only": true, "orders": 0, "real_capital": 0, "operational_status": "NOT_APPROVED", "retrospective_performance": "PROHIBITED", "methodology_changes": 0},
+  "local_admission_checks": {
+    "source_zip_integrity": "PASS",
+    "source_canonicality": "PASS",
+    "reference_zip_integrity": "PASS",
+    "source_fixture_full_pipeline": "PASS",
+    "gateway_fixture_contract": "PASS",
+    "frozen_downstream_replay": {"all_strategy_selections": "PASS_118_ROWS", "strategy_compositions": "PASS_132_ROWS", "strategy_execution_profiles": "PASS_8_ROWS", "delta_stop_trade_rules": "PASS_80_ROWS", "gateway_decision_log": "PASS_80_ROWS"}
+  },
+  "remote_admission_checks": {
+    "status": "PASS",
+    "workflow": "GATE BTC Gateway v0.10 Frozen Replay",
+    "run_id": 30757134021,
+    "head_sha": "a91407d98508563a1a0162e60de8eb6d9af190be",
+    "python": "3.12.13",
+    "tests": "PASS_2_OF_2",
+    "stage_reached": "CANONICAL_FIXTURE_AND_FROZEN_DOWNSTREAM_REPLAY_PASS",
+    "source_canonicality": "PASS",
+    "reference_integrity": "PASS",
+    "fixture_contract": "PASS",
+    "frozen_downstream_replay": "PASS_118_132_8_80_80",
+    "artifact_id": 8836278329,
+    "artifact_name": "gate-btc-gateway-v010-30757134021",
+    "artifact_size_bytes": 149662,
+    "artifact_sha256": "bff305886ca5392c3e277905bf5e9f8decdef2931692694499f18ea52633010c"
+  },
+  "equivalence_boundary": {
+    "downstream_functional_equivalence": "PASS_LOCAL_AND_GITHUB_ACTIONS",
+    "public_source_acquisition_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
+    "feature_construction_equivalence": "NOT_TESTED_INPUT_SNAPSHOT_UNAVAILABLE",
+    "total_system_equivalence": "BLOCKED_ONLY_BY_UPSTREAM_INPUT_SNAPSHOT_BOUNDARY"
+  }
+}

@@ -1,0 +1,289 @@
+name: GATE BTC Windows PowerShell 5.1 Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - windows_local_verifier/**
+      - gateway_source_locator/**
+      - tests/test_windows_local_verifier_bundle.py
+      - tests/test_gateway_source_locator.py
+      - .github/workflows/gate-btc-windows-powershell51-smoke.yml
+  push:
+    branches: [agent/gate-btc-actions-migration]
+    paths:
+      - windows_local_verifier/**
+      - gateway_source_locator/**
+      - tests/test_windows_local_verifier_bundle.py
+      - tests/test_gateway_source_locator.py
+      - .github/workflows/gate-btc-windows-powershell51-smoke.yml
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-windows-powershell51-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  powershell51-compatibility:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Windows PowerShell 5.1 parser check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scriptPath = Join-Path $PWD "windows_local_verifier/Invoke-GateBtcLocalVerify.ps1"
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptPath,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if (@($parseErrors).Count -ne 0) {
+            $parseErrors | Format-List * | Out-String | Write-Error
+          }
+          if ($PSVersionTable.PSVersion.Major -ne 5) {
+            throw "Expected Windows PowerShell 5.1, found $($PSVersionTable.PSVersion)"
+          }
+          Write-Host "WINDOWS_POWERSHELL_VERSION=$($PSVersionTable.PSVersion)"
+          Write-Host "PARSER_STATUS=PASS"
+
+      - name: Windows PowerShell 5.1 native process smoke
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scriptPath = Join-Path $PWD "windows_local_verifier/Invoke-GateBtcLocalVerify.ps1"
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptPath,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if (@($parseErrors).Count -ne 0) {
+            throw "Verifier parser errors prevent wrapper smoke"
+          }
+
+          $wanted = @(
+            "ConvertTo-WindowsCommandLineArgument",
+            "Invoke-CheckedProcess"
+          )
+          $functions = $ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $wanted -contains $node.Name
+          }, $true)
+          if (@($functions).Count -ne 2) {
+            throw "Could not extract both verifier process functions"
+          }
+          foreach ($functionAst in $functions) {
+            . ([scriptblock]::Create($functionAst.Extent.Text))
+          }
+
+          $LogRoot = Join-Path $env:RUNNER_TEMP "gate btc ps51 smoke logs"
+          $WorkingRoot = Join-Path $env:RUNNER_TEMP "gate btc ps51 working directory"
+          New-Item -ItemType Directory -Force -Path $LogRoot, $WorkingRoot | Out-Null
+          $PowerShellExe = Join-Path $env:SystemRoot "System32/WindowsPowerShell/v1.0/powershell.exe"
+
+          $successCommand = "[Console]::Out.WriteLine('OUT_OK'); [Console]::Error.WriteLine('WARNING_OK'); exit 0"
+          $success = Invoke-CheckedProcess `
+            -Name "ps51_warning_success" `
+            -FilePath $PowerShellExe `
+            -Arguments @("-NoProfile", "-Command", $successCommand) `
+            -WorkingDirectory $WorkingRoot
+          if ($success.exit_code -ne 0) {
+            throw "Successful child returned a nonzero exit code"
+          }
+          $stdout = Get-Content -LiteralPath $success.stdout_path -Raw
+          $stderr = Get-Content -LiteralPath $success.stderr_path -Raw
+          if ($stdout -notmatch "OUT_OK") {
+            throw "stdout capture failed"
+          }
+          if ($stderr -notmatch "WARNING_OK") {
+            throw "stderr warning capture failed"
+          }
+
+          $failedClosed = $false
+          try {
+            Invoke-CheckedProcess `
+              -Name "ps51_nonzero_failure" `
+              -FilePath $PowerShellExe `
+              -Arguments @("-NoProfile", "-Command", "exit 7") `
+              -WorkingDirectory $WorkingRoot | Out-Null
+          }
+          catch {
+            if ($_.Exception.Message -match "exit code 7") {
+              $failedClosed = $true
+            }
+            else {
+              throw
+            }
+          }
+          if (-not $failedClosed) {
+            throw "Nonzero child process was not rejected fail-closed"
+          }
+
+          Write-Host "STDOUT_CAPTURE=PASS"
+          Write-Host "STDERR_WARNING_CAPTURE=PASS"
+          Write-Host "EXIT_CODE_AUTHORITY=PASS"
+          Write-Host "NONZERO_FAIL_CLOSED=PASS"
+
+      - name: Windows PowerShell 5.1 Gateway locator parser check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scriptPath = Join-Path $PWD "gateway_source_locator/Find-GateBtcGatewaySource.ps1"
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptPath,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if (@($parseErrors).Count -ne 0) {
+            $parseErrors | Format-List * | Out-String | Write-Error
+          }
+          if ($PSVersionTable.PSVersion.Major -ne 5) {
+            throw "Expected Windows PowerShell 5.1, found $($PSVersionTable.PSVersion)"
+          }
+          Write-Host "GATEWAY_LOCATOR_PARSER_STATUS=PASS"
+
+      - name: Windows PowerShell 5.1 Gateway locator synthetic smoke
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $syntheticRoot = Join-Path $env:RUNNER_TEMP "gate btc gateway locator synthetic root"
+          $staging = Join-Path $env:RUNNER_TEMP "gate btc gateway locator staging"
+          $output = Join-Path $PWD "artifacts/gateway_source_locator_selftest"
+          New-Item -ItemType Directory -Force -Path $syntheticRoot, $staging, $output | Out-Null
+
+          Set-Content -LiteralPath (Join-Path $staging "gateway_scanner.py") -Encoding UTF8 -Value @'
+          coingecko_top500 = True
+          bybit_loaded = False
+          strategy = "Delta_LS_70_30"
+          '@
+          Set-Content -LiteralPath (Join-Path $staging "MANIFEST.txt") -Encoding UTF8 -Value "qos_v2a1 gateway scanner"
+
+          $exactZip = Join-Path $syntheticRoot "qos_v2a1_gateway_scanner_v0_9.zip"
+          Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $exactZip -Force
+          $renamedZip = Join-Path $syntheticRoot "renamed_historical_package.zip"
+          Copy-Item -LiteralPath $exactZip -Destination $renamedZip -Force
+
+          & "gateway_source_locator/Find-GateBtcGatewaySource.ps1" `
+            -Roots @($syntheticRoot) `
+            -OutputDirectory $output `
+            -MaxZipCount 20 `
+            -TimeoutSeconds 120
+          if ($LASTEXITCODE -ne 0) {
+            throw "Gateway source locator returned exit code $LASTEXITCODE"
+          }
+
+          $json = Get-ChildItem -LiteralPath $output -Filter "GATE_BTC_GATEWAY_SOURCE_LOCATOR_*.json" -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if ($null -eq $json) {
+            throw "Gateway source locator did not produce JSON evidence"
+          }
+          $result = Get-Content -LiteralPath $json.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($result.status -ne "PASS" -or $result.source_discovery_status -ne "FOUND_CANDIDATES") {
+            throw "Gateway source locator did not find synthetic candidates"
+          }
+          if ([int]$result.exact_candidate_count -lt 1) {
+            throw "Exact Gateway package was not found"
+          }
+          if ([int]$result.archive_candidate_count -lt 2) {
+            throw "ZIP-content discovery did not detect both exact and renamed packages"
+          }
+          if ($result.network_actions -ne "NONE" -or $result.searched_files_modified -ne 0) {
+            throw "Gateway source locator violated read-only contract"
+          }
+          Write-Host "GATEWAY_LOCATOR_STATUS=PASS"
+          Write-Host "GATEWAY_LOCATOR_EXACT_FOUND=PASS"
+          Write-Host "GATEWAY_LOCATOR_RENAMED_ZIP_FOUND=PASS"
+          Write-Host "GATEWAY_LOCATOR_READ_ONLY=PASS"
+
+      - name: Download exact packaged verifier from validated run
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-windows-local-verifier-30747556555
+          path: artifacts/full_ps51_bundle
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: vmasardinha-coder/QRDS
+          run-id: 30747556555
+
+      - name: Full packaged verifier under Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundleScript = Join-Path $PWD "artifacts/full_ps51_bundle/Invoke-GateBtcLocalVerify.ps1"
+          $output = Join-Path $PWD "artifacts/full_ps51_selftest"
+          & $bundleScript -OutputDirectory $output
+          if ($LASTEXITCODE -ne 0) {
+            throw "Full Windows PowerShell 5.1 verifier returned exit code $LASTEXITCODE"
+          }
+          $json = Get-ChildItem -LiteralPath $output -Filter "GATE_BTC_WINDOWS_LOCAL_VERIFY_*.json" -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if ($null -eq $json) {
+            throw "Full verifier did not produce JSON evidence"
+          }
+          $result = Get-Content -LiteralPath $json.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($result.status -ne "PASS") {
+            throw "Full verifier status is $($result.status)"
+          }
+          if ($result.v2a_status -ne "PASS" -or $result.v2a_output_members -ne "14/14") {
+            throw "Full verifier V2A parity did not pass"
+          }
+          if ($result.delta_status -ne "PASS" -or $result.delta_output_members -ne "15/15") {
+            throw "Full verifier Delta parity did not pass"
+          }
+          if ($result.network_actions -ne "NONE" -or $result.project_files_modified -ne 0) {
+            throw "Full verifier violated offline or zero-modification contract"
+          }
+          Write-Host "FULL_PS51_PACKAGE_STATUS=PASS"
+          Write-Host "FULL_PS51_V2A=14/14"
+          Write-Host "FULL_PS51_DELTA=15/15"
+
+      - name: Upload PowerShell 5.1 smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-powershell51-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/gate btc ps51 smoke logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload full PowerShell 5.1 verifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-full-ps51-selftest-${{ github.run_id }}
+          path: artifacts/full_ps51_selftest/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload Gateway locator bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-source-locator-${{ github.run_id }}
+          path: gateway_source_locator/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload Gateway locator synthetic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gateway-source-locator-selftest-${{ github.run_id }}
+          path: artifacts/gateway_source_locator_selftest/
+          retention-days: 14
+          if-no-files-found: error
