@@ -275,6 +275,7 @@ jobs:
       - name: Self-test packaged Windows local verifier
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $true
           & "artifacts/windows_local_verifier_bundle/Invoke-GateBtcLocalVerify.ps1" `
             -OutputDirectory "artifacts/windows_local_verifier_selftest"
       - name: Upload Windows same-input evidence
