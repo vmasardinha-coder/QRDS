@@ -46,6 +46,11 @@ jobs:
           cache-dependency-path: migration/canonical/gateway/requirements.txt
       - name: Install canonical Gateway dependencies
         run: pip install -r migration/canonical/gateway/requirements.txt
+      - name: Materialize byte-preserving source payload
+        run: |
+          cat migration/canonical/gateway/payload/gateway_v010_canonical_source.zip.b64.part-* \
+            > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
+          mkdir -p artifacts/gateway_v010_replay
       - name: Test frozen replay and fail-closed boundary
         run: python -m unittest -v tests/test_gateway_frozen_replay.py
       - name: Run canonical fixture and August 2 frozen replay
