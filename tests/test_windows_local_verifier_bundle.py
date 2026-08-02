@@ -34,19 +34,23 @@ class WindowsLocalVerifierBundleTests(unittest.TestCase):
         for token in required:
             self.assertIn(token, text)
 
-    def test_native_process_wrapper_uses_exit_code_not_stderr_records(self) -> None:
+    def test_native_process_wrapper_uses_exit_code_and_async_stream_draining(self) -> None:
         text = PS1.read_text(encoding="utf-8")
         required = (
             '[System.Diagnostics.ProcessStartInfo]::new()',
             'RedirectStandardOutput = $true',
             'RedirectStandardError = $true',
-            '$Process.StandardOutput.ReadToEnd()',
-            '$Process.StandardError.ReadToEnd()',
+            '$Process.StandardOutput.ReadToEndAsync()',
+            '$Process.StandardError.ReadToEndAsync()',
+            '$StdoutTask.GetAwaiter().GetResult()',
+            '$StderrTask.GetAwaiter().GetResult()',
             '$ExitCode = $Process.ExitCode',
         )
         for token in required:
             self.assertIn(token, text)
         self.assertNotIn('& $FilePath @Arguments 1> $StdoutPath 2> $StderrPath', text)
+        self.assertNotIn('$Process.StandardOutput.ReadToEnd()', text)
+        self.assertNotIn('$Process.StandardError.ReadToEnd()', text)
 
     def test_launcher_is_relative_and_returns_verifier_exit_code(self) -> None:
         text = CMD.read_text(encoding="utf-8")
