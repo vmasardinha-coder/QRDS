@@ -77,11 +77,13 @@ class WindowsLocalVerifierBundleTests(unittest.TestCase):
         text = PS51_WORKFLOW.read_text(encoding="utf-8")
         required = (
             "windows-latest",
-            "powershell.exe",
+            "shell: powershell",
             "Windows PowerShell 5.1 parser check",
             "Windows PowerShell 5.1 native process smoke",
-            "RedirectStandardOutput",
-            "RedirectStandardError",
+            "STDOUT_CAPTURE=PASS",
+            "STDERR_WARNING_CAPTURE=PASS",
+            "EXIT_CODE_AUTHORITY=PASS",
+            "NONZERO_FAIL_CLOSED=PASS",
         )
         for token in required:
             self.assertIn(token, text)
