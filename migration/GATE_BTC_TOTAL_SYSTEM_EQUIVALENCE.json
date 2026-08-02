@@ -1,0 +1,96 @@
+{
+  "schema": "gate-btc-total-system-equivalence-v1",
+  "decision_date": "2026-08-02",
+  "status": "PASS_RESEARCH_ONLY",
+  "total_system_equivalence": "PASS",
+  "scope": "FUNCTIONAL_STRUCTURAL_SAFETY_AND_SAME_INPUT_EQUIVALENCE",
+  "components": {
+    "v2a": {
+      "structural_equivalence": "PASS",
+      "matched_close_equivalence": "PASS_14_OF_14",
+      "linux_windows_same_input": "PASS",
+      "user_windows_same_input": "PASS_14_OF_14",
+      "methodology_changes": 0
+    },
+    "delta": {
+      "structural_equivalence": "PASS",
+      "matched_close_equivalence": "PASS_15_OF_15",
+      "linux_windows_same_input": "PASS",
+      "user_windows_same_input": "PASS_15_OF_15",
+      "methodology_changes": 0
+    },
+    "gateway_v010": {
+      "source_binary_admission": "PASS",
+      "source_canonicality": "PASS",
+      "fixture_contract": "PASS",
+      "downstream_reference_replay": "PASS_118_132_8_80_80",
+      "public_source_acquisition": "PASS_835_PUBLIC_HTTP_RESPONSES_CAPTURED",
+      "linux_offline_same_input_replay": "PASS_835_OF_835_ZERO_REMAINING",
+      "windows_offline_same_input_replay": "PASS_835_OF_835_ZERO_REMAINING",
+      "linux_windows_output_parity": "PASS",
+      "cross_platform_numeric_rtol": 1e-12,
+      "cross_platform_numeric_atol": 1e-12,
+      "cross_platform_max_abs_diff": 0.0,
+      "cross_platform_max_rel_diff": 0.0,
+      "methodology_changes": 0
+    }
+  },
+  "evidence": {
+    "gateway_total_equivalence_run_id": 30759445898,
+    "gateway_linux_artifact": {
+      "id": 8837004243,
+      "sha256": "54e67cb680ad013c204094234ca24809dd10819ac63d3186bca4b41e9ab48f75"
+    },
+    "gateway_windows_artifact": {
+      "id": 8837018058,
+      "sha256": "c3f7eb561b7bbb1e6cd21a5085d372b8ed5dad40573587f131f94ad7f84504e4"
+    },
+    "gateway_decision_artifact": {
+      "id": 8837020585,
+      "sha256": "2b2d0e664f79ad8d8b259e87ba6f75bc82a6c7726e6f10c43abedd49080d9a70"
+    },
+    "gateway_downstream_first_pass_run_id": 30757134021,
+    "user_windows_v2a_delta_verification": "PASS_2026_08_02"
+  },
+  "runtime_policy": {
+    "research_only": true,
+    "orders_allowed": false,
+    "real_capital_allowed": false,
+    "operational_promotion_allowed": false,
+    "retrospective_gateway_performance": "PROHIBITED",
+    "documented_public_source_warning_states": [
+      "PASS_PARTIAL_REDUNDANCY_WARNING",
+      "SNAPSHOT_USABLE_WITH_DATA_WARNINGS"
+    ],
+    "warning_state_action": "DELIVER_RESEARCH_REPORT_WITH_EXPLICIT_WARNING",
+    "technical_failure_action": "FAIL_CLOSED_DO_NOT_DELIVER_AS_CURRENT_VALID_REPORT"
+  },
+  "deployment": {
+    "pull_request": 3,
+    "merge_to_main_authorized": false,
+    "cron_prepared": true,
+    "cron_on_main_active": false,
+    "daily_cadence": "00:15_UTC_21:15_AMERICA_SAO_PAULO",
+    "local_windows_google_reference_must_continue_until_merge_and_first_scheduled_pass": true
+  },
+  "reporting": {
+    "daily_shadow_report_count": 3,
+    "reports": [
+      "MASTER_ANALYTIC",
+      "COMPARATIVOS_COMPLETOS",
+      "PROFIT_PRESERVATION"
+    ],
+    "daily_collection_workflow_prepared": true,
+    "automatic_chat_delivery_active": false,
+    "activation_requires": [
+      "EXPLICIT_MERGE_AUTHORIZATION",
+      "FIRST_MAIN_SCHEDULED_COLLECTION_PASS",
+      "CHAT_DELIVERY_AUTOMATION_CREATION"
+    ]
+  },
+  "remaining_decisions": [
+    "EXPLICITLY_AUTHORIZE_OR_REJECT_PR_3_MERGE",
+    "AFTER_FIRST_MAIN_SCHEDULED_PASS_DECIDE_WHETHER_GOOGLE_ROUTINES_ARE_REDUNDANT",
+    "INTEGRATE_MACROQUANT_IN_SEPARATE_FINAL_CONSOLIDATION"
+  ]
+}
