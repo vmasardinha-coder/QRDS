@@ -22,16 +22,20 @@ Last updated: 2026-08-02.
    bundle integrity PASS, offline dependency installation PASS, V2A 14/14,
    Delta 15/15, no network actions, no project-file modification, no local
    collection access, no orders and no real capital.
+10. Canonical Gateway source candidates located on the user's Windows machine
+    by a read-only, no-network scan. Exact names, sizes and SHA-256 hashes are
+    frozen in `migration/gateway/source_intake_manifest.json`.
 
 ## Pending before local shutdown
 
-10. Recover and wire the canonical Gateway/QOS calculation entrypoints.
-    Gateway v0.10 remains `PENDING_SOURCE`; the existing output contract is not
-    a substitute for the missing canonical scanner/pipeline implementation.
-11. Run and compare the recovered Gateway implementation on the same frozen
-    input/date boundary. No reconstruction by assumption is permitted.
-12. Enable the daily schedule only after total-system equivalence passes.
-13. Produce the single MacroQuant Markdown handoff and retire only
+11. Ingest the five hash-frozen Gateway source/evidence ZIPs and verify name,
+    size, SHA-256 and archive integrity before reading or wiring their content.
+12. Review the v0.9 → v0.10 lineage and confirm the canonical Gateway/QOS
+    calculation entrypoints. No reconstruction by assumption is permitted.
+13. Run and compare the admitted Gateway implementation on the same frozen
+    2026-07-31 input/date boundary.
+14. Enable the daily schedule only after total-system equivalence passes.
+15. Produce the single MacroQuant Markdown handoff and retire only
     proven-redundant local routines.
 
 ## Current classification
@@ -40,8 +44,9 @@ Last updated: 2026-08-02.
 - Safety equivalence: PASS for the implemented V2A/Delta scope.
 - Matched-close V2A/Delta equivalence: PASS.
 - User-machine Windows V2A/Delta same-input parity: PASS.
-- Gateway: `PENDING_SOURCE`.
-- Total-system equivalence: BLOCKED by Gateway source recovery.
+- Gateway: `SOURCE_LOCATED_AWAITING_INGESTION`.
+- Gateway source admission: hash manifest committed; file bytes not yet ingested.
+- Total-system equivalence: BLOCKED by Gateway ingestion and parity review.
 - Merge to `main`: NOT AUTHORIZED.
 - Cron on `main`: NOT ENABLED.
 - Local Google/Windows routine: MUST CONTINUE.
