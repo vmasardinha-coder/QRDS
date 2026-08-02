@@ -8,6 +8,7 @@ on:
       - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
+      - tools/gateway_upstream_equivalence_v3.py
       - tools/gateway_capture_site/**
       - tools/gateway_frozen_replay.py
       - migration/canonical/gateway/**
@@ -18,6 +19,7 @@ on:
       - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
+      - tools/gateway_upstream_equivalence_v3.py
       - tools/gateway_capture_site/**
       - tools/gateway_frozen_replay.py
       - migration/canonical/gateway/**
@@ -53,7 +55,7 @@ jobs:
           > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
       - name: Capture public responses and replay offline on Linux
         run: >-
-          python tools/gateway_upstream_equivalence_v2.py capture-replay
+          python tools/gateway_upstream_equivalence_v3.py capture-replay
           --output-dir artifacts/gateway_upstream_linux
           --timeout-seconds 1800
       - name: Revalidate admitted downstream reference
@@ -92,9 +94,9 @@ jobs:
       - name: Replay identical public HTTP cassette offline on Windows
         shell: pwsh
         run: >-
-          python tools/gateway_upstream_equivalence_v2.py replay-only
+          python tools/gateway_upstream_equivalence_v3.py replay-only
           --cassette artifacts/linux/gateway_upstream_linux/gateway_public_http_cassette.jsonl
-          --reference-semantic artifacts/linux/gateway_upstream_linux/linux_public_capture_semantic.json
+          --reference-output-zip artifacts/linux/gateway_upstream_linux/linux_public_capture_outputs.zip
           --output-dir artifacts/gateway_upstream_windows
           --timeout-seconds 1800
       - name: Upload Windows replay evidence
@@ -137,6 +139,7 @@ jobs:
               'linux_feature_construction': str(linux.get('feature_construction_equivalence', '')).startswith('PASS'),
               'windows_identical_input_replay': windows.get('status') == 'PASS',
               'windows_feature_construction': str(windows.get('feature_construction_equivalence', '')).startswith('PASS'),
+              'windows_cross_platform_numeric_tolerance': windows.get('cross_platform_parity', {}).get('status') == 'PASS',
               'gateway_downstream_reference': downstream.get('status') == 'PASS',
               'source_canonicality': downstream.get('source_canonicality', {}).get('status') == 'PASS',
               'reference_integrity': downstream.get('reference_integrity', {}).get('status') == 'PASS',
@@ -152,6 +155,10 @@ jobs:
               'status': status,
               'gateway_total_equivalence': 'PASS' if status == 'PASS' else 'FAIL',
               'checks': checks,
+              'cross_platform_max_abs_diff': windows.get('cross_platform_parity', {}).get('max_abs_diff'),
+              'cross_platform_max_rel_diff': windows.get('cross_platform_parity', {}).get('max_rel_diff'),
+              'cross_platform_rtol': windows.get('cross_platform_parity', {}).get('numeric_rtol'),
+              'cross_platform_atol': windows.get('cross_platform_parity', {}).get('numeric_atol'),
               'research_only': True,
               'orders_generated': 0,
               'real_capital_used': 0,
@@ -167,6 +174,10 @@ jobs:
               f'STATUS={status}',
               f'GATEWAY_TOTAL_EQUIVALENCE={payload["gateway_total_equivalence"]}',
           ] + [f'{key.upper()}={"PASS" if value else "FAIL"}' for key, value in checks.items()] + [
+              f'CROSS_PLATFORM_MAX_ABS_DIFF={payload["cross_platform_max_abs_diff"]}',
+              f'CROSS_PLATFORM_MAX_REL_DIFF={payload["cross_platform_max_rel_diff"]}',
+              f'CROSS_PLATFORM_RTOL={payload["cross_platform_rtol"]}',
+              f'CROSS_PLATFORM_ATOL={payload["cross_platform_atol"]}',
               'RESEARCH_ONLY=True', 'ORDERS_GENERATED=0', 'REAL_CAPITAL_USED=0',
               'OPERATIONAL_STATUS=NOT_APPROVED', 'METHODOLOGY_CHANGES=0',
               'MERGE_AUTHORIZED=False', 'CRON_ON_MAIN_ENABLED=False',
