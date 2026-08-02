@@ -1,0 +1,58 @@
+{
+  "schema": "gate-btc-gateway-source-intake-v1",
+  "status": "SOURCE_LOCATED_AWAITING_INGESTION",
+  "discovered_at_local": "2026-08-02T10:57:32-03:00",
+  "discovery_evidence": {
+    "files_examined": 5003,
+    "zip_files_examined": 219,
+    "network_actions": "NONE",
+    "searched_files_modified": 0,
+    "project_files_modified": 0,
+    "local_collection_read": false,
+    "local_collection_modified": false
+  },
+  "expected_inputs": [
+    {
+      "name": "qos_v2a1_gateway_scanner_v0_9.zip",
+      "role": "historical_gateway_baseline_source",
+      "size_bytes": 19394,
+      "sha256": "08e0cc09376bc1e174e3aa86b835571246622eefe9f80b4197d34183313d3a0d"
+    },
+    {
+      "name": "qos_master_pipeline_v0_2.zip",
+      "role": "historical_master_pipeline_source",
+      "size_bytes": 5043,
+      "sha256": "3e510cb7e871d23a0546b2e248b06efd2c38ca160cbe840a749afdbc4b7ad388"
+    },
+    {
+      "name": "qos_master_pipeline_v1_3_RECONCILED_FULLSET_READY.zip",
+      "role": "candidate_current_pipeline_with_gateway_v0_10_source",
+      "size_bytes": 288306,
+      "sha256": "f861fc31461a39713d98f4d4ad4c7aa9468df8fa9744e2eab1fb084ef4d8cf89"
+    },
+    {
+      "name": "qos_full_outputs_v13-31-07-26.zip",
+      "role": "frozen_2026_07_31_full_output_baseline",
+      "size_bytes": 5732078,
+      "sha256": "7ee09d8eac763cd2f273dba48e7e1a906984f8dc9981bfb14fa8035264943631"
+    },
+    {
+      "name": "qos_review_bundle_v13-31-07-26.zip",
+      "role": "frozen_2026_07_31_gateway_review_evidence",
+      "size_bytes": 906530,
+      "sha256": "a1bfd5a8210ef3ce5052e0794de7a447752d5372830766f903e2ddc6a3b3ebef"
+    }
+  ],
+  "admission_policy": {
+    "all_names_required": true,
+    "all_sizes_must_match": true,
+    "all_sha256_must_match": true,
+    "zip_integrity_required": true,
+    "no_source_reconstruction_by_assumption": true,
+    "research_only": true,
+    "orders_allowed": false,
+    "real_capital_allowed": false,
+    "operational_promotion_allowed": false
+  },
+  "next_state_on_successful_ingestion": "SOURCE_INGESTED_PENDING_CANONICALITY_REVIEW"
+}
