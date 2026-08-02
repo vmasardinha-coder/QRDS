@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
       - tools/gateway_upstream_equivalence.py
+      - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_capture_site/**
       - tools/gateway_frozen_replay.py
       - migration/canonical/gateway/**
@@ -16,6 +17,7 @@ on:
     paths:
       - .github/workflows/gate-btc-gateway-upstream-equivalence.yml
       - tools/gateway_upstream_equivalence.py
+      - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_capture_site/**
       - tools/gateway_frozen_replay.py
       - migration/canonical/gateway/**
@@ -51,7 +53,7 @@ jobs:
           > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
       - name: Capture public responses and replay offline on Linux
         run: >-
-          python tools/gateway_upstream_equivalence.py capture-replay
+          python tools/gateway_upstream_equivalence_v2.py capture-replay
           --output-dir artifacts/gateway_upstream_linux
           --timeout-seconds 1800
       - name: Revalidate admitted downstream reference
@@ -90,7 +92,7 @@ jobs:
       - name: Replay identical public HTTP cassette offline on Windows
         shell: pwsh
         run: >-
-          python tools/gateway_upstream_equivalence.py replay-only
+          python tools/gateway_upstream_equivalence_v2.py replay-only
           --cassette artifacts/linux/gateway_upstream_linux/gateway_public_http_cassette.jsonl
           --reference-semantic artifacts/linux/gateway_upstream_linux/linux_public_capture_semantic.json
           --output-dir artifacts/gateway_upstream_windows
@@ -122,7 +124,7 @@ jobs:
         run: |
           mkdir -p artifacts/decision
           python - <<'PY'
-          import hashlib, json, pathlib, zipfile
+          import json, pathlib, zipfile
           from datetime import datetime, timezone
 
           root = pathlib.Path('artifacts')
