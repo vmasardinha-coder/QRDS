@@ -12,12 +12,16 @@ on:
       - tools/qos_orchestrator.py
       - tools/v2a_frozen_replay.py
       - tools/compare_v2a_outputs.py
+      - tools/delta_frozen_replay.py
+      - tools/compare_delta_outputs.py
       - tools/validate_gateway_output_contract.py
       - tools/compare_qos_runs.py
       - tests/test_gate_btc_migration_runner.py
       - tests/test_qos_orchestrator.py
       - tests/test_v2a_frozen_replay.py
       - tests/test_compare_v2a_outputs.py
+      - tests/test_delta_frozen_replay.py
+      - tests/test_compare_delta_outputs.py
       - tests/test_gateway_output_contract.py
       - tests/test_compare_qos_runs.py
       - migration/canonical/**
@@ -62,6 +66,8 @@ jobs:
           tests/test_qos_orchestrator.py
           tests/test_v2a_frozen_replay.py
           tests/test_compare_v2a_outputs.py
+          tests/test_delta_frozen_replay.py
+          tests/test_compare_delta_outputs.py
           tests/test_compare_qos_runs.py
       - name: Prepare artifact directories
         run: mkdir -p artifacts
@@ -81,7 +87,7 @@ jobs:
 
   public-data-close:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       GATE_BTC_RESEARCH_ONLY: "true"
       PYTHONDONTWRITEBYTECODE: "1"
@@ -115,6 +121,18 @@ jobs:
             artifacts/qos_public_close/qos_v2a_outputs.zip \
             artifacts/qos_public_close/qos_v2a_frozen_replay.zip \
             --output-dir artifacts/qos_public_close/v2a_frozen_parity
+      - name: Verify deterministic Delta replay on identical bytes
+        run: |
+          python tools/delta_frozen_replay.py \
+            artifacts/qos_public_close/delta_public_input_snapshot.zip \
+            --data-cutoff 2026-07-31 \
+            --output-zip artifacts/qos_public_close/delta_frozen_replay.zip \
+            --input-snapshot-zip artifacts/qos_public_close/delta_second_input_snapshot.zip \
+            --evidence-dir artifacts/qos_public_close/delta_replay_evidence
+          python tools/compare_delta_outputs.py \
+            artifacts/qos_public_close/delta_walk_forward_outputs.zip \
+            artifacts/qos_public_close/delta_frozen_replay.zip \
+            --output-dir artifacts/qos_public_close/delta_frozen_parity
       - name: Generate dated migration evidence
         if: always()
         run: python tools/gate_btc_migration_runner.py --output-dir artifacts/gate_btc_migration
