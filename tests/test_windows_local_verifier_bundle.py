@@ -34,6 +34,20 @@ class WindowsLocalVerifierBundleTests(unittest.TestCase):
         for token in required:
             self.assertIn(token, text)
 
+    def test_native_process_wrapper_uses_exit_code_not_stderr_records(self) -> None:
+        text = PS1.read_text(encoding="utf-8")
+        required = (
+            '[System.Diagnostics.ProcessStartInfo]::new()',
+            'RedirectStandardOutput = $true',
+            'RedirectStandardError = $true',
+            '$Process.StandardOutput.ReadToEnd()',
+            '$Process.StandardError.ReadToEnd()',
+            '$ExitCode = $Process.ExitCode',
+        )
+        for token in required:
+            self.assertIn(token, text)
+        self.assertNotIn('& $FilePath @Arguments 1> $StdoutPath 2> $StderrPath', text)
+
     def test_launcher_is_relative_and_returns_verifier_exit_code(self) -> None:
         text = CMD.read_text(encoding="utf-8")
         self.assertIn('%~dp0', text)
@@ -50,6 +64,7 @@ class WindowsLocalVerifierBundleTests(unittest.TestCase):
             'gate-btc-windows-local-verifier-${{ github.run_id }}',
             'BUNDLE_MANIFEST.json',
             'pip download',
+            '$PSNativeCommandUseErrorActionPreference = $true',
         )
         for token in required:
             self.assertIn(token, text)
