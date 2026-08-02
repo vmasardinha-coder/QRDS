@@ -1,0 +1,142 @@
+name: GATE BTC Windows PowerShell 5.1 Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - windows_local_verifier/**
+      - tests/test_windows_local_verifier_bundle.py
+      - .github/workflows/gate-btc-windows-powershell51-smoke.yml
+  push:
+    branches: [agent/gate-btc-actions-migration]
+    paths:
+      - windows_local_verifier/**
+      - tests/test_windows_local_verifier_bundle.py
+      - .github/workflows/gate-btc-windows-powershell51-smoke.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-windows-powershell51-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  powershell51-compatibility:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      GATE_BTC_RESEARCH_ONLY: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Windows PowerShell 5.1 parser check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scriptPath = Join-Path $PWD "windows_local_verifier/Invoke-GateBtcLocalVerify.ps1"
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptPath,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if (@($parseErrors).Count -ne 0) {
+            $parseErrors | Format-List * | Out-String | Write-Error
+          }
+          if ($PSVersionTable.PSVersion.Major -ne 5) {
+            throw "Expected Windows PowerShell 5.1, found $($PSVersionTable.PSVersion)"
+          }
+          Write-Host "WINDOWS_POWERSHELL_VERSION=$($PSVersionTable.PSVersion)"
+          Write-Host "PARSER_STATUS=PASS"
+
+      - name: Windows PowerShell 5.1 native process smoke
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scriptPath = Join-Path $PWD "windows_local_verifier/Invoke-GateBtcLocalVerify.ps1"
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptPath,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if (@($parseErrors).Count -ne 0) {
+            throw "Verifier parser errors prevent wrapper smoke"
+          }
+
+          $wanted = @(
+            "ConvertTo-WindowsCommandLineArgument",
+            "Invoke-CheckedProcess"
+          )
+          $functions = $ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $wanted -contains $node.Name
+          }, $true)
+          if (@($functions).Count -ne 2) {
+            throw "Could not extract both verifier process functions"
+          }
+          foreach ($functionAst in $functions) {
+            . ([scriptblock]::Create($functionAst.Extent.Text))
+          }
+
+          $LogRoot = Join-Path $env:RUNNER_TEMP "gate btc ps51 smoke logs"
+          $WorkingRoot = Join-Path $env:RUNNER_TEMP "gate btc ps51 working directory"
+          New-Item -ItemType Directory -Force -Path $LogRoot, $WorkingRoot | Out-Null
+          $PowerShellExe = Join-Path $env:SystemRoot "System32/WindowsPowerShell/v1.0/powershell.exe"
+
+          $successCommand = "[Console]::Out.WriteLine('OUT_OK'); [Console]::Error.WriteLine('WARNING_OK'); exit 0"
+          $success = Invoke-CheckedProcess `
+            -Name "ps51_warning_success" `
+            -FilePath $PowerShellExe `
+            -Arguments @("-NoProfile", "-Command", $successCommand) `
+            -WorkingDirectory $WorkingRoot
+          if ($success.exit_code -ne 0) {
+            throw "Successful child returned a nonzero exit code"
+          }
+          $stdout = Get-Content -LiteralPath $success.stdout_path -Raw
+          $stderr = Get-Content -LiteralPath $success.stderr_path -Raw
+          if ($stdout -notmatch "OUT_OK") {
+            throw "stdout capture failed"
+          }
+          if ($stderr -notmatch "WARNING_OK") {
+            throw "stderr warning capture failed"
+          }
+
+          $failedClosed = $false
+          try {
+            Invoke-CheckedProcess `
+              -Name "ps51_nonzero_failure" `
+              -FilePath $PowerShellExe `
+              -Arguments @("-NoProfile", "-Command", "exit 7") `
+              -WorkingDirectory $WorkingRoot | Out-Null
+          }
+          catch {
+            if ($_.Exception.Message -match "exit code 7") {
+              $failedClosed = $true
+            }
+            else {
+              throw
+            }
+          }
+          if (-not $failedClosed) {
+            throw "Nonzero child process was not rejected fail-closed"
+          }
+
+          Write-Host "STDOUT_CAPTURE=PASS"
+          Write-Host "STDERR_WARNING_CAPTURE=PASS"
+          Write-Host "EXIT_CODE_AUTHORITY=PASS"
+          Write-Host "NONZERO_FAIL_CLOSED=PASS"
+
+      - name: Upload PowerShell 5.1 smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-windows-powershell51-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/gate btc ps51 smoke logs/
+          retention-days: 14
+          if-no-files-found: warn
