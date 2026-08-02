@@ -14,6 +14,7 @@ on:
       - tools/compare_v2a_outputs.py
       - tools/delta_frozen_replay.py
       - tools/compare_delta_outputs.py
+      - tools/compare_cross_platform_outputs.py
       - tools/validate_gateway_output_contract.py
       - tools/compare_qos_runs.py
       - tests/test_gate_btc_migration_runner.py
@@ -22,6 +23,7 @@ on:
       - tests/test_compare_v2a_outputs.py
       - tests/test_delta_frozen_replay.py
       - tests/test_compare_delta_outputs.py
+      - tests/test_compare_cross_platform_outputs.py
       - tests/test_gateway_output_contract.py
       - tests/test_compare_qos_runs.py
       - migration/canonical/**
@@ -69,6 +71,7 @@ jobs:
           tests/test_compare_v2a_outputs.py
           tests/test_delta_frozen_replay.py
           tests/test_compare_delta_outputs.py
+          tests/test_compare_cross_platform_outputs.py
           tests/test_compare_qos_runs.py
       - name: Prepare artifact directories
         run: mkdir -p artifacts
@@ -169,29 +172,35 @@ jobs:
         with:
           name: gate-btc-public-close-${{ github.run_id }}
           path: artifacts
-      - name: Replay V2A and Delta on Windows with identical frozen bytes
+      - name: Replay V2A on Windows and compare semantically
         shell: pwsh
         run: |
-          $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path artifacts/windows_same_input | Out-Null
           python tools/v2a_frozen_replay.py `
             artifacts/qos_public_close/qos_v2a_outputs.zip `
             --data-cutoff 2026-07-31 `
             --output-zip artifacts/windows_same_input/windows_v2a_outputs.zip `
             --evidence-dir artifacts/windows_same_input/v2a_replay_evidence
-          python tools/compare_v2a_outputs.py `
+          python tools/compare_cross_platform_outputs.py v2a `
             artifacts/qos_public_close/qos_v2a_outputs.zip `
             artifacts/windows_same_input/windows_v2a_outputs.zip `
             --output-dir artifacts/windows_same_input/v2a_windows_parity
+      - name: Replay Delta on Windows and compare semantically
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts/windows_same_input | Out-Null
           python tools/delta_frozen_replay.py `
             artifacts/qos_public_close/delta_public_input_snapshot.zip `
             --data-cutoff 2026-07-31 `
             --output-zip artifacts/windows_same_input/windows_delta_outputs.zip `
             --input-snapshot-zip artifacts/windows_same_input/windows_delta_input_snapshot.zip `
             --evidence-dir artifacts/windows_same_input/delta_replay_evidence
-          python tools/compare_delta_outputs.py `
+          python tools/compare_cross_platform_outputs.py delta `
             artifacts/qos_public_close/delta_walk_forward_outputs.zip `
             artifacts/windows_same_input/windows_delta_outputs.zip `
+            --reference-input-snapshot artifacts/qos_public_close/delta_public_input_snapshot.zip `
+            --replay-input-snapshot artifacts/windows_same_input/windows_delta_input_snapshot.zip `
             --output-dir artifacts/windows_same_input/delta_windows_parity
       - name: Generate Windows dated migration evidence
         if: always()
