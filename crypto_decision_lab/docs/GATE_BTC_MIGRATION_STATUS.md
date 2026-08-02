@@ -23,19 +23,37 @@ Last updated: 2026-08-02.
    Delta 15/15, no network actions, no project-file modification, no local
    collection access, no orders and no real capital.
 10. Canonical Gateway source candidates located on the user's Windows machine
-    by a read-only, no-network scan. Exact names, sizes and SHA-256 hashes are
+    by a read-only, no-network scan. Exact names, sizes and SHA-256 hashes were
     frozen in `migration/gateway/source_intake_manifest.json`.
+11. The current unified source package
+    `qos_master_pipeline_v1_3_RECONCILED_FULLSET_READY.zip` was received in the
+    migration conversation. The older v0.9 and v0.2 packages are now optional
+    lineage fallbacks rather than mandatory intake inputs.
+12. A fresh 2026-08-02 reference run was received with the full output ZIP,
+    review bundle, cumulative PDF and master TXT report. The report declares:
+    master technical PASS, data-quality PASS, QA PASS_WITH_WARNINGS,
+    `RESEARCH_ONLY`, `NOT_APPROVED`, orders=0 and capital=0.
+13. The received report identifies Gateway source/output version
+    `QOS_V2A1_GATEWAY_SCANNER_0.10`, data as of 2026-08-02, technical PASS,
+    data-quality PASS, `SNAPSHOT_USABLE_RESEARCH_ONLY`, no errors and
+    `PROHIBITED_CURRENT_COMPOSITION` for retrospective performance.
 
 ## Pending before local shutdown
 
-11. Ingest the five hash-frozen Gateway source/evidence ZIPs and verify name,
-    size, SHA-256 and archive integrity before reading or wiring their content.
-12. Review the v0.9 → v0.10 lineage and confirm the canonical Gateway/QOS
-    calculation entrypoints. No reconstruction by assumption is permitted.
-13. Run and compare the admitted Gateway implementation on the same frozen
-    2026-07-31 input/date boundary.
-14. Enable the daily schedule only after total-system equivalence passes.
-15. Produce the single MacroQuant Markdown handoff and retire only
+14. Verify the received source, full-output and review ZIP bytes: expected name,
+    size and SHA-256 for the unified source, CRC integrity for every archive,
+    and newly frozen SHA-256 values for the 2026-08-02 evidence packages.
+15. Inspect the unified source read-only and confirm the canonical Gateway/QOS
+    entrypoint, configuration, dependencies and output schemas. No
+    reconstruction by assumption is permitted.
+16. Import only the exact admitted Gateway v0.10 source into the migration
+    branch without changing formulas, weights, thresholds, stops or strategy
+    logic.
+17. Replay the admitted implementation remotely against the 2026-08-02
+    reference boundary and compare manifests, profiles, 118 selected rows,
+    eight execution profiles and 80 Delta stop-rule rows.
+18. Enable the daily schedule only after total-system equivalence passes.
+19. Produce the single MacroQuant Markdown handoff and retire only
     proven-redundant local routines.
 
 ## Current classification
@@ -44,9 +62,13 @@ Last updated: 2026-08-02.
 - Safety equivalence: PASS for the implemented V2A/Delta scope.
 - Matched-close V2A/Delta equivalence: PASS.
 - User-machine Windows V2A/Delta same-input parity: PASS.
-- Gateway: `SOURCE_LOCATED_AWAITING_INGESTION`.
-- Gateway source admission: hash manifest committed; file bytes not yet ingested.
-- Total-system equivalence: BLOCKED by Gateway ingestion and parity review.
+- Gateway source: `RECEIVED_PENDING_BINARY_ADMISSION`.
+- Gateway 2026-08-02 reference evidence: `RECEIVED_PENDING_BINARY_ADMISSION`.
+- Gateway reported run status: technical PASS, data-quality PASS,
+  `SNAPSHOT_USABLE_RESEARCH_ONLY`, operational `NOT_APPROVED`.
+- Gateway retrospective performance: PROHIBITED.
+- Total-system equivalence: BLOCKED by binary admission, canonicality review
+  and remote Gateway replay; no longer blocked by source discovery.
 - Merge to `main`: NOT AUTHORIZED.
 - Cron on `main`: NOT ENABLED.
 - Local Google/Windows routine: MUST CONTINUE.
