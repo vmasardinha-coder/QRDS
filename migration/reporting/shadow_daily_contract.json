@@ -1,0 +1,85 @@
+{
+  "schema": "gate-btc-shadow-daily-report-contract-v1",
+  "status": "FROZEN_RESEARCH_ONLY",
+  "report_count": 3,
+  "reports": [
+    {
+      "id": "MASTER_ANALYTIC",
+      "canonical_name_pattern": "Shadow_Watch_Executive_{date}_Reconciled_FullSet_v13_Master.pdf",
+      "role": "cumulative analytic master for QOS, Gateway and Delta",
+      "required_inputs": [
+        "qos_v2a_outputs.zip",
+        "delta_walk_forward_outputs.zip",
+        "linux_public_capture_outputs.zip",
+        "GATE_BTC_DAILY_RESEARCH_MANIFEST.json"
+      ],
+      "required_boundaries": [
+        "RESEARCH_ONLY",
+        "NOT_APPROVED",
+        "orders=0",
+        "capital=0",
+        "Gateway current composition retrospective performance prohibited",
+        "legacy v0.9 pages archived baseline only"
+      ]
+    },
+    {
+      "id": "COMPARATIVOS_COMPLETOS",
+      "canonical_name_pattern": "Shadow_Watch_Executive_{date}_Comparativos_Completos_Janela_Alinhada.pdf",
+      "role": "aligned-window executive comparison and evidence clocks",
+      "required_sections": [
+        "executive summary",
+        "three-universe comparability map",
+        "V2A long-history scorecard",
+        "Delta fixed, expanding and rolling windows",
+        "Gateway and Dynamics prospective snapshot clock",
+        "Monte Carlo V2A",
+        "Monte Carlo Delta",
+        "bear replay",
+        "current compositions and execution profiles",
+        "next evidence gates"
+      ],
+      "comparison_rules": [
+        "Universe A compares only the seven V2A series on the common long history",
+        "Universe B compares only Delta walk-forward evidence and its valid benchmark protocol",
+        "Universe C describes current Gateway compositions without retrospective return attribution",
+        "N/A means invalid comparison and must not be filled by assumption"
+      ]
+    },
+    {
+      "id": "PROFIT_PRESERVATION",
+      "canonical_name_pattern": "Shadow_Watch_Profit_Preservation_{date}_Shadow_Update.pdf",
+      "role": "prospective preservation overlay monitor",
+      "required_inputs": [
+        "current V2A Moderada and Ultra control curves",
+        "latest admitted prospective LOCK ledger when available",
+        "frozen Profit Preservation study baseline"
+      ],
+      "missing_ledger_policy": "DO_NOT_INVENT_NEW_LOCK_PERFORMANCE; retain frozen study metrics and update only supported control overlays",
+      "current_research_preference": {
+        "LOCK25": "primary efficiency shadow",
+        "LOCK50": "higher-protection alternative",
+        "LOCK75": "high protection with excessive growth removal warning",
+        "rigid_floor": "rejected"
+      }
+    }
+  ],
+  "daily_source_policy": {
+    "current_data_only": true,
+    "technical_failure": "FAIL_CLOSED_NO_CURRENT_REPORT_DELIVERY",
+    "documented_data_warning": "DELIVER_WITH_EXPLICIT_WARNING",
+    "methodology_change_allowed": false,
+    "retrospective_gateway_current_composition_allowed": false
+  },
+  "delivery_policy": {
+    "deliver_together": true,
+    "auxiliary_txt_is_not_a_fourth_shadow_report": true,
+    "expected_pdf_count": 3,
+    "automatic_delivery_requires_first_main_daily_collection_pass": true
+  },
+  "safety": {
+    "research_only": true,
+    "orders": 0,
+    "real_capital": 0,
+    "operational_status": "NOT_APPROVED"
+  }
+}
