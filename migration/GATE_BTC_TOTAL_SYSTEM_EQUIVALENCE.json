@@ -50,7 +50,28 @@
       "sha256": "2b2d0e664f79ad8d8b259e87ba6f75bc82a6c7726e6f10c43abedd49080d9a70"
     },
     "gateway_downstream_first_pass_run_id": 30757134021,
-    "user_windows_v2a_delta_verification": "PASS_2026_08_02"
+    "user_windows_v2a_delta_verification": "PASS_2026_08_02",
+    "predeployment_daily_branch_run": {
+      "run_id": 30759775067,
+      "status": "PASS_WITH_DATA_WARNINGS",
+      "data_cutoff": "2026-08-01",
+      "v2a": "PASS",
+      "delta": "PASS",
+      "gateway_upstream": "PASS",
+      "gateway_downstream": "PASS",
+      "gateway_data_quality": "PASS_PARTIAL_REDUNDANCY_WARNING",
+      "gateway_snapshot_status": "SNAPSHOT_USABLE_WITH_DATA_WARNINGS",
+      "http_capture_count": 835,
+      "http_replay_consumed": 835,
+      "report_delivery_inputs": "READY",
+      "expected_shadow_reports": 3,
+      "artifact": {
+        "id": 8837195468,
+        "name": "gate-btc-daily-research-30759775067",
+        "size_bytes": 22720280,
+        "sha256": "2fd589c41c09f6ba71f4b434941b84fcdd9b248a7fb9e9d2234a82176bd024d8"
+      }
+    }
   },
   "runtime_policy": {
     "research_only": true,
@@ -71,7 +92,9 @@
     "cron_prepared": true,
     "cron_on_main_active": false,
     "daily_cadence": "00:15_UTC_21:15_AMERICA_SAO_PAULO",
-    "local_windows_google_reference_must_continue_until_merge_and_first_scheduled_pass": true
+    "local_windows_google_reference_must_continue_until_merge_and_first_scheduled_pass": true,
+    "all_reversible_predeployment_work_complete": true,
+    "next_irreversible_action": "EXPLICIT_PR_3_MERGE_AUTHORIZATION"
   },
   "reporting": {
     "daily_shadow_report_count": 3,
@@ -81,6 +104,7 @@
       "PROFIT_PRESERVATION"
     ],
     "daily_collection_workflow_prepared": true,
+    "predeployment_daily_handoff_validated": true,
     "automatic_chat_delivery_active": false,
     "activation_requires": [
       "EXPLICIT_MERGE_AUTHORIZATION",
