@@ -1,0 +1,72 @@
+name: GATE BTC Daily Schedule Fallback
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 2 * * *"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: gate-btc-daily-fallback
+  cancel-in-progress: false
+
+jobs:
+  recover-missing-primary-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Dispatch primary workflow only when today's schedule is absent or failed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PRIMARY_WORKFLOW: gate-btc-daily-research.yml
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from datetime import datetime, timedelta, timezone
+
+          repository = os.environ["REPOSITORY"]
+          workflow = os.environ["PRIMARY_WORKFLOW"]
+          token = os.environ["GH_TOKEN"]
+          today = datetime.now(timezone.utc).date().isoformat()
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "gate-btc-daily-fallback",
+          }
+          runs_url = (
+              f"https://api.github.com/repos/{repository}/actions/workflows/{workflow}/runs"
+              "?branch=main&event=schedule&per_page=30"
+          )
+          request = urllib.request.Request(runs_url, headers=headers)
+          with urllib.request.urlopen(request, timeout=30) as response:
+              runs = json.load(response).get("workflow_runs", [])
+          today_runs = [run for run in runs if str(run.get("created_at", "")).startswith(today)]
+          successful = [
+              run for run in today_runs
+              if run.get("status") == "completed" and run.get("conclusion") == "success"
+          ]
+          active = [run for run in today_runs if run.get("status") in {"queued", "in_progress", "waiting", "pending", "requested"}]
+          if successful:
+              print(f"FALLBACK_STATUS=NOT_NEEDED_SUCCESS successful_run_id={successful[0]['id']}")
+              raise SystemExit(0)
+          if active:
+              print(f"FALLBACK_STATUS=NOT_NEEDED_ACTIVE active_run_id={active[0]['id']} status={active[0].get('status')}")
+              raise SystemExit(0)
+
+          cutoff = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
+          dispatch_url = f"https://api.github.com/repos/{repository}/actions/workflows/{workflow}/dispatches"
+          payload = json.dumps({"ref": "main", "inputs": {"data_cutoff": cutoff}}).encode("utf-8")
+          dispatch = urllib.request.Request(dispatch_url, data=payload, headers=headers, method="POST")
+          with urllib.request.urlopen(dispatch, timeout=30) as response:
+              if response.status not in (204,):
+                  raise RuntimeError(f"unexpected dispatch status={response.status}")
+          failed_ids = [str(run.get("id")) for run in today_runs if run.get("status") == "completed"]
+          print(f"FALLBACK_STATUS=DISPATCHED data_cutoff={cutoff} prior_completed_run_ids={','.join(failed_ids) or 'NONE'}")
+          PY
