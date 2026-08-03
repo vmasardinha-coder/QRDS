@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Dispatch primary workflow only when today's schedule has no successful run
+      - name: Dispatch primary workflow only when today's schedule is absent or failed
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -47,14 +47,17 @@ jobs:
           request = urllib.request.Request(runs_url, headers=headers)
           with urllib.request.urlopen(request, timeout=30) as response:
               runs = json.load(response).get("workflow_runs", [])
-          successful_today = [
-              run for run in runs
-              if str(run.get("created_at", "")).startswith(today)
-              and run.get("status") == "completed"
-              and run.get("conclusion") == "success"
+          today_runs = [run for run in runs if str(run.get("created_at", "")).startswith(today)]
+          successful = [
+              run for run in today_runs
+              if run.get("status") == "completed" and run.get("conclusion") == "success"
           ]
-          if successful_today:
-              print(f"FALLBACK_STATUS=NOT_NEEDED successful_run_id={successful_today[0]['id']}")
+          active = [run for run in today_runs if run.get("status") in {"queued", "in_progress", "waiting", "pending", "requested"}]
+          if successful:
+              print(f"FALLBACK_STATUS=NOT_NEEDED_SUCCESS successful_run_id={successful[0]['id']}")
+              raise SystemExit(0)
+          if active:
+              print(f"FALLBACK_STATUS=NOT_NEEDED_ACTIVE active_run_id={active[0]['id']} status={active[0].get('status')}")
               raise SystemExit(0)
 
           cutoff = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
@@ -64,5 +67,6 @@ jobs:
           with urllib.request.urlopen(dispatch, timeout=30) as response:
               if response.status not in (204,):
                   raise RuntimeError(f"unexpected dispatch status={response.status}")
-          print(f"FALLBACK_STATUS=DISPATCHED data_cutoff={cutoff}")
+          failed_ids = [str(run.get("id")) for run in today_runs if run.get("status") == "completed"]
+          print(f"FALLBACK_STATUS=DISPATCHED data_cutoff={cutoff} prior_completed_run_ids={','.join(failed_ids) or 'NONE'}")
           PY
