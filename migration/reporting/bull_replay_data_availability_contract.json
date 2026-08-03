@@ -1,0 +1,53 @@
+{
+  "contract_version": "1.0",
+  "status": "FROZEN_RESEARCH_ONLY",
+  "research_only": true,
+  "operational_status": "NOT_APPROVED",
+  "orders_generated": 0,
+  "real_capital_used": 0,
+  "holdout_opened": false,
+  "visible_evaluation_allowed": false,
+  "required_benchmarks": [
+    "Victor_proxy",
+    "BTC_puro",
+    "BTC_ETH_70_30"
+  ],
+  "required_core_candidates": [
+    "QOS_Moderada",
+    "QOS_Ultra"
+  ],
+  "required_delta_candidates": [
+    "Delta_LS_50_50",
+    "Delta_LS_50_50_StopVol",
+    "Delta_LS_70_30",
+    "Delta_LS_70_30_StopVol"
+  ],
+  "optional_independent_candidates": [
+    "MacroQuant"
+  ],
+  "availability_only_fields": [
+    "series_name",
+    "source_path",
+    "exists",
+    "format",
+    "start_date",
+    "end_date",
+    "row_count",
+    "frequency",
+    "currency_base",
+    "sha256",
+    "warnings"
+  ],
+  "prohibited_outputs": [
+    "return",
+    "cagr",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "drawdown",
+    "ranking",
+    "winner",
+    "allocation_recommendation"
+  ],
+  "next_gate": "REVIEW_AVAILABILITY_MANIFEST_BEFORE_REAL_BULL_REPLAY"
+}
