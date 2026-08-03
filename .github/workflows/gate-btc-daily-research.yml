@@ -13,8 +13,11 @@ on:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-daily-research.yml
+      - .github/workflows/gate-btc-daily-fallback.yml
       - tools/gate_btc_daily_research.py
+      - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
+      - tests/test_gate_btc_shadow_delivery.py
       - tools/qos_orchestrator.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
@@ -25,12 +28,15 @@ on:
       - tools/delta_frozen_replay.py
       - migration/canonical/**
       - migration/gateway/**
+      - migration/reporting/**
   push:
     branches: [agent/gate-btc-actions-migration]
     paths:
       - .github/workflows/gate-btc-daily-research.yml
       - tools/gate_btc_daily_research.py
+      - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
+      - tests/test_gate_btc_shadow_delivery.py
       - tools/qos_orchestrator.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
@@ -41,6 +47,7 @@ on:
       - tools/delta_frozen_replay.py
       - migration/canonical/**
       - migration/gateway/**
+      - migration/reporting/**
 
 permissions:
   contents: read
@@ -74,7 +81,10 @@ jobs:
           -r migration/canonical/delta/requirements.txt
           -r migration/canonical/gateway/requirements.txt
       - name: Test daily handoff and fail-closed locks
-        run: python -m unittest -v tests/test_gate_btc_daily_research.py
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_daily_research.py
+          tests/test_gate_btc_shadow_delivery.py
       - name: Resolve most recent completed UTC close
         env:
           REQUESTED_CUTOFF: ${{ inputs.data_cutoff || '' }}
@@ -116,6 +126,11 @@ jobs:
           --gateway-reference-dir artifacts/gateway_reference_check
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/daily_handoff
+      - name: Bind immutable Shadow delivery request to this run
+        run: >-
+          python tools/gate_btc_shadow_delivery.py request
+          --handoff-dir artifacts/daily_handoff
+          --output artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
       - name: Upload daily report inputs and evidence
         if: always()
         uses: actions/upload-artifact@v4
