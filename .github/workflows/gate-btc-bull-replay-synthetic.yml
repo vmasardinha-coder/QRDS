@@ -32,6 +32,7 @@ jobs:
         run: python -m unittest tests.test_gate_btc_bull_replay -v
       - name: Run synthetic scaffold
         run: |
+          mkdir -p bull-replay-synthetic-output
           python tools/gate_btc_bull_replay.py \
             --contract migration/reporting/bull_replay_contract.json \
             --output-dir bull-replay-synthetic-output \
