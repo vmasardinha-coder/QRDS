@@ -38,8 +38,15 @@ class ShadowDeliveryTests(unittest.TestCase):
             root = Path(temporary)
             handoff = self._handoff(root)
             output = root / "request.json"
-            old = {key: os.environ.get(key) for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_REPOSITORY")}
-            os.environ.update({"GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "2", "GITHUB_SHA": "abc123", "GITHUB_REPOSITORY": "owner/repo"})
+            keys = ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_REPOSITORY", "GATE_BTC_REPORT_DATE")
+            old = {key: os.environ.get(key) for key in keys}
+            os.environ.update({
+                "GITHUB_RUN_ID": "123",
+                "GITHUB_RUN_ATTEMPT": "2",
+                "GITHUB_SHA": "abc123",
+                "GITHUB_REPOSITORY": "owner/repo",
+                "GATE_BTC_REPORT_DATE": "2026-08-03",
+            })
             try:
                 request = delivery.build_request(handoff, output)
             finally:
@@ -48,9 +55,12 @@ class ShadowDeliveryTests(unittest.TestCase):
                         os.environ.pop(key, None)
                     else:
                         os.environ[key] = value
-            self.assertEqual(request["delivery_id"], "2026-08-02--run-123--attempt-2")
+            self.assertEqual(request["delivery_id"], "2026-08-03--cutoff-2026-08-02--run-123--attempt-2")
+            self.assertEqual(request["source"]["report_date"], "2026-08-03")
+            self.assertEqual(request["source"]["data_cutoff"], "2026-08-02")
             self.assertEqual(request["contract"]["expected_pdf_count"], 3)
             self.assertEqual(len(request["contract"]["reports"]), 3)
+            self.assertTrue(all("2026-08-03" in item["filename"] for item in request["contract"]["reports"]))
             self.assertEqual(request["source"]["head_sha"], "abc123")
 
     def test_receipt_rejects_missing_or_extra_pdf(self) -> None:
@@ -66,7 +76,7 @@ class ShadowDeliveryTests(unittest.TestCase):
                 "contract": {
                     "expected_pdf_count": 3,
                     "reports": [
-                        {"position": i, "role": role, "filename": pattern.format(date="2026-08-02")}
+                        {"position": i, "role": role, "filename": pattern.format(date="2026-08-03")}
                         for i, (role, pattern) in enumerate(delivery.REPORT_ROLES, start=1)
                     ],
                 },
@@ -75,7 +85,7 @@ class ShadowDeliveryTests(unittest.TestCase):
             reports = root / "reports"
             reports.mkdir()
             for _, pattern in delivery.REPORT_ROLES[:2]:
-                (reports / pattern.format(date="2026-08-02")).write_bytes(b"%PDF-1.4\n" + b"x" * 1100 + b"\n%%EOF\n")
+                (reports / pattern.format(date="2026-08-03")).write_bytes(b"%PDF-1.4\n" + b"x" * 1100 + b"\n%%EOF\n")
             with self.assertRaises(RuntimeError):
                 delivery.build_receipt(request_path, reports, root / "receipt.json")
 
@@ -84,7 +94,7 @@ class ShadowDeliveryTests(unittest.TestCase):
             root = Path(temporary)
             request_path = root / "request.json"
             expected = [
-                {"position": i, "role": role, "filename": pattern.format(date="2026-08-02")}
+                {"position": i, "role": role, "filename": pattern.format(date="2026-08-03")}
                 for i, (role, pattern) in enumerate(delivery.REPORT_ROLES, start=1)
             ]
             request = {
