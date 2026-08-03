@@ -6,8 +6,11 @@ on:
     branches: [main]
     paths:
       - "tools/gate_btc_bull_replay.py"
+      - "tools/gate_btc_bull_replay_availability.py"
       - "tests/test_gate_btc_bull_replay.py"
+      - "tests/test_gate_btc_bull_replay_availability.py"
       - "migration/reporting/bull_replay_contract.json"
+      - "migration/reporting/bull_replay_data_availability_contract.json"
       - ".github/workflows/gate-btc-bull-replay-synthetic.yml"
 
 permissions:
@@ -27,9 +30,13 @@ jobs:
         with:
           python-version: "3.11"
       - name: Compile
-        run: python -m py_compile tools/gate_btc_bull_replay.py
+        run: |
+          python -m py_compile tools/gate_btc_bull_replay.py
+          python -m py_compile tools/gate_btc_bull_replay_availability.py
       - name: Unit tests
-        run: python -m unittest tests.test_gate_btc_bull_replay -v
+        run: |
+          python -m unittest tests.test_gate_btc_bull_replay -v
+          python -m unittest tests.test_gate_btc_bull_replay_availability -v
       - name: Run synthetic scaffold
         run: |
           mkdir -p bull-replay-synthetic-output
