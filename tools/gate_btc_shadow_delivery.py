@@ -83,21 +83,23 @@ def build_request(handoff_dir: Path, output_path: Path) -> dict[str, Any]:
     require(report_path.is_file(), f"missing handoff report: {report_path}")
     require(evidence_path.is_file(), f"missing handoff evidence ZIP: {evidence_path}")
 
+    now = datetime.now(timezone.utc)
     cutoff = safe_token(manifest.get("data_cutoff", ""), "unknown-cutoff")
+    report_date = safe_token(os.environ.get("GATE_BTC_REPORT_DATE", now.date().isoformat()), "unknown-report-date")
     run_id = safe_token(os.environ.get("GITHUB_RUN_ID", "local"), "local")
     run_attempt = safe_token(os.environ.get("GITHUB_RUN_ATTEMPT", "1"), "1")
     head_sha = safe_token(os.environ.get("GITHUB_SHA", "local-unbound"), "local-unbound")
     repository = os.environ.get("GITHUB_REPOSITORY", "local/unbound")
     event_name = os.environ.get("GITHUB_EVENT_NAME", "local")
     workflow = os.environ.get("GITHUB_WORKFLOW", "GATE BTC Daily Research Collection")
-    delivery_id = f"{cutoff}--run-{run_id}--attempt-{run_attempt}"
+    delivery_id = f"{report_date}--cutoff-{cutoff}--run-{run_id}--attempt-{run_attempt}"
     expected = [
-        {"position": index, "role": role, "filename": pattern.format(date=cutoff)}
+        {"position": index, "role": role, "filename": pattern.format(date=report_date)}
         for index, (role, pattern) in enumerate(REPORT_ROLES, start=1)
     ]
     payload = {
         "schema": "gate-btc-shadow-delivery-request-v1",
-        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "created_utc": now.isoformat(),
         "status": "READY_FOR_RENDER",
         "delivery_id": delivery_id,
         "duplicate_key": f"{cutoff}:{head_sha}",
@@ -109,6 +111,7 @@ def build_request(handoff_dir: Path, output_path: Path) -> dict[str, Any]:
             "run_attempt": run_attempt,
             "head_sha": head_sha,
             "ref": os.environ.get("GITHUB_REF", "local"),
+            "report_date": report_date,
             "data_cutoff": manifest.get("data_cutoff"),
             "handoff_status": manifest.get("status"),
         },
