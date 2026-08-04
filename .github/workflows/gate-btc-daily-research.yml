@@ -50,7 +50,7 @@ on:
       - migration/reporting/**
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: gate-btc-daily-research-${{ github.ref }}
@@ -131,6 +131,41 @@ jobs:
           python tools/gate_btc_shadow_delivery.py request
           --handoff-dir artifacts/daily_handoff
           --output artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
+      - name: Build deterministic latest-run pointer
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          request_path = Path('artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json')
+          request_bytes = request_path.read_bytes()
+          pointer = {
+              'schema_version': '1.0.0',
+              'workflow_name': 'GATE BTC Daily Research Collection',
+              'workflow_file': '.github/workflows/gate-btc-daily-research.yml',
+              'run_id': int(os.environ['GITHUB_RUN_ID']),
+              'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'event_name': os.environ['GITHUB_EVENT_NAME'],
+              'branch': os.environ['GITHUB_REF_NAME'],
+              'head_sha': os.environ['GITHUB_SHA'],
+              'data_cutoff': os.environ['GATE_BTC_DATA_CUTOFF'],
+              'artifact_name': f"gate-btc-daily-research-{os.environ['GITHUB_RUN_ID']}",
+              'delivery_request_path': 'artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json',
+              'delivery_request_sha256': hashlib.sha256(request_bytes).hexdigest(),
+              'research_only': True,
+              'operational_status': 'NOT_APPROVED',
+              'orders_generated': 0,
+              'real_capital_used': 0,
+              'published_at_utc': datetime.now(timezone.utc).isoformat(),
+          }
+          output = Path('artifacts/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json')
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text(json.dumps(pointer, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(output.read_text(encoding='utf-8'))
+          PY
       - name: Upload daily report inputs and evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -139,3 +174,21 @@ jobs:
           path: artifacts/
           retention-days: 30
           if-no-files-found: error
+      - name: Publish deterministic pointer to runtime branch
+        if: success() && github.event_name != 'pull_request'
+        run: |
+          git config user.name "gate-btc-actions"
+          git config user.email "gate-btc-actions@users.noreply.github.com"
+          git fetch origin gate-btc-runtime
+          git worktree add /tmp/gate-btc-runtime origin/gate-btc-runtime
+          cd /tmp/gate-btc-runtime
+          git checkout -B gate-btc-runtime origin/gate-btc-runtime
+          mkdir -p runtime
+          cp "$GITHUB_WORKSPACE/artifacts/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json" runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          git add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          if git diff --cached --quiet; then
+            echo "Runtime pointer already current"
+          else
+            git commit -m "Update latest eligible GATE BTC run pointer"
+            git push origin HEAD:gate-btc-runtime
+          fi
