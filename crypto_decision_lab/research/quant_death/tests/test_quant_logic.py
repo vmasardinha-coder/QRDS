@@ -11,7 +11,7 @@ import pandas as pd
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from collect_multisource import analyze_price, parse_kline_zip, source_window_classification
+from collect_multisource import analyze_price, parse_kline_zip, serialize_dates, source_window_classification
 
 
 def series(start: str, prices: list[float], step_days: int = 1) -> pd.DataFrame:
@@ -83,3 +83,8 @@ def test_binance_zip_parser_handles_ms_and_us():
     assert len(frame) == 2
     assert frame.price.tolist() == [1.5, 2.5]
     assert frame.date.dt.year.tolist() == [2020, 2025]
+
+
+def test_serialize_dates_handles_nat_before_timestamp_formatting():
+    out = serialize_dates({"nat": pd.NaT, "nan": np.nan, "date": pd.Timestamp("2024-01-02")})
+    assert out == {"nat": "", "nan": "", "date": "2024-01-02"}
