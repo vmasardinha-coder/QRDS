@@ -16,6 +16,7 @@ on:
       - .github/workflows/gate-btc-daily-fallback.yml
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
+      - tools/gate_btc_generate_shadow_models.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
       - tools/qos_orchestrator.py
@@ -30,11 +31,14 @@ on:
       - migration/gateway/**
       - migration/reporting/**
   push:
-    branches: [agent/gate-btc-actions-migration]
+    branches:
+      - agent/gate-btc-actions-migration
+      - agent/gate-btc-autonomous-shadow-models
     paths:
       - .github/workflows/gate-btc-daily-research.yml
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
+      - tools/gate_btc_generate_shadow_models.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
       - tools/qos_orchestrator.py
@@ -80,6 +84,7 @@ jobs:
           -r migration/canonical/v2a/requirements.txt
           -r migration/canonical/delta/requirements.txt
           -r migration/canonical/gateway/requirements.txt
+          reportlab
       - name: Test daily handoff and fail-closed locks
         run: >-
           python -m unittest -v
@@ -131,7 +136,38 @@ jobs:
           python tools/gate_btc_shadow_delivery.py request
           --handoff-dir artifacts/daily_handoff
           --output artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
-      - name: Upload daily report inputs and evidence
+      - name: Package current artifact inputs for autonomous renderer
+        run: |
+          cd artifacts
+          zip -qr gate-btc-render-input.zip qos_daily gateway_reference_check gateway_daily daily_handoff
+      - name: Generate the three canonical Shadow Watch PDF models
+        run: >-
+          python tools/gate_btc_generate_shadow_models.py
+          --artifact artifacts/gate-btc-render-input.zip
+          --out artifacts/shadow_reports
+      - name: Validate exact autonomous PDF set
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('artifacts/shadow_reports')
+          pdfs = sorted(root.glob('*.pdf'))
+          assert len(pdfs) == 3, [p.name for p in pdfs]
+          expected = ('Reconciled_FullSet_v13_Master', 'v20_Comparativos_Completos_FINAL', 'Profit_Preservation')
+          names = ' '.join(p.name for p in pdfs)
+          for token in expected:
+              assert token in names, token
+          for p in pdfs:
+              assert p.stat().st_size >= 20000, (p.name, p.stat().st_size)
+              assert p.read_bytes().startswith(b'%PDF-'), p.name
+          manifest = json.loads((root/'GATE_BTC_SHADOW_REPORT_MANIFEST.json').read_text())
+          assert manifest['research_only'] is True
+          assert manifest['not_approved'] is True
+          assert manifest['orders'] == 0
+          assert manifest['capital'] == 0
+          print([p.name for p in pdfs])
+          PY
+      - name: Upload daily report inputs, PDFs and evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
