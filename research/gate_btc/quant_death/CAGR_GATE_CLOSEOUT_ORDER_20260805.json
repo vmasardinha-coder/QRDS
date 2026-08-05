@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "research_only": true,
+  "not_approved": true,
+  "holdout_closed": true,
+  "orders": 0,
+  "real_capital": 0,
+  "starting_cagr_eligible": 111,
+  "denominator": 202,
+  "gate_required": 122,
+  "minimum_ids_to_close": 11,
+  "excluded_statuses": ["QUANT_UNRESOLVED_DATA"],
+  "attack_order": [
+    {
+      "priority": 1,
+      "group": "priority_cohort_mapping",
+      "ids": ["dYdX (Native)", "Beam", "Core", "Movement", "Oasis", "Ronin", "ZKsync"]
+    },
+    {
+      "priority": 2,
+      "group": "priority_cohort_source_disagreement",
+      "ids": ["Grass", "Popcat (SOL)"]
+    },
+    {
+      "priority": 3,
+      "group": "v3_quant_death_source_disagreement",
+      "ids": ["Balancer", "NEM", "OMG Network", "Ren", "Verge", "FUNToken", "0x", "EthereumPoW", "Casper", "Chia"]
+    },
+    {
+      "priority": 4,
+      "group": "source_window_no_90",
+      "ids": ["ABBC Coin", "Energi", "Energy Web Token", "Golem", "HyperCash", "MINDOL", "Mixin", "Nano", "Numeraire", "Steem", "Uquid Coin", "XinFin Network"]
+    }
+  ],
+  "promotion_rules": {
+    "mapping": "exact economic asset identity, chain, migration and launch boundary required",
+    "source_disagreement": "adjudicate only with complete spot history and documented identity continuity; never average classifications",
+    "v3_vs_v4": "preserve validated full-history V3 classification when V4 conflict is solely a later venue-window truncation",
+    "source_window_no_90": "eligible only when inception-complete or sufficiently pre-exchange history is recovered",
+    "perpetual": "never CAGR eligible",
+    "recalibrate_cagr": "only after independently verified eligible_count >= 122"
+  },
+  "reporting_boundary": "Shadow reports are generated separately only after closeout and CAGR recalibration complete."
+}
