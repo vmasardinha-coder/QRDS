@@ -126,6 +126,94 @@ jobs:
             --output "$GITHUB_WORKSPACE/quant_death_multisource_output" \
             --asof "$(date -u +%F)" \
             --workers 6
+      - name: Finalize complete audit manifest and checksums
+        shell: bash
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+
+          root = Path('quant_death_multisource_output')
+          coverage = json.loads((root / 'COVERAGE_SUMMARY.json').read_text(encoding='utf-8'))
+          manifest_path = root / 'MANIFEST.json'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+
+          if coverage['cagr_eligible_v4'] >= coverage['coverage_gate_minimum']:
+              overall = 'PASS_CAGR_GATE_REACHED_RESEARCH_ONLY'
+          elif coverage['series_testable_v4'] >= coverage['coverage_gate_minimum']:
+              overall = 'PARTIAL_PASS_RAW_TESTABILITY_TARGET_MET__CAGR_GATE_FAIL_CLOSED'
+          else:
+              overall = 'PARTIAL_PASS_COVERAGE_GATE_NOT_REACHED_FAIL_CLOSED'
+
+          finalized_utc = datetime.now(timezone.utc).isoformat()
+          audit_note = root / 'AUDIT_MANIFEST_FINALIZATION.txt'
+          audit_note.write_text(
+              '\n'.join([
+                  'GATE BTC — FINAL AUDIT MANIFEST',
+                  f'OVERALL_STATUS={overall}',
+                  f'SERIES_TESTABLE={coverage["series_testable_v4"]}/{coverage["candidate_denominator"]}',
+                  f'MORTALITY_RESOLVED={coverage["mortality_resolved_v4"]}/{coverage["candidate_denominator"]}',
+                  f'CAGR_ELIGIBLE={coverage["cagr_eligible_v4"]}/{coverage["candidate_denominator"]}',
+                  f'CAGR_GATE_MINIMUM={coverage["coverage_gate_minimum"]}',
+                  f'CAGR_RECALIBRATION_EXECUTED={coverage["cagr_recalibration_executed"]}',
+                  f'GITHUB_RUN_ID={os.environ.get("GITHUB_RUN_ID", "")}',
+                  f'GITHUB_SHA={os.environ.get("GITHUB_SHA", "")}',
+                  f'FINALIZED_UTC={finalized_utc}',
+                  'RESEARCH_ONLY=True',
+                  'NOT_APPROVED=True',
+                  'ORDERS=0',
+                  'REAL_CAPITAL=0',
+              ]) + '\n',
+              encoding='utf-8',
+          )
+
+          def sha256(path: Path) -> str:
+              h = hashlib.sha256()
+              with path.open('rb') as fh:
+                  for chunk in iter(lambda: fh.read(1024 * 1024), b''):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          file_rows = []
+          for path in sorted(root.rglob('*')):
+              if path.is_file() and path.name not in {'MANIFEST.json', 'SHA256SUMS.txt'}:
+                  file_rows.append({
+                      'path': path.relative_to(root).as_posix(),
+                      'bytes': path.stat().st_size,
+                      'sha256': sha256(path),
+                  })
+
+          manifest.update({
+              'overall_status': overall,
+              'evidence_finalized_utc': finalized_utc,
+              'coverage': coverage,
+              'workflow': {
+                  'github_run_id': os.environ.get('GITHUB_RUN_ID', ''),
+                  'github_run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT', ''),
+                  'github_sha': os.environ.get('GITHUB_SHA', ''),
+                  'github_ref': os.environ.get('GITHUB_REF', ''),
+              },
+              'files': file_rows,
+          })
+          manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+
+          sum_paths = [p for p in sorted(root.rglob('*')) if p.is_file() and p.name != 'SHA256SUMS.txt']
+          sums = ''.join(f'{sha256(path)}  {path.relative_to(root).as_posix()}\n' for path in sum_paths)
+          (root / 'SHA256SUMS.txt').write_text(sums, encoding='utf-8')
+
+          assert manifest['coverage']['series_testable_v4'] == coverage['series_testable_v4']
+          assert manifest['coverage']['mortality_resolved_v4'] == coverage['mortality_resolved_v4']
+          assert len(manifest['files']) == len(file_rows)
+          for row in manifest['files']:
+              path = root / row['path']
+              assert path.stat().st_size == row['bytes']
+              assert sha256(path) == row['sha256']
+          print(f'FINAL_MANIFEST_FILES={len(file_rows)}')
+          print(f'OVERALL_STATUS={overall}')
+          PY
       - name: Create evidence ZIP
         shell: bash
         run: |
