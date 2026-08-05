@@ -91,7 +91,8 @@ jobs:
           set -euo pipefail
           cat "$GITHUB_WORKSPACE"/.gate_staging/augment_gate_kucoin.py.gz.b64.part-* | base64 -d | gzip -dc > augment_gate_kucoin.py
           cat "$GITHUB_WORKSPACE"/.gate_staging/augment_ccdata.py.gz.b64.part-* | base64 -d | gzip -dc > augment_ccdata.py
-          python -m py_compile augment_gate_kucoin.py augment_ccdata.py
+          cat "$GITHUB_WORKSPACE"/.gate_staging/augment_okx_bybit_mexc.py.gz.b64.part-* | base64 -d | gzip -dc > augment_okx_bybit_mexc.py
+          python -m py_compile augment_gate_kucoin.py augment_ccdata.py augment_okx_bybit_mexc.py
       - name: Collect public price histories and evaluate frozen rule
         working-directory: crypto_decision_lab/research/quant_death
         env:
@@ -111,6 +112,13 @@ jobs:
             --output "$GITHUB_WORKSPACE/quant_death_multisource_output" \
             --asof "$(date -u +%F)" \
             --workers 12
+      - name: Augment unresolved rows from public OKX Bybit and MEXC spot history
+        working-directory: crypto_decision_lab/research/quant_death
+        run: |
+          python augment_okx_bybit_mexc.py \
+            --output "$GITHUB_WORKSPACE/quant_death_multisource_output" \
+            --asof "$(date -u +%F)" \
+            --workers 8
       - name: Augment unresolved rows from public CCData CCCAGG history
         working-directory: crypto_decision_lab/research/quant_death
         run: |
