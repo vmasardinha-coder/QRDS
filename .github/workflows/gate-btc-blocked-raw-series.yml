@@ -1,0 +1,32 @@
+name: GATE BTC Blocked Raw Series
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+permissions:
+  contents: read
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect public candidate series
+        run: python tools/gate_btc_collect_blocked_raw_series.py --output blocked_raw_series
+      - name: Validate research-only manifest
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          m=json.loads(pathlib.Path('blocked_raw_series/SOURCE_MANIFEST.json').read_text())
+          assert m['RESEARCH_ONLY'] is True
+          assert m['SHADOW_ONLY'] is True
+          assert m['NOT_APPROVED'] is True
+          assert m['orders']==0 and m['capital']==0
+          assert m['formal_status_changes']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-blocked-raw-series-${{ github.run_id }}
+          path: blocked_raw_series
+          if-no-files-found: error
+          retention-days: 90
