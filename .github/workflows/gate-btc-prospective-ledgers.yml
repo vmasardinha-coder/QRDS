@@ -150,15 +150,26 @@ jobs:
           --ledger-dir runtime_repo/runtime/ledgers/lock25_50
 
       - name: Append LOCK25/50 eligible close
-        if: ${{ env.LOCK_SNAPSHOT_ID >= env.GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE }}
-        run: >-
-          python tools/gate_btc_measurement_ledgers.py append-lock
-          --contract config/lock25_50_shadow_contract_v1.json
-          --equity-curves extracted/v2a/outputs/qos_v2a_equity_curves.csv
-          --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
-          --snapshot-id "$LOCK_SNAPSHOT_ID"
-          --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
-          --ledger-dir runtime_repo/runtime/ledgers/lock25_50
+        run: |
+          set -euo pipefail
+          if python - <<'PY'
+          from datetime import date
+          import os
+          close = date.fromisoformat(os.environ["LOCK_SNAPSHOT_ID"])
+          first = date.fromisoformat(os.environ["GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE"])
+          raise SystemExit(0 if close >= first else 1)
+          PY
+          then
+            python tools/gate_btc_measurement_ledgers.py append-lock \
+              --contract config/lock25_50_shadow_contract_v1.json \
+              --equity-curves extracted/v2a/outputs/qos_v2a_equity_curves.csv \
+              --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv \
+              --snapshot-id "$LOCK_SNAPSHOT_ID" \
+              --cycle-id "$GATE_BTC_LOCK_CYCLE_ID" \
+              --ledger-dir runtime_repo/runtime/ledgers/lock25_50
+          else
+            echo "LOCK close $LOCK_SNAPSHOT_ID precedes first eligible close; anchor remains at 0."
+          fi
 
       - name: Rebuild canonical measurement status
         run: |
