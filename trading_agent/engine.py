@@ -110,7 +110,6 @@ def run_b3(today: str) -> dict:
     weekday = datetime.strptime(today, "%Y-%m-%d").weekday()
     bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
-    cdi_idx = data_sources.cdi_index(cdi_rates)
 
     universe: dict[str, Series] = {}
     failed: list[str] = []
@@ -128,8 +127,7 @@ def run_b3(today: str) -> dict:
         state = portfolio.new_state(
             "b3", config.B3_BENCHMARK, today, bench_price, currency="BRL",
             initial_capital=config.B3_INITIAL_CAPITAL_BRL,
-            benchmark2_symbol=config.B3_BENCHMARK2,
-            benchmark2_index=cdi_idx[-1][1])
+            benchmark2_symbol=config.B3_BENCHMARK2)
 
     portfolio.accrue_cash_cdi(state, cdi_rates, today)
 
@@ -146,8 +144,10 @@ def run_b3(today: str) -> dict:
         state["last_regime"] = regime
         rebalanced = True
 
+    cdi_factor = data_sources.cdi_factor_since(cdi_rates,
+                                               state["inception_date"], today)
     entry = portfolio.append_history(state, today, prices, bench_price,
-                                     benchmark2_index=cdi_idx[-1][1])
+                                     benchmark2_factor=cdi_factor)
     portfolio.save_state(state)
     return {
         "state": state, "entry": entry, "trades": trades, "regime": regime,
@@ -163,7 +163,6 @@ def run_b3_structured(today: str) -> dict:
     series = data_sources.fetch_b3_daily(underlying)
     bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
-    cdi_idx = data_sources.cdi_index(cdi_rates)
 
     spot = series[-1][1]
     prices = {underlying: spot}
@@ -175,8 +174,7 @@ def run_b3_structured(today: str) -> dict:
         state = portfolio.new_state(
             "b3_estruturadas", config.B3_BENCHMARK, today, bench_price,
             currency="BRL", initial_capital=config.B3S_INITIAL_CAPITAL_BRL,
-            benchmark2_symbol=config.B3_BENCHMARK2,
-            benchmark2_index=cdi_idx[-1][1])
+            benchmark2_symbol=config.B3_BENCHMARK2)
 
     portfolio.accrue_cash_cdi(state, cdi_rates, today)
 
@@ -212,8 +210,10 @@ def run_b3_structured(today: str) -> dict:
         f"Volatilidade realizada {config.B3S_VOL_WINDOW_DAYS}d: {sigma*100:.1f}% a.a. "
         f"| CDI: {cdi_rates[-1][1]:.4f}% a.d.")
 
+    cdi_factor = data_sources.cdi_factor_since(cdi_rates,
+                                               state["inception_date"], today)
     entry = portfolio.append_history(state, today, prices, bench_price,
-                                     benchmark2_index=cdi_idx[-1][1],
+                                     benchmark2_factor=cdi_factor,
                                      nav_override=nav_net)
     portfolio.save_state(state)
     return {

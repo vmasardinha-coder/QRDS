@@ -177,12 +177,20 @@ def fetch_b3_daily(ticker: str) -> list[tuple[str, float]]:
     return fetch_yahoo_daily(symbol)
 
 
-def fetch_bcb_cdi_daily(last_n: int = 600) -> list[tuple[str, float]]:
-    """Taxa CDI diaria (% ao dia) via API SGS do Banco Central do Brasil."""
+def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
+    """Taxa CDI diaria (% ao dia) via API SGS do Banco Central do Brasil.
+
+    Usa consulta por intervalo de datas (o endpoint 'ultimos/N' tem limites
+    baixos e devolve 400 para N grandes).
+    """
     from . import config
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days_back)
     url = (
         f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{config.BCB_SGS_CDI_SERIES}"
-        f"/dados/ultimos/{last_n}?formato=json"
+        f"/dados?formato=json"
+        f"&dataInicial={start.strftime('%d/%m/%Y')}"
+        f"&dataFinal={end.strftime('%d/%m/%Y')}"
     )
     data = json.loads(_http_get(url).decode("utf-8"))
     rows: list[tuple[str, float]] = []
@@ -198,11 +206,11 @@ def fetch_bcb_cdi_daily(last_n: int = 600) -> list[tuple[str, float]]:
     return rows
 
 
-def cdi_index(rates: list[tuple[str, float]]) -> list[tuple[str, float]]:
-    """Converte taxas CDI diarias (% a.d.) num indice acumulado (base 1.0)."""
-    out: list[tuple[str, float]] = []
-    idx = 1.0
+def cdi_factor_since(rates: list[tuple[str, float]], start_date: str,
+                     end_date: str) -> float:
+    """Fator de acumulacao do CDI para dias uteis em (start_date, end_date]."""
+    factor = 1.0
     for date, rate in rates:
-        idx *= 1.0 + rate / 100.0
-        out.append((date, idx))
-    return out
+        if start_date < date <= end_date:
+            factor *= 1.0 + rate / 100.0
+    return factor

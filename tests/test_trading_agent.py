@@ -167,11 +167,15 @@ class TestReport(unittest.TestCase):
 
 
 class TestB3(unittest.TestCase):
-    def test_cdi_index_accumulates(self):
+    def test_cdi_factor_anchored_to_inception(self):
         from trading_agent import data_sources
-        rates = [("2026-01-05", 0.05), ("2026-01-06", 0.05)]
-        idx = data_sources.cdi_index(rates)
-        self.assertAlmostEqual(idx[-1][1], 1.0005 * 1.0005, places=8)
+        rates = [("2026-01-02", 0.05), ("2026-01-05", 0.05),
+                 ("2026-01-06", 0.05), ("2026-01-07", 0.05)]
+        # so acumula dias APOS a inception e ate hoje, seja qual for a janela
+        factor = data_sources.cdi_factor_since(rates, "2026-01-05", "2026-01-07")
+        self.assertAlmostEqual(factor, 1.0005 ** 2, places=10)
+        self.assertEqual(data_sources.cdi_factor_since(rates, "2026-01-05",
+                                                       "2026-01-05"), 1.0)
 
     def test_cash_accrues_cdi(self):
         state = portfolio.new_state("b3", "^BVSP", "2026-01-05", 130_000.0,

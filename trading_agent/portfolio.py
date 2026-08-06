@@ -17,8 +17,7 @@ STATE_DIR = Path(__file__).resolve().parent / "state"
 def new_state(name: str, benchmark_symbol: str, date: str,
               benchmark_price: float, currency: str = "USD",
               initial_capital: float | None = None,
-              benchmark2_symbol: str | None = None,
-              benchmark2_index: float | None = None) -> dict:
+              benchmark2_symbol: str | None = None) -> dict:
     capital = initial_capital if initial_capital is not None else config.INITIAL_CAPITAL_USD
     state = {
         "name": name,
@@ -33,9 +32,10 @@ def new_state(name: str, benchmark_symbol: str, date: str,
         "history": [],            # [{"date", "nav", "benchmark_nav"}]
         "trades": [],             # [{"date", "symbol", "side", "qty", "price", "value"}]
     }
-    if benchmark2_symbol is not None and benchmark2_index is not None:
-        state["benchmark2"] = {"symbol": benchmark2_symbol,
-                               "inception_index": benchmark2_index}
+    if benchmark2_symbol is not None:
+        # benchmark2 (CDI) e calculado como fator acumulado desde a inception,
+        # por isso basta guardar o simbolo
+        state["benchmark2"] = {"symbol": benchmark2_symbol}
     return state
 
 
@@ -156,17 +156,16 @@ def execute_orders(state: dict, orders: list[dict], date: str,
 
 def append_history(state: dict, date: str, prices: dict[str, float],
                    benchmark_price: float,
-                   benchmark2_index: float | None = None,
+                   benchmark2_factor: float | None = None,
                    nav_override: float | None = None) -> dict:
     bench = state["benchmark"]
     benchmark_nav = state["initial_capital"] * benchmark_price / bench["inception_price"]
     total = nav_override if nav_override is not None else nav(state, prices)
     entry = {"date": date, "nav": round(total, 2),
              "benchmark_nav": round(benchmark_nav, 2)}
-    if benchmark2_index is not None and "benchmark2" in state:
-        b2 = state["benchmark2"]
+    if benchmark2_factor is not None and "benchmark2" in state:
         entry["benchmark2_nav"] = round(
-            state["initial_capital"] * benchmark2_index / b2["inception_index"], 2)
+            state["initial_capital"] * benchmark2_factor, 2)
     if state["history"] and state["history"][-1]["date"] == date:
         state["history"][-1] = entry
     else:
