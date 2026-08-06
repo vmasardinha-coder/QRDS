@@ -21,68 +21,166 @@ concurrency:
 
 env:
   GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_LOCK_CYCLE_ID: "QOS_CURRENT_COMPOSITION_2026-08-06"
+  GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE: "2026-08-06"
 
 jobs:
-  append-gateway-ledger:
+  append-prospective-ledgers:
     if: >-
       (github.event_name == 'workflow_dispatch') ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out frozen ledger activation code
+        uses: actions/checkout@v4
         with:
-          ref: main
+          ref: agent/gate-btc-ledger-activation
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Resolve source run
+
+      - name: Test prospective ledger contracts
+        run: python -m unittest -v tests/test_gate_btc_measurement_ledgers.py
+
+      - name: Resolve and validate source run
         env:
+          GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
           EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
-        run: echo "SOURCE_RUN_ID=${MANUAL_RUN_ID:-$EVENT_RUN_ID}" >> "$GITHUB_ENV"
-      - name: Download eligible daily artifact
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run = json.load(open("source_run.json", encoding="utf-8"))
+          assert run["name"] == "GATE BTC Daily Research Collection", run["name"]
+          assert run["head_branch"] == "main", run["head_branch"]
+          assert run["status"] == "completed", run["status"]
+          assert run["conclusion"] == "success", run["conclusion"]
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Download and expand eligible daily artifact
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p source_artifact
-          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          set -euo pipefail
+          mkdir -p source_artifact extracted/gateway extracted/v2a extracted/delta
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
-      - name: Locate and validate Gateway evidence
+          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          test -f source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
+          test -f source_artifact/gateway_daily/linux_offline_replay_outputs.zip
+          test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
+          unzip -q source_artifact/gateway_daily/linux_offline_replay_outputs.zip -d extracted/gateway
+          unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          unzip -q source_artifact/qos_daily/delta_walk_forward_outputs.zip -d extracted/delta
+
+      - name: Validate fail-closed daily handoff
         run: |
-          manifest=$(find source_artifact -type f -name 'v2a1_run_manifest.json' | head -1)
-          snapshot_status=$(find source_artifact -type f -name 'scanner_snapshot_status.json' | head -1)
-          compositions=$(find source_artifact -type f -name 'strategy_compositions.csv' | head -1)
-          profiles=$(find source_artifact -type f -name 'strategy_execution_profiles.csv' | head -1)
-          test -f "$manifest" && test -f "$snapshot_status" && test -f "$compositions" && test -f "$profiles"
-          snapshot_id=$(python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8-sig"))["data_as_of"])' "$manifest")
-          echo "MANIFEST=$manifest" >> "$GITHUB_ENV"
-          echo "SNAPSHOT_STATUS=$snapshot_status" >> "$GITHUB_ENV"
-          echo "COMPOSITIONS=$compositions" >> "$GITHUB_ENV"
-          echo "PROFILES=$profiles" >> "$GITHUB_ENV"
-          echo "SNAPSHOT_ID=$snapshot_id" >> "$GITHUB_ENV"
-      - name: Check out runtime ledger branch
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          manifest = json.load(open("source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json", encoding="utf-8-sig"))
+          delivery = json.load(open("source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json", encoding="utf-8-sig"))
+          assert manifest["status"] in {"PASS", "PASS_WITH_DATA_WARNINGS"}
+          assert manifest["research_only"] is True
+          assert manifest["operational_status"] == "NOT_APPROVED"
+          assert manifest["orders_generated"] == 0
+          assert manifest["real_capital_used"] == 0
+          assert manifest["methodology_changes"] == 0
+          assert manifest["components"]["v2a"]["status"] == "PASS"
+          assert manifest["components"]["delta"]["status"] == "PASS"
+          assert manifest["components"]["gateway_upstream"]["status"] == "PASS"
+          assert manifest["components"]["gateway_downstream"]["status"] == "PASS"
+          assert delivery["status"] == "READY_FOR_RENDER"
+          assert delivery["contract"]["research_only"] is True
+          assert delivery["contract"]["operational_status"] == "NOT_APPROVED"
+          assert delivery["contract"]["orders_generated"] == 0
+          assert delivery["contract"]["real_capital_used"] == 0
+          PY
+
+      - name: Resolve canonical prospective inputs
+        run: |
+          set -euo pipefail
+          test -f extracted/gateway/outputs/v2a1_run_manifest.json
+          test -f extracted/gateway/outputs/scanner_snapshot_status.json
+          test -f extracted/gateway/outputs/strategy_compositions.csv
+          test -f extracted/gateway/outputs/strategy_execution_profiles.csv
+          test -f extracted/v2a/outputs/v2a_run_manifest.json
+          test -f extracted/v2a/outputs/qos_v2a_equity_curves.csv
+          test -f extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          test -f extracted/delta/outputs/strategy_evidence_gate.csv
+          GATEWAY_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/gateway/outputs/v2a1_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          LOCK_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          echo "GATEWAY_SNAPSHOT_ID=$GATEWAY_SNAPSHOT_ID" >> "$GITHUB_ENV"
+          echo "LOCK_SNAPSHOT_ID=$LOCK_SNAPSHOT_ID" >> "$GITHUB_ENV"
+
+      - name: Check out immutable runtime branch
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Append immutable Gateway snapshot
+
+      - name: Append Gateway Dynamics snapshot
         run: >-
-          python tools/gate_btc_prospective_ledgers.py append-gateway
-          --manifest "$MANIFEST"
-          --snapshot-status "$SNAPSHOT_STATUS"
-          --compositions "$COMPOSITIONS"
-          --execution-profiles "$PROFILES"
-          --snapshot-id "$SNAPSHOT_ID"
+          python tools/gate_btc_measurement_ledgers.py append-gateway-safe
+          --manifest extracted/gateway/outputs/v2a1_run_manifest.json
+          --snapshot-status extracted/gateway/outputs/scanner_snapshot_status.json
+          --compositions extracted/gateway/outputs/strategy_compositions.csv
+          --execution-profiles extracted/gateway/outputs/strategy_execution_profiles.csv
+          --snapshot-id "$GATEWAY_SNAPSHOT_ID"
           --ledger-dir runtime_repo/runtime/ledgers/gateway_dynamics
-      - name: Commit runtime evidence
+
+      - name: Initialize frozen LOCK25/50 cycle
+        run: >-
+          python tools/gate_btc_measurement_ledgers.py initialize-lock
+          --contract config/lock25_50_shadow_contract_v1.json
+          --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
+          --first-eligible-close "$GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE"
+          --ledger-dir runtime_repo/runtime/ledgers/lock25_50
+
+      - name: Append LOCK25/50 eligible close
+        if: ${{ env.LOCK_SNAPSHOT_ID >= env.GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE }}
+        run: >-
+          python tools/gate_btc_measurement_ledgers.py append-lock
+          --contract config/lock25_50_shadow_contract_v1.json
+          --equity-curves extracted/v2a/outputs/qos_v2a_equity_curves.csv
+          --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          --snapshot-id "$LOCK_SNAPSHOT_ID"
+          --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
+          --ledger-dir runtime_repo/runtime/ledgers/lock25_50
+
+      - name: Rebuild canonical measurement status
+        run: |
+          set -euo pipefail
+          d50_args=()
+          if test -f runtime_repo/runtime/ledgers/d50/STATUS.json; then
+            d50_args=(--d50-status runtime_repo/runtime/ledgers/d50/STATUS.json)
+          fi
+          python tools/gate_btc_measurement_ledgers.py build-status \
+            --delta-gate extracted/delta/outputs/strategy_evidence_gate.csv \
+            --gateway-status runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json \
+            --lock-status runtime_repo/runtime/ledgers/lock25_50/STATUS.json \
+            "${d50_args[@]}" \
+            --output runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
+
+      - name: Commit runtime evidence only
         working-directory: runtime_repo
         run: |
+          set -euo pipefail
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/ledgers/gateway_dynamics
+          git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/GATE_BTC_MEASUREMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m "Append Gateway Dynamics prospective snapshot ${SNAPSHOT_ID}"
+          git commit -m "Append GATE BTC prospective measurements ${LOCK_SNAPSHOT_ID}"
           git push origin HEAD:gate-btc-runtime
