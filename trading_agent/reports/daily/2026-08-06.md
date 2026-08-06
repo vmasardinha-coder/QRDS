@@ -12,26 +12,21 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao.
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,975.00 |
-| Retorno desde inicio (2026-08-06) | -0.05% |
-| Benchmark BTC desde inicio | +0.00% |
-| **Alfa vs BTC** | **-0.05%** |
+| NAV | $49,941.99 |
+| Retorno desde inicio (2026-08-06) | -0.12% |
+| Benchmark BTC desde inicio | -0.09% |
+| **Alfa vs BTC** | **-0.02%** |
 | Caixa | $24,975.00 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,417.77 | $12,500.00 | 25.0% |
-| ETH | 3.287 | $1,901.43 | $6,250.00 | 12.5% |
-| LINK | 768.191 | $8.14 | $6,250.00 | 12.5% |
+| BTC | 0.194046 | $64,356.88 | $12,488.18 | 25.0% |
+| LINK | 768.191 | $8.13 | $6,242.32 | 12.5% |
+| ETH | 3.287 | $1,897.32 | $6,236.49 | 12.5% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor |
-|---|---|---|---|---|
-| BTC | COMPRA | 0.194046 | $64,482.19 | $12,512.50 |
-| ETH | COMPRA | 3.287 | $1,903.33 | $6,256.25 |
-| LINK | COMPRA | 768.191 | $8.14 | $6,256.25 |
+_Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 ---
 _Estrategia: momentum com filtro de regime (SMA 200). Rebalanceio as segundas-feiras, em mudanca de regime ou por desvio de pesos. Custos de execucao modelados (slippage)._
