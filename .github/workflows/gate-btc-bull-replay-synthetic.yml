@@ -1,0 +1,67 @@
+name: GATE BTC Bull Replay Synthetic Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/gate_btc_bull_replay.py"
+      - "tools/gate_btc_bull_replay_availability.py"
+      - "tests/test_gate_btc_bull_replay.py"
+      - "tests/test_gate_btc_bull_replay_availability.py"
+      - "migration/reporting/bull_replay_contract.json"
+      - "migration/reporting/bull_replay_data_availability_contract.json"
+      - ".github/workflows/gate-btc-bull-replay-synthetic.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-bull-replay-synthetic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-research-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: |
+          python -m py_compile tools/gate_btc_bull_replay.py
+          python -m py_compile tools/gate_btc_bull_replay_availability.py
+      - name: Unit tests
+        run: |
+          python -m unittest tests.test_gate_btc_bull_replay -v
+          python -m unittest tests.test_gate_btc_bull_replay_availability -v
+      - name: Run synthetic scaffold
+        run: |
+          mkdir -p bull-replay-synthetic-output
+          python tools/gate_btc_bull_replay.py \
+            --contract migration/reporting/bull_replay_contract.json \
+            --output-dir bull-replay-synthetic-output \
+            --synthetic-only | tee bull-replay-synthetic-output/run_stdout.txt
+      - name: Validate safety manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('bull-replay-synthetic-output/GATE_BTC_BULL_REPLAY_SYNTHETIC_MANIFEST.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          assert data['status'] == 'PASS_SYNTHETIC_INFRASTRUCTURE_ONLY'
+          assert data['research_only'] is True
+          assert data['operational_status'] == 'NOT_APPROVED'
+          assert data['orders_generated'] == 0
+          assert data['real_capital_used'] == 0
+          assert data['real_market_data_loaded'] is False
+          assert data['holdout_opened'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-bull-replay-synthetic-${{ github.run_id }}
+          path: bull-replay-synthetic-output/
+          if-no-files-found: error
+          retention-days: 30

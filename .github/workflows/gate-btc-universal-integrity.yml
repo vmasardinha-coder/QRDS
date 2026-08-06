@@ -1,0 +1,62 @@
+name: GATE BTC Universal Integrity
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-universal-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-btc-universal-integrity:
+    name: gate-btc-universal-integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile migration and delivery tools
+        run: >-
+          python -m py_compile
+          tools/gate_btc_daily_research.py
+          tools/gate_btc_shadow_delivery.py
+          tools/qos_orchestrator.py
+          tools/gateway_frozen_replay.py
+          tools/v2a_frozen_replay.py
+          tools/delta_frozen_replay.py
+      - name: Run universal fail-closed tests
+        env:
+          GATE_BTC_RESEARCH_ONLY: "true"
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_daily_research.py
+          tests/test_gate_btc_shadow_delivery.py
+      - name: Validate frozen reporting contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('migration/reporting/shadow_daily_contract.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          reports = payload.get('reports', payload.get('shadow_reports', []))
+          if isinstance(reports, dict):
+              names = list(reports)
+          else:
+              names = [item.get('id') or item.get('role') or item.get('name') for item in reports]
+          normalized = {str(name).upper().replace(' ', '_') for name in names if name}
+          required = {'MASTER_ANALYTIC', 'COMPARATIVOS_COMPLETOS', 'PROFIT_PRESERVATION'}
+          if not required.issubset(normalized):
+              raise SystemExit(f'missing official Shadow reports: required={sorted(required)} found={sorted(normalized)}')
+          text = path.read_text(encoding='utf-8').upper()
+          for lock in ('RESEARCH_ONLY', 'NOT_APPROVED'):
+              if lock not in text:
+                  raise SystemExit(f'missing reporting lock: {lock}')
+          print('UNIVERSAL_INTEGRITY_STATUS=PASS')
+          PY

@@ -1,0 +1,60 @@
+{
+  "contract_version": "1.0.0",
+  "status": "PREREGISTERED_RESEARCH_ONLY",
+  "research_only": true,
+  "operational_status": "NOT_APPROVED",
+  "orders_allowed": false,
+  "real_capital_allowed": false,
+  "benchmarks_required": [
+    "Victor_proxy",
+    "BTC_puro",
+    "BTC_ETH_70_30"
+  ],
+  "core_candidates": [
+    "QOS_Moderada",
+    "QOS_Ultra"
+  ],
+  "dynamic_candidates": [
+    "Delta_LS_50_50",
+    "Delta_LS_50_50_StopVol",
+    "Delta_LS_70_30",
+    "Delta_LS_70_30_StopVol",
+    "MacroQuant"
+  ],
+  "allocation_splits": [
+    [100, 0],
+    [90, 10],
+    [80, 20],
+    [70, 30],
+    [60, 40],
+    [50, 50]
+  ],
+  "phases": [
+    "PRE_REVERSAL",
+    "EARLY_BULL",
+    "ACCELERATION",
+    "MID_BULL",
+    "LATE_BULL",
+    "TOP_REVERSAL"
+  ],
+  "locks": [
+    "CONTROL",
+    "LOCK25",
+    "LOCK50",
+    "LOCK75"
+  ],
+  "target": {
+    "currency": "BRL",
+    "amount": 1500000,
+    "deadline": "2030-12-31",
+    "probability_levels": [0.5, 0.7, 0.8, 0.9]
+  },
+  "methodology_guards": {
+    "lookahead_prohibited": true,
+    "post_result_rule_changes_prohibited": true,
+    "gateway_current_composition_retrospective_prohibited": true,
+    "macroquant_methodology_must_remain_independent": true,
+    "gross_and_net_results_required": true,
+    "backtest_walkforward_prospective_separation_required": true
+  }
+}
