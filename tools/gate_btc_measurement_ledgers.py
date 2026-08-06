@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from tools.gate_btc_lock_ledger import append_lock, initialize_lock
+from tools.gate_btc_lock_ledger import append_lock, initialize_lock, initialize_source_anchor
 from tools.gate_btc_measurement_common import load_json, safe_gateway
 from tools.gate_btc_measurement_status import audit_d50, build_status
 
@@ -30,9 +30,20 @@ def main() -> int:
     init.add_argument("--ledger-dir", type=Path, required=True)
     init.set_defaults(func=initialize_lock)
 
+    source = sub.add_parser("initialize-lock-source")
+    source.add_argument("--contract", type=Path, required=True)
+    source.add_argument("--current-portfolios", type=Path, required=True)
+    source.add_argument("--monthly-allocations", type=Path, required=True)
+    source.add_argument("--equity-curves", type=Path, required=True)
+    source.add_argument("--v2a-config", type=Path, required=True)
+    source.add_argument("--base-date", required=True)
+    source.add_argument("--cycle-id", required=True)
+    source.add_argument("--ledger-dir", type=Path, required=True)
+    source.set_defaults(func=initialize_source_anchor)
+
     lock = sub.add_parser("append-lock")
     lock.add_argument("--contract", type=Path, required=True)
-    lock.add_argument("--equity-curves", type=Path, required=True)
+    lock.add_argument("--master-daily", type=Path, required=True)
     lock.add_argument("--current-portfolios", type=Path, required=True)
     lock.add_argument("--snapshot-id", required=True)
     lock.add_argument("--cycle-id", required=True)
