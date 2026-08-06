@@ -2,11 +2,27 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from tools.gate_btc_measurement_common import (
     atomic_json, canonical_sha, deep_diff, file_sha, iso_day, load_json,
     read_csv, require,
 )
+
+D50_PROVENANCE_FIELDS = {"source_bar_sha256", "replay_row_sha256"}
+
+
+def _without_fields(value: Any, fields: set[str]) -> Any:
+    """Return a comparison copy with named provenance fields removed recursively."""
+    if isinstance(value, dict):
+        return {
+            key: _without_fields(child, fields)
+            for key, child in value.items()
+            if key not in fields
+        }
+    if isinstance(value, list):
+        return [_without_fields(child, fields) for child in value]
+    return value
 
 
 def audit_d50(args) -> int:
@@ -14,22 +30,66 @@ def audit_d50(args) -> int:
     for field in args.ignore_field or []:
         frozen.pop(field, None)
         candidate.pop(field, None)
+
     differences = deep_diff(frozen, candidate)
+    frozen_economic = _without_fields(frozen, D50_PROVENANCE_FIELDS)
+    candidate_economic = _without_fields(candidate, D50_PROVENANCE_FIELDS)
+    economic_differences = deep_diff(frozen_economic, candidate_economic)
+    frozen_provenance = {
+        field: frozen.get(field) for field in sorted(D50_PROVENANCE_FIELDS)
+        if field in frozen
+    }
+    candidate_provenance = {
+        field: candidate.get(field) for field in sorted(D50_PROVENANCE_FIELDS)
+        if field in candidate
+    }
+    provenance_differences = deep_diff(frozen_provenance, candidate_provenance)
+
+    if not differences:
+        status = "PASS_IDENTICAL"
+        required_action = "resume append from frozen ledger tip"
+    elif not economic_differences:
+        status = "PASS_PROVENANCE_ONLY_SOURCE_REVISION"
+        required_action = (
+            "preserve frozen row; record immutable source-revision diagnostic; "
+            "resume append from frozen ledger tip"
+        )
+    else:
+        status = "FAIL_IMMUTABLE_ECONOMIC_ROW_CHANGED"
+        required_action = (
+            "preserve frozen row; correct deterministic inputs/serialization; "
+            "regenerate candidate only"
+        )
+
     report = {
-        "schema": "gate_btc.d50_immutable_conflict.v2",
-        "status": "PASS_IDENTICAL" if not differences else "FAIL_IMMUTABLE_ROW_CHANGED",
+        "schema": "gate_btc.d50_immutable_conflict.v3",
+        "status": status,
         "frozen_row_sha256": file_sha(args.frozen_row),
         "candidate_row_sha256": file_sha(args.candidate_row),
-        "difference_count": len(differences), "differences": differences,
-        "mutation_performed": False, "frozen_row_preserved": True,
+        "difference_count": len(differences),
+        "differences": differences,
+        "economic_difference_count": len(economic_differences),
+        "economic_differences": economic_differences,
+        "provenance_difference_count": len(provenance_differences),
+        "provenance_differences": provenance_differences,
+        "provenance_fields": sorted(D50_PROVENANCE_FIELDS),
+        "economic_fields_identical": not economic_differences,
+        "source_revision_only": bool(differences) and not economic_differences,
+        "mutation_performed": False,
+        "frozen_row_preserved": True,
+        "counter_incremented_for_existing_date": False,
         "resume_counter_from": "4/30",
-        "required_action": "preserve frozen row; correct deterministic inputs/serialization; regenerate candidate only" if differences else "resume append from frozen ledger tip",
-        "research_only": True, "shadow_only": True, "not_approved": True,
-        "orders_generated": 0, "real_capital_used": 0,
+        "required_action": required_action,
+        "research_only": True,
+        "shadow_only": True,
+        "not_approved": True,
+        "orders_generated": 0,
+        "real_capital_used": 0,
+        "promotion_allowed": False,
     }
     atomic_json(args.output, report)
     print(json.dumps(report, indent=2))
-    return 0 if not differences else 2
+    return 2 if economic_differences else 0
 
 
 def build_status(args) -> int:
