@@ -235,5 +235,44 @@ class TestStructured(unittest.TestCase):
         self.assertGreaterEqual(vol, 0.0)
 
 
+class TestGarch(unittest.TestCase):
+    def _simulate_garch_closes(self, n=600, omega=4e-6, alpha=0.08, beta=0.88):
+        import math, random
+        random.seed(3)
+        var = omega / (1 - alpha - beta)
+        price, closes = 100.0, [100.0]
+        for _ in range(n):
+            r = math.sqrt(var) * random.gauss(0, 1)
+            price *= math.exp(r)
+            closes.append(price)
+            var = omega + alpha * r * r + beta * var
+        return closes
+
+    def test_fit_recovers_persistence(self):
+        from trading_agent import garch
+        closes = self._simulate_garch_closes()
+        omega, alpha, beta = garch.fit_garch11(garch.log_returns(closes))
+        self.assertGreater(alpha, 0.0)
+        self.assertGreater(beta, 0.5)
+        self.assertLess(alpha + beta, 0.999)
+        # persistencia proxima da simulada (0.96)
+        self.assertGreater(alpha + beta, 0.85)
+
+    def test_forecast_close_to_long_run_vol(self):
+        import math
+        from trading_agent import garch
+        closes = self._simulate_garch_closes()
+        vol = garch.forecast_avg_vol(closes, 21)
+        # sanidade: mesma ordem de grandeza da vol de longo prazo simulada
+        long_run = math.sqrt(4e-6 / (1 - 0.96) * 252)  # ~15.9% a.a.
+        self.assertGreater(vol, long_run * 0.35)
+        self.assertLess(vol, long_run * 2.5)
+
+    def test_insufficient_history_raises(self):
+        from trading_agent import garch
+        with self.assertRaises(ValueError):
+            garch.fit_garch11([0.001] * 50)
+
+
 if __name__ == "__main__":
     unittest.main()

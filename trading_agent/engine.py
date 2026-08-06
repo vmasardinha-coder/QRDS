@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from . import config, data_sources, portfolio, strategy, structured
+from . import config, data_sources, garch, portfolio, strategy, structured
 
 Series = list[tuple[str, float]]
 
@@ -178,7 +178,17 @@ def run_b3_structured(today: str) -> dict:
 
     portfolio.accrue_cash_cdi(state, cdi_rates, today)
 
-    sigma = structured.realized_vol(_closes(series), config.B3S_VOL_WINDOW_DAYS)
+    vol_realized = structured.realized_vol(_closes(series),
+                                           config.B3S_VOL_WINDOW_DAYS)
+    # GARCH(1,1) como calibrador principal da volatilidade; se o ajuste
+    # degenerar, cai para a volatilidade realizada
+    try:
+        sigma = garch.forecast_avg_vol(_closes(series),
+                                       config.B3S_GARCH_HORIZON_DAYS)
+        vol_source = "GARCH(1,1)"
+    except (ValueError, ZeroDivisionError, OverflowError):
+        sigma = vol_realized
+        vol_source = f"realizada {config.B3S_VOL_WINDOW_DAYS}d"
     rate_annual = structured.annual_rate_from_cdi(cdi_rates[-1][1])
 
     trades: list[dict] = []
@@ -207,7 +217,8 @@ def run_b3_structured(today: str) -> dict:
             f"vence {sc['expiry']}, premio R$ {sc['premium_unit']:.4f}/un, "
             f"valor atual da obrigacao R$ {liability:,.2f}")
     extra_lines.append(
-        f"Volatilidade realizada {config.B3S_VOL_WINDOW_DAYS}d: {sigma*100:.1f}% a.a. "
+        f"Volatilidade usada na call ({vol_source}): {sigma*100:.1f}% a.a. "
+        f"| realizada {config.B3S_VOL_WINDOW_DAYS}d: {vol_realized*100:.1f}% a.a. "
         f"| CDI: {cdi_rates[-1][1]:.4f}% a.d.")
 
     cdi_factor = data_sources.cdi_factor_since(cdi_rates,

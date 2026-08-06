@@ -48,9 +48,12 @@ relatório.
 - **Estruturadas B3** — financiamento coberto (covered call) em BOVA11:
   carteira 100% comprada, venda mensal de call ~3% OTM com prazo de 30 dias
   sobre a posição inteira; liquidação financeira no vencimento; caixa rende
-  CDI. **Os prémios das opções são modelados (Black-Scholes com volatilidade
-  realizada de 30 dias e CDI como taxa livre de risco)** — não há fonte
-  gratuita fiável de cotações de opções da B3; o relatório declara isso.
+  CDI. **Os prémios das opções são modelados (Black-Scholes com CDI como taxa
+  livre de risco e volatilidade calibrada por GARCH(1,1)** — previsão média da
+  variância para o prazo da call, com fallback para a volatilidade realizada
+  de 30 dias se o ajuste degenerar) — não há fonte gratuita fiável de
+  cotações de opções da B3; o relatório declara isso e mostra as duas
+  volatilidades.
 - **Rebalanceio** às segundas-feiras, em mudança de regime, ou quando um peso
   desvia mais de 30% do alvo. Ordens abaixo de $200 são ignoradas.
 - **Custos modelados:** slippage de 5 bps (ações EUA) e 10 bps (crypto/B3).
