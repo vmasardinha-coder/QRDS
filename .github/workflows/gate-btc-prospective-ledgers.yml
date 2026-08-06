@@ -116,8 +116,8 @@ jobs:
           test -f extracted/gateway/outputs/strategy_compositions.csv
           test -f extracted/gateway/outputs/strategy_execution_profiles.csv
           test -f extracted/v2a/outputs/v2a_run_manifest.json
-          test -f extracted/v2a/outputs/qos_v2a_equity_curves.csv
           test -f extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
           test -f extracted/delta/outputs/strategy_evidence_gate.csv
           GATEWAY_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/gateway/outputs/v2a1_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
           LOCK_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
@@ -149,6 +149,12 @@ jobs:
           --first-eligible-close "$GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE"
           --ledger-dir runtime_repo/runtime/ledgers/lock25_50
 
+      - name: Validate frozen LOCK source anchor
+        run: |
+          set -euo pipefail
+          test -f runtime_repo/runtime/ledgers/lock25_50/ANCHOR.json
+          test -f runtime_repo/runtime/ledgers/lock25_50/SOURCE_ANCHOR.json
+
       - name: Append LOCK25/50 eligible close
         run: |
           set -euo pipefail
@@ -162,7 +168,7 @@ jobs:
           then
             python tools/gate_btc_measurement_ledgers.py append-lock \
               --contract config/lock25_50_shadow_contract_v1.json \
-              --equity-curves extracted/v2a/outputs/qos_v2a_equity_curves.csv \
+              --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv \
               --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv \
               --snapshot-id "$LOCK_SNAPSHOT_ID" \
               --cycle-id "$GATE_BTC_LOCK_CYCLE_ID" \
