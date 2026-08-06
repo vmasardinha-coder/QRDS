@@ -103,19 +103,39 @@ def safe_gateway(args) -> int:
         previous_close = iso_day(str(previous.get("data_as_of")), "previous Gateway data_as_of")
         require(source_close >= previous_close, "Gateway source close moved backwards")
         if source_close == previous_close:
-            current_hashes = {
-                file_sha(args.manifest), file_sha(args.snapshot_status),
-                file_sha(args.compositions), file_sha(args.execution_profiles),
+            current_sources = {
+                "manifest": file_sha(args.manifest),
+                "snapshot_status": file_sha(args.snapshot_status),
+                "compositions": file_sha(args.compositions),
+                "execution_profiles": file_sha(args.execution_profiles),
             }
-            previous_hashes = set(previous.get("source_artifacts", {}).values())
-            require(current_hashes.issubset(previous_hashes),
-                    "same Gateway source close changed; immutable evidence not appended")
-            print(json.dumps({
-                "result": "SKIPPED_ALREADY_RECORDED_SOURCE_CLOSE",
+            previous_sources = previous.get("source_artifacts", {})
+            identical = set(current_sources.values()).issubset(set(previous_sources.values()))
+            bundle_sha = payload_sha(current_sources)
+            diagnostic = {
+                "schema": "gate_btc.gateway_same_source_close_diagnostic.v1",
+                "status": "IDENTICAL_ALREADY_RECORDED" if identical else "NONIDENTICAL_SAME_SOURCE_CLOSE_NOT_COUNTED",
                 "source_data_as_of": source_close.isoformat(),
                 "existing_snapshot_id": previous.get("snapshot_id"),
                 "existing_sequence": previous.get("sequence"),
-                "research_only": True, "orders_generated": 0, "real_capital_used": 0,
+                "existing_snapshot_sha256": previous.get("snapshot_sha256"),
+                "existing_source_artifacts": previous_sources,
+                "candidate_source_artifacts": current_sources,
+                "candidate_bundle_sha256": bundle_sha,
+                "counter_incremented": False,
+                "snapshot_mutation_performed": False,
+                "required_action": "none; wait for a strictly newer source close",
+                "research_only": True, "shadow_only": True, "not_approved": True,
+                "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
+            }
+            diagnostic["diagnostic_sha256"] = canonical_sha(diagnostic, "diagnostic_sha256")
+            write_immutable(
+                args.ledger_dir / "diagnostics" / f"{source_close.isoformat()}-{bundle_sha[:12]}.json",
+                diagnostic, "diagnostic_sha256",
+            )
+            print(json.dumps({
+                "result": "SKIPPED_ALREADY_RECORDED_SOURCE_CLOSE" if identical else "SKIPPED_NONIDENTICAL_SAME_SOURCE_CLOSE",
+                **diagnostic,
             }, indent=2))
             return 0
     require(args.snapshot_id == source_close.isoformat(), "Gateway snapshot_id must equal source data_as_of")
