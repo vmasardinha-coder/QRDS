@@ -22,13 +22,13 @@ def _is_fresh(series: Series, today: str) -> bool:
 def run_equities(today: str) -> dict:
     """Executa o ciclo da carteira de acoes. Devolve resumo para o relatorio."""
     weekday = datetime.strptime(today, "%Y-%m-%d").weekday()
-    bench_series = data_sources.fetch_stooq_daily(config.EQUITY_BENCHMARK)
+    bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK)
 
     universe: dict[str, Series] = {}
     failed: list[str] = []
     for ticker in config.EQUITY_UNIVERSE:
         try:
-            universe[ticker] = data_sources.fetch_stooq_daily(ticker)
+            universe[ticker] = data_sources.fetch_equity_daily(ticker)
         except data_sources.DataSourceError:
             failed.append(ticker)
 

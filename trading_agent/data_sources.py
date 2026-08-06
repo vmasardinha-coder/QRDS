@@ -58,6 +58,54 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float]]:
     return rows
 
 
+def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float]]:
+    """Serie diaria de fecho via API de chart do Yahoo Finance (sem chave)."""
+    symbol = ticker.upper().replace(".", "-")
+    url = (
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+        f"?range=2y&interval=1d&events=div%2Csplit"
+    )
+    data = json.loads(_http_get(url).decode("utf-8"))
+    try:
+        result = data["chart"]["result"][0]
+        timestamps = result["timestamp"]
+        closes = result["indicators"]["quote"][0]["close"]
+    except (KeyError, IndexError, TypeError) as err:
+        raise DataSourceError(f"Yahoo: resposta inesperada para {ticker}: {err}")
+    rows: list[tuple[str, float]] = []
+    for ts, close in zip(timestamps, closes):
+        if close is None:
+            continue
+        date = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
+        rows.append((date, float(close)))
+    if len(rows) < 10:
+        raise DataSourceError(f"Yahoo devolveu serie vazia para {ticker}")
+    # o mesmo dia pode aparecer duas vezes (sessao em curso); mantem o ultimo
+    dedup = dict(rows)
+    return sorted(dedup.items())
+
+
+_STOOQ_CONSECUTIVE_FAILURES = 0
+_STOOQ_TRIP_AFTER = 3
+
+
+def fetch_equity_daily(ticker: str) -> list[tuple[str, float]]:
+    """Stooq como fonte primaria, Yahoo Finance como fallback.
+
+    Depois de _STOOQ_TRIP_AFTER falhas consecutivas do Stooq (tipico quando
+    bloqueia IPs de cloud), os pedidos seguintes vao direto ao Yahoo.
+    """
+    global _STOOQ_CONSECUTIVE_FAILURES
+    if _STOOQ_CONSECUTIVE_FAILURES < _STOOQ_TRIP_AFTER:
+        try:
+            series = fetch_stooq_daily(ticker)
+            _STOOQ_CONSECUTIVE_FAILURES = 0
+            return series
+        except DataSourceError:
+            _STOOQ_CONSECUTIVE_FAILURES += 1
+    return fetch_yahoo_daily(ticker)
+
+
 def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float]]:
     """Serie diaria de fecho (UTC) para <asset>-USD via Coinbase Exchange.
 
