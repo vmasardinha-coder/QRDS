@@ -42,7 +42,10 @@ jobs:
           python-version: "3.12"
 
       - name: Test prospective ledger contracts
-        run: python -m unittest -v tests/test_gate_btc_measurement_ledgers.py
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_measurement_ledgers.py
+          tests/test_gateway_measurement_status.py
 
       - name: Resolve and validate source run
         env:
