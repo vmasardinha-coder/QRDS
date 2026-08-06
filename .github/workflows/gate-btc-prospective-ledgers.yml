@@ -1,0 +1,88 @@
+name: GATE BTC Prospective Ledgers
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Eligible Daily Research workflow run ID
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-prospective-ledgers
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  append-gateway-ledger:
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve source run
+        env:
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: echo "SOURCE_RUN_ID=${MANUAL_RUN_ID:-$EVENT_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Download eligible daily artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p source_artifact
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          unzip -q artifact.zip -d source_artifact
+      - name: Locate and validate Gateway evidence
+        run: |
+          manifest=$(find source_artifact -type f -name 'v2a1_run_manifest.json' | head -1)
+          snapshot_status=$(find source_artifact -type f -name 'scanner_snapshot_status.json' | head -1)
+          compositions=$(find source_artifact -type f -name 'strategy_compositions.csv' | head -1)
+          profiles=$(find source_artifact -type f -name 'strategy_execution_profiles.csv' | head -1)
+          test -f "$manifest" && test -f "$snapshot_status" && test -f "$compositions" && test -f "$profiles"
+          snapshot_id=$(python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8-sig"))["data_as_of"])' "$manifest")
+          echo "MANIFEST=$manifest" >> "$GITHUB_ENV"
+          echo "SNAPSHOT_STATUS=$snapshot_status" >> "$GITHUB_ENV"
+          echo "COMPOSITIONS=$compositions" >> "$GITHUB_ENV"
+          echo "PROFILES=$profiles" >> "$GITHUB_ENV"
+          echo "SNAPSHOT_ID=$snapshot_id" >> "$GITHUB_ENV"
+      - name: Check out runtime ledger branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Append immutable Gateway snapshot
+        run: >-
+          python tools/gate_btc_prospective_ledgers.py append-gateway
+          --manifest "$MANIFEST"
+          --snapshot-status "$SNAPSHOT_STATUS"
+          --compositions "$COMPOSITIONS"
+          --execution-profiles "$PROFILES"
+          --snapshot-id "$SNAPSHOT_ID"
+          --ledger-dir runtime_repo/runtime/ledgers/gateway_dynamics
+      - name: Commit runtime evidence
+        working-directory: runtime_repo
+        run: |
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/gateway_dynamics
+          git diff --cached --quiet && exit 0
+          git commit -m "Append Gateway Dynamics prospective snapshot ${SNAPSHOT_ID}"
+          git push origin HEAD:gate-btc-runtime
