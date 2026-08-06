@@ -1,12 +1,13 @@
 {
   "schema": "gate_btc.lock25_50_shadow_contract.v1",
-  "status": "DRAFT_PENDING_TWO_PARAMETERS",
+  "status": "FROZEN_READY_FOR_PROSPECTIVE_LEDGER",
   "research_only": true,
   "shadow_only": true,
   "not_approved": true,
   "orders": 0,
   "capital": 0,
   "methodology_change": false,
+  "decision_option": "A_PROTECT_SHARE_OF_ACCUMULATED_PROFIT",
   "comparability_rule": "mirror the existing profit-preservation control framework; same signals, costs, execution timing and portfolio path, differing only by the LOCK overlay",
   "control": {
     "name": "NO_LOCK_CONTROL",
@@ -25,7 +26,7 @@
       "protected_share_of_accumulated_profit": 0.25,
       "destination": "VIRTUAL_CASH",
       "trigger_family": "HWM_RETRACEMENT_AFTER_GAIN_ARMING",
-      "retracement_trigger_pct": null,
+      "retracement_trigger_pct": 0.10,
       "reentry": "ALLOWED_ONLY_AFTER_NEW_VALID_PORTFOLIO_SIGNAL",
       "double_counting_prohibited": true
     },
@@ -34,16 +35,17 @@
       "protected_share_of_accumulated_profit": 0.50,
       "destination": "VIRTUAL_CASH",
       "trigger_family": "HWM_RETRACEMENT_AFTER_GAIN_ARMING",
-      "retracement_trigger_pct": null,
+      "retracement_trigger_pct": 0.15,
       "reentry": "ALLOWED_ONLY_AFTER_NEW_VALID_PORTFOLIO_SIGNAL",
       "double_counting_prohibited": true
     }
   },
   "cycle": {
     "initial_base": "equity_at_formal_cycle_start",
-    "reset_rule": null,
+    "reset_rule": "EXPLICIT_USER_DECISION_ONLY",
     "reset_requires_explicit_user_definition": true,
-    "automatic_monthly_reset": false
+    "automatic_monthly_reset": false,
+    "default_behavior_until_reset": "KEEP_CURRENT_CYCLE_ACTIVE"
   },
   "ledger_required_fields": [
     "date",
