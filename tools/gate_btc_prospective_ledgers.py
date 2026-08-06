@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,13 @@ def require(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
+def parse_day(value: Any, field: str) -> date:
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError as exc:
+        raise RuntimeError(f"invalid {field}: {value}") from exc
+
+
 def append_gateway(args: argparse.Namespace) -> int:
     manifest = load_json(args.manifest)
     status = load_json(args.snapshot_status)
@@ -52,9 +60,15 @@ def append_gateway(args: argparse.Namespace) -> int:
     previous = load_json(snapshots[-1]) if snapshots else None
     previous_sha = previous.get("snapshot_sha256") if previous else None
     sequence = int(previous.get("sequence", 0)) + 1 if previous else 1
+    source_close = parse_day(manifest.get("data_as_of"), "Gateway data_as_of")
     snapshot_id = args.snapshot_id
+    require(snapshot_id == source_close.isoformat(), "Gateway snapshot_id must equal source data_as_of")
     target = ledger_dir / "snapshots" / f"{snapshot_id}.json"
     require(not target.exists(), f"immutable snapshot already exists: {snapshot_id}")
+    if previous:
+        require(previous.get("snapshot_sha256") == canonical_sha(previous), "previous Gateway snapshot hash invalid")
+        previous_close = parse_day(previous.get("data_as_of"), "previous Gateway data_as_of")
+        require(source_close > previous_close, "Gateway source closes must be strictly chronological")
 
     source_files = [args.manifest, args.snapshot_status, args.compositions, args.execution_profiles]
     source_hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
@@ -62,7 +76,7 @@ def append_gateway(args: argparse.Namespace) -> int:
         "schema": "gate_btc.gateway_dynamics_prospective_snapshot.v1",
         "snapshot_id": snapshot_id,
         "created_at_utc": manifest.get("run_utc"),
-        "data_as_of": manifest.get("data_as_of"),
+        "data_as_of": source_close.isoformat(),
         "sequence": sequence,
         "previous_snapshot_sha256": previous_sha,
         "genesis": previous is None,
@@ -82,13 +96,20 @@ def append_gateway(args: argparse.Namespace) -> int:
     }
     record["snapshot_sha256"] = canonical_sha(record)
     atomic_json(target, record)
+    diagnostic_count = len(list((ledger_dir / "diagnostics").glob("*.json")))
     atomic_json(ledger_dir / "STATUS.json", {
-        "schema": "gate_btc.gateway_dynamics_ledger_status.v1",
+        "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
+        "updated_at_utc": manifest.get("run_utc"),
         "status": "ACTIVE",
         "valid_snapshot_count": sequence,
         "required_snapshot_count": 80,
         "latest_snapshot_id": snapshot_id,
+        "latest_source_data_as_of": source_close.isoformat(),
         "latest_snapshot_sha256": record["snapshot_sha256"],
+        "next_expected_source_data_as_of": (source_close + timedelta(days=1)).isoformat(),
+        "same_source_close_diagnostic_count": diagnostic_count,
+        "same_source_close_counter_incremented": False,
+        "raw_snapshots_are_not_automatically_counted": True,
         "research_only": True,
         "shadow_only": True,
         "not_approved": True,
