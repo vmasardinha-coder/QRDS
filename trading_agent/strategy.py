@@ -56,6 +56,23 @@ def equity_target_weights(universe_closes: dict[str, list[float]],
     return {t: weight for t in ranked}, regime
 
 
+def b3_target_weights(universe_closes: dict[str, list[float]],
+                      benchmark_closes: list[float]) -> tuple[dict[str, float], str]:
+    """Pesos-alvo da carteira B3: mesmo momentum 12-1, filtro IBOV vs SMA 200."""
+    scores: dict[str, float] = {}
+    for ticker, closes in universe_closes.items():
+        score = equity_momentum_score(closes)
+        if score is not None:
+            scores[ticker] = score
+    ranked = sorted(scores, key=scores.get, reverse=True)[: config.B3_TOP_N]
+    regime = equity_regime(benchmark_closes)
+    exposure = 1.0 if regime == "risk_on" else config.B3_RISK_OFF_EXPOSURE
+    if not ranked:
+        return {}, regime
+    weight = exposure / len(ranked)
+    return {t: weight for t in ranked}, regime
+
+
 def crypto_momentum_score(closes: list[float]) -> float | None:
     if len(closes) < config.CRYPTO_MIN_HISTORY_DAYS:
         return None

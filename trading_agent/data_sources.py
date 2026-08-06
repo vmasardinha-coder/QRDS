@@ -12,6 +12,7 @@ import io
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -60,7 +61,12 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float]]:
 
 def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float]]:
     """Serie diaria de fecho via API de chart do Yahoo Finance (sem chave)."""
-    symbol = ticker.upper().replace(".", "-")
+    symbol = ticker.upper()
+    # tickers dos EUA usam '-' em vez de '.' (BRK.B); indices (^BVSP) e
+    # tickers da B3 (.SA) ficam como estao
+    if not (symbol.startswith("^") or symbol.endswith(".SA")):
+        symbol = symbol.replace(".", "-")
+    symbol = urllib.parse.quote(symbol)
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         f"?range=2y&interval=1d&events=div%2Csplit"
@@ -164,3 +170,39 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float]]
         return fetch_coinbase_daily(asset)
     except DataSourceError:
         return fetch_coingecko_daily(coingecko_id)
+
+def fetch_b3_daily(ticker: str) -> list[tuple[str, float]]:
+    """Serie diaria de fecho para um ticker da B3 via Yahoo (sufixo .SA)."""
+    symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
+    return fetch_yahoo_daily(symbol)
+
+
+def fetch_bcb_cdi_daily(last_n: int = 600) -> list[tuple[str, float]]:
+    """Taxa CDI diaria (% ao dia) via API SGS do Banco Central do Brasil."""
+    from . import config
+    url = (
+        f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{config.BCB_SGS_CDI_SERIES}"
+        f"/dados/ultimos/{last_n}?formato=json"
+    )
+    data = json.loads(_http_get(url).decode("utf-8"))
+    rows: list[tuple[str, float]] = []
+    for item in data:
+        try:
+            day, month, year = item["data"].split("/")
+            rows.append((f"{year}-{month}-{day}", float(item["valor"])))
+        except (KeyError, ValueError):
+            continue
+    if len(rows) < 10:
+        raise DataSourceError("BCB devolveu serie CDI vazia/invalida")
+    rows.sort(key=lambda r: r[0])
+    return rows
+
+
+def cdi_index(rates: list[tuple[str, float]]) -> list[tuple[str, float]]:
+    """Converte taxas CDI diarias (% a.d.) num indice acumulado (base 1.0)."""
+    out: list[tuple[str, float]] = []
+    idx = 1.0
+    for date, rate in rates:
+        idx *= 1.0 + rate / 100.0
+        out.append((date, idx))
+    return out

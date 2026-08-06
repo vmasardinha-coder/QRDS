@@ -157,13 +157,78 @@ class TestReport(unittest.TestCase):
             "rebalanced": True,
             "data_failures": [],
         }
-        content = report.build_report("2026-01-05", result, None,
-                                      crypto_error="sem rede")
+        content = report.build_report("2026-01-05", {"equities": result},
+                                      {"crypto": "sem rede"})
         self.assertIn("Acoes EUA", content)
         self.assertIn("AAA", content)
         self.assertIn("COMPRA", content)
         self.assertIn("Alfa vs SPY", content)
         self.assertIn("ERRO", content)
+
+
+class TestB3(unittest.TestCase):
+    def test_cdi_index_accumulates(self):
+        from trading_agent import data_sources
+        rates = [("2026-01-05", 0.05), ("2026-01-06", 0.05)]
+        idx = data_sources.cdi_index(rates)
+        self.assertAlmostEqual(idx[-1][1], 1.0005 * 1.0005, places=8)
+
+    def test_cash_accrues_cdi(self):
+        state = portfolio.new_state("b3", "^BVSP", "2026-01-05", 130_000.0,
+                                    currency="BRL", initial_capital=50_000.0)
+        rates = [("2026-01-05", 0.05), ("2026-01-06", 0.05), ("2026-01-07", 0.05)]
+        portfolio.accrue_cash_cdi(state, rates, "2026-01-07")
+        # so acumula dias APOS a inception (06 e 07)
+        self.assertAlmostEqual(state["cash"], 50_000.0 * 1.0005 ** 2, places=4)
+        self.assertEqual(state["last_accrual_date"], "2026-01-07")
+
+    def test_b3_targets_use_top_n(self):
+        universe = {f"T{i}": trending_series(10, 0.0004 * (i + 1), 300)
+                    for i in range(12)}
+        bench = trending_series(100_000, 0.001, 300)
+        weights, regime = strategy.b3_target_weights(universe, bench)
+        self.assertEqual(regime, "risk_on")
+        self.assertEqual(len(weights), config.B3_TOP_N)
+        self.assertAlmostEqual(sum(weights.values()), 1.0, places=6)
+
+
+class TestStructured(unittest.TestCase):
+    def test_bs_call_above_intrinsic_and_rises_with_vol(self):
+        from trading_agent import structured
+        low = structured.bs_call_price(100, 103, 30 / 365, 0.10, 0.15)
+        high = structured.bs_call_price(100, 103, 30 / 365, 0.10, 0.40)
+        self.assertGreater(high, low)
+        self.assertGreater(low, 0.0)
+        itm = structured.bs_call_price(110, 100, 0.0, 0.10, 0.20)
+        self.assertAlmostEqual(itm, 10.0, places=6)
+
+    def test_covered_call_cycle(self):
+        from trading_agent import structured
+        state = portfolio.new_state("b3_estruturadas", "^BVSP", "2026-01-05",
+                                    130_000.0, currency="BRL",
+                                    initial_capital=50_000.0)
+        state["positions"]["BOVA11"] = {"qty": 500.0, "avg_cost": 100.0}
+        state["cash"] = 0.0
+        trade = structured.sell_new_call(state, 100.0, 0.25, 0.10, "2026-01-05")
+        self.assertGreater(state["cash"], 0.0)
+        self.assertEqual(trade["side"], "sell")
+        sc = state["short_call"]
+        self.assertAlmostEqual(sc["strike"], 103.0, places=2)
+        # antes do vencimento nada liquida
+        self.assertIsNone(structured.settle_expired_call(state, 110.0, "2026-01-20"))
+        # no vencimento acima do strike paga a diferenca
+        cash_before = state["cash"]
+        settle = structured.settle_expired_call(state, 110.0, sc["expiry"])
+        self.assertIsNotNone(settle)
+        self.assertAlmostEqual(cash_before - state["cash"], (110.0 - 103.0) * 500.0,
+                               places=2)
+        self.assertIsNone(state["short_call"])
+
+    def test_realized_vol_positive(self):
+        from trading_agent import structured
+        series = trending_series(100, 0.001, 60)
+        vol = structured.realized_vol(series, 30)
+        self.assertGreaterEqual(vol, 0.0)
 
 
 if __name__ == "__main__":

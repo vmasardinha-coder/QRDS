@@ -48,6 +48,35 @@ CRYPTO_MIN_HISTORY_DAYS = 210
 CRYPTO_SLIPPAGE_BPS = 10.0
 CRYPTO_RISK_OFF_EXPOSURE = 0.5   # exposicao quando BTC < SMA 200
 
+# --- Carteira de acoes B3 (Brasil) ---
+B3_INITIAL_CAPITAL_BRL = 50_000.0
+B3_BENCHMARK = "^BVSP"           # Ibovespa
+B3_BENCHMARK2 = "CDI"            # indice acumulado do CDI (BCB SGS 12)
+
+# Universo liquido da B3 (sufixo .SA no Yahoo Finance)
+B3_UNIVERSE = [
+    "PETR4", "VALE3", "ITUB4", "BBDC4", "BBAS3", "ABEV3", "WEGE3", "RENT3",
+    "B3SA3", "ITSA4", "SUZB3", "GGBR4", "CSNA3", "EMBR3", "RADL3", "LREN3",
+    "RAIL3", "PRIO3", "EQTL3", "VIVT3", "TOTS3", "HAPV3", "RDOR3", "CMIG4",
+    "ELET3", "SBSP3", "BPAC11", "CPLE6", "TIMS3", "UGPA3", "JBSS3", "BRFS3",
+    "KLBN11", "CYRE3", "MULT3", "ASAI3",
+]
+
+B3_TOP_N = 8
+B3_SLIPPAGE_BPS = 10.0
+B3_RISK_OFF_EXPOSURE = 0.5       # exposicao quando IBOV < SMA 200
+
+# --- Carteira B3 estruturadas (financiamento coberto) ---
+B3S_INITIAL_CAPITAL_BRL = 50_000.0
+B3S_UNDERLYING = "BOVA11"        # ETF Ibovespa
+B3S_CALL_OTM = 1.03              # strike da call vendida: 3% acima do spot
+B3S_CALL_TENOR_DAYS = 30         # prazo da call vendida
+B3S_VOL_WINDOW_DAYS = 30         # janela de volatilidade realizada
+B3S_SLIPPAGE_BPS = 10.0
+
+# Serie SGS do Banco Central para o CDI diario (% ao dia)
+BCB_SGS_CDI_SERIES = 12
+
 # --- Regras comuns ---
 SMA_REGIME_DAYS = 200
 REBALANCE_WEEKDAY = 0            # segunda-feira (0 = Monday)
