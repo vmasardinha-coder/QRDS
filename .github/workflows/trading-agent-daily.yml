@@ -6,11 +6,13 @@ on:
     # 21:15 UTC — depois do fecho de NYSE (regular close 20:00/21:00 UTC)
     - cron: "15 21 * * *"
   push:
-    branches: [claude/autonomous-trading-agent-h1asy9]
+    branches: [claude/autonomous-trading-agent-h1asy9, main]
     paths:
       - .github/workflows/trading-agent-daily.yml
       - trading_agent/*.py
       - tests/test_trading_agent.py
+      # a rotina diaria pede uma execucao tocando neste ficheiro
+      - trading_agent/RUN_REQUEST
 
 permissions:
   contents: write
