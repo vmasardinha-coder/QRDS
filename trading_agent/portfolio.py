@@ -15,13 +15,16 @@ STATE_DIR = Path(__file__).resolve().parent / "state"
 
 
 def new_state(name: str, benchmark_symbol: str, date: str,
-              benchmark_price: float) -> dict:
-    return {
+              benchmark_price: float, currency: str = "USD",
+              initial_capital: float | None = None,
+              benchmark2_symbol: str | None = None) -> dict:
+    capital = initial_capital if initial_capital is not None else config.INITIAL_CAPITAL_USD
+    state = {
         "name": name,
-        "currency": "USD",
-        "initial_capital": config.INITIAL_CAPITAL_USD,
+        "currency": currency,
+        "initial_capital": capital,
         "inception_date": date,
-        "cash": config.INITIAL_CAPITAL_USD,
+        "cash": capital,
         "positions": {},          # symbol -> {"qty": float, "avg_cost": float}
         "benchmark": {"symbol": benchmark_symbol, "inception_price": benchmark_price},
         "last_rebalance": None,
@@ -29,6 +32,22 @@ def new_state(name: str, benchmark_symbol: str, date: str,
         "history": [],            # [{"date", "nav", "benchmark_nav"}]
         "trades": [],             # [{"date", "symbol", "side", "qty", "price", "value"}]
     }
+    if benchmark2_symbol is not None:
+        # benchmark2 (CDI) e calculado como fator acumulado desde a inception,
+        # por isso basta guardar o simbolo
+        state["benchmark2"] = {"symbol": benchmark2_symbol}
+    return state
+
+
+def accrue_cash_cdi(state: dict, cdi_rates: list[tuple[str, float]],
+                    today: str) -> None:
+    """Rende a caixa em BRL ao CDI para os dias uteis ainda nao acumulados."""
+    last = state.get("last_accrual_date") or state["inception_date"]
+    for date, rate in cdi_rates:
+        if last < date <= today:
+            if state["cash"] > 0:
+                state["cash"] *= 1.0 + rate / 100.0
+            state["last_accrual_date"] = date
 
 
 def state_path(name: str) -> Path:
@@ -136,11 +155,17 @@ def execute_orders(state: dict, orders: list[dict], date: str,
 
 
 def append_history(state: dict, date: str, prices: dict[str, float],
-                   benchmark_price: float) -> dict:
+                   benchmark_price: float,
+                   benchmark2_factor: float | None = None,
+                   nav_override: float | None = None) -> dict:
     bench = state["benchmark"]
     benchmark_nav = state["initial_capital"] * benchmark_price / bench["inception_price"]
-    entry = {"date": date, "nav": round(nav(state, prices), 2),
+    total = nav_override if nav_override is not None else nav(state, prices)
+    entry = {"date": date, "nav": round(total, 2),
              "benchmark_nav": round(benchmark_nav, 2)}
+    if benchmark2_factor is not None and "benchmark2" in state:
+        entry["benchmark2_nav"] = round(
+            state["initial_capital"] * benchmark2_factor, 2)
     if state["history"] and state["history"][-1]["date"] == date:
         state["history"][-1] = entry
     else:

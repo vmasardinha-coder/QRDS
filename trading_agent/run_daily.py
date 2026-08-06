@@ -7,29 +7,31 @@ import traceback
 
 from . import engine, report
 
+SLEEVE_RUNNERS = {
+    "equities": engine.run_equities,
+    "crypto": engine.run_crypto,
+    "b3": engine.run_b3,
+    "b3_estruturadas": engine.run_b3_structured,
+}
+
 
 def main() -> int:
     today = engine.today_utc()
-    equities = crypto = None
-    equities_error = crypto_error = None
+    results: dict[str, dict] = {}
+    errors: dict[str, str] = {}
 
-    try:
-        equities = engine.run_equities(today)
-    except Exception as err:  # noqa: BLE001 - o relatorio regista a falha
-        equities_error = str(err)
-        traceback.print_exc()
+    for name, runner in SLEEVE_RUNNERS.items():
+        try:
+            results[name] = runner(today)
+        except Exception as err:  # noqa: BLE001 - o relatorio regista a falha
+            errors[name] = str(err)
+            traceback.print_exc()
 
-    try:
-        crypto = engine.run_crypto(today)
-    except Exception as err:  # noqa: BLE001
-        crypto_error = str(err)
-        traceback.print_exc()
-
-    content = report.build_report(today, equities, crypto, equities_error, crypto_error)
+    content = report.build_report(today, results, errors)
     path = report.write_report(today, content)
     print(f"Relatorio escrito em {path}")
 
-    if equities is None and crypto is None:
+    if not results:
         print("FALHA: nenhuma carteira executou.", file=sys.stderr)
         return 1
     return 0
