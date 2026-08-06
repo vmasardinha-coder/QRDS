@@ -5,7 +5,7 @@ import csv
 import hashlib
 import json
 import os
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -133,6 +133,25 @@ def safe_gateway(args) -> int:
                 args.ledger_dir / "diagnostics" / f"{source_close.isoformat()}-{bundle_sha[:12]}.json",
                 diagnostic, "diagnostic_sha256",
             )
+            diagnostic_count = len(list((args.ledger_dir / "diagnostics").glob("*.json")))
+            existing_status_path = args.ledger_dir / "STATUS.json"
+            existing_status = load_json(existing_status_path) if existing_status_path.exists() else {}
+            atomic_json(existing_status_path, {
+                "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
+                "updated_at_utc": manifest.get("run_utc") or existing_status.get("updated_at_utc"),
+                "status": "ACTIVE",
+                "valid_snapshot_count": int(previous.get("sequence", 0)),
+                "required_snapshot_count": int(existing_status.get("required_snapshot_count", 80)),
+                "latest_snapshot_id": previous.get("snapshot_id"),
+                "latest_source_data_as_of": previous_close.isoformat(),
+                "latest_snapshot_sha256": previous.get("snapshot_sha256"),
+                "next_expected_source_data_as_of": (previous_close + timedelta(days=1)).isoformat(),
+                "same_source_close_diagnostic_count": diagnostic_count,
+                "same_source_close_counter_incremented": False,
+                "raw_snapshots_are_not_automatically_counted": True,
+                "research_only": True, "shadow_only": True, "not_approved": True,
+                "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
+            })
             print(json.dumps({
                 "result": "SKIPPED_ALREADY_RECORDED_SOURCE_CLOSE" if identical else "SKIPPED_NONIDENTICAL_SAME_SOURCE_CLOSE",
                 **diagnostic,
