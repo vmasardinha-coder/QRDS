@@ -71,7 +71,8 @@ B3S_INITIAL_CAPITAL_BRL = 50_000.0
 B3S_UNDERLYING = "BOVA11"        # ETF Ibovespa
 B3S_CALL_OTM = 1.03              # strike da call vendida: 3% acima do spot
 B3S_CALL_TENOR_DAYS = 30         # prazo da call vendida
-B3S_VOL_WINDOW_DAYS = 30         # janela de volatilidade realizada
+B3S_VOL_WINDOW_DAYS = 30         # janela de volatilidade realizada (fallback)
+B3S_GARCH_HORIZON_DAYS = 21      # horizonte da previsao GARCH (~30 dias corridos)
 B3S_SLIPPAGE_BPS = 10.0
 
 # Serie SGS do Banco Central para o CDI diario (% ao dia)

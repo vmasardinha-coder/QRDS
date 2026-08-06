@@ -33,20 +33,20 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 | Indicador | Valor |
 |---|---|
-| NAV | $50,054.12 |
-| Retorno desde inicio (2026-08-06) | +0.11% |
-| Benchmark BTC desde inicio | -0.04% |
-| **Alfa vs BTC** | **+0.15%** |
+| NAV | $49,952.35 |
+| Retorno desde inicio (2026-08-06) | -0.10% |
+| Benchmark BTC desde inicio | -0.18% |
+| **Alfa vs BTC** | **+0.09%** |
 | Caixa | $25,031.98 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,390.06 | $12,494.62 | 25.0% |
-| ADA | 20455 | $0.20 | $4,186.73 | 8.4% |
-| LINK | 507.429 | $8.22 | $4,171.07 | 8.3% |
-| ETH | 2.18871 | $1,905.10 | $4,169.72 | 8.3% |
+| BTC | 0.194046 | $64,299.25 | $12,477.00 | 25.0% |
+| ETH | 2.18871 | $1,903.70 | $4,166.66 | 8.3% |
+| LINK | 507.429 | $8.19 | $4,155.85 | 8.3% |
+| ADA | 20455 | $0.20 | $4,120.86 | 8.2% |
 
 _Sem movimentacoes hoje (rebalanceio nao necessario)_
 
@@ -75,17 +75,7 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 | UGPA3 | 190.84 | R$ 32.75 | R$ 6,250.00 | 12.5% |
 | VALE3 | 82.2397 | R$ 75.39 | R$ 6,200.05 | 12.4% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor |
-|---|---|---|---|---|
-| BPAC11 | COMPRA | 111.21 | R$ 56.26 | R$ 6,256.25 |
-| GGBR4 | COMPRA | 243.665 | R$ 25.68 | R$ 6,256.25 |
-| ITSA4 | COMPRA | 462.62 | R$ 13.52 | R$ 6,256.25 |
-| PRIO3 | COMPRA | 106.637 | R$ 58.67 | R$ 6,256.25 |
-| RADL3 | COMPRA | 310.636 | R$ 20.14 | R$ 6,256.25 |
-| SBSP3 | COMPRA | 228.185 | R$ 27.42 | R$ 6,256.25 |
-| UGPA3 | COMPRA | 190.84 | R$ 32.78 | R$ 6,256.25 |
-| VALE3 | COMPRA | 82.2397 | R$ 75.47 | R$ 6,206.25 |
+_Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 > Aviso: sem dados para EMBR3, ELET3, CPLE6, JBSS3, BRFS3 nesta execucao.
 
@@ -93,28 +83,24 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 49,950.05 |
-| Retorno desde inicio (2026-08-06) | -0.10% |
+| NAV | R$ 50,009.33 |
+| Retorno desde inicio (2026-08-06) | +0.02% |
 | Benchmark IBOV desde inicio | +0.00% |
-| **Alfa vs IBOV** | **-0.10%** |
+| **Alfa vs IBOV** | **+0.02%** |
 | Benchmark CDI desde inicio | +0.00% |
-| **Alfa vs CDI** | **-0.10%** |
+| **Alfa vs CDI** | **+0.02%** |
 | Caixa | R$ 676.90 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 172.04 | R$ 49,950.05 | 100.0% |
+| BOVA11 | 290.34 | R$ 172.04 | R$ 49,950.05 | 99.9% |
 
-> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 676.90
+> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 617.62
 
-> Volatilidade realizada 30d: 18.8% a.a. | CDI: 0.0525% a.d.
+> Volatilidade usada na call (GARCH(1,1)): 17.7% a.a. | realizada 30d: 18.8% a.a. | CDI: 0.0525% a.d.
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor |
-|---|---|---|---|---|
-| BOVA11 | COMPRA | 290.34 | R$ 172.21 | R$ 50,000.00 |
-| CALL 177.20 venc. 2026-09-05 | VENDA | 290.34 | R$ 2.33 | R$ 676.90 |
+_Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 ---
 _Estrategia: momentum com filtro de regime (SMA 200) nas carteiras direcionais; financiamento coberto mensal na carteira de estruturadas. Rebalanceio as segundas-feiras, em mudanca de regime ou por desvio de pesos. Caixa em BRL rende CDI. Custos de execucao modelados (slippage)._
