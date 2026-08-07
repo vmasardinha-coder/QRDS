@@ -9,6 +9,7 @@ on:
       - tools/gate_btc_survivorship_definitive_pit.py
       - tools/gate_btc_survivorship_definitive_runner.py
       - tools/gate_btc_cmc_pit_parser.py
+      - tools/gate_btc_cmc_pit_collector.py
       - tests/test_gate_btc_survivorship_definitive_pit.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
@@ -44,19 +45,22 @@ jobs:
           tests/test_gate_btc_survivorship_definitive_pit.py
           tests/test_gate_btc_survivorship_alpha_audit.py
 
-      - name: Smoke test hardened real CMC parser
+      - name: Smoke test real lazy-row CMC reconstruction
         run: |
           python - <<'PY'
           import pandas as pd, requests
-          from tools.gate_btc_cmc_pit_parser import parse_cmc_html
+          from tools.gate_btc_cmc_pit_collector import metadata_maps, parse_page
+          session=requests.Session()
+          session.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-Research-Only/1.0'})
+          cmc,cc=metadata_maps(session)
           url='https://coinmarketcap.com/historical/20200630/'
-          r=requests.get(url,timeout=45,headers={'User-Agent':'Mozilla/5.0 GATE-BTC-Research-Only/1.0'})
+          r=session.get(url,timeout=45)
           r.raise_for_status()
-          f=parse_cmc_html(r.text,pd.Timestamp('2020-06-30'))
-          assert len(f) >= 140
-          assert f['rank'].min() == 1
-          assert f['rank'].max() >= 140
-          print('REAL_CMC_PARSER=PASS rows='+str(len(f)))
+          f=parse_page(r.text,pd.Timestamp('2020-06-30'),cmc,cc)
+          assert len(f) == 150
+          assert f['rank'].min() == 1 and f['rank'].max() == 150
+          assert int(f['identity_resolved'].sum()) >= 100
+          print('REAL_CMC_PIT_RECONSTRUCTION=PASS rows='+str(len(f))+' resolved='+str(int(f['identity_resolved'].sum())))
           PY
 
       - name: Execute external monthly PIT top150 strict-next-bar study
