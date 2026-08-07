@@ -7,35 +7,43 @@
   "positions": {
     "BPAC11": {
       "qty": 111.20996290308776,
-      "avg_cost": 56.25620076370239
+      "avg_cost": 56.25620076370239,
+      "high_water": 56.20000076293945
     },
     "GGBR4": {
       "qty": 243.6647209727374,
-      "avg_cost": 25.6756496181488
+      "avg_cost": 25.6756496181488,
+      "high_water": 25.649999618530273
     },
     "ITSA4": {
       "qty": 462.6202734355753,
-      "avg_cost": 13.523510229110716
+      "avg_cost": 13.523510229110716,
+      "high_water": 13.510000228881836
     },
     "PRIO3": {
       "qty": 106.63709153581104,
-      "avg_cost": 58.6686106109619
+      "avg_cost": 58.6686106109619,
+      "high_water": 58.61000061035156
     },
     "RADL3": {
       "qty": 310.6361699455145,
-      "avg_cost": 20.14012084007263
+      "avg_cost": 20.14012084007263,
+      "high_water": 20.1200008392334
     },
     "SBSP3": {
       "qty": 228.18547423414972,
-      "avg_cost": 27.41738938903808
+      "avg_cost": 27.41738938903808,
+      "high_water": 27.389999389648438
     },
     "UGPA3": {
       "qty": 190.83969465648855,
-      "avg_cost": 32.78274999999999
+      "avg_cost": 32.78274999999999,
+      "high_water": 32.75
     },
     "VALE3": {
       "qty": 82.23968696438618,
-      "avg_cost": 75.46538938903808
+      "avg_cost": 75.46538938903808,
+      "high_water": 75.38999938964844
     }
   },
   "benchmark": {
@@ -47,6 +55,12 @@
   "history": [
     {
       "date": "2026-08-06",
+      "nav": 49950.05,
+      "benchmark_nav": 50000.0,
+      "benchmark2_nav": 50000.0
+    },
+    {
+      "date": "2026-08-07",
       "nav": 49950.05,
       "benchmark_nav": 50000.0,
       "benchmark2_nav": 50000.0
@@ -120,5 +134,162 @@
   ],
   "benchmark2": {
     "symbol": "CDI"
-  }
+  },
+  "cooldown": {},
+  "decision_log": [
+    {
+      "date": "2026-08-07",
+      "regime": "risk_on",
+      "hurdle": "IBOV",
+      "hurdle_score": 0.2834,
+      "rebalance_trigger": "nenhum (sem motivo para negociar)",
+      "eligible_count": 7,
+      "selected": [
+        {
+          "symbol": "UGPA3",
+          "score": 0.7581,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "PRIO3",
+          "score": 0.3938,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "SBSP3",
+          "score": 0.3891,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "BPAC11",
+          "score": 0.3773,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "GGBR4",
+          "score": 0.3641,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "VALE3",
+          "score": 0.3418,
+          "weight": 0.1429
+        },
+        {
+          "symbol": "ITSA4",
+          "score": 0.3049,
+          "weight": 0.1429
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ABEV3",
+          "reason": "nao bate o benchmark (+25.9% <= +28.3%)"
+        },
+        {
+          "symbol": "ASAI3",
+          "reason": "nao bate o benchmark (-13.9% <= +28.3%)"
+        },
+        {
+          "symbol": "B3SA3",
+          "reason": "nao bate o benchmark (+12.3% <= +28.3%)"
+        },
+        {
+          "symbol": "BBAS3",
+          "reason": "nao bate o benchmark (+4.3% <= +28.3%)"
+        },
+        {
+          "symbol": "BBDC4",
+          "reason": "nao bate o benchmark (+13.0% <= +28.3%)"
+        },
+        {
+          "symbol": "CMIG4",
+          "reason": "nao bate o benchmark (+4.9% <= +28.3%)"
+        },
+        {
+          "symbol": "CSNA3",
+          "reason": "nao bate o benchmark (-37.3% <= +28.3%)"
+        },
+        {
+          "symbol": "CYRE3",
+          "reason": "nao bate o benchmark (-12.2% <= +28.3%)"
+        },
+        {
+          "symbol": "EQTL3",
+          "reason": "nao bate o benchmark (+12.8% <= +28.3%)"
+        },
+        {
+          "symbol": "HAPV3",
+          "reason": "nao bate o benchmark (-70.7% <= +28.3%)"
+        },
+        {
+          "symbol": "ITUB4",
+          "reason": "nao bate o benchmark (+22.2% <= +28.3%)"
+        },
+        {
+          "symbol": "KLBN11",
+          "reason": "nao bate o benchmark (-5.5% <= +28.3%)"
+        },
+        {
+          "symbol": "LREN3",
+          "reason": "nao bate o benchmark (-18.7% <= +28.3%)"
+        },
+        {
+          "symbol": "MULT3",
+          "reason": "nao bate o benchmark (+12.7% <= +28.3%)"
+        },
+        {
+          "symbol": "PETR4",
+          "reason": "nao bate o benchmark (+23.3% <= +28.3%)"
+        },
+        {
+          "symbol": "RADL3",
+          "reason": "nao bate o benchmark (+18.8% <= +28.3%)"
+        },
+        {
+          "symbol": "RAIL3",
+          "reason": "nao bate o benchmark (-19.4% <= +28.3%)"
+        },
+        {
+          "symbol": "RDOR3",
+          "reason": "nao bate o benchmark (+2.7% <= +28.3%)"
+        },
+        {
+          "symbol": "RENT3",
+          "reason": "nao bate o benchmark (+13.0% <= +28.3%)"
+        },
+        {
+          "symbol": "SUZB3",
+          "reason": "nao bate o benchmark (-19.6% <= +28.3%)"
+        },
+        {
+          "symbol": "TIMS3",
+          "reason": "nao bate o benchmark (+4.4% <= +28.3%)"
+        },
+        {
+          "symbol": "TOTS3",
+          "reason": "nao bate o benchmark (-33.9% <= +28.3%)"
+        },
+        {
+          "symbol": "VIVT3",
+          "reason": "nao bate o benchmark (+7.5% <= +28.3%)"
+        },
+        {
+          "symbol": "WEGE3",
+          "reason": "nao bate o benchmark (+22.3% <= +28.3%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {},
+      "data_failures": [
+        "EMBR3",
+        "ELET3",
+        "CPLE6",
+        "JBSS3",
+        "BRFS3"
+      ],
+      "note": "",
+      "cash_weight": 0.0
+    }
+  ]
 }

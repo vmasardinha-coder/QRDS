@@ -58,6 +58,24 @@ relatório.
   desvia mais de 30% do alvo. Ordens abaixo de $200 são ignoradas.
 - **Custos modelados:** slippage de 5 bps (ações EUA) e 10 bps (crypto/B3).
 
+### Limites da Carta de Operação
+
+Regras duras que o agente nunca contorna — detalhe e rastreabilidade em
+[`CARTA_DE_OPERACAO.md`](CARTA_DE_OPERACAO.md):
+
+- **Teto de 15% por posição ativa** (BTC tem teto próprio de 50% por ser a
+  âncora do seu benchmark). O excedente fica em caixa, não é redistribuído.
+- **Piso de diversificação** — se os candidatos aprovados não chegarem ao
+  mínimo, a carteira fica em caixa em vez de afrouxar o critério.
+- **Força relativa** — um ativo só entra se o momentum superar o do próprio
+  benchmark (na B3, o maior entre Ibovespa e CDI).
+- **Filtro de liquidez** — mediana de preço × volume em 60 dias ≥ 20M.
+- **Stop estatístico** de 8 × desvio-padrão diário do próprio ativo, com 30
+  dias de carência antes de poder voltar à carteira.
+- **Fail-closed** — dado em falta exclui o ativo; nunca é estimado.
+- **Critérios congelados** — alteração só com ~1 ano de observação e validação
+  fora-da-amostra.
+
 Nenhuma estratégia garante bater o benchmark; momentum com filtro de regime é
 uma abordagem clássica com suporte empírico de longo prazo, e o desempenho
 relativo fica visível todos os dias no relatório (linha "Alfa").

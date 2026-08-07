@@ -7,19 +7,23 @@
   "positions": {
     "BTC": {
       "qty": 0.19404583548918258,
-      "avg_cost": 64482.18777
+      "avg_cost": 64482.18777,
+      "high_water": 64352.29
     },
     "ETH": {
       "qty": 2.188714987317902,
-      "avg_cost": 1903.33143
+      "avg_cost": 1903.33143,
+      "high_water": 1901.66
     },
     "LINK": {
       "qty": 507.4292107996044,
-      "avg_cost": 8.144135999999998
+      "avg_cost": 8.144135999999998,
+      "high_water": 8.202
     },
     "ADA": {
       "qty": 20454.993255201873,
-      "avg_cost": 0.20404383999999998
+      "avg_cost": 0.20404383999999998,
+      "high_water": 0.20004
     }
   },
   "benchmark": {
@@ -33,6 +37,11 @@
       "date": "2026-08-06",
       "nav": 49952.35,
       "benchmark_nav": 49908.01
+    },
+    {
+      "date": "2026-08-07",
+      "nav": 49935.22,
+      "benchmark_nav": 49949.18
     }
   ],
   "trades": [
@@ -83,6 +92,70 @@
       "qty": 20454.9932552,
       "price": 0.204044,
       "value": 4173.72
+    }
+  ],
+  "cooldown": {},
+  "decision_log": [
+    {
+      "date": "2026-08-07",
+      "regime": "risk_off",
+      "hurdle": "BTC",
+      "hurdle_score": -0.0841,
+      "rebalance_trigger": "nenhum (sem motivo para negociar)",
+      "eligible_count": 3,
+      "selected": [
+        {
+          "symbol": "BTC",
+          "score": 0.0,
+          "weight": 0.25
+        },
+        {
+          "symbol": "ADA",
+          "score": -0.0315,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "ETH",
+          "score": -0.0454,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "LINK",
+          "score": -0.0674,
+          "weight": 0.0833
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "AVAX",
+          "reason": "nao bate o benchmark (-18.3% <= -8.4%)"
+        },
+        {
+          "symbol": "DOGE",
+          "reason": "nao bate o benchmark (-20.4% <= -8.4%)"
+        },
+        {
+          "symbol": "DOT",
+          "reason": "nao bate o benchmark (-20.1% <= -8.4%)"
+        },
+        {
+          "symbol": "LTC",
+          "reason": "nao bate o benchmark (-8.4% <= -8.4%)"
+        },
+        {
+          "symbol": "SOL",
+          "reason": "nao bate o benchmark (-14.3% <= -8.4%)"
+        },
+        {
+          "symbol": "XRP",
+          "reason": "nao bate o benchmark (-16.0% <= -8.4%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {},
+      "data_failures": [],
+      "note": "",
+      "cash_weight": 0.5
     }
   ]
 }
