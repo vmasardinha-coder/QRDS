@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from tools.gate_btc_cmc_pit_collector import parse_page, reconcile_unique_historical_slugs
+from tools.gate_btc_cmc_pit_collector import parse_page, reconcile_unique_historical_slugs, resolve_symbol
 
 
 class CMCPITCollectorTests(unittest.TestCase):
@@ -54,6 +54,26 @@ class CMCPITCollectorTests(unittest.TestCase):
         self.assertEqual(old['symbol'], 'FET')
         self.assertTrue(bool(old['identity_resolved']))
         self.assertEqual(old['symbol_resolution'], 'CMC_CROSS_SNAPSHOT_SLUG_LINEAGE')
+
+    def test_conservative_historical_aliases_resolve_without_market_data(self):
+        expected = {
+            'Fetch.ai': 'FET',
+            'Voyager Token': 'VGX',
+            'Hedera Hashgraph': 'HBAR',
+            'Swipe': 'SXP',
+            'Kyber Network': 'KNC',
+            'Injective Protocol': 'INJ',
+        }
+        for name, ticker in expected.items():
+            with self.subTest(name=name):
+                symbol, resolution = resolve_symbol(name, '', {}, {}, '')
+                self.assertEqual(symbol, ticker)
+                self.assertEqual(resolution, 'CURATED_HISTORICAL_ALIAS')
+
+    def test_unknown_name_remains_fail_closed(self):
+        symbol, resolution = resolve_symbol('Ambiguous Unknown Asset', '', {}, {}, '')
+        self.assertTrue(symbol.startswith('U'))
+        self.assertEqual(resolution, 'UNRESOLVED_AUDIT_KEY')
 
 
 if __name__ == '__main__':
