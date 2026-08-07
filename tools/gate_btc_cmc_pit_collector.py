@@ -4,9 +4,10 @@
 Historical pages currently expose the full ordered name list but only the first
 rows include materialized rank/symbol cells. Rank is therefore recovered from
 verified table order and missing symbols are resolved against authoritative CMC
-keyless maps, then CryptoCompare metadata. Unresolved identities receive a
-stable synthetic audit key so they remain in the coverage denominator but can
-never enter the strategy selection.
+keyless maps, including the historical page currency-link slug, then
+CryptoCompare metadata. Unresolved identities receive a stable synthetic audit
+key so they remain in the coverage denominator but can never enter the strategy
+selection.
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import requests
+from lxml import html as lxml_html
 
 START_SIGNAL = pd.Timestamp("2020-06-30")
 END_SIGNAL = pd.Timestamp("2026-07-31")
@@ -109,6 +111,10 @@ def get(session: requests.Session, url: str, params: dict | None = None, tries: 
 
 
 def metadata_maps(session: requests.Session) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    # Keys intentionally include both normalized CMC names and normalized CMC
+    # slugs. Historical lazy rows preserve /currencies/<slug>/ links even when
+    # their symbol cell is not materialized. The slug is therefore a stronger
+    # identity key than guessing from ticker text and remains keyless/auditable.
     cmc_names: dict[str, set[str]] = {}
     for status in ("active", "inactive", "untracked"):
         try:
@@ -119,9 +125,13 @@ def metadata_maps(session: requests.Session) -> tuple[dict[str, set[str]], dict[
             ).json()
             data = payload.get("data") or payload.get("Data") or []
             for row in data:
-                name, symbol = norm(row.get("name")), str(row.get("symbol") or "").upper().strip()
-                if name and re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
-                    cmc_names.setdefault(name, set()).add(symbol)
+                symbol = str(row.get("symbol") or "").upper().strip()
+                if not re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
+                    continue
+                for value in (row.get("name"), row.get("slug")):
+                    key = norm(value)
+                    if key:
+                        cmc_names.setdefault(key, set()).add(symbol)
         except Exception as exc:
             print(f"CMC_MAP_{status}=WARN {type(exc).__name__}", flush=True)
     cc_names: dict[str, set[str]] = {}
@@ -135,7 +145,7 @@ def metadata_maps(session: requests.Session) -> tuple[dict[str, set[str]], dict[
                     cc_names.setdefault(key, set()).add(sym)
     except Exception as exc:
         print(f"CRYPTOCOMPARE_MAP=WARN {type(exc).__name__}", flush=True)
-    print(f"CMC_NAME_KEYS={len(cmc_names)} CC_NAME_KEYS={len(cc_names)}", flush=True)
+    print(f"CMC_NAME_OR_SLUG_KEYS={len(cmc_names)} CC_NAME_KEYS={len(cc_names)}", flush=True)
     return cmc_names, cc_names
 
 
@@ -143,7 +153,37 @@ def pseudo(name: str) -> str:
     return "U" + hashlib.sha256(norm(name).encode("utf-8")).hexdigest()[:8].upper()
 
 
-def resolve_symbol(name: str, materialized: str, cmc_names: dict[str, set[str]], cc_names: dict[str, set[str]]) -> tuple[str, str]:
+def currency_link_slugs(html: str) -> dict[str, set[str]]:
+    """Return normalized anchor-text -> historical CMC currency slugs.
+
+    Only /currencies/<slug>/ links are admitted and consumers require a unique
+    slug for the exact normalized historical name. Ambiguous anchor text is
+    therefore never auto-resolved.
+    """
+    links: dict[str, set[str]] = {}
+    try:
+        root = lxml_html.fromstring(html)
+    except Exception:
+        return links
+    for anchor in root.xpath("//a[@href]"):
+        href = str(anchor.get("href") or "")
+        match = re.search(r"(?:https?://[^/]+)?/currencies/([^/?#]+)/?", href, flags=re.IGNORECASE)
+        if not match:
+            continue
+        slug = norm(match.group(1))
+        text = norm(" ".join(str(x) for x in anchor.itertext()))
+        if slug and text:
+            links.setdefault(text, set()).add(slug)
+    return links
+
+
+def resolve_symbol(
+    name: str,
+    materialized: str,
+    cmc_names: dict[str, set[str]],
+    cc_names: dict[str, set[str]],
+    cmc_slug: str = "",
+) -> tuple[str, str]:
     direct = str(materialized or "").upper().strip()
     if re.fullmatch(r"[A-Z0-9]{1,20}", direct) and direct not in {"NAN", "NONE"}:
         return direct, "PAGE_MATERIALIZED"
@@ -154,6 +194,10 @@ def resolve_symbol(name: str, materialized: str, cmc_names: dict[str, set[str]],
     cmc = sorted(cmc_names.get(key, set()))
     if len(cmc) == 1:
         return cmc[0], "CMC_KEYLESS_NAME_MAP"
+    slug_key = norm(cmc_slug)
+    slug_matches = sorted(cmc_names.get(slug_key, set())) if slug_key else []
+    if len(slug_matches) == 1:
+        return slug_matches[0], "CMC_HISTORICAL_SLUG_MAP"
     cc = sorted(cc_names.get(key, set()))
     if len(cc) == 1:
         return cc[0], "CRYPTOCOMPARE_NAME_MAP"
@@ -197,16 +241,20 @@ def parse_page(html: str, day: pd.Timestamp, cmc_names: dict[str, set[str]], cc_
     mismatch = int((materialized_ranks[known] != expected[known]).sum())
     if mismatch:
         raise RuntimeError(f"CMC ordered-table rank verification failed {day.date()} mismatches={mismatch}")
+    page_slugs = currency_link_slugs(html)
     records = []
     for idx, row in table.iloc[:TOP_N].iterrows():
         raw_name = str(row[name_col] or "").strip()
-        symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names)
+        slug_candidates = sorted(page_slugs.get(norm(raw_name), set()))
+        cmc_slug = slug_candidates[0] if len(slug_candidates) == 1 else ""
+        symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names, cmc_slug)
         name = clean_materialized_name(raw_name, symbol, resolution)
         records.append({
             "snapshot_date": day.normalize(), "rank": idx + 1, "name": name, "symbol": symbol,
             "market_cap_usd": number(row[mcap_col]) if mcap_col else np.nan,
             "price_usd": number(row[price_col]),
             "volume_24h_usd": number(row[volume_col]) if volume_col else np.nan,
+            "cmc_slug": cmc_slug,
             "symbol_resolution": resolution,
             "identity_resolved": resolution != "UNRESOLVED_AUDIT_KEY",
         })
@@ -230,7 +278,7 @@ def collect_snapshots(session: requests.Session, outdir: Path) -> pd.DataFrame:
         time.sleep(0.08)
     all_rows = pd.concat(rows, ignore_index=True)
     all_rows.to_csv(outdir / "CMC_MONTH_END_TOP150.csv", index=False)
-    unresolved = all_rows[~all_rows["identity_resolved"]][["snapshot_date","rank","name","symbol"]]
+    unresolved = all_rows[~all_rows["identity_resolved"]][["snapshot_date","rank","name","symbol","cmc_slug"]]
     unresolved.to_csv(outdir / "CMC_UNRESOLVED_IDENTITIES.csv", index=False)
     if all_rows["snapshot_date"].nunique() != len(dates):
         raise RuntimeError("missing CMC month-end snapshots")
