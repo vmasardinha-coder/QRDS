@@ -42,11 +42,18 @@ def _norm(value):
     return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
 
 
-def _continuity_ok(symbol: str, names: list[str]) -> bool:
+def _continuity_ok(symbol: str, names: list[str], slugs: list[str] | None = None) -> bool:
     norms = sorted(set(_norm(x) for x in names if _norm(x)))
+    slug_norms = sorted(set(_norm(x) for x in (slugs or []) if _norm(x)))
     if not norms:
         return False
     if len(norms) == 1:
+        return True
+    # A unique historical CMC currency slug is a stronger lineage key than the
+    # rendered display name. It permits benign renames such as THETA -> Theta
+    # Network while ticker reuse remains fail-closed because reused assets carry
+    # distinct slugs. No price/factor information participates in this decision.
+    if len(slug_norms) == 1:
         return True
     aliases = {_norm(x) for x in definitive.KNOWN_CONTINUITIES.get(symbol, set()) if _norm(x)}
     if not aliases:
@@ -62,11 +69,18 @@ def _cascade_identity_audit(snapshots, _unused_coinlist, v2a):
     _CM_CATALOG = cm_history.metric_catalog(session)
     identity = cm_history.resolve_cmc_to_cm(snapshots, _CM_REFERENCE, _CM_CATALOG).copy()
     name_map = snapshots.groupby("symbol")["name"].apply(lambda x: sorted(set(x.astype(str)))).to_dict()
+    if "cmc_slug" in snapshots.columns:
+        slug_map = snapshots.groupby("symbol")["cmc_slug"].apply(
+            lambda x: sorted({str(v) for v in x.dropna() if _norm(v)})
+        ).to_dict()
+    else:
+        slug_map = {}
+    identity["cmc_slugs"] = identity["symbol"].map(lambda s: ";".join(slug_map.get(str(s), [])))
     identity["exchange_identity_ok"] = [
         bool(
             not (str(s).startswith("U") and len(str(s)) == 9)
             and v2a.standard_ticker(str(s))
-            and _continuity_ok(str(s), name_map.get(str(s), []))
+            and _continuity_ok(str(s), name_map.get(str(s), []), slug_map.get(str(s), []))
         )
         for s in identity["symbol"]
     ]
