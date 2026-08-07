@@ -29,6 +29,10 @@ on:
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
       - migration/canonical/v2a/config_v2a.json
 
+concurrency:
+  group: gate-btc-definitive-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
