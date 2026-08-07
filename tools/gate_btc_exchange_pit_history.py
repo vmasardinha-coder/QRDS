@@ -6,6 +6,7 @@ turnover, treated as USD-equivalent only for USDT pairs. No gaps are filled.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import re
 import time
 from typing import Callable
@@ -29,17 +30,21 @@ def _valid_symbol(symbol: str) -> bool:
 def _request(session: requests.Session, url: str, params: dict, tries: int = 4):
     for attempt in range(tries):
         try:
-            r = session.get(url, params=params, timeout=35)
+            r = session.get(url, params=params, timeout=25)
             if r.status_code == 200:
                 return r
-            if r.status_code in {403, 429, 500, 502, 503, 504}:
-                time.sleep(0.6 + attempt)
+            # 403 is a persistent public-source access boundary on hosted CI,
+            # not a transient error. Fail this request immediately.
+            if r.status_code == 403:
+                return None
+            if r.status_code in {429, 500, 502, 503, 504}:
+                time.sleep(0.5 + attempt)
                 continue
             return None
         except Exception:
             if attempt + 1 == tries:
                 return None
-            time.sleep(0.6 + attempt)
+            time.sleep(0.5 + attempt)
     return None
 
 
@@ -65,17 +70,15 @@ def fetch_gate(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, st
         except Exception:
             data = []
         if isinstance(data, dict):
-            # INVALID_CURRENCY_PAIR and other venue errors are not retried.
             if not rows:
                 return _empty(), "NO_GATE_USDT"
             break
         for rec in data or []:
             if not isinstance(rec, list) or len(rec) < 6:
                 continue
-            # [timestamp, quote_volume, close, high, low, open, base_volume, closed]
             rows.append((rec[0], rec[2], rec[1]))
         cursor = stop
-        time.sleep(0.025)
+        time.sleep(0.015)
     return (_assemble(rows, symbol, "gateio_usdt"), "PASS") if rows else (_empty(), "NO_GATE_USDT")
 
 
@@ -108,10 +111,9 @@ def fetch_kucoin(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, 
         for rec in data:
             if not isinstance(rec, list) or len(rec) < 7:
                 continue
-            # [time, open, close, high, low, base_volume, quote_turnover]
             rows.append((rec[0], rec[2], rec[6]))
         cursor = stop
-        time.sleep(0.025)
+        time.sleep(0.015)
     return (_assemble(rows, symbol, "kucoin_usdt"), "PASS") if rows else (_empty(), "NO_KUCOIN_USDT")
 
 
@@ -120,7 +122,6 @@ def _assemble(rows, symbol: str, source: str) -> pd.DataFrame:
         return _empty()
     out = pd.DataFrame(rows, columns=["time", "close_usd", "volume_usd"])
     times = pd.to_numeric(out["time"], errors="coerce")
-    # Gate/KuCoin timestamps are seconds.
     out["date"] = pd.to_datetime(times, unit="s", utc=True, errors="coerce").dt.tz_localize(None).dt.normalize()
     out["close_usd"] = pd.to_numeric(out["close_usd"], errors="coerce")
     out["volume_usd"] = pd.to_numeric(out["volume_usd"], errors="coerce")
@@ -132,24 +133,30 @@ def _assemble(rows, symbol: str, source: str) -> pd.DataFrame:
     return out.drop_duplicates("date", keep="last").sort_values("date")[EMPTY_COLS]
 
 
-def collect_source(session: requests.Session, symbols: list[str], outdir, name: str, fetcher: Callable) -> tuple[pd.DataFrame, pd.DataFrame]:
-    rows = []
-    cov = []
+def collect_source(session: requests.Session, symbols: list[str], outdir, name: str, fetcher: Callable, max_workers: int = 8) -> tuple[pd.DataFrame, pd.DataFrame]:
     unique = sorted(set(symbols))
-    for i, symbol in enumerate(unique, 1):
+    rows, cov = [], []
+
+    def one(symbol: str):
         hist, status = fetcher(session, symbol)
-        if not hist.empty:
-            rows.append(hist)
-        cov.append({
-            "symbol": symbol,
-            "status": "PASS" if len(hist) >= 2 else status,
-            "rows": len(hist),
-            "first_date": hist["date"].min() if not hist.empty else None,
-            "last_date": hist["date"].max() if not hist.empty else None,
-        })
-        print(f"{name.upper()} {i}/{len(unique)} {symbol} rows={len(hist)} {status}", flush=True)
+        return symbol, hist, status
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(max_workers, 10))) as executor:
+        futures = [executor.submit(one, symbol) for symbol in unique]
+        for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
+            symbol, hist, status = future.result()
+            if not hist.empty:
+                rows.append(hist)
+            cov.append({
+                "symbol": symbol,
+                "status": "PASS" if len(hist) >= 2 else status,
+                "rows": len(hist),
+                "first_date": hist["date"].min() if not hist.empty else None,
+                "last_date": hist["date"].max() if not hist.empty else None,
+            })
+            print(f"{name.upper()} {i}/{len(unique)} {symbol} rows={len(hist)} {status}", flush=True)
     master = pd.concat(rows, ignore_index=True) if rows else _empty()
-    coverage = pd.DataFrame(cov)
+    coverage = pd.DataFrame(cov).sort_values("symbol") if cov else pd.DataFrame(columns=["symbol","status","rows","first_date","last_date"])
     master.to_csv(outdir / f"{name.upper()}_DAILY_HISTORY.csv.gz", index=False, compression="gzip")
     coverage.to_csv(outdir / f"{name.upper()}_COVERAGE.csv", index=False)
     return master, coverage
