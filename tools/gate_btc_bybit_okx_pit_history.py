@@ -6,6 +6,7 @@ volume factor input. No source stitching and no missing-return synthesis.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import re
 import time
 from typing import Callable
@@ -26,20 +27,22 @@ def _valid(symbol: str) -> bool:
     return bool(re.fullmatch(r"[A-Z0-9]{1,20}", symbol or "")) and not (symbol.startswith("U") and len(symbol) == 9)
 
 
-def _get(session: requests.Session, url: str, params: dict, tries: int = 5):
+def _get(session: requests.Session, url: str, params: dict, tries: int = 4):
     for attempt in range(tries):
         try:
-            r = session.get(url, params=params, timeout=40)
+            r = session.get(url, params=params, timeout=25)
             if r.status_code == 200:
                 return r
-            if r.status_code in {403, 429, 500, 502, 503, 504}:
-                time.sleep(0.7 + attempt)
+            if r.status_code == 403:
+                return None
+            if r.status_code in {429, 500, 502, 503, 504}:
+                time.sleep(0.5 + attempt)
                 continue
             return None
         except Exception:
             if attempt + 1 == tries:
                 return None
-            time.sleep(0.7 + attempt)
+            time.sleep(0.5 + attempt)
     return None
 
 
@@ -89,8 +92,6 @@ def fetch_bybit(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, s
         for rec in data:
             if not isinstance(rec, list) or len(rec) < 7:
                 continue
-            # [startTime, open, high, low, close, volume, turnover]
-            # For a USDT spot pair, turnover is quote-currency trade value.
             rows.append((rec[0], rec[4], rec[6]))
             t = int(rec[0])
             oldest = t if oldest is None else min(oldest, t)
@@ -100,7 +101,7 @@ def fetch_bybit(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, s
         if new_end >= cursor_end:
             break
         cursor_end = new_end
-        time.sleep(0.04)
+        time.sleep(0.02)
     hist = _assemble(rows, symbol, "bybit_spot_usdt")
     return (hist, "PASS") if len(hist) >= 2 else (_empty(), "NO_BYBIT_USDT")
 
@@ -113,7 +114,6 @@ def fetch_okx(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, str
     rows = []
     cursor = None
     floor_ms = int(START.tz_localize("UTC").timestamp() * 1000)
-    # 300 daily bars/request; ~9 calls cover the full research interval.
     for _ in range(12):
         params = {"instId": pair, "bar": "1Dutc", "limit": "300"}
         if cursor is not None:
@@ -136,7 +136,6 @@ def fetch_okx(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, str
         for rec in data:
             if not isinstance(rec, list) or len(rec) < 9:
                 continue
-            # [ts,o,h,l,c,vol,volCcy,volCcyQuote,confirm]
             if str(rec[8]) != "1":
                 continue
             rows.append((rec[0], rec[4], rec[7]))
@@ -147,27 +146,35 @@ def fetch_okx(session: requests.Session, symbol: str) -> tuple[pd.DataFrame, str
         if cursor is not None and oldest >= cursor:
             break
         cursor = oldest - 1
-        time.sleep(0.04)
+        time.sleep(0.02)
     hist = _assemble(rows, symbol, "okx_spot_usdt")
     return (hist, "PASS") if len(hist) >= 2 else (_empty(), "NO_OKX_USDT")
 
 
-def collect_source(session: requests.Session, symbols: list[str], outdir, name: str, fetcher: Callable) -> tuple[pd.DataFrame, pd.DataFrame]:
+def collect_source(session: requests.Session, symbols: list[str], outdir, name: str, fetcher: Callable, max_workers: int = 8) -> tuple[pd.DataFrame, pd.DataFrame]:
     unique = sorted(set(symbols))
     rows, cov = [], []
-    for i, symbol in enumerate(unique, 1):
+
+    def one(symbol: str):
         hist, status = fetcher(session, symbol)
-        if not hist.empty:
-            rows.append(hist)
-        cov.append({
-            "symbol": symbol, "status": "PASS" if len(hist) >= 2 else status,
-            "rows": len(hist),
-            "first_date": hist["date"].min() if not hist.empty else None,
-            "last_date": hist["date"].max() if not hist.empty else None,
-        })
-        print(f"{name.upper()} {i}/{len(unique)} {symbol} rows={len(hist)} {status}", flush=True)
+        return symbol, hist, status
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(max_workers, 10))) as executor:
+        futures = [executor.submit(one, symbol) for symbol in unique]
+        for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
+            symbol, hist, status = future.result()
+            if not hist.empty:
+                rows.append(hist)
+            cov.append({
+                "symbol": symbol,
+                "status": "PASS" if len(hist) >= 2 else status,
+                "rows": len(hist),
+                "first_date": hist["date"].min() if not hist.empty else None,
+                "last_date": hist["date"].max() if not hist.empty else None,
+            })
+            print(f"{name.upper()} {i}/{len(unique)} {symbol} rows={len(hist)} {status}", flush=True)
     master = pd.concat(rows, ignore_index=True) if rows else _empty()
-    coverage = pd.DataFrame(cov)
+    coverage = pd.DataFrame(cov).sort_values("symbol") if cov else pd.DataFrame(columns=["symbol","status","rows","first_date","last_date"])
     master.to_csv(outdir / f"{name.upper()}_DAILY_HISTORY.csv.gz", index=False, compression="gzip")
     coverage.to_csv(outdir / f"{name.upper()}_COVERAGE.csv", index=False)
     return master, coverage
