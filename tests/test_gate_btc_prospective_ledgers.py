@@ -51,6 +51,20 @@ class ProspectiveLedgerTests(unittest.TestCase):
             self.assertFalse(report["mutation_performed"])
             self.assertEqual(json.loads(frozen.read_text(encoding="utf-8"))["value"], 1)
 
+    def test_frozen_lock_contract_excludes_lock75(self):
+        repo = Path(__file__).resolve().parents[1]
+        lock_contract = json.loads(
+            (repo / "config/lock25_50_shadow_contract_v1.json").read_text(encoding="utf-8")
+        )
+        replay_contract = json.loads(
+            (repo / "migration/reporting/bull_replay_contract.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(set(lock_contract["variants"]), {"LOCK25", "LOCK50"})
+        self.assertNotIn("LOCK75", lock_contract["variants"])
+        self.assertEqual(replay_contract["locks"], ["CONTROL", "LOCK25", "LOCK50"])
+        self.assertNotIn("LOCK75", replay_contract["locks"])
+
 
 if __name__ == "__main__":
     unittest.main()
