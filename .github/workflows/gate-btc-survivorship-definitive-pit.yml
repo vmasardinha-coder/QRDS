@@ -12,6 +12,7 @@ on:
       - tools/gate_btc_cmc_pit_collector.py
       - tools/gate_btc_coinmetrics_pit_history.py
       - tools/gate_btc_cdd_binance_pit_history.py
+      - tools/gate_btc_cdd_multi_exchange_pit_history.py
       - tools/gate_btc_exchange_pit_history.py
       - tools/gate_btc_bybit_okx_pit_history.py
       - tools/gate_btc_binance_vision_pit_history.py
@@ -19,6 +20,7 @@ on:
       - tests/test_gate_btc_survivorship_definitive_pit.py
       - tests/test_gate_btc_survivorship_alpha_audit.py
       - tests/test_gate_btc_binance_vision_pit_history.py
+      - tests/test_gate_btc_cdd_multi_exchange_pit_history.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
       - migration/canonical/v2a/config_v2a.json
@@ -53,6 +55,7 @@ jobs:
           tests/test_gate_btc_survivorship_definitive_pit.py
           tests/test_gate_btc_survivorship_alpha_audit.py
           tests/test_gate_btc_binance_vision_pit_history.py
+          tests/test_gate_btc_cdd_multi_exchange_pit_history.py
 
       - name: Smoke test real lazy-row CMC reconstruction
         run: |
@@ -99,6 +102,19 @@ jobs:
           assert len(h) >= 2000
           assert h['close_usd'].notna().all() and h['volume_usd'].notna().all()
           print('CDD_BINANCE=PASS rows='+str(len(h))+' source='+url)
+          PY
+
+      - name: Smoke test CryptoDataDownload multi-exchange daily source
+        run: |
+          python - <<'PY'
+          import pandas as pd, requests
+          from tools.gate_btc_cdd_multi_exchange_pit_history import fetch_symbol
+          s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-Research-Only/1.0'})
+          h,url,status=fetch_symbol(s,'BTC',pd.Timestamp('2020-06-30'),pd.Timestamp('2026-07-31'))
+          assert status == 'PASS'
+          assert len(h) >= 2000
+          assert 'binance' not in str(h['source'].iloc[0]).lower()
+          print('CDD_MULTI=PASS rows='+str(len(h))+' source='+url)
           PY
 
       - name: Execute external monthly PIT top150 strict-next-bar study
