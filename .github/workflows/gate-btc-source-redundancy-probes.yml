@@ -17,11 +17,13 @@ on:
       - tools/gate_btc_bybit_redundancy_probe.py
       - tools/gate_btc_binance_spot_recovery_probe.py
       - tools/gate_btc_binance_spot_history_probe.py
+      - tools/gate_btc_binance_spot_equivalence_probe.py
       - tools/gate_btc_v2a_failure_diagnostic.py
       - tests/test_gate_btc_source_redundancy_probe.py
       - tests/test_gate_btc_bybit_redundancy_probe.py
       - tests/test_gate_btc_binance_spot_recovery_probe.py
       - tests/test_gate_btc_binance_spot_history_probe.py
+      - tests/test_gate_btc_binance_spot_equivalence_probe.py
       - tests/test_gate_btc_v2a_failure_diagnostic.py
 
 permissions:
@@ -54,6 +56,7 @@ jobs:
           tests/test_gate_btc_bybit_redundancy_probe.py
           tests/test_gate_btc_binance_spot_recovery_probe.py
           tests/test_gate_btc_binance_spot_history_probe.py
+          tests/test_gate_btc_binance_spot_equivalence_probe.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
 
       - name: Resolve public archive day
@@ -110,6 +113,7 @@ jobs:
           unzip -q source_daily/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
           test -f extracted/v2a/outputs/v2a_run_manifest.json
           test -f extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
           test -f extracted/v2a/outputs/download_failures_v2a.csv
           V2A_DAY=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
           echo "V2A_DAILY_ARTIFACT_AVAILABLE=true" >> "$GITHUB_ENV"
@@ -127,6 +131,14 @@ jobs:
           --snapshot-id "${V2A_SOURCE_DAY}-run-${V2A_SOURCE_RUN_ID}"
           --source-run-id "$V2A_SOURCE_RUN_ID"
           --output artifacts/source_probes/v2a_failure_diagnostic.json
+
+      - name: Compare Binance public Spot transport with admitted CDD rows
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_equivalence_probe.py
+          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --day "$V2A_SOURCE_DAY"
+          --output artifacts/source_probes/binance_spot_vs_cdd_equivalence.json
 
       - name: Probe Binance Spot archives for V2A recovery candidates
         if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
@@ -153,6 +165,7 @@ jobs:
           paths = [
               Path("artifacts/source_probes/binance_usdm_daily_1d.json"),
               Path("artifacts/source_probes/bybit_v5_linear_tickers.json"),
+              Path("artifacts/source_probes/binance_spot_vs_cdd_equivalence.json"),
               Path("artifacts/source_probes/binance_spot_v2a_recovery_candidates.json"),
               Path("artifacts/source_probes/binance_spot_v2a_history_depth.json"),
           ]
