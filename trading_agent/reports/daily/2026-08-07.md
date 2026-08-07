@@ -1,6 +1,6 @@
 # Relatorio diario do agente — 2026-08-07
 
-_Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes)._
+_Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
@@ -9,7 +9,7 @@ _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real e
 | NAV | $49,802.55 |
 | Retorno do dia | +0.00% |
 | Retorno desde inicio (2026-08-06) | -0.39% |
-| Benchmark SPY desde inicio | -0.16% |
+| Benchmark SPY | -0.16% |
 | **Alfa vs SPY** | **-0.24%** |
 | Caixa | $2.42 |
 | Regime | risco ligado |
@@ -28,41 +28,79 @@ _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real e
 | CAT | 5.74 | $856.96 | $4,918.95 | 9.9% |
 | UNH | 12.0533 | $403.97 | $4,869.18 | 9.8% |
 
-_Sem movimentacoes hoje (rebalanceio nao necessario)_
+_Sem movimentacoes hoje._
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (SPY):** momentum de +18.7% — so entram ativos acima disto
+- **Candidatos elegiveis:** 20
+
+| Rejeitado | Motivo |
+|---|---|
+| ADBE | nao bate o benchmark (-34.8% <= +18.7%) |
+| AMZN | nao bate o benchmark (+14.0% <= +18.7%) |
+| COST | nao bate o benchmark (+1.0% <= +18.7%) |
+| CRM | nao bate o benchmark (-32.7% <= +18.7%) |
+| DIS | nao bate o benchmark (-18.3% <= +18.7%) |
+| HD | nao bate o benchmark (-12.8% <= +18.7%) |
+| JPM | nao bate o benchmark (+13.5% <= +18.7%) |
+| MA | nao bate o benchmark (-8.2% <= +18.7%) |
+| _(+12 outros)_ | |
+
+</details>
 
 ## Crypto (objetivo: bater o BTC)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,983.79 |
-| Retorno do dia | +0.06% |
-| Retorno desde inicio (2026-08-06) | -0.03% |
-| Benchmark BTC desde inicio | -0.12% |
-| **Alfa vs BTC** | **+0.09%** |
+| NAV | $49,935.22 |
+| Retorno do dia | -0.03% |
+| Retorno desde inicio (2026-08-06) | -0.13% |
+| Benchmark BTC | -0.10% |
+| **Alfa vs BTC** | **-0.03%** |
 | Caixa | $25,031.98 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,338.38 | $12,484.59 | 25.0% |
-| ETH | 2.18871 | $1,904.31 | $4,167.99 | 8.3% |
-| LINK | 507.429 | $8.21 | $4,167.52 | 8.3% |
-| ADA | 20455 | $0.20 | $4,131.70 | 8.3% |
+| BTC | 0.194046 | $64,352.29 | $12,487.29 | 25.0% |
+| ETH | 2.18871 | $1,901.66 | $4,162.19 | 8.3% |
+| LINK | 507.429 | $8.20 | $4,161.93 | 8.3% |
+| ADA | 20455 | $0.20 | $4,091.82 | 8.2% |
 
-_Sem movimentacoes hoje (rebalanceio nao necessario)_
+_Sem movimentacoes hoje._
 
-## Acoes B3 (objetivo: bater Ibovespa e CDI)
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de -8.4% — so entram ativos acima disto
+- **Candidatos elegiveis:** 3
+
+| Rejeitado | Motivo |
+|---|---|
+| AVAX | nao bate o benchmark (-18.3% <= -8.4%) |
+| DOGE | nao bate o benchmark (-20.4% <= -8.4%) |
+| DOT | nao bate o benchmark (-20.1% <= -8.4%) |
+| LTC | nao bate o benchmark (-8.4% <= -8.4%) |
+| SOL | nao bate o benchmark (-14.3% <= -8.4%) |
+| XRP | nao bate o benchmark (-16.0% <= -8.4%) |
+
+</details>
+
+## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
 
 | Indicador | Valor |
 |---|---|
 | NAV | R$ 49,950.05 |
 | Retorno do dia | +0.00% |
 | Retorno desde inicio (2026-08-06) | -0.10% |
-| Benchmark IBOV desde inicio | +0.00% |
-| **Alfa vs IBOV** | **-0.10%** |
-| Benchmark CDI desde inicio | +0.00% |
-| **Alfa vs CDI** | **-0.10%** |
+| Benchmark IBOV | +0.00% |
+| Benchmark CDI | +0.00% |
+| **Alfa vs o maior (IBOV)** | **-0.10%** |
 | Caixa | R$ 0.00 |
 | Regime | risco ligado |
 
@@ -78,9 +116,29 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 | UGPA3 | 190.84 | R$ 32.75 | R$ 6,250.00 | 12.5% |
 | VALE3 | 82.2397 | R$ 75.39 | R$ 6,200.05 | 12.4% |
 
-_Sem movimentacoes hoje (rebalanceio nao necessario)_
+_Sem movimentacoes hoje._
 
-> Aviso: sem dados para EMBR3, ELET3, CPLE6, JBSS3, BRFS3 nesta execucao.
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (IBOV):** momentum de +28.3% — so entram ativos acima disto
+- **Candidatos elegiveis:** 7
+- **Sem dado (excluidos, nao estimados):** EMBR3, ELET3, CPLE6, JBSS3, BRFS3
+
+| Rejeitado | Motivo |
+|---|---|
+| ABEV3 | nao bate o benchmark (+25.9% <= +28.3%) |
+| ASAI3 | nao bate o benchmark (-13.9% <= +28.3%) |
+| B3SA3 | nao bate o benchmark (+12.3% <= +28.3%) |
+| BBAS3 | nao bate o benchmark (+4.3% <= +28.3%) |
+| BBDC4 | nao bate o benchmark (+13.0% <= +28.3%) |
+| CMIG4 | nao bate o benchmark (+4.9% <= +28.3%) |
+| CSNA3 | nao bate o benchmark (-37.3% <= +28.3%) |
+| CYRE3 | nao bate o benchmark (-12.2% <= +28.3%) |
+| _(+16 outros)_ | |
+
+</details>
 
 ## Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)
 
@@ -89,10 +147,9 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 | NAV | R$ 50,031.67 |
 | Retorno do dia | +0.04% |
 | Retorno desde inicio (2026-08-06) | +0.06% |
-| Benchmark IBOV desde inicio | +0.00% |
-| **Alfa vs IBOV** | **+0.06%** |
-| Benchmark CDI desde inicio | +0.00% |
-| **Alfa vs CDI** | **+0.06%** |
+| Benchmark IBOV | +0.00% |
+| Benchmark CDI | +0.00% |
+| **Alfa vs o maior (IBOV)** | **+0.06%** |
 | Caixa | R$ 676.90 |
 
 ### Posicoes
@@ -104,7 +161,15 @@ _Sem movimentacoes hoje (rebalanceio nao necessario)_
 
 > Volatilidade usada na call (GARCH(1,1)): 17.7% a.a. | realizada 30d: 18.8% a.a. | CDI: 0.0525% a.d.
 
-_Sem movimentacoes hoje (rebalanceio nao necessario)_
+_Sem movimentacoes hoje._
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (call em curso)
+- **Candidatos elegiveis:** 0
+
+</details>
 
 ---
-_Estrategia: momentum com filtro de regime (SMA 200) nas carteiras direcionais; financiamento coberto mensal na carteira de estruturadas. Rebalanceio as segundas-feiras, em mudanca de regime ou por desvio de pesos. Caixa em BRL rende CDI. Custos de execucao modelados (slippage)._
+_Sob a Carta de Operacao: teto por posicao ativa, piso de diversificacao (abaixo dele fica caixa), stop proporcional a volatilidade do ativo, filtro de regime e de liquidez, e forca relativa ao benchmark. Dado em falta exclui o ativo — nunca e estimado. Criterios congelados: mudanca so com validacao fora-da-amostra._
