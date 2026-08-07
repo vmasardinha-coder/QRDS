@@ -52,6 +52,7 @@ jobs:
           tests/test_gate_btc_prospective_ledgers.py
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
+          tests/test_gate_btc_v2a_failure_diagnostic.py
 
   append-prospective-ledgers:
     needs: contract-tests
@@ -178,6 +179,16 @@ jobs:
           --snapshot-id "$V2A_DATA_SNAPSHOT_ID"
           --source-run-id "$SOURCE_RUN_ID"
           --ledger-dir runtime_repo/runtime/data_quality/v2a
+
+      - name: Build advisory V2A failure diagnostic
+        run: >-
+          python tools/gate_btc_v2a_failure_diagnostic.py
+          --manifest extracted/v2a/outputs/v2a_run_manifest.json
+          --universe-csv extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          --failures-csv extracted/v2a/outputs/download_failures_v2a.csv
+          --snapshot-id "$V2A_DATA_SNAPSHOT_ID"
+          --source-run-id "$SOURCE_RUN_ID"
+          --output "runtime_repo/runtime/data_quality/v2a/diagnostics/${V2A_DATA_SNAPSHOT_ID}.json"
 
       - name: Preserve immutable Gateway point-in-time universe
         run: >-
