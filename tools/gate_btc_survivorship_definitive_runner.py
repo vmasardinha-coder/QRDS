@@ -14,6 +14,7 @@ import gate_btc_cmc_pit_parser as cmc_parser
 import gate_btc_coinmetrics_pit_history as cm_history
 import gate_btc_cdd_binance_pit_history as cdd_history
 import gate_btc_exchange_pit_history as exchange_history
+import gate_btc_bybit_okx_pit_history as byok_history
 import gate_btc_survivorship_definitive_pit as definitive
 
 _ORIGINAL_HTTP_GET = definitive.http_get
@@ -95,15 +96,34 @@ def _choose_source(frames: list[pd.DataFrame], first_snapshot: pd.Timestamp, las
         pre_rows = int(((f["date"] < membership_start) & (f["date"] >= membership_start - pd.Timedelta(days=200))).sum())
         span_days = int((f["date"].max() - f["date"].min()).days) if len(f) > 1 else 0
         source = str(f["source"].iloc[0])
-        # Prioritize actual PIT membership coverage, then factor lookback support,
-        # then total continuity. No source stitching inside one symbol.
-        score = (member_rows, pre_rows, len(f), span_days, source.startswith("cryptodatadownload_binance_"))
+        # Primary criterion is contemporaneous PIT-membership coverage. Factor
+        # lookback support and continuity break ties. One source per symbol only.
+        score = (
+            member_rows,
+            pre_rows,
+            len(f),
+            span_days,
+            source.startswith("cryptodatadownload_binance_"),
+        )
         candidates.append((score, f, source))
     if not candidates:
         return _clean(pd.DataFrame()), ""
     candidates.sort(key=lambda x: x[0], reverse=True)
     _, best, source = candidates[0]
     return best, source
+
+
+def _needs_extra(best: pd.DataFrame, first_snapshot: pd.Timestamp, last_snapshot: pd.Timestamp) -> bool:
+    if best.empty:
+        return True
+    start = pd.Timestamp(first_snapshot)
+    end = min(pd.Timestamp("2026-08-06"), pd.Timestamp(last_snapshot) + pd.Timedelta(days=35))
+    membership = best[(best["date"] >= start) & (best["date"] <= end)]
+    return bool(membership.empty or membership["date"].min() > start + pd.Timedelta(days=7))
+
+
+def _slice(master: pd.DataFrame, symbol: str) -> pd.DataFrame:
+    return master[master["symbol"] == symbol].copy() if master is not None and not master.empty else pd.DataFrame()
 
 
 def _cascade_collect_histories(session, identity, outdir: Path):
@@ -113,37 +133,39 @@ def _cascade_collect_histories(session, identity, outdir: Path):
     candidates = identity.loc[identity["exchange_identity_ok"], "symbol"].astype(str).tolist()
     cdd_master, _ = cdd_history.collect(session, candidates, outdir)
 
-    # First pass: identify names still lacking usable coverage over their PIT membership.
     need_extra = []
     for r in identity.itertuples(index=False):
         symbol = str(r.symbol)
         if not bool(getattr(r, "exchange_identity_ok", False)):
             continue
-        cm = cm_master[cm_master["symbol"] == symbol].copy() if not cm_master.empty else pd.DataFrame()
-        cdd = cdd_master[cdd_master["symbol"] == symbol].copy() if not cdd_master.empty else pd.DataFrame()
-        best, _ = _choose_source([cm, cdd], pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
-        if best.empty:
-            need_extra.append(symbol)
-            continue
-        membership = best[(best["date"] >= pd.Timestamp(r.first_snapshot)) & (best["date"] <= min(pd.Timestamp("2026-08-06"), pd.Timestamp(r.last_snapshot) + pd.Timedelta(days=35)))]
-        if membership.empty or membership["date"].min() > pd.Timestamp(r.first_snapshot) + pd.Timedelta(days=7):
+        best, _ = _choose_source(
+            [_slice(cm_master, symbol), _slice(cdd_master, symbol)],
+            pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot),
+        )
+        if _needs_extra(best, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot)):
             need_extra.append(symbol)
 
     print(f"CASCADE_EXTRA_CANDIDATES={len(need_extra)}", flush=True)
     gate_master, _ = exchange_history.collect_source(session, need_extra, outdir, "gateio", exchange_history.fetch_gate)
     kucoin_master, _ = exchange_history.collect_source(session, need_extra, outdir, "kucoin", exchange_history.fetch_kucoin)
+    bybit_master, _ = byok_history.collect_source(session, need_extra, outdir, "bybit", byok_history.fetch_bybit)
+    okx_master, _ = byok_history.collect_source(session, need_extra, outdir, "okx", byok_history.fetch_okx)
 
     selected = []
     coverage = []
     symbols = identity["symbol"].astype(str).tolist()
-    source_counts = {}
+    source_counts: dict[str, int] = {}
     for r in identity.itertuples(index=False):
         symbol = str(r.symbol)
-        cm = cm_master[cm_master["symbol"] == symbol].copy() if not cm_master.empty else pd.DataFrame()
-        cdd = cdd_master[cdd_master["symbol"] == symbol].copy() if not cdd_master.empty else pd.DataFrame()
-        gate = gate_master[gate_master["symbol"] == symbol].copy() if not gate_master.empty else pd.DataFrame()
-        kucoin = kucoin_master[kucoin_master["symbol"] == symbol].copy() if not kucoin_master.empty else pd.DataFrame()
-        best, source = _choose_source([cm, cdd, gate, kucoin], pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
+        frames = [
+            _slice(cm_master, symbol),
+            _slice(cdd_master, symbol),
+            _slice(gate_master, symbol),
+            _slice(kucoin_master, symbol),
+            _slice(bybit_master, symbol),
+            _slice(okx_master, symbol),
+        ]
+        best, source = _choose_source(frames, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
         if not best.empty:
             best = best.copy()
             best["symbol"] = symbol
@@ -157,10 +179,12 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             "first_date": best["date"].min() if not best.empty else None,
             "last_date": best["date"].max() if not best.empty else None,
             "selected_source": source,
-            "coinmetrics_rows": len(cm),
-            "cdd_binance_rows": len(cdd),
-            "gateio_rows": len(gate),
-            "kucoin_rows": len(kucoin),
+            "coinmetrics_rows": len(frames[0]),
+            "cdd_binance_rows": len(frames[1]),
+            "gateio_rows": len(frames[2]),
+            "kucoin_rows": len(frames[3]),
+            "bybit_rows": len(frames[4]),
+            "okx_rows": len(frames[5]),
         })
         mask = identity["symbol"].astype(str) == symbol
         identity.loc[mask, "history_usable"] = status == "PASS"
@@ -224,7 +248,7 @@ def _write_text_cascade(outdir, manifest, alpha, survivor_alpha, identity, cover
         text = method.read_text(encoding="utf-8")
         text = text.replace(
             "Daily price/volume source: CryptoCompare CCCAGG, identity-audited by symbol/name history.",
-            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT daily candles, and KuCoin USDT daily candles. Missing history is never synthesized.",
+            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT, KuCoin USDT, Bybit spot USDT, and OKX spot USDT. Missing history is never synthesized.",
         )
         method.write_text(text, encoding="utf-8")
     executive = outdir / "EXECUTIVE_SUMMARY.txt"
