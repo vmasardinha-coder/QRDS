@@ -1,8 +1,12 @@
 """Fontes publicas de dados de mercado (sem chave de API).
 
-Acoes: Stooq (CSV diario). Crypto: Coinbase Exchange com fallback CoinGecko.
-Todas as funcoes devolvem series diarias ordenadas por data ascendente:
-lista de tuplos (date_iso: str, close: float).
+Acoes: Stooq (CSV diario) com fallback Yahoo. Crypto: Coinbase Exchange com
+fallback CoinGecko. Acoes B3: Yahoo (sufixo .SA). CDI: API SGS do Banco Central.
+
+Todas as funcoes de preco devolvem series diarias ordenadas por data ascendente:
+lista de tuplos (date_iso: str, close: float, volume: float). O volume alimenta
+o filtro de liquidez da Carta de Operacao (secao 5); quando a fonte nao o
+fornece, vem 0.0 e o ativo e tratado como nao elegivel (fail-closed, secao 7).
 """
 
 from __future__ import annotations
@@ -38,28 +42,29 @@ def _http_get(url: str, timeout: float = 30.0) -> bytes:
     raise DataSourceError(f"GET {url} falhou apos {RETRIES} tentativas: {last_err}")
 
 
-def fetch_stooq_daily(ticker: str) -> list[tuple[str, float]]:
+def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker dos EUA via Stooq."""
     symbol = ticker.lower().replace(".", "-") + ".us"
     raw = _http_get(f"https://stooq.com/q/d/l/?s={symbol}&i=d")
     text = raw.decode("utf-8", errors="replace")
-    rows: list[tuple[str, float]] = []
+    rows: list[tuple[str, float, float]] = []
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         try:
             close = float(row["Close"])
             date = row["Date"]
+            volume = float(row.get("Volume") or 0.0)
         except (KeyError, TypeError, ValueError):
             continue
         if close > 0:
-            rows.append((date, close))
+            rows.append((date, close, volume))
     if len(rows) < 10:
         raise DataSourceError(f"Stooq devolveu serie vazia/invalida para {ticker}")
     rows.sort(key=lambda r: r[0])
     return rows
 
 
-def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float]]:
+def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho via API de chart do Yahoo Finance (sem chave)."""
     symbol = ticker.upper()
     # tickers dos EUA usam '-' em vez de '.' (BRK.B); indices (^BVSP) e
@@ -75,27 +80,28 @@ def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float]]:
     try:
         result = data["chart"]["result"][0]
         timestamps = result["timestamp"]
-        closes = result["indicators"]["quote"][0]["close"]
+        quote = result["indicators"]["quote"][0]
+        closes = quote["close"]
+        volumes = quote.get("volume") or [None] * len(closes)
     except (KeyError, IndexError, TypeError) as err:
         raise DataSourceError(f"Yahoo: resposta inesperada para {ticker}: {err}")
-    rows: list[tuple[str, float]] = []
-    for ts, close in zip(timestamps, closes):
+    dedup: dict[str, tuple[float, float]] = {}
+    for ts, close, volume in zip(timestamps, closes, volumes):
         if close is None:
             continue
         date = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
-        rows.append((date, float(close)))
-    if len(rows) < 10:
+        # o mesmo dia pode aparecer duas vezes (sessao em curso); mantem o ultimo
+        dedup[date] = (float(close), float(volume or 0.0))
+    if len(dedup) < 10:
         raise DataSourceError(f"Yahoo devolveu serie vazia para {ticker}")
-    # o mesmo dia pode aparecer duas vezes (sessao em curso); mantem o ultimo
-    dedup = dict(rows)
-    return sorted(dedup.items())
+    return [(d, c, v) for d, (c, v) in sorted(dedup.items())]
 
 
 _STOOQ_CONSECUTIVE_FAILURES = 0
 _STOOQ_TRIP_AFTER = 3
 
 
-def fetch_equity_daily(ticker: str) -> list[tuple[str, float]]:
+def fetch_equity_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Stooq como fonte primaria, Yahoo Finance como fallback.
 
     Depois de _STOOQ_TRIP_AFTER falhas consecutivas do Stooq (tipico quando
@@ -112,14 +118,14 @@ def fetch_equity_daily(ticker: str) -> list[tuple[str, float]]:
     return fetch_yahoo_daily(ticker)
 
 
-def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float]]:
+def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho (UTC) para <asset>-USD via Coinbase Exchange.
 
     A API limita a 300 velas por pedido; pagina em janelas de 250 dias.
     """
     product = f"{asset.upper()}-USD"
     end = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    out: dict[str, float] = {}
+    out: dict[str, tuple[float, float]] = {}
     window = 250
     cursor_end = end + timedelta(days=1)
     remaining = days
@@ -136,18 +142,18 @@ def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float]]
             raise DataSourceError(f"Coinbase: resposta inesperada para {product}: {data!r}")
         for candle in data:
             # [time, low, high, open, close, volume]
-            ts, close = int(candle[0]), float(candle[4])
+            ts, close, volume = int(candle[0]), float(candle[4]), float(candle[5])
             date = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
-            out[date] = close
+            out[date] = (close, volume)
         cursor_end = cursor_start
         remaining -= span
         time.sleep(0.34)  # limite de taxa publico da Coinbase
     if len(out) < 10:
         raise DataSourceError(f"Coinbase devolveu serie vazia para {product}")
-    return sorted(out.items())
+    return [(d, c, v) for d, (c, v) in sorted(out.items())]
 
 
-def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, float]]:
+def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, float, float]]:
     """Fallback: serie diaria via CoinGecko (free tier)."""
     url = (
         f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -157,21 +163,25 @@ def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, floa
     prices = data.get("prices")
     if not prices:
         raise DataSourceError(f"CoinGecko devolveu serie vazia para {coin_id}")
+    volumes: dict[str, float] = {}
+    for ms, vol in data.get("total_volumes") or []:
+        date = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        volumes[date] = float(vol)
     out: dict[str, float] = {}
     for ms, price in prices:
         date = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
         out[date] = float(price)
-    return sorted(out.items())
+    return [(d, c, volumes.get(d, 0.0)) for d, c in sorted(out.items())]
 
 
-def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float]]:
+def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, float]]:
     """Coinbase como fonte primaria, CoinGecko como fallback."""
     try:
         return fetch_coinbase_daily(asset)
     except DataSourceError:
         return fetch_coingecko_daily(coingecko_id)
 
-def fetch_b3_daily(ticker: str) -> list[tuple[str, float]]:
+def fetch_b3_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker da B3 via Yahoo (sufixo .SA)."""
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
     return fetch_yahoo_daily(symbol)

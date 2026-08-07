@@ -78,6 +78,29 @@ B3S_SLIPPAGE_BPS = 10.0
 # Serie SGS do Banco Central para o CDI diario (% ao dia)
 BCB_SGS_CDI_SERIES = 12
 
+# --- Carta de Operacao: limites fixos de risco (secao 4) ---
+# Estes valores sao tetos duros. O agente NAO os altera por conta propria,
+# mesmo que o sinal pareca forte; so mudam por decisao explicita do mandante.
+
+MAX_ACTIVE_POSITION_WEIGHT = 0.15   # teto por posicao ativa (fracao do NAV)
+# BTC na carteira crypto e ancora de benchmark, nao posicao ativa: cap proprio
+CRYPTO_BTC_ANCHOR_MAX = 0.50
+
+EQUITY_MIN_POSITIONS = 5            # piso de diversificacao; abaixo disto -> caixa
+B3_MIN_POSITIONS = 4
+
+# Stop estatistico: proporcional a volatilidade do proprio ativo, nunca fixo
+STOP_SIGMA_MULTIPLE = 8.0           # queda maxima = k x desvio-padrao diario
+STOP_VOL_WINDOW_DAYS = 60           # janela do desvio-padrao usado no stop
+STOP_COOLDOWN_DAYS = 30             # dias de carencia apos stop (evita recompra)
+
+# Filtro de liquidez: sinal sem liquidez real nao e executavel (secao 5)
+LIQUIDITY_WINDOW_DAYS = 60
+MIN_MEDIAN_TURNOVER_USD = 20_000_000.0   # mediana de preco x volume diario
+MIN_MEDIAN_TURNOVER_BRL = 20_000_000.0
+
+DECISION_LOG_MAX_ENTRIES = 120      # log auditavel por carteira (secao 8)
+
 # --- Regras comuns ---
 SMA_REGIME_DAYS = 200
 REBALANCE_WEEKDAY = 0            # segunda-feira (0 = Monday)

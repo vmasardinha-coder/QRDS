@@ -7,6 +7,7 @@ por isso sobrevive entre execucoes do workflow diario.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
@@ -37,6 +38,82 @@ def new_state(name: str, benchmark_symbol: str, date: str,
         # por isso basta guardar o simbolo
         state["benchmark2"] = {"symbol": benchmark2_symbol}
     return state
+
+
+def daily_sigma(closes: list[float], window: int) -> float | None:
+    """Desvio-padrao dos retornos diarios (base do stop estatistico)."""
+    if len(closes) < window + 1:
+        return None
+    tail = closes[-(window + 1):]
+    rets = [tail[i + 1] / tail[i] - 1.0 for i in range(len(tail) - 1)]
+    mean = sum(rets) / len(rets)
+    var = sum((r - mean) ** 2 for r in rets) / (len(rets) - 1)
+    return var ** 0.5
+
+
+def update_high_water(state: dict, prices: dict[str, float]) -> None:
+    """Marca d'agua por posicao — referencia do stop movel."""
+    for symbol, pos in state["positions"].items():
+        price = prices.get(symbol)
+        if price is None:
+            continue
+        pos["high_water"] = max(pos.get("high_water", price), price)
+
+
+def check_stops(state: dict, prices: dict[str, float],
+                sigmas: dict[str, float], today: str,
+                slippage_bps: float) -> list[dict]:
+    """Stop proporcional a volatilidade do proprio ativo (secao 4 da Carta).
+
+    Vende a posicao quando a queda desde a marca d'agua excede
+    STOP_SIGMA_MULTIPLE x desvio-padrao diario, e poe o ativo em carencia
+    para nao ser recomprado no rebalanceio seguinte.
+    """
+    triggered: list[dict] = []
+    cooldown = state.setdefault("cooldown", {})
+    for symbol in list(state["positions"]):
+        price = prices.get(symbol)
+        sigma = sigmas.get(symbol)
+        if price is None or sigma is None or sigma <= 0:
+            continue
+        pos = state["positions"][symbol]
+        high = pos.get("high_water", price)
+        limit = config.STOP_SIGMA_MULTIPLE * sigma
+        drawdown = 1.0 - price / high if high > 0 else 0.0
+        if drawdown <= limit:
+            continue
+        qty = pos["qty"]
+        executed = execute_orders(
+            state, [{"symbol": symbol, "side": "sell", "qty": qty,
+                     "ref_price": price}], today, slippage_bps)
+        until = (datetime.strptime(today, "%Y-%m-%d")
+                 + timedelta(days=config.STOP_COOLDOWN_DAYS)).strftime("%Y-%m-%d")
+        cooldown[symbol] = until
+        for trade in executed:
+            trade["reason"] = (f"stop: queda {drawdown*100:.1f}% > "
+                               f"{config.STOP_SIGMA_MULTIPLE:.0f}x sigma "
+                               f"({limit*100:.1f}%); carencia ate {until}")
+            triggered.append(trade)
+    return triggered
+
+
+def active_cooldowns(state: dict, today: str) -> dict[str, str]:
+    """Ativos em carencia por stop, limpando os ja expirados."""
+    cooldown = state.setdefault("cooldown", {})
+    for symbol, until in list(cooldown.items()):
+        if until <= today:
+            del cooldown[symbol]
+    return dict(cooldown)
+
+
+def log_decision(state: dict, entry: dict) -> None:
+    """Guarda a decisao do dia para auditoria posterior (secao 8 da Carta)."""
+    log = state.setdefault("decision_log", [])
+    if log and log[-1].get("date") == entry.get("date"):
+        log[-1] = entry
+    else:
+        log.append(entry)
+    del log[: max(0, len(log) - config.DECISION_LOG_MAX_ENTRIES)]
 
 
 def accrue_cash_cdi(state: dict, cdi_rates: list[tuple[str, float]],
@@ -132,7 +209,8 @@ def execute_orders(state: dict, orders: list[dict], date: str,
             if value < config.MIN_TRADE_VALUE_USD / 2:
                 continue
             state["cash"] -= value
-            pos = state["positions"].setdefault(symbol, {"qty": 0.0, "avg_cost": 0.0})
+            pos = state["positions"].setdefault(
+                symbol, {"qty": 0.0, "avg_cost": 0.0, "high_water": price})
             new_qty = pos["qty"] + qty
             pos["avg_cost"] = (pos["qty"] * pos["avg_cost"] + value) / new_qty
             pos["qty"] = new_qty
@@ -175,18 +253,20 @@ def append_history(state: dict, date: str, prices: dict[str, float],
 
 def needs_rebalance(state: dict, target_weights: dict[str, float],
                     prices: dict[str, float], today_weekday: int,
-                    regime: str) -> bool:
+                    regime: str) -> str | None:
+    """Devolve o motivo do rebalanceio (para o log) ou None se nao ha motivo."""
     if state["last_rebalance"] is None:
-        return True
+        return "primeira execucao da carteira"
     if regime != state.get("last_regime"):
-        return True
+        return f"mudanca de regime: {state.get('last_regime')} -> {regime}"
     if today_weekday == config.REBALANCE_WEEKDAY:
-        return True
+        return "cadencia semanal (segunda-feira)"
     weights = current_weights(state, prices)
     for symbol, target in target_weights.items():
         if target <= 0:
             continue
         actual = weights.get(symbol, 0.0)
         if abs(actual - target) / target > config.DRIFT_REBALANCE_THRESHOLD:
-            return True
-    return False
+            return (f"desvio de peso em {symbol}: {actual*100:.1f}% vs alvo "
+                    f"{target*100:.1f}%")
+    return None
