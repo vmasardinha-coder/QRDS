@@ -122,26 +122,10 @@ def append_gateway(args: argparse.Namespace) -> int:
 
 
 def audit_d50(args: argparse.Namespace) -> int:
-    frozen = load_json(args.frozen_row)
-    candidate = load_json(args.candidate_row)
-    ignored = set(args.ignore_field or [])
-    keys = sorted((set(frozen) | set(candidate)) - ignored)
-    differences = {k: {"frozen": frozen.get(k), "candidate": candidate.get(k)} for k in keys if frozen.get(k) != candidate.get(k)}
-    report = {
-        "schema": "gate_btc.d50_immutable_conflict.v1",
-        "status": "PASS_IDENTICAL" if not differences else "FAIL_IMMUTABLE_ROW_CHANGED",
-        "frozen_row_sha256": hashlib.sha256(args.frozen_row.read_bytes()).hexdigest(),
-        "candidate_row_sha256": hashlib.sha256(args.candidate_row.read_bytes()).hexdigest(),
-        "differences": differences,
-        "mutation_performed": False,
-        "required_action": "preserve frozen row and correct deterministic replay inputs" if differences else "none",
-        "research_only": True,
-        "orders_generated": 0,
-        "real_capital_used": 0,
-    }
-    atomic_json(args.output, report)
-    print(json.dumps(report, indent=2, ensure_ascii=False))
-    return 0 if not differences else 2
+    """Compatibility entry point delegating to the canonical D50 policy."""
+    from tools.gate_btc_measurement_status import audit_d50 as canonical_audit_d50
+
+    return canonical_audit_d50(args)
 
 
 def main() -> int:
