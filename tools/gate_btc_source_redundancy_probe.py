@@ -19,7 +19,6 @@ from typing import Callable
 BASE = "https://data.binance.vision"
 DEFAULT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT")
 HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
-MARKETS = {"usdm", "spot"}
 
 
 def sha256_bytes(raw: bytes) -> str:
@@ -93,24 +92,13 @@ def validate_daily_1d_zip(raw_zip: bytes, expected_day: str) -> dict:
     }
 
 
-def archive_path(symbol: str, day: str, market: str) -> str:
-    if market == "usdm":
-        root = "/data/futures/um/daily/klines"
-    elif market == "spot":
-        root = "/data/spot/daily/klines"
-    else:
-        raise ValueError(f"unsupported market: {market}")
+def probe_symbol(symbol: str, day: str, fetcher: Callable[[str], bytes] = fetch_bytes) -> dict:
     filename = f"{symbol}-1d-{day}.zip"
-    return f"{root}/{symbol}/1d/{filename}"
-
-
-def probe_symbol(symbol: str, day: str, fetcher: Callable[[str], bytes] = fetch_bytes, market: str = "usdm") -> dict:
-    path = archive_path(symbol, day, market)
+    path = f"/data/futures/um/daily/klines/{symbol}/1d/{filename}"
     url = BASE + path
     checksum_url = url + ".CHECKSUM"
     result = {
         "symbol": symbol,
-        "market": market,
         "requested_day": day,
         "archive_path": path,
         "checksum_path": path + ".CHECKSUM",
@@ -144,10 +132,8 @@ def probe_symbol(symbol: str, day: str, fetcher: Callable[[str], bytes] = fetch_
     return result
 
 
-def run_probe(day: str, symbols: list[str], fetcher: Callable[[str], bytes] = fetch_bytes, market: str = "usdm") -> dict:
+def run_probe(day: str, symbols: list[str], fetcher: Callable[[str], bytes] = fetch_bytes) -> dict:
     date.fromisoformat(day)
-    if market not in MARKETS:
-        raise ValueError(f"unsupported market: {market}")
     normalized = []
     for symbol in symbols:
         s = symbol.strip().upper()
@@ -157,7 +143,7 @@ def run_probe(day: str, symbols: list[str], fetcher: Callable[[str], bytes] = fe
             normalized.append(s)
     if not normalized:
         raise ValueError("at least one symbol is required")
-    results = [probe_symbol(symbol, day, fetcher, market) for symbol in normalized]
+    results = [probe_symbol(symbol, day, fetcher) for symbol in normalized]
     counts = {}
     for item in results:
         counts[item["status"]] = counts.get(item["status"], 0) + 1
@@ -169,13 +155,11 @@ def run_probe(day: str, symbols: list[str], fetcher: Callable[[str], bytes] = fe
         status = "PASS_PARTIAL"
     else:
         status = "WARN_UNAVAILABLE"
-    source = "BINANCE_PUBLIC_DATA_USDM_DAILY_KLINES" if market == "usdm" else "BINANCE_PUBLIC_DATA_SPOT_DAILY_KLINES"
     return {
-        "schema": "gate_btc.public_source_redundancy_probe.v2",
+        "schema": "gate_btc.public_source_redundancy_probe.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": status,
-        "source": source,
-        "market": market,
+        "source": "BINANCE_PUBLIC_DATA_USDM_DAILY_KLINES",
         "requested_day": day,
         "interval": "1d",
         "symbols": normalized,
@@ -200,7 +184,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--day", required=True)
     parser.add_argument("--symbols", default=",".join(DEFAULT_SYMBOLS))
-    parser.add_argument("--market", choices=sorted(MARKETS), default="usdm")
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -209,7 +192,7 @@ def main() -> int:
     args = build_parser().parse_args()
     if os.environ.get("GATE_BTC_RESEARCH_ONLY", "true").strip().lower() not in {"1", "true", "yes", "on"}:
         raise RuntimeError("GATE_BTC_RESEARCH_ONLY must remain true")
-    payload = run_probe(args.day, args.symbols.split(","), market=args.market)
+    payload = run_probe(args.day, args.symbols.split(","))
     atomic_json(args.output, payload)
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
