@@ -81,6 +81,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
     require(contract.get("promotion") == "PROHIBITED", "promotion must remain prohibited")
     require(contract.get("control", {}).get("name") == "NO_LOCK_CONTROL", "control changed")
     expected = {"LOCK25": (1.25, 0.25, 0.10), "LOCK50": (1.50, 0.50, 0.15)}
+    require(set(contract.get("variants", {})) == set(expected), "LOCK variants must be exactly LOCK25 and LOCK50")
     for name, (arm, share, retracement) in expected.items():
         cfg = contract.get("variants", {}).get(name, {})
         require(float(cfg.get("arming_level_multiple", -1)) == arm, f"{name} arming changed")
