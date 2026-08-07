@@ -51,6 +51,15 @@ HISTORICAL_NAME_ALIASES = {
     "bitcoin gold": "BTG",
     "bitcoin diamond": "BCD",
     "ethereumclassic": "ETC",
+    # Conservative historical-name lineage fixes. These names are explicit
+    # historical project names whose ticker is independently documented; they
+    # are identity-only mappings and do not inject price/factor information.
+    "fetchai": "FET",
+    "voyagertoken": "VGX",
+    "hederahashgraph": "HBAR",
+    "swipe": "SXP",
+    "kybernetwork": "KNC",
+    "injectiveprotocol": "INJ",
 }
 
 
