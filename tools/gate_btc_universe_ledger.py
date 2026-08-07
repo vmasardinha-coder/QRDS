@@ -88,10 +88,6 @@ def iso_day(value: str, field: str) -> date:
         raise RuntimeError(f"invalid {field}: {value}") from exc
 
 
-def snapshot_records(ledger_dir: Path) -> list[Path]:
-    return sorted((ledger_dir / "snapshots").glob("*.json"))
-
-
 def validate_record(path: Path, record: dict[str, Any], ledger_dir: Path) -> None:
     require(record.get("record_sha256") == canonical_sha(record, "record_sha256"), f"invalid record hash: {path}")
     require(record.get("research_only") is True, f"research_only changed: {path}")
@@ -108,6 +104,22 @@ def validate_record(path: Path, record: dict[str, Any], ledger_dir: Path) -> Non
     raw = gzip.decompress(compressed)
     require(sha256_bytes(raw) == record.get("raw_csv_sha256"), f"raw CSV hash mismatch: {archive_path}")
     require(len(raw) == int(record.get("raw_csv_size_bytes", -1)), f"raw CSV size mismatch: {archive_path}")
+
+
+def validated_records(ledger_dir: Path) -> list[tuple[int, Path, dict[str, Any]]]:
+    records: list[tuple[int, Path, dict[str, Any]]] = []
+    for path in (ledger_dir / "snapshots").glob("*.json"):
+        record = load_json(path)
+        validate_record(path, record, ledger_dir)
+        sequence = int(record.get("sequence", 0))
+        require(sequence >= 1, f"invalid universe sequence: {path}")
+        records.append((sequence, path, record))
+    records.sort(key=lambda item: item[0])
+    require(
+        [sequence for sequence, _, _ in records] == list(range(1, len(records) + 1)),
+        "Gateway universe ledger sequence is not contiguous",
+    )
+    return records
 
 
 def append(args: argparse.Namespace) -> int:
@@ -165,11 +177,9 @@ def append(args: argparse.Namespace) -> int:
         }, indent=2))
         return 0
 
-    records = snapshot_records(ledger_dir)
-    previous: dict[str, Any] | None = None
-    if records:
-        previous = load_json(records[-1])
-        validate_record(records[-1], previous, ledger_dir)
+    records = validated_records(ledger_dir)
+    previous: dict[str, Any] | None = records[-1][2] if records else None
+    if previous:
         require(
             iso_day(source_day, "Gateway data_as_of") >= iso_day(str(previous.get("source_data_as_of")), "previous universe data_as_of"),
             "Gateway universe source date moved backwards; retrospective backfill is prohibited",
