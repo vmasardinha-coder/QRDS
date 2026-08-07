@@ -8,6 +8,7 @@ are admitted so close and quote-volume are already in a USD-like unit.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import re
 import time
 from io import StringIO
@@ -138,22 +139,44 @@ def fetch_symbol(
     return history, url, "PASS"
 
 
-def collect(session: requests.Session, identity: pd.DataFrame, symbols: list[str], outdir) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _fetch_one(symbol: str, windows: pd.DataFrame, headers: dict[str, str]) -> tuple[str, pd.DataFrame, str, str]:
+    if symbol not in windows.index:
+        return symbol, _empty(), "", "MISSING_IDENTITY_WINDOW"
+    item = windows.loc[symbol]
+    local_session = requests.Session()
+    local_session.headers.update(headers)
+    history, url, status = fetch_symbol(
+        local_session,
+        symbol,
+        pd.Timestamp(item["first_snapshot"]),
+        pd.Timestamp(item["last_snapshot"]),
+    )
+    return symbol, history, url, status
+
+
+def collect(session: requests.Session, identity: pd.DataFrame, symbols: list[str], outdir, max_workers: int = 12) -> tuple[pd.DataFrame, pd.DataFrame]:
     rows = []
     coverage = []
     windows = identity.set_index("symbol")
     unique = sorted(set(symbols))
+    headers = dict(session.headers)
+    results: dict[str, tuple[pd.DataFrame, str, str]] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(int(max_workers), 16))) as executor:
+        futures = {
+            executor.submit(_fetch_one, symbol, windows, headers): symbol
+            for symbol in unique
+        }
+        for future in concurrent.futures.as_completed(futures):
+            symbol = futures[future]
+            try:
+                _, history, url, status = future.result()
+            except Exception as exc:
+                history, url, status = _empty(), "", f"FETCH_ERROR_{type(exc).__name__}"
+            results[symbol] = (history, url, status)
+
+    # Emit artifacts and logs in deterministic symbol order regardless of worker completion order.
     for position, symbol in enumerate(unique, 1):
-        if symbol not in windows.index:
-            history, url, status = _empty(), "", "MISSING_IDENTITY_WINDOW"
-        else:
-            item = windows.loc[symbol]
-            history, url, status = fetch_symbol(
-                session,
-                symbol,
-                pd.Timestamp(item["first_snapshot"]),
-                pd.Timestamp(item["last_snapshot"]),
-            )
+        history, url, status = results.get(symbol, (_empty(), "", "FETCH_RESULT_MISSING"))
         if not history.empty:
             rows.append(history)
         coverage.append({
