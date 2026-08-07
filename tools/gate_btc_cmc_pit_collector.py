@@ -245,10 +245,19 @@ def parse_page(html: str, day: pd.Timestamp, cmc_names: dict[str, set[str]], cc_
     records = []
     for idx, row in table.iloc[:TOP_N].iterrows():
         raw_name = str(row[name_col] or "").strip()
-        slug_candidates = sorted(page_slugs.get(norm(raw_name), set()))
-        cmc_slug = slug_candidates[0] if len(slug_candidates) == 1 else ""
-        symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names, cmc_slug)
+        # Resolve the authoritative materialized ticker first so duplicated CMC
+        # table text (e.g. FETFetch.ai) can be cleaned before slug lookup.
+        symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names, "")
         name = clean_materialized_name(raw_name, symbol, resolution)
+        slug_candidates = set(page_slugs.get(norm(raw_name), set()))
+        slug_candidates.update(page_slugs.get(norm(name), set()))
+        slug_candidates = sorted(slug_candidates)
+        cmc_slug = slug_candidates[0] if len(slug_candidates) == 1 else ""
+        # Lazy rows have no authoritative symbol cell; after recovering the
+        # historical slug, give the identity maps one final fail-closed chance.
+        if resolution != "PAGE_MATERIALIZED" and cmc_slug:
+            symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names, cmc_slug)
+            name = clean_materialized_name(raw_name, symbol, resolution)
         records.append({
             "snapshot_date": day.normalize(), "rank": idx + 1, "name": name, "symbol": symbol,
             "market_cap_usd": number(row[mcap_col]) if mcap_col else np.nan,
