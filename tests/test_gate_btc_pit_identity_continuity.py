@@ -1,6 +1,12 @@
+import sys
 import unittest
+from pathlib import Path
 
-from tools.gate_btc_survivorship_definitive_runner import _continuity_ok
+TOOLS = Path(__file__).resolve().parents[1] / "tools"
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
+
+from gate_btc_survivorship_definitive_runner import _continuity_ok
 
 
 class PITIdentityContinuityTests(unittest.TestCase):
