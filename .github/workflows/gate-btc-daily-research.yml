@@ -179,7 +179,8 @@ jobs:
     needs: daily-research-collection
     if: >-
       needs.daily-research-collection.result == 'success' &&
-      github.event_name != 'pull_request'
+      github.event_name != 'pull_request' &&
+      github.ref_name == 'main'
     permissions:
       actions: read
       contents: write
