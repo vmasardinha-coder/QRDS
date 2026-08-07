@@ -264,6 +264,37 @@ def parse_page(html: str, day: pd.Timestamp, cmc_names: dict[str, set[str]], cc_
     return out
 
 
+def reconcile_unique_historical_slugs(all_rows: pd.DataFrame) -> pd.DataFrame:
+    """Reconcile lazy rows using a slug resolved unambiguously in another PIT page.
+
+    CMC currency slugs are stronger identifiers than tickers. We use the full
+    historical corpus only for identity lineage, never for features or trading
+    information. A slug is backfilled only when every resolved occurrence in
+    the corpus points to exactly one symbol. Ambiguous/reused slugs fail closed.
+    """
+    out = all_rows.copy()
+    resolved = out[
+        out["identity_resolved"].astype(bool)
+        & out["cmc_slug"].fillna("").astype(str).map(bool)
+    ].copy()
+    slug_symbols = (
+        resolved.groupby("cmc_slug")["symbol"]
+        .agg(lambda values: sorted(set(str(v) for v in values if str(v))))
+        .to_dict()
+    )
+    unique_map = {slug: symbols[0] for slug, symbols in slug_symbols.items() if len(symbols) == 1}
+    mask = (~out["identity_resolved"].astype(bool)) & out["cmc_slug"].isin(unique_map)
+    if mask.any():
+        out.loc[mask, "symbol"] = out.loc[mask, "cmc_slug"].map(unique_map)
+        out.loc[mask, "symbol_resolution"] = "CMC_CROSS_SNAPSHOT_SLUG_LINEAGE"
+        out.loc[mask, "identity_resolved"] = True
+    print(
+        f"CMC_CROSS_SNAPSHOT_SLUG_LINEAGE={int(mask.sum())} UNIQUE_SLUGS={len(unique_map)}",
+        flush=True,
+    )
+    return out
+
+
 def collect_snapshots(session: requests.Session, outdir: Path) -> pd.DataFrame:
     cmc_names, cc_names = metadata_maps(session)
     dates = pd.date_range(START_SIGNAL, END_SIGNAL, freq="ME")
@@ -276,7 +307,7 @@ def collect_snapshots(session: requests.Session, outdir: Path) -> pd.DataFrame:
         counts = frame["symbol_resolution"].value_counts().to_dict()
         print(f"CMC {index}/{len(dates)} {day.date()} rows={len(frame)} resolution={counts}", flush=True)
         time.sleep(0.08)
-    all_rows = pd.concat(rows, ignore_index=True)
+    all_rows = reconcile_unique_historical_slugs(pd.concat(rows, ignore_index=True))
     all_rows.to_csv(outdir / "CMC_MONTH_END_TOP150.csv", index=False)
     unresolved = all_rows[~all_rows["identity_resolved"]][["snapshot_date","rank","name","symbol","cmc_slug"]]
     unresolved.to_csv(outdir / "CMC_UNRESOLVED_IDENTITIES.csv", index=False)
