@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/gate-btc-survivorship-definitive-pit.yml
       - tools/gate_btc_survivorship_definitive_pit.py
+      - tools/gate_btc_survivorship_definitive_runner.py
+      - tools/gate_btc_cmc_pit_parser.py
       - tests/test_gate_btc_survivorship_definitive_pit.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
@@ -42,9 +44,24 @@ jobs:
           tests/test_gate_btc_survivorship_definitive_pit.py
           tests/test_gate_btc_survivorship_alpha_audit.py
 
+      - name: Smoke test hardened real CMC parser
+        run: |
+          python - <<'PY'
+          import pandas as pd, requests
+          from tools.gate_btc_cmc_pit_parser import parse_cmc_html
+          url='https://coinmarketcap.com/historical/20200630/'
+          r=requests.get(url,timeout=45,headers={'User-Agent':'Mozilla/5.0 GATE-BTC-Research-Only/1.0'})
+          r.raise_for_status()
+          f=parse_cmc_html(r.text,pd.Timestamp('2020-06-30'))
+          assert len(f) >= 140
+          assert f['rank'].min() == 1
+          assert f['rank'].max() >= 140
+          print('REAL_CMC_PARSER=PASS rows='+str(len(f)))
+          PY
+
       - name: Execute external monthly PIT top150 strict-next-bar study
         run: >-
-          python tools/gate_btc_survivorship_definitive_pit.py
+          python tools/gate_btc_survivorship_definitive_runner.py
           --output-dir artifacts/survivorship_definitive
           --coverage-threshold 0.95
 
