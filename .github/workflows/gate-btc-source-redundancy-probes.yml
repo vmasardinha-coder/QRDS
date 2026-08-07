@@ -15,10 +15,15 @@ on:
       - .github/workflows/gate-btc-source-redundancy-probes.yml
       - tools/gate_btc_source_redundancy_probe.py
       - tools/gate_btc_bybit_redundancy_probe.py
+      - tools/gate_btc_binance_spot_recovery_probe.py
+      - tools/gate_btc_v2a_failure_diagnostic.py
       - tests/test_gate_btc_source_redundancy_probe.py
       - tests/test_gate_btc_bybit_redundancy_probe.py
+      - tests/test_gate_btc_binance_spot_recovery_probe.py
+      - tests/test_gate_btc_v2a_failure_diagnostic.py
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -32,7 +37,7 @@ env:
 jobs:
   source-redundancy-probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +50,8 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_source_redundancy_probe.py
           tests/test_gate_btc_bybit_redundancy_probe.py
+          tests/test_gate_btc_binance_spot_recovery_probe.py
+          tests/test_gate_btc_v2a_failure_diagnostic.py
 
       - name: Resolve public archive day
         env:
@@ -73,15 +80,72 @@ jobs:
           python tools/gate_btc_bybit_redundancy_probe.py
           --output artifacts/source_probes/bybit_v5_linear_tickers.json
 
+      - name: Resolve latest successful Daily Research artifact for this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=${BRANCH}&status=success&per_page=20" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          if test -z "$RUN_ID"; then
+            echo "V2A_DAILY_ARTIFACT_AVAILABLE=false" >> "$GITHUB_ENV"
+            echo "No successful Daily Research artifact available for branch ${BRANCH}; recovery probe skipped."
+            exit 0
+          fi
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          if test -z "$ARTIFACT_ID"; then
+            echo "V2A_DAILY_ARTIFACT_AVAILABLE=false" >> "$GITHUB_ENV"
+            echo "Successful Daily Research run ${RUN_ID} has no eligible artifact; recovery probe skipped."
+            exit 0
+          fi
+          mkdir -p source_daily extracted/v2a artifacts/source_probes
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > daily_artifact.zip
+          unzip -q daily_artifact.zip -d source_daily
+          test -f source_daily/qos_daily/qos_v2a_outputs.zip
+          unzip -q source_daily/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          test -f extracted/v2a/outputs/v2a_run_manifest.json
+          test -f extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          test -f extracted/v2a/outputs/download_failures_v2a.csv
+          V2A_DAY=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          echo "V2A_DAILY_ARTIFACT_AVAILABLE=true" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_RUN_ID=${RUN_ID}" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_DAY=${V2A_DAY}" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_RUN_ID=${RUN_ID} V2A_SOURCE_DAY=${V2A_DAY}"
+
+      - name: Build advisory V2A failure classification for recovery probe
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_v2a_failure_diagnostic.py
+          --manifest extracted/v2a/outputs/v2a_run_manifest.json
+          --universe-csv extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          --failures-csv extracted/v2a/outputs/download_failures_v2a.csv
+          --snapshot-id "${V2A_SOURCE_DAY}-run-${V2A_SOURCE_RUN_ID}"
+          --source-run-id "$V2A_SOURCE_RUN_ID"
+          --output artifacts/source_probes/v2a_failure_diagnostic.json
+
+      - name: Probe Binance Spot archives for V2A recovery candidates
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_recovery_probe.py
+          --day "$V2A_SOURCE_DAY"
+          --diagnostic artifacts/source_probes/v2a_failure_diagnostic.json
+          --output artifacts/source_probes/binance_spot_v2a_recovery_candidates.json
+
       - name: Verify probes cannot alter frozen research engine
         run: |
           python - <<'PY'
           import json
+          from pathlib import Path
           paths = [
-              "artifacts/source_probes/binance_usdm_daily_1d.json",
-              "artifacts/source_probes/bybit_v5_linear_tickers.json",
+              Path("artifacts/source_probes/binance_usdm_daily_1d.json"),
+              Path("artifacts/source_probes/bybit_v5_linear_tickers.json"),
+              Path("artifacts/source_probes/binance_spot_v2a_recovery_candidates.json"),
           ]
           for path in paths:
+              if not path.exists():
+                  continue
               report = json.load(open(path, encoding="utf-8"))
               assert report["role"] == "SOURCE_REDUNDANCY_PROBE_ONLY"
               assert report["engine_feed"] is False
@@ -95,7 +159,17 @@ jobs:
               assert report["orders_generated"] == 0
               assert report["real_capital_used"] == 0
               assert report["promotion_allowed"] is False
-              print(path + " STATUS=" + report["status"])
+              print(str(path) + " STATUS=" + report["status"])
+          diagnostic = Path("artifacts/source_probes/v2a_failure_diagnostic.json")
+          if diagnostic.exists():
+              report = json.load(open(diagnostic, encoding="utf-8"))
+              assert report["advisory_only"] is True
+              assert report["feeds_frozen_engine"] is False
+              assert report["denominator_changed"] is False
+              assert report["universe_changed"] is False
+              assert report["source_order_changed"] is False
+              assert report["source_substitution_performed"] is False
+              assert report["methodology_changes"] == 0
           print("SOURCE_PROBE_SAFETY=PASS")
           PY
 
