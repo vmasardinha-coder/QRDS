@@ -1,0 +1,94 @@
+name: GATE BTC Source Redundancy Probes
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_cutoff:
+        description: Public archive UTC day (YYYY-MM-DD); defaults to yesterday
+        required: false
+        type: string
+  schedule:
+    - cron: "45 1 * * *"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-source-redundancy-probes.yml
+      - tools/gate_btc_source_redundancy_probe.py
+      - tests/test_gate_btc_source_redundancy_probe.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-source-probes-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  source-redundancy-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test source-probe safety contract
+        run: python -m unittest -v tests/test_gate_btc_source_redundancy_probe.py
+
+      - name: Resolve public archive day
+        env:
+          REQUESTED_CUTOFF: ${{ inputs.data_cutoff || '' }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime, timedelta, timezone
+          requested = os.environ.get("REQUESTED_CUTOFF", "").strip()
+          day = requested or (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
+          datetime.strptime(day, "%Y-%m-%d")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"PROBE_DATA_CUTOFF={day}\n")
+          print(f"PROBE_DATA_CUTOFF={day}")
+          PY
+
+      - name: Probe Binance public USD-M daily archives
+        run: >-
+          python tools/gate_btc_source_redundancy_probe.py
+          --day "$PROBE_DATA_CUTOFF"
+          --symbols BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT
+          --output artifacts/source_probes/binance_usdm_daily_1d.json
+
+      - name: Verify probe cannot alter frozen research engine
+        run: |
+          python - <<'PY'
+          import json
+          report = json.load(open("artifacts/source_probes/binance_usdm_daily_1d.json", encoding="utf-8"))
+          assert report["role"] == "SOURCE_REDUNDANCY_PROBE_ONLY"
+          assert report["engine_feed"] is False
+          assert report["feeds_frozen_engine"] is False
+          assert report["source_substitution_performed"] is False
+          assert report["strategy_inputs_changed"] is False
+          assert report["methodology_changes"] == 0
+          assert report["research_only"] is True
+          assert report["shadow_only"] is True
+          assert report["not_approved"] is True
+          assert report["orders_generated"] == 0
+          assert report["real_capital_used"] == 0
+          assert report["promotion_allowed"] is False
+          print("SOURCE_PROBE_SAFETY=PASS")
+          print("LIVE_SOURCE_STATUS=" + report["status"])
+          PY
+
+      - name: Upload source-probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-source-probes-${{ github.run_id }}
+          path: artifacts/source_probes/
+          retention-days: 30
+          if-no-files-found: error
