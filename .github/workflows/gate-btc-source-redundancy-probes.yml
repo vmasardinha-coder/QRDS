@@ -16,10 +16,12 @@ on:
       - tools/gate_btc_source_redundancy_probe.py
       - tools/gate_btc_bybit_redundancy_probe.py
       - tools/gate_btc_binance_spot_recovery_probe.py
+      - tools/gate_btc_binance_spot_history_probe.py
       - tools/gate_btc_v2a_failure_diagnostic.py
       - tests/test_gate_btc_source_redundancy_probe.py
       - tests/test_gate_btc_bybit_redundancy_probe.py
       - tests/test_gate_btc_binance_spot_recovery_probe.py
+      - tests/test_gate_btc_binance_spot_history_probe.py
       - tests/test_gate_btc_v2a_failure_diagnostic.py
 
 permissions:
@@ -51,6 +53,7 @@ jobs:
           tests/test_gate_btc_source_redundancy_probe.py
           tests/test_gate_btc_bybit_redundancy_probe.py
           tests/test_gate_btc_binance_spot_recovery_probe.py
+          tests/test_gate_btc_binance_spot_history_probe.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
 
       - name: Resolve public archive day
@@ -133,6 +136,15 @@ jobs:
           --diagnostic artifacts/source_probes/v2a_failure_diagnostic.json
           --output artifacts/source_probes/binance_spot_v2a_recovery_candidates.json
 
+      - name: Measure Binance Spot monthly history depth for recovery leads
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_history_probe.py
+          --cutoff-day "$V2A_SOURCE_DAY"
+          --spot-report artifacts/source_probes/binance_spot_v2a_recovery_candidates.json
+          --months 12
+          --output artifacts/source_probes/binance_spot_v2a_history_depth.json
+
       - name: Verify probes cannot alter frozen research engine
         run: |
           python - <<'PY'
@@ -142,6 +154,7 @@ jobs:
               Path("artifacts/source_probes/binance_usdm_daily_1d.json"),
               Path("artifacts/source_probes/bybit_v5_linear_tickers.json"),
               Path("artifacts/source_probes/binance_spot_v2a_recovery_candidates.json"),
+              Path("artifacts/source_probes/binance_spot_v2a_history_depth.json"),
           ]
           for path in paths:
               if not path.exists():
