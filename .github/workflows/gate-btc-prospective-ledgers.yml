@@ -51,6 +51,7 @@ jobs:
           tests/test_gate_btc_d50_source_revision.py
           tests/test_gate_btc_prospective_ledgers.py
           tests/test_gate_btc_universe_ledger.py
+          tests/test_gate_btc_v2a_data_ledger.py
 
   append-prospective-ledgers:
     needs: contract-tests
@@ -147,13 +148,18 @@ jobs:
           test -f extracted/v2a/outputs/v2a_run_manifest.json
           test -f extracted/v2a/outputs/qos_v2a_current_portfolios.csv
           test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          test -f extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          test -f extracted/v2a/outputs/data_quality_summary.csv
+          test -f extracted/v2a/outputs/download_failures_v2a.csv
           test -f extracted/delta/outputs/strategy_evidence_gate.csv
           GATEWAY_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/gateway/outputs/v2a1_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
           LOCK_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
           UNIVERSE_SNAPSHOT_ID="${GATEWAY_SNAPSHOT_ID}-run-${SOURCE_RUN_ID}"
+          V2A_DATA_SNAPSHOT_ID="${LOCK_SNAPSHOT_ID}-run-${SOURCE_RUN_ID}"
           echo "GATEWAY_SNAPSHOT_ID=$GATEWAY_SNAPSHOT_ID" >> "$GITHUB_ENV"
           echo "LOCK_SNAPSHOT_ID=$LOCK_SNAPSHOT_ID" >> "$GITHUB_ENV"
           echo "UNIVERSE_SNAPSHOT_ID=$UNIVERSE_SNAPSHOT_ID" >> "$GITHUB_ENV"
+          echo "V2A_DATA_SNAPSHOT_ID=$V2A_DATA_SNAPSHOT_ID" >> "$GITHUB_ENV"
 
       - name: Check out immutable runtime branch
         uses: actions/checkout@v4
@@ -161,6 +167,17 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+
+      - name: Preserve immutable V2A point-in-time data quality
+        run: >-
+          python tools/gate_btc_v2a_data_ledger.py append
+          --manifest extracted/v2a/outputs/v2a_run_manifest.json
+          --universe-csv extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          --quality-csv extracted/v2a/outputs/data_quality_summary.csv
+          --failures-csv extracted/v2a/outputs/download_failures_v2a.csv
+          --snapshot-id "$V2A_DATA_SNAPSHOT_ID"
+          --source-run-id "$SOURCE_RUN_ID"
+          --ledger-dir runtime_repo/runtime/data_quality/v2a
 
       - name: Preserve immutable Gateway point-in-time universe
         run: >-
@@ -238,7 +255,7 @@ jobs:
           set -euo pipefail
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/universe_snapshots/gateway runtime/GATE_BTC_MEASUREMENT_STATUS.json
+          git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/universe_snapshots/gateway runtime/data_quality/v2a runtime/GATE_BTC_MEASUREMENT_STATUS.json
           git diff --cached --quiet && exit 0
           git commit -m "Append GATE BTC prospective measurements ${LOCK_SNAPSHOT_ID}"
           git push origin HEAD:gate-btc-runtime
