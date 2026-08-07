@@ -1,6 +1,13 @@
 name: GATE BTC Prospective Ledgers
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/gate-btc-prospective-ledgers.yml"
+      - "config/lock25_50_shadow_contract_v1.json"
+      - "tools/gate_btc_*.py"
+      - "tests/test_gate_btc_*.py"
+      - "tests/test_gateway_measurement_status.py"
   workflow_dispatch:
     inputs:
       run_id:
@@ -13,10 +20,10 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
 
 concurrency:
-  group: gate-btc-prospective-ledgers
+  group: gate-btc-prospective-ledgers-${{ github.event_name }}-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 env:
@@ -25,17 +32,12 @@ env:
   GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE: "2026-08-06"
 
 jobs:
-  append-prospective-ledgers:
-    if: >-
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+  contract-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
-      - name: Check out frozen ledger activation code
+      - name: Check out code under review
         uses: actions/checkout@v4
-        with:
-          ref: agent/gate-btc-ledger-activation
 
       - uses: actions/setup-python@v5
         with:
@@ -47,6 +49,27 @@ jobs:
           tests/test_gate_btc_measurement_ledgers.py
           tests/test_gateway_measurement_status.py
           tests/test_gate_btc_d50_source_revision.py
+          tests/test_gate_btc_prospective_ledgers.py
+
+  append-prospective-ledgers:
+    needs: contract-tests
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out canonical merged code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Resolve and validate source run
         env:
