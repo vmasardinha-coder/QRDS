@@ -4,7 +4,7 @@ import unittest
 import urllib.error
 import zipfile
 
-from tools.gate_btc_source_redundancy_probe import parse_checksum, run_probe, validate_daily_1d_zip
+from tools.gate_btc_source_redundancy_probe import archive_path, parse_checksum, run_probe, validate_daily_1d_zip
 
 
 def make_zip(day="2026-08-06", close="123.45"):
@@ -31,6 +31,16 @@ class SourceRedundancyProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "day mismatch"):
             validate_daily_1d_zip(make_zip(), "2026-08-05")
 
+    def test_market_paths_are_separate(self):
+        self.assertEqual(
+            archive_path("BTCUSDT", "2026-08-06", "usdm"),
+            "/data/futures/um/daily/klines/BTCUSDT/1d/BTCUSDT-1d-2026-08-06.zip",
+        )
+        self.assertEqual(
+            archive_path("BTCUSDT", "2026-08-06", "spot"),
+            "/data/spot/daily/klines/BTCUSDT/1d/BTCUSDT-1d-2026-08-06.zip",
+        )
+
     def test_full_probe_pass_and_never_feeds_engine(self):
         archive = make_zip()
         checksum = (hashlib.sha256(archive).hexdigest() + "  BTCUSDT.zip\n").encode()
@@ -40,11 +50,28 @@ class SourceRedundancyProbeTests(unittest.TestCase):
 
         result = run_probe("2026-08-06", ["BTCUSDT", "ETHUSDT"], fetcher)
         self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["market"], "usdm")
         self.assertFalse(result["feeds_frozen_engine"])
         self.assertFalse(result["source_substitution_performed"])
         self.assertEqual(result["methodology_changes"], 0)
         self.assertEqual(result["orders_generated"], 0)
         self.assertEqual(result["real_capital_used"], 0)
+
+    def test_spot_probe_is_evidence_only(self):
+        archive = make_zip()
+        checksum = (hashlib.sha256(archive).hexdigest() + "  BTCUSDT.zip\n").encode()
+        seen = []
+
+        def fetcher(url):
+            seen.append(url)
+            return checksum if url.endswith(".CHECKSUM") else archive
+
+        result = run_probe("2026-08-06", ["KASUSDT"], fetcher, market="spot")
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["source"], "BINANCE_PUBLIC_DATA_SPOT_DAILY_KLINES")
+        self.assertTrue(all("/data/spot/daily/klines/" in url for url in seen))
+        self.assertFalse(result["engine_feed"])
+        self.assertFalse(result["strategy_inputs_changed"])
 
     def test_integrity_failure_is_explicit(self):
         archive = make_zip()
