@@ -160,6 +160,21 @@ def resolve_symbol(name: str, materialized: str, cmc_names: dict[str, set[str]],
     return pseudo(name), "UNRESOLVED_AUDIT_KEY"
 
 
+def clean_materialized_name(name: str, symbol: str, resolution: str) -> str:
+    """Remove the duplicated ticker prefix created by CMC's materialized cell.
+
+    This is deliberately restricted to PAGE_MATERIALIZED rows, where the symbol
+    comes from a separate authoritative table cell. Lazy rows are never guessed.
+    """
+    raw = str(name or "").strip()
+    ticker = str(symbol or "").strip()
+    if resolution == "PAGE_MATERIALIZED" and ticker and raw.upper().startswith(ticker.upper()) and len(raw) > len(ticker):
+        remainder = raw[len(ticker):].strip()
+        if remainder:
+            return remainder
+    return raw
+
+
 def parse_page(html: str, day: pd.Timestamp, cmc_names: dict[str, set[str]], cc_names: dict[str, set[str]]) -> pd.DataFrame:
     tables = [flatten(t) for t in pd.read_html(StringIO(html))]
     candidates = []
@@ -184,8 +199,9 @@ def parse_page(html: str, day: pd.Timestamp, cmc_names: dict[str, set[str]], cc_
         raise RuntimeError(f"CMC ordered-table rank verification failed {day.date()} mismatches={mismatch}")
     records = []
     for idx, row in table.iloc[:TOP_N].iterrows():
-        name = str(row[name_col] or "").strip()
-        symbol, resolution = resolve_symbol(name, row[symbol_col], cmc_names, cc_names)
+        raw_name = str(row[name_col] or "").strip()
+        symbol, resolution = resolve_symbol(raw_name, row[symbol_col], cmc_names, cc_names)
+        name = clean_materialized_name(raw_name, symbol, resolution)
         records.append({
             "snapshot_date": day.normalize(), "rank": idx + 1, "name": name, "symbol": symbol,
             "market_cap_usd": number(row[mcap_col]) if mcap_col else np.nan,
