@@ -15,6 +15,7 @@ import gate_btc_coinmetrics_pit_history as cm_history
 import gate_btc_cdd_binance_pit_history as cdd_history
 import gate_btc_exchange_pit_history as exchange_history
 import gate_btc_bybit_okx_pit_history as byok_history
+import gate_btc_binance_vision_pit_history as binance_vision
 import gate_btc_survivorship_definitive_pit as definitive
 
 _ORIGINAL_HTTP_GET = definitive.http_get
@@ -151,6 +152,30 @@ def _cascade_collect_histories(session, identity, outdir: Path):
     bybit_master, _ = byok_history.collect_source(session, need_extra, outdir, "bybit", byok_history.fetch_bybit)
     okx_master, _ = byok_history.collect_source(session, need_extra, outdir, "okx", byok_history.fetch_okx)
 
+    # Official Binance Data Vision is an archive-recovery layer, so query it
+    # only for symbols still lacking timely PIT coverage after the live/public
+    # exchange cascade. This avoids thousands of irrelevant archive requests.
+    need_archive = []
+    for r in identity.itertuples(index=False):
+        symbol = str(r.symbol)
+        if not bool(getattr(r, "exchange_identity_ok", False)):
+            continue
+        best, _ = _choose_source(
+            [
+                _slice(cm_master, symbol),
+                _slice(cdd_master, symbol),
+                _slice(gate_master, symbol),
+                _slice(kucoin_master, symbol),
+                _slice(bybit_master, symbol),
+                _slice(okx_master, symbol),
+            ],
+            pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot),
+        )
+        if _needs_extra(best, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot)):
+            need_archive.append(symbol)
+    print(f"BINANCE_VISION_ARCHIVE_CANDIDATES={len(need_archive)}", flush=True)
+    vision_master, _ = binance_vision.collect(session, identity, need_archive, outdir)
+
     selected = []
     coverage = []
     symbols = identity["symbol"].astype(str).tolist()
@@ -164,6 +189,7 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             _slice(kucoin_master, symbol),
             _slice(bybit_master, symbol),
             _slice(okx_master, symbol),
+            _slice(vision_master, symbol),
         ]
         best, source = _choose_source(frames, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
         if not best.empty:
@@ -185,6 +211,7 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             "kucoin_rows": len(frames[3]),
             "bybit_rows": len(frames[4]),
             "okx_rows": len(frames[5]),
+            "binance_vision_rows": len(frames[6]),
         })
         mask = identity["symbol"].astype(str) == symbol
         identity.loc[mask, "history_usable"] = status == "PASS"
@@ -200,6 +227,7 @@ def _cascade_collect_histories(session, identity, outdir: Path):
         "symbols_total": len(symbols),
         "history_pass": int((cov["status"] == "PASS").sum()),
         "extra_candidates": len(need_extra),
+        "binance_vision_archive_candidates": len(need_archive),
         "selected_sources": source_counts,
     }
     (outdir / "SOURCE_CASCADE_SUMMARY.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -248,7 +276,7 @@ def _write_text_cascade(outdir, manifest, alpha, survivor_alpha, identity, cover
         text = method.read_text(encoding="utf-8")
         text = text.replace(
             "Daily price/volume source: CryptoCompare CCCAGG, identity-audited by symbol/name history.",
-            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT, KuCoin USDT, Bybit spot USDT, and OKX spot USDT. Missing history is never synthesized.",
+            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT, KuCoin USDT, Bybit spot USDT, OKX spot USDT, and official Binance Data Vision spot archives with SHA-256 verification. Missing history is never synthesized.",
         )
         method.write_text(text, encoding="utf-8")
     executive = outdir / "EXECUTIVE_SUMMARY.txt"
