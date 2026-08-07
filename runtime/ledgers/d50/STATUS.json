@@ -11,18 +11,20 @@
   "orders_generated": 0,
   "promotion_allowed": false,
   "prospective_immutable_ledger": {
-    "blocker": "immutable prospective row changed: 2026-08-01 D50_CONTROL",
+    "blocker": "provenance-only source revision confirmed for 2026-08-01 D50_CONTROL; local updater repair not yet validated",
     "current": 4,
+    "economic_fields_identical": true,
     "frozen_history_must_be_preserved": true,
-    "impact": "prospective append paused; historical replay and primary collection remain valid",
+    "impact": "prospective append remains paused at 4/30 until the local updater repair passes copied-state dry run and frozen-row verification",
     "mutation_performed": false,
-    "required_action": "run field-level non-destructive audit, correct deterministic cause, regenerate candidate only",
+    "required_action": "run the final local source-revision repair; preserve all frozen rows; append only genuinely newer admissible dates",
     "required_files": [
-      "original frozen row for 2026-08-01 D50_CONTROL",
-      "recalculated candidate row for 2026-08-01 D50_CONTROL"
+      "successful final local repair result",
+      "post-repair frozen-row verification"
     ],
     "resume_from": "4/30",
-    "status": "BLOCKED_IMMUTABLE_ROW_CHANGED",
+    "source_revision_only": true,
+    "status": "BLOCKED_LOCAL_SOURCE_REVISION_REPAIR_PENDING",
     "target": 30,
     "user_action_required": true
   },
@@ -30,5 +32,5 @@
   "research_only": true,
   "schema": "gate_btc.d50_measurement_status.v1",
   "shadow_only": true,
-  "status_sha256": "f4245661f7e844f9f84c6c46b45c0be82eddff5b51e7f88c81a5c92e61fafeab"
+  "status_sha256": "bc78eb57e96caf6cfe8f4672dde18ebdf4f3ba63695b91d6d133c1e6af685790"
 }
