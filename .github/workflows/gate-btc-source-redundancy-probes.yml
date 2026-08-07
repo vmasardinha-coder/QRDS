@@ -14,7 +14,9 @@ on:
     paths:
       - .github/workflows/gate-btc-source-redundancy-probes.yml
       - tools/gate_btc_source_redundancy_probe.py
+      - tools/gate_btc_bybit_redundancy_probe.py
       - tests/test_gate_btc_source_redundancy_probe.py
+      - tests/test_gate_btc_bybit_redundancy_probe.py
 
 permissions:
   contents: read
@@ -38,8 +40,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test source-probe safety contract
-        run: python -m unittest -v tests/test_gate_btc_source_redundancy_probe.py
+      - name: Test source-probe safety contracts
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_source_redundancy_probe.py
+          tests/test_gate_btc_bybit_redundancy_probe.py
 
       - name: Resolve public archive day
         env:
@@ -63,25 +68,35 @@ jobs:
           --symbols BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT
           --output artifacts/source_probes/binance_usdm_daily_1d.json
 
-      - name: Verify probe cannot alter frozen research engine
+      - name: Probe Bybit public V5 regional availability
+        run: >-
+          python tools/gate_btc_bybit_redundancy_probe.py
+          --output artifacts/source_probes/bybit_v5_linear_tickers.json
+
+      - name: Verify probes cannot alter frozen research engine
         run: |
           python - <<'PY'
           import json
-          report = json.load(open("artifacts/source_probes/binance_usdm_daily_1d.json", encoding="utf-8"))
-          assert report["role"] == "SOURCE_REDUNDANCY_PROBE_ONLY"
-          assert report["engine_feed"] is False
-          assert report["feeds_frozen_engine"] is False
-          assert report["source_substitution_performed"] is False
-          assert report["strategy_inputs_changed"] is False
-          assert report["methodology_changes"] == 0
-          assert report["research_only"] is True
-          assert report["shadow_only"] is True
-          assert report["not_approved"] is True
-          assert report["orders_generated"] == 0
-          assert report["real_capital_used"] == 0
-          assert report["promotion_allowed"] is False
+          paths = [
+              "artifacts/source_probes/binance_usdm_daily_1d.json",
+              "artifacts/source_probes/bybit_v5_linear_tickers.json",
+          ]
+          for path in paths:
+              report = json.load(open(path, encoding="utf-8"))
+              assert report["role"] == "SOURCE_REDUNDANCY_PROBE_ONLY"
+              assert report["engine_feed"] is False
+              assert report["feeds_frozen_engine"] is False
+              assert report["source_substitution_performed"] is False
+              assert report["strategy_inputs_changed"] is False
+              assert report["methodology_changes"] == 0
+              assert report["research_only"] is True
+              assert report["shadow_only"] is True
+              assert report["not_approved"] is True
+              assert report["orders_generated"] == 0
+              assert report["real_capital_used"] == 0
+              assert report["promotion_allowed"] is False
+              print(path + " STATUS=" + report["status"])
           print("SOURCE_PROBE_SAFETY=PASS")
-          print("LIVE_SOURCE_STATUS=" + report["status"])
           PY
 
       - name: Upload source-probe evidence
