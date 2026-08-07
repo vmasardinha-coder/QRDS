@@ -4,6 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
+from tools.gate_btc_measurement_common import validate_contract
 from tools.gate_btc_prospective_ledgers import append_gateway, audit_d50
 
 
@@ -93,6 +94,18 @@ class ProspectiveLedgerTests(unittest.TestCase):
         self.assertNotIn("LOCK75", lock_contract["variants"])
         self.assertEqual(replay_contract["locks"], ["CONTROL", "LOCK25", "LOCK50"])
         self.assertNotIn("LOCK75", replay_contract["locks"])
+        validate_contract(lock_contract)
+
+        bad = json.loads(json.dumps(lock_contract))
+        bad["variants"]["LOCK75"] = {
+            "arming_level_multiple": 1.75,
+            "protected_share_of_accumulated_profit": 0.75,
+            "destination": "VIRTUAL_CASH",
+            "retracement_trigger_pct": 0.20,
+            "double_counting_prohibited": True,
+        }
+        with self.assertRaisesRegex(RuntimeError, "exactly LOCK25 and LOCK50"):
+            validate_contract(bad)
 
 
 if __name__ == "__main__":
