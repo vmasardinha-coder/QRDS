@@ -1,0 +1,81 @@
+name: GATE BTC Definitive PIT Survivorship Alpha
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-survivorship-definitive-pit.yml
+      - tools/gate_btc_survivorship_definitive_pit.py
+      - tests/test_gate_btc_survivorship_definitive_pit.py
+      - tools/gate_btc_survivorship_alpha_audit.py
+      - migration/canonical/v2a/scripts/00_run_all_v2a.py
+      - migration/canonical/v2a/config_v2a.json
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  definitive-pit-alpha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: migration/canonical/v2a/requirements.txt
+
+      - name: Install research dependencies
+        run: |
+          pip install -r migration/canonical/v2a/requirements.txt
+          pip install 'lxml>=5,<7'
+
+      - name: Test definitive PIT contracts
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_survivorship_definitive_pit.py
+          tests/test_gate_btc_survivorship_alpha_audit.py
+
+      - name: Execute external monthly PIT top150 strict-next-bar study
+        run: >-
+          python tools/gate_btc_survivorship_definitive_pit.py
+          --output-dir artifacts/survivorship_definitive
+          --coverage-threshold 0.95
+
+      - name: Verify safety and result contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.load(open('artifacts/survivorship_definitive/MANIFEST.json', encoding='utf-8'))
+          assert p['status'] in {'PASS_FULL_COVERAGE_AUDIT','PARTIAL_COVERAGE_RESEARCH_ONLY'}
+          assert p['protocol'] == 'EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR'
+          assert p['cmc_snapshots'] == 74
+          assert p['pit_unique_symbols'] > 202
+          assert p['research_only'] is True
+          assert p['shadow_only'] is True
+          assert p['not_approved'] is True
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          assert p['engine_feed'] is False
+          assert p['methodology_changes'] == 0
+          assert Path('artifacts/survivorship_definitive/GATE_BTC_SURVIVORSHIP_ALPHA_DEFINITIVE.zip').is_file()
+          print('DEFINITIVE_PIT_CONTRACT=PASS')
+          print('STATUS='+p['status'])
+          print('PIT_UNIQUE_SYMBOLS='+str(p['pit_unique_symbols']))
+          PY
+
+      - name: Upload definitive research package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-survivorship-definitive-${{ github.run_id }}
+          path: artifacts/survivorship_definitive/
+          retention-days: 30
+          if-no-files-found: warn
