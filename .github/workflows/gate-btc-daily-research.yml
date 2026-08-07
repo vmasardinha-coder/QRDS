@@ -50,7 +50,7 @@ on:
       - migration/reporting/**
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: gate-btc-daily-research-${{ github.ref }}
@@ -174,21 +174,41 @@ jobs:
           path: artifacts/
           retention-days: 30
           if-no-files-found: error
+
+  publish-runtime-pointer:
+    needs: daily-research-collection
+    if: >-
+      needs.daily-research-collection.result == 'success' &&
+      github.event_name != 'pull_request'
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download validated daily evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-daily-research-${{ github.run_id }}
+          path: daily_evidence
+      - name: Check out runtime branch only
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
       - name: Publish deterministic pointer to runtime branch
-        if: success() && github.event_name != 'pull_request'
         run: |
-          git config user.name "gate-btc-actions"
-          git config user.email "gate-btc-actions@users.noreply.github.com"
-          git fetch origin gate-btc-runtime
-          git worktree add /tmp/gate-btc-runtime origin/gate-btc-runtime
-          cd /tmp/gate-btc-runtime
-          git checkout -B gate-btc-runtime origin/gate-btc-runtime
-          mkdir -p runtime
-          cp "$GITHUB_WORKSPACE/artifacts/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json" runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          git add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          if git diff --cached --quiet; then
+          set -euo pipefail
+          test -f daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          git -C runtime_repo config user.name "gate-btc-actions"
+          git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
+          mkdir -p runtime_repo/runtime
+          cp daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          if git -C runtime_repo diff --cached --quiet; then
             echo "Runtime pointer already current"
           else
-            git commit -m "Update latest eligible GATE BTC run pointer"
-            git push origin HEAD:gate-btc-runtime
+            git -C runtime_repo commit -m "Update latest eligible GATE BTC run pointer"
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
           fi
