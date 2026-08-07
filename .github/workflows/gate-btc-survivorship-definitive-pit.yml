@@ -11,6 +11,7 @@ on:
       - tools/gate_btc_cmc_pit_parser.py
       - tools/gate_btc_cmc_pit_collector.py
       - tools/gate_btc_coinmetrics_pit_history.py
+      - tools/gate_btc_cdd_binance_pit_history.py
       - tests/test_gate_btc_survivorship_definitive_pit.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
@@ -78,6 +79,19 @@ jobs:
           h=fetch_asset_history(s,'btc')
           assert len(h) >= 2000
           print('COINMETRICS_COMMUNITY=PASS assets='+str(len(ref))+' catalog_assets='+str(len(catalog))+' btc_rows='+str(len(h)))
+          PY
+
+      - name: Smoke test CryptoDataDownload Binance daily source
+        run: |
+          python - <<'PY'
+          import requests
+          from tools.gate_btc_cdd_binance_pit_history import fetch_symbol
+          s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-Research-Only/1.0'})
+          h,url,status=fetch_symbol(s,'BTC')
+          assert status == 'PASS'
+          assert len(h) >= 2000
+          assert h['close_usd'].notna().all() and h['volume_usd'].notna().all()
+          print('CDD_BINANCE=PASS rows='+str(len(h))+' source='+url)
           PY
 
       - name: Execute external monthly PIT top150 strict-next-bar study
