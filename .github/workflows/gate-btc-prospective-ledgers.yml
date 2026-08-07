@@ -50,6 +50,7 @@ jobs:
           tests/test_gateway_measurement_status.py
           tests/test_gate_btc_d50_source_revision.py
           tests/test_gate_btc_prospective_ledgers.py
+          tests/test_gate_btc_universe_ledger.py
 
   append-prospective-ledgers:
     needs: contract-tests
@@ -140,6 +141,7 @@ jobs:
           set -euo pipefail
           test -f extracted/gateway/outputs/v2a1_run_manifest.json
           test -f extracted/gateway/outputs/scanner_snapshot_status.json
+          test -f extracted/gateway/outputs/scanner_top500_raw.csv
           test -f extracted/gateway/outputs/strategy_compositions.csv
           test -f extracted/gateway/outputs/strategy_execution_profiles.csv
           test -f extracted/v2a/outputs/v2a_run_manifest.json
@@ -148,8 +150,10 @@ jobs:
           test -f extracted/delta/outputs/strategy_evidence_gate.csv
           GATEWAY_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/gateway/outputs/v2a1_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
           LOCK_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          UNIVERSE_SNAPSHOT_ID="${GATEWAY_SNAPSHOT_ID}-run-${SOURCE_RUN_ID}"
           echo "GATEWAY_SNAPSHOT_ID=$GATEWAY_SNAPSHOT_ID" >> "$GITHUB_ENV"
           echo "LOCK_SNAPSHOT_ID=$LOCK_SNAPSHOT_ID" >> "$GITHUB_ENV"
+          echo "UNIVERSE_SNAPSHOT_ID=$UNIVERSE_SNAPSHOT_ID" >> "$GITHUB_ENV"
 
       - name: Check out immutable runtime branch
         uses: actions/checkout@v4
@@ -157,6 +161,16 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+
+      - name: Preserve immutable Gateway point-in-time universe
+        run: >-
+          python tools/gate_btc_universe_ledger.py append
+          --raw-csv extracted/gateway/outputs/scanner_top500_raw.csv
+          --manifest extracted/gateway/outputs/v2a1_run_manifest.json
+          --snapshot-status extracted/gateway/outputs/scanner_snapshot_status.json
+          --snapshot-id "$UNIVERSE_SNAPSHOT_ID"
+          --source-run-id "$SOURCE_RUN_ID"
+          --ledger-dir runtime_repo/runtime/universe_snapshots/gateway
 
       - name: Append Gateway Dynamics snapshot
         run: >-
@@ -224,7 +238,7 @@ jobs:
           set -euo pipefail
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/GATE_BTC_MEASUREMENT_STATUS.json
+          git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/universe_snapshots/gateway runtime/GATE_BTC_MEASUREMENT_STATUS.json
           git diff --cached --quiet && exit 0
           git commit -m "Append GATE BTC prospective measurements ${LOCK_SNAPSHOT_ID}"
           git push origin HEAD:gate-btc-runtime
