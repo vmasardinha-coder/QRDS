@@ -13,6 +13,7 @@ import gate_btc_cmc_pit_collector as cmc_collector
 import gate_btc_cmc_pit_parser as cmc_parser
 import gate_btc_coinmetrics_pit_history as cm_history
 import gate_btc_cdd_binance_pit_history as cdd_history
+import gate_btc_exchange_pit_history as exchange_history
 import gate_btc_survivorship_definitive_pit as definitive
 
 _ORIGINAL_HTTP_GET = definitive.http_get
@@ -21,8 +22,6 @@ _ORIGINAL_RUN_ALPHA = definitive.run_alpha
 _ORIGINAL_DIRECT = definitive.direct_delta_fits
 _CM_REFERENCE = None
 _CM_CATALOG = None
-_SNAPSHOTS = None
-_V2A = None
 
 
 class _StubCoinListResponse:
@@ -53,9 +52,7 @@ def _continuity_ok(symbol: str, names: list[str]) -> bool:
 
 
 def _cascade_identity_audit(snapshots, _unused_coinlist, v2a):
-    global _CM_REFERENCE, _CM_CATALOG, _SNAPSHOTS, _V2A
-    _SNAPSHOTS = snapshots.copy()
-    _V2A = v2a
+    global _CM_REFERENCE, _CM_CATALOG
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 GATE-BTC-Research-Only/1.0"})
     _CM_REFERENCE = cm_history.asset_reference(session)
@@ -77,47 +74,81 @@ def _cascade_identity_audit(snapshots, _unused_coinlist, v2a):
     return identity
 
 
-def _choose_source(cm: pd.DataFrame, cdd: pd.DataFrame) -> tuple[pd.DataFrame, str]:
-    if cm.empty and cdd.empty:
-        return pd.DataFrame(columns=["date","symbol","close_usd","volume_usd","source"]), ""
-    if cm.empty:
-        return cdd.copy(), str(cdd["source"].iloc[0])
-    if cdd.empty:
-        out = cm.copy()
-        if "source" not in out:
-            out["source"] = "coinmetrics_community"
-        return out, "coinmetrics_community"
-    cm0 = cm.dropna(subset=["date","close_usd","volume_usd"]).copy()
-    cdd0 = cdd.dropna(subset=["date","close_usd","volume_usd"]).copy()
-    # One source per symbol avoids artificial source-switch returns. Pick the
-    # source with the broader usable daily history; ties prefer Binance quote-volume.
-    cm_score = (len(cm0), -(cm0["date"].min().toordinal() if len(cm0) else 9999999))
-    cdd_score = (len(cdd0), -(cdd0["date"].min().toordinal() if len(cdd0) else 9999999))
-    if cdd_score >= cm_score:
-        return cdd0, str(cdd0["source"].iloc[0])
-    if "source" not in cm0:
-        cm0["source"] = "coinmetrics_community"
-    return cm0, "coinmetrics_community"
+def _clean(frame: pd.DataFrame, source_default: str = "") -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=["date","symbol","close_usd","volume_usd","source"])
+    out = frame.dropna(subset=["date","close_usd","volume_usd"]).copy()
+    if "source" not in out:
+        out["source"] = source_default
+    return out.sort_values("date").drop_duplicates("date", keep="last")
+
+
+def _choose_source(frames: list[pd.DataFrame], first_snapshot: pd.Timestamp, last_snapshot: pd.Timestamp) -> tuple[pd.DataFrame, str]:
+    candidates = []
+    membership_end = min(pd.Timestamp("2026-08-06"), pd.Timestamp(last_snapshot) + pd.Timedelta(days=35))
+    membership_start = pd.Timestamp(first_snapshot)
+    for frame in frames:
+        f = _clean(frame)
+        if f.empty:
+            continue
+        member_rows = int(((f["date"] >= membership_start) & (f["date"] <= membership_end)).sum())
+        pre_rows = int(((f["date"] < membership_start) & (f["date"] >= membership_start - pd.Timedelta(days=200))).sum())
+        span_days = int((f["date"].max() - f["date"].min()).days) if len(f) > 1 else 0
+        source = str(f["source"].iloc[0])
+        # Prioritize actual PIT membership coverage, then factor lookback support,
+        # then total continuity. No source stitching inside one symbol.
+        score = (member_rows, pre_rows, len(f), span_days, source.startswith("cryptodatadownload_binance_"))
+        candidates.append((score, f, source))
+    if not candidates:
+        return _clean(pd.DataFrame()), ""
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    _, best, source = candidates[0]
+    return best, source
 
 
 def _cascade_collect_histories(session, identity, outdir: Path):
     if _CM_REFERENCE is not None:
         _CM_REFERENCE.to_csv(outdir / "COINMETRICS_ASSET_REFERENCE.csv", index=False)
-    cm_master, cm_cov = cm_history.collect_histories(session, identity, outdir)
+    cm_master, _ = cm_history.collect_histories(session, identity, outdir)
     candidates = identity.loc[identity["exchange_identity_ok"], "symbol"].astype(str).tolist()
-    cdd_master, cdd_cov = cdd_history.collect(session, candidates, outdir)
+    cdd_master, _ = cdd_history.collect(session, candidates, outdir)
+
+    # First pass: identify names still lacking usable coverage over their PIT membership.
+    need_extra = []
+    for r in identity.itertuples(index=False):
+        symbol = str(r.symbol)
+        if not bool(getattr(r, "exchange_identity_ok", False)):
+            continue
+        cm = cm_master[cm_master["symbol"] == symbol].copy() if not cm_master.empty else pd.DataFrame()
+        cdd = cdd_master[cdd_master["symbol"] == symbol].copy() if not cdd_master.empty else pd.DataFrame()
+        best, _ = _choose_source([cm, cdd], pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
+        if best.empty:
+            need_extra.append(symbol)
+            continue
+        membership = best[(best["date"] >= pd.Timestamp(r.first_snapshot)) & (best["date"] <= min(pd.Timestamp("2026-08-06"), pd.Timestamp(r.last_snapshot) + pd.Timedelta(days=35)))]
+        if membership.empty or membership["date"].min() > pd.Timestamp(r.first_snapshot) + pd.Timedelta(days=7):
+            need_extra.append(symbol)
+
+    print(f"CASCADE_EXTRA_CANDIDATES={len(need_extra)}", flush=True)
+    gate_master, _ = exchange_history.collect_source(session, need_extra, outdir, "gateio", exchange_history.fetch_gate)
+    kucoin_master, _ = exchange_history.collect_source(session, need_extra, outdir, "kucoin", exchange_history.fetch_kucoin)
 
     selected = []
     coverage = []
     symbols = identity["symbol"].astype(str).tolist()
-    for symbol in symbols:
+    source_counts = {}
+    for r in identity.itertuples(index=False):
+        symbol = str(r.symbol)
         cm = cm_master[cm_master["symbol"] == symbol].copy() if not cm_master.empty else pd.DataFrame()
         cdd = cdd_master[cdd_master["symbol"] == symbol].copy() if not cdd_master.empty else pd.DataFrame()
-        best, source = _choose_source(cm, cdd)
+        gate = gate_master[gate_master["symbol"] == symbol].copy() if not gate_master.empty else pd.DataFrame()
+        kucoin = kucoin_master[kucoin_master["symbol"] == symbol].copy() if not kucoin_master.empty else pd.DataFrame()
+        best, source = _choose_source([cm, cdd, gate, kucoin], pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
         if not best.empty:
             best = best.copy()
             best["symbol"] = symbol
             selected.append(best[["date","symbol","close_usd","volume_usd","source"]])
+            source_counts[source] = source_counts.get(source, 0) + 1
         status = "PASS" if len(best) >= 2 else "NO_USABLE_HISTORY"
         coverage.append({
             "symbol": symbol,
@@ -128,6 +159,8 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             "selected_source": source,
             "coinmetrics_rows": len(cm),
             "cdd_binance_rows": len(cdd),
+            "gateio_rows": len(gate),
+            "kucoin_rows": len(kucoin),
         })
         mask = identity["symbol"].astype(str) == symbol
         identity.loc[mask, "history_usable"] = status == "PASS"
@@ -142,10 +175,10 @@ def _cascade_collect_histories(session, identity, outdir: Path):
     summary = {
         "symbols_total": len(symbols),
         "history_pass": int((cov["status"] == "PASS").sum()),
-        "coinmetrics_selected": int((cov["selected_source"] == "coinmetrics_community").sum()),
-        "cdd_binance_selected": int(cov["selected_source"].astype(str).str.startswith("cryptodatadownload_binance_").sum()),
+        "extra_candidates": len(need_extra),
+        "selected_sources": source_counts,
     }
-    (outdir / "SOURCE_CASCADE_SUMMARY.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (outdir / "SOURCE_CASCADE_SUMMARY.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("SOURCE_CASCADE=" + json.dumps(summary, sort_keys=True), flush=True)
     return master, cov
 
@@ -174,7 +207,7 @@ def _safe_run_alpha(alpha_tool, weekly, unresolved):
     provenance = result.get("provenance")
     if isinstance(provenance, dict):
         provenance["external_data_basis"] = "CMC_MONTH_END_TOP150_PLUS_PUBLIC_SOURCE_CASCADE"
-        provenance["source_priority"] = "single-source-per-symbol; widest daily history"
+        provenance["source_priority"] = "one continuous public source per symbol; maximize PIT membership coverage"
     return result
 
 
@@ -191,7 +224,7 @@ def _write_text_cascade(outdir, manifest, alpha, survivor_alpha, identity, cover
         text = method.read_text(encoding="utf-8")
         text = text.replace(
             "Daily price/volume source: CryptoCompare CCCAGG, identity-audited by symbol/name history.",
-            "Daily price/volume sources: public cascade using one continuous source per symbol. Current layers: CryptoDataDownload/Binance stable-quote daily OHLCV and Coin Metrics Community PriceUSD + reported spot USD volume. Missing history is never synthesized.",
+            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT daily candles, and KuCoin USDT daily candles. Missing history is never synthesized.",
         )
         method.write_text(text, encoding="utf-8")
     executive = outdir / "EXECUTIVE_SUMMARY.txt"
