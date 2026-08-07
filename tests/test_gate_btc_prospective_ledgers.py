@@ -36,20 +36,49 @@ class ProspectiveLedgerTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 append_gateway(args)
 
-    def test_d50_conflict_is_non_destructive(self):
+    def test_d50_economic_conflict_is_non_destructive(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             frozen = root / "frozen.json"
             candidate = root / "candidate.json"
             output = root / "report.json"
-            frozen.write_text('{"date":"2026-08-01","value":1}', encoding="utf-8")
-            candidate.write_text('{"date":"2026-08-01","value":2}', encoding="utf-8")
+            frozen.write_text('{"date":"2026-08-01","strategy":"D50_CONTROL","value":1}', encoding="utf-8")
+            candidate.write_text('{"date":"2026-08-01","strategy":"D50_CONTROL","value":2}', encoding="utf-8")
             rc = audit_d50(Namespace(frozen_row=frozen, candidate_row=candidate, ignore_field=None, output=output))
             self.assertEqual(rc, 2)
             report = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(report["status"], "FAIL_IMMUTABLE_ROW_CHANGED")
+            self.assertEqual(report["status"], "FAIL_IMMUTABLE_ECONOMIC_ROW_CHANGED")
             self.assertFalse(report["mutation_performed"])
             self.assertEqual(json.loads(frozen.read_text(encoding="utf-8"))["value"], 1)
+
+    def test_d50_provenance_only_revision_uses_canonical_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            frozen = root / "frozen.json"
+            candidate = root / "candidate.json"
+            output = root / "report.json"
+            frozen_payload = {
+                "date": "2026-08-01",
+                "strategy": "D50_CONTROL",
+                "net_return": -0.0010251858188263,
+                "source_bar_sha256": "old-source",
+                "replay_row_sha256": "old-replay",
+            }
+            candidate_payload = {
+                **frozen_payload,
+                "source_bar_sha256": "new-source",
+                "replay_row_sha256": "new-replay",
+            }
+            frozen.write_text(json.dumps(frozen_payload), encoding="utf-8")
+            candidate.write_text(json.dumps(candidate_payload), encoding="utf-8")
+            rc = audit_d50(Namespace(frozen_row=frozen, candidate_row=candidate, ignore_field=None, output=output))
+            self.assertEqual(rc, 0)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["status"], "PASS_PROVENANCE_ONLY_SOURCE_REVISION")
+            self.assertTrue(report["economic_fields_identical"])
+            self.assertTrue(report["source_revision_only"])
+            self.assertFalse(report["mutation_performed"])
+            self.assertEqual(json.loads(frozen.read_text(encoding="utf-8")), frozen_payload)
 
     def test_frozen_lock_contract_excludes_lock75(self):
         repo = Path(__file__).resolve().parents[1]
