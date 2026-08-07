@@ -2,9 +2,9 @@
 """Thin runner that injects hardened public CMC PIT collection into the definitive study."""
 from __future__ import annotations
 
-from tools import gate_btc_cmc_pit_collector as cmc_collector
-from tools import gate_btc_cmc_pit_parser as cmc_parser
-from tools import gate_btc_survivorship_definitive_pit as definitive
+import gate_btc_cmc_pit_collector as cmc_collector
+import gate_btc_cmc_pit_parser as cmc_parser
+import gate_btc_survivorship_definitive_pit as definitive
 
 
 def main() -> int:
