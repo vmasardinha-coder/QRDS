@@ -14,7 +14,11 @@ on:
       - tools/gate_btc_cdd_binance_pit_history.py
       - tools/gate_btc_exchange_pit_history.py
       - tools/gate_btc_bybit_okx_pit_history.py
+      - tools/gate_btc_binance_vision_pit_history.py
+      - tools/gate_btc_pit_coverage_report.py
       - tests/test_gate_btc_survivorship_definitive_pit.py
+      - tests/test_gate_btc_survivorship_alpha_audit.py
+      - tests/test_gate_btc_binance_vision_pit_history.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
       - migration/canonical/v2a/config_v2a.json
@@ -48,6 +52,7 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_survivorship_definitive_pit.py
           tests/test_gate_btc_survivorship_alpha_audit.py
+          tests/test_gate_btc_binance_vision_pit_history.py
 
       - name: Smoke test real lazy-row CMC reconstruction
         run: |
@@ -102,12 +107,19 @@ jobs:
           --output-dir artifacts/survivorship_definitive
           --coverage-threshold 0.95
 
+      - name: Emit explicit PIT coverage audit
+        run: >-
+          python tools/gate_btc_pit_coverage_report.py
+          --output-dir artifacts/survivorship_definitive
+          --threshold 0.95
+
       - name: Verify safety and result contract
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.load(open('artifacts/survivorship_definitive/MANIFEST.json', encoding='utf-8'))
+          c=json.load(open('artifacts/survivorship_definitive/COVERAGE_SUMMARY.json', encoding='utf-8'))
           assert p['status'] in {'PASS_FULL_COVERAGE_AUDIT','PARTIAL_COVERAGE_RESEARCH_ONLY'}
           assert p['protocol'] == 'EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR'
           assert p['cmc_snapshots'] == 74
@@ -119,10 +131,19 @@ jobs:
           assert p['real_capital_used'] == 0
           assert p['engine_feed'] is False
           assert p['methodology_changes'] == 0
+          assert c['signals'] == 74
+          assert c['research_only'] is True
+          assert c['engine_feed'] is False
+          assert c['methodology_changes'] == 0
+          assert Path('artifacts/survivorship_definitive/COVERAGE_BY_SIGNAL.csv').is_file()
           assert Path('artifacts/survivorship_definitive/GATE_BTC_SURVIVORSHIP_ALPHA_DEFINITIVE.zip').is_file()
           print('DEFINITIVE_PIT_CONTRACT=PASS')
           print('STATUS='+p['status'])
           print('PIT_UNIQUE_SYMBOLS='+str(p['pit_unique_symbols']))
+          print('SIGNAL_COVERAGE_MIN='+str(c['signal_coverage_min']))
+          print('SIGNAL_COVERAGE_MEAN='+str(c['signal_coverage_mean']))
+          print('SIGNAL_COVERAGE_MAX='+str(c['signal_coverage_max']))
+          print('WEEKS_GE_95='+str(c['weeks_at_or_above_threshold']))
           PY
 
       - name: Upload definitive research package
