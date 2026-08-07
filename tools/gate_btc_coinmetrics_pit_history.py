@@ -77,8 +77,8 @@ def asset_reference(session: requests.Session) -> pd.DataFrame:
 
 
 def metric_catalog(session: requests.Session) -> dict[str, dict[str, tuple[pd.Timestamp | None, pd.Timestamp | None]]]:
-    """Return asset -> metric -> (min,max) for community-accessible 1d metrics."""
-    rows = get_all(session, "/catalog-all-v2/asset-metrics", {"page_size": 10000})
+    """Return only metrics actually available to the no-key Community plan."""
+    rows = get_all(session, "/catalog-v2/asset-metrics", {"page_size": 10000})
     output: dict[str, dict[str, tuple[pd.Timestamp | None, pd.Timestamp | None]]] = defaultdict(dict)
     for row in rows:
         asset = str(row.get("asset") or "").strip()
@@ -125,7 +125,6 @@ def resolve_cmc_to_cm(snapshots: pd.DataFrame, reference: pd.DataFrame, catalog:
                 if len(exact) == 1:
                     candidates |= exact
                     resolution_sources.append("CM_FULL_NAME")
-        # Prefer a unique exact full-name candidate when ticker conflicts with a suffixed CM id.
         name_candidates = set()
         for name_norm in name_norms:
             exact = by_name.get(name_norm, set())
