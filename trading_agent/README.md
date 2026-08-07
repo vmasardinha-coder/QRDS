@@ -56,6 +56,7 @@ relatório.
   volatilidades.
 - **Rebalanceio** às segundas-feiras, em mudança de regime, ou quando um peso
   desvia mais de 30% do alvo. Ordens abaixo de $200 são ignoradas.
+- **Custos modelados:** slippage de 5 bps (ações EUA) e 10 bps (crypto/B3).
 
 ### Limites da Carta de Operação
 
@@ -74,7 +75,6 @@ Regras duras que o agente nunca contorna — detalhe e rastreabilidade em
 - **Fail-closed** — dado em falta exclui o ativo; nunca é estimado.
 - **Critérios congelados** — alteração só com ~1 ano de observação e validação
   fora-da-amostra.
-- **Custos modelados:** slippage de 5 bps (ações EUA) e 10 bps (crypto/B3).
 
 Nenhuma estratégia garante bater o benchmark; momentum com filtro de regime é
 uma abordagem clássica com suporte empírico de longo prazo, e o desempenho
