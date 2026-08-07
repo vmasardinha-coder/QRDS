@@ -21,6 +21,7 @@ on:
       - tests/test_gate_btc_survivorship_alpha_audit.py
       - tests/test_gate_btc_binance_vision_pit_history.py
       - tests/test_gate_btc_cdd_multi_exchange_pit_history.py
+      - tests/test_gate_btc_cmc_pit_collector.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
       - migration/canonical/v2a/config_v2a.json
@@ -56,6 +57,7 @@ jobs:
           tests/test_gate_btc_survivorship_alpha_audit.py
           tests/test_gate_btc_binance_vision_pit_history.py
           tests/test_gate_btc_cdd_multi_exchange_pit_history.py
+          tests/test_gate_btc_cmc_pit_collector.py
 
       - name: Smoke test real lazy-row CMC reconstruction
         run: |
