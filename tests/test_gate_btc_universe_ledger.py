@@ -81,6 +81,20 @@ class UniverseLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "retrospective backfill is prohibited"):
                 append(self.args(root, raw2, manifest2, status2, day="2026-08-06", run_id="124"))
 
+    def test_same_day_numeric_run_ids_keep_contiguous_sequence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            raw, manifest, status = self.fixture(root)
+            for run_id in ("9", "10", "11"):
+                self.assertEqual(append(self.args(root, raw, manifest, status, run_id=run_id)), 0)
+            records = []
+            for path in (root / "ledger/snapshots").glob("*.json"):
+                records.append(json.loads(path.read_text(encoding="utf-8")))
+            self.assertEqual(sorted(record["sequence"] for record in records), [1, 2, 3])
+            latest = json.loads((root / "ledger/STATUS.json").read_text(encoding="utf-8"))
+            self.assertEqual(latest["snapshot_count"], 3)
+            self.assertEqual(latest["latest_source_run_id"], "11")
+
     def test_operational_boundary_change_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
