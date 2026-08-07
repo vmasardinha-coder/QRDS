@@ -17,14 +17,24 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from tools.gate_btc_source_redundancy_probe import (
-    BASE,
-    atomic_json,
-    fetch_bytes,
-    parse_checksum,
-    sha256_bytes,
-    validate_daily_1d_zip,
-)
+try:
+    from tools.gate_btc_source_redundancy_probe import (
+        BASE,
+        atomic_json,
+        fetch_bytes,
+        parse_checksum,
+        sha256_bytes,
+        validate_daily_1d_zip,
+    )
+except ModuleNotFoundError:
+    from gate_btc_source_redundancy_probe import (
+        BASE,
+        atomic_json,
+        fetch_bytes,
+        parse_checksum,
+        sha256_bytes,
+        validate_daily_1d_zip,
+    )
 
 
 def probe_spot_symbol(symbol: str, day: str, fetcher: Callable[[str], bytes] = fetch_bytes) -> dict:
