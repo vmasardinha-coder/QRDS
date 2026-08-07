@@ -8,13 +8,13 @@ quotes or venues are never stitched together. Missing archives remain missing.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import csv
 import hashlib
 import io
 import re
 import time
 import zipfile
-from typing import Any
 
 import pandas as pd
 import requests
@@ -104,22 +104,16 @@ def parse_archive(raw_zip: bytes, symbol: str, quote: str) -> pd.DataFrame:
             continue
         if day is None or not (START <= day <= END) or close <= 0 or quote_volume < 0:
             continue
-        records.append(
-            {
-                "date": day,
-                "symbol": symbol,
-                "close_usd": close,
-                "volume_usd": quote_volume,
-                "source": f"binance_data_vision_spot_{quote.lower()}",
-            }
-        )
+        records.append({
+            "date": day,
+            "symbol": symbol,
+            "close_usd": close,
+            "volume_usd": quote_volume,
+            "source": f"binance_data_vision_spot_{quote.lower()}",
+        })
     if not records:
         return _empty()
-    return (
-        pd.DataFrame(records)
-        .drop_duplicates("date", keep="last")
-        .sort_values("date")[EMPTY_COLUMNS]
-    )
+    return pd.DataFrame(records).drop_duplicates("date", keep="last").sort_values("date")[EMPTY_COLUMNS]
 
 
 def _month_url(pair: str, month: str) -> str:
@@ -132,11 +126,7 @@ def _day_url(pair: str, day: str) -> str:
     return f"{BASE}/data/spot/daily/klines/{pair}/1d/{filename}"
 
 
-def _verified_archive(
-    session: requests.Session,
-    url: str,
-    expected_checksum: str | None = None,
-) -> bytes | None:
+def _verified_archive(session: requests.Session, url: str, expected_checksum: str | None = None) -> bytes | None:
     expected = expected_checksum or _checksum(session, url)
     if not expected:
         return None
@@ -159,8 +149,6 @@ def _probe_periods(first_snapshot: pd.Timestamp, last_snapshot: pd.Timestamp) ->
     periods = _periods(first_snapshot, last_snapshot)
     if not periods:
         return []
-    # Every third PIT month plus the endpoints catches short historical listings
-    # without downloading full archives for symbols never listed on Binance.
     indexes = set(range(0, len(periods), 3)) | {0, len(periods) - 1}
     return [periods[index] for index in sorted(indexes)]
 
@@ -176,13 +164,7 @@ def _membership_score(history: pd.DataFrame, first_snapshot: pd.Timestamp, last_
     return (membership_rows, pre_rows, len(history), span)
 
 
-def _fetch_pair(
-    session: requests.Session,
-    symbol: str,
-    quote: str,
-    first_snapshot: pd.Timestamp,
-    last_snapshot: pd.Timestamp,
-) -> tuple[pd.DataFrame, str, int]:
+def _fetch_pair(session: requests.Session, symbol: str, quote: str, first_snapshot: pd.Timestamp, last_snapshot: pd.Timestamp) -> tuple[pd.DataFrame, str, int]:
     pair = f"{symbol}{quote}"
     checksum_cache: dict[str, str] = {}
     hit = False
@@ -202,7 +184,6 @@ def _fetch_pair(
     monthly_end = min(required_end, last_complete_month_end)
     frames = []
     verified_archives = 0
-
     for month in _periods(required_start, monthly_end):
         url = _month_url(pair, month)
         raw = _verified_archive(session, url, checksum_cache.get(url))
@@ -213,9 +194,6 @@ def _fetch_pair(
             frames.append(frame)
         verified_archives += 1
 
-    # The terminal study month can be incomplete before its monthly archive is
-    # published. Daily files are the same official Data Vision source family;
-    # they are used only for that incomplete terminal month, never to fill old gaps.
     terminal_month_start = pd.Timestamp(END.year, END.month, 1)
     if required_end >= terminal_month_start:
         for day in pd.date_range(max(required_start, terminal_month_start), required_end, freq="D"):
@@ -230,21 +208,12 @@ def _fetch_pair(
 
     if not frames:
         return _empty(), pair, verified_archives
-    history = (
-        pd.concat(frames, ignore_index=True)
-        .drop_duplicates("date", keep="last")
-        .sort_values("date")
-    )
+    history = pd.concat(frames, ignore_index=True).drop_duplicates("date", keep="last").sort_values("date")
     history = history[history["date"].between(required_start, required_end)].copy()
     return history[EMPTY_COLUMNS], pair, verified_archives
 
 
-def fetch_symbol(
-    session: requests.Session,
-    symbol: str,
-    first_snapshot: pd.Timestamp,
-    last_snapshot: pd.Timestamp,
-) -> tuple[pd.DataFrame, str, str, int]:
+def fetch_symbol(session: requests.Session, symbol: str, first_snapshot: pd.Timestamp, last_snapshot: pd.Timestamp) -> tuple[pd.DataFrame, str, str, int]:
     if not _valid_symbol(symbol):
         return _empty(), "", "BLOCKED_IDENTITY", 0
     candidates = []
@@ -252,8 +221,6 @@ def fetch_symbol(
         history, pair, verified = _fetch_pair(session, symbol, quote, first_snapshot, last_snapshot)
         if not history.empty:
             candidates.append((_membership_score(history, first_snapshot, last_snapshot), history, pair, verified))
-            # A USDT history covering both the required lookback and the end of
-            # the membership window cannot be improved by another stable quote.
             if quote == "USDT":
                 required_start = max(START, pd.Timestamp(first_snapshot).normalize() - pd.Timedelta(days=200))
                 required_end = min(END, pd.Timestamp(last_snapshot).normalize() + pd.Timedelta(days=35))
@@ -266,41 +233,52 @@ def fetch_symbol(
     return history, pair, "PASS", verified
 
 
-def collect(
-    session: requests.Session,
-    identity: pd.DataFrame,
-    symbols: list[str],
-    outdir,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    rows = []
-    coverage = []
+def _fetch_one(symbol: str, index: pd.DataFrame, headers: dict[str, str]):
+    if symbol not in index.index:
+        return symbol, _empty(), "", "MISSING_IDENTITY_WINDOW", 0
+    item = index.loc[symbol]
+    local = requests.Session()
+    local.headers.update(headers)
+    history, pair, status, verified = fetch_symbol(
+        local,
+        symbol,
+        pd.Timestamp(item["first_snapshot"]),
+        pd.Timestamp(item["last_snapshot"]),
+    )
+    return symbol, history, pair, status, verified
+
+
+def collect(session: requests.Session, identity: pd.DataFrame, symbols: list[str], outdir, max_workers: int = 8) -> tuple[pd.DataFrame, pd.DataFrame]:
     index = identity.set_index("symbol")
     unique = sorted(set(symbols))
+    headers = dict(session.headers)
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(int(max_workers), 10))) as executor:
+        futures = {executor.submit(_fetch_one, symbol, index, headers): symbol for symbol in unique}
+        for future in concurrent.futures.as_completed(futures):
+            symbol = futures[future]
+            try:
+                _, history, pair, status, verified = future.result()
+            except Exception as exc:
+                history, pair, status, verified = _empty(), "", f"FETCH_ERROR_{type(exc).__name__}", 0
+            results[symbol] = (history, pair, status, verified)
+
+    rows = []
+    coverage = []
     for position, symbol in enumerate(unique, 1):
-        if symbol not in index.index:
-            history, pair, status, verified = _empty(), "", "MISSING_IDENTITY_WINDOW", 0
-        else:
-            item = index.loc[symbol]
-            history, pair, status, verified = fetch_symbol(
-                session,
-                symbol,
-                pd.Timestamp(item["first_snapshot"]),
-                pd.Timestamp(item["last_snapshot"]),
-            )
+        history, pair, status, verified = results.get(symbol, (_empty(), "", "FETCH_RESULT_MISSING", 0))
         if not history.empty:
             rows.append(history)
-        coverage.append(
-            {
-                "symbol": symbol,
-                "status": status,
-                "pair": pair,
-                "rows": len(history),
-                "first_date": history["date"].min() if not history.empty else None,
-                "last_date": history["date"].max() if not history.empty else None,
-                "verified_archives": verified,
-                "source_root": BASE,
-            }
-        )
+        coverage.append({
+            "symbol": symbol,
+            "status": status,
+            "pair": pair,
+            "rows": len(history),
+            "first_date": history["date"].min() if not history.empty else None,
+            "last_date": history["date"].max() if not history.empty else None,
+            "verified_archives": verified,
+            "source_root": BASE,
+        })
         print(f"BINANCE_VISION {position}/{len(unique)} {symbol} rows={len(history)} {status} pair={pair}", flush=True)
     master = pd.concat(rows, ignore_index=True) if rows else _empty()
     cov = pd.DataFrame(coverage)
