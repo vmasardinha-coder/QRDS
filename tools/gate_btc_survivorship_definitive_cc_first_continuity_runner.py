@@ -44,7 +44,7 @@ BTT_REDENOMINATION_DATE = pd.Timestamp("2021-12-27")
 REV_RENAME_COMPLETE_DATE = pd.Timestamp("2020-04-09")
 MEXC_HISTORY_START = pd.Timestamp("2023-01-01")
 MEXC_END = pd.Timestamp("2026-08-06")
-RESIDUAL_SYMBOLS = ("BORG", "BTTOLD", "REV", "MX", "ABBC", "VLX")
+RESIDUAL_SYMBOLS = ("BORG", "BTTOLD", "REV", "MX", "AMPL", "ABBC", "VLX")
 COLS = ["date", "symbol", "close_usd", "volume_usd", "source"]
 
 _ORIGINAL_IDENTITY_AUDIT = staged.runner._cascade_identity_audit
@@ -217,6 +217,10 @@ def _recover_mx(session, row) -> tuple[pd.DataFrame, str, str]:
     return out, url, "PASS" if len(out) >= 2 else "NO_MEXC_MXUSDT_HISTORY"
 
 
+def _recover_ampl(session, row) -> tuple[pd.DataFrame, str, str]:
+    return kucoin_uta_legacy.fetch_symbol(session, "AMPL", row.first_snapshot, row.last_snapshot)
+
+
 def _recover_abbc(session, row) -> tuple[pd.DataFrame, str, str]:
     return kucoin_uta_legacy.fetch_symbol(session, "ABBC", row.first_snapshot, row.last_snapshot)
 
@@ -231,6 +235,7 @@ def _recover_residuals(session, identity: pd.DataFrame, outdir: Path) -> tuple[p
         "BTTOLD": _recover_bttold,
         "REV": _recover_rev,
         "MX": _recover_mx,
+        "AMPL": _recover_ampl,
         "ABBC": _recover_abbc,
         "VLX": _recover_vlx,
     }
