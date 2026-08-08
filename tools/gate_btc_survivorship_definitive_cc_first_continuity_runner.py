@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 import gate_btc_survivorship_definitive_cc_first_runner as staged
+import gate_btc_bitfinex_legacy_pit_history as bitfinex_legacy
 
 EVIDENCE_BACKED_CONTINUITIES = {
     "THETA": {"theta", "thetanetwork"},
@@ -27,27 +28,16 @@ EVIDENCE_BACKED_CONTINUITIES = {
     "SXP": {"sxp", "solar", "swipe"},
 }
 
-# PIT-only single-character ticker exceptions backed by primary project evidence.
-# This does not modify the canonical V2A standard_ticker rule and does not admit
-# any other one-character symbol.
 EVIDENCE_BACKED_SINGLE_CHAR = {
     "W": {"name": "wormhole", "slug": "wormhole"},
     "T": {"name": "threshold", "slug": "threshold"},
 }
 
-# Stablecoin identities missing from the frozen symbol/name filter because CMC
-# now exposes historical markets under later/current labels. These exact
-# symbol+name pairs are excluded from the directional PIT universe; the
-# canonical V2A stable list is not modified.
 EVIDENCE_BACKED_PIT_STABLES = {
     "XTN": {"neutrinousd"},
     "FEI": {"feiusd"},
 }
 
-# Explicit historical-label recovery boundaries. These do NOT establish
-# same-token continuity across the boundary. They permit only the documented
-# historical market label/API identifier during the snapshot window that
-# predates (or postdates, for REV) the migration event.
 BORG_MIGRATION_DATE = pd.Timestamp("2023-10-17")
 BTT_REDENOMINATION_DATE = pd.Timestamp("2021-12-27")
 REV_RENAME_COMPLETE_DATE = pd.Timestamp("2020-04-09")
@@ -55,13 +45,6 @@ MEXC_HISTORY_START = pd.Timestamp("2023-01-01")
 MEXC_END = pd.Timestamp("2026-08-06")
 RESIDUAL_SYMBOLS = ("BORG", "BTTOLD", "REV", "MX")
 COLS = ["date", "symbol", "close_usd", "volume_usd", "source"]
-
-# Intentionally absent from same-token continuity:
-# - DYDX / ethDYDX: documented bridge/conversion across chains/tokens.
-# - KNC / KNCL: documented old-contract to new-contract token migration.
-# - BORG / CHSB and BTTOLD / BTT: token migrations/redenominations are not
-#   admitted by the continuity layer. Their legacy identifiers may only be used
-#   inside the hard-bounded historical recovery functions below.
 
 _ORIGINAL_IDENTITY_AUDIT = staged.runner._cascade_identity_audit
 _ORIGINAL_STABLE_SYMBOL = staged.runner.definitive.stable_symbol
@@ -132,11 +115,19 @@ def _recover_borg(session, row) -> tuple[pd.DataFrame, str, str]:
     history, url, status = staged.runner.cdd_multi.fetch_symbol(
         session, "CHSB", pd.Timestamp(row.first_snapshot), pd.Timestamp(row.last_snapshot)
     )
-    if status != "PASS" or history.empty:
-        return _empty(), url, status
-    source = "legacy_chsb_pre_borg_migration__" + str(history["source"].iloc[0])
-    out = _bounded_relabel(history, "BORG", source, end_exclusive=BORG_MIGRATION_DATE)
-    return out, url, "PASS" if len(out) >= 2 else "NO_BOUNDED_CHSB_HISTORY"
+    if status == "PASS" and not history.empty:
+        source = "legacy_chsb_pre_borg_migration__" + str(history["source"].iloc[0])
+        out = _bounded_relabel(history, "BORG", source, end_exclusive=BORG_MIGRATION_DATE)
+        return out, url, "PASS" if len(out) >= 2 else "NO_BOUNDED_CHSB_HISTORY"
+    direct, direct_url, direct_status = bitfinex_legacy.fetch_chsb_pre_migration(
+        session,
+        pd.Timestamp(row.first_snapshot),
+        pd.Timestamp(row.last_snapshot),
+        BORG_MIGRATION_DATE,
+    )
+    if direct_status == "PASS" and not direct.empty:
+        return direct, direct_url, "PASS"
+    return _empty(), direct_url or url, f"CDD_{status}|BITFINEX_{direct_status}"
 
 
 def _recover_bttold(session, row) -> tuple[pd.DataFrame, str, str]:
