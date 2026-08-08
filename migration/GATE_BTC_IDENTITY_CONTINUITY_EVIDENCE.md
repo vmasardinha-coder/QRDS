@@ -60,6 +60,60 @@ Primary evidence:
 
 Audit aliases after normalization: `injective`, `injectiveprotocol`.
 
+## SNX — `Synthetix Network Token` / `Synthetix`
+
+**Decision:** admit as one SNX lineage.
+
+Primary/canonical evidence:
+
+- Synthetix documentation, *Synthetix Token (SNX)*: https://docs.synthetix.io/synthetix-protocol/the-synthetix-token-snx
+  - Describes SNX as the Synthetix Network token and identifies the same SNX token as the protocol collateral/governance asset.
+- Synthetix documentation, *Links*: https://docs.synthetix.io/links
+  - The official project documentation links the SNX market under the historical `synthetix-network-token` naming lineage.
+- CoinMarketCap historical snapshots record the market under ticker `SNX` as `Synthetix Network Token` historically and `Synthetix` later; this is used only to identify the display-name variants seen by the PIT ingestion, not as independent proof of token continuity.
+
+Audit aliases after normalization: `synthetixnetworktoken`, `synthetix`.
+
+## SXP — `Swipe` / `Solar`
+
+**Decision:** admit the CMC display-name transition as one SXP lineage.
+
+Primary/canonical evidence:
+
+- Solar documentation, *Introduction to Solar (SXP)*: https://docs.solar.org/about/introduction/
+  - States that Solar Blockchain was previously known as Swipechain and that SXP migrated 1:1 to the Solar mainnet.
+- Solar project history: https://solar.org/history/
+  - Records the Swipe-to-Solar transition and the SXP mainnet migration/rebrand.
+- CoinMarketCap historical snapshot 2020-08-09 records `Swipe` under ticker `SXP`, while the current CMC market is `Solar` under ticker `SXP`; these records identify the exact display-name variants seen by the PIT ingestion.
+
+Audit aliases after normalization: `swipe`, `solar`.
+
+This admission is identity-only. It does not stitch ERC-20/BEP-20/native-chain bars, manufacture a continuous price series, or authorize a venue/source substitution. A price history must independently satisfy the existing source cascade and data-quality contract.
+
+## Explicitly rejected cross-token / cross-contract migrations
+
+### DYDX — `ethDYDX` / `DYDX`
+
+**Decision:** reject identity alias; keep fail-closed.
+
+Primary evidence:
+
+- dYdX Foundation, *The dYdX Chain is Live!*: https://www.dydx.foundation/blog/dydx-chain-live
+- dYdX, token migration/bridge documentation: https://www.dydx.xyz/blog/dydx-token-migration
+
+The documented process bridges/converts the Ethereum `ethDYDX` token into the dYdX Chain `DYDX` token. That is not merely a display-name change of one uninterrupted market identity, so the PIT identity gate must not merge the two lineages.
+
+### KNC — `KNCL` / `KNC`
+
+**Decision:** reject identity alias; keep fail-closed.
+
+Primary evidence:
+
+- Kyber Network, *KNC Token Migration Guide*: https://blog.kyber.network/knc-token-migration-guide-fda08bfe62c2
+- KyberDAO migration documentation: https://docs.kyber.org/kyberdao/knc-token/migration
+
+Kyber documents an upgrade from the old token/contract (`KNCL`) to a new `KNC` token contract. This is a token-contract migration, not a display-name-only continuity. No KNCL/KNC return stitching is authorized.
+
 ## Safety constraints
 
 - This ledger changes identity continuity only.
