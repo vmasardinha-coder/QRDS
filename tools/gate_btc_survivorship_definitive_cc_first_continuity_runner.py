@@ -113,12 +113,14 @@ def _bounded_relabel(history: pd.DataFrame, target: str, source: str, start=None
         return _empty()
     out = history.copy()
     out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.tz_localize(None).dt.normalize()
+    out["close_usd"] = pd.to_numeric(out["close_usd"], errors="coerce")
+    out["volume_usd"] = pd.to_numeric(out["volume_usd"], errors="coerce")
     if start is not None:
         out = out[out["date"] >= pd.Timestamp(start)]
     if end_exclusive is not None:
         out = out[out["date"] < pd.Timestamp(end_exclusive)]
     out = out.dropna(subset=["date", "close_usd", "volume_usd"])
-    out = out[(pd.to_numeric(out["close_usd"], errors="coerce") > 0) & (pd.to_numeric(out["volume_usd"], errors="coerce") >= 0)]
+    out = out[(out["close_usd"] > 0) & (out["volume_usd"] >= 0)]
     out["symbol"] = target
     out["source"] = source
     return out.drop_duplicates("date", keep="last").sort_values("date")[COLS]
