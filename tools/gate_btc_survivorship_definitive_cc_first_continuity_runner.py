@@ -2,7 +2,7 @@
 """Run staged direct-USD PIT recovery with evidence-backed continuities.
 
 Research-only wrapper layered on the CC-first staging runner. It keeps the
-trade-level Bybit archive deferred and adds only four primary-source documented
+trade-level Bybit archive deferred and adds only primary-source documented
 identity continuities. No strategy, factor, weight, price, return, execution,
 or frozen-engine rule is changed.
 """
@@ -15,7 +15,15 @@ EVIDENCE_BACKED_CONTINUITIES = {
     "HBAR": {"hedera", "hederahashgraph"},
     "FET": {"fetchai", "artificialsuperintelligencealliance"},
     "INJ": {"injective", "injectiveprotocol"},
+    "SNX": {"synthetix", "synthetixnetworktoken"},
+    "SXP": {"solar", "swipe"},
 }
+
+# Intentionally absent from EVIDENCE_BACKED_CONTINUITIES:
+# - DYDX / ethDYDX: documented bridge/conversion across chains/tokens.
+# - KNC / KNCL: documented old-contract to new-contract token migration.
+# The PIT identity gate must keep both cases fail-closed rather than treating
+# them as display-name-only continuity.
 
 
 def apply_continuity_evidence() -> None:
