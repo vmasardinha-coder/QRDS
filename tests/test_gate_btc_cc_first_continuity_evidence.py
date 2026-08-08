@@ -20,7 +20,7 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
             "FET": (["Fetch.ai", "Artificial Superintelligence Alliance"], ["fetch", "artificialsuperintelligencealliance"]),
             "INJ": (["Injective Protocol", "Injective"], ["injectiveprotocol", "injective"]),
             "SNX": (["Synthetix Network Token", "Synthetix"], ["synthetixnetworktoken", "synthetix"]),
-            "SXP": (["Swipe", "Solar"], ["swipe", "solar"]),
+            "SXP": (["SXP", "Swipe", "Solar"], ["swipe", "sxp", "solar"]),
         }
         for symbol, (names, slugs) in cases.items():
             with self.subTest(symbol=symbol):
