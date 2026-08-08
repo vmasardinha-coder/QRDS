@@ -1,0 +1,86 @@
+name: GATE BTC V2A Coverage Recovery Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v2a-coverage-audit.yml
+      - tools/gate_btc_v2a_coverage_lift_audit.py
+      - tests/test_gate_btc_v2a_coverage_lift_audit.py
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  coverage-recovery-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test coverage audit fail-closed boundary
+        run: python -m unittest -v tests/test_gate_btc_v2a_coverage_lift_audit.py
+
+      - name: Resolve latest successful source-probe evidence for branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${BRANCH}&status=success&per_page=20" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          test -n "$RUN_ID"
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
+          test -n "$ARTIFACT_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+          mkdir -p source_probe artifacts/coverage_audit
+          unzip -q source_probe.zip -d source_probe
+          test -f source_probe/v2a_failure_diagnostic.json
+          test -f source_probe/binance_spot_v2a_history_depth.json
+          echo "SOURCE_PROBE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Build availability-only V2A coverage lift audit
+        run: >-
+          python tools/gate_btc_v2a_coverage_lift_audit.py
+          --diagnostic source_probe/v2a_failure_diagnostic.json
+          --history-report source_probe/binance_spot_v2a_history_depth.json
+          --output artifacts/coverage_audit/v2a_coverage_lift_audit.json
+
+      - name: Verify no integration or methodology change occurred
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/coverage_audit/v2a_coverage_lift_audit.json', encoding='utf-8'))
+          assert p['integration_eligible'] is False
+          assert p['engine_feed'] is False
+          assert p['feeds_frozen_engine'] is False
+          assert p['source_substitution_performed'] is False
+          assert p['denominator_changed'] is False
+          assert p['universe_changed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('COVERAGE_RECOVERY_AUDIT_SAFETY=PASS')
+          print('CANONICAL_COVERAGE_PCT=' + str(p['canonical_coverage_pct']))
+          print('RECOVERY_LEADS=' + str(p['recovery_lead_count']))
+          print('AVAILABILITY_UPPER_BOUND_COVERAGE_PCT=' + str(p['availability_only_upper_bound_coverage_pct']))
+          PY
+
+      - name: Upload coverage audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v2a-coverage-audit-${{ github.run_id }}
+          path: artifacts/coverage_audit/
+          retention-days: 30
+          if-no-files-found: error
