@@ -28,6 +28,20 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
                     continuity.staged.runner._continuity_ok(symbol, names, slugs)
                 )
 
+    def test_wormhole_w_is_the_only_single_char_exception(self):
+        self.assertTrue(
+            continuity._single_char_evidence_ok("W", ["Wormhole"], ["wormhole"])
+        )
+        self.assertFalse(
+            continuity._single_char_evidence_ok("T", ["Threshold"], ["threshold"])
+        )
+        self.assertFalse(
+            continuity._single_char_evidence_ok("W", ["Another W"], ["wormhole"])
+        )
+        self.assertFalse(
+            continuity._single_char_evidence_ok("W", ["Wormhole"], ["another-wormhole"])
+        )
+
     def test_unrelated_ticker_reuse_still_fails_closed(self):
         self.assertFalse(
             continuity.staged.runner._continuity_ok(
