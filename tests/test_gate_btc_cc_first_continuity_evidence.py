@@ -144,11 +144,47 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
         self.assertEqual(out["volume_usd"].tolist(), [205, 231])
         self.assertEqual(set(out["source"]), {"mexc_spot_mxusdt"})
 
+    def test_kucoin_uta_residuals_use_direct_usdt_quote_amount_and_listing_bounds(self):
+        class Response:
+            status_code = 200
+            def json(self):
+                return {
+                    "code": "200000",
+                    "data": [
+                        [1622764800, "0.20", "0.22", "0.19", "0.21", "100", "21"],
+                        [1622851200, "0.21", "0.23", "0.20", "0.22", "120", "26.4"],
+                    ],
+                }
+        class Session:
+            def get(self, url, params=None, timeout=None):
+                self.url = url
+                self.params = params
+                return Response()
+
+        session = Session()
+        out, _, status = continuity.kucoin_uta_legacy.fetch_symbol(
+            session, "ABBC", "2020-06-30", "2022-11-30"
+        )
+        self.assertEqual(status, "PASS")
+        self.assertEqual(out["volume_usd"].tolist(), [21.0, 26.4])
+        self.assertTrue((out["date"] >= pd.Timestamp("2021-06-04")).all())
+        self.assertEqual(session.params["symbol"], "ABBC-USDT")
+        self.assertEqual(session.params["tradeType"], "SPOT")
+        self.assertEqual(session.params["interval"], "1day")
+
+    def test_kucoin_uta_residual_scope_is_exact(self):
+        self.assertEqual(set(continuity.kucoin_uta_legacy.CONTRACTS), {"ABBC", "VLX"})
+        out, _, status = continuity.kucoin_uta_legacy.fetch_symbol(object(), "MONA", "2020-06-30", "2021-01-31")
+        self.assertTrue(out.empty)
+        self.assertEqual(status, "BLOCKED_NOT_CURATED_KUCOIN_UTA_RESIDUAL")
+
     def test_migration_cases_are_not_promoted_to_same_token_continuities(self):
         self.assertNotIn("BORG", continuity.EVIDENCE_BACKED_CONTINUITIES)
         self.assertNotIn("BTTOLD", continuity.EVIDENCE_BACKED_CONTINUITIES)
         self.assertNotIn("REV", continuity.EVIDENCE_BACKED_CONTINUITIES)
         self.assertNotIn("MX", continuity.EVIDENCE_BACKED_CONTINUITIES)
+        self.assertNotIn("ABBC", continuity.EVIDENCE_BACKED_CONTINUITIES)
+        self.assertNotIn("VLX", continuity.EVIDENCE_BACKED_CONTINUITIES)
 
     def test_unrelated_ticker_reuse_still_fails_closed(self):
         self.assertFalse(
