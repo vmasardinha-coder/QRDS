@@ -172,14 +172,17 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
         self.assertEqual(session.params["tradeType"], "SPOT")
         self.assertEqual(session.params["interval"], "1day")
 
-    def test_kucoin_uta_ampl_contract_spans_full_pit_window(self):
-        contract = continuity.kucoin_uta_legacy.CONTRACTS["AMPL"]
-        self.assertEqual(contract["pair"], "AMPL-USDT")
-        self.assertLessEqual(contract["listing_date"], pd.Timestamp("2020-07-31") - pd.Timedelta(days=200))
-        self.assertGreater(contract["delisting_date_exclusive"], pd.Timestamp("2021-02-28"))
+    def test_rebasing_ampl_is_excluded_from_price_only_kucoin_uta_recovery(self):
+        self.assertNotIn("AMPL", continuity.kucoin_uta_legacy.CONTRACTS)
+        self.assertNotIn("AMPL", continuity.RESIDUAL_SYMBOLS)
+        out, _, status = continuity.kucoin_uta_legacy.fetch_symbol(
+            object(), "AMPL", "2020-07-31", "2021-02-28"
+        )
+        self.assertTrue(out.empty)
+        self.assertEqual(status, "BLOCKED_NOT_CURATED_KUCOIN_UTA_RESIDUAL")
 
     def test_kucoin_uta_residual_scope_is_exact(self):
-        self.assertEqual(set(continuity.kucoin_uta_legacy.CONTRACTS), {"AMPL", "ABBC", "VLX"})
+        self.assertEqual(set(continuity.kucoin_uta_legacy.CONTRACTS), {"ABBC", "VLX"})
         out, _, status = continuity.kucoin_uta_legacy.fetch_symbol(object(), "MONA", "2020-06-30", "2021-01-31")
         self.assertTrue(out.empty)
         self.assertEqual(status, "BLOCKED_NOT_CURATED_KUCOIN_UTA_RESIDUAL")
