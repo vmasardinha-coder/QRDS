@@ -5,6 +5,8 @@ Research-only helper. It uses KuCoin's public UTA kline endpoint, which
 explicitly documents no historical-range limit for spot. Only direct USDT
 markets with primary KuCoin listing/delisting evidence are admitted here.
 No quote conversion, venue stitching, or pre-listing bars are allowed.
+Rebasing assets are intentionally excluded because price-only returns do not
+represent holder economic returns without a separate balance-adjustment ledger.
 """
 from __future__ import annotations
 
@@ -17,12 +19,6 @@ URL = "https://api.kucoin.com/api/ua/v1/market/kline"
 
 # UTC calendar boundaries from KuCoin's own listing/delisting announcements.
 CONTRACTS = {
-    "AMPL": {
-        "pair": "AMPL-USDT",
-        "listing_date": pd.Timestamp("2019-11-07"),
-        "delisting_date_exclusive": pd.Timestamp("2025-12-29"),
-        "source": "kucoin_uta_ampl_usdt_bounded",
-    },
     "ABBC": {
         "pair": "ABBC-USDT",
         "listing_date": pd.Timestamp("2021-06-04"),
@@ -93,8 +89,6 @@ def fetch_symbol(session, symbol: str, first_snapshot, last_snapshot) -> tuple[p
     listing = contract["listing_date"]
     delisting = contract["delisting_date_exclusive"]
 
-    # Never request/admit pre-listing or post-delisting data. We keep up to 200
-    # days of available pre-signal history when the listing date permits it.
     start = max(listing, first_snapshot - pd.Timedelta(days=200))
     end = min(delisting - pd.Timedelta(days=1), last_snapshot + pd.Timedelta(days=35))
     if end < start:
