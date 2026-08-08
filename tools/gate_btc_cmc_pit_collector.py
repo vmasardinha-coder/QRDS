@@ -124,58 +124,25 @@ def metadata_maps(session: requests.Session) -> tuple[dict[str, set[str]], dict[
     # slugs. Historical lazy rows preserve /currencies/<slug>/ links even when
     # their symbol cell is not materialized. The slug is therefore a stronger
     # identity key than guessing from ticker text and remains keyless/auditable.
-    #
-    # The public CMC map endpoint is paginated (1-based `start`, max `limit`
-    # 5000). Paging every listing state is required here because old top-150
-    # constituents are disproportionately inactive/untracked today. Stopping at
-    # the first 5000 would silently censor identity candidates before the PIT
-    # history stage even starts.
     cmc_names: dict[str, set[str]] = {}
-    page_size = 5000
     for status in ("active", "inactive", "untracked"):
-        start = 1
-        pages = 0
-        total_rows = 0
         try:
-            while True:
-                payload = get(
-                    session,
-                    "https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map",
-                    {
-                        "listing_status": status,
-                        "start": start,
-                        "limit": page_size,
-                        "aux": "status",
-                    },
-                ).json()
-                data = payload.get("data") or payload.get("Data") or []
-                if not isinstance(data, list):
-                    raise RuntimeError(f"unexpected CMC map payload type status={status}")
-                pages += 1
-                total_rows += len(data)
-                for row in data:
-                    symbol = str(row.get("symbol") or "").upper().strip()
-                    if not re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
-                        continue
-                    for value in (row.get("name"), row.get("slug")):
-                        key = norm(value)
-                        if key:
-                            cmc_names.setdefault(key, set()).add(symbol)
-                print(
-                    f"CMC_MAP_{status}_PAGE={pages} START={start} ROWS={len(data)}",
-                    flush=True,
-                )
-                if len(data) < page_size:
-                    break
-                start += len(data)
-                if pages >= 100:
-                    raise RuntimeError(f"CMC map pagination guard exceeded status={status}")
-            print(f"CMC_MAP_{status}=PASS pages={pages} rows={total_rows}", flush=True)
+            payload = get(
+                session,
+                "https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map",
+                {"listing_status": status, "limit": 5000, "aux": "status"},
+            ).json()
+            data = payload.get("data") or payload.get("Data") or []
+            for row in data:
+                symbol = str(row.get("symbol") or "").upper().strip()
+                if not re.fullmatch(r"[A-Z0-9]{1,20}", symbol):
+                    continue
+                for value in (row.get("name"), row.get("slug")):
+                    key = norm(value)
+                    if key:
+                        cmc_names.setdefault(key, set()).add(symbol)
         except Exception as exc:
-            print(
-                f"CMC_MAP_{status}=WARN {type(exc).__name__} pages={pages} rows={total_rows}",
-                flush=True,
-            )
+            print(f"CMC_MAP_{status}=WARN {type(exc).__name__}", flush=True)
     cc_names: dict[str, set[str]] = {}
     try:
         payload = get(session, "https://min-api.cryptocompare.com/data/all/coinlist", {"summary": "true"}).json()

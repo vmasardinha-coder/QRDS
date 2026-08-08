@@ -2,43 +2,7 @@ import unittest
 
 import pandas as pd
 
-from tools.gate_btc_cmc_pit_collector import (
-    metadata_maps,
-    parse_page,
-    reconcile_unique_historical_slugs,
-    resolve_symbol,
-)
-
-
-class _FakeResponse:
-    def __init__(self, payload):
-        self.status_code = 200
-        self._payload = payload
-
-    def json(self):
-        return self._payload
-
-    def raise_for_status(self):
-        return None
-
-
-class _PagedMapSession:
-    def __init__(self):
-        self.calls = []
-
-    def get(self, url, params=None, timeout=None):
-        params = dict(params or {})
-        self.calls.append((url, params, timeout))
-        if "cryptocompare.com/data/all/coinlist" in url:
-            return _FakeResponse({"Data": {}})
-        status = params.get("listing_status")
-        start = int(params.get("start", 1))
-        if status == "inactive" and start == 1:
-            row = {"name": "Repeated Old Asset", "slug": "repeated-old-asset", "symbol": "ROA"}
-            return _FakeResponse({"data": [row] * 5000})
-        if status == "inactive" and start == 5001:
-            return _FakeResponse({"data": [{"name": "Second Page Asset", "slug": "second-page-asset", "symbol": "SPA"}]})
-        return _FakeResponse({"data": []})
+from tools.gate_btc_cmc_pit_collector import parse_page, reconcile_unique_historical_slugs, resolve_symbol
 
 
 class CMCPITCollectorTests(unittest.TestCase):
@@ -55,20 +19,6 @@ class CMCPITCollectorTests(unittest.TestCase):
             + ''.join(rows)
             + '</tbody></table>'
         )
-
-    def test_keyless_cmc_map_paginates_past_5000(self):
-        session = _PagedMapSession()
-        cmc, cc = metadata_maps(session)
-        self.assertEqual(cc, {})
-        self.assertEqual(cmc.get('secondpageasset'), {'SPA'})
-        self.assertEqual(cmc.get('repeatedoldasset'), {'ROA'})
-        inactive_starts = [
-            int(params['start'])
-            for url, params, _ in session.calls
-            if 'coinmarketcap.com/public-api/v1/cryptocurrency/map' in url
-            and params.get('listing_status') == 'inactive'
-        ]
-        self.assertEqual(inactive_starts, [1, 5001])
 
     def test_materialized_name_cleanup_still_captures_slug(self):
         frame = parse_page(self._page(), pd.Timestamp('2024-01-31'), {}, {})
