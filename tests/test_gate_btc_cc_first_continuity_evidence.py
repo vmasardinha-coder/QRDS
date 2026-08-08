@@ -28,19 +28,12 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
                     continuity.staged.runner._continuity_ok(symbol, names, slugs)
                 )
 
-    def test_wormhole_w_is_the_only_single_char_exception(self):
-        self.assertTrue(
-            continuity._single_char_evidence_ok("W", ["Wormhole"], ["wormhole"])
-        )
-        self.assertFalse(
-            continuity._single_char_evidence_ok("T", ["Threshold"], ["threshold"])
-        )
-        self.assertFalse(
-            continuity._single_char_evidence_ok("W", ["Another W"], ["wormhole"])
-        )
-        self.assertFalse(
-            continuity._single_char_evidence_ok("W", ["Wormhole"], ["another-wormhole"])
-        )
+    def test_curated_single_char_exceptions_are_exact(self):
+        self.assertTrue(continuity._single_char_evidence_ok("W", ["Wormhole"], ["wormhole"]))
+        self.assertTrue(continuity._single_char_evidence_ok("T", ["Threshold"], ["threshold"]))
+        self.assertFalse(continuity._single_char_evidence_ok("A", ["Asset"], ["asset"]))
+        self.assertFalse(continuity._single_char_evidence_ok("W", ["Another W"], ["wormhole"]))
+        self.assertFalse(continuity._single_char_evidence_ok("T", ["Threshold"], ["another-threshold"]))
 
     def test_unrelated_ticker_reuse_still_fails_closed(self):
         self.assertFalse(
