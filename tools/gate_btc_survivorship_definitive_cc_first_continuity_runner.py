@@ -18,6 +18,7 @@ import pandas as pd
 
 import gate_btc_survivorship_definitive_cc_first_runner as staged
 import gate_btc_bitfinex_legacy_pit_history as bitfinex_legacy
+import gate_btc_kucoin_uta_legacy_pit_history as kucoin_uta_legacy
 
 EVIDENCE_BACKED_CONTINUITIES = {
     "THETA": {"theta", "thetanetwork"},
@@ -43,7 +44,7 @@ BTT_REDENOMINATION_DATE = pd.Timestamp("2021-12-27")
 REV_RENAME_COMPLETE_DATE = pd.Timestamp("2020-04-09")
 MEXC_HISTORY_START = pd.Timestamp("2023-01-01")
 MEXC_END = pd.Timestamp("2026-08-06")
-RESIDUAL_SYMBOLS = ("BORG", "BTTOLD", "REV", "MX")
+RESIDUAL_SYMBOLS = ("BORG", "BTTOLD", "REV", "MX", "ABBC", "VLX")
 COLS = ["date", "symbol", "close_usd", "volume_usd", "source"]
 
 _ORIGINAL_IDENTITY_AUDIT = staged.runner._cascade_identity_audit
@@ -216,12 +217,22 @@ def _recover_mx(session, row) -> tuple[pd.DataFrame, str, str]:
     return out, url, "PASS" if len(out) >= 2 else "NO_MEXC_MXUSDT_HISTORY"
 
 
+def _recover_abbc(session, row) -> tuple[pd.DataFrame, str, str]:
+    return kucoin_uta_legacy.fetch_symbol(session, "ABBC", row.first_snapshot, row.last_snapshot)
+
+
+def _recover_vlx(session, row) -> tuple[pd.DataFrame, str, str]:
+    return kucoin_uta_legacy.fetch_symbol(session, "VLX", row.first_snapshot, row.last_snapshot)
+
+
 def _recover_residuals(session, identity: pd.DataFrame, outdir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     fetchers = {
         "BORG": _recover_borg,
         "BTTOLD": _recover_bttold,
         "REV": _recover_rev,
         "MX": _recover_mx,
+        "ABBC": _recover_abbc,
+        "VLX": _recover_vlx,
     }
     frames = []
     coverage = []
@@ -265,6 +276,7 @@ def _recover_residuals(session, identity: pd.DataFrame, outdir: Path) -> tuple[p
         "btt_redenomination_date_exclusive": str(BTT_REDENOMINATION_DATE.date()),
         "rev_post_swap_start_inclusive": str(REV_RENAME_COMPLETE_DATE.date()),
         "mexc_history_start_inclusive": str(MEXC_HISTORY_START.date()),
+        "kucoin_uta_curated_symbols": sorted(kucoin_uta_legacy.CONTRACTS),
         "cross_boundary_stitching": False,
         "synthetic_conversion": False,
         "strategy_inputs_changed": False,
