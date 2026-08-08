@@ -1,0 +1,62 @@
+name: GATE BTC CMC Ranked Active Identity Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-cmc-ranked-active-probe.yml
+      - tools/gate_btc_cmc_ranked_active_identity.py
+      - tests/test_gate_btc_cmc_ranked_active_identity.py
+
+concurrency:
+  group: gate-btc-cmc-ranked-active-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  ranked-active-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install probe dependency
+        run: pip install 'requests>=2.31,<3'
+      - name: Test fail-closed ranked identity contracts
+        run: python -m unittest -v tests/test_gate_btc_cmc_ranked_active_identity.py
+      - name: Probe official CMC rank-sorted active map
+        run: python tools/gate_btc_cmc_ranked_active_identity.py
+      - name: Verify research-only contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/cmc_ranked_active_probe/CMC_RANKED_ACTIVE_IDENTITY_PROBE.json', encoding='utf-8'))
+          assert p['status'] == 'PASS'
+          assert p['request_sort'] == 'cmc_rank'
+          assert p['rows'] >= 100
+          assert p['research_only'] is True
+          assert p['shadow_only'] is True
+          assert p['not_approved'] is True
+          assert p['engine_feed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('CMC_RANKED_ACTIVE_IDENTITY_CONTRACT=PASS rows='+str(p['rows']))
+          PY
+      - name: Upload identity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-cmc-ranked-active-${{ github.run_id }}
+          path: artifacts/cmc_ranked_active_probe/
+          retention-days: 30
+          if-no-files-found: warn
