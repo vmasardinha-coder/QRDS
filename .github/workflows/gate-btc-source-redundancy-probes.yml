@@ -1,0 +1,222 @@
+name: GATE BTC Source Redundancy Probes
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_cutoff:
+        description: Public archive UTC day (YYYY-MM-DD); defaults to yesterday
+        required: false
+        type: string
+  schedule:
+    - cron: "45 1 * * *"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-source-redundancy-probes.yml
+      - tools/gate_btc_source_redundancy_probe.py
+      - tools/gate_btc_bybit_redundancy_probe.py
+      - tools/gate_btc_bybit_public_archive_probe.py
+      - tools/gate_btc_binance_spot_recovery_probe.py
+      - tools/gate_btc_binance_spot_history_probe.py
+      - tools/gate_btc_binance_spot_equivalence_probe.py
+      - tools/gate_btc_v2a_failure_diagnostic.py
+      - tests/test_gate_btc_source_redundancy_probe.py
+      - tests/test_gate_btc_bybit_redundancy_probe.py
+      - tests/test_gate_btc_bybit_public_archive_probe.py
+      - tests/test_gate_btc_binance_spot_recovery_probe.py
+      - tests/test_gate_btc_binance_spot_history_probe.py
+      - tests/test_gate_btc_binance_spot_equivalence_probe.py
+      - tests/test_gate_btc_v2a_failure_diagnostic.py
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-source-probes-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  source-redundancy-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test source-probe safety contracts
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_source_redundancy_probe.py
+          tests/test_gate_btc_bybit_redundancy_probe.py
+          tests/test_gate_btc_bybit_public_archive_probe.py
+          tests/test_gate_btc_binance_spot_recovery_probe.py
+          tests/test_gate_btc_binance_spot_history_probe.py
+          tests/test_gate_btc_binance_spot_equivalence_probe.py
+          tests/test_gate_btc_v2a_failure_diagnostic.py
+
+      - name: Resolve public archive day
+        env:
+          REQUESTED_CUTOFF: ${{ inputs.data_cutoff || '' }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime, timedelta, timezone
+          requested = os.environ.get("REQUESTED_CUTOFF", "").strip()
+          day = requested or (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
+          datetime.strptime(day, "%Y-%m-%d")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"PROBE_DATA_CUTOFF={day}\n")
+          print(f"PROBE_DATA_CUTOFF={day}")
+          PY
+
+      - name: Probe Binance public USD-M daily archives
+        run: >-
+          python tools/gate_btc_source_redundancy_probe.py
+          --day "$PROBE_DATA_CUTOFF"
+          --symbols BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT
+          --output artifacts/source_probes/binance_usdm_daily_1d.json
+
+      - name: Probe Bybit public V5 regional availability
+        run: >-
+          python tools/gate_btc_bybit_redundancy_probe.py
+          --output artifacts/source_probes/bybit_v5_linear_tickers.json
+
+      - name: Probe Bybit public Spot trade archives
+        run: >-
+          python tools/gate_btc_bybit_public_archive_probe.py
+          --day "$PROBE_DATA_CUTOFF"
+          --pairs BTCUSDT,ETHUSDT,JASMYUSDT,NEXOUSDT,SYRUPUSDT
+          --output artifacts/source_probes/bybit_public_spot_archives.json
+
+      - name: Resolve latest successful Daily Research artifact for this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=${BRANCH}&status=success&per_page=20" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          if test -z "$RUN_ID"; then
+            echo "V2A_DAILY_ARTIFACT_AVAILABLE=false" >> "$GITHUB_ENV"
+            echo "No successful Daily Research artifact available for branch ${BRANCH}; recovery probe skipped."
+            exit 0
+          fi
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          if test -z "$ARTIFACT_ID"; then
+            echo "V2A_DAILY_ARTIFACT_AVAILABLE=false" >> "$GITHUB_ENV"
+            echo "Successful Daily Research run ${RUN_ID} has no eligible artifact; recovery probe skipped."
+            exit 0
+          fi
+          mkdir -p source_daily extracted/v2a artifacts/source_probes
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > daily_artifact.zip
+          unzip -q daily_artifact.zip -d source_daily
+          test -f source_daily/qos_daily/qos_v2a_outputs.zip
+          unzip -q source_daily/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          test -f extracted/v2a/outputs/v2a_run_manifest.json
+          test -f extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          test -f extracted/v2a/outputs/download_failures_v2a.csv
+          V2A_DAY=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          echo "V2A_DAILY_ARTIFACT_AVAILABLE=true" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_RUN_ID=${RUN_ID}" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_DAY=${V2A_DAY}" >> "$GITHUB_ENV"
+          echo "V2A_SOURCE_RUN_ID=${RUN_ID} V2A_SOURCE_DAY=${V2A_DAY}"
+
+      - name: Build advisory V2A failure classification for recovery probe
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_v2a_failure_diagnostic.py
+          --manifest extracted/v2a/outputs/v2a_run_manifest.json
+          --universe-csv extracted/v2a/data/raw/coingecko_current_universe_v04.csv
+          --failures-csv extracted/v2a/outputs/download_failures_v2a.csv
+          --snapshot-id "${V2A_SOURCE_DAY}-run-${V2A_SOURCE_RUN_ID}"
+          --source-run-id "$V2A_SOURCE_RUN_ID"
+          --output artifacts/source_probes/v2a_failure_diagnostic.json
+
+      - name: Compare Binance public Spot transport with admitted CDD rows
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_equivalence_probe.py
+          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --day "$V2A_SOURCE_DAY"
+          --output artifacts/source_probes/binance_spot_vs_cdd_equivalence.json
+
+      - name: Probe Binance Spot archives for V2A recovery candidates
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_recovery_probe.py
+          --day "$V2A_SOURCE_DAY"
+          --diagnostic artifacts/source_probes/v2a_failure_diagnostic.json
+          --output artifacts/source_probes/binance_spot_v2a_recovery_candidates.json
+
+      - name: Measure Binance Spot monthly history depth for recovery leads
+        if: env.V2A_DAILY_ARTIFACT_AVAILABLE == 'true'
+        run: >-
+          python tools/gate_btc_binance_spot_history_probe.py
+          --cutoff-day "$V2A_SOURCE_DAY"
+          --spot-report artifacts/source_probes/binance_spot_v2a_recovery_candidates.json
+          --months 12
+          --output artifacts/source_probes/binance_spot_v2a_history_depth.json
+
+      - name: Verify probes cannot alter frozen research engine
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          paths = [
+              Path("artifacts/source_probes/binance_usdm_daily_1d.json"),
+              Path("artifacts/source_probes/bybit_v5_linear_tickers.json"),
+              Path("artifacts/source_probes/bybit_public_spot_archives.json"),
+              Path("artifacts/source_probes/binance_spot_vs_cdd_equivalence.json"),
+              Path("artifacts/source_probes/binance_spot_v2a_recovery_candidates.json"),
+              Path("artifacts/source_probes/binance_spot_v2a_history_depth.json"),
+          ]
+          for path in paths:
+              if not path.exists():
+                  continue
+              report = json.load(open(path, encoding="utf-8"))
+              assert report["role"] == "SOURCE_REDUNDANCY_PROBE_ONLY"
+              assert report["engine_feed"] is False
+              assert report["feeds_frozen_engine"] is False
+              assert report["source_substitution_performed"] is False
+              assert report["strategy_inputs_changed"] is False
+              assert report["methodology_changes"] == 0
+              assert report["research_only"] is True
+              assert report["shadow_only"] is True
+              assert report["not_approved"] is True
+              assert report["orders_generated"] == 0
+              assert report["real_capital_used"] == 0
+              assert report["promotion_allowed"] is False
+              if "proxy_or_geo_bypass_used" in report:
+                  assert report["proxy_or_geo_bypass_used"] is False
+              print(str(path) + " STATUS=" + report["status"])
+          diagnostic = Path("artifacts/source_probes/v2a_failure_diagnostic.json")
+          if diagnostic.exists():
+              report = json.load(open(diagnostic, encoding="utf-8"))
+              assert report["advisory_only"] is True
+              assert report["feeds_frozen_engine"] is False
+              assert report["denominator_changed"] is False
+              assert report["universe_changed"] is False
+              assert report["source_order_changed"] is False
+              assert report["source_substitution_performed"] is False
+              assert report["methodology_changes"] == 0
+          print("SOURCE_PROBE_SAFETY=PASS")
+          PY
+
+      - name: Upload source-probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-source-probes-${{ github.run_id }}
+          path: artifacts/source_probes/
+          retention-days: 30
+          if-no-files-found: error
