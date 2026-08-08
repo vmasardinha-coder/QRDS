@@ -38,7 +38,9 @@ class CMCRankedDefinitiveRunnerTests(unittest.TestCase):
         self.assertEqual(meme.symbol, "M")
         self.assertFalse(bool(new.identity_resolved))
         self.assertEqual(keep.symbol, "KEEP")
-        self.assertEqual(policy["historical_conflict_count"], 1)
+        # Both the reused same-slug identity and an attempted KEEP->WRONG
+        # overwrite are conflicts and must fail closed.
+        self.assertEqual(policy["historical_conflict_count"], 2)
         self.assertFalse(policy["existing_identity_overwrite_allowed"])
         self.assertFalse(policy["name_based_ranked_backfill_allowed"])
 
