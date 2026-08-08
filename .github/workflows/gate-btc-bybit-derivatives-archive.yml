@@ -1,0 +1,78 @@
+name: GATE BTC Bybit Derivatives Archive Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-bybit-derivatives-archive.yml
+      - tools/gate_btc_bybit_derivatives_archive_probe.py
+      - tests/test_gate_btc_bybit_derivatives_archive_probe.py
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  bybit-derivatives-archive-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test historical-redundancy safety boundary
+        run: python -m unittest -v tests/test_gate_btc_bybit_derivatives_archive_probe.py
+
+      - name: Resolve most recent completed UTC day
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime, timedelta, timezone
+          day=(datetime.now(timezone.utc).date()-timedelta(days=1)).isoformat()
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write('PROBE_CUTOFF='+day+'\n')
+          print('PROBE_CUTOFF='+day)
+          PY
+
+      - name: Probe Bybit public derivatives archives
+        run: >-
+          python tools/gate_btc_bybit_derivatives_archive_probe.py
+          --cutoff-day "$PROBE_CUTOFF"
+          --pairs BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT
+          --output artifacts/bybit_derivatives/bybit_derivatives_archive.json
+
+      - name: Verify archive evidence cannot replace V5 live feed
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/bybit_derivatives/bybit_derivatives_archive.json',encoding='utf-8'))
+          assert p['engine_feed'] is False
+          assert p['feeds_frozen_engine'] is False
+          assert p['source_substitution_performed'] is False
+          assert p['strategy_inputs_changed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['proxy_or_geo_bypass_used'] is False
+          assert p['authentication_used'] is False
+          assert p['live_v5_feed_restored'] is False
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('BYBIT_DERIVATIVES_ARCHIVE_SAFETY=PASS')
+          print('STATUS='+p['status'])
+          print('AVAILABLE='+str(p['historical_archive_available_count']))
+          PY
+
+      - name: Upload Bybit derivatives archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-bybit-derivatives-${{ github.run_id }}
+          path: artifacts/bybit_derivatives/
+          retention-days: 30
+          if-no-files-found: error
