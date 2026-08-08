@@ -17,6 +17,12 @@ URL = "https://api.kucoin.com/api/ua/v1/market/kline"
 
 # UTC calendar boundaries from KuCoin's own listing/delisting announcements.
 CONTRACTS = {
+    "AMPL": {
+        "pair": "AMPL-USDT",
+        "listing_date": pd.Timestamp("2019-11-07"),
+        "delisting_date_exclusive": pd.Timestamp("2025-12-29"),
+        "source": "kucoin_uta_ampl_usdt_bounded",
+    },
     "ABBC": {
         "pair": "ABBC-USDT",
         "listing_date": pd.Timestamp("2021-06-04"),
