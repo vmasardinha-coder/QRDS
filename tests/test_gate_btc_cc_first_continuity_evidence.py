@@ -47,47 +47,29 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
         self.assertFalse(continuity._stable_symbol_with_evidence(v2a, "XTN", "Another Token"))
         self.assertFalse(continuity._stable_symbol_with_evidence(v2a, "ABC", "Neutrino USD"))
 
-    def test_borg_chsb_recovery_is_hard_cut_before_migration(self):
-        source = pd.DataFrame({
-            "date": pd.to_datetime(["2023-10-15", "2023-10-16", "2023-10-17"]),
-            "symbol": ["CHSB"] * 3,
-            "close_usd": [1.0, 1.1, 1.2],
-            "volume_usd": [100.0, 110.0, 120.0],
-            "source": ["cryptodatadownload_bitfinex_usd"] * 3,
-        })
+    def test_borg_chsb_recovery_is_hard_blocked_even_for_pre_migration_snapshots(self):
         row = SimpleNamespace(first_snapshot="2020-06-30", last_snapshot="2023-01-31")
-        with patch.object(continuity.staged.runner.cdd_multi, "fetch_symbol", return_value=(source, "cdd://CHSB", "PASS")):
-            out, _, status = continuity._recover_borg(object(), row)
-        self.assertEqual(status, "PASS")
-        self.assertEqual(set(out["symbol"]), {"BORG"})
-        self.assertTrue((out["date"] < continuity.BORG_MIGRATION_DATE).all())
-        self.assertEqual(out["date"].max(), pd.Timestamp("2023-10-16"))
-        self.assertTrue(out["source"].str.startswith("legacy_chsb_pre_borg_migration__").all())
-
-    def test_borg_falls_back_to_bitfinex_trade_history_fail_closed_by_date(self):
-        direct = pd.DataFrame({
-            "date": pd.to_datetime(["2022-12-30", "2022-12-31"]),
-            "symbol": ["BORG", "BORG"],
-            "close_usd": [0.18, 0.19],
-            "volume_usd": [1000.0, 1200.0],
-            "source": ["bitfinex_public_trades_chsbusd", "bitfinex_public_trades_chsbusd"],
-        })
-        row = SimpleNamespace(first_snapshot="2020-06-30", last_snapshot="2023-01-31")
-        with patch.object(
-            continuity.staged.runner.cdd_multi,
-            "fetch_symbol",
-            return_value=(pd.DataFrame(), "cdd://CHSB", "NO_CDD_MULTI_EXCHANGE_DAILY"),
-        ), patch.object(
-            continuity.bitfinex_legacy,
-            "fetch_chsb_pre_migration",
-            return_value=(direct, "bitfinex://CHSBUSD", "PASS"),
-        ) as fallback:
+        with patch.object(continuity.staged.runner.cdd_multi, "fetch_symbol") as cdd, patch.object(
+            continuity.bitfinex_legacy, "fetch_chsb_pre_migration"
+        ) as bitfinex:
             out, url, status = continuity._recover_borg(object(), row)
-        self.assertEqual(status, "PASS")
-        self.assertEqual(url, "bitfinex://CHSBUSD")
-        self.assertEqual(set(out["symbol"]), {"BORG"})
-        self.assertTrue((out["date"] < continuity.BORG_MIGRATION_DATE).all())
-        fallback.assert_called_once()
+        self.assertTrue(out.empty)
+        self.assertEqual(url, "")
+        self.assertEqual(status, "BLOCKED_CHSB_BORG_TOKEN_MIGRATION_NO_STITCHING")
+        cdd.assert_not_called()
+        bitfinex.assert_not_called()
+
+    def test_borg_chsb_recovery_remains_blocked_after_migration(self):
+        row = SimpleNamespace(first_snapshot="2023-10-17", last_snapshot="2024-01-31")
+        with patch.object(continuity.staged.runner.cdd_multi, "fetch_symbol") as cdd, patch.object(
+            continuity.bitfinex_legacy, "fetch_chsb_pre_migration"
+        ) as bitfinex:
+            out, url, status = continuity._recover_borg(object(), row)
+        self.assertTrue(out.empty)
+        self.assertEqual(url, "")
+        self.assertEqual(status, "BLOCKED_CHSB_BORG_TOKEN_MIGRATION_NO_STITCHING")
+        cdd.assert_not_called()
+        bitfinex.assert_not_called()
 
     def test_bttold_recovery_never_admits_new_btt_side(self):
         source = pd.DataFrame({
