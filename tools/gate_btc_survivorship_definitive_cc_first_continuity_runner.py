@@ -21,11 +21,12 @@ EVIDENCE_BACKED_CONTINUITIES = {
     "SXP": {"sxp", "solar", "swipe"},
 }
 
-# PIT-only single-character ticker exception backed by primary project evidence.
+# PIT-only single-character ticker exceptions backed by primary project evidence.
 # This does not modify the canonical V2A standard_ticker rule and does not admit
 # any other one-character symbol.
 EVIDENCE_BACKED_SINGLE_CHAR = {
     "W": {"name": "wormhole", "slug": "wormhole"},
+    "T": {"name": "threshold", "slug": "threshold"},
 }
 
 # Intentionally absent from EVIDENCE_BACKED_CONTINUITIES:
@@ -52,7 +53,7 @@ def _single_char_evidence_ok(symbol: str, names: list[str], slugs: list[str]) ->
 
 def _identity_audit_with_single_char_evidence(snapshots, coinlist, v2a):
     identity = _ORIGINAL_IDENTITY_AUDIT(snapshots, coinlist, v2a)
-    for symbol, evidence in EVIDENCE_BACKED_SINGLE_CHAR.items():
+    for symbol in EVIDENCE_BACKED_SINGLE_CHAR:
         mask = identity["symbol"].astype(str) == symbol
         if not bool(mask.any()):
             continue
