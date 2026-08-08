@@ -3,8 +3,8 @@
 
 Research-only wrapper layered on the CC-first staging runner. It keeps the
 trade-level Bybit archive deferred and adds only primary-source documented
-identity continuities. No strategy, factor, weight, price, return, execution,
-or frozen-engine rule is changed.
+identity continuities and classification corrections. No strategy, factor,
+weight, price, return, execution, or frozen-engine rule is changed.
 """
 from __future__ import annotations
 
@@ -29,24 +29,23 @@ EVIDENCE_BACKED_SINGLE_CHAR = {
     "T": {"name": "threshold", "slug": "threshold"},
 }
 
-# Historical venue symbols that are proven to be the same underlying token,
-# not synthetic conversions or contract stitching. XTN is the same Neutrino
-# token formerly displayed/traded as USDN; the Neutrino project explicitly
-# documents XTN as formerly USDN and the same 2019-issued token.
-EVIDENCE_BACKED_SOURCE_ALIASES = {
-    "XTN": "USDN",
+# Stablecoin identities missing from the frozen symbol/name filter because CMC
+# now exposes historical markets under later/current labels. These exact
+# symbol+name pairs are excluded from the directional PIT universe; the
+# canonical V2A stable list is not modified.
+EVIDENCE_BACKED_PIT_STABLES = {
+    "XTN": {"neutrinousd"},
+    "FEI": {"feiusd"},
 }
 
-# Intentionally absent from EVIDENCE_BACKED_CONTINUITIES/source aliases:
+# Intentionally absent from same-token continuity:
 # - DYDX / ethDYDX: documented bridge/conversion across chains/tokens.
 # - KNC / KNCL: documented old-contract to new-contract token migration.
 # - BORG / CHSB and BTTOLD / BTT: token migrations/redenominations are not
-#   admitted by this same-token alias layer.
-# The PIT identity gate must keep those cases fail-closed.
+#   admitted by this continuity layer.
 
 _ORIGINAL_IDENTITY_AUDIT = staged.runner._cascade_identity_audit
-_ORIGINAL_FETCH_GATE = staged.runner.exchange_history.fetch_gate
-_ORIGINAL_FETCH_KUCOIN = staged.runner.exchange_history.fetch_kucoin
+_ORIGINAL_STABLE_SYMBOL = staged.runner.definitive.stable_symbol
 
 
 def _norm(value: object) -> str:
@@ -60,6 +59,13 @@ def _single_char_evidence_ok(symbol: str, names: list[str], slugs: list[str]) ->
     name_norms = {_norm(v) for v in names if _norm(v)}
     slug_norms = {_norm(v) for v in slugs if _norm(v)}
     return name_norms == {evidence["name"]} and slug_norms == {evidence["slug"]}
+
+
+def _stable_symbol_with_evidence(v2a, symbol: str, name: str) -> bool:
+    if _ORIGINAL_STABLE_SYMBOL(v2a, symbol, name):
+        return True
+    allowed_names = EVIDENCE_BACKED_PIT_STABLES.get(str(symbol), set())
+    return bool(allowed_names and _norm(name) in allowed_names)
 
 
 def _identity_audit_with_single_char_evidence(snapshots, coinlist, v2a):
@@ -78,31 +84,11 @@ def _identity_audit_with_single_char_evidence(snapshots, coinlist, v2a):
     return identity
 
 
-def _fetch_with_same_token_alias(fetcher, session, symbol: str, venue: str):
-    query_symbol = EVIDENCE_BACKED_SOURCE_ALIASES.get(str(symbol), str(symbol))
-    history, status = fetcher(session, query_symbol)
-    if query_symbol == str(symbol) or history.empty:
-        return history, status
-    out = history.copy()
-    out["symbol"] = str(symbol)
-    out["source"] = out["source"].astype(str) + f"_same_token_alias_{query_symbol.lower()}_to_{str(symbol).lower()}"
-    return out, status
-
-
-def _fetch_gate_with_alias(session, symbol: str):
-    return _fetch_with_same_token_alias(_ORIGINAL_FETCH_GATE, session, symbol, "gateio")
-
-
-def _fetch_kucoin_with_alias(session, symbol: str):
-    return _fetch_with_same_token_alias(_ORIGINAL_FETCH_KUCOIN, session, symbol, "kucoin")
-
-
 def apply_continuity_evidence() -> None:
     for symbol, aliases in EVIDENCE_BACKED_CONTINUITIES.items():
         staged.runner.definitive.KNOWN_CONTINUITIES.setdefault(symbol, set()).update(aliases)
     staged.runner._cascade_identity_audit = _identity_audit_with_single_char_evidence
-    staged.runner.exchange_history.fetch_gate = _fetch_gate_with_alias
-    staged.runner.exchange_history.fetch_kucoin = _fetch_kucoin_with_alias
+    staged.runner.definitive.stable_symbol = _stable_symbol_with_evidence
 
 
 def main() -> int:
