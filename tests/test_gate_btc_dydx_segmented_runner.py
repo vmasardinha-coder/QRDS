@@ -51,7 +51,7 @@ class DydxSegmentedRunnerTests(unittest.TestCase):
 
     def test_strict_span_accepts_full_pre_genesis_segment(self):
         full = pd.DataFrame({
-            "date": pd.to_datetime(["2021-09-29", "2023-09-30"]),
+            "date": pd.to_datetime(["2021-09-30", "2023-09-30"]),
             "symbol": ["DYDXERC20"] * 2,
             "close_usd": [10.0, 2.0],
             "volume_usd": [100.0, 100.0],
