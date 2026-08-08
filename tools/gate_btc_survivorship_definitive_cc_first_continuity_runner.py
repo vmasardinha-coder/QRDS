@@ -29,13 +29,24 @@ EVIDENCE_BACKED_SINGLE_CHAR = {
     "T": {"name": "threshold", "slug": "threshold"},
 }
 
-# Intentionally absent from EVIDENCE_BACKED_CONTINUITIES:
+# Historical venue symbols that are proven to be the same underlying token,
+# not synthetic conversions or contract stitching. XTN is the same Neutrino
+# token formerly displayed/traded as USDN; the Neutrino project explicitly
+# documents XTN as formerly USDN and the same 2019-issued token.
+EVIDENCE_BACKED_SOURCE_ALIASES = {
+    "XTN": "USDN",
+}
+
+# Intentionally absent from EVIDENCE_BACKED_CONTINUITIES/source aliases:
 # - DYDX / ethDYDX: documented bridge/conversion across chains/tokens.
 # - KNC / KNCL: documented old-contract to new-contract token migration.
-# The PIT identity gate must keep both cases fail-closed rather than treating
-# them as display-name-only continuity.
+# - BORG / CHSB and BTTOLD / BTT: token migrations/redenominations are not
+#   admitted by this same-token alias layer.
+# The PIT identity gate must keep those cases fail-closed.
 
 _ORIGINAL_IDENTITY_AUDIT = staged.runner._cascade_identity_audit
+_ORIGINAL_FETCH_GATE = staged.runner.exchange_history.fetch_gate
+_ORIGINAL_FETCH_KUCOIN = staged.runner.exchange_history.fetch_kucoin
 
 
 def _norm(value: object) -> str:
@@ -67,10 +78,31 @@ def _identity_audit_with_single_char_evidence(snapshots, coinlist, v2a):
     return identity
 
 
+def _fetch_with_same_token_alias(fetcher, session, symbol: str, venue: str):
+    query_symbol = EVIDENCE_BACKED_SOURCE_ALIASES.get(str(symbol), str(symbol))
+    history, status = fetcher(session, query_symbol)
+    if query_symbol == str(symbol) or history.empty:
+        return history, status
+    out = history.copy()
+    out["symbol"] = str(symbol)
+    out["source"] = out["source"].astype(str) + f"_same_token_alias_{query_symbol.lower()}_to_{str(symbol).lower()}"
+    return out, status
+
+
+def _fetch_gate_with_alias(session, symbol: str):
+    return _fetch_with_same_token_alias(_ORIGINAL_FETCH_GATE, session, symbol, "gateio")
+
+
+def _fetch_kucoin_with_alias(session, symbol: str):
+    return _fetch_with_same_token_alias(_ORIGINAL_FETCH_KUCOIN, session, symbol, "kucoin")
+
+
 def apply_continuity_evidence() -> None:
     for symbol, aliases in EVIDENCE_BACKED_CONTINUITIES.items():
         staged.runner.definitive.KNOWN_CONTINUITIES.setdefault(symbol, set()).update(aliases)
     staged.runner._cascade_identity_audit = _identity_audit_with_single_char_evidence
+    staged.runner.exchange_history.fetch_gate = _fetch_gate_with_alias
+    staged.runner.exchange_history.fetch_kucoin = _fetch_kucoin_with_alias
 
 
 def main() -> int:
