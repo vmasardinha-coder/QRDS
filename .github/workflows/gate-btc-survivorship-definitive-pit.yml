@@ -10,6 +10,7 @@ on:
       - tools/gate_btc_survivorship_definitive_runner.py
       - tools/gate_btc_survivorship_definitive_cc_first_runner.py
       - tools/gate_btc_survivorship_definitive_cc_first_continuity_runner.py
+      - tools/gate_btc_survivorship_definitive_dydx_segmented_runner.py
       - tools/gate_btc_cmc_pit_parser.py
       - tools/gate_btc_cmc_pit_collector.py
       - tools/gate_btc_coinmetrics_pit_history.py
@@ -29,6 +30,7 @@ on:
       - tests/test_gate_btc_pit_identity_continuity.py
       - tests/test_gate_btc_cc_first_staging.py
       - tests/test_gate_btc_cc_first_continuity_evidence.py
+      - tests/test_gate_btc_dydx_segmented_runner.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/GATE_BTC_IDENTITY_CONTINUITY_EVIDENCE.md
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
@@ -74,6 +76,7 @@ jobs:
           tests/test_gate_btc_pit_identity_continuity.py
           tests/test_gate_btc_cc_first_staging.py
           tests/test_gate_btc_cc_first_continuity_evidence.py
+          tests/test_gate_btc_dydx_segmented_runner.py
 
       - name: Smoke test real lazy-row CMC reconstruction
         run: |
@@ -137,7 +140,7 @@ jobs:
 
       - name: Execute external monthly PIT top150 strict-next-bar study
         run: >-
-          python tools/gate_btc_survivorship_definitive_cc_first_continuity_runner.py
+          python tools/gate_btc_survivorship_definitive_dydx_segmented_runner.py
           --output-dir artifacts/survivorship_definitive
           --coverage-threshold 0.95
 
@@ -155,6 +158,8 @@ jobs:
           p=json.load(open('artifacts/survivorship_definitive/MANIFEST.json', encoding='utf-8'))
           c=json.load(open('artifacts/survivorship_definitive/COVERAGE_SUMMARY.json', encoding='utf-8'))
           s=json.load(open('artifacts/survivorship_definitive/BYBIT_ARCHIVE_STAGE_POLICY.json', encoding='utf-8'))
+          d=json.load(open('artifacts/survivorship_definitive/DYDX_SEGMENT_IDENTITY_POLICY.json', encoding='utf-8'))
+          r=json.load(open('artifacts/survivorship_definitive/DYDX_SEGMENT_RECOVERY.json', encoding='utf-8'))
           assert p['status'] in {'PASS_FULL_COVERAGE_AUDIT','PARTIAL_COVERAGE_RESEARCH_ONLY'}
           assert p['protocol'] == 'EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR'
           assert p['cmc_snapshots'] == 74
@@ -173,6 +178,16 @@ jobs:
           assert s['status'] == 'DEFERRED_CC_DIRECT_FIRST'
           assert s['bybit_adapter_removed'] is False
           assert s['engine_feed'] is False
+          assert d['legacy_audit_symbol'] == 'DYDXERC20'
+          assert d['chain_genesis'] == '2023-10-26'
+          assert d['native_dydx_generic_history_allowed'] is False
+          assert d['cross_token_stitching'] is False
+          assert d['methodology_changes'] == 0
+          assert d['engine_feed'] is False
+          assert r['cross_token_stitching'] is False
+          assert r['native_dydx_recovery_attempted'] is False
+          assert r['methodology_changes'] == 0
+          assert r['engine_feed'] is False
           assert Path('artifacts/survivorship_definitive/COVERAGE_BY_SIGNAL.csv').is_file()
           assert Path('artifacts/survivorship_definitive/GATE_BTC_SURVIVORSHIP_ALPHA_DEFINITIVE.zip').is_file()
           print('DEFINITIVE_PIT_CONTRACT=PASS')
@@ -182,6 +197,7 @@ jobs:
           print('SIGNAL_COVERAGE_MEAN='+str(c['signal_coverage_mean']))
           print('SIGNAL_COVERAGE_MAX='+str(c['signal_coverage_max']))
           print('WEEKS_GE_95='+str(c['weeks_at_or_above_threshold']))
+          print('DYDX_SEGMENT_STATUS='+r['status'])
           PY
 
       - name: Upload definitive research package
