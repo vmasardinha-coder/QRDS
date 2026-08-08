@@ -19,6 +19,8 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
             "HBAR": (["Hedera Hashgraph", "Hedera"], ["hederahashgraph", "hedera"]),
             "FET": (["Fetch.ai", "Artificial Superintelligence Alliance"], ["fetch", "artificialsuperintelligencealliance"]),
             "INJ": (["Injective Protocol", "Injective"], ["injectiveprotocol", "injective"]),
+            "SNX": (["Synthetix Network Token", "Synthetix"], ["synthetixnetworktoken", "synthetix"]),
+            "SXP": (["Swipe", "Solar"], ["swipe", "solar"]),
         }
         for symbol, (names, slugs) in cases.items():
             with self.subTest(symbol=symbol):
@@ -38,6 +40,24 @@ class CCFirstContinuityEvidenceTests(unittest.TestCase):
     def test_fet_evidence_does_not_merge_other_premerger_assets(self):
         self.assertNotIn("AGIX", continuity.EVIDENCE_BACKED_CONTINUITIES)
         self.assertNotIn("OCEAN", continuity.EVIDENCE_BACKED_CONTINUITIES)
+
+    def test_cross_token_migrations_remain_fail_closed(self):
+        self.assertNotIn("DYDX", continuity.EVIDENCE_BACKED_CONTINUITIES)
+        self.assertNotIn("KNC", continuity.EVIDENCE_BACKED_CONTINUITIES)
+        self.assertFalse(
+            continuity.staged.runner._continuity_ok(
+                "DYDX",
+                ["dYdX", "dYdX (ethDYDX)"],
+                ["dydx", "ethdydx"],
+            )
+        )
+        self.assertFalse(
+            continuity.staged.runner._continuity_ok(
+                "KNC",
+                ["Kyber Network Crystal Legacy", "Kyber Network Crystal v2"],
+                ["kybernetworkcrystallegacy", "kybernetworkcrystalv2"],
+            )
+        )
 
     def test_bybit_archive_remains_staged_not_removed(self):
         self.assertTrue(callable(continuity.staged._defer_bybit_archive))
