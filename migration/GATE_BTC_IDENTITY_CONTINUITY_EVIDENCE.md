@@ -1,10 +1,12 @@
 # GATE BTC — PIT identity continuity evidence
 
-Research-only evidence ledger for historical CoinMarketCap display-name changes. This file is identity-only: it must never be used to infer prices, factors, returns, rankings, or strategy outcomes.
+Research-only evidence ledger for historical CoinMarketCap display-name changes and tightly bounded historical-market identifiers. This file is identity/history-provenance only: it must never be used to infer factors, rankings, or strategy outcomes.
 
 ## Admission rule
 
 A continuity alias may be admitted only when primary project documentation explicitly establishes that the historical and later display names refer to the same project/token lineage, with the same ticker or an explicitly uninterrupted ticker transition. Similar names, ticker coincidence, third-party listings, or price correlation are insufficient.
+
+A historical-market identifier may be used without admitting cross-token continuity only when primary documentation fixes the migration/rename boundary and the recovered series is hard-cut to the documented side of that boundary. Bars must never be stitched across a token migration or redenomination.
 
 ## THETA — `THETA` / `Theta Network`
 
@@ -90,6 +92,59 @@ Audit aliases after normalization: `swipe`, `solar`.
 
 This admission is identity-only. It does not stitch ERC-20/BEP-20/native-chain bars, manufacture a continuous price series, or authorize a venue/source substitution. A price history must independently satisfy the existing source cascade and data-quality contract.
 
+## Bounded historical-market recovery — not cross-token continuity
+
+### BORG snapshots before BORG launch — recover only legacy `CHSB`
+
+**Decision:** permit direct CHSB market data only for the historical CMC BORG-labelled snapshot interval that ends before the CHSB→BORG migration; hard-cut all recovered bars before 2023-10-17. Do **not** stitch CHSB and BORG.
+
+Primary evidence:
+
+- SwissBorg, *Migrator Terms and Conditions*: https://swissborg.com/legal/migrator-terms-and-conditions
+  - Defines migration of existing CHSB to a new smart contract.
+- SwissBorg Academy, *What is the SwissBorg Token?*: https://academy.swissborg.com/en/learn/what-is-the-swissborg-token
+  - States that the original CHSB token was migrated to the new BORG token on 2023-10-17 at 1:1.
+- SwissBorg, *Embracing DeFi: The CHSB to BORG Migration*: https://swissborg.com/blog/embracing-defi-the-chsb-to-borg-migration-at-swissborg
+  - Documents completion of the CHSB→BORG migration.
+
+The PIT audit records the current CMC label `BORG` for snapshots from 2020-06-30 through 2023-01-31, all before BORG's documented launch/migration date. Therefore the recovery key is historical `CHSB`, and the stored target symbol is only a PIT label mapping. Source provenance must retain `legacy_chsb_pre_borg_migration`.
+
+### BTTOLD — recover only pre-redenomination legacy `BTT`
+
+**Decision:** permit legacy BTT market data only before 2021-12-27 and relabel it `BTTOLD` for the historical PIT rows. New BTT prices are forbidden in this series; no 1:1000 arithmetic conversion is allowed.
+
+Primary evidence:
+
+- BitTorrent, *What are BTT and BTTOLD*: https://blog.bittorrent.com/faqs/what-are-btt-and-bttold/
+  - On 2021-12-27 BitTorrent states that the then-current BTT becomes BTTOLD, the new token becomes BTT, and `1 BTTOLD = 1000 BTT`.
+
+The PIT snapshot window begins 2020-06-30 and ends 2021-12-31. Recovery is hard-cut before 2021-12-27, so the final post-redenomination snapshot may remain uncovered rather than using new-token prices.
+
+### REV — KuCoin legacy API symbol `R` after the 1:1 rename
+
+**Decision:** permit KuCoin `R-USDT` API history only on/after 2020-04-09 for CMC `REV` snapshots; relabel the returned market series as REV with explicit `kucoin_legacy_api_r_usdt_post_rev_swap` provenance.
+
+Primary evidence:
+
+- KuCoin, *KuCoin Will Support the Upgrade of Revain (R)*: https://www.kucoin.com/announcement/en-kucoin-will-support-the-upgrade-of-r
+  - States that R is automatically converted to REV 1:1, trading pairs are renamed REV/BTC, REV/ETH and REV/USDT, while the API symbol parameter remains `R`.
+- KuCoin, *KuCoin Completes The Upgrade and Rename of R into REV*: https://www.kucoin.com/announcement/en-upgrade-and-rename-r-rev
+  - On 2020-04-09 confirms the rename is complete and again states the API symbol parameter remains `R`.
+
+The current PIT REV snapshot window starts 2020-09-30, after completion, so no pre-swap R bar is admitted.
+
+### MX — residual-only MEXC `MXUSDT` direct spot history
+
+**Decision:** permit only the public MEXC MXUSDT spot market for MX, starting no earlier than 2023-01-01. Do not broaden the MEXC adapter to unrelated residual symbols in this experiment.
+
+Primary evidence:
+
+- MEXC Spot V3 API documentation: https://mexcdevelop.github.io/apidocs/spot_v3_en/
+  - Documents unauthenticated `GET /api/v3/klines`, identifies close at response index 4 and quote-asset volume at index 7, and documents downloadable Spot historical market data for all pairs since 2023-01-01.
+  - The exchange information/order examples explicitly use `MXUSDT`, confirming the pair identifier.
+
+The PIT MX window starts 2023-04-30, after the documented historical-data start. Source provenance is fixed as `mexc_spot_mxusdt`.
+
 ## Explicitly rejected cross-token / cross-contract migrations
 
 ### DYDX — `ethDYDX` / `DYDX`
@@ -116,8 +171,9 @@ Kyber documents an upgrade from the old token/contract (`KNCL`) to a new `KNC` t
 
 ## Safety constraints
 
-- This ledger changes identity continuity only.
-- It does not authorize stitching different tokens, contracts, venues, or quote currencies.
-- It does not synthesize missing prices or returns.
+- This ledger changes identity/classification or bounded historical-market provenance only.
+- It does not authorize stitching different tokens, contracts, venues, or quote currencies across migration boundaries.
+- It does not synthesize missing prices or returns and does not apply redenomination arithmetic.
 - It does not alter V2A selection rules, weights, execution convention, or the frozen engine.
+- Residual recovery must fail closed if a source, date boundary, or identity condition is not independently satisfied.
 - If future evidence reveals a ticker reuse or discontinuity, the corresponding alias must fail closed until explicitly re-audited.
