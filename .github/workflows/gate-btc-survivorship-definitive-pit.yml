@@ -8,6 +8,7 @@ on:
       - .github/workflows/gate-btc-survivorship-definitive-pit.yml
       - tools/gate_btc_survivorship_definitive_pit.py
       - tools/gate_btc_survivorship_definitive_runner.py
+      - tools/gate_btc_survivorship_definitive_cc_first_runner.py
       - tools/gate_btc_cmc_pit_parser.py
       - tools/gate_btc_cmc_pit_collector.py
       - tools/gate_btc_coinmetrics_pit_history.py
@@ -25,6 +26,7 @@ on:
       - tests/test_gate_btc_cmc_pit_collector.py
       - tests/test_gate_btc_bybit_archive_pit_history.py
       - tests/test_gate_btc_pit_identity_continuity.py
+      - tests/test_gate_btc_cc_first_staging.py
       - tools/gate_btc_survivorship_alpha_audit.py
       - migration/canonical/v2a/scripts/00_run_all_v2a.py
       - migration/canonical/v2a/config_v2a.json
@@ -67,6 +69,7 @@ jobs:
           tests/test_gate_btc_cmc_pit_collector.py
           tests/test_gate_btc_bybit_archive_pit_history.py
           tests/test_gate_btc_pit_identity_continuity.py
+          tests/test_gate_btc_cc_first_staging.py
 
       - name: Smoke test real lazy-row CMC reconstruction
         run: |
@@ -130,7 +133,7 @@ jobs:
 
       - name: Execute external monthly PIT top150 strict-next-bar study
         run: >-
-          python tools/gate_btc_survivorship_definitive_runner.py
+          python tools/gate_btc_survivorship_definitive_cc_first_runner.py
           --output-dir artifacts/survivorship_definitive
           --coverage-threshold 0.95
 
@@ -147,6 +150,7 @@ jobs:
           from pathlib import Path
           p=json.load(open('artifacts/survivorship_definitive/MANIFEST.json', encoding='utf-8'))
           c=json.load(open('artifacts/survivorship_definitive/COVERAGE_SUMMARY.json', encoding='utf-8'))
+          s=json.load(open('artifacts/survivorship_definitive/BYBIT_ARCHIVE_STAGE_POLICY.json', encoding='utf-8'))
           assert p['status'] in {'PASS_FULL_COVERAGE_AUDIT','PARTIAL_COVERAGE_RESEARCH_ONLY'}
           assert p['protocol'] == 'EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR'
           assert p['cmc_snapshots'] == 74
@@ -162,6 +166,9 @@ jobs:
           assert c['research_only'] is True
           assert c['engine_feed'] is False
           assert c['methodology_changes'] == 0
+          assert s['status'] == 'DEFERRED_CC_DIRECT_FIRST'
+          assert s['bybit_adapter_removed'] is False
+          assert s['engine_feed'] is False
           assert Path('artifacts/survivorship_definitive/COVERAGE_BY_SIGNAL.csv').is_file()
           assert Path('artifacts/survivorship_definitive/GATE_BTC_SURVIVORSHIP_ALPHA_DEFINITIVE.zip').is_file()
           print('DEFINITIVE_PIT_CONTRACT=PASS')
