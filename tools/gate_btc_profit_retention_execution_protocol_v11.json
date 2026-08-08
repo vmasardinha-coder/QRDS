@@ -1,0 +1,42 @@
+{
+  "schema": "gate_btc.profit_retention_execution_protocol.v1_1",
+  "status": "PREDECLARED_RESEARCH_ONLY",
+  "frozen_at_source_phase2_protocol_commit": "ab1f338c1c84586df30de0ae32264ade165ae99d",
+  "pinned_phase1_run_id": 31276127634,
+  "pinned_phase1_artifact_id": 9027220602,
+  "question": "Does the predeclared per-position LOCK_50 hypothesis retain its advantage after enforcing the same one-daily-bar execution lag used by the operational research framework?",
+  "entry_selection": "UNCHANGED_FROM_PINNED_PHASE1_SELECTIONS_PIT",
+  "primary_sample": "SIGNAL_COVERAGE_GE_95_AND_COMPLETE_NEXT_SIGNAL_BOUNDARY",
+  "entry_execution": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_SIGNAL_DATE",
+  "month_end_baseline_exit": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_NEXT_SIGNAL_DATE",
+  "lock_activation_gain": 0.20,
+  "lock_giveback_fraction": 0.50,
+  "lock_trigger_observation": "CONFIRMED_DAILY_CLOSE",
+  "lock_exit_execution": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_TRIGGER_CLOSE",
+  "lock_boundary_rule": "IF_NO_LOCK_TRIGGER_BEFORE_NEXT_SIGNAL_DATE_EXIT_AT_BASELINE_NEXT_BAR; A_TRIGGER_ON_OR_BEFORE_NEXT_SIGNAL_DATE_EXECUTES_AT_THE_FIRST_VALIDATED_CLOSE_AFTER_TRIGGER",
+  "price_basis": "PINNED_PHASE1_CASCADE_DAILY_HISTORY_CLOSE_USD",
+  "primary_metric": "PAIRED_MEAN_SELECTED_ALT_SLEEVE_RETURN_DELTA_LOCK50_EXECUTABLE_VS_MONTH_END_EXECUTABLE_BY_SIGNAL_MONTH",
+  "uncertainty": {
+    "method": "PAIRED_BOOTSTRAP_ACROSS_SIGNAL_MONTHS",
+    "replicates": 10000,
+    "seed": 20260808,
+    "report": ["CI95", "PROBABILITY_DELTA_POSITIVE"]
+  },
+  "secondary_diagnostics": [
+    "SAME_CLOSE_LOCK50_WITH_NEXT_BAR_ENTRY_TO_ISOLATE_ENTRY_ANCHOR_EFFECT",
+    "TRIGGER_RATE",
+    "HOLDING_DAYS",
+    "ROUND_TRIP_RATE",
+    "REGIME_DECOMPOSITION"
+  ],
+  "interpretation_guard": "NO_THRESHOLD_OR_HORIZON_TUNING_AFTER_RESULTS; V1_1_CAN_CONFIRM_OR_WEAKEN_V1_ONLY",
+  "prospective_rule_if_promising": "CREATE_A_DISTINCT_PER_POSITION_SHADOW_LEDGER; DO_NOT_REUSE_THE_EXISTING_PORTFOLIO_LEVEL_LOCK25_50_LEDGER",
+  "existing_lock50_name_collision_guard": "EXISTING_CONFIG_LOCK50_IS_PORTFOLIO_LEVEL_ARM_1_50_RETRACE_15_PERCENT_AND_IS_A_DIFFERENT_HYPOTHESIS",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders_generated": 0,
+  "real_capital_used": 0,
+  "methodology_changes_phase1": 0
+}
