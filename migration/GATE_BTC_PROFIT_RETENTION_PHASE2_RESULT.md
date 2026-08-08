@@ -1,110 +1,99 @@
 # GATE BTC — Phase 2 Profit-Retention Result
 
-Status: **RESEARCH RESULT / CANDIDATE FOR PROSPECTIVE SHADOW ONLY**  
-Official workflow run: **31277372106**  
-Head: `42ea4542ad941c1ca3195d75208e0d9ef2903420`  
-Artifact: `gate-btc-profit-retention-31277372106`  
-Artifact id: `9027397831`  
-Artifact SHA-256: `e162c492f8188d2a72abf2dea8a6eab6a888fbf687d8a8da9b9ec34de28b9ab4`
+Status: **RESEARCH RESULT / EXECUTION-CONSISTENT v1.1 SUPERSEDES v1 FOR DECISION**  
+Pinned Phase-1 evidence: **31276127634 (#115)**  
+Original exploratory Phase-2 run: **31277372106**  
+Execution-consistent v1.1 run: **31277917947**  
+v1.1 artifact: `gate-btc-profit-retention-execution-31277917947`  
+v1.1 artifact id: `9027550308`  
+v1.1 artifact SHA-256: `85e9da1a118e671f307d9d049f014627faad20f5edcddbec7479469901ccefe7`
 
-## Reproducibility
+## Why v1.1 was required
 
-The official GitHub run passed:
+The original Phase-2 study correctly froze the entry *selection* but anchored returns at the signal-date close and allowed a lock to realize at the same close that revealed the trigger. The frozen V2A framework specifies `execution_lag_daily_bars=1`.
 
-- predeclared exit-policy unit tests;
-- download of the pinned Phase-1 #115 artifact;
-- Phase-1 protocol / canonical V2A / 444-history-pass integrity guards;
-- Phase-2 study execution;
-- safety/result contract;
-- artifact publication.
+The v1.1 protocol was committed **before recalculating results** and keeps the economic hypothesis unchanged:
 
-Primary sample:
+- same QOS picks;
+- same +20% activation;
+- same 50% giveback of peak **profit**;
+- no pre-activation stop loss;
+- no threshold tuning.
 
-- 62 complete signal months with PIT signal coverage >=95%;
-- 1,240 baseline selected-alt trades: 496 Moderada and 744 Ultra;
-- entry selections unchanged;
-- final incomplete forward month excluded.
+It changes only execution consistency:
 
-## Baseline giveback diagnosis
+1. entry = first validated daily close strictly after the signal date;
+2. monthly baseline exit = first validated daily close strictly after the next signal date;
+3. lock trigger = observed at confirmed daily close;
+4. executable lock exit = first validated daily close strictly after the trigger close.
 
-### QOS Moderada
+The same 62 complete >=95%-coverage signal months and 1,240 selected-alt trades remain in the paired sample.
 
-- mean per-trade MFE: **+28.47%**;
-- median MFE: **+12.97%**;
-- mean month-end giveback from MFE: **28.58 percentage points**;
-- 39.92% of trades reached at least +20%;
-- among those +20% trades, **26.77%** finished the monthly boundary at zero or negative;
-- mean MFE among +20% trades: **+62.43%**.
+## v1 diagnostic remains useful
 
-### QOS Ultra
+The original same-close study showed a real path problem: many selected alts reached large unrealized gains and later surrendered them. That diagnosis is retained. It is **not** the operational performance estimate.
 
-- mean per-trade MFE: **+25.77%**;
-- median MFE: **+11.76%**;
-- mean month-end giveback from MFE: **25.97 percentage points**;
-- 37.50% of trades reached at least +20%;
-- among those +20% trades, **24.01%** finished the monthly boundary at zero or negative;
-- mean MFE among +20% trades: **+58.41%**.
-
-This supports the existence of a material profit-retention problem independent of the Phase-1 entry-selection question.
-
-## Predeclared policy results
-
-The primary metric is paired mean selected-alt-sleeve return delta versus the `MONTH_END` baseline across the same signal months.
+## Official execution-consistent v1.1 result
 
 ### QOS Moderada
 
-- `MONTH_END`: mean sleeve return **-0.1078%/month**;
-- `LOCK_50`: **+1.2688%/month**, delta **+1.3766 pp/month**;
-  - paired bootstrap 95% interval: **[-0.3007, +3.0854] pp/month**;
-  - bootstrap probability delta > 0: **94.76%**;
-- `FIXED_14D`: **+1.1497%/month**, delta **+1.2575 pp/month**;
-  - bootstrap probability delta > 0: **74.52%**;
-- `FIXED_21D`: delta **-2.0997 pp/month**, materially worse than baseline.
+- executable `MONTH_END`: mean selected-alt sleeve return **+0.1208%/month**;
+- executable `PRL50_POSITION`: **+0.5687%/month**;
+- paired delta: **+0.4479 percentage points/month**;
+- paired bootstrap 95% interval: **[-1.2378, +2.0222] pp/month**;
+- bootstrap probability delta > 0: **70.28%**;
+- PRL50 trigger rate: **27.62%** of selected trades;
+- mean executable holding: **26.36 days**; median **30 days**.
 
 ### QOS Ultra
 
-- `MONTH_END`: mean sleeve return **-0.2017%/month**;
-- `LOCK_50`: **+0.8010%/month**, delta **+1.0027 pp/month**;
-  - paired bootstrap 95% interval: **[-0.2397, +2.2614] pp/month**;
-  - bootstrap probability delta > 0: **94.30%**;
-- `FIXED_14D`: **+0.8041%/month**, delta **+1.0058 pp/month**;
-  - bootstrap probability delta > 0: **72.72%**;
-- `FIXED_21D`: delta **-1.9752 pp/month**, materially worse than baseline.
+- executable `MONTH_END`: mean selected-alt sleeve return **-0.0666%/month**;
+- executable `PRL50_POSITION`: **+0.5396%/month**;
+- paired delta: **+0.6062 percentage points/month**;
+- paired bootstrap 95% interval: **[-0.6295, +1.7882] pp/month**;
+- bootstrap probability delta > 0: **83.96%**;
+- PRL50 trigger rate: **25.13%** of selected trades;
+- mean executable holding: **26.73 days**; median **30 days**.
 
-The bootstrap intervals still cross zero. These are promising in-sample research results, not proof of a production edge.
-
-## Holding-time interpretation
-
-`LOCK_50` is not an early-exit rule for every trade:
-
-- Moderada: early exit on ~27.82% of trades; mean holding ~25.87 days; median 30 days;
-- Ultra: early exit on ~26.08% of trades; mean holding ~26.17 days; median 30 days.
-
-The evidence therefore does **not** support a generic “sell after 7/14 days” rule. The stronger hypothesis is conditional:
-
-> allow the monthly trade to run, but once unrealized profit reaches +20%, stop allowing more than half of the best observed profit to be given back.
-
-`FIXED_14D` remains a secondary challenger because its mean was competitive, but its paired-bootstrap evidence was materially weaker and its rule truncates every trade regardless of path.
+Both 95% intervals cross zero materially. The execution-consistent evidence is therefore directional but weak-to-moderate, not sufficient to establish an exit edge.
 
 ## Regime decomposition
 
-Most of `LOCK_50`'s improvement comes from DEFENSIVE periods:
+The positive effect remains concentrated in `DEFENSIVE` periods:
 
-- Moderada DEFENSIVE: `MONTH_END` -1.6145% -> `LOCK_50` +0.9090% per alt sleeve;
-- Ultra DEFENSIVE: `MONTH_END` -1.3606% -> `LOCK_50` +0.6442%;
-- Moderada RISK_ON: +1.6067% -> +1.6783%;
-- Ultra RISK_ON: +1.1171% -> +0.9795%.
+- Moderada DEFENSIVE: monthly executable sleeve **-0.0377% -> +0.8240%**;
+- Ultra DEFENSIVE: **-0.3278% -> +0.5012%**.
 
-This is consistent with Phase 1, where the QOS selector's largest damage appeared in DEFENSIVE periods. It does not establish that an exit overlay repairs the full portfolio alpha.
+In `RISK_ON`:
 
-## Decision
+- Moderada: **+0.3011% -> +0.2781%** (slightly worse);
+- Ultra: **+0.2307% -> +0.5833%** (better).
 
-1. **Do not deploy the current QOS selection layer as-is.** Phase 1 did not demonstrate structural positive selection alpha.
-2. **Freeze `LOCK_50` as the sole primary profit-retention candidate for future prospective/shadow validation.**
-3. Keep `FIXED_14D` as a secondary challenger only; do not tune additional horizons or activation/giveback thresholds on this historical sample.
-4. Do not claim `LOCK_50` restores portfolio alpha. The present result is selected-alt-sleeve evidence and remains in-sample.
-5. The next scientifically valid confirmation is untouched future/prospective shadow data using the frozen `LOCK_50` definition. Re-slicing this same historical sample to manufacture a holdout after seeing the result would not be an independent validation.
+This is a diagnostic decomposition only. No regime-specific rule is authorized or tuned from it.
 
-KAITO was not among the QOS selected trades in the >=95% complete-month sample; it is therefore not used as evidence for this result.
+## Name collision guard
+
+The historical Phase-2 per-position rule is henceforth called **`PRL50_POSITION`** (Profit-Retention Lock 50).
+
+It is **not** the pre-existing project `LOCK50`, which is a different portfolio-level hypothesis defined in `config/lock25_50_shadow_contract_v1.json`:
+
+- portfolio equity HWM;
+- arming at 1.50x cycle equity;
+- 15% HWM retracement trigger;
+- protection of 50% of accumulated portfolio profit into virtual cash.
+
+The two hypotheses must never share a ledger, result series or promotion decision.
+
+## Decision after v1.1
+
+1. **Do not deploy the current QOS selector as-is.** Phase 1 remains negative on structural incremental selection alpha.
+2. **Do not treat PRL50_POSITION as a proven repair.** Execution consistency materially weakens the historical advantage.
+3. Preserve PRL50_POSITION unchanged as a **prospective shadow hypothesis only**; no additional activation/giveback tuning on this historical sample.
+4. The scientifically clean prospective start is the first new monthly QOS signal after the v1.1 protocol freeze: **2026-08-31 signal**, with entry on the first eligible daily bar after it.
+5. Do not initialize a prospective position mid-cycle from the July signal; doing so would inherit pre-freeze price-path information.
+6. Keep the existing portfolio-level LOCK25/LOCK50 experiment independent.
+7. No real capital, order generation, engine feed or operational approval follows from this result.
+
+KAITO was not among the QOS selected trades in the >=95% complete-month historical sample and is not used as evidence.
 
 Safety: `RESEARCH_ONLY=true`, `SHADOW_ONLY=true`, `NOT_APPROVED`, `ENGINE_FEED=false`, entry selection unchanged, Phase-1 methodology unchanged, orders=0, capital=0.
