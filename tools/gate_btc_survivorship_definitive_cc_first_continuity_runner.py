@@ -111,24 +111,11 @@ def _bounded_relabel(history: pd.DataFrame, target: str, source: str, start=None
 
 
 def _recover_borg(session, row) -> tuple[pd.DataFrame, str, str]:
-    if pd.Timestamp(row.last_snapshot) >= BORG_MIGRATION_DATE:
-        return _empty(), "", "BLOCKED_SNAPSHOT_CROSSES_CHSB_BORG_MIGRATION"
-    history, url, status = staged.runner.cdd_multi.fetch_symbol(
-        session, "CHSB", pd.Timestamp(row.first_snapshot), pd.Timestamp(row.last_snapshot)
-    )
-    if status == "PASS" and not history.empty:
-        source = "legacy_chsb_pre_borg_migration__" + str(history["source"].iloc[0])
-        out = _bounded_relabel(history, "BORG", source, end_exclusive=BORG_MIGRATION_DATE)
-        return out, url, "PASS" if len(out) >= 2 else "NO_BOUNDED_CHSB_HISTORY"
-    direct, direct_url, direct_status = bitfinex_legacy.fetch_chsb_pre_migration(
-        session,
-        pd.Timestamp(row.first_snapshot),
-        pd.Timestamp(row.last_snapshot),
-        BORG_MIGRATION_DATE,
-    )
-    if direct_status == "PASS" and not direct.empty:
-        return direct, direct_url, "PASS"
-    return _empty(), direct_url or url, f"CDD_{status}|BITFINEX_{direct_status}"
+    # SwissBorg's CHSB -> BORG event is a token/contract migration, while older
+    # CMC snapshots may be retroactively labelled BORG. The PIT contract treats
+    # that as censorship/retroactive labelling, not a recoverable price-history
+    # gap. Never relabel or stitch CHSB history into BORG.
+    return _empty(), "", "BLOCKED_CHSB_BORG_TOKEN_MIGRATION_NO_STITCHING"
 
 
 def _recover_bttold(session, row) -> tuple[pd.DataFrame, str, str]:
