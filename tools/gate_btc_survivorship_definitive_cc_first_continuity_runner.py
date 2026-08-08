@@ -16,7 +16,7 @@ EVIDENCE_BACKED_CONTINUITIES = {
     "FET": {"fetchai", "artificialsuperintelligencealliance"},
     "INJ": {"injective", "injectiveprotocol"},
     "SNX": {"synthetix", "synthetixnetworktoken"},
-    "SXP": {"solar", "swipe"},
+    "SXP": {"sxp", "solar", "swipe"},
 }
 
 # Intentionally absent from EVIDENCE_BACKED_CONTINUITIES:
