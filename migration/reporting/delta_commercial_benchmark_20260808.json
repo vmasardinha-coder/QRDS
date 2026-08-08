@@ -1,0 +1,56 @@
+{
+  "schema": "gate-btc-delta-commercial-benchmark-v1",
+  "status": "FROZEN_EXTERNAL_REFERENCE",
+  "as_of_date": "2026-08-08",
+  "source_basis": "user-observed commercial/marketing snapshots; partial evidence only",
+  "benchmark_role": "fixed external reference for the COMPARATIVOS report and Delta 50/50 gap analysis",
+  "observed_snapshot": {
+    "commercial_delta_return_pct": 7.24,
+    "btc_return_pct_approx": -18.0,
+    "approx_relative_gap_percentage_points": 25.24,
+    "window_start": null,
+    "window_end": null,
+    "window_alignment_confirmed": false
+  },
+  "commercial_strategy_description_observed": {
+    "universe_size_approx": 300,
+    "long_top_n": 10,
+    "short_bottom_n": 10,
+    "cross_sectional_long_short": true,
+    "ranking_formula": null,
+    "rebalance_frequency": null,
+    "long_weights": null,
+    "short_weights": null,
+    "gross_exposure": null,
+    "net_exposure": null,
+    "leverage": null,
+    "funding_treatment": null,
+    "fees_and_slippage": null,
+    "locks_or_profit_preservation": null,
+    "stop_rules": null,
+    "regime_filter": null
+  },
+  "comparison_contract": {
+    "primary_internal_proxy": "DELTA_50_50",
+    "do_not_recalibrate_proxy_to_match_marketing_result": true,
+    "do_not_claim_same_window_until_dates_are_evidenced": true,
+    "unknown_commercial_parameters_must_remain_unknown": true,
+    "report_observed_external_result_separately_from_reconstructed_result": true,
+    "aligned_window_comparison_only_when_start_and_end_are_evidenced": true,
+    "purpose": "measure and explain the gap between observed commercial Delta and the frozen auditable Delta 50/50 proxy"
+  },
+  "reporting_instruction": {
+    "comparativos_fixed_section": true,
+    "show_on_each_update_until_superseded_by_better_evidence": true,
+    "label": "Benchmark externo Delta observado",
+    "display_summary": "Delta divulgado +7,24% vs BTC ~-18% (janela exata ainda não confirmada); universo ~300, long 10 melhores / short 10 piores; demais parâmetros não observados.",
+    "interpretation_required": true
+  },
+  "safety": {
+    "research_only": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "methodology_change": false
+  }
+}

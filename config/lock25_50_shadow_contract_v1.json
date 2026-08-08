@@ -1,0 +1,70 @@
+{
+  "schema": "gate_btc.lock25_50_shadow_contract.v1",
+  "status": "FROZEN_READY_FOR_PROSPECTIVE_LEDGER",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "orders": 0,
+  "capital": 0,
+  "methodology_change": false,
+  "decision_option": "A_PROTECT_SHARE_OF_ACCUMULATED_PROFIT",
+  "comparability_rule": "mirror the existing profit-preservation control framework; same signals, costs, execution timing and portfolio path, differing only by the LOCK overlay",
+  "control": {
+    "name": "NO_LOCK_CONTROL",
+    "description": "same portfolio and signals without profit-preservation overlay"
+  },
+  "valuation": {
+    "basis": "net_equity_after_costs_funding_slippage",
+    "observation_frequency": "daily_confirmed_close",
+    "signal_time": "daily_confirmed_close",
+    "simulated_execution": "next_eligible_bar",
+    "high_water_mark": "highest_confirmed_daily_net_equity_close"
+  },
+  "variants": {
+    "LOCK25": {
+      "arming_level_multiple": 1.25,
+      "protected_share_of_accumulated_profit": 0.25,
+      "destination": "VIRTUAL_CASH",
+      "trigger_family": "HWM_RETRACEMENT_AFTER_GAIN_ARMING",
+      "retracement_trigger_pct": 0.10,
+      "reentry": "ALLOWED_ONLY_AFTER_NEW_VALID_PORTFOLIO_SIGNAL",
+      "double_counting_prohibited": true
+    },
+    "LOCK50": {
+      "arming_level_multiple": 1.50,
+      "protected_share_of_accumulated_profit": 0.50,
+      "destination": "VIRTUAL_CASH",
+      "trigger_family": "HWM_RETRACEMENT_AFTER_GAIN_ARMING",
+      "retracement_trigger_pct": 0.15,
+      "reentry": "ALLOWED_ONLY_AFTER_NEW_VALID_PORTFOLIO_SIGNAL",
+      "double_counting_prohibited": true
+    }
+  },
+  "cycle": {
+    "initial_base": "equity_at_formal_cycle_start",
+    "reset_rule": "EXPLICIT_USER_DECISION_ONLY",
+    "reset_requires_explicit_user_definition": true,
+    "automatic_monthly_reset": false,
+    "default_behavior_until_reset": "KEEP_CURRENT_CYCLE_ACTIVE"
+  },
+  "ledger_required_fields": [
+    "date",
+    "cycle_id",
+    "portfolio",
+    "variant",
+    "net_equity_before_lock",
+    "cycle_base_equity",
+    "high_water_mark",
+    "drawdown_from_hwm",
+    "armed_level",
+    "lock_triggered",
+    "protected_cash_before",
+    "protected_cash_after",
+    "risk_equity_after",
+    "reentry_signal",
+    "config_sha256",
+    "previous_row_sha256",
+    "row_sha256"
+  ],
+  "promotion": "PROHIBITED"
+}
