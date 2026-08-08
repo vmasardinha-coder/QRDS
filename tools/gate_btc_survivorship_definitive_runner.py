@@ -16,6 +16,7 @@ import gate_btc_cdd_binance_pit_history as cdd_history
 import gate_btc_cdd_multi_exchange_pit_history as cdd_multi
 import gate_btc_exchange_pit_history as exchange_history
 import gate_btc_bybit_okx_pit_history as byok_history
+import gate_btc_bybit_archive_pit_history as bybit_archive
 import gate_btc_binance_vision_pit_history as binance_vision
 import gate_btc_survivorship_definitive_pit as definitive
 
@@ -50,9 +51,9 @@ def _continuity_ok(symbol: str, names: list[str], slugs: list[str] | None = None
     if len(norms) == 1:
         return True
     # A unique historical CMC currency slug is a stronger lineage key than the
-    # rendered display name. It permits benign renames such as THETA -> Theta
-    # Network while ticker reuse remains fail-closed because reused assets carry
-    # distinct slugs. No price/factor information participates in this decision.
+    # rendered display name. It permits benign renames while ticker reuse remains
+    # fail-closed because reused assets carry distinct slugs. No price/factor
+    # information participates in this decision.
     if len(slug_norms) == 1:
         return True
     aliases = {_norm(x) for x in definitive.KNOWN_CONTINUITIES.get(symbol, set()) if _norm(x)}
@@ -140,6 +141,47 @@ def _slice(master: pd.DataFrame, symbol: str) -> pd.DataFrame:
     return master[master["symbol"] == symbol].copy() if master is not None and not master.empty else pd.DataFrame()
 
 
+def _collect_cryptocompare_direct_usd(session, symbols: list[str], outdir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Final public recovery layer using direct CCCAGG USD history only.
+
+    The underlying canonical helper sends tryConversion=false, so a BTC/other
+    synthetic conversion path is never admitted. This remains one continuous
+    source per symbol and missing rows are never filled or converted to zero.
+    """
+    frames = []
+    coverage = []
+    unique = sorted(set(symbols))
+    for position, symbol in enumerate(unique, 1):
+        try:
+            history = definitive.collect_cc_history(session, symbol)
+            if not history.empty:
+                history = history.copy()
+                history["source"] = "cryptocompare_cccagg_direct_usd"
+            status = "PASS" if len(history) >= 2 else "NO_DIRECT_USD_HISTORY"
+        except Exception as exc:
+            history = pd.DataFrame(columns=["date","symbol","close_usd","volume_usd","source"])
+            status = f"ERROR:{type(exc).__name__}"
+        if not history.empty:
+            frames.append(history[["date","symbol","close_usd","volume_usd","source"]])
+        coverage.append({
+            "symbol": symbol,
+            "status": status,
+            "rows": len(history),
+            "first_date": history["date"].min() if not history.empty else None,
+            "last_date": history["date"].max() if not history.empty else None,
+            "source_url": "https://min-api.cryptocompare.com/data/v2/histoday",
+            "exchange": "CCCAGG",
+            "quote": "USD",
+            "try_conversion": False,
+        })
+        print(f"CRYPTOCOMPARE {position}/{len(unique)} {symbol} rows={len(history)} {status}", flush=True)
+    master = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["date","symbol","close_usd","volume_usd","source"])
+    cov = pd.DataFrame(coverage)
+    master.to_csv(outdir / "CRYPTOCOMPARE_DIRECT_USD_DAILY_HISTORY.csv.gz", index=False, compression="gzip")
+    cov.to_csv(outdir / "CRYPTOCOMPARE_DIRECT_USD_COVERAGE.csv", index=False)
+    return master, cov
+
+
 def _cascade_collect_histories(session, identity, outdir: Path):
     if _CM_REFERENCE is not None:
         _CM_REFERENCE.to_csv(outdir / "COINMETRICS_ASSET_REFERENCE.csv", index=False)
@@ -208,6 +250,53 @@ def _cascade_collect_histories(session, identity, outdir: Path):
     print(f"CDD_MULTI_EXCHANGE_CANDIDATES={len(need_cdd_multi)}", flush=True)
     cdd_multi_master, _ = cdd_multi.collect(session, identity, need_cdd_multi, outdir)
 
+    need_bybit_archive = []
+    for r in identity.itertuples(index=False):
+        symbol = str(r.symbol)
+        if not bool(getattr(r, "exchange_identity_ok", False)):
+            continue
+        best, _ = _choose_source(
+            [
+                _slice(cm_master, symbol),
+                _slice(cdd_master, symbol),
+                _slice(gate_master, symbol),
+                _slice(kucoin_master, symbol),
+                _slice(bybit_master, symbol),
+                _slice(okx_master, symbol),
+                _slice(vision_master, symbol),
+                _slice(cdd_multi_master, symbol),
+            ],
+            pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot),
+        )
+        if _needs_extra(best, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot)):
+            need_bybit_archive.append(symbol)
+    print(f"BYBIT_PUBLIC_ARCHIVE_CANDIDATES={len(need_bybit_archive)}", flush=True)
+    bybit_archive_master, _ = bybit_archive.collect(session, identity, need_bybit_archive, outdir)
+
+    need_cryptocompare = []
+    for r in identity.itertuples(index=False):
+        symbol = str(r.symbol)
+        if not bool(getattr(r, "exchange_identity_ok", False)):
+            continue
+        best, _ = _choose_source(
+            [
+                _slice(cm_master, symbol),
+                _slice(cdd_master, symbol),
+                _slice(gate_master, symbol),
+                _slice(kucoin_master, symbol),
+                _slice(bybit_master, symbol),
+                _slice(okx_master, symbol),
+                _slice(vision_master, symbol),
+                _slice(cdd_multi_master, symbol),
+                _slice(bybit_archive_master, symbol),
+            ],
+            pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot),
+        )
+        if _needs_extra(best, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot)):
+            need_cryptocompare.append(symbol)
+    print(f"CRYPTOCOMPARE_DIRECT_USD_CANDIDATES={len(need_cryptocompare)}", flush=True)
+    cryptocompare_master, _ = _collect_cryptocompare_direct_usd(session, need_cryptocompare, outdir)
+
     selected = []
     coverage = []
     symbols = identity["symbol"].astype(str).tolist()
@@ -223,6 +312,8 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             _slice(okx_master, symbol),
             _slice(vision_master, symbol),
             _slice(cdd_multi_master, symbol),
+            _slice(bybit_archive_master, symbol),
+            _slice(cryptocompare_master, symbol),
         ]
         best, source = _choose_source(frames, pd.Timestamp(r.first_snapshot), pd.Timestamp(r.last_snapshot))
         if not best.empty:
@@ -246,6 +337,8 @@ def _cascade_collect_histories(session, identity, outdir: Path):
             "okx_rows": len(frames[5]),
             "binance_vision_rows": len(frames[6]),
             "cdd_multi_rows": len(frames[7]),
+            "bybit_archive_rows": len(frames[8]),
+            "cryptocompare_direct_usd_rows": len(frames[9]),
         })
         mask = identity["symbol"].astype(str) == symbol
         identity.loc[mask, "history_usable"] = status == "PASS"
@@ -263,6 +356,8 @@ def _cascade_collect_histories(session, identity, outdir: Path):
         "extra_candidates": len(need_extra),
         "binance_vision_archive_candidates": len(need_archive),
         "cdd_multi_exchange_candidates": len(need_cdd_multi),
+        "bybit_public_archive_candidates": len(need_bybit_archive),
+        "cryptocompare_direct_usd_candidates": len(need_cryptocompare),
         "selected_sources": source_counts,
     }
     (outdir / "SOURCE_CASCADE_SUMMARY.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -311,7 +406,7 @@ def _write_text_cascade(outdir, manifest, alpha, survivor_alpha, identity, cover
         text = method.read_text(encoding="utf-8")
         text = text.replace(
             "Daily price/volume source: CryptoCompare CCCAGG, identity-audited by symbol/name history.",
-            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT, KuCoin USDT, Bybit spot USDT, OKX spot USDT, official Binance Data Vision spot archives with SHA-256 verification, then CryptoDataDownload USD-like daily archives across Bitfinex/Bitstamp/Coinbase/Gemini/Bittrex/Poloniex/CEX.io. Missing history is never synthesized and venues/quotes are never stitched within a symbol.",
+            "Daily price/volume sources: public one-source-per-symbol cascade. Layers: CryptoDataDownload/Binance stable-quote daily OHLCV, Coin Metrics Community PriceUSD + reported spot USD volume, Gate.io USDT, KuCoin USDT, Bybit spot USDT, OKX spot USDT, official Binance Data Vision spot archives with SHA-256 verification, CryptoDataDownload USD-like daily archives across Bitfinex/Bitstamp/Coinbase/Gemini/Bittrex/Poloniex/CEX.io, Bybit public monthly Spot trade archives aggregated deterministically to daily bars with per-archive SHA-256, then CryptoCompare CCCAGG direct USD daily history with tryConversion=false. Missing history is never synthesized and venues/quotes are never stitched within a symbol.",
         )
         method.write_text(text, encoding="utf-8")
     executive = outdir / "EXECUTIVE_SUMMARY.txt"
