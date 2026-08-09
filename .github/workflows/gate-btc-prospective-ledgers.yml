@@ -30,6 +30,7 @@ env:
   GATE_BTC_RESEARCH_ONLY: "true"
   GATE_BTC_LOCK_CYCLE_ID: "QOS_CURRENT_COMPOSITION_2026-08-06"
   GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE: "2026-08-06"
+  PYTHONPATH: "."
 
 jobs:
   contract-tests:
@@ -53,6 +54,13 @@ jobs:
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
+
+      - name: Reproduce direct-script runtime import path
+        run: |
+          set -euo pipefail
+          test "$PYTHONPATH" = "."
+          python tools/gate_btc_measurement_ledgers.py --help >/dev/null
+          echo "DIRECT_SCRIPT_IMPORT=PASS"
 
   append-prospective-ledgers:
     needs: contract-tests
