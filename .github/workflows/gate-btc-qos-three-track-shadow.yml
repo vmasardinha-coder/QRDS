@@ -1,0 +1,173 @@
+name: GATE BTC QOS Three-Track Prospective Shadow
+
+on:
+  pull_request:
+    branches: [main, agent/gate-btc-migration-current]
+    paths:
+      - .github/workflows/gate-btc-qos-three-track-shadow.yml
+      - migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
+      - migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_DECISION.md
+      - tools/gate_btc_qos_prospective_three_track.py
+      - tests/test_gate_btc_qos_prospective_three_track.py
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Eligible Daily Research workflow run ID
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-qos-three-track-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  QOS_THREE_TRACK_FIRST_SIGNAL: "2026-08-31"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research-only test dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas pytest
+      - name: Verify three-track contract and fail-closed tests
+        run: python -m pytest -q tests/test_gate_btc_qos_prospective_three_track.py
+      - name: Compile prospective sidecar
+        run: python -m py_compile tools/gate_btc_qos_prospective_three_track.py
+
+  append-prospective-evidence:
+    needs: contract-tests
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out canonical merged code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas
+
+      - name: Resolve and validate Daily Research source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name'] == 'GATE BTC Daily Research Collection'
+          assert run['head_branch'] == 'main'
+          assert run['status'] == 'completed'
+          assert run['conclusion'] == 'success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Download untouched V2A daily evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source_artifact extracted/v2a
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          unzip -q artifact.zip -d source_artifact
+          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          test -f extracted/v2a/outputs/v2a_run_manifest.json
+          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
+
+      - name: Verify source safety and resolve snapshot date
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          d=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json', encoding='utf-8-sig'))
+          assert d['status'] in {'PASS','PASS_WITH_DATA_WARNINGS'}
+          assert d['research_only'] is True
+          assert d['operational_status'] == 'NOT_APPROVED'
+          assert d['orders_generated'] == 0 and d['real_capital_used'] == 0
+          assert d['methodology_changes'] == 0
+          assert d['components']['v2a']['status'] == 'PASS'
+          v=json.load(open('extracted/v2a/outputs/v2a_run_manifest.json', encoding='utf-8-sig'))
+          open('snapshot_id.txt','w',encoding='utf-8').write(v['data_as_of'])
+          PY
+          echo "QOS_THREE_TRACK_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
+
+      - name: Check out immutable runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Process prospective three-track signal and daily path
+        run: >-
+          python tools/gate_btc_qos_prospective_three_track.py
+          --contract migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
+          --v2a-zip source_artifact/qos_daily/qos_v2a_outputs.zip
+          --runtime-dir runtime_repo/runtime/ledgers/qos_three_track
+          --snapshot-date "$QOS_THREE_TRACK_SNAPSHOT_ID"
+          --source-run-id "$SOURCE_RUN_ID"
+
+      - name: Verify runtime safety state when active
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/ledgers/qos_three_track/STATUS.json')
+          if not p.exists():
+              print('QOS_THREE_TRACK=BEFORE_FIRST_SIGNAL_NO_RUNTIME_WRITE')
+              raise SystemExit(0)
+          s=json.load(open(p, encoding='utf-8'))
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['orders_generated'] == 0 and s['real_capital_used'] == 0
+          print('QOS_THREE_TRACK_RUNTIME_SAFETY=PASS')
+          PY
+
+      - name: Commit prospective QOS evidence only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          if [ ! -d runtime/ledgers/qos_three_track ]; then
+            echo "Before first signal; nothing to commit"
+            exit 0
+          fi
+          git add runtime/ledgers/qos_three_track
+          git diff --cached --quiet && exit 0
+          git commit -m "Append QOS three-track shadow ${QOS_THREE_TRACK_SNAPSHOT_ID}"
+          git push origin HEAD:gate-btc-runtime
