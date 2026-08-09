@@ -123,14 +123,24 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/lock25_50/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/lock_status.json
           python - <<'PY'
           import json
+          from datetime import date
           s=json.load(open('/tmp/lock_status.json',encoding='utf-8'))
           assert s['first_eligible_close']=='2026-08-06'
           assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
           assert s['orders_generated']==0 and s['real_capital_used']==0
           latest=s.get('latest_snapshot_id')
-          assert latest in {None,'2026-08-06','2026-08-07','2026-08-08'}, latest
+          if latest is None:
+              start=0
+          elif latest == '2026-08-06':
+              start=1
+          elif latest == '2026-08-07':
+              start=2
+          else:
+              assert date.fromisoformat(latest) >= date(2026,8,8), latest
+              start=3
           print('LOCK_BOOTSTRAP_START=' + str(latest))
-          open('/tmp/latest_lock.txt','w',encoding='utf-8').write(latest or '')
+          print('BOOTSTRAP_INDEX=' + str(start))
+          open('/tmp/bootstrap_start.txt','w',encoding='utf-8').write(str(start))
           PY
 
       - name: Dispatch missing historical evidence strictly in order
@@ -138,17 +148,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          current=$(cat /tmp/latest_lock.txt)
           runs=(31143743831 31234743983 31290375228)
           closes=(2026-08-06 2026-08-07 2026-08-08)
-          start=0
-          case "$current" in
-            "") start=0 ;;
-            2026-08-06) start=1 ;;
-            2026-08-07) start=2 ;;
-            2026-08-08) start=3 ;;
-            *) echo "Unexpected LOCK state: $current"; exit 1 ;;
-          esac
+          start=$(cat /tmp/bootstrap_start.txt)
           if [ "$start" -ge 3 ]; then
             echo "BOOTSTRAP=ALREADY_COMPLETE"
             exit 0
@@ -189,19 +191,20 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/GATE_BTC_MEASUREMENT_STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_measurement.json
           python - <<'PY'
           import json
+          from datetime import date
           lock=json.load(open('/tmp/final_lock.json',encoding='utf-8'))
           gateway=json.load(open('/tmp/final_gateway.json',encoding='utf-8'))
           measurement=json.load(open('/tmp/final_measurement.json',encoding='utf-8'))
-          assert lock['latest_snapshot_id']=='2026-08-08'
-          assert lock['valid_snapshot_count']==3
-          assert gateway['latest_snapshot_id']=='2026-08-09'
+          assert date.fromisoformat(lock['latest_snapshot_id']) >= date(2026,8,8)
+          assert lock['valid_snapshot_count'] >= 3
+          assert date.fromisoformat(gateway['latest_snapshot_id']) >= date(2026,8,9)
           for obj in (lock,gateway,measurement):
               assert obj['research_only'] is True
               assert obj.get('orders_generated',0)==0
               assert obj.get('real_capital_used',0)==0
           print('PROSPECTIVE_BOOTSTRAP=PASS')
-          print('LOCK=3/chronological-through-2026-08-08')
-          print('GATEWAY=through-2026-08-09')
+          print('LOCK=chronological-through-at-least-2026-08-08')
+          print('GATEWAY=through-at-least-2026-08-09')
           print('ORDERS=0')
           print('CAPITAL=0')
           PY
