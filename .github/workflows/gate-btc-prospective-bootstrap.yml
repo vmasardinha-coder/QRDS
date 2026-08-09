@@ -1,0 +1,211 @@
+name: GATE BTC Prospective Bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-prospective-bootstrap.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-prospective-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assert immutable bootstrap contract
+        run: |
+          set -euo pipefail
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          python - <<'PY'
+          plan = [
+              (31143743831, "2026-08-06", "2026-08-07"),
+              (31234743983, "2026-08-07", "2026-08-08"),
+              (31290375228, "2026-08-08", "2026-08-09"),
+          ]
+          assert [x[1] for x in plan] == ["2026-08-06", "2026-08-07", "2026-08-08"]
+          assert len({x[0] for x in plan}) == len(plan)
+          print("BOOTSTRAP_PLAN=PASS")
+          print("RESEARCH_ONLY=True")
+          print("ORDERS=0")
+          print("CAPITAL=0")
+          PY
+
+  bootstrap:
+    needs: contract-tests
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Verify main safety boundary
+        run: |
+          set -euo pipefail
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          python - <<'PY'
+          import json
+          c=json.load(open('config/lock25_50_shadow_contract_v1.json', encoding='utf-8'))
+          assert c['research_only'] is True
+          assert c['shadow_only'] is True
+          assert c['not_approved'] is True
+          assert c['orders_generated'] == 0
+          assert c['real_capital_used'] == 0
+          assert c['first_eligible_close'] == '2026-08-06'
+          print('BOOTSTRAP_SAFETY=PASS')
+          PY
+
+      - name: Validate archived source runs and exact chronological cutoffs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          json.dump([
+              {"run_id":31143743831,"v2a":"2026-08-06","gateway":"2026-08-07"},
+              {"run_id":31234743983,"v2a":"2026-08-07","gateway":"2026-08-08"},
+              {"run_id":31290375228,"v2a":"2026-08-08","gateway":"2026-08-09"},
+          ], open('/tmp/bootstrap_plan.json','w',encoding='utf-8'))
+          PY
+          python - <<'PY'
+          import json, os, subprocess, zipfile, io
+          repo=os.environ['GITHUB_REPOSITORY']
+          plan=json.load(open('/tmp/bootstrap_plan.json',encoding='utf-8'))
+          for item in plan:
+              rid=str(item['run_id'])
+              run=json.loads(subprocess.check_output(['gh','api',f'/repos/{repo}/actions/runs/{rid}']))
+              assert run['name']=='GATE BTC Daily Research Collection'
+              assert run['head_branch']=='main'
+              assert run['status']=='completed' and run['conclusion']=='success'
+              arts=json.loads(subprocess.check_output(['gh','api',f'/repos/{repo}/actions/runs/{rid}/artifacts']))['artifacts']
+              arts=[a for a in arts if not a['expired'] and a['name'].startswith('gate-btc-daily-research-')]
+              assert len(arts)==1, (rid, len(arts))
+              blob=subprocess.check_output(['gh','api',f"/repos/{repo}/actions/artifacts/{arts[0]['id']}/zip"])
+              outer=zipfile.ZipFile(io.BytesIO(blob))
+              daily=json.loads(outer.read('daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json'))
+              assert daily['research_only'] is True
+              assert daily['operational_status']=='NOT_APPROVED'
+              assert daily['orders_generated']==0 and daily['real_capital_used']==0
+              v2a=zipfile.ZipFile(io.BytesIO(outer.read('qos_daily/qos_v2a_outputs.zip')))
+              vm=json.loads(v2a.read('outputs/v2a_run_manifest.json'))
+              assert vm['data_as_of']==item['v2a'], (rid, vm['data_as_of'], item['v2a'])
+              gw=zipfile.ZipFile(io.BytesIO(outer.read('gateway_daily/linux_offline_replay_outputs.zip')))
+              gm=json.loads(gw.read('outputs/v2a1_run_manifest.json'))
+              assert gm['data_as_of']==item['gateway'], (rid, gm['data_as_of'], item['gateway'])
+              print(f"ARCHIVE_RUN_OK={rid} V2A={vm['data_as_of']} GATEWAY={gm['data_as_of']}")
+          PY
+
+      - name: Resolve current immutable LOCK position
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/lock25_50/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/lock_status.json
+          python - <<'PY'
+          import json
+          s=json.load(open('/tmp/lock_status.json',encoding='utf-8'))
+          assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
+          assert s['orders_generated']==0 and s['real_capital_used']==0
+          latest=s.get('latest_snapshot_id')
+          assert latest in {None,'2026-08-06','2026-08-07','2026-08-08'}, latest
+          print('LOCK_BOOTSTRAP_START=' + str(latest))
+          open('/tmp/latest_lock.txt','w',encoding='utf-8').write(latest or '')
+          PY
+
+      - name: Dispatch missing historical evidence strictly in order
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          current=$(cat /tmp/latest_lock.txt)
+          runs=(31143743831 31234743983 31290375228)
+          closes=(2026-08-06 2026-08-07 2026-08-08)
+          start=0
+          case "$current" in
+            "") start=0 ;;
+            2026-08-06) start=1 ;;
+            2026-08-07) start=2 ;;
+            2026-08-08) start=3 ;;
+            *) echo "Unexpected LOCK state: $current"; exit 1 ;;
+          esac
+          if [ "$start" -ge 3 ]; then
+            echo "BOOTSTRAP=ALREADY_COMPLETE"
+            exit 0
+          fi
+          for ((i=start; i<3; i++)); do
+            source_run=${runs[$i]}
+            expected=${closes[$i]}
+            gh run list --repo "$GITHUB_REPOSITORY" --workflow gate-btc-prospective-ledgers.yml --event workflow_dispatch --branch main --limit 100 --json databaseId --jq '.[].databaseId' | sort -n > /tmp/before_ids.txt
+            gh workflow run gate-btc-prospective-ledgers.yml --repo "$GITHUB_REPOSITORY" --ref main -f run_id="$source_run"
+            new_id=""
+            for attempt in $(seq 1 30); do
+              sleep 4
+              gh run list --repo "$GITHUB_REPOSITORY" --workflow gate-btc-prospective-ledgers.yml --event workflow_dispatch --branch main --limit 100 --json databaseId --jq '.[].databaseId' | sort -n > /tmp/after_ids.txt
+              new_id=$(comm -13 /tmp/before_ids.txt /tmp/after_ids.txt | tail -1)
+              [ -n "$new_id" ] && break
+            done
+            test -n "$new_id"
+            echo "BOOTSTRAP_DISPATCH source_run=$source_run workflow_run=$new_id expected_lock=$expected"
+            gh run watch "$new_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
+            gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/lock25_50/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/lock_after.json
+            EXPECTED="$expected" python - <<'PY'
+          import json, os
+          s=json.load(open('/tmp/lock_after.json',encoding='utf-8'))
+          assert s['latest_snapshot_id']==os.environ['EXPECTED'], (s['latest_snapshot_id'], os.environ['EXPECTED'])
+          assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
+          assert s['orders_generated']==0 and s['real_capital_used']==0
+          print('LOCK_BOOTSTRAP_ADVANCED=' + s['latest_snapshot_id'])
+          PY
+          done
+
+      - name: Verify final prospective runtime state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for path in runtime/ledgers/lock25_50/STATUS.json runtime/ledgers/gateway_dynamics/STATUS.json runtime/GATE_BTC_MEASUREMENT_STATUS.json; do
+            name=$(basename "$path")
+            gh api "/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > "/tmp/${name}"
+          done
+          python - <<'PY'
+          import json
+          lock=json.load(open('/tmp/STATUS.json',encoding='utf-8'))
+          # basename collision is avoided below by refetching explicit files.
+          PY
+          gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/lock25_50/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_lock.json
+          gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/gateway_dynamics/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_gateway.json
+          gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/GATE_BTC_MEASUREMENT_STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_measurement.json
+          python - <<'PY'
+          import json
+          lock=json.load(open('/tmp/final_lock.json',encoding='utf-8'))
+          gateway=json.load(open('/tmp/final_gateway.json',encoding='utf-8'))
+          measurement=json.load(open('/tmp/final_measurement.json',encoding='utf-8'))
+          assert lock['latest_snapshot_id']=='2026-08-08'
+          assert lock['valid_snapshot_count']==3
+          assert gateway['latest_snapshot_id']=='2026-08-09'
+          for obj in (lock,gateway,measurement):
+              assert obj['research_only'] is True
+              assert obj.get('orders_generated',0)==0
+              assert obj.get('real_capital_used',0)==0
+          print('PROSPECTIVE_BOOTSTRAP=PASS')
+          print('LOCK=3/chronological-through-2026-08-08')
+          print('GATEWAY=through-2026-08-09')
+          print('ORDERS=0')
+          print('CAPITAL=0')
+          PY
