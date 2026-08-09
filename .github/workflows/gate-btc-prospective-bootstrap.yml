@@ -34,6 +34,7 @@ jobs:
               (31290375228, "2026-08-08", "2026-08-09"),
           ]
           assert [x[1] for x in plan] == ["2026-08-06", "2026-08-07", "2026-08-08"]
+          assert [x[2] for x in plan] == ["2026-08-07", "2026-08-08", "2026-08-09"]
           assert len({x[0] for x in plan}) == len(plan)
           print("BOOTSTRAP_PLAN=PASS")
           print("RESEARCH_ONLY=True")
@@ -61,12 +62,14 @@ jobs:
           python - <<'PY'
           import json
           c=json.load(open('config/lock25_50_shadow_contract_v1.json', encoding='utf-8'))
+          assert c['status'] == 'FROZEN_READY_FOR_PROSPECTIVE_LEDGER'
           assert c['research_only'] is True
           assert c['shadow_only'] is True
           assert c['not_approved'] is True
-          assert c['orders_generated'] == 0
-          assert c['real_capital_used'] == 0
-          assert c['first_eligible_close'] == '2026-08-06'
+          assert c['orders'] == 0
+          assert c['capital'] == 0
+          assert c['methodology_change'] is False
+          assert c['promotion'] == 'PROHIBITED'
           print('BOOTSTRAP_SAFETY=PASS')
           PY
 
@@ -84,7 +87,7 @@ jobs:
           ], open('/tmp/bootstrap_plan.json','w',encoding='utf-8'))
           PY
           python - <<'PY'
-          import json, os, subprocess, zipfile, io
+          import io, json, os, subprocess, zipfile
           repo=os.environ['GITHUB_REPOSITORY']
           plan=json.load(open('/tmp/bootstrap_plan.json',encoding='utf-8'))
           for item in plan:
@@ -102,6 +105,7 @@ jobs:
               assert daily['research_only'] is True
               assert daily['operational_status']=='NOT_APPROVED'
               assert daily['orders_generated']==0 and daily['real_capital_used']==0
+              assert daily['methodology_changes']==0
               v2a=zipfile.ZipFile(io.BytesIO(outer.read('qos_daily/qos_v2a_outputs.zip')))
               vm=json.loads(v2a.read('outputs/v2a_run_manifest.json'))
               assert vm['data_as_of']==item['v2a'], (rid, vm['data_as_of'], item['v2a'])
@@ -120,6 +124,7 @@ jobs:
           python - <<'PY'
           import json
           s=json.load(open('/tmp/lock_status.json',encoding='utf-8'))
+          assert s['first_eligible_close']=='2026-08-06'
           assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
           assert s['orders_generated']==0 and s['real_capital_used']==0
           latest=s.get('latest_snapshot_id')
@@ -179,15 +184,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for path in runtime/ledgers/lock25_50/STATUS.json runtime/ledgers/gateway_dynamics/STATUS.json runtime/GATE_BTC_MEASUREMENT_STATUS.json; do
-            name=$(basename "$path")
-            gh api "/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > "/tmp/${name}"
-          done
-          python - <<'PY'
-          import json
-          lock=json.load(open('/tmp/STATUS.json',encoding='utf-8'))
-          # basename collision is avoided below by refetching explicit files.
-          PY
           gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/lock25_50/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_lock.json
           gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/ledgers/gateway_dynamics/STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_gateway.json
           gh api "/repos/${GITHUB_REPOSITORY}/contents/runtime/GATE_BTC_MEASUREMENT_STATUS.json?ref=gate-btc-runtime" --jq .content | tr -d '\n' | base64 -d > /tmp/final_measurement.json
