@@ -25,29 +25,40 @@
       "next_action": "DOCUMENT_ONLY; DO_NOT_TUNE_HISTORICAL_IDENTITIES_TO_FORCE_RESULT"
     },
     "QOS_THREE_TRACK": {
-      "state": "ENGINEERING_COMPLETE_CI_GREEN_WAITING_ACTIVATION_AND_FIRST_SIGNAL",
+      "state": "ACTIVE_PROSPECTIVE_SHADOW_WAITING_FIRST_UNTOUCHED_SIGNAL",
       "question": "Prospectively, does QOS beat a frozen PIT control and does PRL50 add value on top?",
       "arms": ["PIT_CONTROL", "QOS_CONTROL", "QOS_PRL50"],
       "first_eligible_signal": "2026-08-31",
       "first_eligible_execution": "2026-09-01",
-      "branch": "agent/gate-btc-qos-three-track-prospective",
-      "draft_pr": 26,
+      "branch": "main",
+      "merged_prs": [26, 16],
       "ci": "PASS",
-      "automation": "WORKFLOW_READY_BUT_WORKFLOW_RUN_ACTIVATION_REQUIRES_CODE_ON_MAIN",
-      "data_quality_note": "Current raw V2A coverage is about 62.67%; this is frozen as a generalizability/data-quality diagnostic, not used for retrospective survivor reconstruction.",
+      "automation": "ACTIVE_WORKFLOW_RUN_FROM_DAILY_RESEARCH_COLLECTION",
+      "data_quality_note": "Raw V2A coverage remains a generalizability/data-quality diagnostic and is not used for retrospective survivor reconstruction.",
       "survivorship_guard": "All frozen candidates remain in denominator; unresolved candidate outcome blocks selector/package inference; provisional terminal returns are never synthesized.",
-      "next_action": "ACTIVATION_REQUIRES_EXPLICIT_MERGE_AUTHORIZATION_BEFORE_FIRST_SIGNAL"
+      "next_action": "WAIT_FOR_FIRST_UNTOUCHED_2026-08-31_SIGNAL; NO_BACKFILL; NO_RETUNING"
     },
     "PRL50_POSITION": {
-      "state": "FROZEN_HYPOTHESIS_READY_FOR_PROSPECTIVE_SHADOW",
+      "state": "ACTIVE_PROSPECTIVE_SHADOW_WAITING_FIRST_UNTOUCHED_SIGNAL",
       "question": "Does PRL50 improve the same QOS picks after execution-consistent next-bar timing?",
       "activation_gain": 0.20,
       "giveback_fraction_of_peak_profit": 0.50,
       "first_eligible_signal": "2026-08-31",
       "first_eligible_execution": "2026-09-01",
-      "standalone_archive": "READY_IN_PR16",
-      "controlled_comparison": "READY_IN_PR26_QOS_THREE_TRACK",
-      "next_action": "WAIT_FOR_PROSPECTIVE_SIGNAL_AFTER_ACTIVATION"
+      "standalone_archive": "ACTIVE_ON_MAIN",
+      "controlled_comparison": "ACTIVE_ON_MAIN_QOS_THREE_TRACK",
+      "next_action": "WAIT_FOR_PROSPECTIVE_SIGNAL; NO_MID_CYCLE_INITIALIZATION; NO_BACKFILL"
+    },
+    "LOCK25_50": {
+      "state": "ACTIVE_PROSPECTIVE_IMMUTABLE_LEDGER",
+      "cycle_id": "QOS_CURRENT_COMPOSITION_2026-08-06",
+      "first_eligible_close": "2026-08-06",
+      "latest_snapshot_id": "2026-08-08",
+      "valid_snapshot_count": 3,
+      "tracks": 6,
+      "strategies": ["QOS_Moderada", "QOS_Ultra"],
+      "variants": ["NO_LOCK_CONTROL", "LOCK25", "LOCK50"],
+      "next_action": "CONTINUE_APPEND_ONLY_FROM_DAILY_RESEARCH; NO_PARAMETER_CHANGE"
     },
     "DELTA": {
       "state": "AUTOMATED_DAILY_COLLECTION_ACTIVE",
@@ -68,10 +79,10 @@
       "question": "Does D50 remain consistent through the formal 30-observation prospective checkpoint?",
       "latest_validated_local_handoff": "7/30",
       "data_qualification": "7/7",
-      "remote_runtime_warning": "gate-btc-runtime measurement status is intentionally stale pre-merge and must not override validated local Windows state",
+      "remote_runtime_warning": "Remote gate-btc-runtime D50 status still requires provenance-only source-revision reconciliation and must not overwrite validated frozen/local economic history.",
       "routine": "LOCAL_WINDOWS_RUNTIME_APPEND_ONLY",
       "next_checkpoint": 30,
-      "next_action": "NO_PARAMETER_CHANGE; CONTINUE_LOCAL_COLLECTION"
+      "next_action": "NO_PARAMETER_CHANGE; PRESERVE FROZEN ROWS; COMPLETE SOURCE-REVISION RECONCILIATION BEFORE REMOTE RESUME"
     },
     "B3_WIN_A1_60M": {
       "state": "PHASE_B_H1_READY_WAITING_NEW_QUALIFIED_SESSIONS",
@@ -86,19 +97,21 @@
       "next_action": "APPEND_ONLY_QUALIFIED_SESSION_QA_UNTIL_20_OF_20"
     },
     "GATEWAY": {
-      "state": "SCANNER_AUTOMATED_PROSPECTIVE_PIT_LEDGER_WAITING_ACTIVATION",
+      "state": "ACTIVE_AUTOMATED_PROSPECTIVE_PIT_LEDGER",
       "question": "Does Gateway create value after enough immutable prospective snapshots exist?",
       "scanner_routine": "GATE BTC Daily Research Collection on main",
       "latest_scanner_snapshot": "2026-08-09",
+      "valid_snapshot_count": 4,
+      "target": 80,
+      "next_expected_source_data_as_of": "2026-08-10",
       "retrospective_performance": "PROHIBITED",
-      "prospective_archive": "READY_IN_PR16",
-      "prospective_archive_activation": "REQUIRES_PR16_ON_MAIN",
-      "next_action": "KEEP_SCANNER_RUNNING; ACTIVATE_IMMUTABLE_PIT_ARCHIVE_ONLY_AFTER_EXPLICIT_MERGE_AUTHORIZATION"
+      "prospective_archive": "ACTIVE_ON_GATE_BTC_RUNTIME",
+      "next_action": "CONTINUE_IMMUTABLE_PIT_COLLECTION; NO_RETROSPECTIVE PERFORMANCE RECONSTRUCTION"
     }
   },
   "human_authorization_boundaries": [
-    "MERGE_PR26_INTO_PR16_BASE",
-    "MERGE_PR16_TO_MAIN",
-    "ANY_OPERATIONAL_PROMOTION_OR_REAL_CAPITAL"
+    "ANY_OPERATIONAL_PROMOTION_OR_REAL_CAPITAL",
+    "ANY_ORDER_GENERATION",
+    "ANY_FROZEN_METHODOLOGY_OR_PARAMETER_CHANGE"
   ]
 }
