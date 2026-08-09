@@ -1,0 +1,77 @@
+name: GATE BTC PR Scope Guard
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  scope-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail closed on non-GATE files in PR diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          test -n "$PR_NUMBER"
+          gh api --paginate "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[].filename' > changed_files.txt
+          test -s changed_files.txt
+          python - <<'PY'
+          from pathlib import Path
+
+          files=[line.strip() for line in Path('changed_files.txt').read_text(encoding='utf-8').splitlines() if line.strip()]
+          exact={
+              'config/lock25_50_shadow_contract_v1.json',
+              'migration/GATE_BTC_IDENTITY_CONTINUITY_EVIDENCE.md',
+              'migration/GATE_BTC_SURVIVORSHIP_PHASE1_CONCLUSION.md',
+              'migration/GATE_BTC_PROFIT_RETENTION_PHASE2_PROTOCOL.md',
+              'migration/GATE_BTC_PROFIT_RETENTION_PHASE2_RESULT.md',
+              'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json',
+              'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_DECISION.md',
+              'migration/GATE_BTC_INITIATIVE_EXECUTION_STATUS_LATEST.json',
+              'migration/reporting/bull_replay_contract.json',
+              'migration/reporting/shadow_daily_contract.json',
+              'migration/reporting/delta_commercial_benchmark_20260808.json',
+              'tests/test_gateway_measurement_status.py',
+          }
+          prefixes=(
+              '.github/workflows/gate-btc-',
+              'tools/gate_btc_',
+              'tests/test_gate_btc_',
+          )
+          violations=[]
+          for path in files:
+              allowed = path in exact or any(path.startswith(prefix) for prefix in prefixes)
+              if not allowed:
+                  violations.append(path)
+          if 'README.md' in files:
+              violations.append('README.md (explicitly forbidden in GATE migration diff)')
+          print('CHANGED_FILE_COUNT=' + str(len(files)))
+          print('SCOPE_GUARD_RESEARCH_ONLY=true')
+          if violations:
+              print('SCOPE_GUARD=FAIL')
+              for path in sorted(set(violations)):
+                  print('VIOLATION=' + path)
+              raise SystemExit(1)
+          print('SCOPE_GUARD=PASS')
+          for path in files:
+              print('ALLOWED=' + path)
+          PY
+
+      - name: Assert safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          echo 'RESEARCH_ONLY=True'
+          echo 'ORDERS=0'
+          echo 'CAPITAL=0'
+          echo 'MAIN_MUTATION=0'
+          echo 'MERGE_PERFORMED=0'

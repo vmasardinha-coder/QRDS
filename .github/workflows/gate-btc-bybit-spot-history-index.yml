@@ -1,0 +1,88 @@
+name: GATE BTC Bybit Spot History Index Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-bybit-spot-history-index.yml
+      - tools/gate_btc_bybit_spot_history_index_probe.py
+      - tests/test_gate_btc_bybit_spot_history_index_probe.py
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  bybit-spot-history-index-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test Bybit history-index fail-closed boundary
+        run: python -m unittest -v tests/test_gate_btc_bybit_spot_history_index_probe.py
+
+      - name: Resolve latest successful Bybit recovery evidence for branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-bybit-spot-recovery.yml/runs?branch=${BRANCH}&status=success&per_page=20" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          test -n "$RUN_ID"
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-bybit-spot-recovery-")) | .id' | head -1)
+          test -n "$ARTIFACT_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > bybit_recovery.zip
+          mkdir -p source_bybit artifacts/bybit_history
+          unzip -q bybit_recovery.zip -d source_bybit
+          test -f source_bybit/bybit_spot_v2a_recovery_candidates.json
+          echo "BYBIT_RECOVERY_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Measure Bybit public Spot history from directory indexes
+        run: >-
+          python tools/gate_btc_bybit_spot_history_index_probe.py
+          --recovery-report source_bybit/bybit_spot_v2a_recovery_candidates.json
+          --output artifacts/bybit_history/bybit_spot_v2a_history_index.json
+
+      - name: Verify no bypass or engine integration occurred
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/bybit_history/bybit_spot_v2a_history_index.json', encoding='utf-8'))
+          assert p['engine_feed'] is False
+          assert p['feeds_frozen_engine'] is False
+          assert p['source_substitution_performed'] is False
+          assert p['strategy_inputs_changed'] is False
+          assert p['denominator_changed'] is False
+          assert p['universe_changed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['proxy_or_geo_bypass_used'] is False
+          assert p['authentication_used'] is False
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('BYBIT_HISTORY_INDEX_SAFETY=PASS')
+          print('STATUS=' + p['status'])
+          print('LEADS=' + str(p['lead_count']))
+          print('HISTORY_GE_200=' + str(p['history_ge_200_count']))
+          print('SYMBOLS=' + ','.join(p['history_ge_200_symbols']))
+          PY
+
+      - name: Upload Bybit history-index evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-bybit-history-index-${{ github.run_id }}
+          path: artifacts/bybit_history/
+          retention-days: 30
+          if-no-files-found: error

@@ -1,0 +1,104 @@
+{
+  "as_of": "2026-08-09",
+  "generated_for": "GATE BTC action-plan execution",
+  "global_safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "operational_promotion_allowed": false
+  },
+  "initiatives": {
+    "SURVIVORSHIP_PIT": {
+      "state": "CLOSED_HISTORICAL_RESEARCH",
+      "question": "Does QOS selector add alpha versus unfiltered point-in-time universe?",
+      "answer": "NOT_PROVEN",
+      "evidence": {
+        "mean_pit_coverage": 0.9581,
+        "months_ge_95pct": "63/74",
+        "strict_weeks": 201,
+        "moderada_incremental_alpha_per_week": -0.00253,
+        "ultra_incremental_alpha_per_week": -0.00159
+      },
+      "routine": "NONE_DAILY",
+      "next_action": "DOCUMENT_ONLY; DO_NOT_TUNE_HISTORICAL_IDENTITIES_TO_FORCE_RESULT"
+    },
+    "QOS_THREE_TRACK": {
+      "state": "ENGINEERING_COMPLETE_CI_GREEN_WAITING_ACTIVATION_AND_FIRST_SIGNAL",
+      "question": "Prospectively, does QOS beat a frozen PIT control and does PRL50 add value on top?",
+      "arms": ["PIT_CONTROL", "QOS_CONTROL", "QOS_PRL50"],
+      "first_eligible_signal": "2026-08-31",
+      "first_eligible_execution": "2026-09-01",
+      "branch": "agent/gate-btc-qos-three-track-prospective",
+      "draft_pr": 26,
+      "ci": "PASS",
+      "automation": "WORKFLOW_READY_BUT_WORKFLOW_RUN_ACTIVATION_REQUIRES_CODE_ON_MAIN",
+      "data_quality_note": "Current raw V2A coverage is about 62.67%; this is frozen as a generalizability/data-quality diagnostic, not used for retrospective survivor reconstruction.",
+      "survivorship_guard": "All frozen candidates remain in denominator; unresolved candidate outcome blocks selector/package inference; provisional terminal returns are never synthesized.",
+      "next_action": "ACTIVATION_REQUIRES_EXPLICIT_MERGE_AUTHORIZATION_BEFORE_FIRST_SIGNAL"
+    },
+    "PRL50_POSITION": {
+      "state": "FROZEN_HYPOTHESIS_READY_FOR_PROSPECTIVE_SHADOW",
+      "question": "Does PRL50 improve the same QOS picks after execution-consistent next-bar timing?",
+      "activation_gain": 0.20,
+      "giveback_fraction_of_peak_profit": 0.50,
+      "first_eligible_signal": "2026-08-31",
+      "first_eligible_execution": "2026-09-01",
+      "standalone_archive": "READY_IN_PR16",
+      "controlled_comparison": "READY_IN_PR26_QOS_THREE_TRACK",
+      "next_action": "WAIT_FOR_PROSPECTIVE_SIGNAL_AFTER_ACTIVATION"
+    },
+    "DELTA": {
+      "state": "AUTOMATED_DAILY_COLLECTION_ACTIVE",
+      "question": "Does Delta_LS_50_50 sustain edge as walk-forward sample reaches 90/120 observations?",
+      "routine": "GATE BTC Daily Research Collection on main; DELTA_WALK_FORWARD_1.1 using OKX public data",
+      "latest_validated_data_as_of": "2026-08-08",
+      "expanding_observations": 86,
+      "primary_candidate": "Delta_LS_50_50",
+      "primary_total_return": 0.004844,
+      "primary_product_sharpe_rf0": 0.144891,
+      "primary_max_drawdown": -0.099385,
+      "evidence_eligible": false,
+      "next_checkpoints": [90, 120],
+      "next_action": "NO_RECALIBRATION; CONTINUE_AUTOMATIC_COLLECTION"
+    },
+    "D50": {
+      "state": "LOCAL_PROSPECTIVE_COLLECTION_ACTIVE_WAITING_30",
+      "question": "Does D50 remain consistent through the formal 30-observation prospective checkpoint?",
+      "latest_validated_local_handoff": "7/30",
+      "data_qualification": "7/7",
+      "remote_runtime_warning": "gate-btc-runtime measurement status is intentionally stale pre-merge and must not override validated local Windows state",
+      "routine": "LOCAL_WINDOWS_RUNTIME_APPEND_ONLY",
+      "next_checkpoint": 30,
+      "next_action": "NO_PARAMETER_CHANGE; CONTINUE_LOCAL_COLLECTION"
+    },
+    "B3_WIN_A1_60M": {
+      "state": "PHASE_B_H1_READY_WAITING_NEW_QUALIFIED_SESSIONS",
+      "question": "Does WIN/A1/60m/CONTINUATION survive untouched out-of-sample data?",
+      "phase_a": "PROMISING_SHADOW_NOT_PROVEN",
+      "h1": "0/20",
+      "cutoff": "2026-08-07",
+      "next_possible_session": "2026-08-10",
+      "routine": "WINDOWS_ENGINE_V7_PLUS_B3_PHASEB_BLIND_COLLECTOR_V2",
+      "automation": "SEMI_AUTOMATED_REQUIRES_DAILY_B3_FILES_OR_LOCAL_RUN",
+      "sealed_metrics_before_20": ["PnL", "Sharpe", "win_rate", "expectancy", "parameter_comparison"],
+      "next_action": "APPEND_ONLY_QUALIFIED_SESSION_QA_UNTIL_20_OF_20"
+    },
+    "GATEWAY": {
+      "state": "SCANNER_AUTOMATED_PROSPECTIVE_PIT_LEDGER_WAITING_ACTIVATION",
+      "question": "Does Gateway create value after enough immutable prospective snapshots exist?",
+      "scanner_routine": "GATE BTC Daily Research Collection on main",
+      "latest_scanner_snapshot": "2026-08-09",
+      "retrospective_performance": "PROHIBITED",
+      "prospective_archive": "READY_IN_PR16",
+      "prospective_archive_activation": "REQUIRES_PR16_ON_MAIN",
+      "next_action": "KEEP_SCANNER_RUNNING; ACTIVATE_IMMUTABLE_PIT_ARCHIVE_ONLY_AFTER_EXPLICIT_MERGE_AUTHORIZATION"
+    }
+  },
+  "human_authorization_boundaries": [
+    "MERGE_PR26_INTO_PR16_BASE",
+    "MERGE_PR16_TO_MAIN",
+    "ANY_OPERATIONAL_PROMOTION_OR_REAL_CAPITAL"
+  ]
+}

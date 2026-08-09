@@ -11,21 +11,39 @@
         "qos_v2a_outputs.zip",
         "delta_walk_forward_outputs.zip",
         "linux_public_capture_outputs.zip",
-        "GATE_BTC_DAILY_RESEARCH_MANIFEST.json"
+        "GATE_BTC_DAILY_RESEARCH_MANIFEST.json",
+        "migration/reporting/delta_commercial_benchmark_20260808.json"
       ],
+      "required_sections": [
+        "executive summary",
+        "compact fixed external Delta benchmark reference"
+      ],
+      "fixed_external_benchmark": {
+        "path": "migration/reporting/delta_commercial_benchmark_20260808.json",
+        "as_of_date": "2026-08-08",
+        "commercial_delta_return_pct": 7.24,
+        "btc_return_pct_approx": -18.0,
+        "master_display": "compact executive benchmark box",
+        "display_until_superseded_by_better_evidence": true
+      },
       "required_boundaries": [
         "RESEARCH_ONLY",
         "NOT_APPROVED",
         "orders=0",
         "capital=0",
         "Gateway current composition retrospective performance prohibited",
-        "legacy v0.9 pages archived baseline only"
+        "legacy v0.9 pages archived baseline only",
+        "external Delta benchmark exact start/end window remains unconfirmed",
+        "external Delta unknown commercial parameters remain explicitly unknown"
       ]
     },
     {
       "id": "COMPARATIVOS_COMPLETOS",
       "canonical_name_pattern": "Shadow_Watch_Executive_{date}_Comparativos_Completos_Janela_Alinhada.pdf",
       "role": "aligned-window executive comparison and evidence clocks",
+      "required_inputs": [
+        "migration/reporting/delta_commercial_benchmark_20260808.json"
+      ],
       "required_sections": [
         "executive summary",
         "three-universe comparability map",
@@ -36,14 +54,25 @@
         "Monte Carlo Delta",
         "bear replay",
         "current compositions and execution profiles",
+        "fixed external Delta benchmark and gap interpretation",
         "next evidence gates"
       ],
       "comparison_rules": [
         "Universe A compares only the seven V2A series on the common long history",
         "Universe B compares only Delta walk-forward evidence and its valid benchmark protocol",
         "Universe C describes current Gateway compositions without retrospective return attribution",
+        "The fixed external Delta benchmark is an observed commercial reference, not an aligned backtest until its exact start/end dates are evidenced",
+        "Never recalibrate the frozen Delta 50/50 proxy to force a match to the commercial benchmark",
+        "Unknown commercial strategy parameters remain explicitly unknown",
         "N/A means invalid comparison and must not be filled by assumption"
-      ]
+      ],
+      "fixed_external_benchmark": {
+        "path": "migration/reporting/delta_commercial_benchmark_20260808.json",
+        "as_of_date": "2026-08-08",
+        "commercial_delta_return_pct": 7.24,
+        "btc_return_pct_approx": -18.0,
+        "display_until_superseded_by_better_evidence": true
+      }
     },
     {
       "id": "PROFIT_PRESERVATION",
@@ -58,7 +87,7 @@
       "current_research_preference": {
         "LOCK25": "primary efficiency shadow",
         "LOCK50": "higher-protection alternative",
-        "LOCK75": "high protection with excessive growth removal warning",
+        "LOCK75": "FORBIDDEN_OUTSIDE_FROZEN_CONTRACT",
         "rigid_floor": "rejected"
       }
     }

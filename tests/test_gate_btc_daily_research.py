@@ -139,6 +139,18 @@ class DailyResearchTests(unittest.TestCase):
             self.assertFalse(payload["report_delivery"]["inputs_ready"])
             self.assertIn("orders", payload["errors"][0]["message"].lower())
 
+    def test_runtime_pointer_write_is_main_only_and_isolated(self) -> None:
+        repo = Path(__file__).resolve().parents[1]
+        workflow = (repo / ".github/workflows/gate-btc-daily-research.yml").read_text(encoding="utf-8")
+        collection, publication = workflow.split("\n  publish-runtime-pointer:\n", 1)
+
+        self.assertIn("permissions:\n  contents: read", workflow)
+        self.assertNotIn("contents: write", collection)
+        self.assertIn("permissions:\n      actions: read\n      contents: write", publication)
+        self.assertIn("github.event_name != 'pull_request'", publication)
+        self.assertIn("github.ref_name == 'main'", publication)
+        self.assertIn("ref: gate-btc-runtime", publication)
+
 
 if __name__ == "__main__":
     unittest.main()
