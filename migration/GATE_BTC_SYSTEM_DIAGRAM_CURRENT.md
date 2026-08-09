@@ -28,7 +28,13 @@ flowchart TD
     E2 --> E3[First eligible execution\n2026-09-01]
 
     F[Delta walk-forward] --> F1[86 observations\ncheckpoints 90 / 120]
-    G[D50 prospective] --> G1[Validated local state remains authoritative\nuntil remote repair/reconciliation]
+
+    G[D50 prospective] --> G1[Validated local checkpoint\n7/30]
+    G1 --> G2[Fail-closed mirror reconciliation audit\nMERGED · audit-only]
+    G2 -->|full proof pack passes| G3[Mirror advance candidate]
+    G2 -->|any economic-prefix change| G4[FAIL CLOSED]
+    G3 --> G5[Separate reviewed mirror publication\nnot yet executed]
+
     H[B3 WIN A1 60m] --> H1[Phase B H1 untouched\n0/20 qualified sessions]
     H1 --> H2[No PnL/Sharpe/win-rate/expectancy peek before 20/20]
 
@@ -37,7 +43,7 @@ flowchart TD
     D5 --> Z
     E3 --> Z
     F1 --> Z
-    G1 --> Z
+    G5 --> Z
     H2 --> Z
 
     Z --> P{Promotion gate}
@@ -53,6 +59,6 @@ flowchart TD
 2. Keep Gateway and LOCK25/50 prospective ledgers append-only.
 3. Do not backfill QOS Three-Track or PRL50; wait for the first untouched 2026-08-31 signal.
 4. Delta continues automatically to 90 and 120 observations without recalibration.
-5. D50 preserves validated frozen/local history; provenance-only reconciliation must not alter economic fields.
+5. D50 preserves validated frozen/local history. The audit-only mirror reconciler is now merged; it may emit only a `PASS_MIRROR_ADVANCE_CANDIDATE` after the full provenance proof pack passes. Runtime publication remains a separate reviewed step, and any economic-field change fails closed.
 6. B3 Phase B remains blind until H1 reaches 20/20 qualified sessions; only data-quality inspection is allowed beforehand.
 7. No operational promotion, real capital, or order generation is authorized by this diagram.
