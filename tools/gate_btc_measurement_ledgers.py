@@ -3,11 +3,66 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
-from tools.gate_btc_lock_ledger import append_lock, initialize_lock, initialize_source_anchor
+from tools.gate_btc_lock_ledger import append_lock as _append_lock_strict, initialize_lock, initialize_source_anchor
 from tools.gate_btc_measurement_common import load_json, safe_gateway
 from tools.gate_btc_measurement_status import audit_d50, build_status
+
+
+_PRICE_BLOCKER_PREFIXES = (
+    "missing prior price for ",
+    "missing current price for ",
+    "stale prior price for ",
+    "stale current price for ",
+)
+
+
+def append_lock(args) -> int:
+    """Append LOCK evidence, failing closed but non-fatally on missing/stale prices.
+
+    Missing or stale required prices are data-availability blockers, not permission to
+    drop an asset or synthesize a return. The strict ledger writer raises before any
+    snapshot mutation, so this wrapper records an immutable diagnostic and returns 0
+    so independent Gateway/V2A evidence from the same Daily Research run can still be
+    persisted. All other RuntimeError conditions remain fatal.
+    """
+    try:
+        return _append_lock_strict(args)
+    except RuntimeError as exc:
+        message = str(exc)
+        if not message.startswith(_PRICE_BLOCKER_PREFIXES):
+            raise
+
+        diagnostics = args.ledger_dir / "diagnostics"
+        diagnostics.mkdir(parents=True, exist_ok=True)
+        target = diagnostics / f"{args.snapshot_id}.json"
+        payload = {
+            "schema": "gate_btc.lock25_50_blocked_snapshot.v1",
+            "status": "BLOCKED_MISSING_OR_STALE_REQUIRED_PRICE",
+            "snapshot_id": args.snapshot_id,
+            "cycle_id": args.cycle_id,
+            "reason": message,
+            "snapshot_appended": False,
+            "mutation_performed": False,
+            "asset_drop_allowed": False,
+            "synthetic_return_allowed": False,
+            "research_only": True,
+            "shadow_only": True,
+            "not_approved": True,
+            "orders_generated": 0,
+            "real_capital_used": 0,
+        }
+        rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+        if target.exists():
+            existing = target.read_text(encoding="utf-8")
+            if existing != rendered:
+                raise RuntimeError(f"LOCK blocker diagnostic conflict for {args.snapshot_id}")
+        else:
+            target.write_text(rendered, encoding="utf-8")
+        print(json.dumps(payload, indent=2))
+        return 0
 
 
 def main() -> int:
