@@ -24,6 +24,8 @@ USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 RETRIES = 3
 RETRY_SLEEP_S = 3.0
+RATE_LIMIT_SLEEP_S = (20.0, 45.0, 90.0)   # esperas para HTTP 429
+MAX_RETRY_AFTER_S = 120.0
 
 
 class DataSourceError(RuntimeError):
@@ -46,6 +48,17 @@ def _http_get(url: str, timeout: float = 30.0) -> bytes:
             last_err = err
             if err.code in PERMANENT_HTTP:
                 raise DataSourceError(f"GET {url}: HTTP {err.code} (definitivo)")
+            if err.code == 429:
+                # a fonte pede para abrandar; obedece ao cabecalho se houver
+                wait = RATE_LIMIT_SLEEP_S[min(attempt, len(RATE_LIMIT_SLEEP_S) - 1)]
+                header = (err.headers or {}).get("Retry-After")
+                if header:
+                    try:
+                        wait = max(wait, min(float(header), MAX_RETRY_AFTER_S))
+                    except (TypeError, ValueError):
+                        pass
+                time.sleep(wait)
+                continue
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
         except (urllib.error.URLError, TimeoutError, OSError) as err:
             last_err = err

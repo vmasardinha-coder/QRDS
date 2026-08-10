@@ -265,9 +265,10 @@ MIN_MEDIAN_TURNOVER_CRYPTO_USD = 1_000_000.0
 DECISION_LOG_MAX_ENTRIES = 120      # log auditavel por carteira (secao 8)
 
 # Pausa entre pedidos de precos de acoes. Com ~150 chamadas por ciclo (100 EUA
-# + 50 B3) as fontes publicas comecam a limitar por taxa; a pausa custa ~40s e
-# evita falhas de dado que excluiriam ativos sem motivo real.
-FETCH_DELAY_S = 0.25
+# + 50 B3) todas na mesma fonte, 0.25s ainda provocava HTTP 429 e derrubava a
+# carteira que corria por ultimo. 0.8s custa ~2 minutos e mantem a cadencia
+# abaixo do limite — barato face a perder uma carteira inteira no dia.
+FETCH_DELAY_S = 0.8
 
 # --- Regras comuns ---
 SMA_REGIME_DAYS = 200

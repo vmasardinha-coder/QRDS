@@ -624,3 +624,46 @@ class TestBcbFallbackChain(unittest.TestCase):
                                side_effect=self.ds.DataSourceError("502")):
             with self.assertRaises(self.ds.DataSourceError):
                 self.ds.fetch_bcb_cdi_daily()
+
+
+class TestRateLimitBackoff(unittest.TestCase):
+    """429 e a fonte a pedir para abrandar — repetir depressa so confirma o
+    bloqueio e custa a carteira que corre a seguir."""
+
+    def _run_with(self, code, headers=None):
+        import urllib.error
+        from trading_agent import data_sources
+        waits, calls = [], []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, code, "x",
+                                         headers or {}, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep", waits.append):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        return waits, calls
+
+    def test_429_waits_much_longer_than_a_generic_error(self):
+        from trading_agent import data_sources
+        rate_waits, _ = self._run_with(429)
+        generic_waits, _ = self._run_with(503)
+        self.assertGreaterEqual(min(rate_waits), data_sources.RATE_LIMIT_SLEEP_S[0])
+        self.assertGreater(sum(rate_waits), sum(generic_waits) * 3)
+
+    def test_429_honours_retry_after_header(self):
+        waits, _ = self._run_with(429, headers={"Retry-After": "75"})
+        self.assertIn(75.0, waits)
+
+    def test_retry_after_is_capped(self):
+        from trading_agent import data_sources
+        waits, _ = self._run_with(429, headers={"Retry-After": "99999"})
+        self.assertLessEqual(max(waits), data_sources.MAX_RETRY_AFTER_S)
+
+    def test_garbage_retry_after_falls_back_to_default(self):
+        from trading_agent import data_sources
+        waits, _ = self._run_with(429, headers={"Retry-After": "amanha"})
+        self.assertIn(data_sources.RATE_LIMIT_SLEEP_S[0], waits)
