@@ -3,37 +3,42 @@
   "currency": "BRL",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 24509.985899497402,
+  "cash": 24509.133286493612,
   "positions": {
     "BPAC11": {
-      "qty": 75.54334738455687,
+      "qty": 64.71371698102388,
       "avg_cost": 55.95514075273786,
       "high_water": 56.20000076293945
     },
     "GGBR4": {
-      "qty": 162.01981692338862,
+      "qty": 139.09079632423203,
       "avg_cost": 25.615564298245825,
       "high_water": 25.649999618530273
     },
     "PRIO3": {
-      "qty": 67.472582214303,
+      "qty": 57.80337159714822,
       "avg_cost": 58.862107543169245,
-      "high_water": 60.560001373291016
+      "high_water": 60.59000015258789
     },
     "SBSP3": {
-      "qty": 154.31041322490117,
+      "qty": 132.31229258567987,
       "avg_cost": 27.273079607041595,
       "high_water": 27.389999389648438
     },
     "UGPA3": {
-      "qty": 132.0665675832749,
+      "qty": 112.86839240704901,
       "avg_cost": 32.502494701264084,
       "high_water": 32.75
     },
     "VALE3": {
-      "qty": 53.772072462524285,
+      "qty": 46.11938611133984,
       "avg_cost": 75.5457290892971,
       "high_water": 75.98999786376953
+    },
+    "ITSA4": {
+      "qty": 267.3516177026532,
+      "avg_cost": 13.113100381851195,
+      "high_water": 13.113100381851195
     }
   },
   "benchmark": {
@@ -69,8 +74,8 @@
     },
     {
       "date": "2026-08-10",
-      "nav": 49026.82,
-      "benchmark_nav": 49113.12,
+      "nav": 49025.28,
+      "benchmark_nav": 49101.19,
       "benchmark2_nav": 50025.83
     }
   ],
@@ -258,6 +263,62 @@
       "qty": 7.19287907,
       "price": 76.065988,
       "value": 547.13
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "BPAC11",
+      "side": "sell",
+      "qty": 10.8296304,
+      "price": 54.065879,
+      "value": 585.51
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "GGBR4",
+      "side": "sell",
+      "qty": 22.9290206,
+      "price": 25.15482,
+      "value": 576.78
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "PRIO3",
+      "side": "sell",
+      "qty": 9.66921062,
+      "price": 60.52941,
+      "value": 585.27
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "SBSP3",
+      "side": "sell",
+      "qty": 21.99812064,
+      "price": 26.443529,
+      "value": 581.71
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "UGPA3",
+      "side": "sell",
+      "qty": 19.19817518,
+      "price": 30.998971,
+      "value": 595.12
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "VALE3",
+      "side": "sell",
+      "qty": 7.65268635,
+      "price": 75.864062,
+      "value": 580.56
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "ITSA4",
+      "side": "buy",
+      "qty": 267.3516177,
+      "price": 13.1131,
+      "value": 3505.81
     }
   ],
   "benchmark2": {
@@ -733,47 +794,52 @@
       "hurdle": "IBOV",
       "hurdle_score": 0.3221,
       "rebalance_trigger": "cadencia semanal (segunda-feira)",
-      "eligible_count": 6,
+      "eligible_count": 7,
       "selected": [
         {
           "symbol": "UGPA3",
           "score": 0.8013,
-          "weight": 0.0833
-        },
-        {
-          "symbol": "SBSP3",
-          "score": 0.4377,
-          "weight": 0.0833
+          "weight": 0.0714
         },
         {
           "symbol": "BPAC11",
-          "score": 0.42,
-          "weight": 0.0833
+          "score": 0.4749,
+          "weight": 0.0714
+        },
+        {
+          "symbol": "SBSP3",
+          "score": 0.4666,
+          "weight": 0.0714
+        },
+        {
+          "symbol": "PRIO3",
+          "score": 0.3936,
+          "weight": 0.0714
         },
         {
           "symbol": "GGBR4",
           "score": 0.3902,
-          "weight": 0.0833
-        },
-        {
-          "symbol": "PRIO3",
-          "score": 0.369,
-          "weight": 0.0833
+          "weight": 0.0714
         },
         {
           "symbol": "VALE3",
-          "score": 0.3519,
-          "weight": 0.0833
+          "score": 0.3796,
+          "weight": 0.0714
+        },
+        {
+          "symbol": "ITSA4",
+          "score": 0.3495,
+          "weight": 0.0714
         }
       ],
       "rejected": [
         {
           "symbol": "ABEV3",
-          "reason": "nao bate o benchmark (+27.2% <= +32.2%)"
+          "reason": "nao bate o benchmark (+26.8% <= +32.2%)"
         },
         {
           "symbol": "ASAI3",
-          "reason": "nao bate o benchmark (-12.0% <= +32.2%)"
+          "reason": "nao bate o benchmark (-12.6% <= +32.2%)"
         },
         {
           "symbol": "B3SA3",
@@ -781,7 +847,7 @@
         },
         {
           "symbol": "BBAS3",
-          "reason": "nao bate o benchmark (+7.4% <= +32.2%)"
+          "reason": "nao bate o benchmark (+10.1% <= +32.2%)"
         },
         {
           "symbol": "BBDC4",
@@ -789,15 +855,15 @@
         },
         {
           "symbol": "CMIG4",
-          "reason": "nao bate o benchmark (+8.2% <= +32.2%)"
+          "reason": "nao bate o benchmark (+9.0% <= +32.2%)"
         },
         {
           "symbol": "CSNA3",
-          "reason": "nao bate o benchmark (-33.7% <= +32.2%)"
+          "reason": "nao bate o benchmark (-28.3% <= +32.2%)"
         },
         {
           "symbol": "CYRE3",
-          "reason": "nao bate o benchmark (-8.4% <= +32.2%)"
+          "reason": "nao bate o benchmark (-6.8% <= +32.2%)"
         },
         {
           "symbol": "EQTL3",
@@ -805,47 +871,43 @@
         },
         {
           "symbol": "HAPV3",
-          "reason": "nao bate o benchmark (-71.7% <= +32.2%)"
-        },
-        {
-          "symbol": "ITSA4",
-          "reason": "nao bate o benchmark (+31.6% <= +32.2%)"
+          "reason": "nao bate o benchmark (-70.4% <= +32.2%)"
         },
         {
           "symbol": "ITUB4",
-          "reason": "nao bate o benchmark (+22.9% <= +32.2%)"
+          "reason": "nao bate o benchmark (+26.3% <= +32.2%)"
         },
         {
           "symbol": "KLBN11",
-          "reason": "nao bate o benchmark (-1.7% <= +32.2%)"
+          "reason": "nao bate o benchmark (-2.8% <= +32.2%)"
         },
         {
           "symbol": "LREN3",
-          "reason": "nao bate o benchmark (-16.2% <= +32.2%)"
+          "reason": "nao bate o benchmark (-17.7% <= +32.2%)"
         },
         {
           "symbol": "MULT3",
-          "reason": "nao bate o benchmark (+13.7% <= +32.2%)"
+          "reason": "nao bate o benchmark (+17.3% <= +32.2%)"
         },
         {
           "symbol": "PETR4",
-          "reason": "nao bate o benchmark (+21.4% <= +32.2%)"
+          "reason": "nao bate o benchmark (+22.6% <= +32.2%)"
         },
         {
           "symbol": "RADL3",
-          "reason": "nao bate o benchmark (+23.3% <= +32.2%)"
+          "reason": "nao bate o benchmark (+7.6% <= +32.2%)"
         },
         {
           "symbol": "RAIL3",
-          "reason": "nao bate o benchmark (-16.9% <= +32.2%)"
+          "reason": "nao bate o benchmark (-14.0% <= +32.2%)"
         },
         {
           "symbol": "RDOR3",
-          "reason": "nao bate o benchmark (+5.2% <= +32.2%)"
+          "reason": "nao bate o benchmark (+4.8% <= +32.2%)"
         },
         {
           "symbol": "RENT3",
-          "reason": "nao bate o benchmark (+13.9% <= +32.2%)"
+          "reason": "nao bate o benchmark (+16.1% <= +32.2%)"
         },
         {
           "symbol": "SUZB3",
@@ -853,19 +915,19 @@
         },
         {
           "symbol": "TIMS3",
-          "reason": "nao bate o benchmark (+4.1% <= +32.2%)"
+          "reason": "nao bate o benchmark (+5.1% <= +32.2%)"
         },
         {
           "symbol": "TOTS3",
-          "reason": "nao bate o benchmark (-32.6% <= +32.2%)"
+          "reason": "nao bate o benchmark (-32.2% <= +32.2%)"
         },
         {
           "symbol": "VIVT3",
-          "reason": "nao bate o benchmark (+7.6% <= +32.2%)"
+          "reason": "nao bate o benchmark (+9.3% <= +32.2%)"
         },
         {
           "symbol": "WEGE3",
-          "reason": "nao bate o benchmark (+23.2% <= +32.2%)"
+          "reason": "nao bate o benchmark (+21.9% <= +32.2%)"
         }
       ],
       "stops": [],
