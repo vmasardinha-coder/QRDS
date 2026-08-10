@@ -59,26 +59,29 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,654.39 |
-| Retorno do dia | -1.03% |
-| Retorno desde inicio (2026-08-06) | -0.69% |
-| Benchmark BTC | -0.75% |
-| **Alfa vs BTC** | **+0.06%** |
-| Caixa | $24,850.51 |
+| NAV | $49,614.64 |
+| Retorno do dia | -1.11% |
+| Retorno desde inicio (2026-08-06) | -0.77% |
+| Benchmark BTC | -0.77% |
+| **Alfa vs BTC** | **+0.00%** |
+| Caixa | $24,842.18 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,935.51 | $12,406.42 | 25.0% |
-| UNI | 1053.81 | $3.95 | $4,160.24 | 8.4% |
-| ADA | 21535.8 | $0.19 | $4,137.88 | 8.3% |
-| ETH | 2.18871 | $1,872.94 | $4,099.33 | 8.3% |
+| BTC | 0.194046 | $63,919.99 | $12,403.41 | 25.0% |
+| ONDO | 12152.4 | $0.34 | $4,135.93 | 8.3% |
+| TRX | 12519.4 | $0.33 | $4,135.93 | 8.3% |
+| ETH | 2.18871 | $1,871.96 | $4,097.19 | 8.3% |
 
 ### Movimentacoes de hoje
 | Ativo | Operacao | Qtd | Preco | Valor | Motivo |
 |---|---|---|---|---|---|
-| ADA | COMPRA | 1080.78 | $0.19 | $207.87 | rebalanceio |
+| ADA | VENDA | 21535.8 | $0.19 | $4,128.15 | rebalanceio |
+| UNI | VENDA | 1053.81 | $3.93 | $4,143.65 | rebalanceio |
+| ONDO | COMPRA | 12152.4 | $0.34 | $4,140.07 | rebalanceio |
+| TRX | COMPRA | 12519.4 | $0.33 | $4,140.07 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
@@ -86,100 +89,36 @@ _Sem movimentacoes hoje._
 - **Gatilho:** cadencia semanal (segunda-feira)
 - **Obstaculo (BTC):** momentum de -10.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 9
+- **Sem dado (excluidos, nao estimados):** ZIL, ONE, WAVES, RVN, DCR, RUNE, GLMR, MOVR, ACA
+  - `ZIL`: GET https://api.coingecko.com/api/v3/coins/zilliqa/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
+  - `ONE`: GET https://api.coingecko.com/api/v3/coins/harmony/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
+  - `WAVES`: GET https://api.coingecko.com/api/v3/coins/waves/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
 
 | Rejeitado | Motivo |
 |---|---|
-| ALGO | nao bate o benchmark (-17.4% <= -10.2%) |
-| APT | nao bate o benchmark (-25.8% <= -10.2%) |
-| ARB | nao bate o benchmark (-29.1% <= -10.2%) |
-| ATOM | nao bate o benchmark (-22.4% <= -10.2%) |
-| AVAX | nao bate o benchmark (-18.4% <= -10.2%) |
-| BCH | nao bate o benchmark (-32.2% <= -10.2%) |
-| DOGE | nao bate o benchmark (-20.7% <= -10.2%) |
-| DOT | nao bate o benchmark (-22.4% <= -10.2%) |
-| _(+7 outros)_ | |
+| 1INCH | liquidez baixa (0.0M < 5M) |
+| AAVE | liquidez baixa (2.9M < 5M) |
+| ALGO | liquidez baixa (0.9M < 5M) |
+| ALICE | liquidez baixa (0.1M < 5M) |
+| AMP | liquidez baixa (0.1M < 5M) |
+| ANKR | liquidez baixa (0.0M < 5M) |
+| APE | liquidez baixa (0.1M < 5M) |
+| API3 | liquidez baixa (0.0M < 5M) |
+| _(+119 outros)_ | |
 
 </details>
 
 ## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
 
-| Indicador | Valor |
-|---|---|
-| NAV | R$ 49,055.63 |
-| Retorno do dia | +0.39% |
-| Retorno desde inicio (2026-08-06) | -1.89% |
-| Benchmark IBOV | -1.92% |
-| Benchmark CDI | +0.05% |
-| **Alfa vs o maior (CDI)** | **-1.94%** |
-| Caixa | R$ 24,494.74 |
-| Regime | risco reduzido (defensivo) |
+> ERRO nesta execucao: `GET https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=22/02/2024&dataFinal=10/08/2026 falhou apos 3 tentativas: HTTP Error 502: Bad Gateway`
 
-### Posicoes
-| Ativo | Qtd | Preco | Valor | Peso |
-|---|---|---|---|---|
-| PRIO3 | 50.4093 | R$ 61.24 | R$ 3,087.07 | 6.3% |
-| GGBR4 | 121.756 | R$ 25.25 | R$ 3,074.33 | 6.3% |
-| BPAC11 | 57.0355 | R$ 53.86 | R$ 3,071.93 | 6.3% |
-| VBBR3 | 91.8553 | R$ 33.44 | R$ 3,071.64 | 6.3% |
-| SBSP3 | 115.643 | R$ 26.55 | R$ 3,070.31 | 6.3% |
-| GOAU4 | 275.236 | R$ 11.15 | R$ 3,068.88 | 6.3% |
-| VALE3 | 40.3553 | R$ 75.93 | R$ 3,064.18 | 6.2% |
-| UGPA3 | 98.4691 | R$ 31.00 | R$ 3,052.54 | 6.2% |
-
-_Sem movimentacoes hoje._
-
-<details>
-<summary>Rasto de decisao (auditoria)</summary>
-
-- **Gatilho:** cadencia semanal (segunda-feira)
-- **Obstaculo (IBOV):** momentum de +32.2% — so entram ativos acima disto
-- **Candidatos elegiveis:** 8
-- **Sem dado (excluidos, nao estimados):** EMBR3, ELET3, CPLE6, JBSS3, BRFS3, NTCO3
-
-| Rejeitado | Motivo |
-|---|---|
-| ABEV3 | nao bate o benchmark (+27.2% <= +32.2%) |
-| ASAI3 | nao bate o benchmark (-12.0% <= +32.2%) |
-| B3SA3 | nao bate o benchmark (+17.6% <= +32.2%) |
-| BBAS3 | nao bate o benchmark (+7.4% <= +32.2%) |
-| BBDC4 | nao bate o benchmark (+20.4% <= +32.2%) |
-| BRKM5 | nao bate o benchmark (-25.4% <= +32.2%) |
-| CMIG4 | nao bate o benchmark (+8.2% <= +32.2%) |
-| CMIN3 | nao bate o benchmark (-1.6% <= +32.2%) |
-| _(+28 outros)_ | |
-
-</details>
+O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
 ## Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)
 
-| Indicador | Valor |
-|---|---|
-| NAV | R$ 49,543.03 |
-| Retorno do dia | +0.23% |
-| Retorno desde inicio (2026-08-06) | -0.91% |
-| Benchmark IBOV | -1.92% |
-| Benchmark CDI | +0.05% |
-| **Alfa vs o maior (CDI)** | **-0.97%** |
-| Caixa | R$ 677.25 |
+> ERRO nesta execucao: `GET https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=22/02/2024&dataFinal=10/08/2026 falhou apos 3 tentativas: HTTP Error 502: Bad Gateway`
 
-### Posicoes
-| Ativo | Qtd | Preco | Valor | Peso |
-|---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 169.27 | R$ 49,145.81 | 99.2% |
-
-> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 280.03
-
-> Volatilidade usada na call (GARCH(1,1)): 17.2% a.a. | realizada 30d: 19.2% a.a. | CDI: 0.0517% a.d.
-
-_Sem movimentacoes hoje._
-
-<details>
-<summary>Rasto de decisao (auditoria)</summary>
-
-- **Gatilho:** nenhum (call em curso)
-- **Candidatos elegiveis:** 0
-
-</details>
+O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
 ---
 _Sob a Carta de Operacao: teto por posicao ativa, piso de diversificacao (abaixo dele fica caixa), stop proporcional a volatilidade do ativo, filtro de regime e de liquidez, e forca relativa ao benchmark. Dado em falta exclui o ativo — nunca e estimado. Criterios congelados: mudanca so com validacao fora-da-amostra._
