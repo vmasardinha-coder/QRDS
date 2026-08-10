@@ -41,7 +41,7 @@ gráficos. A rotina diária do Claude apenas **lê e entrega** — não escreve.
   fechar abaixo da SMA 200, a exposição cai para 50% (resto em caixa).
 - **Crypto** — núcleo de 50% em BTC; até 3 altcoins com momentum
   (média dos retornos de 30 e 90 dias) superior ao do BTC partilham os outros
-  50%. Sem alts qualificadas → 100% BTC. Se o BTC fechar abaixo da SMA 200,
+  50%, escolhidas entre 149 altcoins. Sem alts qualificadas → 100% BTC. Se o BTC fechar abaixo da SMA 200,
   exposição cai para 50%.
 - **Ações B3** — mesmo momentum 12-1 sobre ~50 ações líquidas da B3
   (dados Yahoo `.SA`), top 8 em pesos iguais; filtro de regime Ibovespa vs
@@ -71,7 +71,8 @@ Regras duras que o agente nunca contorna — detalhe e rastreabilidade em
   mínimo, a carteira fica em caixa em vez de afrouxar o critério.
 - **Força relativa** — um ativo só entra se o momentum superar o do próprio
   benchmark (na B3, o maior entre Ibovespa e CDI).
-- **Filtro de liquidez** — mediana de preço × volume em 60 dias ≥ 20M.
+- **Filtro de liquidez** — mediana de preço × volume em 60 dias ≥ 20M nas
+  ações (USD e BRL) e ≥ 5M na crypto.
 - **Stop estatístico** de 8 × desvio-padrão diário do próprio ativo, com 30
   dias de carência antes de poder voltar à carteira.
 - **Fail-closed** — dado em falta exclui o ativo; nunca é estimado.

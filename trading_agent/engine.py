@@ -27,15 +27,19 @@ def _is_fresh(series: Series, today: str) -> bool:
     return (now - last).days <= config.STALE_PRICE_MAX_DAYS
 
 
-def _fetch_universe(symbols, fetch) -> tuple[dict[str, Series], list[str]]:
-    """Descarrega o universo. Falha de dado exclui o ativo, nao inventa valor."""
+def _fetch_universe(symbols, fetch) -> tuple[dict[str, Series], list[dict]]:
+    """Descarrega o universo. Falha de dado exclui o ativo, nao inventa valor.
+
+    Guarda o motivo de cada ausencia: sem ele nao ha como distinguir um ticker
+    errado de uma indisponibilidade passageira da fonte.
+    """
     universe: dict[str, Series] = {}
-    failed: list[str] = []
+    failed: list[dict] = []
     for symbol in symbols:
         try:
             universe[symbol] = fetch(symbol)
-        except data_sources.DataSourceError:
-            failed.append(symbol)
+        except data_sources.DataSourceError as err:
+            failed.append({"symbol": symbol, "reason": str(err)[:160]})
     return universe, failed
 
 

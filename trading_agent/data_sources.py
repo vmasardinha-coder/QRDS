@@ -29,6 +29,11 @@ class DataSourceError(RuntimeError):
     pass
 
 
+# 4xx que significam "nao existe / nao autorizado": repetir nao muda o
+# resultado e, com universos grandes, custa dezenas de minutos por ciclo.
+PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
+
+
 def _http_get(url: str, timeout: float = 30.0) -> bytes:
     last_err: Exception | None = None
     for attempt in range(RETRIES):
@@ -36,7 +41,12 @@ def _http_get(url: str, timeout: float = 30.0) -> bytes:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as err:
+        except urllib.error.HTTPError as err:
+            last_err = err
+            if err.code in PERMANENT_HTTP:
+                raise DataSourceError(f"GET {url}: HTTP {err.code} (definitivo)")
+            time.sleep(RETRY_SLEEP_S * (attempt + 1))
+        except (urllib.error.URLError, TimeoutError, OSError) as err:
             last_err = err
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
     raise DataSourceError(f"GET {url} falhou apos {RETRIES} tentativas: {last_err}")
@@ -175,7 +185,11 @@ def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, floa
     for ms, price in prices:
         date = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
         out[date] = float(price)
-    return [(d, c, volumes.get(d, 0.0)) for d, c in sorted(out.items())]
+    # a CoinGecko devolve volume ja em USD; a Coinbase em unidades da moeda.
+    # Normaliza para unidades da moeda para que close x volume seja giro em USD
+    # em ambas as fontes, e o filtro de liquidez signifique a mesma coisa.
+    return [(d, c, (volumes.get(d, 0.0) / c) if c > 0 else 0.0)
+            for d, c in sorted(out.items())]
 
 
 def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, float]]:

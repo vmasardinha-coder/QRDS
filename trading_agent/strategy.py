@@ -181,11 +181,12 @@ def crypto_decision(universe: dict[str, Series]) -> dict:
                          "sem historico do BTC: so ancora", hurdle="BTC")
 
     alts = {s: series for s, series in universe.items() if s != "BTC"}
-    # Sem limiar de liquidez aqui, por honestidade de unidades: a Coinbase
-    # reporta volume na moeda base e a CoinGecko ja em USD, e um limiar unico
-    # sobre as duas seria arbitrario. O universo sao as 10 maiores por
-    # capitalizacao, todas com profundidade muito acima do tamanho negociado.
-    ranked, rejected = _screen(alts, btc_score, 0.0, crypto_momentum_score)
+    # As duas fontes ja reportam volume em unidades da moeda base (a CoinGecko
+    # e normalizada na leitura), por isso preco x volume e giro em USD em ambas
+    # e o limiar significa a mesma coisa venha de onde vier.
+    ranked, rejected = _screen(alts, btc_score,
+                               config.MIN_MEDIAN_TURNOVER_CRYPTO_USD,
+                               crypto_momentum_score)
 
     btc_weight = min(exposure * config.CRYPTO_BTC_CORE_WEIGHT,
                      config.CRYPTO_BTC_ANCHOR_MAX)

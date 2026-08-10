@@ -113,9 +113,14 @@ def _audit_block(log: dict) -> list[str]:
     if log.get("cooldowns"):
         pairs = ", ".join(f"{s} (ate {d})" for s, d in log["cooldowns"].items())
         lines.append(f"- **Em carencia por stop:** {pairs}")
-    if log.get("data_failures"):
-        lines.append(f"- **Sem dado (excluidos, nao estimados):** "
-                     f"{', '.join(log['data_failures'])}")
+    failures = log.get("data_failures") or []
+    if failures:
+        names = ", ".join(f["symbol"] if isinstance(f, dict) else str(f)
+                          for f in failures)
+        lines.append(f"- **Sem dado (excluidos, nao estimados):** {names}")
+        for item in failures[:3]:
+            if isinstance(item, dict) and item.get("reason"):
+                lines.append(f"  - `{item['symbol']}`: {item['reason']}")
     rejected = log.get("rejected") or []
     if rejected:
         lines.append("")
