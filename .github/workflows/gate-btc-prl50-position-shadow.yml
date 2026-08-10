@@ -128,7 +128,11 @@ jobs:
           assert m['methodology_changes'] == 0
           assert m['components']['v2a']['status'] == 'PASS'
           v=json.load(open('extracted/v2a/outputs/v2a_run_manifest.json', encoding='utf-8-sig'))
-          assert v['operational_status'] == 'NOT_APPROVED_RESEARCH_ONLY'
+          assert v['operational_status'] == 'NOT_APPROVED'
+          assert v['technical_status'] == 'PASS'
+          assert v['real_orders'] == 0 and v['capital_used'] == 0
+          assert v['evidence_status'] == 'RESEARCH_ONLY_NOT_PROMOTED'
+          assert v['lookahead_guard'] == 'signals execute on next daily bar'
           print(v['data_as_of'])
           open('snapshot_id.txt','w',encoding='utf-8').write(v['data_as_of'])
           PY
