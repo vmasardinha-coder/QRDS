@@ -256,9 +256,11 @@ LIQUIDITY_WINDOW_DAYS = 60
 MIN_MEDIAN_TURNOVER_USD = 20_000_000.0   # mediana de preco x volume diario
 MIN_MEDIAN_TURNOVER_BRL = 20_000_000.0
 # Com um universo de 150 ativos, a cauda inclui moedas genuinamente finas.
-# O limiar e mais baixo que o das acoes porque a carteira so aloca ~$7.5k por
-# alt (teto de 15%), mas existe: sinal sem liquidez nao e executavel.
-MIN_MEDIAN_TURNOVER_CRYPTO_USD = 5_000_000.0
+# O limiar deriva do tamanho da ordem: uma alt recebe no maximo ~$7.5k (teto de
+# 15%), e $7.5k sobre 1M de giro mediano diario e 0,75% do volume de um dia.
+# Nota: o volume da Coinbase e da propria bolsa, nao global — por isso este
+# numero nao e comparavel ao limiar das acoes, que usa volume consolidado.
+MIN_MEDIAN_TURNOVER_CRYPTO_USD = 1_000_000.0
 
 DECISION_LOG_MAX_ENTRIES = 120      # log auditavel por carteira (secao 8)
 

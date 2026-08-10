@@ -49,8 +49,11 @@ para que a gestão de risco preceda a busca de retorno (secção 9).
 - Momentum **relativo ao benchmark** — um ativo só é elegível se o seu momentum
   superar o do próprio benchmark (`strategy._screen`). Não basta ser melhor que
   os pares: tem de bater aquilo que se está a tentar bater.
-- Filtro de liquidez — mediana de (preço × volume) em 60 dias, mínimo de 20M
-  (`strategy.median_turnover`). Sinal sem liquidez não é executável.
+- Filtro de liquidez — mediana de (preço × volume) em 60 dias
+  (`strategy.median_turnover`). Sinal sem liquidez não é executável. Limiar de
+  20M nas ações (volume consolidado) e 1M na crypto (volume da própria bolsa);
+  o número da crypto deriva do tamanho da ordem — uma alt recebe no máximo
+  ~$7.500, ou seja 0,75% de um dia de giro.
 - Poucos fatores ortogonais: tendência (momentum 12-1), regime (SMA 200) e
   volatilidade (σ no stop, GARCH nas opções). **Não empilhar indicadores
   correlacionados.**
@@ -74,7 +77,11 @@ trading é evidência fraca — não escalar convicção depressa.
 Dado em falta **nunca** é estimado, repetido do último valor conhecido, nem
 ignorado em silêncio:
 - falha de fonte → ativo excluído do ciclo e registado em `data_failures`
-  (`engine._fetch_universe`);
+  **com o motivo** (`engine._fetch_universe`);
+- CDI: uma indisponibilidade do Banco Central usa a cópia local da série já
+  publicada (`data_sources._load_cdi_cache`). O CDI passado é um facto
+  imutável, por isso a cópia é o mesmo dado, não uma estimativa; os dias ainda
+  não publicados simplesmente não acumulam até a fonte voltar;
 - preço com mais de 4 dias → ativo não negociável (`config.STALE_PRICE_MAX_DAYS`);
 - volume ausente → chega como `0.0` e reprova no filtro de liquidez;
 - falha total de uma carteira → secção de ERRO no relatório, estado intacto.

@@ -208,6 +208,28 @@ def fetch_b3_daily(ticker: str) -> list[tuple[str, float, float]]:
     return series
 
 
+def _cdi_cache_path():
+    from pathlib import Path
+    return Path(__file__).resolve().parent / "state" / "cdi_cache.json"
+
+
+def _load_cdi_cache() -> list[tuple[str, float]] | None:
+    path = _cdi_cache_path()
+    if not path.exists():
+        return None
+    try:
+        rows = json.loads(path.read_text(encoding="utf-8"))
+        return [(str(d), float(v)) for d, v in rows] or None
+    except (ValueError, TypeError, OSError):
+        return None
+
+
+def _save_cdi_cache(rows: list[tuple[str, float]]) -> None:
+    path = _cdi_cache_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps([list(r) for r in rows]), encoding="utf-8")
+
+
 def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
     """Taxa CDI diaria (% ao dia) via API SGS do Banco Central do Brasil.
 
@@ -223,7 +245,18 @@ def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
         f"&dataInicial={start.strftime('%d/%m/%Y')}"
         f"&dataFinal={end.strftime('%d/%m/%Y')}"
     )
-    data = json.loads(_http_get(url).decode("utf-8"))
+    try:
+        data = json.loads(_http_get(url).decode("utf-8"))
+    except DataSourceError:
+        # O SGS do Banco Central tem indisponibilidades passageiras (502). O CDI
+        # ja publicado nao muda, por isso a copia local e o mesmo facto, nao uma
+        # estimativa. Os dias em falta simplesmente nao acumulam ate a fonte
+        # voltar — nada e inventado.
+        cached = _load_cdi_cache()
+        if cached:
+            return cached
+        raise
+
     rows: list[tuple[str, float]] = []
     for item in data:
         try:
@@ -232,8 +265,12 @@ def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
         except (KeyError, ValueError):
             continue
     if len(rows) < 10:
+        cached = _load_cdi_cache()
+        if cached:
+            return cached
         raise DataSourceError("BCB devolveu serie CDI vazia/invalida")
     rows.sort(key=lambda r: r[0])
+    _save_cdi_cache(rows)
     return rows
 
 

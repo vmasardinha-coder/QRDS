@@ -71,8 +71,9 @@ Regras duras que o agente nunca contorna — detalhe e rastreabilidade em
   mínimo, a carteira fica em caixa em vez de afrouxar o critério.
 - **Força relativa** — um ativo só entra se o momentum superar o do próprio
   benchmark (na B3, o maior entre Ibovespa e CDI).
-- **Filtro de liquidez** — mediana de preço × volume em 60 dias ≥ 20M nas
-  ações (USD e BRL) e ≥ 5M na crypto.
+- **Filtro de liquidez** — mediana de preço × volume em 60 dias: ≥ 20M nas
+  ações (USD e BRL, volume consolidado) e ≥ 1M na crypto (volume da própria
+  bolsa, por isso os números não são comparáveis entre si).
 - **Stop estatístico** de 8 × desvio-padrão diário do próprio ativo, com 30
   dias de carência antes de poder voltar à carteira.
 - **Fail-closed** — dado em falta exclui o ativo; nunca é estimado.

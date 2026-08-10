@@ -486,3 +486,87 @@ class TestCharts(unittest.TestCase):
     def test_report_links_dated_chart(self):
         content = report.build_report("2026-08-07", {}, {})
         self.assertIn("2026-08-07-grafico.svg", content)
+
+
+class TestCdiResilience(unittest.TestCase):
+    """Uma indisponibilidade do Banco Central nao pode custar um dia inteiro
+    as duas carteiras B3 — mas tambem nao pode inventar taxa nenhuma."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cache = Path(self.tmp.name) / "cdi_cache.json"
+        patcher = mock.patch.object(data_sources, "_cdi_cache_path",
+                                    lambda: self.cache)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_successful_fetch_populates_cache(self):
+        payload = json.dumps([{"data": "05/01/2026", "valor": "0.05"}] * 12
+                             ).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            rows = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(len(rows), 12)
+        self.assertTrue(self.cache.exists())
+
+    def test_outage_falls_back_to_cache(self):
+        payload = json.dumps([{"data": "05/01/2026", "valor": "0.05"},
+                              {"data": "06/01/2026", "valor": "0.05"}] * 6
+                             ).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            fresh = self.ds.fetch_bcb_cdi_daily()
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            cached = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(cached, fresh)
+
+    def test_outage_without_cache_still_fails_closed(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_bcb_cdi_daily()
+
+    def test_cache_does_not_invent_future_days(self):
+        # a caixa so acumula ate ao ultimo dia realmente publicado
+        state = portfolio.new_state("b3", "^BVSP", "2026-01-05", 130_000.0,
+                                    currency="BRL", initial_capital=50_000.0)
+        cached = [("2026-01-06", 0.05), ("2026-01-07", 0.05)]
+        portfolio.accrue_cash_cdi(state, cached, "2026-01-20")
+        self.assertAlmostEqual(state["cash"], 50_000.0 * 1.0005 ** 2, places=4)
+        self.assertEqual(state["last_accrual_date"], "2026-01-07")
+
+
+class TestPermanentHttpErrors(unittest.TestCase):
+    def test_definitive_4xx_is_not_retried(self):
+        import urllib.error
+        from trading_agent import data_sources
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, 404, "Not Found", None, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep"):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        self.assertEqual(len(calls), 1)
+
+    def test_transient_5xx_is_retried(self):
+        import urllib.error
+        from trading_agent import data_sources
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, 502, "Bad Gateway", None, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep"):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        self.assertEqual(len(calls), data_sources.RETRIES)
