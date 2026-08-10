@@ -24,18 +24,20 @@ mercado** e **dinheiro simulado** (paper trading):
    - calcula sinais, decide rebalanceio, executa ordens simuladas com slippage;
    - atualiza o estado (`trading_agent/state/*.json`) e escreve o relatório;
    - faz commit e push de estado + relatório para o próprio branch.
-2. **Relatório diário** em `trading_agent/reports/daily/AAAA-MM-DD.md`; o mais
-   recente fica sempre em `trading_agent/reports/RELATORIO_ATUAL.md`.
+2. **Relatório diário** em `trading_agent/reports/daily/AAAA-MM-DD.md` e
+   **gráfico do histórico** em `daily/AAAA-MM-DD-grafico.svg`; os mais recentes
+   ficam sempre em `RELATORIO_ATUAL.md` e `GRAFICO_ATUAL.svg`.
 
-Nota: o `schedule` do GitHub Actions só dispara no branch por omissão (`main`).
-Enquanto o agente viver num branch de feature, o ciclo é disparado diariamente
-via `workflow_dispatch` pela rotina automática do Claude, que também entrega o
-relatório.
+Nota: o `schedule` do GitHub Actions só dispara no branch por omissão (`main`),
+mas o `main` é protegido (só aceita PRs). Por isso o workflow vive no `main`
+para ser agendado, e faz sempre checkout/commit no **branch de operações**
+`claude/autonomous-trading-agent-h1asy9`, onde vivem estado, relatórios e
+gráficos. A rotina diária do Claude apenas **lê e entrega** — não escreve.
 
 ## Estratégia
 
 - **Ações** — momentum transversal 12-1 (retorno de 12 meses excluindo o último
-  mês) sobre ~40 large caps; top 10 em pesos iguais. Filtro de regime: se o SPY
+  mês) sobre 100 large caps dos EUA; top 10 em pesos iguais. Filtro de regime: se o SPY
   fechar abaixo da SMA 200, a exposição cai para 50% (resto em caixa).
 - **Crypto** — núcleo de 50% em BTC; até 3 altcoins com momentum
   (média dos retornos de 30 e 90 dias) superior ao do BTC partilham os outros
