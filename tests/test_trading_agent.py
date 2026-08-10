@@ -570,3 +570,57 @@ class TestPermanentHttpErrors(unittest.TestCase):
             with self.assertRaises(data_sources.DataSourceError):
                 data_sources._http_get("https://example.invalid/x")
         self.assertEqual(len(calls), data_sources.RETRIES)
+
+
+class TestCdiHurdleGuard(unittest.TestCase):
+    """Serie curta do CDI nao pode virar obstaculo baixo em silencio."""
+
+    def test_short_series_means_no_cdi_hurdle(self):
+        universe = {f"T{i}": as_series(trending_series(50, 0.0008, 300))
+                    for i in range(10)}
+        bench = trending_series(130_000, 0.0002, 300)
+        # sem janela completa o chamador passa None -> obstaculo volta ao IBOV
+        decision = strategy.b3_decision(universe, bench, cdi_window_return=None)
+        self.assertEqual(decision["hurdle"], "IBOV")
+
+    def test_engine_skips_cdi_hurdle_when_series_is_short(self):
+        import inspect
+        from trading_agent import engine
+        src = inspect.getsource(engine.run_b3)
+        # a guarda tem de existir: sem ela o acumulado de poucos dias passaria
+        self.assertIn("if len(cdi_rates) >= window", src)
+
+
+class TestBcbFallbackChain(unittest.TestCase):
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        self.tmp = tempfile.TemporaryDirectory()
+        patcher = mock.patch.object(
+            data_sources, "_cdi_cache_path",
+            lambda: Path(self.tmp.name) / "cdi_cache.json")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_falls_through_to_a_working_endpoint(self):
+        good = json.dumps([{"data": f"{d:02d}/01/2026", "valor": "0.05"}
+                           for d in range(1, 15)]).encode()
+        calls = []
+
+        def flaky(url, timeout=30.0):
+            calls.append(url)
+            if "dataInicial" in url:
+                raise self.ds.DataSourceError("502")
+            return good
+
+        with mock.patch.object(self.ds, "_http_get", flaky):
+            rows = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(len(rows), 14)
+        self.assertGreaterEqual(len(calls), 2)  # tentou o intervalo, depois ultimos/N
+
+    def test_all_endpoints_down_and_no_cache_fails_closed(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_bcb_cdi_daily()

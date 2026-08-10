@@ -20,7 +20,8 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-USER_AGENT = "QRDS-trading-agent/1.0 (research; paper trading)"
+USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 RETRIES = 3
 RETRY_SLEEP_S = 3.0
 
@@ -230,48 +231,58 @@ def _save_cdi_cache(rows: list[tuple[str, float]]) -> None:
     path.write_text(json.dumps([list(r) for r in rows]), encoding="utf-8")
 
 
-def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
-    """Taxa CDI diaria (% ao dia) via API SGS do Banco Central do Brasil.
-
-    Usa consulta por intervalo de datas (o endpoint 'ultimos/N' tem limites
-    baixos e devolve 400 para N grandes).
-    """
-    from . import config
-    end = datetime.now(timezone.utc)
-    start = end - timedelta(days=days_back)
-    url = (
-        f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{config.BCB_SGS_CDI_SERIES}"
-        f"/dados?formato=json"
-        f"&dataInicial={start.strftime('%d/%m/%Y')}"
-        f"&dataFinal={end.strftime('%d/%m/%Y')}"
-    )
-    try:
-        data = json.loads(_http_get(url).decode("utf-8"))
-    except DataSourceError:
-        # O SGS do Banco Central tem indisponibilidades passageiras (502). O CDI
-        # ja publicado nao muda, por isso a copia local e o mesmo facto, nao uma
-        # estimativa. Os dias em falta simplesmente nao acumulam ate a fonte
-        # voltar — nada e inventado.
-        cached = _load_cdi_cache()
-        if cached:
-            return cached
-        raise
-
+def _parse_sgs(payload: bytes) -> list[tuple[str, float]]:
     rows: list[tuple[str, float]] = []
-    for item in data:
+    for item in json.loads(payload.decode("utf-8")):
         try:
             day, month, year = item["data"].split("/")
             rows.append((f"{year}-{month}-{day}", float(item["valor"])))
         except (KeyError, ValueError):
             continue
-    if len(rows) < 10:
-        cached = _load_cdi_cache()
-        if cached:
-            return cached
-        raise DataSourceError("BCB devolveu serie CDI vazia/invalida")
     rows.sort(key=lambda r: r[0])
-    _save_cdi_cache(rows)
     return rows
+
+
+def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
+    """Taxa CDI diaria (% ao dia) via API SGS do Banco Central.
+
+    O SGS e intermitente e cada uma das suas formas de consulta falha de
+    maneira diferente, por isso tenta varias antes de desistir. A ordem vai da
+    serie mais longa para a mais curta: uma serie curta ainda serve para render
+    a caixa, mas nao chega para o obstaculo do CDI — quem decide isso e o
+    chamador, com base no tamanho do que recebeu.
+    """
+    from . import config
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days_back)
+    base = (f"https://api.bcb.gov.br/dados/serie/bcdata.sgs."
+            f"{config.BCB_SGS_CDI_SERIES}/dados")
+    attempts = [
+        f"{base}?formato=json&dataInicial={start.strftime('%d/%m/%Y')}"
+        f"&dataFinal={end.strftime('%d/%m/%Y')}",
+        f"{base}/ultimos/400?formato=json",
+        f"{base}/ultimos/100?formato=json",
+        f"{base}/ultimos/30?formato=json",
+    ]
+    errors: list[str] = []
+    for url in attempts:
+        try:
+            rows = _parse_sgs(_http_get(url))
+        except DataSourceError as err:
+            errors.append(str(err)[:80])
+            continue
+        if len(rows) >= 10:
+            _save_cdi_cache(rows)
+            return rows
+        errors.append(f"{url}: serie curta demais ({len(rows)})")
+
+    # O CDI ja publicado nao muda, por isso a copia local e o mesmo facto, nao
+    # uma estimativa. Os dias em falta simplesmente nao acumulam.
+    cached = _load_cdi_cache()
+    if cached:
+        return cached
+    raise DataSourceError("BCB SGS indisponivel e sem copia local. "
+                          + " | ".join(errors[:2]))
 
 
 def cdi_factor_since(rates: list[tuple[str, float]], start_date: str,

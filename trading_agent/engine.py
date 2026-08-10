@@ -183,12 +183,16 @@ def run_b3(today: str) -> dict:
 
     portfolio.accrue_cash_cdi(state, cdi_rates, today)
 
-    # obstaculo do CDI medido na mesma janela do momentum (12-1)
+    # obstaculo do CDI medido na mesma janela do momentum (12-1). Sem janela
+    # completa nao se calcula: um acumulado de menos dias seria um obstaculo
+    # artificialmente baixo, e baixar a fasquia em silencio e pior que nao a ter.
     window = config.EQUITY_MOM_LONG_DAYS - config.EQUITY_MOM_SKIP_DAYS
-    cdi_window = 1.0
-    for _, rate in cdi_rates[-window:]:
-        cdi_window *= 1.0 + rate / 100.0
-    cdi_window -= 1.0
+    cdi_window = None
+    if len(cdi_rates) >= window:
+        cdi_window = 1.0
+        for _, rate in cdi_rates[-window:]:
+            cdi_window *= 1.0 + rate / 100.0
+        cdi_window -= 1.0
 
     bench_closes = _closes(bench_series)
     outcome = _run_directional(
