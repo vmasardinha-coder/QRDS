@@ -14,6 +14,18 @@ EQUITY_UNIVERSE = [
     "MRK", "ABBV", "CRM", "NFLX", "AMD", "ORCL", "KO", "PEP", "WMT",
     "BAC", "DIS", "CSCO", "ADBE", "TMO", "INTC", "QCOM", "TXN", "AMGN",
     "CAT", "GE", "PM", "NKE",
+    # --- ampliacao para ~100 nomes (agosto 2026) ---
+    "WFC", "MS", "GS", "BLK", "SCHW", "AXP", "SPGI", "C", "PGR", "ICE",
+    "ABT", "DHR", "BMY", "PFE", "GILD", "VRTX", "ISRG", "SYK", "ELV",
+    "INTU", "NOW", "IBM", "ACN", "MU", "LRCX", "AMAT", "KLAC", "ADI",
+    "PANW", "ANET", "UBER",
+    "HON", "UNP", "BA", "LMT", "RTX", "DE", "UPS", "ETN",
+    "LOW", "TGT", "SBUX", "MCD", "BKNG", "TJX", "CL", "MDLZ", "MO",
+    "CVX", "COP", "EOG", "SLB",
+    "NEE", "DUK", "SO",
+    "LIN", "SHW",
+    "TMUS",
+    "AMT", "PLD",
 ]
 
 EQUITY_TOP_N = 10                # posicoes na carteira de acoes
@@ -38,6 +50,22 @@ CRYPTO_UNIVERSE = {
     "LINK": "chainlink",
     "LTC": "litecoin",
     "DOT": "polkadot",
+    # --- ampliacao para 25 ativos (agosto 2026) ---
+    "BCH": "bitcoin-cash",
+    "XLM": "stellar",
+    "UNI": "uniswap",
+    "ATOM": "cosmos",
+    "ETC": "ethereum-classic",
+    "HBAR": "hedera-hashgraph",
+    "FIL": "filecoin",
+    "ICP": "internet-computer",
+    "NEAR": "near",
+    "APT": "aptos",
+    "ARB": "arbitrum",
+    "OP": "optimism",
+    "INJ": "injective-protocol",
+    "AAVE": "aave",
+    "ALGO": "algorand",
 }
 
 CRYPTO_BTC_CORE_WEIGHT = 0.5     # peso base em BTC dentro da parte investida
@@ -60,6 +88,9 @@ B3_UNIVERSE = [
     "RAIL3", "PRIO3", "EQTL3", "VIVT3", "TOTS3", "HAPV3", "RDOR3", "CMIG4",
     "ELET3", "SBSP3", "BPAC11", "CPLE6", "TIMS3", "UGPA3", "JBSS3", "BRFS3",
     "KLBN11", "CYRE3", "MULT3", "ASAI3",
+    # --- ampliacao para ~50 nomes (agosto 2026) ---
+    "SANB11", "CSAN3", "VBBR3", "BRKM5", "GOAU4", "ENGI11", "CPFE3",
+    "TAEE11", "EGIE3", "SLCE3", "PSSA3", "CMIN3", "NTCO3", "MGLU3",
 ]
 
 B3_TOP_N = 8
@@ -100,6 +131,11 @@ MIN_MEDIAN_TURNOVER_USD = 20_000_000.0   # mediana de preco x volume diario
 MIN_MEDIAN_TURNOVER_BRL = 20_000_000.0
 
 DECISION_LOG_MAX_ENTRIES = 120      # log auditavel por carteira (secao 8)
+
+# Pausa entre pedidos de precos de acoes. Com ~150 chamadas por ciclo (100 EUA
+# + 50 B3) as fontes publicas comecam a limitar por taxa; a pausa custa ~40s e
+# evita falhas de dado que excluiriam ativos sem motivo real.
+FETCH_DELAY_S = 0.25
 
 # --- Regras comuns ---
 SMA_REGIME_DAYS = 200

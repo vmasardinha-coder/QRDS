@@ -107,15 +107,19 @@ def fetch_equity_daily(ticker: str) -> list[tuple[str, float, float]]:
     Depois de _STOOQ_TRIP_AFTER falhas consecutivas do Stooq (tipico quando
     bloqueia IPs de cloud), os pedidos seguintes vao direto ao Yahoo.
     """
+    from . import config
     global _STOOQ_CONSECUTIVE_FAILURES
     if _STOOQ_CONSECUTIVE_FAILURES < _STOOQ_TRIP_AFTER:
         try:
             series = fetch_stooq_daily(ticker)
             _STOOQ_CONSECUTIVE_FAILURES = 0
+            time.sleep(config.FETCH_DELAY_S)
             return series
         except DataSourceError:
             _STOOQ_CONSECUTIVE_FAILURES += 1
-    return fetch_yahoo_daily(ticker)
+    series = fetch_yahoo_daily(ticker)
+    time.sleep(config.FETCH_DELAY_S)
+    return series
 
 
 def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float, float]]:
@@ -183,8 +187,11 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
 
 def fetch_b3_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker da B3 via Yahoo (sufixo .SA)."""
+    from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
-    return fetch_yahoo_daily(symbol)
+    series = fetch_yahoo_daily(symbol)
+    time.sleep(config.FETCH_DELAY_S)
+    return series
 
 
 def fetch_bcb_cdi_daily(days_back: int = 900) -> list[tuple[str, float]]:
