@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import traceback
 
-from . import engine, report
+from . import charts, engine, report
 
 SLEEVE_RUNNERS = {
     "equities": engine.run_equities,
@@ -30,6 +30,11 @@ def main() -> int:
     content = report.build_report(today, results, errors)
     path = report.write_report(today, content)
     print(f"Relatorio escrito em {path}")
+
+    if results:
+        chart_path = charts.write_chart(today, report.chart_panels(results),
+                                        report.REPORTS_DIR)
+        print(f"Grafico escrito em {chart_path}")
 
     if not results:
         print("FALHA: nenhuma carteira executou.", file=sys.stderr)

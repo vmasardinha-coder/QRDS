@@ -157,15 +157,23 @@ def _error_section(title: str, error: str) -> str:
 
 
 SLEEVES = [
-    # (chave, titulo, benchmark, benchmark2)
-    ("equities", "Acoes EUA (objetivo: bater o S&P 500)", "SPY", None),
-    ("crypto", "Crypto (objetivo: bater o BTC)", "BTC", None),
+    # (chave, titulo, titulo curto para o grafico, benchmark, benchmark2)
+    ("equities", "Acoes EUA (objetivo: bater o S&P 500)",
+     "Acoes EUA vs SPY", "SPY", None),
+    ("crypto", "Crypto (objetivo: bater o BTC)",
+     "Crypto vs BTC", "BTC", None),
     ("b3", "Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)",
-     "IBOV", "CDI"),
+     "Acoes B3 vs IBOV e CDI", "IBOV", "CDI"),
     ("b3_estruturadas",
      "Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)",
-     "IBOV", "CDI"),
+     "Estruturadas B3 vs CDI", "IBOV", "CDI"),
 ]
+
+
+def chart_panels(results: dict[str, dict]):
+    """Paineis do grafico, na mesma ordem das seccoes do relatorio."""
+    return [(short, results[key]["state"], bench, bench2)
+            for key, _, short, bench, bench2 in SLEEVES if key in results]
 
 
 def build_report(date: str, results: dict[str, dict],
@@ -176,7 +184,13 @@ def build_report(date: str, results: dict[str, dict],
                  "da carteira de estruturadas sao modelados (Black-Scholes com "
                  "volatilidade GARCH)._")
     parts.append("")
-    for key, title, bench, bench2 in SLEEVES:
+    parts.append(f"![Historico das carteiras]({date}-grafico.svg)")
+    parts.append("")
+    parts.append(f"_Grafico do historico (base 100 no inicio de cada carteira): "
+                 f"`{date}-grafico.svg` — o mais recente fica sempre em "
+                 f"`GRAFICO_ATUAL.svg`._")
+    parts.append("")
+    for key, title, _short, bench, bench2 in SLEEVES:
         if key in results:
             parts.append(_sleeve_section(title, bench, results[key], bench2))
         elif key in errors:

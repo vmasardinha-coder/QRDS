@@ -419,3 +419,70 @@ class TestReport(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCharts(unittest.TestCase):
+    def _state(self, points, with_cdi=False):
+        history = []
+        for i, (nav, bench) in enumerate(points):
+            entry = {"date": f"2026-08-{6 + i:02d}", "nav": nav,
+                     "benchmark_nav": bench}
+            if with_cdi:
+                entry["benchmark2_nav"] = 50_000.0 * (1 + 0.0002 * i)
+            history.append(entry)
+        return {"initial_capital": 50_000.0, "currency": "USD",
+                "history": history}
+
+    def test_series_indexed_to_base_100(self):
+        from trading_agent import charts
+        state = self._state([(50_000.0, 50_000.0), (55_000.0, 52_500.0)])
+        series = charts._series_for(state, "SPY", None)
+        self.assertEqual([s["name"] for s in series], ["Carteira", "SPY"])
+        self.assertAlmostEqual(series[0]["values"][0], 100.0, places=6)
+        self.assertAlmostEqual(series[0]["values"][1], 110.0, places=6)
+        self.assertAlmostEqual(series[1]["values"][1], 105.0, places=6)
+
+    def test_second_benchmark_only_when_present(self):
+        from trading_agent import charts
+        plain = charts._series_for(self._state([(50_000.0, 50_000.0)]),
+                                   "IBOV", "CDI")
+        self.assertEqual(len(plain), 2)
+        withcdi = charts._series_for(
+            self._state([(50_000.0, 50_000.0)], with_cdi=True), "IBOV", "CDI")
+        self.assertEqual([s["name"] for s in withcdi],
+                         ["Carteira", "IBOV", "CDI"])
+
+    def test_svg_is_self_contained_and_theme_aware(self):
+        from trading_agent import charts
+        svg = charts.build_svg("2026-08-07", [
+            ("Acoes EUA vs SPY", self._state([(50_000.0, 50_000.0),
+                                              (49_800.0, 50_200.0)]),
+             "SPY", None)])
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("prefers-color-scheme: dark", svg)
+        self.assertNotIn("http://", svg.replace('xmlns="http://www.w3.org/2000/svg"', ""))
+        # identidade nunca so pela cor: rotulo direto de cada serie
+        self.assertIn(">Carteira<", svg)
+        self.assertIn(">SPY<", svg)
+        # tooltip nativo por ponto
+        self.assertIn("<title>", svg)
+
+    def test_empty_history_does_not_crash(self):
+        from trading_agent import charts
+        svg = charts.build_svg("2026-08-07", [
+            ("Vazia", {"initial_capital": 50_000.0, "history": []}, "SPY", None)])
+        self.assertIn("sem historico ainda", svg)
+
+    def test_converging_labels_are_pushed_apart(self):
+        import re
+        from trading_agent import charts
+        # carteira e benchmark praticamente sobrepostos no fim
+        state = self._state([(50_000.0, 50_000.0), (50_010.0, 50_005.0)])
+        svg = charts.build_svg("2026-08-07", [("P", state, "SPY", None)])
+        ys = [float(m) for m in re.findall(r'class="direct"[^>]*y="([\d.]+)"', svg)]
+        self.assertEqual(len(ys), 2)
+        self.assertGreaterEqual(abs(ys[0] - ys[1]), charts.MIN_LABEL_GAP - 0.01)
+
+    def test_report_links_dated_chart(self):
+        content = report.build_report("2026-08-07", {}, {})
+        self.assertIn("2026-08-07-grafico.svg", content)
