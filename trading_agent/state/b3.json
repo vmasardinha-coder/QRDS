@@ -3,49 +3,44 @@
   "currency": "BRL",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 24419.85100235838,
+  "cash": 24509.985899497402,
   "positions": {
     "BPAC11": {
-      "qty": 64.7754070722199,
-      "avg_cost": 56.25620076370239,
+      "qty": 75.54334738455687,
+      "avg_cost": 55.95514075273786,
       "high_water": 56.20000076293945
     },
     "GGBR4": {
-      "qty": 139.40288589762054,
-      "avg_cost": 25.6756496181488,
+      "qty": 162.01981692338862,
+      "avg_cost": 25.615564298245825,
       "high_water": 25.649999618530273
     },
-    "ITSA4": {
-      "qty": 264.3483857150145,
-      "avg_cost": 13.523510229110716,
-      "high_water": 13.510000228881836
-    },
     "PRIO3": {
-      "qty": 60.78402330730901,
-      "avg_cost": 58.6686106109619,
-      "high_water": 58.61000061035156
+      "qty": 67.472582214303,
+      "avg_cost": 58.862107543169245,
+      "high_water": 60.560001373291016
     },
     "SBSP3": {
-      "qty": 129.86397414065124,
-      "avg_cost": 27.41738938903808,
+      "qty": 154.31041322490117,
+      "avg_cost": 27.273079607041595,
       "high_water": 27.389999389648438
     },
     "UGPA3": {
-      "qty": 111.63817483131655,
-      "avg_cost": 32.78274999999999,
+      "qty": 132.0665675832749,
+      "avg_cost": 32.502494701264084,
       "high_water": 32.75
     },
     "VALE3": {
-      "qty": 46.57919339095726,
-      "avg_cost": 75.46538938903808,
-      "high_water": 75.38999938964844
+      "qty": 53.772072462524285,
+      "avg_cost": 75.5457290892971,
+      "high_water": 75.98999786376953
     }
   },
   "benchmark": {
     "symbol": "^BVSP",
     "inception_price": 175546.359375
   },
-  "last_rebalance": "2026-08-07",
+  "last_rebalance": "2026-08-10",
   "last_regime": "risk_off",
   "history": [
     {
@@ -71,6 +66,12 @@
       "nav": 48864.15,
       "benchmark_nav": 49136.02,
       "benchmark2_nav": 50000.0
+    },
+    {
+      "date": "2026-08-10",
+      "nav": 49026.82,
+      "benchmark_nav": 49113.12,
+      "benchmark2_nav": 50025.83
     }
   ],
   "trades": [
@@ -201,6 +202,62 @@
       "qty": 35.66049357,
       "price": 74.895031,
       "value": 2670.79
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "ITSA4",
+      "side": "sell",
+      "qty": 264.34838572,
+      "price": 13.10688,
+      "value": 3464.78
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "BPAC11",
+      "side": "buy",
+      "qty": 10.76794031,
+      "price": 54.14409,
+      "value": 583.02
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "GGBR4",
+      "side": "buy",
+      "qty": 22.61693103,
+      "price": 25.245219,
+      "value": 570.97
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "PRIO3",
+      "side": "buy",
+      "qty": 6.68855891,
+      "price": 60.620561,
+      "value": 405.46
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "SBSP3",
+      "side": "buy",
+      "qty": 24.44643908,
+      "price": 26.50648,
+      "value": 647.99
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "UGPA3",
+      "side": "buy",
+      "qty": 20.42839275,
+      "price": 30.970941,
+      "value": 632.69
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "VALE3",
+      "side": "buy",
+      "qty": 7.19287907,
+      "price": 76.065988,
+      "value": 547.13
     }
   ],
   "benchmark2": {
@@ -669,6 +726,160 @@
       ],
       "note": "",
       "cash_weight": 0.5
+    },
+    {
+      "date": "2026-08-10",
+      "regime": "risk_off",
+      "hurdle": "IBOV",
+      "hurdle_score": 0.3221,
+      "rebalance_trigger": "cadencia semanal (segunda-feira)",
+      "eligible_count": 6,
+      "selected": [
+        {
+          "symbol": "UGPA3",
+          "score": 0.8013,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "SBSP3",
+          "score": 0.4377,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "BPAC11",
+          "score": 0.42,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "GGBR4",
+          "score": 0.3902,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "PRIO3",
+          "score": 0.369,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "VALE3",
+          "score": 0.3519,
+          "weight": 0.0833
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ABEV3",
+          "reason": "nao bate o benchmark (+27.2% <= +32.2%)"
+        },
+        {
+          "symbol": "ASAI3",
+          "reason": "nao bate o benchmark (-12.0% <= +32.2%)"
+        },
+        {
+          "symbol": "B3SA3",
+          "reason": "nao bate o benchmark (+17.6% <= +32.2%)"
+        },
+        {
+          "symbol": "BBAS3",
+          "reason": "nao bate o benchmark (+7.4% <= +32.2%)"
+        },
+        {
+          "symbol": "BBDC4",
+          "reason": "nao bate o benchmark (+20.4% <= +32.2%)"
+        },
+        {
+          "symbol": "CMIG4",
+          "reason": "nao bate o benchmark (+8.2% <= +32.2%)"
+        },
+        {
+          "symbol": "CSNA3",
+          "reason": "nao bate o benchmark (-33.7% <= +32.2%)"
+        },
+        {
+          "symbol": "CYRE3",
+          "reason": "nao bate o benchmark (-8.4% <= +32.2%)"
+        },
+        {
+          "symbol": "EQTL3",
+          "reason": "nao bate o benchmark (+15.5% <= +32.2%)"
+        },
+        {
+          "symbol": "HAPV3",
+          "reason": "nao bate o benchmark (-71.7% <= +32.2%)"
+        },
+        {
+          "symbol": "ITSA4",
+          "reason": "nao bate o benchmark (+31.6% <= +32.2%)"
+        },
+        {
+          "symbol": "ITUB4",
+          "reason": "nao bate o benchmark (+22.9% <= +32.2%)"
+        },
+        {
+          "symbol": "KLBN11",
+          "reason": "nao bate o benchmark (-1.7% <= +32.2%)"
+        },
+        {
+          "symbol": "LREN3",
+          "reason": "nao bate o benchmark (-16.2% <= +32.2%)"
+        },
+        {
+          "symbol": "MULT3",
+          "reason": "nao bate o benchmark (+13.7% <= +32.2%)"
+        },
+        {
+          "symbol": "PETR4",
+          "reason": "nao bate o benchmark (+21.4% <= +32.2%)"
+        },
+        {
+          "symbol": "RADL3",
+          "reason": "nao bate o benchmark (+23.3% <= +32.2%)"
+        },
+        {
+          "symbol": "RAIL3",
+          "reason": "nao bate o benchmark (-16.9% <= +32.2%)"
+        },
+        {
+          "symbol": "RDOR3",
+          "reason": "nao bate o benchmark (+5.2% <= +32.2%)"
+        },
+        {
+          "symbol": "RENT3",
+          "reason": "nao bate o benchmark (+13.9% <= +32.2%)"
+        },
+        {
+          "symbol": "SUZB3",
+          "reason": "nao bate o benchmark (-19.5% <= +32.2%)"
+        },
+        {
+          "symbol": "TIMS3",
+          "reason": "nao bate o benchmark (+4.1% <= +32.2%)"
+        },
+        {
+          "symbol": "TOTS3",
+          "reason": "nao bate o benchmark (-32.6% <= +32.2%)"
+        },
+        {
+          "symbol": "VIVT3",
+          "reason": "nao bate o benchmark (+7.6% <= +32.2%)"
+        },
+        {
+          "symbol": "WEGE3",
+          "reason": "nao bate o benchmark (+23.2% <= +32.2%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {},
+      "data_failures": [
+        "EMBR3",
+        "ELET3",
+        "CPLE6",
+        "JBSS3",
+        "BRFS3"
+      ],
+      "note": "",
+      "cash_weight": 0.5
     }
-  ]
+  ],
+  "last_accrual_date": "2026-08-07"
 }
