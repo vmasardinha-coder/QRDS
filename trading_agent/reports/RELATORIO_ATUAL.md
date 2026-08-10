@@ -10,41 +10,29 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-10-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,957.83 |
-| Retorno do dia | +0.14% |
-| Retorno desde inicio (2026-08-06) | -0.08% |
-| Benchmark SPY | +0.39% |
-| **Alfa vs SPY** | **-0.47%** |
+| NAV | $49,732.40 |
+| Retorno do dia | -0.31% |
+| Retorno desde inicio (2026-08-06) | -0.54% |
+| Benchmark SPY | +0.42% |
+| **Alfa vs SPY** | **-0.96%** |
 | Caixa | $424.83 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| LLY | 4.09275 | $1,223.82 | $5,008.79 | 10.0% |
-| AMAT | 9.45018 | $528.91 | $4,998.29 | 10.0% |
-| KLAC | 25.8103 | $193.65 | $4,998.29 | 10.0% |
-| LRCX | 16.2485 | $307.61 | $4,998.29 | 10.0% |
-| MU | 5.68132 | $879.78 | $4,998.29 | 10.0% |
-| PANW | 13.1189 | $381.00 | $4,998.29 | 10.0% |
-| AMD | 10.3724 | $475.56 | $4,932.68 | 9.9% |
-| GOOGL | 13.7958 | $354.94 | $4,896.67 | 9.8% |
-| INTC | 49.4756 | $98.60 | $4,878.29 | 9.8% |
-| CAT | 5.74 | $840.61 | $4,825.10 | 9.7% |
+| PANW | 13.1189 | $385.04 | $5,051.29 | 10.2% |
+| LLY | 4.09275 | $1,231.94 | $5,042.03 | 10.1% |
+| LRCX | 16.2485 | $306.40 | $4,978.55 | 10.0% |
+| KLAC | 25.8103 | $192.74 | $4,974.68 | 10.0% |
+| AMAT | 9.45018 | $522.12 | $4,934.13 | 9.9% |
+| GOOGL | 13.7958 | $357.52 | $4,932.26 | 9.9% |
+| MU | 5.68132 | $861.00 | $4,891.62 | 9.8% |
+| AMD | 10.3724 | $469.56 | $4,870.45 | 9.8% |
+| INTC | 49.4756 | $97.52 | $4,824.86 | 9.7% |
+| CAT | 5.74 | $837.58 | $4,807.71 | 9.7% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| CSCO | VENDA | 41.1523 | $123.85 | $5,096.63 | rebalanceio |
-| JNJ | VENDA | 19.2464 | $259.35 | $4,991.56 | rebalanceio |
-| MRK | VENDA | 38.9621 | $130.42 | $5,081.62 | rebalanceio |
-| TXN | VENDA | 18.0037 | $282.74 | $5,090.35 | rebalanceio |
-| UNH | VENDA | 12.0533 | $410.18 | $4,944.09 | rebalanceio |
-| AMAT | COMPRA | 9.45018 | $529.17 | $5,000.79 | rebalanceio |
-| KLAC | COMPRA | 25.8103 | $193.75 | $5,000.79 | rebalanceio |
-| LRCX | COMPRA | 16.2485 | $307.77 | $5,000.79 | rebalanceio |
-| MU | COMPRA | 5.68132 | $880.22 | $5,000.79 | rebalanceio |
-| PANW | COMPRA | 13.1189 | $381.19 | $5,000.79 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
@@ -71,46 +59,45 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-10-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,609.78 |
-| Retorno do dia | -1.12% |
-| Retorno desde inicio (2026-08-06) | -0.78% |
-| Benchmark BTC | -1.03% |
-| **Alfa vs BTC** | **+0.24%** |
-| Caixa | $25,058.38 |
+| NAV | $49,654.39 |
+| Retorno do dia | -1.03% |
+| Retorno desde inicio (2026-08-06) | -0.69% |
+| Benchmark BTC | -0.75% |
+| **Alfa vs BTC** | **+0.06%** |
+| Caixa | $24,850.51 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,757.38 | $12,371.85 | 24.9% |
-| UNI | 1053.81 | $3.92 | $4,134.84 | 8.3% |
-| ETH | 2.18871 | $1,869.58 | $4,091.98 | 8.2% |
-| ADA | 20455 | $0.19 | $3,952.72 | 8.0% |
+| BTC | 0.194046 | $63,935.51 | $12,406.42 | 25.0% |
+| UNI | 1053.81 | $3.95 | $4,160.24 | 8.4% |
+| ADA | 21535.8 | $0.19 | $4,137.88 | 8.3% |
+| ETH | 2.18871 | $1,872.94 | $4,099.33 | 8.3% |
 
 ### Movimentacoes de hoje
 | Ativo | Operacao | Qtd | Preco | Valor | Motivo |
 |---|---|---|---|---|---|
-| LINK | VENDA | 507.429 | $8.21 | $4,165.38 | rebalanceio |
-| UNI | COMPRA | 1053.81 | $3.93 | $4,138.98 | rebalanceio |
+| ADA | COMPRA | 1080.78 | $0.19 | $207.87 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
-- **Obstaculo (BTC):** momentum de -10.4% — so entram ativos acima disto
-- **Candidatos elegiveis:** 8
+- **Obstaculo (BTC):** momentum de -10.2% — so entram ativos acima disto
+- **Candidatos elegiveis:** 9
 
 | Rejeitado | Motivo |
 |---|---|
-| ALGO | nao bate o benchmark (-17.4% <= -10.4%) |
-| APT | nao bate o benchmark (-25.1% <= -10.4%) |
-| ARB | nao bate o benchmark (-28.6% <= -10.4%) |
-| ATOM | nao bate o benchmark (-22.1% <= -10.4%) |
-| AVAX | nao bate o benchmark (-17.6% <= -10.4%) |
-| BCH | nao bate o benchmark (-32.0% <= -10.4%) |
-| DOGE | nao bate o benchmark (-20.9% <= -10.4%) |
-| DOT | nao bate o benchmark (-23.0% <= -10.4%) |
-| _(+8 outros)_ | |
+| ALGO | nao bate o benchmark (-17.4% <= -10.2%) |
+| APT | nao bate o benchmark (-25.8% <= -10.2%) |
+| ARB | nao bate o benchmark (-29.1% <= -10.2%) |
+| ATOM | nao bate o benchmark (-22.4% <= -10.2%) |
+| AVAX | nao bate o benchmark (-18.4% <= -10.2%) |
+| BCH | nao bate o benchmark (-32.2% <= -10.2%) |
+| DOGE | nao bate o benchmark (-20.7% <= -10.2%) |
+| DOT | nao bate o benchmark (-22.4% <= -10.2%) |
+| _(+7 outros)_ | |
 
 </details>
 
@@ -118,39 +105,28 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-10-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 49,001.73 |
-| Retorno do dia | +0.28% |
-| Retorno desde inicio (2026-08-06) | -2.00% |
-| Benchmark IBOV | -1.87% |
+| NAV | R$ 49,055.63 |
+| Retorno do dia | +0.39% |
+| Retorno desde inicio (2026-08-06) | -1.89% |
+| Benchmark IBOV | -1.92% |
 | Benchmark CDI | +0.05% |
-| **Alfa vs o maior (CDI)** | **-2.05%** |
+| **Alfa vs o maior (CDI)** | **-1.94%** |
 | Caixa | R$ 24,494.74 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| VALE3 | 40.3553 | R$ 75.91 | R$ 3,063.37 | 6.3% |
-| BPAC11 | 57.0355 | R$ 53.71 | R$ 3,063.37 | 6.3% |
-| GGBR4 | 121.756 | R$ 25.16 | R$ 3,063.37 | 6.3% |
-| UGPA3 | 98.4691 | R$ 31.11 | R$ 3,063.37 | 6.3% |
-| GOAU4 | 275.236 | R$ 11.13 | R$ 3,063.37 | 6.3% |
-| VBBR3 | 91.8553 | R$ 33.35 | R$ 3,063.37 | 6.3% |
-| PRIO3 | 50.4093 | R$ 60.77 | R$ 3,063.37 | 6.3% |
-| SBSP3 | 115.643 | R$ 26.49 | R$ 3,063.37 | 6.3% |
+| PRIO3 | 50.4093 | R$ 61.24 | R$ 3,087.07 | 6.3% |
+| GGBR4 | 121.756 | R$ 25.25 | R$ 3,074.33 | 6.3% |
+| BPAC11 | 57.0355 | R$ 53.86 | R$ 3,071.93 | 6.3% |
+| VBBR3 | 91.8553 | R$ 33.44 | R$ 3,071.64 | 6.3% |
+| SBSP3 | 115.643 | R$ 26.55 | R$ 3,070.31 | 6.3% |
+| GOAU4 | 275.236 | R$ 11.15 | R$ 3,068.88 | 6.3% |
+| VALE3 | 40.3553 | R$ 75.93 | R$ 3,064.18 | 6.2% |
+| UGPA3 | 98.4691 | R$ 31.00 | R$ 3,052.54 | 6.2% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BPAC11 | VENDA | 7.67826 | R$ 53.66 | R$ 411.99 | rebalanceio |
-| GGBR4 | VENDA | 17.3351 | R$ 25.13 | R$ 435.71 | rebalanceio |
-| ITSA4 | VENDA | 267.352 | R$ 13.08 | R$ 3,496.13 | rebalanceio |
-| PRIO3 | VENDA | 7.39406 | R$ 60.71 | R$ 448.89 | rebalanceio |
-| SBSP3 | VENDA | 16.6696 | R$ 26.46 | R$ 441.14 | rebalanceio |
-| UGPA3 | VENDA | 14.3993 | R$ 31.08 | R$ 447.51 | rebalanceio |
-| VALE3 | VENDA | 5.76404 | R$ 75.83 | R$ 437.11 | rebalanceio |
-| GOAU4 | COMPRA | 275.236 | R$ 11.14 | R$ 3,066.44 | rebalanceio |
-| VBBR3 | COMPRA | 91.8553 | R$ 33.38 | R$ 3,066.44 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
@@ -178,20 +154,20 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-10-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 49,557.07 |
-| Retorno do dia | +0.26% |
-| Retorno desde inicio (2026-08-06) | -0.89% |
-| Benchmark IBOV | -1.89% |
+| NAV | R$ 49,543.03 |
+| Retorno do dia | +0.23% |
+| Retorno desde inicio (2026-08-06) | -0.91% |
+| Benchmark IBOV | -1.92% |
 | Benchmark CDI | +0.05% |
-| **Alfa vs o maior (CDI)** | **-0.94%** |
+| **Alfa vs o maior (CDI)** | **-0.97%** |
 | Caixa | R$ 677.25 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 169.33 | R$ 49,163.23 | 99.2% |
+| BOVA11 | 290.34 | R$ 169.27 | R$ 49,145.81 | 99.2% |
 
-> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 283.41
+> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 280.03
 
 > Volatilidade usada na call (GARCH(1,1)): 17.2% a.a. | realizada 30d: 19.2% a.a. | CDI: 0.0517% a.d.
 
