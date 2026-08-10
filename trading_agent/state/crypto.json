@@ -3,27 +3,27 @@
   "currency": "USD",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 24842.1827459552,
+  "cash": 24787.719165756127,
   "positions": {
     "BTC": {
       "qty": 0.19404583548918258,
       "avg_cost": 64482.18777,
       "high_water": 65163.63
     },
-    "ETH": {
-      "qty": 2.188714987317902,
-      "avg_cost": 1903.33143,
-      "high_water": 1924.48
-    },
-    "ONDO": {
-      "qty": 12152.356311076644,
-      "avg_cost": 0.3406803399999999,
-      "high_water": 0.3406803399999999
-    },
     "TRX": {
       "qty": 12519.412545694726,
       "avg_cost": 0.3306919445898805,
       "high_water": 0.33069194458988055
+    },
+    "JTO": {
+      "qty": 7634.854343705296,
+      "avg_cost": 0.5419413999999999,
+      "high_water": 0.5419413999999999
+    },
+    "UNI": {
+      "qty": 1050.7143217290409,
+      "avg_cost": 3.937934,
+      "high_water": 3.937934
     }
   },
   "benchmark": {
@@ -55,8 +55,8 @@
     },
     {
       "date": "2026-08-10",
-      "nav": 49614.64,
-      "benchmark_nav": 49613.63
+      "nav": 49585.63,
+      "benchmark_nav": 49577.41
     }
   ],
   "trades": [
@@ -163,6 +163,38 @@
       "qty": 12519.41254569,
       "price": 0.330692,
       "value": 4140.07
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "ETH",
+      "side": "sell",
+      "qty": 2.18871499,
+      "price": 1867.51062,
+      "value": 4087.45
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "ONDO",
+      "side": "sell",
+      "qty": 12152.35631108,
+      "price": 0.34013,
+      "value": 4133.38
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "JTO",
+      "side": "buy",
+      "qty": 7634.85434371,
+      "price": 0.541941,
+      "value": 4137.64
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "UNI",
+      "side": "buy",
+      "qty": 1050.71432173,
+      "price": 3.937934,
+      "value": 4137.64
     }
   ],
   "cooldown": {},
@@ -350,9 +382,9 @@
       "date": "2026-08-10",
       "regime": "risk_off",
       "hurdle": "BTC",
-      "hurdle_score": -0.1018,
+      "hurdle_score": -0.1024,
       "rebalance_trigger": "cadencia semanal (segunda-feira)",
-      "eligible_count": 9,
+      "eligible_count": 15,
       "selected": [
         {
           "symbol": "BTC",
@@ -360,57 +392,53 @@
           "weight": 0.25
         },
         {
+          "symbol": "UNI",
+          "score": 0.0606,
+          "weight": 0.0833
+        },
+        {
+          "symbol": "JTO",
+          "score": 0.0148,
+          "weight": 0.0833
+        },
+        {
           "symbol": "TRX",
-          "score": -0.0292,
-          "weight": 0.0833
-        },
-        {
-          "symbol": "ONDO",
-          "score": -0.0367,
-          "weight": 0.0833
-        },
-        {
-          "symbol": "ETH",
-          "score": -0.0646,
+          "score": -0.0291,
           "weight": 0.0833
         }
       ],
       "rejected": [
         {
           "symbol": "1INCH",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "AAVE",
-          "reason": "liquidez baixa (2.9M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "ALGO",
-          "reason": "liquidez baixa (0.9M < 5M)"
+          "reason": "liquidez baixa (0.9M < 1M)"
         },
         {
           "symbol": "ALICE",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "AMP",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "ANKR",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "APE",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "API3",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "APT",
-          "reason": "liquidez baixa (0.5M < 5M)"
+          "reason": "liquidez baixa (0.5M < 1M)"
         },
         {
           "symbol": "AR",
@@ -418,403 +446,375 @@
         },
         {
           "symbol": "ARB",
-          "reason": "liquidez baixa (0.4M < 5M)"
+          "reason": "liquidez baixa (0.4M < 1M)"
         },
         {
           "symbol": "ASTR",
-          "reason": "liquidez baixa (1.9M < 5M)"
+          "reason": "nao bate o benchmark (-27.9% <= -10.2%)"
         },
         {
           "symbol": "ATOM",
-          "reason": "liquidez baixa (0.5M < 5M)"
+          "reason": "liquidez baixa (0.5M < 1M)"
         },
         {
           "symbol": "AUDIO",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "AVAX",
-          "reason": "liquidez baixa (2.6M < 5M)"
+          "reason": "nao bate o benchmark (-18.3% <= -10.2%)"
         },
         {
           "symbol": "AXS",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "BAL",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "BAND",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "BAT",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "BCH",
-          "reason": "liquidez baixa (1.9M < 5M)"
+          "reason": "nao bate o benchmark (-32.1% <= -10.2%)"
         },
         {
           "symbol": "BLUR",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "BONK",
-          "reason": "liquidez baixa (1.1M < 5M)"
+          "reason": "nao bate o benchmark (-52.2% <= -10.2%)"
         },
         {
           "symbol": "CAKE",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "CELO",
-          "reason": "liquidez baixa (4.0M < 5M)"
+          "reason": "nao bate o benchmark (-23.3% <= -10.2%)"
         },
         {
           "symbol": "CFX",
-          "reason": "liquidez baixa (4.8M < 5M)"
+          "reason": "nao bate o benchmark (-19.5% <= -10.2%)"
         },
         {
           "symbol": "CHZ",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "COMP",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "COTI",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "CRV",
-          "reason": "liquidez baixa (0.9M < 5M)"
+          "reason": "liquidez baixa (0.9M < 1M)"
         },
         {
           "symbol": "CTSI",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "CVC",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "DASH",
-          "reason": "liquidez baixa (0.4M < 5M)"
+          "reason": "liquidez baixa (0.4M < 1M)"
         },
         {
           "symbol": "DOGE",
-          "reason": "nao bate o benchmark (-20.6% <= -10.2%)"
+          "reason": "nao bate o benchmark (-20.7% <= -10.2%)"
         },
         {
           "symbol": "DOT",
-          "reason": "liquidez baixa (1.0M < 5M)"
-        },
-        {
-          "symbol": "DYDX",
-          "reason": "liquidez baixa (4.5M < 5M)"
+          "reason": "liquidez baixa (1.0M < 1M)"
         },
         {
           "symbol": "EGLD",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "EIGEN",
-          "reason": "liquidez baixa (0.3M < 5M)"
-        },
-        {
-          "symbol": "ENA",
-          "reason": "liquidez baixa (1.6M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "ENJ",
-          "reason": "liquidez baixa (4.1M < 5M)"
-        },
-        {
-          "symbol": "ENS",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "ETC",
-          "reason": "liquidez baixa (0.2M < 5M)"
-        },
-        {
-          "symbol": "ETHFI",
-          "reason": "liquidez baixa (0.2M < 5M)"
-        },
-        {
-          "symbol": "FET",
-          "reason": "liquidez baixa (1.9M < 5M)"
-        },
-        {
-          "symbol": "FIL",
-          "reason": "liquidez baixa (0.5M < 5M)"
-        },
-        {
-          "symbol": "FIS",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "FLOW",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "FORTH",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "FTM",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "GHST",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "GMT",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "GMX",
-          "reason": "liquidez baixa (2.7M < 5M)"
-        },
-        {
-          "symbol": "GRT",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "GTC",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "HBAR",
-          "reason": "liquidez baixa (2.9M < 5M)"
-        },
-        {
-          "symbol": "HIGH",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "ICP",
-          "reason": "liquidez baixa (1.9M < 5M)"
-        },
-        {
-          "symbol": "ICX",
-          "reason": "liquidez baixa (0.5M < 5M)"
-        },
-        {
-          "symbol": "IMX",
-          "reason": "liquidez baixa (0.2M < 5M)"
-        },
-        {
-          "symbol": "INJ",
-          "reason": "liquidez baixa (1.6M < 5M)"
-        },
-        {
-          "symbol": "IOTA",
           "reason": "nao bate o benchmark (-30.8% <= -10.2%)"
         },
         {
+          "symbol": "ENS",
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "ETC",
+          "reason": "liquidez baixa (0.2M < 1M)"
+        },
+        {
+          "symbol": "ETHFI",
+          "reason": "liquidez baixa (0.2M < 1M)"
+        },
+        {
+          "symbol": "FET",
+          "reason": "nao bate o benchmark (-27.4% <= -10.2%)"
+        },
+        {
+          "symbol": "FIL",
+          "reason": "liquidez baixa (0.5M < 1M)"
+        },
+        {
+          "symbol": "FIS",
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "FLOW",
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "FORTH",
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "FTM",
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "GHST",
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "GLMR",
+          "reason": "nao bate o benchmark (-24.5% <= -10.2%)"
+        },
+        {
+          "symbol": "GMT",
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "GRT",
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "GTC",
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "HBAR",
+          "reason": "nao bate o benchmark (-14.6% <= -10.2%)"
+        },
+        {
+          "symbol": "HIGH",
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "ICP",
+          "reason": "nao bate o benchmark (-13.6% <= -10.2%)"
+        },
+        {
+          "symbol": "ICX",
+          "reason": "liquidez baixa (0.5M < 1M)"
+        },
+        {
+          "symbol": "IMX",
+          "reason": "liquidez baixa (0.2M < 1M)"
+        },
+        {
           "symbol": "JASMY",
-          "reason": "liquidez baixa (0.3M < 5M)"
-        },
-        {
-          "symbol": "JTO",
-          "reason": "liquidez baixa (1.6M < 5M)"
-        },
-        {
-          "symbol": "JUP",
-          "reason": "nao bate o benchmark (-19.3% <= -10.2%)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "KAVA",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "KDA",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "KNC",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "KSM",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "LDO",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "LPT",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "LQTY",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "LRC",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "LTC",
-          "reason": "nao bate o benchmark (-10.5% <= -10.2%)"
+          "reason": "nao bate o benchmark (-10.6% <= -10.2%)"
         },
         {
           "symbol": "MAGIC",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "MANA",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "MASK",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "MINA",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
-          "symbol": "MTL",
-          "reason": "liquidez baixa (0.5M < 5M)"
+          "symbol": "MOVR",
+          "reason": "nao bate o benchmark (-38.6% <= -10.2%)"
         },
         {
           "symbol": "NEO",
-          "reason": "liquidez baixa (5.0M < 5M)"
+          "reason": "nao bate o benchmark (-27.3% <= -10.2%)"
         },
         {
           "symbol": "NKN",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "NMR",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "OCEAN",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "OGN",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "ONT",
-          "reason": "liquidez baixa (3.2M < 5M)"
+          "reason": "nao bate o benchmark (-29.7% <= -10.2%)"
         },
         {
           "symbol": "OP",
-          "reason": "liquidez baixa (0.2M < 5M)"
+          "reason": "liquidez baixa (0.2M < 1M)"
         },
         {
           "symbol": "OXT",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "PENDLE",
-          "reason": "liquidez baixa (0.4M < 5M)"
+          "reason": "liquidez baixa (0.4M < 1M)"
         },
         {
           "symbol": "PERP",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "POL",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "POWR",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "PYTH",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "QNT",
-          "reason": "liquidez baixa (0.4M < 5M)"
+          "reason": "liquidez baixa (0.4M < 1M)"
         },
         {
           "symbol": "QTUM",
-          "reason": "liquidez baixa (4.3M < 5M)"
-        },
-        {
-          "symbol": "QUICK",
-          "reason": "liquidez baixa (0.4M < 5M)"
+          "reason": "nao bate o benchmark (-22.0% <= -10.2%)"
         },
         {
           "symbol": "RAD",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "RARE",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "RENDER",
-          "reason": "liquidez baixa (0.6M < 5M)"
+          "reason": "liquidez baixa (0.6M < 1M)"
         },
         {
           "symbol": "REQ",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "RLC",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "ROSE",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
+        },
+        {
+          "symbol": "RVN",
+          "reason": "nao bate o benchmark (-27.1% <= -10.2%)"
         },
         {
           "symbol": "SAND",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "SEI",
-          "reason": "liquidez baixa (0.7M < 5M)"
+          "reason": "liquidez baixa (0.7M < 1M)"
         },
         {
           "symbol": "SHIB",
-          "reason": "liquidez baixa (0.5M < 5M)"
+          "reason": "liquidez baixa (0.5M < 1M)"
         },
         {
           "symbol": "SKL",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "SNX",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "SPELL",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "STORJ",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "STRK",
-          "reason": "liquidez baixa (0.2M < 5M)"
+          "reason": "liquidez baixa (0.2M < 1M)"
         },
         {
           "symbol": "STX",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "SUI",
-          "reason": "nao bate o benchmark (-25.4% <= -10.2%)"
+          "reason": "nao bate o benchmark (-25.5% <= -10.2%)"
         },
         {
           "symbol": "SUSHI",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "THETA",
@@ -822,43 +822,43 @@
         },
         {
           "symbol": "TIA",
-          "reason": "liquidez baixa (0.8M < 5M)"
+          "reason": "liquidez baixa (0.8M < 1M)"
         },
         {
           "symbol": "TLM",
-          "reason": "nao bate o benchmark (-21.0% <= -10.2%)"
+          "reason": "nao bate o benchmark (-20.8% <= -10.2%)"
         },
         {
           "symbol": "TON",
-          "reason": "liquidez baixa (0.6M < 5M)"
+          "reason": "liquidez baixa (0.6M < 1M)"
         },
         {
           "symbol": "TRAC",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "TRB",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "UMA",
-          "reason": "liquidez baixa (0.0M < 5M)"
-        },
-        {
-          "symbol": "UNI",
-          "reason": "liquidez baixa (3.2M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         },
         {
           "symbol": "VET",
-          "reason": "liquidez baixa (0.2M < 5M)"
+          "reason": "liquidez baixa (0.2M < 1M)"
         },
         {
           "symbol": "W",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
+        },
+        {
+          "symbol": "WAVES",
+          "reason": "nao bate o benchmark (-38.7% <= -10.2%)"
         },
         {
           "symbol": "WIF",
-          "reason": "liquidez baixa (0.3M < 5M)"
+          "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
           "symbol": "XRP",
@@ -866,28 +866,28 @@
         },
         {
           "symbol": "XTZ",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "XYO",
-          "reason": "liquidez baixa (0.1M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "YFI",
-          "reason": "liquidez baixa (0.1M < 5M)"
-        },
-        {
-          "symbol": "YGG",
-          "reason": "liquidez baixa (3.3M < 5M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "ZRX",
-          "reason": "liquidez baixa (0.0M < 5M)"
+          "reason": "liquidez baixa (0.0M < 1M)"
         }
       ],
       "stops": [],
       "cooldowns": {},
       "data_failures": [
+        {
+          "symbol": "IOTA",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/iota/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+        },
         {
           "symbol": "ZIL",
           "reason": "GET https://api.coingecko.com/api/v3/coins/zilliqa/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
@@ -895,14 +895,6 @@
         {
           "symbol": "ONE",
           "reason": "GET https://api.coingecko.com/api/v3/coins/harmony/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
-        },
-        {
-          "symbol": "WAVES",
-          "reason": "GET https://api.coingecko.com/api/v3/coins/waves/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
-        },
-        {
-          "symbol": "RVN",
-          "reason": "GET https://api.coingecko.com/api/v3/coins/ravencoin/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
         },
         {
           "symbol": "DCR",
@@ -913,16 +905,32 @@
           "reason": "GET https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
         },
         {
-          "symbol": "GLMR",
-          "reason": "GET https://api.coingecko.com/api/v3/coins/moonbeam/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
-        },
-        {
-          "symbol": "MOVR",
-          "reason": "GET https://api.coingecko.com/api/v3/coins/moonriver/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+          "symbol": "KDA",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/kadena/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
         },
         {
           "symbol": "ACA",
           "reason": "GET https://api.coingecko.com/api/v3/coins/acala/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+        },
+        {
+          "symbol": "JUP",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/jupiter-exchange-solana/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requ"
+        },
+        {
+          "symbol": "DYDX",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/dydx-chain/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+        },
+        {
+          "symbol": "YGG",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/yield-guild-games/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+        },
+        {
+          "symbol": "MTL",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/metal/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
+        },
+        {
+          "symbol": "QUICK",
+          "reason": "GET https://api.coingecko.com/api/v3/coins/quickswap/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests"
         }
       ],
       "note": "",

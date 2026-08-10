@@ -59,52 +59,52 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,614.64 |
-| Retorno do dia | -1.11% |
-| Retorno desde inicio (2026-08-06) | -0.77% |
-| Benchmark BTC | -0.77% |
-| **Alfa vs BTC** | **+0.00%** |
-| Caixa | $24,842.18 |
+| NAV | $49,585.63 |
+| Retorno do dia | -1.17% |
+| Retorno desde inicio (2026-08-06) | -0.83% |
+| Benchmark BTC | -0.85% |
+| **Alfa vs BTC** | **+0.02%** |
+| Caixa | $24,787.72 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,919.99 | $12,403.41 | 25.0% |
-| ONDO | 12152.4 | $0.34 | $4,135.93 | 8.3% |
-| TRX | 12519.4 | $0.33 | $4,135.93 | 8.3% |
-| ETH | 2.18871 | $1,871.96 | $4,097.19 | 8.3% |
+| BTC | 0.194046 | $63,873.33 | $12,394.35 | 25.0% |
+| TRX | 12519.4 | $0.33 | $4,136.53 | 8.3% |
+| JTO | 7634.85 | $0.54 | $4,133.51 | 8.3% |
+| UNI | 1050.71 | $3.93 | $4,133.51 | 8.3% |
 
 ### Movimentacoes de hoje
 | Ativo | Operacao | Qtd | Preco | Valor | Motivo |
 |---|---|---|---|---|---|
-| ADA | VENDA | 21535.8 | $0.19 | $4,128.15 | rebalanceio |
-| UNI | VENDA | 1053.81 | $3.93 | $4,143.65 | rebalanceio |
-| ONDO | COMPRA | 12152.4 | $0.34 | $4,140.07 | rebalanceio |
-| TRX | COMPRA | 12519.4 | $0.33 | $4,140.07 | rebalanceio |
+| ETH | VENDA | 2.18871 | $1,867.51 | $4,087.45 | rebalanceio |
+| ONDO | VENDA | 12152.4 | $0.34 | $4,133.38 | rebalanceio |
+| JTO | COMPRA | 7634.85 | $0.54 | $4,137.64 | rebalanceio |
+| UNI | COMPRA | 1050.71 | $3.94 | $4,137.64 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
 - **Obstaculo (BTC):** momentum de -10.2% — so entram ativos acima disto
-- **Candidatos elegiveis:** 9
-- **Sem dado (excluidos, nao estimados):** ZIL, ONE, WAVES, RVN, DCR, RUNE, GLMR, MOVR, ACA
+- **Candidatos elegiveis:** 15
+- **Sem dado (excluidos, nao estimados):** IOTA, ZIL, ONE, DCR, RUNE, KDA, ACA, JUP, DYDX, YGG, MTL, QUICK
+  - `IOTA`: GET https://api.coingecko.com/api/v3/coins/iota/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
   - `ZIL`: GET https://api.coingecko.com/api/v3/coins/zilliqa/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
   - `ONE`: GET https://api.coingecko.com/api/v3/coins/harmony/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
-  - `WAVES`: GET https://api.coingecko.com/api/v3/coins/waves/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
 
 | Rejeitado | Motivo |
 |---|---|
-| 1INCH | liquidez baixa (0.0M < 5M) |
-| AAVE | liquidez baixa (2.9M < 5M) |
-| ALGO | liquidez baixa (0.9M < 5M) |
-| ALICE | liquidez baixa (0.1M < 5M) |
-| AMP | liquidez baixa (0.1M < 5M) |
-| ANKR | liquidez baixa (0.0M < 5M) |
-| APE | liquidez baixa (0.1M < 5M) |
-| API3 | liquidez baixa (0.0M < 5M) |
-| _(+119 outros)_ | |
+| 1INCH | liquidez baixa (0.0M < 1M) |
+| ALGO | liquidez baixa (0.9M < 1M) |
+| ALICE | liquidez baixa (0.1M < 1M) |
+| AMP | liquidez baixa (0.1M < 1M) |
+| ANKR | liquidez baixa (0.0M < 1M) |
+| APE | liquidez baixa (0.1M < 1M) |
+| API3 | liquidez baixa (0.0M < 1M) |
+| APT | liquidez baixa (0.5M < 1M) |
+| _(+110 outros)_ | |
 
 </details>
 
