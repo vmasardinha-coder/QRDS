@@ -5,7 +5,7 @@
 
 ## Candidate
 
-`GATE_BTC_V16B_CAUSAL_SHORT_FREEZE_20260811`
+`GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811`
 
 Parent discovery line: cross-sectional extreme classifier, weekly 10 long / 10 short, point-in-time Top-150 universe, fixed USD 10m/day 30d-volume floor, causal Binance USD-M shortability, 20% vol target capped at 1x, 15 bps turnover cost.
 
@@ -32,7 +32,7 @@ Point-in-time universe:
 - latest CMC Top-150 snapshot available by Thursday signal date;
 - existing PIT source/identity policy;
 - complete feature row required;
-- `exp(logvol30) >= 10,000,000` USD/day;
+- `logvol30 = log1p(median of the last 30 source-specific volume_usd observations)` and the eligibility threshold remains effectively USD 10,000,000;
 - no use of current-survivor membership.
 
 Target used for expanding historical training:
@@ -67,7 +67,7 @@ Model:
 - no leverage above 1x;
 - turnover cost = 15 bps primary;
 - 30 bps and 50 bps are diagnostic stress only, never selection criteria after freeze;
-- Binance archived short funding is recorded separately and added to the shadow ledger where the short leg is implemented with USD-M perpetuals.
+- Binance archived short funding is recorded separately and added to the shadow ledger where the short leg is implemented with USD-M perpetuals, weighted at `0.05 * exposure` per selected short.
 
 ## External Delta benchmark discipline
 
