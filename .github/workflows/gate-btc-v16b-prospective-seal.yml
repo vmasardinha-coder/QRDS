@@ -6,7 +6,11 @@ on:
     branches: [agent/gate-btc-migration-current]
     paths:
       - tools/gate_btc_v16b_prospective_seal.py
+      - tools/gate_btc_v16b_shadow_signal.py
       - tests/test_gate_btc_v16b_prospective_seal.py
+      - research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json
       - .github/workflows/gate-btc-v16b-prospective-seal.yml
 
 permissions:
@@ -29,10 +33,15 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest
       - name: Run prospective sealing contract tests
         run: python -m pytest -q tests/test_gate_btc_v16b_prospective_seal.py
-      - name: Verify research-only boundary
+      - name: Verify frozen prospective invariants
         run: |
           python - <<'PY'
-          from tools.gate_btc_v16b_prospective_seal import SAFETY, FIRST_SIGNAL, FIRST_ENTRY, FIRST_COMPLETE_EXIT
+          import json
+          from pathlib import Path
+          from tools.gate_btc_v16b_prospective_seal import CANDIDATE_ID, SAFETY, FIRST_SIGNAL, FIRST_ENTRY, FIRST_COMPLETE_EXIT
+
+          canonical = 'GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811'
+          assert CANDIDATE_ID == canonical
           assert SAFETY['RESEARCH_ONLY'] is True
           assert SAFETY['SHADOW_ONLY'] is True
           assert SAFETY['NOT_APPROVED'] is True
@@ -42,5 +51,19 @@ jobs:
           assert FIRST_SIGNAL.isoformat() == '2026-08-13'
           assert FIRST_ENTRY.isoformat() == '2026-08-14'
           assert FIRST_COMPLETE_EXIT.isoformat() == '2026-08-21'
-          print('V16B_PROSPECTIVE_SEAL_SAFETY=PASS')
+
+          protocol = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json').read_text(encoding='utf-8'))
+          amendment = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json').read_text(encoding='utf-8'))
+          md = Path('research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md').read_text(encoding='utf-8')
+          engine = Path('tools/gate_btc_v16b_shadow_signal.py').read_text(encoding='utf-8')
+
+          assert protocol['candidate_id'] == canonical
+          assert amendment['applies_to_freeze_id'] == canonical
+          assert canonical in md
+          assert "CANDIDATE_ID='" + canonical + "'" in engine
+          assert 'LIQ_FLOOR=np.log1p(10_000_000.0)' in engine
+          assert amendment['methodology_changed'] is False
+          assert amendment['historical_returns_reoptimized'] is False
+          assert amendment['orders'] == 0 and amendment['real_capital'] == 0
+          print('V16B_PROSPECTIVE_INVARIANTS=PASS')
           PY
