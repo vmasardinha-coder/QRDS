@@ -113,7 +113,8 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
 
 def run_equities(today: str) -> dict:
     """Carteira de acoes EUA — benchmark SPY."""
-    bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK)
+    bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK,
+                                                  is_benchmark=True)
     universe, failed = _fetch_universe(config.EQUITY_UNIVERSE,
                                        data_sources.fetch_equity_daily)
     prices = {t: s[-1][1] for t, s in universe.items() if _is_fresh(s, today)}
@@ -167,7 +168,8 @@ def run_crypto(today: str) -> dict:
 
 def run_b3(today: str) -> dict:
     """Carteira de acoes B3 — obstaculo e o maior entre Ibovespa e CDI."""
-    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
+    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
+                                              is_benchmark=True)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
     universe, failed = _fetch_universe(config.B3_UNIVERSE,
                                        data_sources.fetch_b3_daily)
@@ -214,7 +216,8 @@ def run_b3_structured(today: str) -> dict:
     """Carteira B3 estruturadas: financiamento coberto em BOVA11 vs CDI."""
     underlying = config.B3S_UNDERLYING
     series = data_sources.fetch_b3_daily(underlying)
-    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
+    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
+                                              is_benchmark=True)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
 
     spot = series[-1][1]

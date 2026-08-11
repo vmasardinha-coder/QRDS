@@ -37,9 +37,10 @@ class DataSourceError(RuntimeError):
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
 
 
-def _http_get(url: str, timeout: float = 30.0) -> bytes:
+def _http_get(url: str, timeout: float = 30.0,
+              retries: int | None = None) -> bytes:
     last_err: Exception | None = None
-    for attempt in range(RETRIES):
+    for attempt in range(retries or RETRIES):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -63,7 +64,8 @@ def _http_get(url: str, timeout: float = 30.0) -> bytes:
         except (urllib.error.URLError, TimeoutError, OSError) as err:
             last_err = err
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
-    raise DataSourceError(f"GET {url} falhou apos {RETRIES} tentativas: {last_err}")
+    raise DataSourceError(
+        f"GET {url} falhou apos {retries or RETRIES} tentativas: {last_err}")
 
 
 def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
@@ -88,7 +90,11 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     return rows
 
 
-def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float, float]]:
+BENCHMARK_RETRIES = 6
+
+
+def fetch_yahoo_daily(ticker: str,
+                      retries: int | None = None) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho via API de chart do Yahoo Finance (sem chave)."""
     symbol = ticker.upper()
     # tickers dos EUA usam '-' em vez de '.' (BRK.B); indices (^BVSP) e
@@ -100,7 +106,7 @@ def fetch_yahoo_daily(ticker: str) -> list[tuple[str, float, float]]:
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         f"?range=2y&interval=1d&events=div%2Csplit"
     )
-    data = json.loads(_http_get(url).decode("utf-8"))
+    data = json.loads(_http_get(url, retries=retries).decode("utf-8"))
     try:
         result = data["chart"]["result"][0]
         timestamps = result["timestamp"]
@@ -125,7 +131,8 @@ _STOOQ_CONSECUTIVE_FAILURES = 0
 _STOOQ_TRIP_AFTER = 3
 
 
-def fetch_equity_daily(ticker: str) -> list[tuple[str, float, float]]:
+def fetch_equity_daily(ticker: str,
+                       is_benchmark: bool = False) -> list[tuple[str, float, float]]:
     """Stooq como fonte primaria, Yahoo Finance como fallback.
 
     Depois de _STOOQ_TRIP_AFTER falhas consecutivas do Stooq (tipico quando
@@ -141,7 +148,8 @@ def fetch_equity_daily(ticker: str) -> list[tuple[str, float, float]]:
             return series
         except DataSourceError:
             _STOOQ_CONSECUTIVE_FAILURES += 1
-    series = fetch_yahoo_daily(ticker)
+    series = fetch_yahoo_daily(
+        ticker, retries=BENCHMARK_RETRIES if is_benchmark else None)
     time.sleep(config.FETCH_DELAY_S)
     return series
 
@@ -213,11 +221,13 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
     except DataSourceError:
         return fetch_coingecko_daily(coingecko_id)
 
-def fetch_b3_daily(ticker: str) -> list[tuple[str, float, float]]:
+def fetch_b3_daily(ticker: str,
+                   is_benchmark: bool = False) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker da B3 via Yahoo (sufixo .SA)."""
     from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
-    series = fetch_yahoo_daily(symbol)
+    series = fetch_yahoo_daily(symbol,
+                               retries=BENCHMARK_RETRIES if is_benchmark else None)
     time.sleep(config.FETCH_DELAY_S)
     return series
 

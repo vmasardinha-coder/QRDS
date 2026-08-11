@@ -667,3 +667,32 @@ class TestRateLimitBackoff(unittest.TestCase):
         from trading_agent import data_sources
         waits, _ = self._run_with(429, headers={"Retry-After": "amanha"})
         self.assertIn(data_sources.RATE_LIMIT_SLEEP_S[0], waits)
+
+
+class TestBenchmarkPriority(unittest.TestCase):
+    """Perder o benchmark derruba a carteira toda; perder um ativo custa um
+    nome. O orcamento de tentativas tem de refletir essa assimetria."""
+
+    def test_benchmark_gets_more_attempts_than_a_constituent(self):
+        import urllib.error
+        from trading_agent import data_sources
+        counts = []
+
+        def make_counter():
+            calls = []
+
+            def fake(req, timeout=None):
+                calls.append(1)
+                raise urllib.error.HTTPError(req.full_url, 429, "x", {}, None)
+            return calls, fake
+
+        for is_bench in (False, True):
+            calls, fake = make_counter()
+            with mock.patch.object(data_sources.urllib.request, "urlopen", fake), \
+                 mock.patch.object(data_sources.time, "sleep"):
+                with self.assertRaises(data_sources.DataSourceError):
+                    data_sources.fetch_b3_daily("^BVSP", is_benchmark=is_bench)
+            counts.append(len(calls))
+        self.assertEqual(counts[0], data_sources.RETRIES)
+        self.assertEqual(counts[1], data_sources.BENCHMARK_RETRIES)
+        self.assertGreater(counts[1], counts[0])
