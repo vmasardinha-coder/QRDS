@@ -21,7 +21,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-CANDIDATE_ID = "GATE_BTC_V16B_CAUSAL_SHORT_FREEZE_20260811"
+CANDIDATE_ID = "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811"
 FIRST_SIGNAL = date(2026, 8, 13)
 FIRST_ENTRY = date(2026, 8, 14)
 FIRST_COMPLETE_EXIT = date(2026, 8, 21)
@@ -146,8 +146,6 @@ def validate_self_row(row: dict[str, Any]) -> dict[str, Any]:
     else:
         if not row["blocker_reason"]:
             raise ValueError("BLOCKED row requires blocker_reason")
-        # A blocked observation remains in the evidence denominator but cannot
-        # contain invented portfolio returns or transaction/funding economics.
         for k in ECONOMIC_FIELDS:
             if row[k] is not None:
                 raise ValueError(f"BLOCKED row must not contain synthetic economic field {k}")
