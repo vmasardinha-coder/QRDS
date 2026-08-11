@@ -16,21 +16,21 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,648.51 |
-| Retorno do dia | +0.09% |
-| Retorno desde inicio (2026-08-06) | -0.70% |
-| Benchmark BTC | -0.75% |
-| **Alfa vs BTC** | **+0.05%** |
+| NAV | $49,737.25 |
+| Retorno do dia | +0.27% |
+| Retorno desde inicio (2026-08-06) | -0.53% |
+| Benchmark BTC | -1.18% |
+| **Alfa vs BTC** | **+0.66%** |
 | Caixa | $24,784.01 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,933.24 | $12,405.98 | 25.0% |
-| JTO | 7634.85 | $0.55 | $4,167.87 | 8.4% |
-| SYN | 40838.9 | $0.10 | $4,148.42 | 8.4% |
-| UNI | 1050.71 | $3.94 | $4,142.23 | 8.3% |
+| BTC | 0.194046 | $63,656.57 | $12,352.29 | 24.8% |
+| SYN | 40838.9 | $0.11 | $4,357.51 | 8.8% |
+| JTO | 7634.85 | $0.56 | $4,283.92 | 8.6% |
+| UNI | 1050.71 | $3.77 | $3,959.51 | 8.0% |
 
 _Sem movimentacoes hoje._
 
@@ -38,7 +38,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -9.5% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de -9.9% — so entram ativos acima disto
 - **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, coinbase: 119
 
