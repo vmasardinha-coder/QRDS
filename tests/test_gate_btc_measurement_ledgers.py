@@ -5,6 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
+from tools.gate_btc_lock_ledger import append_lock as strict_append_lock
 from tools.gate_btc_measurement_ledgers import (
     append_lock, audit_d50, initialize_lock, initialize_source_anchor,
     load_json, safe_gateway,
@@ -131,13 +132,30 @@ class MeasurementLedgerTests(unittest.TestCase):
             self.assertEqual(lock25["protected_cash_after"], 0)
             self.assertEqual(load_json(ledger / "STATUS.json")["valid_snapshot_count"], 4)
 
-    def test_lock_duplicate_must_be_byte_equivalent_and_gaps_fail(self):
+    def test_lock_duplicate_strict_gap_and_nonfatal_wrapper_blocker(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); contract, master, ledger = self._fixture(root)
             self._append(root, contract, master, ledger, "2026-08-06", "2026-08-07")
             self.assertEqual(self._append(root, contract, master, ledger, "2026-08-06", "2026-08-07"), 0)
-            with self.assertRaises(RuntimeError):
-                self._append(root, contract, master, ledger, "2026-08-08", "2026-08-09")
+
+            gap_signal = root / "signal-gap.csv"
+            gap_signal.write_text(current_signal("2026-08-08", "2026-08-09"))
+            gap_args = Namespace(
+                contract=contract, master_daily=master, current_portfolios=gap_signal,
+                snapshot_id="2026-08-08", cycle_id="QOS_CURRENT_COMPOSITION_2026-08-06",
+                ledger_dir=ledger,
+            )
+            with self.assertRaisesRegex(RuntimeError, "LOCK requires consecutive close 2026-08-07, got 2026-08-08"):
+                strict_append_lock(gap_args)
+
+            self.assertEqual(append_lock(gap_args), 0)
+            self.assertFalse((ledger / "snapshots/2026-08-08.json").exists())
+            diagnostic = load_json(ledger / "diagnostics/2026-08-08.json")
+            self.assertEqual(diagnostic["status"], "BLOCKED_UNRESOLVED_REQUIRED_PRIOR_CLOSE")
+            self.assertEqual(diagnostic["blocker_type"], "UNRESOLVED_PROSPECTIVE_GAP")
+            self.assertFalse(diagnostic["snapshot_appended"])
+            self.assertFalse(diagnostic["backfill_allowed"])
+            self.assertEqual(load_json(ledger / "STATUS.json")["valid_snapshot_count"], 1)
 
     def test_d50_deep_diff_preserves_frozen_row(self):
         with tempfile.TemporaryDirectory() as tmp:
