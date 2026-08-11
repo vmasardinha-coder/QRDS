@@ -20,8 +20,8 @@ mercado** e **dinheiro simulado** (paper trading):
 1. **GitHub Actions** (`.github/workflows/trading-agent-daily.yml`) corre o
    ciclo diário às **21:15 UTC** (18:15 em Brasília), depois do fecho de NY:
    - corre os testes offline (se falharem, não negoceia — fail-safe);
-   - busca preços reais: ações EUA via Stooq (fallback Yahoo), crypto via
-     Coinbase → Binance → CoinGecko, ações B3 e benchmarks via Yahoo;
+   - busca preços reais: ações EUA via Stooq → Yahoo, ações B3 via
+     brapi.dev → Yahoo, crypto via Coinbase → Binance → CoinGecko;
    - calcula sinais, decide rebalanceio, executa ordens simuladas com slippage;
    - atualiza o estado (`trading_agent/state/*.json`) e escreve o relatório;
    - faz commit e push de estado + relatório para o próprio branch.

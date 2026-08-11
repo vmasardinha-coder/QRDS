@@ -686,15 +686,17 @@ class TestBenchmarkPriority(unittest.TestCase):
                 raise urllib.error.HTTPError(req.full_url, 429, "x", {}, None)
             return calls, fake
 
-        for is_bench in (False, True):
+        hosts = len(data_sources.YAHOO_HOSTS)
+        for retries in (None, data_sources.BENCHMARK_RETRIES):
             calls, fake = make_counter()
             with mock.patch.object(data_sources.urllib.request, "urlopen", fake), \
                  mock.patch.object(data_sources.time, "sleep"):
                 with self.assertRaises(data_sources.DataSourceError):
-                    data_sources.fetch_b3_daily("^BVSP", is_benchmark=is_bench)
+                    data_sources.fetch_yahoo_daily("^BVSP", retries=retries)
             counts.append(len(calls))
-        self.assertEqual(counts[0], data_sources.RETRIES)
-        self.assertEqual(counts[1], data_sources.BENCHMARK_RETRIES)
+        # cada host recebe o orcamento completo de tentativas
+        self.assertEqual(counts[0], data_sources.RETRIES * hosts)
+        self.assertEqual(counts[1], data_sources.BENCHMARK_RETRIES * hosts)
         self.assertGreater(counts[1], counts[0])
 
 
@@ -756,3 +758,74 @@ class TestSourceRouting(unittest.TestCase):
         self.assertEqual(rows[0][2], 7.5)     # volume na moeda base
         # preco x volume = giro em USD, comparavel ao da Coinbase
         self.assertEqual(rows[0][1] * rows[0][2], 750.0)
+
+
+class TestBrapiSource(unittest.TestCase):
+    """A B3 passa a ter uma fonte independente do Yahoo, que nos bloqueou."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.SOURCE_TALLY.clear()
+        self.addCleanup(data_sources.SOURCE_TALLY.clear)
+
+    def _payload(self, n=12):
+        return json.dumps({"results": [{"historicalDataPrice": [
+            {"date": 1767225600 + i * 86400, "close": 30.0 + i, "volume": 5_000_000}
+            for i in range(n)]}]}).encode()
+
+    def test_parses_history_into_series(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=self._payload()):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 12)
+        self.assertEqual(rows[0][1], 30.0)
+        self.assertEqual(rows[0][2], 5_000_000)
+        self.assertEqual(rows, sorted(rows))
+
+    def test_short_history_is_rejected_not_padded(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               return_value=self._payload(n=3)):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_brapi_daily("PETR4")
+
+    def test_b3_prefers_brapi_and_falls_back_to_yahoo(self):
+        series = [("2026-01-01", 30.0, 5e6)] * 12
+        with mock.patch.object(self.ds, "fetch_brapi_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("brapi"), 1)
+
+        self.ds.SOURCE_TALLY.clear()
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("x")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("yahoo"), 1)
+
+    def test_both_sources_down_names_both_in_the_error(self):
+        err = self.ds.DataSourceError("indisponivel")
+        with mock.patch.object(self.ds, "fetch_brapi_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", side_effect=err):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_b3_daily("PETR4")
+        self.assertIn("brapi", str(ctx.exception))
+        self.assertIn("yahoo", str(ctx.exception))
+
+    def test_yahoo_tries_the_second_host_when_the_first_is_blocked(self):
+        import urllib.error
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "query1" in url:
+                raise self.ds.DataSourceError("429")
+            return json.dumps({"chart": {"result": [{
+                "timestamp": [1767225600 + i * 86400 for i in range(12)],
+                "indicators": {"quote": [{"close": [10.0] * 12,
+                                          "volume": [1000] * 12}]}}]}}).encode()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_yahoo_daily("SPY")
+        self.assertEqual(len(rows), 12)
+        self.assertTrue(any("query2" in u for u in seen))

@@ -93,9 +93,10 @@ vieram de cada fonte (`log["sources"]`):
 
 | Carteira | Cascata |
 |---|---|
-| Ações EUA | Stooq → Yahoo |
+| Ações EUA | Stooq → Yahoo (query1, query2) |
 | Crypto | Coinbase → Binance → CoinGecko |
-| Ações B3 e benchmarks | Yahoo |
+| Ações B3 e benchmarks | brapi.dev → Yahoo |
+| CDI | SGS do Banco Central (4 formas) → cópia local |
 
 Uma falha da fonte (bloqueio, 5xx) é distinta de o ativo não existir nela: só
 a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).

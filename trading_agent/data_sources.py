@@ -1,7 +1,10 @@
 """Fontes publicas de dados de mercado (sem chave de API).
 
-Acoes: Stooq (CSV diario) com fallback Yahoo. Crypto: Coinbase Exchange com
-fallback CoinGecko. Acoes B3: Yahoo (sufixo .SA). CDI: API SGS do Banco Central.
+Cascatas por mercado, para nenhum bloqueio de uma fonte derrubar uma carteira:
+  acoes EUA : Stooq -> Yahoo (query1, query2)
+  acoes B3  : brapi.dev -> Yahoo
+  crypto    : Coinbase -> Binance -> CoinGecko
+  CDI       : SGS do Banco Central (4 formas de consulta) -> copia local
 
 Todas as funcoes de preco devolvem series diarias ordenadas por data ascendente:
 lista de tuplos (date_iso: str, close: float, volume: float). O volume alimenta
@@ -104,6 +107,10 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
 
 
 BENCHMARK_RETRIES = 6
+# query1 e query2 sao edges distintos do mesmo servico; quando um limita por
+# taxa, o outro por vezes ainda responde.
+YAHOO_HOSTS = ("https://query1.finance.yahoo.com",
+               "https://query2.finance.yahoo.com")
 
 
 def fetch_yahoo_daily(ticker: str,
@@ -115,11 +122,18 @@ def fetch_yahoo_daily(ticker: str,
     if not (symbol.startswith("^") or symbol.endswith(".SA")):
         symbol = symbol.replace(".", "-")
     symbol = urllib.parse.quote(symbol)
-    url = (
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-        f"?range=2y&interval=1d&events=div%2Csplit"
-    )
-    data = json.loads(_http_get(url, retries=retries).decode("utf-8"))
+    last: Exception | None = None
+    data = None
+    for host in YAHOO_HOSTS:
+        url = (f"{host}/v8/finance/chart/{symbol}"
+               f"?range=2y&interval=1d&events=div%2Csplit")
+        try:
+            data = json.loads(_http_get(url, retries=retries).decode("utf-8"))
+            break
+        except DataSourceError as err:
+            last = err
+    if data is None:
+        raise DataSourceError(str(last))
     try:
         result = data["chart"]["result"][0]
         timestamps = result["timestamp"]
@@ -287,15 +301,62 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
         return series
     raise DataSourceError(f"Sem fonte para {asset} (Coinbase, Binance, CoinGecko)")
 
+def fetch_brapi_daily(ticker: str,
+                      range_: str = "2y") -> list[tuple[str, float, float]]:
+    """Serie diaria da B3 via brapi.dev.
+
+    O token vem da variavel de ambiente BRAPI_TOKEN quando existe; sem ela
+    tenta anonimo, que a brapi ainda serve com limite de taxa mais apertado.
+    """
+    import os
+    symbol = ticker.replace(".SA", "").upper()
+    url = (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
+           f"?range={range_}&interval=1d&fundamental=false")
+    token = os.environ.get("BRAPI_TOKEN", "").strip()
+    if token:
+        url += f"&token={urllib.parse.quote(token)}"
+    payload = json.loads(_http_get(url).decode("utf-8"))
+    results = payload.get("results") or []
+    if not results:
+        raise DataSourceError(f"brapi sem resultados para {symbol}")
+    rows: list[tuple[str, float, float]] = []
+    for point in results[0].get("historicalDataPrice") or []:
+        close, stamp = point.get("close"), point.get("date")
+        if close is None or stamp is None:
+            continue
+        date = datetime.fromtimestamp(int(stamp), tz=timezone.utc).strftime("%Y-%m-%d")
+        rows.append((date, float(close), float(point.get("volume") or 0.0)))
+    if len(rows) < 10:
+        raise DataSourceError(f"brapi devolveu serie curta para {symbol} "
+                              f"({len(rows)} pontos)")
+    rows.sort(key=lambda r: r[0])
+    return rows
+
+
 def fetch_b3_daily(ticker: str,
                    is_benchmark: bool = False) -> list[tuple[str, float, float]]:
-    """Serie diaria de fecho para um ticker da B3 via Yahoo (sufixo .SA)."""
+    """Serie diaria da B3: brapi.dev primeiro, Yahoo como alternativa.
+
+    A brapi vem a frente porque o Yahoo passou a limitar por taxa os IPs do
+    GitHub Actions, e as 50 acoes da B3 mais os benchmarks eram metade dessa
+    carga. Sao servicos independentes, nao duas portas do mesmo.
+    """
     from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
-    series = fetch_yahoo_daily(symbol,
-                               retries=BENCHMARK_RETRIES if is_benchmark else None)
-    time.sleep(config.FETCH_DELAY_S)
-    return series
+    errors: list[str] = []
+    for name, call in (
+            ("brapi", lambda: fetch_brapi_daily(ticker)),
+            ("yahoo", lambda: fetch_yahoo_daily(
+                symbol, retries=BENCHMARK_RETRIES if is_benchmark else None))):
+        try:
+            series = call()
+        except DataSourceError as err:
+            errors.append(f"{name}: {str(err)[:70]}")
+            continue
+        SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
+        time.sleep(config.FETCH_DELAY_S)
+        return series
+    raise DataSourceError(f"Sem fonte para {ticker} — " + " | ".join(errors))
 
 
 def _cdi_cache_path():
