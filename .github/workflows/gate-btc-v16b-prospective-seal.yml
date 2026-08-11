@@ -1,0 +1,46 @@
+name: GATE BTC V16B Prospective Seal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/gate-btc-migration-current]
+    paths:
+      - tools/gate_btc_v16b_prospective_seal.py
+      - tests/test_gate_btc_v16b_prospective_seal.py
+      - .github/workflows/gate-btc-v16b-prospective-seal.yml
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  prospective-seal-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run prospective sealing contract tests
+        run: python -m pytest -q tests/test_gate_btc_v16b_prospective_seal.py
+      - name: Verify research-only boundary
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_v16b_prospective_seal import SAFETY, FIRST_SIGNAL, FIRST_ENTRY, FIRST_COMPLETE_EXIT
+          assert SAFETY['RESEARCH_ONLY'] is True
+          assert SAFETY['SHADOW_ONLY'] is True
+          assert SAFETY['NOT_APPROVED'] is True
+          assert SAFETY['ORDERS'] == 0
+          assert SAFETY['REAL_CAPITAL'] == 0
+          assert SAFETY['ENGINE_FEED'] is False
+          assert FIRST_SIGNAL.isoformat() == '2026-08-13'
+          assert FIRST_ENTRY.isoformat() == '2026-08-14'
+          assert FIRST_COMPLETE_EXIT.isoformat() == '2026-08-21'
+          print('V16B_PROSPECTIVE_SEAL_SAFETY=PASS')
+          PY
