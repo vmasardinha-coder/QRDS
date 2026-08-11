@@ -167,7 +167,7 @@ class MeasurementLedgerTests(unittest.TestCase):
             report = load_json(output)
             self.assertEqual(report["differences"][0]["path"], "$.state.value")
             self.assertFalse(report["mutation_performed"])
-            self.assertEqual(load_json(frozen)["value"], 1)
+            self.assertEqual(load_json(frozen)["state"]["value"], 1)
 
 
 if __name__ == "__main__":
