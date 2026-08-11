@@ -1,0 +1,67 @@
+name: GATE BTC Binance USD-M Weekly Shortability
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/gate-btc-migration-current]
+    paths:
+      - .github/workflows/gate-btc-binance-usdm-weekly-shortability.yml
+      - tools/gate_btc_binance_usdm_weekly_shortability.py
+      - tests/test_gate_btc_binance_usdm_weekly_shortability.py
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  weekly-shortability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public-data dependency
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Test fail-closed helpers
+        run: python -m unittest -v tests/test_gate_btc_binance_usdm_weekly_shortability.py
+
+      - name: Build weekly causal USD-M shortability ledger
+        run: >-
+          python tools/gate_btc_binance_usdm_weekly_shortability.py
+          --start 2020-07-03
+          --output-csv artifacts/binance_shortability/BINANCE_USDM_WEEKLY_SHORTABLE.csv
+          --output-summary artifacts/binance_shortability/BINANCE_USDM_WEEKLY_SHORTABLE_SUMMARY.json
+
+      - name: Verify safety boundary and nonempty history
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/binance_shortability/BINANCE_USDM_WEEKLY_SHORTABLE_SUMMARY.json',encoding='utf-8'))
+          assert p['status']=='PASS'
+          assert p['RESEARCH_ONLY'] is True
+          assert p['SHADOW_ONLY'] is True
+          assert p['NOT_APPROVED'] is True
+          assert p['ORDERS']==0
+          assert p['REAL_CAPITAL']==0
+          assert p['fridays'] > 250
+          assert 'FAIL_CLOSED' in p['absence_policy']
+          print('BINANCE_USDM_WEEKLY_SHORTABILITY_SAFETY=PASS')
+          print('FRIDAYS='+str(p['fridays']))
+          PY
+
+      - name: Upload historical shortability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-binance-usdm-shortability-${{ github.run_id }}
+          path: artifacts/binance_shortability/
+          retention-days: 30
+          if-no-files-found: error
