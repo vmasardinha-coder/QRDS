@@ -874,3 +874,64 @@ class TestYahooBreaker(unittest.TestCase):
              mock.patch.object(self.ds.time, "sleep"):
             out = self.ds.fetch_b3_daily("PETR4")
         self.assertEqual(out, series)
+
+
+class TestBrapiRanges(unittest.TestCase):
+    """O plano livre da brapi limita o historico; pedir do mais longo para o
+    mais curto e ficar com o melhor evita perder a carteira por isso."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def _payload(self, n):
+        return json.dumps({"results": [{"historicalDataPrice": [
+            {"date": 1767225600 + i * 86400, "close": 30.0, "volume": 1e6}
+            for i in range(n)]}]}).encode()
+
+    def test_falls_back_to_a_shorter_range_when_the_long_one_fails(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "range=2y" in url or "range=1y" in url:
+                raise self.ds.DataSourceError("HTTP 401 (definitivo)")
+            return self._payload(60)
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 60)
+        self.assertTrue(any("range=6mo" in u for u in seen))
+
+    def test_stops_early_once_the_history_is_long_enough(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload(300)
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 300)
+        self.assertEqual(len(seen), 1)   # nao insiste depois de ter o que precisa
+
+    def test_token_is_sent_when_configured(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload(300)
+
+        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "abc123"}), \
+             mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_brapi_daily("PETR4")
+        self.assertIn("token=abc123", seen[0])
+
+    def test_error_names_the_ranges_it_tried(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("HTTP 401")):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_brapi_daily("PETR4")
+        self.assertIn("2y", str(ctx.exception))

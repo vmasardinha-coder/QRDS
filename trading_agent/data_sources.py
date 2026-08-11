@@ -335,36 +335,61 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
         return series
     raise DataSourceError(f"Sem fonte para {asset} (Coinbase, Binance, CoinGecko)")
 
+# O plano livre da brapi limita o intervalo devolvido; pede-se do mais longo
+# para o mais curto e fica-se pelo primeiro que sirva. Menos de 260 pregoes
+# nao chega para o momentum 12-1, mas chega para o benchmark e para o regime.
+BRAPI_RANGES = ("2y", "1y", "6mo", "3mo")
+
+
+def _brapi_url(symbol: str, range_: str, token: str) -> str:
+    url = (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
+           f"?range={range_}&interval=1d&fundamental=false")
+    if token:
+        url += f"&token={urllib.parse.quote(token)}"
+    return url
+
+
 def fetch_brapi_daily(ticker: str,
-                      range_: str = "2y") -> list[tuple[str, float, float]]:
+                      ranges: tuple[str, ...] = BRAPI_RANGES
+                      ) -> list[tuple[str, float, float]]:
     """Serie diaria da B3 via brapi.dev.
 
-    O token vem da variavel de ambiente BRAPI_TOKEN quando existe; sem ela
-    tenta anonimo, que a brapi ainda serve com limite de taxa mais apertado.
+    O token vem de BRAPI_TOKEN quando definido; sem ele tenta anonimo, que a
+    brapi ainda serve com limites mais apertados.
     """
     import os
     symbol = ticker.replace(".SA", "").upper()
-    url = (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
-           f"?range={range_}&interval=1d&fundamental=false")
     token = os.environ.get("BRAPI_TOKEN", "").strip()
-    if token:
-        url += f"&token={urllib.parse.quote(token)}"
-    payload = json.loads(_http_get(url).decode("utf-8"))
-    results = payload.get("results") or []
-    if not results:
-        raise DataSourceError(f"brapi sem resultados para {symbol}")
-    rows: list[tuple[str, float, float]] = []
-    for point in results[0].get("historicalDataPrice") or []:
-        close, stamp = point.get("close"), point.get("date")
-        if close is None or stamp is None:
+    best: list[tuple[str, float, float]] = []
+    errors: list[str] = []
+    for range_ in ranges:
+        try:
+            payload = json.loads(
+                _http_get(_brapi_url(symbol, range_, token)).decode("utf-8"))
+        except DataSourceError as err:
+            errors.append(f"{range_}: {str(err)[-60:]}")
             continue
-        date = datetime.fromtimestamp(int(stamp), tz=timezone.utc).strftime("%Y-%m-%d")
-        rows.append((date, float(close), float(point.get("volume") or 0.0)))
-    if len(rows) < 10:
-        raise DataSourceError(f"brapi devolveu serie curta para {symbol} "
-                              f"({len(rows)} pontos)")
-    rows.sort(key=lambda r: r[0])
-    return rows
+        results = payload.get("results") or []
+        if not results:
+            errors.append(f"{range_}: sem resultados")
+            continue
+        rows: list[tuple[str, float, float]] = []
+        for point in results[0].get("historicalDataPrice") or []:
+            close, stamp = point.get("close"), point.get("date")
+            if close is None or stamp is None:
+                continue
+            date = datetime.fromtimestamp(int(stamp),
+                                          tz=timezone.utc).strftime("%Y-%m-%d")
+            rows.append((date, float(close), float(point.get("volume") or 0.0)))
+        if len(rows) > len(best):
+            best = rows
+        if len(best) >= 260:      # ja chega para o momentum 12-1
+            break
+    if len(best) < 10:
+        raise DataSourceError(f"brapi sem serie utilizavel para {symbol} "
+                              f"[{'; '.join(errors[:2])}]")
+    best.sort(key=lambda r: r[0])
+    return best
 
 
 def fetch_b3_daily(ticker: str,
@@ -385,7 +410,7 @@ def fetch_b3_daily(ticker: str,
         try:
             series = call()
         except DataSourceError as err:
-            errors.append(f"{name}: {str(err)[:70]}")
+            errors.append(f"{name}: {str(err)[-110:]}")
             continue
         SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
         time.sleep(config.FETCH_DELAY_S)

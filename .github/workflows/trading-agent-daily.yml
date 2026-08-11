@@ -45,6 +45,10 @@ jobs:
         run: python -m unittest tests.test_trading_agent -v
 
       - name: Ciclo diario de trading (paper)
+        env:
+          # opcional: define o secret BRAPI_TOKEN para o plano registado da
+          # brapi.dev, que devolve historico mais longo que o anonimo
+          BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
         run: python -m trading_agent.run_daily
 
       - name: Commit do estado e relatorio
