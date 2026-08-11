@@ -696,3 +696,63 @@ class TestBenchmarkPriority(unittest.TestCase):
         self.assertEqual(counts[0], data_sources.RETRIES)
         self.assertEqual(counts[1], data_sources.BENCHMARK_RETRIES)
         self.assertGreater(counts[1], counts[0])
+
+
+class TestSourceRouting(unittest.TestCase):
+    """Distinguir 'a fonte caiu' de 'este ativo nao existe la' e o que evita
+    mandar 100 acoes para o Yahoo por causa de 3 tickers desconhecidos."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources._STOOQ_CONSECUTIVE_FAILURES = 0
+        data_sources.SOURCE_TALLY.clear()
+        self.addCleanup(data_sources.SOURCE_TALLY.clear)
+
+    def test_missing_ticker_does_not_trip_the_breaker(self):
+        with mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.DataSourceError("nao tem serie")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(5):
+                self.ds.fetch_equity_daily("XYZ")
+        self.assertEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES, 0)
+
+    def test_source_outage_trips_the_breaker(self):
+        with mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.SourceUnavailable("bloqueado")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(4):
+                self.ds.fetch_equity_daily("AAPL")
+        self.assertGreaterEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES,
+                                self.ds._STOOQ_TRIP_AFTER)
+
+    def test_crypto_falls_through_coinbase_to_binance(self):
+        series = [("2026-01-01", 100.0, 5.0)] * 12
+        with mock.patch.object(self.ds, "fetch_coinbase_daily",
+                               side_effect=self.ds.DataSourceError("404")), \
+             mock.patch.object(self.ds, "fetch_binance_daily", return_value=series):
+            out = self.ds.fetch_crypto_daily("SUI", "sui")
+        self.assertEqual(out, series)
+        self.assertEqual(self.ds.SOURCE_TALLY.get("binance"), 1)
+
+    def test_crypto_reports_when_every_source_fails(self):
+        err = self.ds.DataSourceError("x")
+        with mock.patch.object(self.ds, "fetch_coinbase_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_binance_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_coingecko_daily", side_effect=err):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_crypto_daily("NADA", "nada")
+
+    def test_binance_volume_is_base_units_for_the_liquidity_filter(self):
+        payload = json.dumps([[1767225600000, "1", "1", "1", "100.0", "7.5",
+                               0, "0", 0, "0", "0", "0"]] * 12).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            rows = self.ds.fetch_binance_daily("BTC")
+        self.assertEqual(rows[0][1], 100.0)   # fecho
+        self.assertEqual(rows[0][2], 7.5)     # volume na moeda base
+        # preco x volume = giro em USD, comparavel ao da Coinbase
+        self.assertEqual(rows[0][1] * rows[0][2], 750.0)

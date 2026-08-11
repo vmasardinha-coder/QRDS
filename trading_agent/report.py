@@ -105,6 +105,9 @@ def _audit_block(log: dict) -> list[str]:
         lines.append(f"- **Obstaculo ({log.get('hurdle')}):** momentum de "
                      f"{log['hurdle_score']*100:+.1f}% — so entram ativos acima disto")
     lines.append(f"- **Candidatos elegiveis:** {log.get('eligible_count', 0)}")
+    if log.get("sources"):
+        tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
+        lines.append(f"- **Fontes usadas:** {tally}")
     if log.get("note"):
         lines.append(f"- **Nota:** {log['note']}")
     if log.get("stops"):

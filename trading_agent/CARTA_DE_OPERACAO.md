@@ -86,6 +86,22 @@ ignorado em silêncio:
 - volume ausente → chega como `0.0` e reprova no filtro de liquidez;
 - falha total de uma carteira → secção de ERRO no relatório, estado intacto.
 
+### Fontes de dados
+
+Cada carteira tem uma cascata própria, e o relatório publica quantas séries
+vieram de cada fonte (`log["sources"]`):
+
+| Carteira | Cascata |
+|---|---|
+| Ações EUA | Stooq → Yahoo |
+| Crypto | Coinbase → Binance → CoinGecko |
+| Ações B3 e benchmarks | Yahoo |
+
+Uma falha da fonte (bloqueio, 5xx) é distinta de o ativo não existir nela: só
+a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).
+Sem essa distinção, três tickers desconhecidos na Stooq mandavam as 100 ações
+para o Yahoo e esgotavam o seu limite de pedidos.
+
 ## 8. Transparência e log
 
 Cada ciclo grava em `state["decision_log"]` (últimas 120 entradas) e o

@@ -32,6 +32,10 @@ class DataSourceError(RuntimeError):
     pass
 
 
+class SourceUnavailable(DataSourceError):
+    """A fonte esta em baixo ou a bloquear-nos — distinto de o ativo nao existir."""
+
+
 # 4xx que significam "nao existe / nao autorizado": repetir nao muda o
 # resultado e, com universos grandes, custa dezenas de minutos por ciclo.
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
@@ -71,8 +75,15 @@ def _http_get(url: str, timeout: float = 30.0,
 def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker dos EUA via Stooq."""
     symbol = ticker.lower().replace(".", "-") + ".us"
-    raw = _http_get(f"https://stooq.com/q/d/l/?s={symbol}&i=d")
+    try:
+        raw = _http_get(f"https://stooq.com/q/d/l/?s={symbol}&i=d")
+    except DataSourceError as err:
+        raise SourceUnavailable(str(err))
     text = raw.decode("utf-8", errors="replace")
+    # a Stooq responde 200 com uma pagina de excesso de pedidos: e a fonte a
+    # bloquear, nao o ticker a nao existir
+    if "exceeded" in text.lower() or "limit" in text[:200].lower():
+        raise SourceUnavailable(f"Stooq bloqueou o pedido ({ticker})")
     rows: list[tuple[str, float, float]] = []
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
@@ -85,7 +96,9 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
         if close > 0:
             rows.append((date, close, volume))
     if len(rows) < 10:
-        raise DataSourceError(f"Stooq devolveu serie vazia/invalida para {ticker}")
+        # CSV valido mas sem dados: este ticker nao existe na Stooq. Nao e
+        # motivo para desistir da fonte inteira.
+        raise DataSourceError(f"Stooq nao tem serie para {ticker}")
     rows.sort(key=lambda r: r[0])
     return rows
 
@@ -130,6 +143,10 @@ def fetch_yahoo_daily(ticker: str,
 _STOOQ_CONSECUTIVE_FAILURES = 0
 _STOOQ_TRIP_AFTER = 3
 
+# Contagem por fonte, para o relatorio dizer de onde vieram os dados em vez
+# de eu ter de adivinhar quando algo corre mal.
+SOURCE_TALLY: dict[str, int] = {}
+
 
 def fetch_equity_daily(ticker: str,
                        is_benchmark: bool = False) -> list[tuple[str, float, float]]:
@@ -144,12 +161,16 @@ def fetch_equity_daily(ticker: str,
         try:
             series = fetch_stooq_daily(ticker)
             _STOOQ_CONSECUTIVE_FAILURES = 0
+            SOURCE_TALLY["stooq"] = SOURCE_TALLY.get("stooq", 0) + 1
             time.sleep(config.FETCH_DELAY_S)
             return series
+        except SourceUnavailable:
+            _STOOQ_CONSECUTIVE_FAILURES += 1   # so falhas da fonte contam
         except DataSourceError:
-            _STOOQ_CONSECUTIVE_FAILURES += 1
+            pass                               # ticker inexistente: segue para o Yahoo
     series = fetch_yahoo_daily(
         ticker, retries=BENCHMARK_RETRIES if is_benchmark else None)
+    SOURCE_TALLY["yahoo"] = SOURCE_TALLY.get("yahoo", 0) + 1
     time.sleep(config.FETCH_DELAY_S)
     return series
 
@@ -214,12 +235,57 @@ def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, floa
             for d, c in sorted(out.items())]
 
 
+BINANCE_HOSTS = ("https://api.binance.com", "https://data-api.binance.vision")
+
+
+def fetch_binance_daily(asset: str, days: int = 500) -> list[tuple[str, float, float]]:
+    """Serie diaria via klines da Binance (par <ASSET>USDT, sem chave).
+
+    Volume vem em unidades da moeda base, igual a Coinbase, por isso
+    preco x volume continua a ser giro em USD para o filtro de liquidez.
+    """
+    symbol = f"{asset.upper()}USDT"
+    last: Exception | None = None
+    for host in BINANCE_HOSTS:
+        url = (f"{host}/api/v3/klines?symbol={symbol}"
+               f"&interval=1d&limit={min(days, 1000)}")
+        try:
+            data = json.loads(_http_get(url).decode("utf-8"))
+        except DataSourceError as err:
+            last = err
+            continue
+        if not isinstance(data, list) or len(data) < 10:
+            last = DataSourceError(f"Binance sem serie para {symbol}")
+            continue
+        rows: list[tuple[str, float, float]] = []
+        for k in data:
+            # [openTime, open, high, low, close, volume, closeTime, ...]
+            date = datetime.fromtimestamp(int(k[0]) / 1000,
+                                          tz=timezone.utc).strftime("%Y-%m-%d")
+            rows.append((date, float(k[4]), float(k[5])))
+        rows.sort(key=lambda r: r[0])
+        return rows
+    raise DataSourceError(f"Binance indisponivel para {symbol}: {last}")
+
+
 def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, float]]:
-    """Coinbase como fonte primaria, CoinGecko como fallback."""
-    try:
-        return fetch_coinbase_daily(asset)
-    except DataSourceError:
-        return fetch_coingecko_daily(coingecko_id)
+    """Coinbase -> Binance -> CoinGecko.
+
+    A Coinbase vem primeiro por cotar em USD verdadeiro; a Binance cobre os
+    ativos que a Coinbase nao lista (foi o que falhou em 12 dos 150); a
+    CoinGecko fica como ultima linha por dar volume global, que sobrestima a
+    liquidez executavel numa unica bolsa.
+    """
+    for name, fetch in (("coinbase", lambda: fetch_coinbase_daily(asset)),
+                        ("binance", lambda: fetch_binance_daily(asset)),
+                        ("coingecko", lambda: fetch_coingecko_daily(coingecko_id))):
+        try:
+            series = fetch()
+        except DataSourceError:
+            continue
+        SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
+        return series
+    raise DataSourceError(f"Sem fonte para {asset} (Coinbase, Binance, CoinGecko)")
 
 def fetch_b3_daily(ticker: str,
                    is_benchmark: bool = False) -> list[tuple[str, float, float]]:
