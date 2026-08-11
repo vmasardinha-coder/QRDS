@@ -1,0 +1,88 @@
+{
+  "readiness_id": "GATE_BTC_V16B_PRE_SIGNAL_READINESS_20260811",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "status": "READY_TO_ATTEMPT_FIRST_CLEAN_SIGNAL_FAIL_CLOSED",
+  "prospective_count": 0,
+  "clock": {
+    "first_eligible_signal_close_utc": "2026-08-13",
+    "first_eligible_entry_close_utc": "2026-08-14",
+    "first_eligible_exit_close_utc": "2026-08-21",
+    "pre_freeze_or_reconstructed_rows_count_as_prospective": false
+  },
+  "frozen_components": {
+    "signal_engine": {
+      "path": "tools/gate_btc_v16b_shadow_signal.py",
+      "blob_sha": "e384ef2456d6fa0db2b1a9f4fe3be15b17c1fcfe",
+      "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+      "liquidity_definition": "logvol30 = log1p(median(last 30 source-specific volume_usd observations)); threshold log1p(USD 10,000,000)"
+    },
+    "prospective_sealer": {
+      "path": "tools/gate_btc_v16b_prospective_seal.py",
+      "blob_sha": "1cc3a5cbe12ce13b4f98e8b139fc307c93a347cf",
+      "policy": "append-only; no pre-freeze prospective rows; BLOCKED rows carry no synthetic economics; external Delta only after self-result seal"
+    },
+    "protocol_json": {
+      "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json",
+      "blob_sha": "9bc169f4631ff1675b7b29b9ddfa7b0ea03dfb2f"
+    },
+    "protocol_markdown": {
+      "path": "research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md",
+      "blob_sha": "1252ec2aba1b417e0b485f18aa68d8a906a83f73"
+    },
+    "audit_amendment": {
+      "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json",
+      "blob_sha": "6ab954f8c8ec1a8a95237dcd04cabb13d5abe8ed",
+      "methodology_changed": false,
+      "historical_returns_reoptimized": false
+    }
+  },
+  "historical_validation_only": {
+    "window": "11 reconstructed weeks in 2026",
+    "net_return_ex_funding": 0.073356,
+    "net_return_with_realized_funding": 0.073914,
+    "prospective_evidence": false,
+    "identity_claim_allowed": false,
+    "tuning_use_allowed": false
+  },
+  "first_signal_fail_closed_requirements": [
+    "fresh causal feature panel through Thursday 2026-08-13 UTC close",
+    "CMC universe snapshot must have demonstrable availability by signal time; if ambiguous use latest strictly-prior snapshot",
+    "persist raw-source hashes, snapshot identifier/timestamp, panel hash, model/refit state, eligible scores and preliminary ranking before external Delta inspection"
+  ],
+  "first_entry_fail_closed_requirements": [
+    "read-only live Binance USD-M active-perpetual verification for every intended short before Friday 2026-08-14 entry close",
+    "if fewer than 10 ranked shorts are verifiably shortable, mark week BLOCKED with no discretionary replacement",
+    "selected long must have a predeclared observable executable instrument under the frozen source policy; unavailable selected long blocks rather than being replaced after ranking",
+    "seal final 10 longs, 10 shorts, scores, exposure, turnover estimate, cost model and source coverage before Friday close"
+  ],
+  "benchmark_separation": {
+    "external_delta_before_self_seal": "FORBIDDEN",
+    "external_delta_after_self_pnl_seal": "ALLOWED_FOR_DATE_ALIGNED_DIAGNOSTIC_ONLY",
+    "parameter_change_from_delta": "FORBIDDEN"
+  },
+  "ci": {
+    "workflow": "GATE BTC V16B Prospective Seal",
+    "run_id": 31544323278,
+    "result": "SUCCESS",
+    "tested": [
+      "canonical candidate identity",
+      "first prospective clock",
+      "append-only duplicate rejection",
+      "pre-freeze/backfill rejection",
+      "BLOCKED synthetic-economics rejection",
+      "external Delta two-stage attachment",
+      "audited liquidity definition",
+      "research-only safety boundary"
+    ]
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}
