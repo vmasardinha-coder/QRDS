@@ -1,0 +1,56 @@
+name: GATE BTC V16B Binance USD-M Funding Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/gate-btc-migration-current]
+    paths:
+      - .github/workflows/gate-btc-binance-usdm-v16b-funding-audit.yml
+      - tools/gate_btc_binance_usdm_funding_audit.py
+      - research_inputs/V16B_SELECTED_SHORTS_2026_11W.csv
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  v16b-funding-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependency
+        run: python -m pip install --disable-pip-version-check requests
+      - name: Audit archived short funding
+        run: >-
+          python tools/gate_btc_binance_usdm_funding_audit.py
+          --manifest research_inputs/V16B_SELECTED_SHORTS_2026_11W.csv
+          --output-csv artifacts/binance_funding/V16B_11W_FUNDING_AUDIT.csv
+          --output-summary artifacts/binance_funding/V16B_11W_FUNDING_AUDIT_SUMMARY.json
+      - name: Verify safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/binance_funding/V16B_11W_FUNDING_AUDIT_SUMMARY.json',encoding='utf-8'))
+          assert p['status'].startswith('PASS')
+          assert p['RESEARCH_ONLY'] and p['SHADOW_ONLY'] and p['NOT_APPROVED']
+          assert p['ORDERS']==0 and p['REAL_CAPITAL']==0
+          assert p['positions']==110
+          print('V16B_FUNDING_AUDIT_SAFETY=PASS')
+          print('STATUS='+p['status'])
+          print('ZERO_EVENT_POSITIONS='+str(p['zero_event_positions']))
+          PY
+      - name: Upload funding evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v16b-funding-${{ github.run_id }}
+          path: artifacts/binance_funding/
+          retention-days: 30
+          if-no-files-found: error
