@@ -17,30 +17,41 @@ _PRICE_BLOCKER_PREFIXES = (
     "stale prior price for ",
     "stale current price for ",
 )
+_GAP_BLOCKER_PREFIX = "LOCK requires consecutive close "
 
 
 def append_lock(args) -> int:
-    """Append LOCK evidence, failing closed but non-fatally on missing/stale prices.
+    """Append LOCK evidence, failing closed but non-fatally on data blockers.
 
-    Missing or stale required prices are data-availability blockers, not permission to
-    drop an asset or synthesize a return. The strict ledger writer raises before any
-    snapshot mutation, so this wrapper records an immutable diagnostic and returns 0
-    so independent Gateway/V2A evidence from the same Daily Research run can still be
-    persisted. All other RuntimeError conditions remain fatal.
+    Missing/stale required prices and a previously unresolved calendar-day gap are
+    evidence-availability blockers, not permission to drop an asset, synthesize a
+    return, or backfill a missed prospective close. The strict ledger writer raises
+    before any snapshot mutation. This wrapper records an immutable diagnostic and
+    returns 0 so independent Gateway/V2A evidence from the same Daily Research run
+    can still be persisted. All other RuntimeError conditions remain fatal.
     """
     try:
         return _append_lock_strict(args)
     except RuntimeError as exc:
         message = str(exc)
-        if not message.startswith(_PRICE_BLOCKER_PREFIXES):
+        is_price_blocker = message.startswith(_PRICE_BLOCKER_PREFIXES)
+        is_gap_blocker = message.startswith(_GAP_BLOCKER_PREFIX)
+        if not (is_price_blocker or is_gap_blocker):
             raise
 
         diagnostics = args.ledger_dir / "diagnostics"
         diagnostics.mkdir(parents=True, exist_ok=True)
         target = diagnostics / f"{args.snapshot_id}.json"
+        if is_gap_blocker:
+            status = "BLOCKED_UNRESOLVED_REQUIRED_PRIOR_CLOSE"
+            blocker_type = "UNRESOLVED_PROSPECTIVE_GAP"
+        else:
+            status = "BLOCKED_MISSING_OR_STALE_REQUIRED_PRICE"
+            blocker_type = "MISSING_OR_STALE_REQUIRED_PRICE"
         payload = {
             "schema": "gate_btc.lock25_50_blocked_snapshot.v1",
-            "status": "BLOCKED_MISSING_OR_STALE_REQUIRED_PRICE",
+            "status": status,
+            "blocker_type": blocker_type,
             "snapshot_id": args.snapshot_id,
             "cycle_id": args.cycle_id,
             "reason": message,
@@ -48,6 +59,7 @@ def append_lock(args) -> int:
             "mutation_performed": False,
             "asset_drop_allowed": False,
             "synthetic_return_allowed": False,
+            "backfill_allowed": False,
             "research_only": True,
             "shadow_only": True,
             "not_approved": True,
