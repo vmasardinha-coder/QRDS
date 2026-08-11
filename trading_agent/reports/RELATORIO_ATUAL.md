@@ -8,7 +8,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-11-grafico
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
-> ERRO nesta execucao: `GET https://query1.finance.yahoo.com/v8/finance/chart/SPY?range=2y&interval=1d&events=div%2Csplit falhou apos 6 tentativas: HTTP Error 429: Too Many Requests`
+> ERRO nesta execucao: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
@@ -16,21 +16,21 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,737.25 |
-| Retorno do dia | +0.27% |
-| Retorno desde inicio (2026-08-06) | -0.53% |
-| Benchmark BTC | -1.18% |
-| **Alfa vs BTC** | **+0.66%** |
+| NAV | $49,810.54 |
+| Retorno do dia | +0.42% |
+| Retorno desde inicio (2026-08-06) | -0.38% |
+| Benchmark BTC | -1.33% |
+| **Alfa vs BTC** | **+0.95%** |
 | Caixa | $24,784.01 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,656.57 | $12,352.29 | 24.8% |
-| SYN | 40838.9 | $0.11 | $4,357.51 | 8.8% |
-| JTO | 7634.85 | $0.56 | $4,283.92 | 8.6% |
-| UNI | 1050.71 | $3.77 | $3,959.51 | 8.0% |
+| BTC | 0.194046 | $63,559.99 | $12,333.55 | 24.8% |
+| SYN | 40838.9 | $0.11 | $4,477.58 | 9.0% |
+| JTO | 7634.85 | $0.56 | $4,281.63 | 8.6% |
+| UNI | 1050.71 | $3.74 | $3,933.77 | 7.9% |
 
 _Sem movimentacoes hoje._
 
@@ -38,7 +38,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -9.9% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de -10.1% — so entram ativos acima disto
 - **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, coinbase: 119
 
@@ -58,13 +58,13 @@ _Sem movimentacoes hoje._
 
 ## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
 
-> ERRO nesta execucao: `GET https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?range=2y&interval=1d&events=div%2Csplit falhou apos 6 tentativas: HTTP Error 429: Too Many Requests`
+> ERRO nesta execucao: `Sem fonte para ^BVSP — brapi: GET https://brapi.dev/api/quote/%5EBVSP?range=2y&interval=1d&fundament | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
 ## Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)
 
-> ERRO nesta execucao: `GET https://query1.finance.yahoo.com/v8/finance/chart/BOVA11.SA?range=2y&interval=1d&events=div%2Csplit falhou apos 3 tentativas: HTTP Error 429: Too Many Requests`
+> ERRO nesta execucao: `Sem fonte para BOVA11 — brapi: GET https://brapi.dev/api/quote/BOVA11?range=2y&interval=1d&fundamenta | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
