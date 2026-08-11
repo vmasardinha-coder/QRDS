@@ -16,21 +16,21 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,673.25 |
-| Retorno do dia | +0.14% |
-| Retorno desde inicio (2026-08-06) | -0.65% |
-| Benchmark BTC | -0.86% |
-| **Alfa vs BTC** | **+0.20%** |
+| NAV | $49,648.51 |
+| Retorno do dia | +0.09% |
+| Retorno desde inicio (2026-08-06) | -0.70% |
+| Benchmark BTC | -0.75% |
+| **Alfa vs BTC** | **+0.05%** |
 | Caixa | $24,784.01 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,865.73 | $12,392.88 | 24.9% |
-| SYN | 40838.9 | $0.10 | $4,185.91 | 8.4% |
-| JTO | 7634.85 | $0.55 | $4,171.68 | 8.4% |
-| UNI | 1050.71 | $3.94 | $4,138.76 | 8.3% |
+| BTC | 0.194046 | $63,933.24 | $12,405.98 | 25.0% |
+| JTO | 7634.85 | $0.55 | $4,167.87 | 8.4% |
+| SYN | 40838.9 | $0.10 | $4,148.42 | 8.4% |
+| UNI | 1050.71 | $3.94 | $4,142.23 | 8.3% |
 
 _Sem movimentacoes hoje._
 
@@ -38,20 +38,21 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -9.6% — so entram ativos acima disto
-- **Candidatos elegiveis:** 17
+- **Obstaculo (BTC):** momentum de -9.5% — so entram ativos acima disto
+- **Candidatos elegiveis:** 16
+- **Fontes usadas:** binance: 31, coinbase: 119
 
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ACA | liquidez baixa (0.1M < 1M) |
 | ALGO | liquidez baixa (0.9M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.0M < 1M) |
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
-| _(+121 outros)_ | |
+| APT | liquidez baixa (0.5M < 1M) |
+| _(+118 outros)_ | |
 
 </details>
 
