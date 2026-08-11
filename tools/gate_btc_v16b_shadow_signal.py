@@ -19,7 +19,7 @@ CANDIDATE_ID='GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811'
 FEATURES=[
 'mom7','mom14','mom30','mom60','mom90','residmom7','residmom14','residmom30','residmom60','residmom90',
 'vol14','vol30','vol60','corr30','corr60','beta30','beta60','logvol30']
-LIQ_FLOOR=np.log(10_000_000.0)
+LIQ_FLOOR=np.log1p(10_000_000.0)
 RANDOM_STATE=20260811
 
 def sha256_file(p:Path)->str:
