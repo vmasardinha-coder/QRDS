@@ -16,46 +16,46 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,606.27 |
-| Retorno do dia | -1.13% |
+| NAV | $49,603.91 |
+| Retorno do dia | -1.14% |
 | Retorno desde inicio (2026-08-06) | -0.79% |
-| Benchmark BTC | -0.81% |
-| **Alfa vs BTC** | **+0.02%** |
-| Caixa | $24,787.72 |
+| Benchmark BTC | -0.78% |
+| **Alfa vs BTC** | **-0.02%** |
+| Caixa | $24,784.01 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,897.95 | $12,399.13 | 25.0% |
-| JTO | 7634.85 | $0.54 | $4,141.91 | 8.3% |
-| UNI | 1050.71 | $3.94 | $4,138.76 | 8.3% |
-| TRX | 12519.4 | $0.33 | $4,138.75 | 8.3% |
+| BTC | 0.194046 | $63,917.55 | $12,402.93 | 25.0% |
+| UNI | 1050.71 | $3.94 | $4,142.23 | 8.4% |
+| JTO | 7634.85 | $0.54 | $4,140.38 | 8.3% |
+| SYN | 40838.9 | $0.10 | $4,134.35 | 8.3% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| TRX | VENDA | 12519.4 | $0.33 | $4,134.78 | rebalanceio |
+| SYN | COMPRA | 40838.9 | $0.10 | $4,138.48 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
 - **Obstaculo (BTC):** momentum de -10.2% — so entram ativos acima disto
-- **Candidatos elegiveis:** 14
-- **Sem dado (excluidos, nao estimados):** IOTA, ZIL, ONE, DCR, RUNE, KDA, ACA, JUP, GMX, TLM, YGG
-  - `IOTA`: GET https://api.coingecko.com/api/v3/coins/iota/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
-  - `ZIL`: GET https://api.coingecko.com/api/v3/coins/zilliqa/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
-  - `ONE`: GET https://api.coingecko.com/api/v3/coins/harmony/market_chart?vs_currency=usd&days=365 falhou apos 3 tentativas: HTTP Error 429: Too Many Requests
+- **Candidatos elegiveis:** 16
 
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
+| ACA | liquidez baixa (0.1M < 1M) |
 | ALGO | liquidez baixa (0.9M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.0M < 1M) |
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
-| APT | liquidez baixa (0.5M < 1M) |
-| _(+112 outros)_ | |
+| _(+122 outros)_ | |
 
 </details>
 
