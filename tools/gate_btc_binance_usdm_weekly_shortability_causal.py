@@ -18,7 +18,7 @@ from pathlib import Path
 
 import requests
 
-from tools.gate_btc_binance_usdm_weekly_shortability import (
+from gate_btc_binance_usdm_weekly_shortability import (
     SYMBOL_ROOT,
     discover_futures_symbols,
     fridays,
