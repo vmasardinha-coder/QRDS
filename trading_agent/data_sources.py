@@ -39,6 +39,10 @@ class SourceUnavailable(DataSourceError):
     """A fonte esta em baixo ou a bloquear-nos — distinto de o ativo nao existir."""
 
 
+class RateLimited(SourceUnavailable):
+    """A fonte respondeu 429: esta a recusar por volume, nao por ativo."""
+
+
 # 4xx que significam "nao existe / nao autorizado": repetir nao muda o
 # resultado e, com universos grandes, custa dezenas de minutos por ciclo.
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
@@ -71,8 +75,10 @@ def _http_get(url: str, timeout: float = 30.0,
         except (urllib.error.URLError, TimeoutError, OSError) as err:
             last_err = err
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
-    raise DataSourceError(
-        f"GET {url} falhou apos {retries or RETRIES} tentativas: {last_err}")
+    attempts = retries or RETRIES
+    if isinstance(last_err, urllib.error.HTTPError) and last_err.code == 429:
+        raise RateLimited(f"GET {url}: 429 apos {attempts} tentativas")
+    raise DataSourceError(f"GET {url} falhou apos {attempts} tentativas: {last_err}")
 
 
 def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
@@ -112,6 +118,21 @@ BENCHMARK_RETRIES = 6
 YAHOO_HOSTS = ("https://query1.finance.yahoo.com",
                "https://query2.finance.yahoo.com")
 
+_YAHOO_RATE_LIMITED = False
+_YAHOO_TRIP_AFTER = 2          # respostas 429 antes de desistir do ciclo
+_yahoo_rate_limit_hits = 0
+
+
+def reset_source_breakers() -> None:
+    """Repoe os disjuntores. Cada ciclo corre num processo novo, mas os testes
+    e uma eventual reexecucao no mesmo processo precisam disto explicito."""
+    global _YAHOO_RATE_LIMITED, _yahoo_rate_limit_hits
+    global _STOOQ_CONSECUTIVE_FAILURES
+    _YAHOO_RATE_LIMITED = False
+    _yahoo_rate_limit_hits = 0
+    _STOOQ_CONSECUTIVE_FAILURES = 0
+    SOURCE_TALLY.clear()
+
 
 def fetch_yahoo_daily(ticker: str,
                       retries: int | None = None) -> list[tuple[str, float, float]]:
@@ -122,6 +143,10 @@ def fetch_yahoo_daily(ticker: str,
     if not (symbol.startswith("^") or symbol.endswith(".SA")):
         symbol = symbol.replace(".", "-")
     symbol = urllib.parse.quote(symbol)
+    global _YAHOO_RATE_LIMITED, _yahoo_rate_limit_hits
+    if _YAHOO_RATE_LIMITED:
+        raise RateLimited("Yahoo ja recusou por volume neste ciclo; "
+                          "nao insisto ativo a ativo")
     last: Exception | None = None
     data = None
     for host in YAHOO_HOSTS:
@@ -129,7 +154,16 @@ def fetch_yahoo_daily(ticker: str,
                f"?range=2y&interval=1d&events=div%2Csplit")
         try:
             data = json.loads(_http_get(url, retries=retries).decode("utf-8"))
+            _yahoo_rate_limit_hits = 0
             break
+        except RateLimited as err:
+            last = err
+            _yahoo_rate_limit_hits += 1
+            if _yahoo_rate_limit_hits >= _YAHOO_TRIP_AFTER:
+                _YAHOO_RATE_LIMITED = True
+                raise RateLimited(
+                    f"Yahoo a limitar por volume ({_yahoo_rate_limit_hits} vezes); "
+                    f"desisto da fonte neste ciclo")
         except DataSourceError as err:
             last = err
     if data is None:

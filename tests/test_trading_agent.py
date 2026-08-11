@@ -673,6 +673,11 @@ class TestBenchmarkPriority(unittest.TestCase):
     """Perder o benchmark derruba a carteira toda; perder um ativo custa um
     nome. O orcamento de tentativas tem de refletir essa assimetria."""
 
+    def setUp(self):
+        from trading_agent import data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
     def test_benchmark_gets_more_attempts_than_a_constituent(self):
         import urllib.error
         from trading_agent import data_sources
@@ -683,7 +688,7 @@ class TestBenchmarkPriority(unittest.TestCase):
 
             def fake(req, timeout=None):
                 calls.append(1)
-                raise urllib.error.HTTPError(req.full_url, 429, "x", {}, None)
+                raise urllib.error.HTTPError(req.full_url, 503, "x", {}, None)
             return calls, fake
 
         hosts = len(data_sources.YAHOO_HOSTS)
@@ -707,9 +712,8 @@ class TestSourceRouting(unittest.TestCase):
     def setUp(self):
         from trading_agent import data_sources
         self.ds = data_sources
-        data_sources._STOOQ_CONSECUTIVE_FAILURES = 0
-        data_sources.SOURCE_TALLY.clear()
-        self.addCleanup(data_sources.SOURCE_TALLY.clear)
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
 
     def test_missing_ticker_does_not_trip_the_breaker(self):
         with mock.patch.object(self.ds, "fetch_stooq_daily",
@@ -766,8 +770,8 @@ class TestBrapiSource(unittest.TestCase):
     def setUp(self):
         from trading_agent import data_sources
         self.ds = data_sources
-        data_sources.SOURCE_TALLY.clear()
-        self.addCleanup(data_sources.SOURCE_TALLY.clear)
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
 
     def _payload(self, n=12):
         return json.dumps({"results": [{"historicalDataPrice": [
@@ -829,3 +833,44 @@ class TestBrapiSource(unittest.TestCase):
             rows = self.ds.fetch_yahoo_daily("SPY")
         self.assertEqual(len(rows), 12)
         self.assertTrue(any("query2" in u for u in seen))
+
+
+class TestYahooBreaker(unittest.TestCase):
+    """Sem disjuntor, 100 tickers x 2 hosts x esperas de 429 davam mais de oito
+    horas — muito acima do limite de uma hora do ciclo."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_repeated_429_stops_further_requests(self):
+        import urllib.error
+        calls = []
+
+        def fake(req, timeout=None):
+            calls.append(req.full_url)
+            raise urllib.error.HTTPError(req.full_url, 429, "x", {}, None)
+
+        with mock.patch.object(self.ds.urllib.request, "urlopen", fake), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(20):
+                with self.assertRaises(self.ds.DataSourceError):
+                    self.ds.fetch_yahoo_daily("AAPL")
+        # depois de disparar, os pedidos seguintes nem saem
+        self.assertLess(len(calls), self.ds.RETRIES * len(self.ds.YAHOO_HOSTS) * 3)
+        self.assertTrue(self.ds._YAHOO_RATE_LIMITED)
+
+    def test_breaker_resets_between_cycles(self):
+        self.ds._YAHOO_RATE_LIMITED = True
+        self.ds.reset_source_breakers()
+        self.assertFalse(self.ds._YAHOO_RATE_LIMITED)
+
+    def test_b3_still_serves_from_brapi_when_yahoo_is_tripped(self):
+        self.ds._YAHOO_RATE_LIMITED = True
+        series = [("2026-01-01", 30.0, 5e6)] * 12
+        with mock.patch.object(self.ds, "fetch_brapi_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            out = self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(out, series)
