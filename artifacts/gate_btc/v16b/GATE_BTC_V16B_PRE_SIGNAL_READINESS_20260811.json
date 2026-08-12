@@ -19,24 +19,38 @@
     },
     "prospective_sealer": {
       "path": "tools/gate_btc_v16b_prospective_seal.py",
-      "blob_sha": "1cc3a5cbe12ce13b4f98e8b139fc307c93a347cf",
-      "policy": "append-only; no pre-freeze prospective rows; BLOCKED rows carry no synthetic economics; external Delta only after self-result seal"
+      "blob_sha": "6db91c6e8fa16795e410ef373549ec224e7e9da9",
+      "policy": "append-only staged chain SIGNAL -> ENTRY -> RESULT -> external Delta; ranking and holdings sealed pre-outcome; BLOCKED stages carry no synthetic economics; legacy one-stage sealing disabled"
     },
     "protocol_json": {
       "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json",
-      "blob_sha": "9bc169f4631ff1675b7b29b9ddfa7b0ea03dfb2f"
+      "blob_sha": "e7c61024fe71bae015945510a0efa143eea59d4d"
     },
     "protocol_markdown": {
       "path": "research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md",
-      "blob_sha": "1252ec2aba1b417e0b485f18aa68d8a906a83f73"
+      "blob_sha": "4aedcb202cbfdfc5dfaa84a815228a74f9c55d50"
     },
-    "audit_amendment": {
+    "audit_amendment_a1": {
       "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json",
       "blob_sha": "6ab954f8c8ec1a8a95237dcd04cabb13d5abe8ed",
       "methodology_changed": false,
       "historical_returns_reoptimized": false
+    },
+    "audit_amendment_a2": {
+      "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json",
+      "blob_sha": "9fd140618bbcb99bf353f41eb86250bea6ef636c",
+      "prospective_count_at_amendment": 0,
+      "methodology_changed": false,
+      "prospective_clock_changed": false,
+      "legacy_one_stage_sealing": "DISABLED"
     }
   },
+  "prospective_evidence_chain": [
+    "V16B_SIGNAL_SEAL after Thursday UTC close and before Friday UTC close",
+    "V16B_ENTRY_SEAL before Friday UTC close referencing the signal seal",
+    "V16B_RESULT_SEAL after the following Friday UTC close referencing the entry seal",
+    "EXTERNAL_DELTA_ATTACHMENT only after the result seal"
+  ],
   "historical_validation_only": {
     "window": "11 reconstructed weeks in 2026",
     "net_return_ex_funding": 0.073356,
@@ -57,31 +71,32 @@
   "first_signal_fail_closed_requirements": [
     "fresh causal feature panel through Thursday 2026-08-13 UTC close",
     "CMC universe snapshot must have demonstrable availability by signal time; if ambiguous use latest strictly-prior snapshot",
-    "persist raw-source hashes, snapshot identifier/timestamp, panel hash, model/refit state, eligible scores and preliminary ranking before external Delta inspection"
+    "seal raw-source hashes, snapshot identifier/timestamp, panel hash, model/refit state, full eligible score map, deterministic full ranking and preliminary top-10 longs before entry"
   ],
   "first_entry_fail_closed_requirements": [
-    "read-only live Binance USD-M active-perpetual verification for every intended short before Friday 2026-08-14 entry close",
-    "if fewer than 10 ranked shorts are verifiably shortable, mark week BLOCKED with no discretionary replacement",
-    "selected long must have a predeclared observable executable instrument under the frozen source policy; unavailable selected long blocks rather than being replaced after ranking",
-    "seal final 10 longs, 10 shorts, scores, exposure, turnover estimate, cost model and source coverage before Friday close"
+    "read-only live Binance USD-M active-perpetual verification in frozen bottom-up rank order before Friday 2026-08-14 entry close",
+    "shorts are exactly the first 10 causally shortable names encountered and checking stops at the 10th",
+    "selected longs require predeclared executable instruments and cannot be replaced after signal seal",
+    "seal final holdings, instrument mapping, exposure, trailing volatility, turnover estimate, frozen 15 bps cost and source coverage before Friday close"
   ],
   "benchmark_separation": {
-    "external_delta_before_self_seal": "FORBIDDEN",
-    "external_delta_after_self_pnl_seal": "ALLOWED_FOR_DATE_ALIGNED_DIAGNOSTIC_ONLY",
+    "external_delta_before_result_seal": "FORBIDDEN",
+    "external_delta_after_result_seal": "ALLOWED_FOR_DATE_ALIGNED_DIAGNOSTIC_ONLY",
     "parameter_change_from_delta": "FORBIDDEN"
   },
   "ci": {
     "workflow": "GATE BTC V16B Prospective Seal",
-    "run_id": 31544323278,
-    "result": "SUCCESS",
-    "tested": [
-      "canonical candidate identity",
-      "first prospective clock",
-      "append-only duplicate rejection",
-      "pre-freeze/backfill rejection",
-      "BLOCKED synthetic-economics rejection",
-      "external Delta two-stage attachment",
-      "audited liquidity definition",
+    "result": "PENDING_POST_A2_VALIDATION",
+    "tested_contract": [
+      "canonical candidate identity and unchanged evidence clock",
+      "signal seal timing and deterministic full ranking",
+      "entry seal timing and immutable longs",
+      "causal bottom-up short selection without discretionary replacement",
+      "frozen 15 bps cost and <=1x exposure",
+      "result per-asset recomputation and exact holdings coverage",
+      "append-only staged references",
+      "external Delta only after result seal",
+      "legacy one-stage seal disabled",
       "research-only safety boundary"
     ]
   },
