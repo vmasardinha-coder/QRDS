@@ -10,7 +10,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-12-grafico
 
 > ERRO nesta execucao: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
-> Fonte stooq falhou 1x: `Stooq nao tem serie para SPY`
+> Fonte stooq falhou 1x: `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
 > Fonte yahoo falhou 3x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
@@ -19,33 +19,37 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,791.51 |
-| Retorno do dia | -0.05% |
-| Retorno desde inicio (2026-08-06) | -0.42% |
-| Benchmark BTC | -1.21% |
-| **Alfa vs BTC** | **+0.79%** |
-| Caixa | $25,032.60 |
+| NAV | $49,743.87 |
+| Retorno do dia | -0.15% |
+| Retorno desde inicio (2026-08-06) | -0.51% |
+| Benchmark BTC | -1.13% |
+| **Alfa vs BTC** | **+0.62%** |
+| Caixa | $25,018.04 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,638.09 | $12,348.71 | 24.8% |
-| UNI | 1109 | $3.74 | $4,150.56 | 8.3% |
-| TRX | 12375.9 | $0.34 | $4,149.64 | 8.3% |
-| SYN | 37939.6 | $0.11 | $4,110.00 | 8.3% |
+| BTC | 0.194046 | $63,689.65 | $12,358.71 | 24.8% |
+| UNI | 1109 | $3.75 | $4,160.43 | 8.4% |
+| JTO | 7287.77 | $0.57 | $4,146.01 | 8.3% |
+| SYN | 37939.6 | $0.11 | $4,060.68 | 8.2% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| TRX | VENDA | 12375.9 | $0.33 | $4,135.60 | rebalanceio |
+| JTO | COMPRA | 7287.77 | $0.57 | $4,150.16 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -9.7% — so entram ativos acima disto
+- **Gatilho:** desvio de peso em JTO: 0.0% vs alvo 8.3%
+- **Obstaculo (BTC):** momentum de -9.6% — so entram ativos acima disto
 - **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, coinbase: 119
 - **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
-- **Fonte stooq falhou 1x:** `Stooq nao tem serie para SPY`
+- **Fonte stooq falhou 1x:** `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
 - **Fonte yahoo falhou 3x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 | Rejeitado | Motivo |
@@ -68,7 +72,7 @@ _Sem movimentacoes hoje._
 
 > Fonte brapi falhou 2x: `: HTTP 401 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 401 (definitivo)]`
 > Fonte coinbase falhou 31x: `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
-> Fonte stooq falhou 1x: `Stooq nao tem serie para SPY`
+> Fonte stooq falhou 1x: `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
 > Fonte yahoo falhou 3x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
@@ -79,7 +83,7 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 > Fonte brapi falhou 2x: `: HTTP 401 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 401 (definitivo)]`
 > Fonte coinbase falhou 31x: `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
-> Fonte stooq falhou 1x: `Stooq nao tem serie para SPY`
+> Fonte stooq falhou 1x: `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
 > Fonte yahoo falhou 3x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
