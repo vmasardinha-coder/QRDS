@@ -1,0 +1,48 @@
+name: GATE BTC B3 H1 Fast Probe 12 Aug
+
+on:
+  push:
+    branches: [agent/gate-btc-b3-h1-cloud-backfill]
+    paths:
+      - .github/workflows/gate-btc-b3-h1-fast-12.yml
+      - tools/b3_h1_fast_12_probe.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  fast-probe-12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install requests only
+        run: pip install requests
+      - name: Probe 12 August legacy source only
+        id: probe
+        continue-on-error: true
+        run: python tools/b3_h1_fast_12_probe.py
+      - name: Record safety status
+        if: always()
+        run: |
+          mkdir -p artifacts/b3_h1_fast_12
+          echo "probe_outcome=${{ steps.probe.outcome }}" > artifacts/b3_h1_fast_12/ACTIONS_STATUS.txt
+          echo "RESEARCH_ONLY=true" >> artifacts/b3_h1_fast_12/ACTIONS_STATUS.txt
+          echo "ECONOMICS_LOCKED=true" >> artifacts/b3_h1_fast_12/ACTIONS_STATUS.txt
+          echo "ORDERS=0" >> artifacts/b3_h1_fast_12/ACTIONS_STATUS.txt
+          echo "REAL_CAPITAL=0" >> artifacts/b3_h1_fast_12/ACTIONS_STATUS.txt
+      - name: Upload source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h1-fast-12-${{ github.run_id }}
+          path: artifacts/b3_h1_fast_12/
+          retention-days: 30
+          if-no-files-found: error
