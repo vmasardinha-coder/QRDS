@@ -16,30 +16,36 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,810.54 |
-| Retorno do dia | +0.42% |
-| Retorno desde inicio (2026-08-06) | -0.38% |
-| Benchmark BTC | -1.33% |
-| **Alfa vs BTC** | **+0.95%** |
-| Caixa | $24,784.01 |
+| NAV | $49,816.38 |
+| Retorno do dia | +0.43% |
+| Retorno desde inicio (2026-08-06) | -0.37% |
+| Benchmark BTC | -1.38% |
+| **Alfa vs BTC** | **+1.01%** |
+| Caixa | $25,032.60 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,559.99 | $12,333.55 | 24.8% |
-| SYN | 40838.9 | $0.11 | $4,477.58 | 9.0% |
-| JTO | 7634.85 | $0.56 | $4,281.63 | 8.6% |
-| UNI | 1050.71 | $3.74 | $3,933.77 | 7.9% |
+| BTC | 0.194046 | $63,528.48 | $12,327.44 | 24.7% |
+| UNI | 1109 | $3.74 | $4,152.11 | 8.3% |
+| SYN | 37939.6 | $0.11 | $4,152.11 | 8.3% |
+| TRX | 12375.9 | $0.34 | $4,152.11 | 8.3% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| JTO | VENDA | 7634.85 | $0.56 | $4,306.33 | rebalanceio |
+| SYN | VENDA | 2899.29 | $0.11 | $316.98 | rebalanceio |
+| TRX | COMPRA | 12375.9 | $0.34 | $4,156.27 | rebalanceio |
+| UNI | COMPRA | 58.2907 | $3.75 | $218.46 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -10.1% — so entram ativos acima disto
-- **Candidatos elegiveis:** 16
+- **Gatilho:** desvio de peso em TRX: 0.0% vs alvo 8.3%
+- **Obstaculo (BTC):** momentum de -9.8% — so entram ativos acima disto
+- **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, coinbase: 119
 
 | Rejeitado | Motivo |
@@ -52,19 +58,19 @@ _Sem movimentacoes hoje._
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
 | APT | liquidez baixa (0.5M < 1M) |
-| _(+118 outros)_ | |
+| _(+117 outros)_ | |
 
 </details>
 
 ## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
 
-> ERRO nesta execucao: `Sem fonte para ^BVSP — brapi: GET https://brapi.dev/api/quote/%5EBVSP?range=2y&interval=1d&fundament | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
+> ERRO nesta execucao: `Sem fonte para ^BVSP — brapi: 1d&fundamental=false: HTTP 401 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 401 (definitivo)] | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
 ## Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)
 
-> ERRO nesta execucao: `Sem fonte para BOVA11 — brapi: GET https://brapi.dev/api/quote/BOVA11?range=2y&interval=1d&fundamenta | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
+> ERRO nesta execucao: `Sem fonte para BOVA11 — brapi: 1d&fundamental=false: HTTP 401 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 401 (definitivo)] | yahoo: Yahoo ja recusou por volume neste ciclo; nao insisto ativo a ativo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
 
