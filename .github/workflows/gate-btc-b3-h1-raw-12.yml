@@ -1,0 +1,52 @@
+name: GATE BTC B3 H1 Raw Seal 12 Aug
+
+on:
+  push:
+    branches: [agent/gate-btc-b3-h1-cloud-backfill]
+    paths:
+      - .github/workflows/gate-btc-b3-h1-raw-12.yml
+      - tools/b3_h1_raw_seal.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  raw-seal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Seal 12 August raw B3 file only
+        id: seal
+        continue-on-error: true
+        run: >-
+          python tools/b3_h1_raw_seal.py
+          --date 2026-08-12
+          --out-dir artifacts/b3_h1_raw_2026-08-12
+      - name: Record locked status
+        if: always()
+        run: |
+          mkdir -p artifacts/b3_h1_raw_2026-08-12
+          echo "seal_outcome=${{ steps.seal.outcome }}" > artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "RESEARCH_ONLY=true" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "ECONOMICS_LOCKED=true" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "CONTRACT_INTERPRETATION=false" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "STRUCTURAL_QA=false" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "ORDERS=0" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+          echo "REAL_CAPITAL=0" >> artifacts/b3_h1_raw_2026-08-12/ACTIONS_STATUS.txt
+      - name: Upload raw seal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h1-raw-12-${{ github.run_id }}
+          path: artifacts/b3_h1_raw_2026-08-12/
+          retention-days: 30
+          if-no-files-found: error
