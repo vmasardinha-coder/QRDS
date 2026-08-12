@@ -10,7 +10,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-12-grafico
 
 > ERRO nesta execucao: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
-> Fonte stooq falhou 1x: `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
+> Fonte stooq falhou 1x: `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
 > Fonte yahoo falhou 3x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
@@ -19,21 +19,21 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,741.07 |
-| Retorno do dia | -0.15% |
-| Retorno desde inicio (2026-08-06) | -0.52% |
-| Benchmark BTC | -1.10% |
-| **Alfa vs BTC** | **+0.58%** |
+| NAV | $49,630.95 |
+| Retorno do dia | -0.37% |
+| Retorno desde inicio (2026-08-06) | -0.74% |
+| Benchmark BTC | -1.00% |
+| **Alfa vs BTC** | **+0.26%** |
 | Caixa | $25,018.04 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,708.99 | $12,362.46 | 24.9% |
-| UNI | 1109 | $3.77 | $4,185.72 | 8.4% |
-| JTO | 7287.77 | $0.57 | $4,172.98 | 8.4% |
-| SYN | 37939.6 | $0.11 | $4,001.87 | 8.0% |
+| BTC | 0.194046 | $63,774.62 | $12,375.20 | 24.9% |
+| UNI | 1109 | $3.79 | $4,198.25 | 8.5% |
+| JTO | 7287.77 | $0.57 | $4,125.61 | 8.3% |
+| SYN | 37939.6 | $0.10 | $3,913.85 | 7.9% |
 
 _Sem movimentacoes hoje._
 
@@ -41,11 +41,11 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -9.6% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de -9.5% — so entram ativos acima disto
 - **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, coinbase: 119
 - **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
-- **Fonte stooq falhou 1x:** `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
+- **Fonte stooq falhou 1x:** `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
 - **Fonte yahoo falhou 3x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 
 | Rejeitado | Motivo |
@@ -75,28 +75,18 @@ _Sem movimentacoes hoje._
 | Caixa | R$ 48,322.53 |
 | Regime | risco ligado |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BPAC11 | VENDA | 57.0355 | R$ 50.08 | R$ 2,856.33 | rebalanceio |
-| GGBR4 | VENDA | 121.756 | R$ 24.14 | R$ 2,938.68 | rebalanceio |
-| GOAU4 | VENDA | 275.236 | R$ 10.67 | R$ 2,936.58 | rebalanceio |
-| PRIO3 | VENDA | 50.4093 | R$ 59.19 | R$ 2,983.77 | rebalanceio |
-| SBSP3 | VENDA | 115.643 | R$ 25.96 | R$ 3,002.55 | rebalanceio |
-| UGPA3 | VENDA | 98.4691 | R$ 30.96 | R$ 3,048.51 | rebalanceio |
-| VALE3 | VENDA | 40.3553 | R$ 74.33 | R$ 2,999.43 | rebalanceio |
-| VBBR3 | VENDA | 91.8553 | R$ 33.20 | R$ 3,049.30 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** mudanca de regime: risk_off -> risk_on
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 3
 - **Fontes usadas:** binance: 31, brapi: 49, coinbase: 119
 - **Fonte brapi falhou 2x:** `: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)]`
 - **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
-- **Fonte stooq falhou 1x:** `a charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>T'`
+- **Fonte stooq falhou 1x:** `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
 - **Fonte yahoo falhou 3x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 - **Nota:** piso de diversificacao nao atingido (3 < 4) -> 100% caixa
 - **Sem dado (excluidos, nao estimados):** CPLE6, BRFS3
