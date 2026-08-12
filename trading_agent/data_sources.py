@@ -17,6 +17,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -48,18 +49,36 @@ class RateLimited(SourceUnavailable):
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
 
 
+SECRET_PARAMS = ("token", "apikey", "api_key", "key")
+
+
+def redact(url: str) -> str:
+    """Remove segredos de uma URL antes de ela entrar num erro ou num log.
+
+    As mensagens de falha sao publicadas no relatorio, que e versionado num
+    repositorio publico — uma credencial na query string acabaria la.
+    """
+    out = url
+    for name in SECRET_PARAMS:
+        out = re.sub(rf"([?&]{name}=)[^&]*", r"\1***", out, flags=re.IGNORECASE)
+    return out
+
+
 def _http_get(url: str, timeout: float = 30.0,
-              retries: int | None = None) -> bytes:
+              retries: int | None = None,
+              headers: dict | None = None) -> bytes:
     last_err: Exception | None = None
     for attempt in range(retries or RETRIES):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            req = urllib.request.Request(
+                url, headers={"User-Agent": USER_AGENT, **(headers or {})})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as err:
             last_err = err
             if err.code in PERMANENT_HTTP:
-                raise DataSourceError(f"GET {url}: HTTP {err.code} (definitivo)")
+                raise DataSourceError(
+                    f"GET {redact(url)}: HTTP {err.code} (definitivo)")
             if err.code == 429:
                 # a fonte pede para abrandar; obedece ao cabecalho se houver
                 wait = RATE_LIMIT_SLEEP_S[min(attempt, len(RATE_LIMIT_SLEEP_S) - 1)]
@@ -77,8 +96,9 @@ def _http_get(url: str, timeout: float = 30.0,
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
     attempts = retries or RETRIES
     if isinstance(last_err, urllib.error.HTTPError) and last_err.code == 429:
-        raise RateLimited(f"GET {url}: 429 apos {attempts} tentativas")
-    raise DataSourceError(f"GET {url} falhou apos {attempts} tentativas: {last_err}")
+        raise RateLimited(f"GET {redact(url)}: 429 apos {attempts} tentativas")
+    raise DataSourceError(
+        f"GET {redact(url)} falhou apos {attempts} tentativas: {last_err}")
 
 
 STOOQ_HOSTS = ("https://stooq.com", "https://stooq.pl")
@@ -445,12 +465,11 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
 BRAPI_RANGES = ("2y", "1y", "6mo", "3mo")
 
 
-def _brapi_url(symbol: str, range_: str, token: str) -> str:
-    url = (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
-           f"?range={range_}&interval=1d&fundamental=false")
-    if token:
-        url += f"&token={urllib.parse.quote(token)}"
-    return url
+def _brapi_url(symbol: str, range_: str, token: str = "") -> str:
+    # o token vai no cabecalho Authorization, nunca na URL: URLs aparecem em
+    # mensagens de erro que sao publicadas no relatorio
+    return (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
+            f"?range={range_}&interval=1d&fundamental=false")
 
 
 def fetch_brapi_daily(ticker: str,
@@ -468,8 +487,10 @@ def fetch_brapi_daily(ticker: str,
     errors: list[str] = []
     for range_ in ranges:
         try:
+            headers = {"Authorization": f"Bearer {token}"} if token else None
             payload = json.loads(
-                _http_get(_brapi_url(symbol, range_, token)).decode("utf-8"))
+                _http_get(_brapi_url(symbol, range_),
+                          headers=headers).decode("utf-8"))
         except DataSourceError as err:
             errors.append(f"{range_}: {str(err)[-60:]}")
             continue

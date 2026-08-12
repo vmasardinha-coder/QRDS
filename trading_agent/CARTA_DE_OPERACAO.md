@@ -109,6 +109,19 @@ a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).
 Sem essa distinção, três tickers desconhecidos na Stooq mandavam as 100 ações
 para o Yahoo e esgotavam o seu limite de pedidos.
 
+### Segredos
+
+As mensagens de falha são publicadas no relatório, que é versionado num
+repositório público. Por isso: credenciais **nunca** viajam em query strings
+(o token da brapi vai no cabeçalho `Authorization`), e qualquer URL que entre
+numa mensagem de erro passa por `data_sources.redact()`, que substitui
+`token`, `apikey`, `api_key` e `key` por `***`.
+
+Isto foi acrescentado depois de o token da brapi ter aparecido no relatório
+de 12/08 e no estado da carteira B3 — a falha ocorreu porque o token estava
+na URL e a URL entrava na mensagem de erro. Um teste verifica que nenhum
+ficheiro publicado contém `token=` seguido de valor real.
+
 ## 8. Transparência e log
 
 Cada ciclo grava em `state["decision_log"]` (últimas 120 entradas) e o

@@ -123,13 +123,13 @@ _Sem movimentacoes hoje._
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 3
 - **Fontes usadas:** binance: 31, brapi: 49, coinbase: 119, nasdaq: 101
-- **Fonte brapi falhou 2x:** `: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)]`
+- **Fonte brapi falhou 2x:** `: HTTP 400 (definitivo); 1y: al=false&token=*** HTTP 400 (definitivo)]`
 - **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
 - **Fonte yahoo falhou 2x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
 - **Nota:** piso de diversificacao nao atingido (3 < 4) -> 100% caixa
 - **Sem dado (excluidos, nao estimados):** CPLE6, BRFS3
-  - `CPLE6`: Sem fonte para CPLE6 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)] | yahoo: Yahoo a li
-  - `BRFS3`: Sem fonte para BRFS3 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)] | yahoo: Yahoo ja r
+  - `CPLE6`: Sem fonte para CPLE6 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=*** HTTP 400 (definitivo)] | yahoo: Yahoo a li
+  - `BRFS3`: Sem fonte para BRFS3 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=*** HTTP 400 (definitivo)] | yahoo: Yahoo ja r
 
 | Rejeitado | Motivo |
 |---|---|

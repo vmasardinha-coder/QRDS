@@ -898,7 +898,7 @@ class TestBrapiRanges(unittest.TestCase):
     def test_falls_back_to_a_shorter_range_when_the_long_one_fails(self):
         seen = []
 
-        def fake(url, timeout=30.0, retries=None):
+        def fake(url, timeout=30.0, retries=None, headers=None):
             seen.append(url)
             if "range=2y" in url or "range=1y" in url:
                 raise self.ds.DataSourceError("HTTP 401 (definitivo)")
@@ -912,7 +912,7 @@ class TestBrapiRanges(unittest.TestCase):
     def test_stops_early_once_the_history_is_long_enough(self):
         seen = []
 
-        def fake(url, timeout=30.0, retries=None):
+        def fake(url, timeout=30.0, retries=None, headers=None):
             seen.append(url)
             return self._payload(300)
 
@@ -920,18 +920,6 @@ class TestBrapiRanges(unittest.TestCase):
             rows = self.ds.fetch_brapi_daily("PETR4")
         self.assertEqual(len(rows), 300)
         self.assertEqual(len(seen), 1)   # nao insiste depois de ter o que precisa
-
-    def test_token_is_sent_when_configured(self):
-        seen = []
-
-        def fake(url, timeout=30.0, retries=None):
-            seen.append(url)
-            return self._payload(300)
-
-        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "abc123"}), \
-             mock.patch.object(self.ds, "_http_get", fake):
-            self.ds.fetch_brapi_daily("PETR4")
-        self.assertIn("token=abc123", seen[0])
 
     def test_error_names_the_ranges_it_tried(self):
         with mock.patch.object(self.ds, "_http_get",
@@ -1135,3 +1123,65 @@ class TestNasdaqSource(unittest.TestCase):
             out = self.ds.fetch_equity_daily("AAPL")
         self.assertEqual(out, series)
         self.assertEqual(self.ds.FAILURE_TALLY["nasdaq"]["n"], 1)
+
+
+class TestSecretRedaction(unittest.TestCase):
+    """As mensagens de falha sao publicadas no relatorio, que vive num
+    repositorio publico. Uma credencial numa URL de erro acaba la — foi o que
+    aconteceu com o token da brapi no ciclo de 12/08."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_redact_hides_every_secret_parameter(self):
+        for name in self.ds.SECRET_PARAMS:
+            url = f"https://x.dev/api?range=2y&{name}=SEGREDO123&z=1"
+            out = self.ds.redact(url)
+            self.assertNotIn("SEGREDO123", out)
+            self.assertIn("range=2y", out)   # o resto continua legivel
+            self.assertIn("z=1", out)
+
+    def test_redact_is_case_insensitive(self):
+        self.assertNotIn("ABC", self.ds.redact("https://x.dev/a?TOKEN=ABC"))
+
+    def test_http_errors_never_carry_the_secret(self):
+        import urllib.error
+
+        def fake(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 400, "Bad", {}, None)
+
+        with mock.patch.object(self.ds.urllib.request, "urlopen", fake), \
+             mock.patch.object(self.ds.time, "sleep"):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds._http_get("https://brapi.dev/api/quote/PETR4?token=SEGREDO123")
+        self.assertNotIn("SEGREDO123", str(ctx.exception))
+
+    def test_brapi_sends_the_token_as_a_header_not_in_the_url(self):
+        seen = {}
+
+        def fake(url, timeout=30.0, retries=None, headers=None):
+            seen["url"] = url
+            seen["headers"] = headers or {}
+            return json.dumps({"results": [{"historicalDataPrice": [
+                {"date": 1767225600 + i * 86400, "close": 30.0, "volume": 1e6}
+                for i in range(300)]}]}).encode()
+
+        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "SEGREDO123"}), \
+             mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_brapi_daily("PETR4")
+        self.assertNotIn("SEGREDO123", seen["url"])
+        self.assertNotIn("token=", seen["url"])
+        self.assertEqual(seen["headers"].get("Authorization"), "Bearer SEGREDO123")
+
+    def test_published_files_carry_no_token(self):
+        from pathlib import Path
+        import re
+        leaked = []
+        for path in list(Path("trading_agent/reports").rglob("*.md")) + \
+                    list(Path("trading_agent/state").glob("*.json")):
+            if re.search(r"token=(?!\*)[A-Za-z0-9]{4}", path.read_text(encoding="utf-8")):
+                leaked.append(str(path))
+        self.assertEqual(leaked, [])
