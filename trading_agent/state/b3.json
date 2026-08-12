@@ -1297,7 +1297,7 @@
       "data_failures": [
         {
           "symbol": "CPLE6",
-          "reason": "Sem fonte para CPLE6 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)] | yahoo: Yahoo ja r"
+          "reason": "Sem fonte para CPLE6 — brapi: etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)] | yahoo: Yahoo a li"
         },
         {
           "symbol": "BRFS3",
@@ -1305,19 +1305,12 @@
         }
       ],
       "sources": {
+        "nasdaq": 101,
         "coinbase": 119,
         "binance": 31,
         "brapi": 49
       },
       "source_failures": {
-        "stooq": {
-          "n": 1,
-          "motivo": "Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)"
-        },
-        "yahoo": {
-          "n": 3,
-          "motivo": "Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo"
-        },
         "coinbase": {
           "n": 31,
           "motivo": "anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)"
@@ -1325,6 +1318,10 @@
         "brapi": {
           "n": 2,
           "motivo": ": HTTP 400 (definitivo); 1y: al=false&token=b1etpm4mP1egEmFJtgfpeG: HTTP 400 (definitivo)]"
+        },
+        "yahoo": {
+          "n": 2,
+          "motivo": "Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo"
         }
       },
       "note": "piso de diversificacao nao atingido (3 < 4) -> 100% caixa",
