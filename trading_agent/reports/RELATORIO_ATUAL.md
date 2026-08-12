@@ -60,35 +60,30 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,617.69 |
-| Retorno do dia | -0.40% |
-| Retorno desde inicio (2026-08-06) | -0.76% |
-| Benchmark BTC | -0.97% |
-| **Alfa vs BTC** | **+0.20%** |
+| NAV | $49,309.26 |
+| Retorno do dia | -1.02% |
+| Retorno desde inicio (2026-08-06) | -1.38% |
+| Benchmark BTC | -1.53% |
+| **Alfa vs BTC** | **+0.14%** |
 | Caixa | $24,774.57 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,795.06 | $12,379.17 | 24.9% |
-| UNI | 1109 | $3.78 | $4,192.93 | 8.5% |
-| SYN | 40034 | $0.10 | $4,135.51 | 8.3% |
-| TRX | 12352.2 | $0.33 | $4,135.51 | 8.3% |
+| BTC | 0.194046 | $63,434.68 | $12,309.24 | 25.0% |
+| SYN | 40034 | $0.10 | $4,151.13 | 8.4% |
+| TRX | 12352.2 | $0.34 | $4,150.34 | 8.4% |
+| UNI | 1109 | $3.54 | $3,923.99 | 8.0% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| JTO | VENDA | 7287.77 | $0.56 | $4,112.75 | rebalanceio |
-| SYN | COMPRA | 2094.36 | $0.10 | $216.56 | rebalanceio |
-| TRX | COMPRA | 12352.2 | $0.34 | $4,139.65 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em TRX: 0.0% vs alvo 8.3%
-- **Obstaculo (BTC):** momentum de -9.4% — so entram ativos acima disto
-- **Candidatos elegiveis:** 17
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de -9.9% — so entram ativos acima disto
+- **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-06T00:00:00Z&end=2026-08-13T00:00:00Z: HTTP 404 (definitivo)`
 
@@ -102,7 +97,7 @@ _Sem movimentacoes hoje._
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
 | APT | liquidez baixa (0.5M < 1M) |
-| _(+115 outros)_ | |
+| _(+116 outros)_ | |
 
 </details>
 
@@ -110,13 +105,13 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 48,322.53 |
-| Retorno do dia | -1.49% |
-| Retorno desde inicio (2026-08-06) | -3.35% |
-| Benchmark IBOV | -4.37% |
-| Benchmark CDI | +0.10% |
+| NAV | R$ 48,347.50 |
+| Retorno do dia | -1.44% |
+| Retorno desde inicio (2026-08-06) | -3.31% |
+| Benchmark IBOV | -4.59% |
+| Benchmark CDI | +0.16% |
 | **Alfa vs o maior (CDI)** | **-3.46%** |
-| Caixa | R$ 48,322.53 |
+| Caixa | R$ 48,347.50 |
 | Regime | risco ligado |
 
 _Sem movimentacoes hoje._
@@ -154,20 +149,20 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 48,448.88 |
-| Retorno do dia | -2.21% |
-| Retorno desde inicio (2026-08-06) | -3.10% |
-| Benchmark IBOV | -4.37% |
-| Benchmark CDI | +0.10% |
-| **Alfa vs o maior (CDI)** | **-3.21%** |
-| Caixa | R$ 677.60 |
+| NAV | R$ 48,351.86 |
+| Retorno do dia | -2.40% |
+| Retorno desde inicio (2026-08-06) | -3.30% |
+| Benchmark IBOV | -4.59% |
+| Benchmark CDI | +0.16% |
+| **Alfa vs o maior (CDI)** | **-3.45%** |
+| Caixa | R$ 677.95 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 165.05 | R$ 47,920.58 | 98.9% |
+| BOVA11 | 290.34 | R$ 164.67 | R$ 47,810.25 | 98.9% |
 
-> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 149.29
+> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 136.34
 
 > Volatilidade usada na call (realizada 30d): 20.5% a.a. | realizada 30d: 20.5% a.a. | CDI: 0.0517% a.d.
 
