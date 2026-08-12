@@ -1,0 +1,44 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811",
+  "applies_to_freeze_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "status": "DOCUMENTATION_AND_ACCOUNTING_CORRECTIONS_ONLY",
+  "methodology_changed": false,
+  "alpha_changed": false,
+  "portfolio_changed": false,
+  "risk_layer_changed": false,
+  "historical_returns_reoptimized": false,
+  "corrections": [
+    {
+      "field": "alpha.eligibility description",
+      "old": "exp(logvol30)>=10,000,000 USD 30d average volume",
+      "correct": "logvol30 = log1p(median of last 30 source-specific volume_usd observations); threshold remains effectively USD 10,000,000",
+      "economic_change": false
+    },
+    {
+      "field": "signal engine candidate_id",
+      "old": "GATE_BTC_V16B_CAUSAL_SHORT_FREEZE_20260811",
+      "correct": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+      "economic_change": false
+    },
+    {
+      "field": "11w funding accounting",
+      "old": "~+8.43% after funding (incorrect position-weight scaling)",
+      "correct": "+7.3914% after realized funding weighted at 5% per short times exposure; +7.3356% ex funding",
+      "economic_change": false,
+      "bug": "funding contribution had been applied as if each short carried 100% portfolio weight"
+    }
+  ],
+  "scientific_caveats_added": [
+    "CMC month-end snapshot availability timestamp is not proven historically; strict-prior stress materially weakens recent results.",
+    "USD 10M source-specific median-volume cutoff is materially sensitive in the recent regime.",
+    "Recent edge is predominantly short-side and has material short-squeeze tail risk.",
+    "11-week similarity to external Delta is post-selection evidence and must not be used for tuning or identity claims."
+  ],
+  "engine_corrected_sha256": "e18b43bcee309ab87c0e51f7121176550422fea45b15e8f47f6d4662c6b530f6",
+  "replay_20260806_sha256": "1f12c70a74ae9cee5ab1d4da3eeebcda39466f42c35b80bc0906614bea4acfb5",
+  "orders": 0,
+  "real_capital": 0,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true
+}

@@ -1,0 +1,78 @@
+{
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_FREEZE_20260811",
+  "status": ["RESEARCH_ONLY", "SHADOW_ONLY", "NOT_APPROVED"],
+  "orders": 0,
+  "real_capital": 0,
+  "freeze_date_brt": "2026-08-11",
+  "holdout_opened_at_freeze": false,
+  "calibration_evaluation_end": "2024-12-31",
+  "purpose": "OWN_MODEL_STABILITY_AND_DELTA_BENCHMARK; Delta checkpoints are not calibration targets",
+  "parent": "GATE_BTC_V16A_LIQ10M_EXTREMES_FREEZE_20260811",
+  "methodology_change_from_parent": "shortability evidence only: Thursday+Friday historical archives; Saturday never inspected",
+  "universe": {
+    "base": "point-in-time CMC Top-150 snapshot available by Thursday signal date",
+    "feature_completeness": "existing 18-feature PIT panel rule",
+    "liquidity_floor": "exp(logvol30) >= 10000000",
+    "liquidity_floor_reason": "fixed execution/capacity constraint chosen before V16A holdout",
+    "short_filter": "before short ranking, asset must have causal Binance USD-M evidence for entry Friday",
+    "shortability_source": "Binance Data Vision USD-M 1d kline archive",
+    "shortability_rule": "Thursday archive AND Friday archive exist; Saturday is never inspected",
+    "shortability_ledger_csv_sha256": "a96a4f42a188f8e605549debac3c5b2d466f0867258b34eaf1941051e5559b39",
+    "shortability_artifact_sha256": "58d369a297556b62a2acb1c80ddc14c84a0cfacc180e241233da2d26f112bd1f"
+  },
+  "features": ["mom7","mom14","mom30","mom60","mom90","residmom7","residmom14","residmom30","residmom60","residmom90","vol14","vol30","vol60","corr30","corr60","beta30","beta60","logvol30"],
+  "target": "within liquidity-qualified weekly cross-section: bottom 10% next-week raw return = class 0, middle = class 1, top 10% = class 2",
+  "model": {
+    "type": "HistGradientBoostingClassifier",
+    "learning_rate": 0.05,
+    "max_iter": 100,
+    "max_depth": 2,
+    "min_samples_leaf": 50,
+    "l2_regularization": 10.0,
+    "random_state": 20260811,
+    "score": "P(class=top10pct)-P(class=bottom10pct)",
+    "training": "expanding; minimum 52 fully realized weeks; retrain every 13 weeks"
+  },
+  "portfolio": {
+    "rebalance": "weekly; Thursday signal, Friday entry",
+    "longs": 10,
+    "shorts": 10,
+    "long_gross_unscaled": 0.5,
+    "short_gross_unscaled": -0.5,
+    "weighting": "equal",
+    "turnover_cost_bps": 15,
+    "vol_target_ann": 0.20,
+    "vol_lookback_weeks": 13,
+    "max_exposure": 1.0,
+    "leverage_allowed": false,
+    "missing_policy": "FAIL_CLOSED/BLOCK; no discretionary replacement"
+  },
+  "preholdout_2022_2024": {
+    "observations": 155,
+    "blocked": 1,
+    "total_return": 1.0586655564117406,
+    "cagr": 0.2731734032133626,
+    "annualized_vol": 0.2100150116265974,
+    "sharpe": 1.2634675216676072,
+    "max_drawdown": -0.18974773161226777,
+    "avg_turnover": 0.9004672606845775,
+    "avg_exposure": 0.9217842016376285,
+    "calendar_returns": {"2022": 0.4156871539190863, "2023": 0.06137902196633083, "2024": 0.37008656456836975},
+    "comparison_to_v16a_old_shortability": {
+      "changed_short_lists": 0,
+      "max_absolute_weekly_return_difference": 0.0
+    }
+  },
+  "inherited_cost_stress": {
+    "reason": "pre-holdout selections/returns are exactly identical to V16A",
+    "30bps": {"cagr": 0.18800025489639527, "sharpe": 0.9296865144968982, "max_drawdown": -0.20140890066553174},
+    "50bps": {"cagr": 0.08201006638924047, "sharpe": 0.4837549490393799, "max_drawdown": -0.2167213466677953}
+  },
+  "prohibitions": [
+    "do not alter liquidity threshold after viewing 2025-2026",
+    "do not retune model parameters from Delta checkpoints",
+    "do not alter cost or vol target based on holdout",
+    "do not use Saturday or later evidence to qualify Friday shortability",
+    "any economic-methodology change requires new candidate ID and new clock"
+  ]
+}

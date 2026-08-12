@@ -1,0 +1,86 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A6_20260811",
+  "applies_to_freeze_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "prospective_count_at_amendment": 0,
+  "issue": "A2-A5 established pre-outcome SIGNAL and ENTRY evidence, but there was no canonical deterministic builder for the weekly RESULT payload. Without one, a future result could again depend on an unversioned/manual replay artifact, reproducing the auditability weakness discovered in the historical +7.3356%/+7.3914% validation print.",
+  "correction": "Add checksum-verified raw Binance price and funding collectors plus a deterministic result builder. The result builder reparses the preserved raw archives, validates exact sealed holdings/instruments/dates, recomputes per-asset returns and frozen weights, recomputes funding events/rates from raw archives, applies the frozen cost formula and derives BTC benchmark return before the existing RESULT_SEAL validator is invoked.",
+  "tools": {
+    "price_evidence_collector": "tools/gate_btc_v16b_prospective_prices.py",
+    "funding_evidence_collector": "tools/gate_btc_v16b_prospective_funding.py",
+    "result_builder": "tools/gate_btc_v16b_prospective_result.py",
+    "result_validator": "tools/gate_btc_v16b_prospective_seal.py"
+  },
+  "price_contract": {
+    "source": "Binance Data Vision daily 1d kline archives",
+    "long_venue": "Binance Spot exact instrument sealed at ENTRY",
+    "short_venue": "Binance USD-M exact instrument sealed at ENTRY",
+    "btc_benchmark": "BTCUSDT Binance Spot daily close",
+    "entry_close": "sealed Friday entry_date_utc daily close",
+    "exit_close": "exactly seven UTC days after entry daily close",
+    "adjacent_checksum_required": true,
+    "raw_zip_preserved": true,
+    "raw_zip_reparsed_by_result_builder": true,
+    "manifest_close_must_equal_raw_archive_close": true
+  },
+  "funding_contract": {
+    "source": "Binance Data Vision USD-M fundingRate archives",
+    "adjacent_checksum_required": true,
+    "raw_archive_preserved": true,
+    "archive_unavailable_policy": "PENDING_FAIL_CLOSED; never synthesize zero funding",
+    "event_window": "strictly after entry-Friday close through exit-Friday close",
+    "csv_recomputed_against_raw_archives": [
+      "funding_events",
+      "funding_rate_sum",
+      "first_event_ms",
+      "last_event_ms"
+    ],
+    "portfolio_application": "0.05 * sealed exposure * raw funding_rate_sum per selected short; positive funding benefits short"
+  },
+  "result_contract": {
+    "holdings": "exactly the 10 longs and 10 shorts in V16B_ENTRY_SEAL",
+    "instrument_mapping": "must exactly match V16B_ENTRY_SEAL",
+    "raw_return": "exit_close / entry_close - 1",
+    "long_weight": "+0.05 * sealed exposure",
+    "short_weight": "-0.05 * sealed exposure",
+    "gross_long_pnl": "sum long weight * raw return",
+    "gross_short_pnl": "sum short weight * raw return",
+    "transaction_cost": "0.0015 * sealed turnover_estimate",
+    "net_pnl": "gross_long_pnl + gross_short_pnl + sum(short_funding) - transaction_cost",
+    "btc_return": "BTCUSDT exit_close / entry_close - 1",
+    "manual_pnl_input_allowed": false,
+    "external_delta_before_result_seal": false
+  },
+  "tests": [
+    "complete 20-asset economics reconstruct and pass the existing RESULT_SEAL validator",
+    "manifest close tampering is detected by reparsing raw kline ZIP",
+    "funding CSV rate tampering is detected by reparsing raw funding archive",
+    "wrong futures instrument is rejected",
+    "missing price holding is rejected",
+    "tampered raw funding archive is rejected"
+  ],
+  "economic_methodology_changed": false,
+  "model_changed": false,
+  "features_changed": false,
+  "ranking_changed": false,
+  "portfolio_construction_changed": false,
+  "weighting_changed": false,
+  "vol_target_changed": false,
+  "cost_model_changed": false,
+  "funding_formula_changed": false,
+  "prospective_clock_changed": false,
+  "historical_replay_regenerated": false,
+  "historical_returns_reoptimized": false,
+  "external_delta_used_for_change": false,
+  "candidate_id_changed": false,
+  "reason_no_new_candidate_id": "The amendment makes the already-frozen result calculation reproducible before the first prospective observation. It changes evidence provenance and recomputation only, not any economic decision or formula.",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A5_20260811",
+  "applies_to_freeze_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "prospective_count_at_amendment": 0,
+  "issue": "The A3 Friday entry builder hashed Binance Spot and USD-M exchangeInfo payloads but did not independently enforce the payload serverTime against the already-sealed Thursday signal and Friday entry close. It also relied on the downstream sealer to reject any accidental long/short overlap instead of returning an explicit fail-closed blocker from the builder.",
+  "correction": "Require serverTime in both Binance payloads. Each server timestamp must be on/after the V16B_SIGNAL_SEAL creation timestamp and strictly before the Friday UTC entry close. Missing, stale or post-close evidence blocks the entry. Any overlap between the sealed longs and first 10 causally shortable names is explicitly BLOCKED before holdings are emitted.",
+  "economic_methodology_changed": false,
+  "model_changed": false,
+  "features_changed": false,
+  "ranking_changed": false,
+  "short_selection_changed": false,
+  "instrument_policy_changed": false,
+  "risk_state_changed": false,
+  "portfolio_construction_changed": false,
+  "cost_model_changed": false,
+  "prospective_clock_changed": false,
+  "historical_returns_reoptimized": false,
+  "external_delta_used_for_change": false,
+  "candidate_id_changed": false,
+  "reason_no_new_candidate_id": "This amendment only strengthens fail-closed evidence timing and explicit anomaly handling before the first prospective observation; no economic decision rule changes.",
+  "friday_evidence_contract": {
+    "binance_spot_serverTime_required": true,
+    "binance_usdm_serverTime_required": true,
+    "minimum_time": "on_or_after_signal_seal_creation",
+    "maximum_time": "strictly_before_entry_day_utc_close",
+    "payload_hashes_preserved": true,
+    "long_short_overlap_policy": "BLOCK",
+    "no_discretionary_replacement": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}
