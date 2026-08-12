@@ -1021,3 +1021,30 @@ class TestStooqClassification(unittest.TestCase):
             with self.assertRaises(self.ds.DataSourceError) as ctx:
                 self.ds.fetch_stooq_daily("SPY")
         self.assertIn("No data", str(ctx.exception))
+
+
+class TestStooqHtmlBlock(unittest.TestCase):
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_html_response_is_a_block_not_a_missing_ticker(self):
+        html = (b'<!DOCTYPE html><html><head><meta charset="utf-8">'
+                b'<meta name="robots" content="noindex,nofollow"></head>'
+                b'<body><noscript>Turn on JavaScript</noscript></body></html>')
+        with mock.patch.object(self.ds, "_http_get", return_value=html):
+            with self.assertRaises(self.ds.SourceUnavailable):
+                self.ds.fetch_stooq_daily("SPY")
+
+    def test_a_block_trips_the_breaker_so_we_stop_asking(self):
+        html = b"<html><noscript>x</noscript></html>"
+        with mock.patch.object(self.ds, "_http_get", return_value=html), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(self.ds._STOOQ_TRIP_AFTER):
+                self.ds.fetch_equity_daily("AAPL")
+        self.assertGreaterEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES,
+                                self.ds._STOOQ_TRIP_AFTER)

@@ -98,8 +98,15 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     if raw is None:
         raise SourceUnavailable(str(last))
     text = raw.decode("utf-8", errors="replace")
-    # a Stooq responde 200 com uma pagina de excesso de pedidos: e a fonte a
-    # bloquear, nao o ticker a nao existir
+    # A Stooq responde 200 com HTML quando nos recusa (pagina anti-robo com
+    # noscript/noindex) ou quando excede o limite. Qualquer resposta que nao
+    # seja CSV e a fonte a bloquear, nao o ticker a nao existir — e essa
+    # distincao decide se vale a pena continuar a insistir nela.
+    head = text.lstrip()[:400].lower()
+    if head.startswith("<") or "<html" in head or "<noscript" in head:
+        raise SourceUnavailable(
+            f"Stooq devolveu HTML em vez de CSV para {ticker} "
+            f"(pagina anti-robo/bloqueio)")
     if "exceeded" in text.lower() or "limit" in text[:200].lower():
         raise SourceUnavailable(f"Stooq bloqueou o pedido ({ticker})")
     rows: list[tuple[str, float, float]] = []
