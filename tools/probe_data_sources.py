@@ -78,9 +78,47 @@ def probe_nasdaq(ticker: str = "AAPL") -> str:
 
 
 def probe_stockanalysis(ticker: str = "AAPL") -> str:
-    url = f"https://stockanalysis.com/api/symbol/s/{ticker}/history"
-    status, body = _get(url)
-    return f"HTTP {status} · {len(body)} bytes · inicio {body[:140]!r}"
+    """Precisa de >= 260 pregoes para o momentum 12-1; ve qual variante os da."""
+    variants = [
+        f"https://stockanalysis.com/api/symbol/s/{ticker}/history",
+        f"https://stockanalysis.com/api/symbol/s/{ticker}/history?range=2Y",
+        f"https://stockanalysis.com/api/symbol/s/{ticker}/history?range=5Y",
+        f"https://stockanalysis.com/api/symbol/s/{ticker}/history?period=Daily&range=2Y",
+    ]
+    out = []
+    for url in variants:
+        try:
+            status, body = _get(url)
+            rows = (json.loads(body.decode("utf-8")).get("data") or {}).get("data") or []
+            span = f"{rows[-1]['t']} -> {rows[0]['t']}" if rows else "-"
+            flag = "OK" if len(rows) >= 260 else "curto"
+            out.append(f"    {flag:5s} {len(rows):>4} pregoes  {span}  "
+                       f"[{url.split('history')[1] or '(sem parametros)'}]")
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    FALHOU {type(err).__name__} [{url[-40:]}]")
+    campos = ""
+    try:
+        _, body = _get(variants[0])
+        rows = (json.loads(body.decode("utf-8")).get("data") or {}).get("data") or []
+        if rows:
+            campos = f"\n    campos: {sorted(rows[0].keys())}"
+    except Exception:  # noqa: BLE001
+        pass
+    return "\n" + "\n".join(out) + campos
+
+
+def probe_stockanalysis_b3(ticker: str = "PETR4") -> str:
+    """A B3 na stockanalysis usa o prefixo de bolsa."""
+    out = []
+    for path in (f"quote/bsp/{ticker}/history", f"symbol/s/{ticker}/history"):
+        url = f"https://stockanalysis.com/api/{path}"
+        try:
+            status, body = _get(url)
+            rows = (json.loads(body.decode("utf-8")).get("data") or {}).get("data") or []
+            out.append(f"    HTTP {status} · {len(rows)} pregoes [{path}]")
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    FALHOU {type(err).__name__} [{path}]")
+    return "\n" + "\n".join(out)
 
 
 def probe_yahoo(ticker: str = "SPY") -> str:
@@ -119,7 +157,11 @@ def main() -> int:
            lambda: probe_tradingview("brazil",
                                      ["PETR4", "VALE3", "ITUB4", "BOVA11", "WEGE3"]))
     report("Nasdaq API — historico diario", probe_nasdaq)
-    report("stockanalysis.com — historico", probe_stockanalysis)
+    report("stockanalysis.com — historico EUA (quantos pregoes?)",
+           probe_stockanalysis)
+    report("stockanalysis.com — B3", probe_stockanalysis_b3)
+    report("stockanalysis.com — SPY (benchmark)",
+           lambda: probe_stockanalysis("SPY"))
     report("brapi.dev — historico B3", probe_brapi)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
