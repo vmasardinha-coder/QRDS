@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -6,6 +7,7 @@ import pytest
 
 from tools import gate_btc_v16b_prospective_chain as chain
 from tools import gate_btc_v16b_prospective_entry as entry_builder
+from tools import gate_btc_v16b_prospective_signal as signal_builder
 
 
 def utc(y,m,d,h=0): return datetime(y,m,d,h,tzinfo=timezone.utc)
@@ -54,3 +56,34 @@ def test_entry_builder_normalizes_multiplier_contract_and_blocks_missing_long(tm
     r=entry_builder.build(sig,up,sp); assert r["status"]=="OK" and r["entry_instruments"]["PEPE"]=="1000PEPEUSDT"
     spot["symbols"]=spot["symbols"][1:]; sp.write_text(json.dumps(spot))
     r2=entry_builder.build(sig,up,sp); assert r2["status"]=="BLOCKED" and r2["blocker_reason"].startswith("LONG_INSTRUMENT_UNAVAILABLE")
+
+
+def _snapshot_pair(tmp_path: Path, available_at="2026-08-01T00:00:00Z"):
+    snap=tmp_path/"cmc_snapshot.json"
+    snap.write_text(json.dumps({"snapshot_id":"cmc-2026-07-31","assets":["BTC","ETH"]}),encoding="utf-8")
+    sha=hashlib.sha256(snap.read_bytes()).hexdigest()
+    ev=tmp_path/"cmc_snapshot_evidence.json"
+    ev.write_text(json.dumps({
+        "snapshot_id":"cmc-2026-07-31",
+        "snapshot_date":"2026-07-31",
+        "available_at_utc":available_at,
+        "source_ref":"CMC historical snapshot 2026-07-31",
+        "raw_snapshot_sha256":sha,
+    }),encoding="utf-8")
+    return snap,ev
+
+
+def test_signal_snapshot_evidence_hash_must_match(tmp_path):
+    snap,ev=_snapshot_pair(tmp_path)
+    evidence,snap_sha,ev_sha=signal_builder._load_snapshot_evidence(snap,ev,signal_builder.pd.Timestamp("2026-08-13"))
+    assert evidence["snapshot_id"]=="cmc-2026-07-31"
+    assert len(snap_sha)==64 and len(ev_sha)==64
+    snap.write_text("tampered",encoding="utf-8")
+    with pytest.raises(ValueError,match="does not match snapshot file"):
+        signal_builder._load_snapshot_evidence(snap,ev,signal_builder.pd.Timestamp("2026-08-13"))
+
+
+def test_signal_snapshot_evidence_must_be_available_by_thursday_close(tmp_path):
+    snap,ev=_snapshot_pair(tmp_path,available_at="2026-08-14T00:00:01Z")
+    with pytest.raises(ValueError,match="not demonstrably available"):
+        signal_builder._load_snapshot_evidence(snap,ev,signal_builder.pd.Timestamp("2026-08-13"))
