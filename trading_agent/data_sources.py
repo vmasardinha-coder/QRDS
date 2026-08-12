@@ -114,9 +114,16 @@ def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
         if close > 0:
             rows.append((date, close, volume))
     if len(rows) < 10:
-        # CSV valido mas sem dados: este ticker nao existe na Stooq. Nao e
-        # motivo para desistir da fonte inteira.
-        raise DataSourceError(f"Stooq nao tem serie para {ticker}")
+        # Distinguir "a Stooq nao tem este papel" de "a Stooq recusou-nos":
+        # um papel inexistente vem com um corpo identificavel; um bloqueio vem
+        # vazio ou minusculo. O corpo entra na mensagem para o proximo ciclo
+        # nao voltar a ser adivinhacao.
+        head = " ".join(text[:120].split())
+        if len(text.strip()) < 200:
+            raise SourceUnavailable(
+                f"Stooq devolveu corpo vazio/curto para {ticker}: '{head}'")
+        raise DataSourceError(
+            f"Stooq nao tem serie para {ticker}: '{head}'")
     rows.sort(key=lambda r: r[0])
     return rows
 

@@ -991,3 +991,33 @@ class TestFailureTelemetry(unittest.TestCase):
         self.assertIn("brapi falhou 51x", section)
         self.assertIn("401", section)
         self.assertIn("yahoo falhou 2x", section)
+
+
+class TestStooqClassification(unittest.TestCase):
+    """Corpo vazio da Stooq e bloqueio (falha da fonte); corpo com conteudo
+    reconhecivel e papel inexistente. Confundir os dois foi o que mandou as
+    100 acoes para o Yahoo."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_empty_body_is_a_source_outage(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=b"\n"):
+            with self.assertRaises(self.ds.SourceUnavailable):
+                self.ds.fetch_stooq_daily("SPY")
+
+    def test_long_body_without_rows_is_a_missing_ticker(self):
+        body = b"Date,Open,High,Low,Close,Volume\n" + b"# " + b"x" * 250
+        with mock.patch.object(self.ds, "_http_get", return_value=body):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_stooq_daily("NOPE")
+        self.assertNotIsInstance(ctx.exception, self.ds.SourceUnavailable)
+
+    def test_error_carries_the_body_for_diagnosis(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=b"No data"):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_stooq_daily("SPY")
+        self.assertIn("No data", str(ctx.exception))
