@@ -11,9 +11,9 @@ from tools import gate_btc_v16b_prospective_signal as signal_builder
 
 
 def utc(y,m,d,h=0): return datetime(y,m,d,h,tzinfo=timezone.utc)
+def ms(y,m,d,h=0): return int(utc(y,m,d,h).timestamp()*1000)
 
 def signal_row():
-    # Deliberately make asc tie order different from reverse(desc) to prove both ranks are preserved independently.
     scores={f"A{i:02d}":float(30-i) for i in range(20)}
     scores["A18"]=1.0; scores["A19"]=1.0
     long_rank=[f"A{i:02d}" for i in range(20)]
@@ -45,17 +45,42 @@ def test_entry_must_follow_sealed_short_ascending_rank(tmp_path):
     with pytest.raises(ValueError,match="ascending short ranking"):
         chain.validate_entry_row(row,sig,now=utc(2026,8,14,12))
 
+def _binance_payloads(sig, server_time=None):
+    server_time=server_time or ms(2026,8,14,12)
+    usdm={"serverTime":server_time,"symbols":[{"symbol":a+"USDT","status":"TRADING","contractType":"PERPETUAL","quoteAsset":"USDT"} for a in sig["short_ranking_asc"][:12]]}
+    spot={"serverTime":server_time,"symbols":[{"symbol":a+"USDT","status":"TRADING","baseAsset":a,"quoteAsset":"USDT","isSpotTradingAllowed":True} for a in sig["preliminary_longs_10"]]}
+    return usdm,spot
+
 def test_entry_builder_normalizes_multiplier_contract_and_blocks_missing_long(tmp_path):
     sig=chain.validate_signal_row(signal_row(),now=utc(2026,8,14,1))
-    # Replace one short-ranked asset with PEPE while keeping monotonic score/rank evidence valid.
     sig["short_ranking_asc"][0]="PEPE"; sig["eligible_scores"]["PEPE"]=sig["eligible_scores"].pop("A18")
-    usdm={"symbols":[{"symbol":"1000PEPEUSDT","status":"TRADING","contractType":"PERPETUAL","quoteAsset":"USDT"}] +
-                     [{"symbol":a+"USDT","status":"TRADING","contractType":"PERPETUAL","quoteAsset":"USDT"} for a in sig["short_ranking_asc"][1:12]]}
-    spot={"symbols":[{"symbol":a+"USDT","status":"TRADING","baseAsset":a,"quoteAsset":"USDT","isSpotTradingAllowed":True} for a in sig["preliminary_longs_10"]]}
+    usdm,spot=_binance_payloads(sig)
+    usdm["symbols"][0]={"symbol":"1000PEPEUSDT","status":"TRADING","contractType":"PERPETUAL","quoteAsset":"USDT"}
     up=tmp_path/"u.json"; sp=tmp_path/"s.json"; up.write_text(json.dumps(usdm)); sp.write_text(json.dumps(spot))
     r=entry_builder.build(sig,up,sp); assert r["status"]=="OK" and r["entry_instruments"]["PEPE"]=="1000PEPEUSDT"
     spot["symbols"]=spot["symbols"][1:]; sp.write_text(json.dumps(spot))
     r2=entry_builder.build(sig,up,sp); assert r2["status"]=="BLOCKED" and r2["blocker_reason"].startswith("LONG_INSTRUMENT_UNAVAILABLE")
+
+def test_entry_builder_blocks_binance_evidence_outside_signal_entry_window(tmp_path):
+    sig=chain.validate_signal_row(signal_row(),now=utc(2026,8,14,1))
+    usdm,spot=_binance_payloads(sig,server_time=ms(2026,8,14,0))
+    up=tmp_path/"u.json"; sp=tmp_path/"s.json"; up.write_text(json.dumps(usdm)); sp.write_text(json.dumps(spot))
+    r=entry_builder.build(sig,up,sp)
+    assert r["status"]=="BLOCKED" and r["blocker_reason"]=="BINANCE_EVIDENCE_PREDATES_SIGNAL_SEAL"
+    usdm,spot=_binance_payloads(sig,server_time=ms(2026,8,15,0))
+    up.write_text(json.dumps(usdm)); sp.write_text(json.dumps(spot))
+    r2=entry_builder.build(sig,up,sp)
+    assert r2["status"]=="BLOCKED" and r2["blocker_reason"]=="BINANCE_EVIDENCE_AFTER_ENTRY_CLOSE"
+
+def test_entry_builder_blocks_long_short_overlap(tmp_path):
+    row=signal_row()
+    row["eligible_scores"]={a:1.0 for a in row["long_ranking_desc"]}
+    row["short_ranking_asc"]=list(row["long_ranking_desc"])
+    sig=chain.validate_signal_row(row,now=utc(2026,8,14,1))
+    usdm,spot=_binance_payloads(sig)
+    up=tmp_path/"u.json"; sp=tmp_path/"s.json"; up.write_text(json.dumps(usdm)); sp.write_text(json.dumps(spot))
+    r=entry_builder.build(sig,up,sp)
+    assert r["status"]=="BLOCKED" and r["blocker_reason"].startswith("LONG_SHORT_OVERLAP")
 
 
 def _snapshot_pair(tmp_path: Path, available_at="2026-08-01T00:00:00Z"):
