@@ -2,7 +2,7 @@
   "protocol_id": "GATE_BTC_V16B_PROSPECTIVE_SHADOW_V1_20260811",
   "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
   "freeze_time_brt": "2026-08-11T18:05:00-03:00",
-  "purpose": "Clean prospective validation of own-model challenger; external Delta benchmark is observed only after local weekly state and result are sealed.",
+  "purpose": "Clean prospective validation of the frozen own-model challenger; external Delta is observed only after the complete local result is sealed.",
   "status": {
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true,
@@ -15,12 +15,30 @@
     "first_untouched_signal_close_utc": "2026-08-13",
     "first_eligible_entry_close_utc": "2026-08-14",
     "first_eligible_exit_close_utc": "2026-08-21",
-    "historical_reconstructions_count_as_prospective": false
+    "historical_reconstructions_count_as_prospective": false,
+    "prospective_count_as_of_protocol_alignment": 0
+  },
+  "frozen_economics": {
+    "features": ["mom7","mom14","mom30","mom60","mom90","residmom7","residmom14","residmom30","residmom60","residmom90","vol14","vol30","vol60","corr30","corr60","beta30","beta60","logvol30"],
+    "model": "HistGradientBoostingClassifier; learning_rate=0.05; max_iter=100; max_depth=2; min_samples_leaf=50; l2_regularization=10; random_state=20260811; expanding training; minimum 52 fully-realized weeks; retrain every 13 scoring weeks",
+    "score": "P(top10pct)-P(bottom10pct)",
+    "universe": "point-in-time CMC Top-150 snapshot demonstrably available by Thursday signal close; complete feature row required",
+    "liquidity": "logvol30=log1p(median(last 30 source-specific volume_usd observations)); threshold effectively USD 10,000,000/day",
+    "portfolio": "weekly Thursday signal / Friday entry; 10 equal longs and 10 equal shorts; unscaled gross +0.50/-0.50",
+    "risk": "13-week realized-vol lookback; 20% annualized target; max exposure 1.0; no leverage above 1x",
+    "cost": "15 bps * turnover primary; 30/50 bps stress only",
+    "funding": "actual Binance USD-M funding; contribution per short = 0.05 * sealed exposure * realized funding_rate_sum"
   },
   "evidence_chain": {
-    "amendment": "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json",
-    "prospective_count_when_staged_chain_adopted": 0,
-    "economic_methodology_changed": false,
+    "amendments": [
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A4_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A5_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A6_20260811.json"
+    ],
+    "all_adopted_before_first_prospective_observation": true,
+    "economic_methodology_changed_by_amendments": false,
     "stages": [
       "V16B_SIGNAL_SEAL",
       "V16B_ENTRY_SEAL",
@@ -32,34 +50,54 @@
   },
   "thursday_signal_gate": [
     "Use only information demonstrably available by Thursday UTC close.",
-    "After Thursday UTC close and before Friday UTC close, seal raw-source hashes, CMC snapshot identifier/availability timestamp, panel hash, model/refit-state hash, all eligible scores, deterministic full ranking and preliminary top-10 longs.",
-    "The top-10 longs must equal the first 10 assets in the sealed score ranking.",
-    "No external Delta print/result may be inspected for model modification before sealing.",
-    "If CMC snapshot availability time is ambiguous, use the latest strictly-prior snapshot; never assume same-day month-end availability."
+    "Raw CMC universe snapshot and a separate availability/source evidence manifest are mandatory; both are SHA-256 sealed and the raw snapshot hash must match the evidence manifest.",
+    "Feature panel may not contain rows after signal_date; shortability input at signal stage may contain only strictly historical rows.",
+    "Seal the complete eligible score map plus independent long_ranking_desc and short_ranking_asc; do not infer one ranking by reversing the other.",
+    "Seal preliminary_longs_10 exactly from the frozen long ranking and seal exposure/trailing-vol/prior-weight risk state.",
+    "Friday shortability and external Delta are forbidden at signal construction."
   ],
   "friday_pre_entry_gate": [
-    "Before Friday UTC close, reference the exact signal seal hash.",
-    "Verify selected longs have predeclared executable instruments; unavailable selected long blocks the week rather than being replaced.",
-    "Verify shorts in frozen bottom-up score-rank order using causal read-only Binance USD-M evidence.",
-    "Select exactly the first 10 verifiably shortable assets encountered and stop checking when the 10th is found; no discretionary replacement.",
-    "Seal final 10 longs, 10 shorts, instruments, exposure, trailing volatility, turnover estimate, frozen 15 bps cost model and source coverage before Friday close.",
-    "Archive-based shortability may later corroborate the live seal but may not retroactively manufacture eligibility."
+    "Reference the exact V16B_SIGNAL_SEAL hash.",
+    "Binance Spot and USD-M exchangeInfo payloads must be preserved/hash-bound and carry serverTime on/after SIGNAL_SEAL creation and strictly before Friday UTC close.",
+    "Selected longs require Binance Spot USDT TRADING evidence; an unavailable selected long BLOCKS instead of being replaced.",
+    "Traverse the sealed short_ranking_asc in order and select exactly the first 10 causally verifiably shortable USD-M perpetual names; stop at the 10th.",
+    "Any long/short overlap BLOCKS explicitly.",
+    "Seal exact instruments, exposure, trailing volatility, turnover estimate and frozen 15 bps cost assumption before entry close."
   ],
-  "during_week": [
-    "Record realized funding for each selected short with portfolio weight 0.05*exposure.",
-    "Record any delisting, contract suspension, missing source or execution anomaly as an explicit event; fail closed where required."
-  ],
-  "friday_exit_gate": [
-    "Only after the following Friday UTC close, reference the exact entry seal hash and seal the weekly result.",
-    "Persist execution/source hashes and per-asset entry price, exit price, raw return, frozen weight and weighted PnL for exactly the 20 sealed holdings.",
-    "Recompute gross long PnL, gross short PnL, actual funding, 15 bps turnover cost, total net PnL and BTC benchmark return from sealed components.",
-    "Never backfill a blocked prospective week as valid evidence."
+  "result_evidence_gate": [
+    "Result evidence is generated only from the exact V16B_ENTRY_SEAL holdings and instruments.",
+    "Price evidence uses Binance Data Vision daily 1d archives for exact Spot/USD-M entry instruments plus BTCUSDT Spot benchmark; every ZIP must match its adjacent CHECKSUM and raw ZIPs are preserved.",
+    "The result builder reparses every preserved price ZIP; manifest close and timestamps must equal raw archive contents.",
+    "Funding evidence uses Binance Data Vision USD-M fundingRate archives; every required symbol-month ZIP must match its adjacent CHECKSUM and be preserved.",
+    "If a required funding archive has not yet been published, evidence remains PENDING/FAIL_CLOSED and zero funding is never synthesized.",
+    "The result builder reparses raw funding ZIPs and recomputes event count, funding_rate_sum, first_event_ms and last_event_ms; summary CSV values must agree exactly.",
+    "Per-asset weights are recomputed as +0.05*exposure for longs and -0.05*exposure for shorts; transaction cost is recomputed as 0.0015*sealed turnover.",
+    "Net PnL is recomputed as gross long + gross short + realized short funding - transaction cost; BTC benchmark return is recomputed from preserved BTCUSDT closes.",
+    "Manual PnL input is not allowed."
   ],
   "benchmark_comparison_gate": [
     "Only after V16B_RESULT_SEAL may a new external Delta checkpoint be attached.",
-    "The Delta attachment references the result seal hash and cannot replace any prior self evidence.",
-    "External Delta trajectory is benchmark evidence only, not a tuning input."
+    "The Delta attachment references the result seal hash and cannot alter any prior local evidence.",
+    "External Delta is benchmark evidence only and may never trigger parameter changes in this candidate."
   ],
-  "promotion_minimum": "No promotion based on a single week or the historical 11-week reference print. Require months of sealed prospective observations plus stability/cost/source review.",
-  "no_retuning": true
+  "historical_validation_only": {
+    "window": "11 reconstructed weeks in 2026",
+    "net_return_ex_funding": 0.073356,
+    "net_return_with_realized_funding": 0.073914,
+    "prospective_evidence": false,
+    "reproducibility_status": "REFERENCE_ONLY_UNREPRODUCED",
+    "identity_claim_allowed": false,
+    "tuning_use_allowed": false,
+    "promotion_use_allowed": false,
+    "auditability_evidence": "artifacts/gate_btc/v16b/GATE_BTC_V16B_HISTORICAL_REPLAY_AUDITABILITY_20260811.json"
+  },
+  "checkpoints": {
+    "weekly_interim": "descriptive only",
+    "13_completed_weeks": "first diagnostic gate",
+    "26_completed_weeks": "stability gate",
+    "52_completed_weeks": "primary evidence gate"
+  },
+  "promotion_minimum": "No promotion based on a single week or the historical 11-week print. Capital approval requires separate venue/capacity/margin/operations review and explicit authorization.",
+  "no_retuning": true,
+  "live_or_capital_approval": false
 }
