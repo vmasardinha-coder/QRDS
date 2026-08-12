@@ -27,15 +27,19 @@ def _is_fresh(series: Series, today: str) -> bool:
     return (now - last).days <= config.STALE_PRICE_MAX_DAYS
 
 
-def _fetch_universe(symbols, fetch) -> tuple[dict[str, Series], list[str]]:
-    """Descarrega o universo. Falha de dado exclui o ativo, nao inventa valor."""
+def _fetch_universe(symbols, fetch) -> tuple[dict[str, Series], list[dict]]:
+    """Descarrega o universo. Falha de dado exclui o ativo, nao inventa valor.
+
+    Guarda o motivo de cada ausencia: sem ele nao ha como distinguir um ticker
+    errado de uma indisponibilidade passageira da fonte.
+    """
     universe: dict[str, Series] = {}
-    failed: list[str] = []
+    failed: list[dict] = []
     for symbol in symbols:
         try:
             universe[symbol] = fetch(symbol)
-        except data_sources.DataSourceError:
-            failed.append(symbol)
+        except data_sources.DataSourceError as err:
+            failed.append({"symbol": symbol, "reason": str(err)[:160]})
     return universe, failed
 
 
@@ -99,6 +103,8 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
                   for t in stops],
         "cooldowns": cooldowns,
         "data_failures": failed,
+        "sources": dict(data_sources.SOURCE_TALLY),
+        "source_failures": dict(data_sources.FAILURE_TALLY),
         "note": decision["note"],
         "cash_weight": decision["cash_weight"],
     }
@@ -109,7 +115,8 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
 
 def run_equities(today: str) -> dict:
     """Carteira de acoes EUA — benchmark SPY."""
-    bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK)
+    bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK,
+                                                  is_benchmark=True)
     universe, failed = _fetch_universe(config.EQUITY_UNIVERSE,
                                        data_sources.fetch_equity_daily)
     prices = {t: s[-1][1] for t, s in universe.items() if _is_fresh(s, today)}
@@ -163,7 +170,8 @@ def run_crypto(today: str) -> dict:
 
 def run_b3(today: str) -> dict:
     """Carteira de acoes B3 — obstaculo e o maior entre Ibovespa e CDI."""
-    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
+    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
+                                              is_benchmark=True)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
     universe, failed = _fetch_universe(config.B3_UNIVERSE,
                                        data_sources.fetch_b3_daily)
@@ -179,12 +187,16 @@ def run_b3(today: str) -> dict:
 
     portfolio.accrue_cash_cdi(state, cdi_rates, today)
 
-    # obstaculo do CDI medido na mesma janela do momentum (12-1)
+    # obstaculo do CDI medido na mesma janela do momentum (12-1). Sem janela
+    # completa nao se calcula: um acumulado de menos dias seria um obstaculo
+    # artificialmente baixo, e baixar a fasquia em silencio e pior que nao a ter.
     window = config.EQUITY_MOM_LONG_DAYS - config.EQUITY_MOM_SKIP_DAYS
-    cdi_window = 1.0
-    for _, rate in cdi_rates[-window:]:
-        cdi_window *= 1.0 + rate / 100.0
-    cdi_window -= 1.0
+    cdi_window = None
+    if len(cdi_rates) >= window:
+        cdi_window = 1.0
+        for _, rate in cdi_rates[-window:]:
+            cdi_window *= 1.0 + rate / 100.0
+        cdi_window -= 1.0
 
     bench_closes = _closes(bench_series)
     outcome = _run_directional(
@@ -206,7 +218,8 @@ def run_b3_structured(today: str) -> dict:
     """Carteira B3 estruturadas: financiamento coberto em BOVA11 vs CDI."""
     underlying = config.B3S_UNDERLYING
     series = data_sources.fetch_b3_daily(underlying)
-    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK)
+    bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
+                                              is_benchmark=True)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
 
     spot = series[-1][1]

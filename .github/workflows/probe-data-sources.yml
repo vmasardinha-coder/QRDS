@@ -1,0 +1,33 @@
+name: Probe Data Sources
+
+# Corre a sonda de fontes a partir do runner, que e o unico sitio com a mesma
+# rede e os mesmos IPs do ciclo diario. Nao toca no estado nem nas carteiras.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [claude/autonomous-trading-agent-h1asy9]
+    paths:
+      - tools/probe_data_sources.py
+      - .github/workflows/probe-data-sources.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/autonomous-trading-agent-h1asy9
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Sondar fontes de dados
+        env:
+          BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
+        run: python -m tools.probe_data_sources

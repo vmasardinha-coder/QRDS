@@ -105,6 +105,11 @@ def _audit_block(log: dict) -> list[str]:
         lines.append(f"- **Obstaculo ({log.get('hurdle')}):** momentum de "
                      f"{log['hurdle_score']*100:+.1f}% — so entram ativos acima disto")
     lines.append(f"- **Candidatos elegiveis:** {log.get('eligible_count', 0)}")
+    if log.get("sources"):
+        tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
+        lines.append(f"- **Fontes usadas:** {tally}")
+    for name, info in sorted((log.get("source_failures") or {}).items()):
+        lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
     if log.get("note"):
         lines.append(f"- **Nota:** {log['note']}")
     if log.get("stops"):
@@ -113,9 +118,14 @@ def _audit_block(log: dict) -> list[str]:
     if log.get("cooldowns"):
         pairs = ", ".join(f"{s} (ate {d})" for s, d in log["cooldowns"].items())
         lines.append(f"- **Em carencia por stop:** {pairs}")
-    if log.get("data_failures"):
-        lines.append(f"- **Sem dado (excluidos, nao estimados):** "
-                     f"{', '.join(log['data_failures'])}")
+    failures = log.get("data_failures") or []
+    if failures:
+        names = ", ".join(f["symbol"] if isinstance(f, dict) else str(f)
+                          for f in failures)
+        lines.append(f"- **Sem dado (excluidos, nao estimados):** {names}")
+        for item in failures[:3]:
+            if isinstance(item, dict) and item.get("reason"):
+                lines.append(f"  - `{item['symbol']}`: {item['reason']}")
     rejected = log.get("rejected") or []
     if rejected:
         lines.append("")
@@ -150,37 +160,60 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
     return "\n".join(lines)
 
 
-def _error_section(title: str, error: str) -> str:
-    return (f"## {title}\n\n> ERRO nesta execucao: `{error}`\n\n"
-            "O estado anterior mantem-se inalterado; nova tentativa na proxima "
-            "execucao. Nenhum dado foi estimado para cobrir a falha.\n")
+def _error_section(title: str, error: str,
+                   source_failures: dict | None = None) -> str:
+    lines = [f"## {title}", "", f"> ERRO nesta execucao: `{error}`", ""]
+    for name, info in sorted((source_failures or {}).items()):
+        lines.append(f"> Fonte {name} falhou {info['n']}x: `{info['motivo']}`")
+    if source_failures:
+        lines.append("")
+    lines.append("O estado anterior mantem-se inalterado; nova tentativa na "
+                 "proxima execucao. Nenhum dado foi estimado para cobrir a falha.")
+    return "\n".join(lines) + "\n"
 
 
 SLEEVES = [
-    # (chave, titulo, benchmark, benchmark2)
-    ("equities", "Acoes EUA (objetivo: bater o S&P 500)", "SPY", None),
-    ("crypto", "Crypto (objetivo: bater o BTC)", "BTC", None),
+    # (chave, titulo, titulo curto para o grafico, benchmark, benchmark2)
+    ("equities", "Acoes EUA (objetivo: bater o S&P 500)",
+     "Acoes EUA vs SPY", "SPY", None),
+    ("crypto", "Crypto (objetivo: bater o BTC)",
+     "Crypto vs BTC", "BTC", None),
     ("b3", "Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)",
-     "IBOV", "CDI"),
+     "Acoes B3 vs IBOV e CDI", "IBOV", "CDI"),
     ("b3_estruturadas",
      "Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)",
-     "IBOV", "CDI"),
+     "Estruturadas B3 vs CDI", "IBOV", "CDI"),
 ]
 
 
+def chart_panels(results: dict[str, dict]):
+    """Paineis do grafico, na mesma ordem das seccoes do relatorio."""
+    return [(short, results[key]["state"], bench, bench2)
+            for key, _, short, bench, bench2 in SLEEVES if key in results]
+
+
 def build_report(date: str, results: dict[str, dict],
-                 errors: dict[str, str]) -> str:
+                 errors: dict[str, str],
+                 source_failures: dict[str, dict] | None = None) -> str:
+    source_failures = source_failures or {}
     parts = [f"# Relatorio diario do agente — {date}", ""]
     parts.append("_Paper trading 100% autonomo com precos reais de mercado. "
                  "Nenhum dinheiro real esta a ser negociado. Premios de opcoes "
                  "da carteira de estruturadas sao modelados (Black-Scholes com "
                  "volatilidade GARCH)._")
     parts.append("")
-    for key, title, bench, bench2 in SLEEVES:
+    parts.append(f"![Historico das carteiras]({date}-grafico.svg)")
+    parts.append("")
+    parts.append(f"_Grafico do historico (base 100 no inicio de cada carteira): "
+                 f"`{date}-grafico.svg` — o mais recente fica sempre em "
+                 f"`GRAFICO_ATUAL.svg`._")
+    parts.append("")
+    for key, title, _short, bench, bench2 in SLEEVES:
         if key in results:
             parts.append(_sleeve_section(title, bench, results[key], bench2))
         elif key in errors:
-            parts.append(_error_section(title, errors[key]))
+            parts.append(_error_section(title, errors[key],
+                                        source_failures.get(key)))
     parts.append("---")
     parts.append("_Sob a Carta de Operacao: teto por posicao ativa, piso de "
                  "diversificacao (abaixo dele fica caixa), stop proporcional a "

@@ -419,3 +419,719 @@ class TestReport(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCharts(unittest.TestCase):
+    def _state(self, points, with_cdi=False):
+        history = []
+        for i, (nav, bench) in enumerate(points):
+            entry = {"date": f"2026-08-{6 + i:02d}", "nav": nav,
+                     "benchmark_nav": bench}
+            if with_cdi:
+                entry["benchmark2_nav"] = 50_000.0 * (1 + 0.0002 * i)
+            history.append(entry)
+        return {"initial_capital": 50_000.0, "currency": "USD",
+                "history": history}
+
+    def test_series_indexed_to_base_100(self):
+        from trading_agent import charts
+        state = self._state([(50_000.0, 50_000.0), (55_000.0, 52_500.0)])
+        series = charts._series_for(state, "SPY", None)
+        self.assertEqual([s["name"] for s in series], ["Carteira", "SPY"])
+        self.assertAlmostEqual(series[0]["values"][0], 100.0, places=6)
+        self.assertAlmostEqual(series[0]["values"][1], 110.0, places=6)
+        self.assertAlmostEqual(series[1]["values"][1], 105.0, places=6)
+
+    def test_second_benchmark_only_when_present(self):
+        from trading_agent import charts
+        plain = charts._series_for(self._state([(50_000.0, 50_000.0)]),
+                                   "IBOV", "CDI")
+        self.assertEqual(len(plain), 2)
+        withcdi = charts._series_for(
+            self._state([(50_000.0, 50_000.0)], with_cdi=True), "IBOV", "CDI")
+        self.assertEqual([s["name"] for s in withcdi],
+                         ["Carteira", "IBOV", "CDI"])
+
+    def test_svg_is_self_contained_and_theme_aware(self):
+        from trading_agent import charts
+        svg = charts.build_svg("2026-08-07", [
+            ("Acoes EUA vs SPY", self._state([(50_000.0, 50_000.0),
+                                              (49_800.0, 50_200.0)]),
+             "SPY", None)])
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("prefers-color-scheme: dark", svg)
+        self.assertNotIn("http://", svg.replace('xmlns="http://www.w3.org/2000/svg"', ""))
+        # identidade nunca so pela cor: rotulo direto de cada serie
+        self.assertIn(">Carteira<", svg)
+        self.assertIn(">SPY<", svg)
+        # tooltip nativo por ponto
+        self.assertIn("<title>", svg)
+
+    def test_empty_history_does_not_crash(self):
+        from trading_agent import charts
+        svg = charts.build_svg("2026-08-07", [
+            ("Vazia", {"initial_capital": 50_000.0, "history": []}, "SPY", None)])
+        self.assertIn("sem historico ainda", svg)
+
+    def test_converging_labels_are_pushed_apart(self):
+        import re
+        from trading_agent import charts
+        # carteira e benchmark praticamente sobrepostos no fim
+        state = self._state([(50_000.0, 50_000.0), (50_010.0, 50_005.0)])
+        svg = charts.build_svg("2026-08-07", [("P", state, "SPY", None)])
+        ys = [float(m) for m in re.findall(r'class="direct"[^>]*y="([\d.]+)"', svg)]
+        self.assertEqual(len(ys), 2)
+        self.assertGreaterEqual(abs(ys[0] - ys[1]), charts.MIN_LABEL_GAP - 0.01)
+
+    def test_report_links_dated_chart(self):
+        content = report.build_report("2026-08-07", {}, {})
+        self.assertIn("2026-08-07-grafico.svg", content)
+
+
+class TestCdiResilience(unittest.TestCase):
+    """Uma indisponibilidade do Banco Central nao pode custar um dia inteiro
+    as duas carteiras B3 — mas tambem nao pode inventar taxa nenhuma."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cache = Path(self.tmp.name) / "cdi_cache.json"
+        patcher = mock.patch.object(data_sources, "_cdi_cache_path",
+                                    lambda: self.cache)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_successful_fetch_populates_cache(self):
+        payload = json.dumps([{"data": "05/01/2026", "valor": "0.05"}] * 12
+                             ).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            rows = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(len(rows), 12)
+        self.assertTrue(self.cache.exists())
+
+    def test_outage_falls_back_to_cache(self):
+        payload = json.dumps([{"data": "05/01/2026", "valor": "0.05"},
+                              {"data": "06/01/2026", "valor": "0.05"}] * 6
+                             ).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            fresh = self.ds.fetch_bcb_cdi_daily()
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            cached = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(cached, fresh)
+
+    def test_outage_without_cache_still_fails_closed(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_bcb_cdi_daily()
+
+    def test_cache_does_not_invent_future_days(self):
+        # a caixa so acumula ate ao ultimo dia realmente publicado
+        state = portfolio.new_state("b3", "^BVSP", "2026-01-05", 130_000.0,
+                                    currency="BRL", initial_capital=50_000.0)
+        cached = [("2026-01-06", 0.05), ("2026-01-07", 0.05)]
+        portfolio.accrue_cash_cdi(state, cached, "2026-01-20")
+        self.assertAlmostEqual(state["cash"], 50_000.0 * 1.0005 ** 2, places=4)
+        self.assertEqual(state["last_accrual_date"], "2026-01-07")
+
+
+class TestPermanentHttpErrors(unittest.TestCase):
+    def test_definitive_4xx_is_not_retried(self):
+        import urllib.error
+        from trading_agent import data_sources
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, 404, "Not Found", None, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep"):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        self.assertEqual(len(calls), 1)
+
+    def test_transient_5xx_is_retried(self):
+        import urllib.error
+        from trading_agent import data_sources
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, 502, "Bad Gateway", None, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep"):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        self.assertEqual(len(calls), data_sources.RETRIES)
+
+
+class TestCdiHurdleGuard(unittest.TestCase):
+    """Serie curta do CDI nao pode virar obstaculo baixo em silencio."""
+
+    def test_short_series_means_no_cdi_hurdle(self):
+        universe = {f"T{i}": as_series(trending_series(50, 0.0008, 300))
+                    for i in range(10)}
+        bench = trending_series(130_000, 0.0002, 300)
+        # sem janela completa o chamador passa None -> obstaculo volta ao IBOV
+        decision = strategy.b3_decision(universe, bench, cdi_window_return=None)
+        self.assertEqual(decision["hurdle"], "IBOV")
+
+    def test_engine_skips_cdi_hurdle_when_series_is_short(self):
+        import inspect
+        from trading_agent import engine
+        src = inspect.getsource(engine.run_b3)
+        # a guarda tem de existir: sem ela o acumulado de poucos dias passaria
+        self.assertIn("if len(cdi_rates) >= window", src)
+
+
+class TestBcbFallbackChain(unittest.TestCase):
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        self.tmp = tempfile.TemporaryDirectory()
+        patcher = mock.patch.object(
+            data_sources, "_cdi_cache_path",
+            lambda: Path(self.tmp.name) / "cdi_cache.json")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_falls_through_to_a_working_endpoint(self):
+        good = json.dumps([{"data": f"{d:02d}/01/2026", "valor": "0.05"}
+                           for d in range(1, 15)]).encode()
+        calls = []
+
+        def flaky(url, timeout=30.0):
+            calls.append(url)
+            if "dataInicial" in url:
+                raise self.ds.DataSourceError("502")
+            return good
+
+        with mock.patch.object(self.ds, "_http_get", flaky):
+            rows = self.ds.fetch_bcb_cdi_daily()
+        self.assertEqual(len(rows), 14)
+        self.assertGreaterEqual(len(calls), 2)  # tentou o intervalo, depois ultimos/N
+
+    def test_all_endpoints_down_and_no_cache_fails_closed(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("502")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_bcb_cdi_daily()
+
+
+class TestRateLimitBackoff(unittest.TestCase):
+    """429 e a fonte a pedir para abrandar — repetir depressa so confirma o
+    bloqueio e custa a carteira que corre a seguir."""
+
+    def _run_with(self, code, headers=None):
+        import urllib.error
+        from trading_agent import data_sources
+        waits, calls = [], []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, code, "x",
+                                         headers or {}, None)
+
+        with mock.patch.object(data_sources.urllib.request, "urlopen",
+                               fake_urlopen), \
+             mock.patch.object(data_sources.time, "sleep", waits.append):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources._http_get("https://example.invalid/x")
+        return waits, calls
+
+    def test_429_waits_much_longer_than_a_generic_error(self):
+        from trading_agent import data_sources
+        rate_waits, _ = self._run_with(429)
+        generic_waits, _ = self._run_with(503)
+        self.assertGreaterEqual(min(rate_waits), data_sources.RATE_LIMIT_SLEEP_S[0])
+        self.assertGreater(sum(rate_waits), sum(generic_waits) * 3)
+
+    def test_429_honours_retry_after_header(self):
+        waits, _ = self._run_with(429, headers={"Retry-After": "75"})
+        self.assertIn(75.0, waits)
+
+    def test_retry_after_is_capped(self):
+        from trading_agent import data_sources
+        waits, _ = self._run_with(429, headers={"Retry-After": "99999"})
+        self.assertLessEqual(max(waits), data_sources.MAX_RETRY_AFTER_S)
+
+    def test_garbage_retry_after_falls_back_to_default(self):
+        from trading_agent import data_sources
+        waits, _ = self._run_with(429, headers={"Retry-After": "amanha"})
+        self.assertIn(data_sources.RATE_LIMIT_SLEEP_S[0], waits)
+
+
+class TestBenchmarkPriority(unittest.TestCase):
+    """Perder o benchmark derruba a carteira toda; perder um ativo custa um
+    nome. O orcamento de tentativas tem de refletir essa assimetria."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_benchmark_gets_more_attempts_than_a_constituent(self):
+        import urllib.error
+        from trading_agent import data_sources
+        counts = []
+
+        def make_counter():
+            calls = []
+
+            def fake(req, timeout=None):
+                calls.append(1)
+                raise urllib.error.HTTPError(req.full_url, 503, "x", {}, None)
+            return calls, fake
+
+        hosts = len(data_sources.YAHOO_HOSTS)
+        for retries in (None, data_sources.BENCHMARK_RETRIES):
+            calls, fake = make_counter()
+            with mock.patch.object(data_sources.urllib.request, "urlopen", fake), \
+                 mock.patch.object(data_sources.time, "sleep"):
+                with self.assertRaises(data_sources.DataSourceError):
+                    data_sources.fetch_yahoo_daily("^BVSP", retries=retries)
+            counts.append(len(calls))
+        # cada host recebe o orcamento completo de tentativas
+        self.assertEqual(counts[0], data_sources.RETRIES * hosts)
+        self.assertEqual(counts[1], data_sources.BENCHMARK_RETRIES * hosts)
+        self.assertGreater(counts[1], counts[0])
+
+
+class TestSourceRouting(unittest.TestCase):
+    """Distinguir 'a fonte caiu' de 'este ativo nao existe la' e o que evita
+    mandar 100 acoes para o Yahoo por causa de 3 tickers desconhecidos."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_missing_ticker_does_not_trip_the_breaker(self):
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.DataSourceError("nao tem serie")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(5):
+                self.ds.fetch_equity_daily("XYZ")
+        self.assertEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES, 0)
+
+    def test_source_outage_trips_the_breaker(self):
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.SourceUnavailable("bloqueado")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(4):
+                self.ds.fetch_equity_daily("AAPL")
+        self.assertGreaterEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES,
+                                self.ds._STOOQ_TRIP_AFTER)
+
+    def test_crypto_falls_through_coinbase_to_binance(self):
+        series = [("2026-01-01", 100.0, 5.0)] * 12
+        with mock.patch.object(self.ds, "fetch_coinbase_daily",
+                               side_effect=self.ds.DataSourceError("404")), \
+             mock.patch.object(self.ds, "fetch_binance_daily", return_value=series):
+            out = self.ds.fetch_crypto_daily("SUI", "sui")
+        self.assertEqual(out, series)
+        self.assertEqual(self.ds.SOURCE_TALLY.get("binance"), 1)
+
+    def test_crypto_reports_when_every_source_fails(self):
+        err = self.ds.DataSourceError("x")
+        with mock.patch.object(self.ds, "fetch_coinbase_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_binance_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_coingecko_daily", side_effect=err):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_crypto_daily("NADA", "nada")
+
+    def test_binance_volume_is_base_units_for_the_liquidity_filter(self):
+        payload = json.dumps([[1767225600000, "1", "1", "1", "100.0", "7.5",
+                               0, "0", 0, "0", "0", "0"]] * 12).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            rows = self.ds.fetch_binance_daily("BTC")
+        self.assertEqual(rows[0][1], 100.0)   # fecho
+        self.assertEqual(rows[0][2], 7.5)     # volume na moeda base
+        # preco x volume = giro em USD, comparavel ao da Coinbase
+        self.assertEqual(rows[0][1] * rows[0][2], 750.0)
+
+
+class TestBrapiSource(unittest.TestCase):
+    """A B3 passa a ter uma fonte independente do Yahoo, que nos bloqueou."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def _payload(self, n=12):
+        return json.dumps({"results": [{"historicalDataPrice": [
+            {"date": 1767225600 + i * 86400, "close": 30.0 + i, "volume": 5_000_000}
+            for i in range(n)]}]}).encode()
+
+    def test_parses_history_into_series(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=self._payload()):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 12)
+        self.assertEqual(rows[0][1], 30.0)
+        self.assertEqual(rows[0][2], 5_000_000)
+        self.assertEqual(rows, sorted(rows))
+
+    def test_short_history_is_rejected_not_padded(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               return_value=self._payload(n=3)):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_brapi_daily("PETR4")
+
+    def test_b3_prefers_brapi_and_falls_back_to_yahoo(self):
+        series = [("2026-01-01", 30.0, 5e6)] * 12
+        with mock.patch.object(self.ds, "fetch_brapi_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("brapi"), 1)
+
+        self.ds.SOURCE_TALLY.clear()
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("x")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("yahoo"), 1)
+
+    def test_both_sources_down_names_both_in_the_error(self):
+        err = self.ds.DataSourceError("indisponivel")
+        with mock.patch.object(self.ds, "fetch_brapi_daily", side_effect=err), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", side_effect=err):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_b3_daily("PETR4")
+        self.assertIn("brapi", str(ctx.exception))
+        self.assertIn("yahoo", str(ctx.exception))
+
+    def test_yahoo_tries_the_second_host_when_the_first_is_blocked(self):
+        import urllib.error
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "query1" in url:
+                raise self.ds.DataSourceError("429")
+            return json.dumps({"chart": {"result": [{
+                "timestamp": [1767225600 + i * 86400 for i in range(12)],
+                "indicators": {"quote": [{"close": [10.0] * 12,
+                                          "volume": [1000] * 12}]}}]}}).encode()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_yahoo_daily("SPY")
+        self.assertEqual(len(rows), 12)
+        self.assertTrue(any("query2" in u for u in seen))
+
+
+class TestYahooBreaker(unittest.TestCase):
+    """Sem disjuntor, 100 tickers x 2 hosts x esperas de 429 davam mais de oito
+    horas — muito acima do limite de uma hora do ciclo."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_repeated_429_stops_further_requests(self):
+        import urllib.error
+        calls = []
+
+        def fake(req, timeout=None):
+            calls.append(req.full_url)
+            raise urllib.error.HTTPError(req.full_url, 429, "x", {}, None)
+
+        with mock.patch.object(self.ds.urllib.request, "urlopen", fake), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(20):
+                with self.assertRaises(self.ds.DataSourceError):
+                    self.ds.fetch_yahoo_daily("AAPL")
+        # depois de disparar, os pedidos seguintes nem saem
+        self.assertLess(len(calls), self.ds.RETRIES * len(self.ds.YAHOO_HOSTS) * 3)
+        self.assertTrue(self.ds._YAHOO_RATE_LIMITED)
+
+    def test_breaker_resets_between_cycles(self):
+        self.ds._YAHOO_RATE_LIMITED = True
+        self.ds.reset_source_breakers()
+        self.assertFalse(self.ds._YAHOO_RATE_LIMITED)
+
+    def test_b3_still_serves_from_brapi_when_yahoo_is_tripped(self):
+        self.ds._YAHOO_RATE_LIMITED = True
+        series = [("2026-01-01", 30.0, 5e6)] * 12
+        with mock.patch.object(self.ds, "fetch_brapi_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            out = self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(out, series)
+
+
+class TestBrapiRanges(unittest.TestCase):
+    """O plano livre da brapi limita o historico; pedir do mais longo para o
+    mais curto e ficar com o melhor evita perder a carteira por isso."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def _payload(self, n):
+        return json.dumps({"results": [{"historicalDataPrice": [
+            {"date": 1767225600 + i * 86400, "close": 30.0, "volume": 1e6}
+            for i in range(n)]}]}).encode()
+
+    def test_falls_back_to_a_shorter_range_when_the_long_one_fails(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "range=2y" in url or "range=1y" in url:
+                raise self.ds.DataSourceError("HTTP 401 (definitivo)")
+            return self._payload(60)
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 60)
+        self.assertTrue(any("range=6mo" in u for u in seen))
+
+    def test_stops_early_once_the_history_is_long_enough(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload(300)
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_brapi_daily("PETR4")
+        self.assertEqual(len(rows), 300)
+        self.assertEqual(len(seen), 1)   # nao insiste depois de ter o que precisa
+
+    def test_token_is_sent_when_configured(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload(300)
+
+        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "abc123"}), \
+             mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_brapi_daily("PETR4")
+        self.assertIn("token=abc123", seen[0])
+
+    def test_error_names_the_ranges_it_tried(self):
+        with mock.patch.object(self.ds, "_http_get",
+                               side_effect=self.ds.DataSourceError("HTTP 401")):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_brapi_daily("PETR4")
+        self.assertIn("2y", str(ctx.exception))
+
+
+class TestFailureTelemetry(unittest.TestCase):
+    """Uma fonte que nunca serviu tem de ser distinguivel de uma que nem foi
+    consultada — foi essa ambiguidade que me fez adivinhar durante dias."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_records_source_and_reason(self):
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("HTTP 401 (definitivo)")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               side_effect=self.ds.RateLimited("429")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_b3_daily("^BVSP")
+        self.assertEqual(self.ds.FAILURE_TALLY["brapi"]["n"], 1)
+        self.assertIn("401", self.ds.FAILURE_TALLY["brapi"]["motivo"])
+        self.assertIn("429", self.ds.FAILURE_TALLY["yahoo"]["motivo"])
+
+    def test_counts_accumulate_across_tickers(self):
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("HTTP 401")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               side_effect=self.ds.DataSourceError("x")):
+            for _ in range(3):
+                with self.assertRaises(self.ds.DataSourceError):
+                    self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.FAILURE_TALLY["brapi"]["n"], 3)
+
+    def test_stooq_tries_the_mirror_host(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "stooq.com" in url:
+                raise self.ds.DataSourceError("timeout")
+            return b"Date,Open,High,Low,Close,Volume\n" + b"\n".join(
+                f"2026-01-{d:02d},1,1,1,10.0,1000".encode() for d in range(1, 15))
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_stooq_daily("SPY")
+        self.assertEqual(len(rows), 14)
+        self.assertTrue(any("stooq.pl" in u for u in seen))
+
+    def test_error_section_surfaces_source_failures(self):
+        section = report._error_section(
+            "Acoes B3", "sem fonte",
+            {"brapi": {"n": 51, "motivo": "HTTP 401 (definitivo)"},
+             "yahoo": {"n": 2, "motivo": "429"}})
+        self.assertIn("brapi falhou 51x", section)
+        self.assertIn("401", section)
+        self.assertIn("yahoo falhou 2x", section)
+
+
+class TestStooqClassification(unittest.TestCase):
+    """Corpo vazio da Stooq e bloqueio (falha da fonte); corpo com conteudo
+    reconhecivel e papel inexistente. Confundir os dois foi o que mandou as
+    100 acoes para o Yahoo."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_empty_body_is_a_source_outage(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=b"\n"):
+            with self.assertRaises(self.ds.SourceUnavailable):
+                self.ds.fetch_stooq_daily("SPY")
+
+    def test_long_body_without_rows_is_a_missing_ticker(self):
+        body = b"Date,Open,High,Low,Close,Volume\n" + b"# " + b"x" * 250
+        with mock.patch.object(self.ds, "_http_get", return_value=body):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_stooq_daily("NOPE")
+        self.assertNotIsInstance(ctx.exception, self.ds.SourceUnavailable)
+
+    def test_error_carries_the_body_for_diagnosis(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=b"No data"):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds.fetch_stooq_daily("SPY")
+        self.assertIn("No data", str(ctx.exception))
+
+
+class TestStooqHtmlBlock(unittest.TestCase):
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_html_response_is_a_block_not_a_missing_ticker(self):
+        html = (b'<!DOCTYPE html><html><head><meta charset="utf-8">'
+                b'<meta name="robots" content="noindex,nofollow"></head>'
+                b'<body><noscript>Turn on JavaScript</noscript></body></html>')
+        with mock.patch.object(self.ds, "_http_get", return_value=html):
+            with self.assertRaises(self.ds.SourceUnavailable):
+                self.ds.fetch_stooq_daily("SPY")
+
+    def test_a_block_trips_the_breaker_so_we_stop_asking(self):
+        html = b"<html><noscript>x</noscript></html>"
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "_http_get", return_value=html), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
+             mock.patch.object(self.ds.time, "sleep"):
+            for _ in range(self.ds._STOOQ_TRIP_AFTER):
+                self.ds.fetch_equity_daily("AAPL")
+        self.assertGreaterEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES,
+                                self.ds._STOOQ_TRIP_AFTER)
+
+
+class TestNasdaqSource(unittest.TestCase):
+    """Fonte escolhida por medicao no runner: 549 pregoes, SPY pela classe
+    'etf', e doze pedidos seguidos sem limite de taxa."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def _payload(self, n=12, close="$308.26", volume="44,812,500"):
+        rows = [{"date": f"08/{1 + i % 28:02d}/2026", "close": close,
+                 "volume": volume, "open": close, "high": close, "low": close}
+                for i in range(n)]
+        return json.dumps({"data": {"tradesTable": {"rows": rows}}}).encode()
+
+    def test_parses_currency_and_thousands_separators(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=self._payload()):
+            rows = self.ds.fetch_nasdaq_daily("AAPL")
+        self.assertEqual(len(rows), 12)
+        self.assertEqual(rows[0][1], 308.26)
+        self.assertEqual(rows[0][2], 44_812_500.0)
+        self.assertEqual(rows, sorted(rows))          # ordem ascendente
+        self.assertRegex(rows[0][0], r"^\d{4}-\d{2}-\d{2}$")
+
+    def test_etfs_are_asked_as_etf_first(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_nasdaq_daily("SPY")
+        self.assertIn("assetclass=etf", seen[0])
+
+    def test_stocks_fall_back_to_the_etf_class(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "assetclass=stocks" in url:
+                return json.dumps({"data": {"tradesTable": {"rows": []}}}).encode()
+            return self._payload()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_nasdaq_daily("QQQ")
+        self.assertEqual(len(rows), 12)
+        self.assertIn("assetclass=stocks", seen[0])
+        self.assertIn("assetclass=etf", seen[1])
+
+    def test_unparsable_rows_are_dropped_not_guessed(self):
+        rows = [{"date": "08/01/2026", "close": "N/A", "volume": "--"},
+                {"date": "nao-e-data", "close": "$10.00", "volume": "1,000"}]
+        rows += [{"date": f"08/{2 + i:02d}/2026", "close": "$10.00",
+                  "volume": "1,000"} for i in range(12)]
+        payload = json.dumps({"data": {"tradesTable": {"rows": rows}}}).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            out = self.ds.fetch_nasdaq_daily("AAPL")
+        self.assertEqual(len(out), 12)
+
+    def test_equities_prefer_nasdaq(self):
+        series = [("2026-01-01", 10.0, 1000.0)] * 12
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_equity_daily("AAPL")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("nasdaq"), 1)
+
+    def test_nasdaq_failure_falls_through_to_the_old_sources(self):
+        series = [("2026-01-01", 10.0, 1000.0)] * 12
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("502")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.SourceUnavailable("html")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            out = self.ds.fetch_equity_daily("AAPL")
+        self.assertEqual(out, series)
+        self.assertEqual(self.ds.FAILURE_TALLY["nasdaq"]["n"], 1)
