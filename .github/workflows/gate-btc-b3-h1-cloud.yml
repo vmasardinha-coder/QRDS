@@ -29,14 +29,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests playwright pandas numpy
           python -m playwright install --with-deps chromium
-      - name: Probe 10 and 11 August 2026 without economics
+      - name: Probe 10 11 and 12 August 2026 without economics
         id: probe
         continue-on-error: true
         run: >-
           python tools/b3_h1_source_probe.py
-          --dates 2026-08-10 2026-08-11
+          --dates 2026-08-10 2026-08-11 2026-08-12
           --out-dir artifacts/b3_h1_source_probe
-      - name: Run frozen V7 structural QA only
+      - name: Run frozen structural QA only
         id: qa
         continue-on-error: true
         run: >-
