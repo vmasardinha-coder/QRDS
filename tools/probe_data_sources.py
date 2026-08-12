@@ -77,6 +77,57 @@ def probe_nasdaq(ticker: str = "AAPL") -> str:
     return f"HTTP {status} · {len(rows)} pregoes · exemplo {rows[0] if rows else '-'}"
 
 
+def probe_nasdaq_deep() -> str:
+    """Os dois pontos que decidem se a Nasdaq serve como fonte primaria:
+    (1) chega a 260+ pregoes? (2) o SPY, que e ETF, tem classe propria?
+    (3) aguenta pedidos seguidos sem limitar por taxa?
+    """
+    out = []
+    end = datetime.now(timezone.utc).date()
+
+    def fetch(ticker, assetclass, days):
+        start = end - timedelta(days=days)
+        url = (f"https://api.nasdaq.com/api/quote/{ticker}/historical"
+               f"?assetclass={assetclass}&fromdate={start}&todate={end}&limit=9999")
+        status, body = _get(url)
+        data = json.loads(body.decode("utf-8"))
+        rows = (((data.get("data") or {}).get("tradesTable") or {}).get("rows")) or []
+        return status, rows
+
+    for days in (400, 800, 1200):
+        try:
+            status, rows = fetch("AAPL", "stocks", days)
+            flag = "OK" if len(rows) >= 260 else "curto"
+            span = f"{rows[-1]['date']} -> {rows[0]['date']}" if rows else "-"
+            out.append(f"    {flag:5s} AAPL {days}d: {len(rows):>4} pregoes  {span}")
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    FALHOU AAPL {days}d: {type(err).__name__}")
+
+    for assetclass in ("etf", "stocks", "index"):
+        try:
+            status, rows = fetch("SPY", assetclass, 800)
+            out.append(f"    SPY assetclass={assetclass}: HTTP {status}, "
+                       f"{len(rows)} pregoes")
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    SPY assetclass={assetclass}: FALHOU {type(err).__name__}")
+
+    # rajada: 12 pedidos seguidos, como no ciclo real
+    ok = 0
+    erro = ""
+    for tk in ["MSFT", "NVDA", "JPM", "V", "UNH", "XOM", "LLY", "JNJ",
+               "PG", "MA", "HD", "COST"]:
+        try:
+            _, rows = fetch(tk, "stocks", 800)
+            if rows:
+                ok += 1
+        except Exception as err:  # noqa: BLE001
+            erro = f"{tk}: {type(err).__name__} {str(err)[:60]}"
+            break
+    out.append(f"    rajada de 12 pedidos seguidos: {ok} ok"
+               + (f" · parou em {erro}" if erro else " · sem limite de taxa"))
+    return "\n" + "\n".join(out)
+
+
 def probe_stockanalysis(ticker: str = "AAPL") -> str:
     """Precisa de >= 260 pregoes para o momentum 12-1; ve qual variante os da."""
     variants = [
@@ -153,15 +204,7 @@ def main() -> int:
     report("TradingView scanner — EUA (lote de 5)",
            lambda: probe_tradingview("america",
                                      ["AAPL", "MSFT", "NVDA", "JPM", "SPY"]))
-    report("TradingView scanner — Brasil (lote de 5)",
-           lambda: probe_tradingview("brazil",
-                                     ["PETR4", "VALE3", "ITUB4", "BOVA11", "WEGE3"]))
-    report("Nasdaq API — historico diario", probe_nasdaq)
-    report("stockanalysis.com — historico EUA (quantos pregoes?)",
-           probe_stockanalysis)
-    report("stockanalysis.com — B3", probe_stockanalysis_b3)
-    report("stockanalysis.com — SPY (benchmark)",
-           lambda: probe_stockanalysis("SPY"))
+    report("Nasdaq API — profundidade, SPY e rajada", probe_nasdaq_deep)
     report("brapi.dev — historico B3", probe_brapi)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
