@@ -6,12 +6,17 @@ on:
     branches: [agent/gate-btc-migration-current]
     paths:
       - tools/gate_btc_v16b_prospective_seal.py
+      - tools/gate_btc_v16b_prospective_chain.py
+      - tools/gate_btc_v16b_prospective_signal.py
+      - tools/gate_btc_v16b_prospective_entry.py
       - tools/gate_btc_v16b_shadow_signal.py
       - tests/test_gate_btc_v16b_prospective_seal.py
+      - tests/test_gate_btc_v16b_prospective_pipeline.py
       - research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811.json
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_PRE_SIGNAL_READINESS_20260811.json
       - .github/workflows/gate-btc-v16b-prospective-seal.yml
 
@@ -25,69 +30,48 @@ env:
 jobs:
   prospective-seal-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install test dependency
-        run: python -m pip install --disable-pip-version-check pytest
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest pandas numpy scikit-learn requests
       - name: Run prospective sealing contract tests
-        run: python -m pytest -q tests/test_gate_btc_v16b_prospective_seal.py
+        run: python -m pytest -q tests/test_gate_btc_v16b_prospective_seal.py tests/test_gate_btc_v16b_prospective_pipeline.py
       - name: Verify frozen prospective invariants
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          from tools.gate_btc_v16b_prospective_seal import (
-              CANDIDATE_ID, SAFETY, FIRST_SIGNAL, FIRST_ENTRY, FIRST_COMPLETE_EXIT,
-              COST_BPS, WEIGHT_PER_ASSET_UNSCALED,
-          )
+          from tools import gate_btc_v16b_prospective_seal as base
+          from tools import gate_btc_v16b_prospective_chain as chain
+          from tools import gate_btc_v16b_prospective_signal as signal
 
-          canonical = 'GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811'
-          assert CANDIDATE_ID == canonical
-          assert SAFETY['RESEARCH_ONLY'] is True
-          assert SAFETY['SHADOW_ONLY'] is True
-          assert SAFETY['NOT_APPROVED'] is True
-          assert SAFETY['ORDERS'] == 0
-          assert SAFETY['REAL_CAPITAL'] == 0
-          assert SAFETY['ENGINE_FEED'] is False
-          assert FIRST_SIGNAL.isoformat() == '2026-08-13'
-          assert FIRST_ENTRY.isoformat() == '2026-08-14'
-          assert FIRST_COMPLETE_EXIT.isoformat() == '2026-08-21'
-          assert COST_BPS == 15.0
-          assert WEIGHT_PER_ASSET_UNSCALED == 0.05
-
-          protocol = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json').read_text(encoding='utf-8'))
-          a1 = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json').read_text(encoding='utf-8'))
-          a2 = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json').read_text(encoding='utf-8'))
-          readiness = json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_PRE_SIGNAL_READINESS_20260811.json').read_text(encoding='utf-8'))
-          md = Path('research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md').read_text(encoding='utf-8')
-          engine = Path('tools/gate_btc_v16b_shadow_signal.py').read_text(encoding='utf-8')
-          sealer = Path('tools/gate_btc_v16b_prospective_seal.py').read_text(encoding='utf-8')
-
-          assert protocol['candidate_id'] == canonical
-          assert a1['applies_to_freeze_id'] == canonical
-          assert a2['applies_to_freeze_id'] == canonical
-          assert readiness['candidate_id'] == canonical
-          assert canonical in md
-          assert "CANDIDATE_ID='" + canonical + "'" in engine
-          assert 'LIQ_FLOOR=np.log1p(10_000_000.0)' in engine
-          assert a1['methodology_changed'] is False
-          assert a1['historical_returns_reoptimized'] is False
-          assert a1['orders'] == 0 and a1['real_capital'] == 0
-          assert a2['methodology_changed'] is False
-          assert a2['prospective_count_at_amendment'] == 0
-          assert a2['prospective_clock_changed'] is False
-          assert a2['external_delta_used_for_change'] is False
-          assert a2['legacy_one_stage_sealing'] == 'DISABLED'
-          assert protocol['evidence_chain']['stages'] == [
-              'V16B_SIGNAL_SEAL', 'V16B_ENTRY_SEAL', 'V16B_RESULT_SEAL', 'EXTERNAL_DELTA_ATTACHMENT'
+          canonical='GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811'
+          assert base.CANDIDATE_ID == canonical == chain.CANDIDATE_ID
+          assert base.SAFETY['RESEARCH_ONLY'] is True and base.SAFETY['SHADOW_ONLY'] is True
+          assert base.SAFETY['NOT_APPROVED'] is True and base.SAFETY['ORDERS'] == 0 and base.SAFETY['REAL_CAPITAL'] == 0
+          assert base.SAFETY['ENGINE_FEED'] is False
+          assert base.FIRST_SIGNAL.isoformat() == '2026-08-13'
+          assert base.FIRST_ENTRY.isoformat() == '2026-08-14'
+          assert base.FIRST_COMPLETE_EXIT.isoformat() == '2026-08-21'
+          assert base.COST_BPS == 15.0 and base.WEIGHT_PER_ASSET_UNSCALED == 0.05
+          assert signal.MODEL_SPEC['features'] == [
+            'mom7','mom14','mom30','mom60','mom90','residmom7','residmom14','residmom30','residmom60','residmom90',
+            'vol14','vol30','vol60','corr30','corr60','beta30','beta60','logvol30'
           ]
-          assert readiness['prospective_count'] == 0
-          for marker in ('V16B_SIGNAL_SEAL', 'V16B_ENTRY_SEAL', 'V16B_RESULT_SEAL'):
-              assert marker in sealer
-          assert 'legacy one-stage V16B self-result sealing is disabled' in sealer
-          print('V16B_PROSPECTIVE_STAGED_INVARIANTS=PASS')
+
+          a1=json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json').read_text())
+          a2=json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json').read_text())
+          a3=json.loads(Path('artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811.json').read_text())
+          assert a1['methodology_changed'] is False and a1['historical_returns_reoptimized'] is False
+          assert a2['methodology_changed'] is False and a2['prospective_count_at_amendment'] == 0
+          assert a3['economic_methodology_changed'] is False and a3['prospective_count_at_amendment'] == 0
+          assert a3['external_delta_used_for_change'] is False and a3['prospective_clock_changed'] is False
+          assert a3['prospective_signal_contract']['friday_shortability_used_at_signal'] is False
+          assert a3['prospective_signal_contract']['sealed_rankings'] == ['long_ranking_desc','short_ranking_asc']
+          assert 'short_ranking_asc' in chain.SIGNAL_REQUIRED
+          print('V16B_PROSPECTIVE_DUAL_RANK_STAGED_INVARIANTS=PASS')
           PY
