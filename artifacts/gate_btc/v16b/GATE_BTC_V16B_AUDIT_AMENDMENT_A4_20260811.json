@@ -1,0 +1,49 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A4_20260811",
+  "applies_to_freeze_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "prospective_count_at_amendment": 0,
+  "issue": "The A3 prospective signal builder accepted universe_snapshot_id and universe_snapshot_available_at_utc as free CLI strings. The staged signal seal validated the timestamp syntactically, but the builder did not cryptographically bind those claims to a preserved universe-snapshot evidence file.",
+  "correction": "The Thursday signal builder now requires both the raw universe snapshot file and a JSON evidence manifest. The evidence manifest must contain snapshot_id, available_at_utc, source_ref and raw_snapshot_sha256. The raw SHA-256 is recomputed and must match before signal construction. Both the raw snapshot and evidence-manifest hashes are included in input_data_hashes and the model-state evidence fingerprint.",
+  "economic_methodology_changed": false,
+  "model_changed": false,
+  "features_changed": false,
+  "ranking_changed": false,
+  "risk_state_changed": false,
+  "portfolio_construction_changed": false,
+  "shortability_rule_changed": false,
+  "cost_model_changed": false,
+  "prospective_clock_changed": false,
+  "historical_replay_regenerated": false,
+  "historical_returns_reoptimized": false,
+  "external_delta_used_for_change": false,
+  "candidate_id_changed": false,
+  "reason_no_new_candidate_id": "This amendment only strengthens source provenance before the first prospective signal; it changes no economic decision rule and prospective_count was zero.",
+  "universe_snapshot_evidence_contract": {
+    "raw_snapshot_file_required": true,
+    "evidence_manifest_required": true,
+    "required_manifest_fields": [
+      "snapshot_id",
+      "available_at_utc",
+      "source_ref",
+      "raw_snapshot_sha256"
+    ],
+    "optional_manifest_field": "snapshot_date",
+    "raw_snapshot_sha256_recomputed": true,
+    "availability_must_be_by_signal_day_utc_close": true,
+    "snapshot_date_after_signal_forbidden": true,
+    "input_hashes_sealed": [
+      "universe_snapshot",
+      "universe_snapshot_evidence"
+    ]
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}
