@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/gate-btc-b3-h1-cloud.yml
       - tools/b3_h1_source_probe.py
+      - tools/b3_h1_structural_qa.py
   workflow_dispatch:
 
 permissions:
@@ -26,7 +27,7 @@ jobs:
       - name: Install probe dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests playwright
+          pip install requests playwright pandas numpy
           python -m playwright install --with-deps chromium
       - name: Probe 10 and 11 August 2026 without economics
         id: probe
@@ -35,15 +36,23 @@ jobs:
           python tools/b3_h1_source_probe.py
           --dates 2026-08-10 2026-08-11
           --out-dir artifacts/b3_h1_source_probe
-      - name: Record probe exit status
+      - name: Run frozen V7 structural QA only
+        id: qa
+        continue-on-error: true
+        run: >-
+          python tools/b3_h1_structural_qa.py
+          --probe-dir artifacts/b3_h1_source_probe
+      - name: Record probe and QA status
         if: always()
         run: |
+          mkdir -p artifacts/b3_h1_source_probe
           echo "probe_outcome=${{ steps.probe.outcome }}" > artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
+          echo "qa_outcome=${{ steps.qa.outcome }}" >> artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
           echo "RESEARCH_ONLY=true" >> artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
           echo "ECONOMICS_LOCKED=true" >> artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
           echo "ORDERS=0" >> artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
           echo "REAL_CAPITAL=0" >> artifacts/b3_h1_source_probe/ACTIONS_STATUS.txt
-      - name: Upload B3 source evidence
+      - name: Upload B3 source and structural QA evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
