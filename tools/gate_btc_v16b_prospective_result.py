@@ -3,8 +3,8 @@
 
 RESEARCH_ONLY / SHADOW_ONLY / NOT_APPROVED. No orders, capital or engine feed.
 The builder does not accept user-supplied PnL. It reparses preserved raw price
-archives, verifies raw funding archives, and recomputes all 20 asset PnLs,
-funding, frozen turnover cost and BTC benchmark from the sealed ENTRY event.
+and funding archives and recomputes all 20 asset PnLs, funding, frozen turnover
+cost and BTC benchmark from the sealed ENTRY event.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from tools import gate_btc_v16b_prospective_seal as base
-from tools.gate_btc_binance_usdm_funding_audit import months_between
+from tools.gate_btc_binance_usdm_funding_audit import close_ms, months_between, parse_funding_zip
 from tools.gate_btc_v16b_prospective_prices import parse_daily_close
 
 
@@ -71,8 +71,7 @@ def _load_prices(price_evidence_path: Path, entry_event: dict) -> tuple[dict, di
     expected_exit = (date.fromisoformat(entry_event["entry_date_utc"]) + timedelta(days=7)).isoformat()
     if p.get("exit_date_utc") != expected_exit:
         raise ValueError("price evidence exit date must be exactly seven days after entry")
-    manifest_seal = p.get("evidence_sha256")
-    if manifest_seal != hobj({k: p[k] for k in p if k != "evidence_sha256"}):
+    if p.get("evidence_sha256") != hobj({k: p[k] for k in p if k != "evidence_sha256"}):
         raise ValueError("price evidence manifest seal mismatch")
 
     expected_assets = set(entry_event["longs_10"]) | set(entry_event["shorts_10"])
@@ -113,7 +112,7 @@ def _load_prices(price_evidence_path: Path, entry_event: dict) -> tuple[dict, di
     return by_asset, btc, price_hashes
 
 
-def _verify_funding_archives(summary: dict, summary_path: Path, entry_event: dict, exit_date: str) -> list[str]:
+def _verify_funding_archives(summary: dict, summary_path: Path, entry_event: dict, exit_date: str) -> tuple[list[str], dict[tuple[str, str], list[tuple[int, float]]]]:
     raw = summary.get("raw_archives")
     if not isinstance(raw, list) or not raw:
         raise ValueError("funding summary must preserve raw_archives evidence")
@@ -124,6 +123,7 @@ def _verify_funding_archives(summary: dict, summary_path: Path, entry_event: dic
     }
     seen = set()
     verified_hashes = []
+    event_cache = {}
     evidence_dir = summary_path.parent
     for item in raw:
         required = {"symbol", "month", "raw_file", "checksum_file", "raw_sha256", "expected_checksum_sha256", "source_url"}
@@ -143,10 +143,14 @@ def _verify_funding_archives(summary: dict, summary_path: Path, entry_event: dic
             raise ValueError("funding raw archive hash mismatch")
         if _checksum_token(checksum_path) != actual:
             raise ValueError("preserved Binance CHECKSUM does not match funding archive")
+        events, _ = parse_funding_zip(raw_path.read_bytes())
+        if not events:
+            raise ValueError("preserved funding archive contains no parseable events")
+        event_cache[pair] = events
         verified_hashes.append(actual)
     if seen != expected_pairs:
         raise ValueError("funding raw archives do not cover every required symbol-month")
-    return sorted(verified_hashes)
+    return sorted(verified_hashes), event_cache
 
 
 def _load_funding(csv_path: Path, summary_path: Path, entry_event: dict, exit_date: str) -> tuple[dict[str, float], str, dict]:
@@ -161,26 +165,40 @@ def _load_funding(csv_path: Path, summary_path: Path, entry_event: dict, exit_da
         raise ValueError("funding summary dates mismatch")
     if summary.get("missing_month_files") not in ([], None):
         raise ValueError("funding audit contains missing month files")
-    verified_raw_hashes = _verify_funding_archives(summary, summary_path, entry_event, exit_date)
+    verified_raw_hashes, event_cache = _verify_funding_archives(summary, summary_path, entry_event, exit_date)
     shorts = list(entry_event["shorts_10"])
     if len(rows) != 10 or int(summary.get("positions", -1)) != 10:
         raise ValueError("funding audit must contain exactly 10 positions")
     by_asset = {}
     exposure = float(entry_event["exposure"])
+    lo, hi = close_ms(entry_event["entry_date_utc"]), close_ms(exit_date)
     for row in rows:
         asset = row.get("asset")
         if asset in by_asset or asset not in shorts:
             raise ValueError("funding audit assets must uniquely match selected shorts")
+        symbol = str(entry_event["entry_instruments"][asset])
         if row.get("entry_friday") != entry_event["entry_date_utc"] or row.get("exit_friday") != exit_date:
             raise ValueError("funding audit dates mismatch")
-        if row.get("futures_symbol") != entry_event["entry_instruments"][asset]:
+        if row.get("futures_symbol") != symbol:
             raise ValueError("funding audit futures symbol mismatch")
-        if int(row.get("funding_events", 0)) <= 0:
-            raise ValueError("funding audit position has no realized events")
         if row.get("portfolio_exposure") not in (None, "") and abs(float(row["portfolio_exposure"]) - exposure) > 1e-10:
             raise ValueError("funding audit portfolio exposure differs from sealed entry exposure")
-        rate_sum = float(row["funding_rate_sum"])
-        by_asset[asset] = base.WEIGHT_PER_ASSET_UNSCALED * exposure * rate_sum
+        all_events = []
+        for ym in months_between(entry_event["entry_date_utc"], exit_date):
+            all_events.extend(event_cache[(symbol, ym)])
+        realized = sorted((t, r) for t, r in all_events if lo < t <= hi)
+        if not realized:
+            raise ValueError("funding position has no realized events in preserved raw archives")
+        raw_count = len(realized)
+        raw_rate_sum = sum(r for _, r in realized)
+        raw_first, raw_last = realized[0][0], realized[-1][0]
+        if int(row.get("funding_events", -1)) != raw_count:
+            raise ValueError("funding_events differs from preserved raw archives")
+        if abs(float(row.get("funding_rate_sum", "nan")) - raw_rate_sum) > 1e-15:
+            raise ValueError("funding_rate_sum differs from preserved raw archives")
+        if int(float(row.get("first_event_ms", -1))) != raw_first or int(float(row.get("last_event_ms", -1))) != raw_last:
+            raise ValueError("funding event timestamps differ from preserved raw archives")
+        by_asset[asset] = base.WEIGHT_PER_ASSET_UNSCALED * exposure * raw_rate_sum
     if set(by_asset) != set(shorts):
         raise ValueError("funding audit does not cover exact selected shorts")
     csv_sha, summary_sha = sha256_file(csv_path), sha256_file(summary_path)
@@ -191,6 +209,7 @@ def _load_funding(csv_path: Path, summary_path: Path, entry_event: dict, exit_da
         "raw_archive_sha256": verified_raw_hashes,
         "source": summary.get("source"),
         "method": summary.get("method"),
+        "raw_reparsed": True,
     }
 
 
