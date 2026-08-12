@@ -7,121 +7,109 @@
 
 `GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811`
 
-Parent discovery line: cross-sectional extreme classifier, weekly 10 long / 10 short, point-in-time Top-150 universe, fixed USD 10m/day 30d-volume floor, causal Binance USD-M shortability, 20% vol target capped at 1x, 15 bps turnover cost.
+Frozen economics remain unchanged: point-in-time CMC Top-150 universe; effective USD 10m/day 30d-volume floor; 18 frozen features; HistGradientBoostingClassifier; weekly Thursday signal / Friday entry; 10 equal longs / 10 equal shorts; unscaled gross +0.50/-0.50; 13-week realized-vol lookback; 20% annualized target; exposure capped at 1.0x; 15 bps turnover cost; actual USD-M short funding.
 
-No parameter may be changed because of any external Delta checkpoint.
+**No external Delta checkpoint may change any candidate parameter.**
 
 ## Prospective clock
 
-The 2025-2026 retrospective window is **not** true untouched OOS because the research process had already inspected the regime while testing earlier candidate families. It is validation-after-design only.
+The 2025-2026 reconstructed window is not untouched OOS and never counts as prospective.
 
-True untouched V16B evidence begins after this freeze:
+- first eligible signal: **2026-08-13 UTC close**;
+- first eligible entry: **2026-08-14 UTC close**;
+- first eligible exit: **2026-08-21 UTC close**;
+- prospective count at adoption of Amendments A2-A6: **0**;
+- missing/late/ambiguous evidence fails closed; no synthetic return or zero funding is created.
 
-- first eligible signal: **Thursday 2026-08-13 UTC close**;
-- first eligible entry: **Friday 2026-08-14 UTC close**;
-- first complete weekly return: **Friday 2026-08-21 UTC close**;
-- no historical/backfilled decision may count as prospective;
-- if required data or execution eligibility is unavailable, status is `BLOCKED` and no synthetic economics are appended.
+## Frozen model
 
-## Frozen signal and model
+Features: `mom7,mom14,mom30,mom60,mom90,residmom7,residmom14,residmom30,residmom60,residmom90,vol14,vol30,vol60,corr30,corr60,beta30,beta60,logvol30`.
 
-Features:
-`mom7,mom14,mom30,mom60,mom90,residmom7,residmom14,residmom30,residmom60,residmom90,vol14,vol30,vol60,corr30,corr60,beta30,beta60,logvol30`
+Target: bottom 10% next-week raw return = class 0; middle 80% = class 1; top 10% = class 2.
 
-Point-in-time universe:
-- latest CMC Top-150 snapshot demonstrably available by Thursday signal close;
-- existing PIT source/identity policy;
-- complete feature row required;
-- `logvol30 = log1p(median of the last 30 source-specific volume_usd observations)` and the eligibility threshold remains effectively USD 10,000,000;
-- no use of current-survivor membership.
+Model: HistGradientBoostingClassifier; learning_rate 0.05; max_iter 100; max_depth 2; min_samples_leaf 50; l2_regularization 10; random_state 20260811; score `P(top10%)-P(bottom10%)`; expanding training; at least 52 fully realized weeks; refit every 13 scoring weeks.
 
-Target used for expanding historical training:
-- bottom 10% next-week raw return = class 0;
-- middle 80% = class 1;
-- top 10% = class 2.
+## Append-only evidence chain
 
-Model:
-- `HistGradientBoostingClassifier`;
-- learning_rate = 0.05;
-- max_iter = 100;
-- max_depth = 2;
-- min_samples_leaf = 50;
-- l2_regularization = 10.0;
-- random_state = 20260811;
-- score = `P(top10%) - P(bottom10%)`;
-- expanding training;
-- minimum 52 fully realized weeks;
-- retrain every 13 weeks.
+Before the first prospective observation, audit-only Amendments A2-A6 strengthened evidence provenance without changing economic methodology.
 
-## Frozen portfolio
+1. **`V16B_SIGNAL_SEAL`** — after Thursday UTC close and before Friday UTC close.
+2. **`V16B_ENTRY_SEAL`** — before Friday UTC close and referencing the exact signal seal.
+3. **`V16B_RESULT_SEAL`** — after the following Friday UTC close and referencing the exact entry seal.
+4. **`EXTERNAL_DELTA_ATTACHMENT`** — only after the result seal.
 
-- signal Thursday, execution Friday;
-- 10 longs, equal weighted;
-- 10 shorts, equal weighted;
-- unscaled gross = +0.50 / -0.50;
-- short candidate must pass causal Binance USD-M eligibility at Friday execution;
-- long leg may use spot or another pre-declared executable instrument; unavailable selected long = fail closed / block, not post-ranking replacement;
-- realized-vol lookback = 13 weeks;
-- target annualized vol = 20%;
-- max exposure = 1.0x;
-- no leverage above 1x;
-- turnover cost = 15 bps primary;
-- 30 bps and 50 bps are diagnostic stress only, never selection criteria after freeze;
-- Binance archived short funding is recorded separately and added where the short leg uses USD-M perpetuals, weighted at `0.05 * exposure` per selected short.
+The legacy one-stage result seal is disabled.
 
-## Staged prospective evidence chain — Amendment A2
+## Thursday SIGNAL evidence
 
-Before the first eligible prospective signal, the audit contract was strengthened by `GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811`. Prospective count was zero. **No economic methodology, model, feature, portfolio, liquidity, shortability, exposure, volatility-target or cost parameter changed.**
+The signal builder may use only information demonstrably available by Thursday UTC close. The feature panel cannot contain rows after signal date, and shortability supplied to the signal engine must be strictly historical.
 
-The append-only evidence chain is now mandatory:
+A raw CMC universe snapshot plus a separate evidence manifest are mandatory. The evidence manifest carries snapshot identity, source reference, availability timestamp and the raw snapshot SHA-256. The raw hash is recomputed and both files are sealed in the signal inputs.
 
-1. **`V16B_SIGNAL_SEAL`** — created after Thursday UTC close and before Friday UTC close. It seals model/code/input hashes, CMC snapshot ID and demonstrated availability timestamp, feature-panel hash, model-state hash, complete eligible score map, deterministic complete score ranking and the preliminary top-10 longs. The longs must be exactly the first 10 names in that ranking.
-2. **`V16B_ENTRY_SEAL`** — created before Friday UTC close and referencing the exact signal seal. Longs cannot change. Each selected long requires predeclared executability evidence. Shortability must be checked in the frozen ranking from worst score upward; shorts must be the first 10 causally shortable names encountered, and checking stops on the 10th. Instruments, exposure, trailing volatility, turnover estimate and the frozen 15 bps cost assumption are sealed here.
-3. **`V16B_RESULT_SEAL`** — created only after the following Friday UTC close and referencing the exact entry seal. It must contain source/execution hashes plus per-asset entry/exit prices, raw returns, frozen weights and weighted P&L for exactly the 20 sealed holdings. Gross long, gross short, funding, cost, net P&L and BTC return are recomputed from those components.
-4. **`EXTERNAL_DELTA_ATTACHMENT`** — permitted only after the result seal. It references that result hash and cannot modify any earlier self evidence.
+The signal seals the entire eligible score map plus **two independently preserved rankings**: `long_ranking_desc` and `short_ranking_asc`. One ranking is never manufactured by reversing the other. The top-10 longs and the risk state (exposure, trailing volatility, prior weights) are sealed at this stage. Friday shortability and external Delta are not inspected.
 
-The legacy one-stage self-result seal is disabled.
+## Friday ENTRY evidence
 
-## External Delta benchmark discipline
+The entry stage references the exact signal-seal hash. Binance Spot and USD-M public exchangeInfo payloads are hash-bound, and both must carry `serverTime` on/after signal-seal creation and strictly before Friday UTC close.
 
-The external Delta is a benchmark, not a tuning target.
+Selected longs require predeclared Binance Spot USDT TRADING instruments. If a frozen long is unavailable, the week BLOCKS rather than replacing it.
 
-Public structural facts known before freeze may be used:
-- weekly rebalance around Friday;
-- 10 long / 10 short;
-- scans hundreds of cryptoassets;
-- seeks strongest/highest-upside assets for longs and weakest/highest-downside assets for shorts.
+Shortability is checked in exact sealed `short_ranking_asc` order. The shorts are the first 10 verifiably shortable Binance USD-M perpetual names encountered, checking stops at the 10th, and no discretionary replacement is allowed. Any long/short overlap BLOCKS explicitly.
 
-Known historical return prints, including +7.24% and other May-July 2026 observations, are retrospective withheld-output diagnostics only. They cannot justify any V16B parameter change.
+The entry seal freezes exact instruments, exposure, trailing volatility, turnover estimate and the 15 bps cost assumption.
 
-For every new external Delta print received after freeze:
-1. complete and seal `V16B_SIGNAL_SEAL`;
-2. complete and seal `V16B_ENTRY_SEAL` before entry close;
-3. complete and seal `V16B_RESULT_SEAL` after exit close;
-4. only then attach the external Delta print;
-5. compare only date-aligned intervals and retain source timestamp/reference;
-6. never backfill a V16B choice based on the external result.
+## RESULT evidence — Amendment A6
 
-## Required prospective evidence
+The weekly result is not typed in manually. It is reconstructed deterministically from preserved raw evidence.
 
-Signal stage must preserve the complete eligible ranking, not only selected assets. Entry stage must preserve causal shortability checks in rank order and exact instrument mapping. Result stage must preserve per-asset economics for all 20 holdings plus actual funding, cost and BTC benchmark inputs. Every stage is append-only and SHA-256 sealed.
+### Prices
 
-A `BLOCKED` stage may carry the blocker and source evidence needed to explain the failure but may not carry synthetic holdings/economics inconsistent with the stage contract.
+`tools/gate_btc_v16b_prospective_prices.py` downloads the entry-day and exit-day 1d archives for every exact sealed instrument: Binance Spot for longs, Binance USD-M for shorts, plus BTCUSDT Spot for the benchmark. Every archive must match its adjacent Binance Data Vision `.CHECKSUM`, and the raw ZIP/checksum files are preserved.
 
-## Historical replay auditability
+`tools/gate_btc_v16b_prospective_result.py` re-hashes and **reparses those raw ZIPs**. The manifest close and timestamps must equal the contents of the preserved archive.
 
-The reconstructed 11-week 2026 print (+7.3356% ex funding; +7.3914% with audited funding) remains **reference-only and non-prospective**. The detailed replay file referenced by SHA-256 has not been recovered from the Git tree or recovered Actions packages, so it is not promotion evidence and cannot support a mechanism-identity claim versus external Delta. See `artifacts/gate_btc/v16b/GATE_BTC_V16B_HISTORICAL_REPLAY_AUDITABILITY_20260811.json`.
+### Funding
 
-## Checkpoints
+`tools/gate_btc_v16b_prospective_funding.py` collects the required Binance USD-M fundingRate archives, verifies adjacent `.CHECKSUM` files and preserves raw archives. If a required archive is not yet published, the result remains pending/fail-closed; funding is never replaced with zero.
 
-Interim weekly results are descriptive only.
+The result builder reparses the raw funding archives and independently recomputes event count, `funding_rate_sum`, first event and last event for each exact selected short. Any disagreement with the audit CSV fails closed.
 
-Formal scientific checkpoints:
+Funding contribution per short remains the frozen formula `0.05 * exposure * funding_rate_sum`; positive funding benefits the short.
+
+### Economics
+
+For each of the 20 sealed holdings:
+
+- raw return = `exit_close / entry_close - 1`;
+- long weight = `+0.05 * sealed exposure`;
+- short weight = `-0.05 * sealed exposure`;
+- gross long/short PnL = sum of weighted per-asset returns;
+- transaction cost = `0.0015 * sealed turnover`;
+- net PnL = gross long + gross short + realized short funding - transaction cost;
+- BTC benchmark = BTCUSDT Spot exit close / entry close - 1.
+
+The existing `V16B_RESULT_SEAL` validator recomputes these formulas again before accepting the row.
+
+## External Delta discipline
+
+External Delta is benchmark evidence only. Known historical prints, including +7.24%, cannot justify any V16B change.
+
+A Delta print may be attached only after the corresponding V16B result has been sealed. It references the result hash and cannot alter signal, holdings, instruments, exposure or economics.
+
+## Historical validation print
+
+The reconstructed 11-week 2026 print (+7.3356% ex funding; +7.3914% with audited funding) remains **REFERENCE_ONLY_UNREPRODUCED** because its detailed historical replay file was not recovered. It is not promotion evidence and cannot support a mechanism-identity claim versus external Delta.
+
+See `artifacts/gate_btc/v16b/GATE_BTC_V16B_HISTORICAL_REPLAY_AUDITABILITY_20260811.json`.
+
+## Scientific checkpoints
+
+- weekly interim: descriptive only;
 - 13 completed prospective weeks: first diagnostic gate;
-- 26 completed prospective weeks: stability gate;
-- 52 completed prospective weeks: primary evidence gate.
+- 26 completed weeks: stability gate;
+- 52 completed weeks: primary evidence gate.
 
-No promotion to capital is authorized by this protocol. Any live proposal requires a separate approval document covering venue mapping, long-side executability, slippage/order-book capacity, margin/liquidation/ADL risk, operational monitoring and explicit capital limits.
+No capital/live promotion is authorized by this protocol.
 
 ## Current verdict
 
