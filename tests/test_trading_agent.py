@@ -716,7 +716,9 @@ class TestSourceRouting(unittest.TestCase):
         self.addCleanup(data_sources.reset_source_breakers)
 
     def test_missing_ticker_does_not_trip_the_breaker(self):
-        with mock.patch.object(self.ds, "fetch_stooq_daily",
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
                                side_effect=self.ds.DataSourceError("nao tem serie")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
@@ -726,7 +728,9 @@ class TestSourceRouting(unittest.TestCase):
         self.assertEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES, 0)
 
     def test_source_outage_trips_the_breaker(self):
-        with mock.patch.object(self.ds, "fetch_stooq_daily",
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
                                side_effect=self.ds.SourceUnavailable("bloqueado")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
@@ -1040,7 +1044,9 @@ class TestStooqHtmlBlock(unittest.TestCase):
 
     def test_a_block_trips_the_breaker_so_we_stop_asking(self):
         html = b"<html><noscript>x</noscript></html>"
-        with mock.patch.object(self.ds, "_http_get", return_value=html), \
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("indisponivel")), \
+             mock.patch.object(self.ds, "_http_get", return_value=html), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                return_value=[("2026-01-01", 1.0, 1.0)] * 12), \
              mock.patch.object(self.ds.time, "sleep"):
@@ -1048,3 +1054,84 @@ class TestStooqHtmlBlock(unittest.TestCase):
                 self.ds.fetch_equity_daily("AAPL")
         self.assertGreaterEqual(self.ds._STOOQ_CONSECUTIVE_FAILURES,
                                 self.ds._STOOQ_TRIP_AFTER)
+
+
+class TestNasdaqSource(unittest.TestCase):
+    """Fonte escolhida por medicao no runner: 549 pregoes, SPY pela classe
+    'etf', e doze pedidos seguidos sem limite de taxa."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def _payload(self, n=12, close="$308.26", volume="44,812,500"):
+        rows = [{"date": f"08/{1 + i % 28:02d}/2026", "close": close,
+                 "volume": volume, "open": close, "high": close, "low": close}
+                for i in range(n)]
+        return json.dumps({"data": {"tradesTable": {"rows": rows}}}).encode()
+
+    def test_parses_currency_and_thousands_separators(self):
+        with mock.patch.object(self.ds, "_http_get", return_value=self._payload()):
+            rows = self.ds.fetch_nasdaq_daily("AAPL")
+        self.assertEqual(len(rows), 12)
+        self.assertEqual(rows[0][1], 308.26)
+        self.assertEqual(rows[0][2], 44_812_500.0)
+        self.assertEqual(rows, sorted(rows))          # ordem ascendente
+        self.assertRegex(rows[0][0], r"^\d{4}-\d{2}-\d{2}$")
+
+    def test_etfs_are_asked_as_etf_first(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            return self._payload()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_nasdaq_daily("SPY")
+        self.assertIn("assetclass=etf", seen[0])
+
+    def test_stocks_fall_back_to_the_etf_class(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "assetclass=stocks" in url:
+                return json.dumps({"data": {"tradesTable": {"rows": []}}}).encode()
+            return self._payload()
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_nasdaq_daily("QQQ")
+        self.assertEqual(len(rows), 12)
+        self.assertIn("assetclass=stocks", seen[0])
+        self.assertIn("assetclass=etf", seen[1])
+
+    def test_unparsable_rows_are_dropped_not_guessed(self):
+        rows = [{"date": "08/01/2026", "close": "N/A", "volume": "--"},
+                {"date": "nao-e-data", "close": "$10.00", "volume": "1,000"}]
+        rows += [{"date": f"08/{2 + i:02d}/2026", "close": "$10.00",
+                  "volume": "1,000"} for i in range(12)]
+        payload = json.dumps({"data": {"tradesTable": {"rows": rows}}}).encode()
+        with mock.patch.object(self.ds, "_http_get", return_value=payload):
+            out = self.ds.fetch_nasdaq_daily("AAPL")
+        self.assertEqual(len(out), 12)
+
+    def test_equities_prefer_nasdaq(self):
+        series = [("2026-01-01", 10.0, 1000.0)] * 12
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            self.ds.fetch_equity_daily("AAPL")
+        self.assertEqual(self.ds.SOURCE_TALLY.get("nasdaq"), 1)
+
+    def test_nasdaq_failure_falls_through_to_the_old_sources(self):
+        series = [("2026-01-01", 10.0, 1000.0)] * 12
+        with mock.patch.object(self.ds, "fetch_nasdaq_daily",
+                               side_effect=self.ds.DataSourceError("502")), \
+             mock.patch.object(self.ds, "fetch_stooq_daily",
+                               side_effect=self.ds.SourceUnavailable("html")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
+             mock.patch.object(self.ds.time, "sleep"):
+            out = self.ds.fetch_equity_daily("AAPL")
+        self.assertEqual(out, series)
+        self.assertEqual(self.ds.FAILURE_TALLY["nasdaq"]["n"], 1)

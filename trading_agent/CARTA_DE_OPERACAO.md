@@ -93,10 +93,16 @@ vieram de cada fonte (`log["sources"]`):
 
 | Carteira | Cascata |
 |---|---|
-| Ações EUA | Stooq → Yahoo (query1, query2) |
+| Ações EUA | Nasdaq → Stooq → Yahoo (query1, query2) |
 | Crypto | Coinbase → Binance → CoinGecko |
 | Ações B3 e benchmarks | brapi.dev → Yahoo |
 | CDI | SGS do Banco Central (4 formas) → cópia local |
+
+A ordem de cada cascata vem de medição feita no próprio runner
+(`tools/probe_data_sources.py`), não de suposição: Yahoo devolve 429 e Stooq
+uma página anti-robô a partir destes IPs, enquanto a Nasdaq serve 549 pregões
+e aguenta pedidos seguidos. A sonda pode voltar a correr sempre que uma fonte
+falhar, e é assim que a próxima troca deve ser decidida.
 
 Uma falha da fonte (bloqueio, 5xx) é distinta de o ativo não existir nela: só
 a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).

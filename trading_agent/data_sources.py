@@ -1,7 +1,7 @@
 """Fontes publicas de dados de mercado (sem chave de API).
 
 Cascatas por mercado, para nenhum bloqueio de uma fonte derrubar uma carteira:
-  acoes EUA : Stooq -> Yahoo (query1, query2)
+  acoes EUA : Nasdaq -> Stooq -> Yahoo (query1, query2)
   acoes B3  : brapi.dev -> Yahoo
   crypto    : Coinbase -> Binance -> CoinGecko
   CDI       : SGS do Banco Central (4 formas de consulta) -> copia local
@@ -212,6 +212,63 @@ def fetch_yahoo_daily(ticker: str,
     return [(d, c, v) for d, (c, v) in sorted(dedup.items())]
 
 
+# ETFs e acoes vivem em classes diferentes na API da Nasdaq; o SPY e o unico
+# ETF do universo, mas a tentativa cruzada cobre qualquer outro que entre.
+NASDAQ_ETFS = {"SPY"}
+NASDAQ_HISTORY_DAYS = 800      # ~549 pregoes, medido na sonda
+
+
+def _nasdaq_number(text: str) -> float | None:
+    cleaned = str(text).replace("$", "").replace(",", "").strip()
+    if not cleaned or cleaned.upper() in {"N/A", "--"}:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def fetch_nasdaq_daily(ticker: str) -> list[tuple[str, float, float]]:
+    """Serie diaria via API publica da Nasdaq (sem chave).
+
+    Escolhida por medicao: 549 pregoes numa janela de 800 dias, o SPY servido
+    pela classe 'etf', e doze pedidos seguidos sem limite de taxa — que foi
+    exatamente onde o Yahoo e a Stooq cairam.
+    """
+    symbol = ticker.upper().replace(".", "-")
+    end = datetime.now(timezone.utc).date()
+    start = end - timedelta(days=NASDAQ_HISTORY_DAYS)
+    classes = ("etf", "stocks") if symbol in NASDAQ_ETFS else ("stocks", "etf")
+    errors: list[str] = []
+    for assetclass in classes:
+        url = (f"https://api.nasdaq.com/api/quote/{urllib.parse.quote(symbol)}"
+               f"/historical?assetclass={assetclass}"
+               f"&fromdate={start}&todate={end}&limit=9999")
+        try:
+            payload = json.loads(_http_get(url).decode("utf-8"))
+        except DataSourceError as err:
+            errors.append(f"{assetclass}: {str(err)[-60:]}")
+            continue
+        table = ((payload.get("data") or {}).get("tradesTable") or {})
+        rows: list[tuple[str, float, float]] = []
+        for row in table.get("rows") or []:
+            close = _nasdaq_number(row.get("close"))
+            volume = _nasdaq_number(row.get("volume"))
+            raw_date = str(row.get("date") or "")
+            if close is None or close <= 0:
+                continue
+            try:
+                date = datetime.strptime(raw_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+            rows.append((date, close, volume or 0.0))
+        if len(rows) >= 10:
+            rows.sort(key=lambda r: r[0])
+            return rows
+        errors.append(f"{assetclass}: {len(rows)} pregoes")
+    raise DataSourceError(f"Nasdaq sem serie para {symbol} [{'; '.join(errors)}]")
+
+
 _STOOQ_CONSECUTIVE_FAILURES = 0
 _STOOQ_TRIP_AFTER = 3
 
@@ -230,13 +287,22 @@ def _note_failure(source: str, err: Exception) -> None:
 
 def fetch_equity_daily(ticker: str,
                        is_benchmark: bool = False) -> list[tuple[str, float, float]]:
-    """Stooq como fonte primaria, Yahoo Finance como fallback.
+    """Acoes EUA: Nasdaq primeiro, depois Stooq, depois Yahoo.
 
-    Depois de _STOOQ_TRIP_AFTER falhas consecutivas do Stooq (tipico quando
-    bloqueia IPs de cloud), os pedidos seguintes vao direto ao Yahoo.
+    A ordem vem de medicao feita no proprio runner: a Nasdaq serve 549
+    pregoes e aguenta pedidos seguidos, enquanto a Stooq responde com pagina
+    anti-robo e o Yahoo com 429. As duas ficam atras como alternativas, para
+    o dia em que a Nasdaq falhe e uma delas ja tenha voltado.
     """
     from . import config
     global _STOOQ_CONSECUTIVE_FAILURES
+    try:
+        series = fetch_nasdaq_daily(ticker)
+        SOURCE_TALLY["nasdaq"] = SOURCE_TALLY.get("nasdaq", 0) + 1
+        time.sleep(config.FETCH_DELAY_S)
+        return series
+    except DataSourceError as err:
+        _note_failure("nasdaq", err)
     if _STOOQ_CONSECUTIVE_FAILURES < _STOOQ_TRIP_AFTER:
         try:
             series = fetch_stooq_daily(ticker)
