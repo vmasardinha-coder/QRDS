@@ -81,13 +81,22 @@ def _http_get(url: str, timeout: float = 30.0,
     raise DataSourceError(f"GET {url} falhou apos {attempts} tentativas: {last_err}")
 
 
+STOOQ_HOSTS = ("https://stooq.com", "https://stooq.pl")
+
+
 def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker dos EUA via Stooq."""
     symbol = ticker.lower().replace(".", "-") + ".us"
-    try:
-        raw = _http_get(f"https://stooq.com/q/d/l/?s={symbol}&i=d")
-    except DataSourceError as err:
-        raise SourceUnavailable(str(err))
+    raw = None
+    last: Exception | None = None
+    for host in STOOQ_HOSTS:
+        try:
+            raw = _http_get(f"{host}/q/d/l/?s={symbol}&i=d")
+            break
+        except DataSourceError as err:
+            last = err
+    if raw is None:
+        raise SourceUnavailable(str(last))
     text = raw.decode("utf-8", errors="replace")
     # a Stooq responde 200 com uma pagina de excesso de pedidos: e a fonte a
     # bloquear, nao o ticker a nao existir
@@ -132,6 +141,7 @@ def reset_source_breakers() -> None:
     _yahoo_rate_limit_hits = 0
     _STOOQ_CONSECUTIVE_FAILURES = 0
     SOURCE_TALLY.clear()
+    FAILURE_TALLY.clear()
 
 
 def fetch_yahoo_daily(ticker: str,
@@ -192,8 +202,16 @@ _STOOQ_CONSECUTIVE_FAILURES = 0
 _STOOQ_TRIP_AFTER = 3
 
 # Contagem por fonte, para o relatorio dizer de onde vieram os dados em vez
-# de eu ter de adivinhar quando algo corre mal.
+# de eu ter de adivinhar quando algo corre mal. FAILURE_TALLY guarda tambem
+# o primeiro motivo de cada fonte: sem ele, uma fonte que nunca serviu e
+# indistinguivel de uma que nem chegou a ser consultada.
 SOURCE_TALLY: dict[str, int] = {}
+FAILURE_TALLY: dict[str, dict] = {}
+
+
+def _note_failure(source: str, err: Exception) -> None:
+    entry = FAILURE_TALLY.setdefault(source, {"n": 0, "motivo": str(err)[-90:]})
+    entry["n"] += 1
 
 
 def fetch_equity_daily(ticker: str,
@@ -212,12 +230,17 @@ def fetch_equity_daily(ticker: str,
             SOURCE_TALLY["stooq"] = SOURCE_TALLY.get("stooq", 0) + 1
             time.sleep(config.FETCH_DELAY_S)
             return series
-        except SourceUnavailable:
+        except SourceUnavailable as err:
             _STOOQ_CONSECUTIVE_FAILURES += 1   # so falhas da fonte contam
-        except DataSourceError:
-            pass                               # ticker inexistente: segue para o Yahoo
-    series = fetch_yahoo_daily(
-        ticker, retries=BENCHMARK_RETRIES if is_benchmark else None)
+            _note_failure("stooq", err)
+        except DataSourceError as err:
+            _note_failure("stooq", err)        # ticker inexistente: segue p/ Yahoo
+    try:
+        series = fetch_yahoo_daily(
+            ticker, retries=BENCHMARK_RETRIES if is_benchmark else None)
+    except DataSourceError as err:
+        _note_failure("yahoo", err)
+        raise
     SOURCE_TALLY["yahoo"] = SOURCE_TALLY.get("yahoo", 0) + 1
     time.sleep(config.FETCH_DELAY_S)
     return series
@@ -329,7 +352,8 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
                         ("coingecko", lambda: fetch_coingecko_daily(coingecko_id))):
         try:
             series = fetch()
-        except DataSourceError:
+        except DataSourceError as err:
+            _note_failure(name, err)
             continue
         SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
         return series
@@ -411,6 +435,7 @@ def fetch_b3_daily(ticker: str,
             series = call()
         except DataSourceError as err:
             errors.append(f"{name}: {str(err)[-110:]}")
+            _note_failure(name, err)
             continue
         SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
         time.sleep(config.FETCH_DELAY_S)

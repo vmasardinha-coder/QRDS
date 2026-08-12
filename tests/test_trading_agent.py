@@ -935,3 +935,59 @@ class TestBrapiRanges(unittest.TestCase):
             with self.assertRaises(self.ds.DataSourceError) as ctx:
                 self.ds.fetch_brapi_daily("PETR4")
         self.assertIn("2y", str(ctx.exception))
+
+
+class TestFailureTelemetry(unittest.TestCase):
+    """Uma fonte que nunca serviu tem de ser distinguivel de uma que nem foi
+    consultada — foi essa ambiguidade que me fez adivinhar durante dias."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_records_source_and_reason(self):
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("HTTP 401 (definitivo)")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               side_effect=self.ds.RateLimited("429")):
+            with self.assertRaises(self.ds.DataSourceError):
+                self.ds.fetch_b3_daily("^BVSP")
+        self.assertEqual(self.ds.FAILURE_TALLY["brapi"]["n"], 1)
+        self.assertIn("401", self.ds.FAILURE_TALLY["brapi"]["motivo"])
+        self.assertIn("429", self.ds.FAILURE_TALLY["yahoo"]["motivo"])
+
+    def test_counts_accumulate_across_tickers(self):
+        with mock.patch.object(self.ds, "fetch_brapi_daily",
+                               side_effect=self.ds.DataSourceError("HTTP 401")), \
+             mock.patch.object(self.ds, "fetch_yahoo_daily",
+                               side_effect=self.ds.DataSourceError("x")):
+            for _ in range(3):
+                with self.assertRaises(self.ds.DataSourceError):
+                    self.ds.fetch_b3_daily("PETR4")
+        self.assertEqual(self.ds.FAILURE_TALLY["brapi"]["n"], 3)
+
+    def test_stooq_tries_the_mirror_host(self):
+        seen = []
+
+        def fake(url, timeout=30.0, retries=None):
+            seen.append(url)
+            if "stooq.com" in url:
+                raise self.ds.DataSourceError("timeout")
+            return b"Date,Open,High,Low,Close,Volume\n" + b"\n".join(
+                f"2026-01-{d:02d},1,1,1,10.0,1000".encode() for d in range(1, 15))
+
+        with mock.patch.object(self.ds, "_http_get", fake):
+            rows = self.ds.fetch_stooq_daily("SPY")
+        self.assertEqual(len(rows), 14)
+        self.assertTrue(any("stooq.pl" in u for u in seen))
+
+    def test_error_section_surfaces_source_failures(self):
+        section = report._error_section(
+            "Acoes B3", "sem fonte",
+            {"brapi": {"n": 51, "motivo": "HTTP 401 (definitivo)"},
+             "yahoo": {"n": 2, "motivo": "429"}})
+        self.assertIn("brapi falhou 51x", section)
+        self.assertIn("401", section)
+        self.assertIn("yahoo falhou 2x", section)

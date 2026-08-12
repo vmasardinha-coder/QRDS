@@ -104,6 +104,7 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
         "cooldowns": cooldowns,
         "data_failures": failed,
         "sources": dict(data_sources.SOURCE_TALLY),
+        "source_failures": dict(data_sources.FAILURE_TALLY),
         "note": decision["note"],
         "cash_weight": decision["cash_weight"],
     }

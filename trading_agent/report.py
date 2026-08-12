@@ -108,6 +108,8 @@ def _audit_block(log: dict) -> list[str]:
     if log.get("sources"):
         tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
         lines.append(f"- **Fontes usadas:** {tally}")
+    for name, info in sorted((log.get("source_failures") or {}).items()):
+        lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
     if log.get("note"):
         lines.append(f"- **Nota:** {log['note']}")
     if log.get("stops"):
@@ -158,10 +160,16 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
     return "\n".join(lines)
 
 
-def _error_section(title: str, error: str) -> str:
-    return (f"## {title}\n\n> ERRO nesta execucao: `{error}`\n\n"
-            "O estado anterior mantem-se inalterado; nova tentativa na proxima "
-            "execucao. Nenhum dado foi estimado para cobrir a falha.\n")
+def _error_section(title: str, error: str,
+                   source_failures: dict | None = None) -> str:
+    lines = [f"## {title}", "", f"> ERRO nesta execucao: `{error}`", ""]
+    for name, info in sorted((source_failures or {}).items()):
+        lines.append(f"> Fonte {name} falhou {info['n']}x: `{info['motivo']}`")
+    if source_failures:
+        lines.append("")
+    lines.append("O estado anterior mantem-se inalterado; nova tentativa na "
+                 "proxima execucao. Nenhum dado foi estimado para cobrir a falha.")
+    return "\n".join(lines) + "\n"
 
 
 SLEEVES = [
@@ -185,7 +193,9 @@ def chart_panels(results: dict[str, dict]):
 
 
 def build_report(date: str, results: dict[str, dict],
-                 errors: dict[str, str]) -> str:
+                 errors: dict[str, str],
+                 source_failures: dict[str, dict] | None = None) -> str:
+    source_failures = source_failures or {}
     parts = [f"# Relatorio diario do agente — {date}", ""]
     parts.append("_Paper trading 100% autonomo com precos reais de mercado. "
                  "Nenhum dinheiro real esta a ser negociado. Premios de opcoes "
@@ -202,7 +212,8 @@ def build_report(date: str, results: dict[str, dict],
         if key in results:
             parts.append(_sleeve_section(title, bench, results[key], bench2))
         elif key in errors:
-            parts.append(_error_section(title, errors[key]))
+            parts.append(_error_section(title, errors[key],
+                                        source_failures.get(key)))
     parts.append("---")
     parts.append("_Sob a Carta de Operacao: teto por posicao ativa, piso de "
                  "diversificacao (abaixo dele fica caixa), stop proporcional a "
