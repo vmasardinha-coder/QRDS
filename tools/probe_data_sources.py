@@ -220,7 +220,15 @@ def probe_b3_tickers(tickers: list[str] | None = None) -> str:
         try:
             status, data = _brapi(tk)
         except urllib.error.HTTPError as err:
-            out.append(f"    {tk:8s} HTTP {err.code} {err.reason}")
+            # O corpo do erro e que distingue "simbolo nao existe" de "o teu
+            # plano nao da acesso a este simbolo" — sem ele, um 400 nao diz
+            # se a correcao e trocar o ticker ou mudar de fonte.
+            corpo = ""
+            try:
+                corpo = err.read().decode("utf-8", "replace")[:200]
+            except Exception:  # noqa: BLE001
+                pass
+            out.append(f"    {tk:8s} HTTP {err.code} {err.reason} · corpo={corpo!r}")
             continue
         except Exception as err:  # noqa: BLE001
             out.append(f"    {tk:8s} FALHOU {type(err).__name__}")
@@ -239,6 +247,31 @@ def probe_b3_tickers(tickers: list[str] | None = None) -> str:
     return "\n" + "\n".join(out)
 
 
+def probe_brapi_disponiveis(buscas: list[str] | None = None) -> str:
+    """Pergunta a fonte que simbolos ela tem, em vez de adivinhar candidatos.
+
+    Adivinhar o sucessor de um ticker extinto e como escolher fonte as cegas:
+    testa-se uma hipotese de cada vez e nunca se sabe o espaco todo.
+    """
+    import os
+    token = os.environ.get("BRAPI_TOKEN", "").strip()
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    out = []
+    for termo in buscas or ["CPLE", "COPEL", "MBRF", "BRF", "MRFG"]:
+        url = f"https://brapi.dev/api/available?search={termo}"
+        try:
+            _, body = _get(url, headers=headers)
+            achados = (json.loads(body.decode("utf-8")).get("stocks")) or []
+        except urllib.error.HTTPError as err:
+            out.append(f"    {termo:8s} HTTP {err.code} {err.reason}")
+            continue
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    {termo:8s} FALHOU {type(err).__name__}")
+            continue
+        out.append(f"    {termo:8s} {len(achados):>3} simbolos: {achados[:25]}")
+    return "\n" + "\n".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
@@ -246,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] == "b3tickers":
         # Modo dirigido: so os simbolos da B3, sem gastar pedidos nas outras
         # fontes. Usado quando um evento societario muda um ticker.
+        report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
         report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
         print("\nFim da sonda.")
         return 0
@@ -255,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
                                      ["AAPL", "MSFT", "NVDA", "JPM", "SPY"]))
     report("Nasdaq API — profundidade, SPY e rajada", probe_nasdaq_deep)
     report("brapi.dev — historico B3", probe_brapi)
+    report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
     report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
