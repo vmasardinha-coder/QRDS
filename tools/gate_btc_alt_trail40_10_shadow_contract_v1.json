@@ -1,0 +1,81 @@
+{
+  "schema": "gate_btc.alt_trail40_10_shadow_contract.v1",
+  "status": "FROZEN_WAITING_FIRST_UNTOUCHED_MONTHLY_SIGNAL",
+  "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
+  "candidate_definition": {
+    "scope": "EACH_SELECTED_SPECULATIVE_ALT_POSITION_INDEPENDENTLY",
+    "activation_gain": 0.40,
+    "trailing_buffer_fraction_of_running_close_high": 0.10,
+    "trigger_observation": "CONFIRMED_DAILY_CLOSE",
+    "arming_effective": "NEXT_ELIGIBLE_DAILY_BAR",
+    "running_high_definition": "MAX_COMPLETED_DAILY_CLOSE_THROUGH_PREVIOUS_BAR",
+    "stop_definition": "0.90_X_RUNNING_HIGH",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_TRIGGER_CLOSE",
+    "same_bar_arm_and_exit": false,
+    "partial_take_profit": false,
+    "automatic_reentry": false,
+    "post_exit_state_until_next_monthly_signal": "VIRTUAL_CASH_ZERO_RETURN",
+    "parameter_retuning_before_gate": false
+  },
+  "control_definition": {
+    "name": "MONTH_END_EXEC_CONTROL",
+    "entry_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_MONTHLY_SIGNAL",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_NEXT_MONTHLY_SIGNAL"
+  },
+  "strategies": ["QOS_Moderada", "QOS_Ultra"],
+  "eligible_assets": "ALT_PICKS_ONLY_EXCLUDING_BTC_ETH_BNB_CASH",
+  "first_eligible_signal_date": "2026-08-31",
+  "first_eligible_execution_date": "2026-09-01",
+  "mid_cycle_initialization": "PROHIBITED",
+  "retrospective_backfill": "PROHIBITED",
+  "daily_gap_policy": "FAIL_CLOSED_INVALIDATE_CYCLE_IF_A_CONFIRMED_DAILY_SNAPSHOT_IS_MISSING_AFTER_ENTRY",
+  "source": {
+    "workflow": "GATE BTC Daily Research Collection",
+    "current_portfolios": "qos_v2a_current_portfolios.csv",
+    "master_daily": "qos_v2a_master_daily.csv",
+    "required_execution_lag_daily_bars": 1,
+    "price_field": "close_usd"
+  },
+  "historical_evidence_freeze": {
+    "neutral_universe_deep_dive": {
+      "universe_n": 114,
+      "common_window_start": "2026-01-04",
+      "common_window_end": "2026-08-11",
+      "armed_n_at_40pct": 26,
+      "win_rate_vs_hold": 0.8846,
+      "mean_advantage": 0.3948,
+      "median_advantage": 0.4935,
+      "worst_regret": -1.2446
+    },
+    "qos_crosscheck": {
+      "phase1_run_id": 31276127634,
+      "phase1_artifact_digest": "sha256:e3b484f8797685547b7e59aa86f19e9080daaac551b1488b6ea0fac9f8fd5f81",
+      "protocol_sha256": "d1d7eceb8325e141e73aafe8645a8ed671e2e549ea81e41b04ec52f756f01cd7",
+      "scope_amendment_sha256": "d64868d5dbdb3c2297fd0b35640ecf3e1e502eed3789cfd052c10c318b5ec3c5",
+      "result_sha256": "c3e2139b33c537c791633d2b5a3605b6f773baf8ab5b64a5f96b51ab52d654cf",
+      "decision": "HISTORICALLY_REJECTED_OR_INSUFFICIENT_FOR_PROMOTION",
+      "rule_search_status": "CLOSED_NO_RETUNING_ON_THIS_SAMPLE"
+    }
+  },
+  "prospective_gate": {
+    "minimum_armed_completed_journeys": 30,
+    "minimum_calendar_days_since_freeze": 120,
+    "requirements_all": [
+      "execution_aware_mean_advantage_gt_0",
+      "median_advantage_gt_0",
+      "paired_bootstrap_95pct_ci_low_gt_0",
+      "aggregate_benefit_gt_aggregate_regret",
+      "mean_advantage_after_removing_top_5pct_positive_cases_gt_0",
+      "no_single_case_dominates_total_positive_benefit"
+    ],
+    "failure_action": "NO_PROMOTION_AND_NO_RETUNING_ON_SAME_SAMPLE",
+    "success_action": "PROMOTION_CANDIDATE_ONLY_REQUIRES_SEPARATE_REAL_CAPITAL_APPROVAL"
+  },
+  "kaito": "DIAGNOSTIC_HOLDOUT_ONLY_NOT_PARAMETER_SELECTION",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders_generated": 0,
+  "real_capital_used": 0
+}
