@@ -1185,3 +1185,26 @@ class TestSecretRedaction(unittest.TestCase):
             if re.search(r"token=(?!\*)[A-Za-z0-9]{4}", path.read_text(encoding="utf-8")):
                 leaked.append(str(path))
         self.assertEqual(leaked, [])
+
+
+class TestUniverseHygiene(unittest.TestCase):
+    """Um ticker extinto encolhe o universo em silencio.
+
+    A carteira nao fica errada — fica mais pequena do que o mandante decidiu,
+    e o relatorio so mostra isso como uma linha de "sem dado" entre outras.
+    """
+
+    def test_no_duplicate_tickers(self):
+        for nome, universo in (("B3", config.B3_UNIVERSE),
+                               ("EUA", config.EQUITY_UNIVERSE)):
+            with self.subTest(universo=nome):
+                repetidos = {t for t in universo if universo.count(t) > 1}
+                self.assertEqual(repetidos, set())
+
+    def test_symbols_retired_by_corporate_action_are_gone(self):
+        # CPLE6 -> CPLE3 (Copel unificada); BRFS3 -> MBRF3 (BRF/Marfrig).
+        # Medido em 2026-08-13: /api/available da brapi so conhece os novos.
+        for morto, vivo in (("CPLE6", "CPLE3"), ("BRFS3", "MBRF3")):
+            with self.subTest(ticker=morto):
+                self.assertNotIn(morto, config.B3_UNIVERSE)
+                self.assertIn(vivo, config.B3_UNIVERSE)

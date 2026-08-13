@@ -109,6 +109,41 @@ a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).
 Sem essa distinção, três tickers desconhecidos na Stooq mandavam as 100 ações
 para o Yahoo e esgotavam o seu limite de pedidos.
 
+### Manutencao de ticker nao e mudanca de universo
+
+Trocar `CPLE6` por `CPLE3` (Copel unificada numa classe) ou `BRFS3` por
+`MBRF3` (BRF fundida na Marfrig) **nao** altera a composicao do universo: e a
+mesma empresa sob outro simbolo. O que a seccao 3 protege e a escolha de que
+empresas entram, e essa continua a exigir decisao do mandante.
+
+A distincao importa porque a omissao tem o efeito contrario ao pretendido:
+manter um simbolo extinto encolhe o universo de 50 para 48 nomes sem que
+ninguem tenha decidido isso, e o relatorio mostra-o apenas como mais uma
+linha de "sem dado". Um teste (`TestUniverseHygiene`) fixa os dois casos ja
+medidos para nao regredirem.
+
+A confirmacao veio de `/api/available` da brapi, que lista os simbolos que a
+fonte tem — perguntar a fonte, em vez de testar candidatos um a um.
+
+### Limite conhecido: historico da B3 no plano gratuito
+
+Medido em 2026-08-13 no runner: a brapi so devolve serie longa para uma
+minoria dos tickers. `PETR4` e `VALE3` dao 499 pregoes com `range=2y`;
+`CPLE3` e `MBRF3` recusam 2y, 1y e 6mo com `INVALID_RANGE` e so entregam 63
+pregoes em `3mo`. Nao e quota — os controlos passam depois das recusas na
+mesma corrida — e sim uma restricao por ticker.
+
+Consequencia directa: o momentum 12-1 precisa de ~273 pregoes, por isso 45
+dos 48 nomes restantes sao rejeitados por "historico insuficiente", so 3
+ficam elegiveis, e o piso de diversificacao (4) manda a carteira de acoes B3
+para 100% caixa desde 2026-08-12.
+
+Isto e o fail-closed a funcionar — a carteira recusa-se a operar com menos
+diversificacao do que a Carta exige, em vez de afrouxar o criterio. Mas o
+efeito pratico e uma carteira parada, e resolver exige decisao do mandante
+(plano pago na brapi, outra fonte para a B3, ou aceitar a carteira em caixa).
+O agente nao escolhe sozinho.
+
 ### Segredos
 
 As mensagens de falha são publicadas no relatório, que é versionado num

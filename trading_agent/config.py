@@ -212,7 +212,11 @@ B3_UNIVERSE = [
     "PETR4", "VALE3", "ITUB4", "BBDC4", "BBAS3", "ABEV3", "WEGE3", "RENT3",
     "B3SA3", "ITSA4", "SUZB3", "GGBR4", "CSNA3", "EMBR3", "RADL3", "LREN3",
     "RAIL3", "PRIO3", "EQTL3", "VIVT3", "TOTS3", "HAPV3", "RDOR3", "CMIG4",
-    "ELET3", "SBSP3", "BPAC11", "CPLE6", "TIMS3", "UGPA3", "JBSS3", "BRFS3",
+    # CPLE3 sucede CPLE6 (Copel unificada numa unica classe) e MBRF3 sucede
+    # BRFS3 (BRF fundida na Marfrig). Os simbolos antigos ja nao existem na
+    # B3: /api/available da brapi so devolve CPLE3/CPLE3F e MBRF3/MBRF3F.
+    # Manter o ticker morto encolhia o universo de 50 para 48 sem decisao.
+    "ELET3", "SBSP3", "BPAC11", "CPLE3", "TIMS3", "UGPA3", "JBSS3", "MBRF3",
     "KLBN11", "CYRE3", "MULT3", "ASAI3",
     # --- ampliacao para ~50 nomes (agosto 2026) ---
     "SANB11", "CSAN3", "VBBR3", "BRKM5", "GOAU4", "ENGI11", "CPFE3",
