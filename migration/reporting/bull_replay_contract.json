@@ -65,9 +65,22 @@
     "calendar": "UTC_DAILY_CLOSE",
     "purpose": "Append-only common live scoreboard for the preregistered Bull Replay series; descriptive only and separate from formal prospective experiments.",
     "series": {
-      "v2a_published_equity": ["Victor_proxy", "BTC_puro", "BTC_ETH_70_30", "QOS_Moderada", "QOS_Ultra"],
-      "delta_published_daily": ["Delta_LS_50_50", "Delta_LS_50_50_StopVol", "Delta_LS_70_30", "Delta_LS_70_30_StopVol"],
-      "optional_external": ["MacroQuant"]
+      "v2a_published_equity": [
+        "Victor_proxy",
+        "BTC_puro",
+        "BTC_ETH_70_30",
+        "QOS_Moderada",
+        "QOS_Ultra"
+      ],
+      "delta_published_daily": [
+        "Delta_LS_50_50",
+        "Delta_LS_50_50_StopVol",
+        "Delta_LS_70_30",
+        "Delta_LS_70_30_StopVol"
+      ],
+      "optional_external": [
+        "MacroQuant"
+      ]
     },
     "methodology": {
       "v2a_net_return": "published equity_brl(t) / published equity_brl(t-1) - 1 from the same immutable Daily Research source artifact",
@@ -79,7 +92,49 @@
       "daily_gap_policy": "FAIL_CLOSED_NO_BACKFILL",
       "duplicate_date_policy": "NO_OP_IF_IDENTICAL_ELSE_FAIL_CLOSED",
       "source_revision_policy": "do not rewrite prior live rows; each row is bound to the exact source run used that day",
-      "macroquant_policy": "WAITING_CONTEMPORANEOUS_INDEPENDENT_FEED; never reconstruct retrospectively"
+      "macroquant_policy": "INDEPENDENT_EXTERNAL_JOIN_ONLY_FROM_FIRST_TRUSTWORTHY_CONTEMPORANEOUS_SNAPSHOT; no reconstructed history; separate join date allowed"
+    },
+    "macroquant_external": {
+      "schema": "gate_btc.macroquant_external_adapter.v1",
+      "status": "PREREGISTERED_PRIVACY_SAFE_EXTERNAL_JOIN",
+      "acceptance": {
+        "required_snapshot_schema": "macroquant.daily_snapshot.v1",
+        "strategy_name": "MacroQuant",
+        "nav_currency": "USD",
+        "minimum_anchor_data_as_of_utc": "2026-08-13T00:00:00Z",
+        "require_native_nav": true,
+        "prohibit_reconstructed_history": true,
+        "require_research_only": true,
+        "require_orders_generated_for_gate_btc_zero": true,
+        "allow_missing_position_detail": true
+      },
+      "joining": {
+        "common_gate_btc_anchor_not_required": true,
+        "own_join_timestamp_allowed": true,
+        "anchor_rule": "first trustworthy native MacroQuant snapshot with data_as_of at or after 2026-08-13T00:00:00Z received after preregistration",
+        "first_return_rule": "second trustworthy snapshot from unchanged methodology; compare native NAV ratio across exact native timestamps",
+        "gap_policy": "do not synthesize missing intervals; retain exact elapsed hours between native snapshots",
+        "methodology_change_policy": "start separately labelled series; never splice across methodology versions"
+      },
+      "privacy": {
+        "raw_snapshot_is_private_input": true,
+        "public_runtime_must_not_store_absolute_nav": true,
+        "public_runtime_must_not_store_positions": true,
+        "public_runtime_may_store": [
+          "normalized_nav",
+          "period_return_net",
+          "native_timestamps",
+          "source_sha256",
+          "strategy_version_sha256",
+          "hash_chain"
+        ]
+      },
+      "interpretation": {
+        "role": "DESCRIPTIVE_EXTERNAL_BENCHMARK",
+        "leaderboard_is_descriptive_only": true,
+        "promotion_from_macroquant_comparison": "FORBIDDEN",
+        "macroquant_methodology_remains_independent": true
+      }
     },
     "interpretation": {
       "role": "DIAGNOSTIC_LIVE_BASELINE",
