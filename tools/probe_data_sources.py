@@ -297,9 +297,69 @@ def probe_brapi_ranges(tickers: list[str] | None = None) -> str:
     return "\n" + "\n".join(out)
 
 
+def probe_cotahist() -> str:
+    """Serie historica oficial da B3 (COTAHIST): um ficheiro anual com todos
+    os pregoes de todos os papeis.
+
+    Interessa porque devolve serie diaria, e nao um retrato pre-calculado:
+    com ela a estrategia fica identica e a troca e so de fonte. O ficheiro do
+    ano passado nunca muda, por isso pode ser guardado em cache como o CDI.
+
+    So le os primeiros bytes — nao vale a pena trazer 25 MB para saber se a
+    porta esta aberta.
+    """
+    ano = datetime.now(timezone.utc).year
+    bases = [
+        "https://bvmf.bmfbovespa.com.br/InstDados/SerHist",
+        "https://www.b3.com.br/InstDados/SerHist",
+    ]
+    out = []
+    for base in bases:
+        for nome in (f"COTAHIST_A{ano}.ZIP", f"COTAHIST_A{ano - 1}.ZIP"):
+            url = f"{base}/{nome}"
+            try:
+                req = urllib.request.Request(
+                    url, headers={"User-Agent": UA, "Range": "bytes=0-1023"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    trecho = resp.read(1024)
+                    tamanho = resp.headers.get("Content-Range") or \
+                        resp.headers.get("Content-Length")
+                    zip_ok = trecho[:2] == b"PK"
+                    out.append(f"    HTTP {resp.status} · {nome} · "
+                               f"tamanho={tamanho} · zip={zip_ok} "
+                               f"[{base.split('/')[2]}]")
+            except urllib.error.HTTPError as err:
+                out.append(f"    HTTP {err.code} {err.reason} · {nome} "
+                           f"[{base.split('/')[2]}]")
+            except Exception as err:  # noqa: BLE001
+                out.append(f"    FALHOU {type(err).__name__} · {nome} "
+                           f"[{base.split('/')[2]}]")
+    return "\n" + "\n".join(out)
+
+
+def probe_tradingview_b3() -> str:
+    """O plano B: retrato do scanner para a B3.
+
+    Da os campos que a estrategia precisa ja calculados, mas nao da serie —
+    adota-lo mudaria como o sinal e calculado, o que cai na seccao 6 da Carta.
+    """
+    return probe_tradingview("brazil", ["PETR4", "VALE3", "CPLE3", "MBRF3",
+                                        "BOVA11", "ITUB4"])
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
+
+    if argv and argv[0] == "b3fonte":
+        # Procurar substituto para a brapi na B3. A ordem reflecte a
+        # preferencia: primeiro a que preserva a estrategia.
+        report("B3 COTAHIST — serie oficial (preserva a estrategia)",
+               probe_cotahist)
+        report("TradingView scanner — B3 (retrato, muda a metodologia)",
+               probe_tradingview_b3)
+        print("\nFim da sonda.")
+        return 0
 
     if argv and argv[0] == "b3tickers":
         # Modo dirigido: so os simbolos da B3, sem gastar pedidos nas outras
