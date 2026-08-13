@@ -272,6 +272,31 @@ def probe_brapi_disponiveis(buscas: list[str] | None = None) -> str:
     return "\n" + "\n".join(out)
 
 
+def probe_brapi_ranges(tickers: list[str] | None = None) -> str:
+    """Quanto historico a fonte da, por ticker e por range.
+
+    CPLE3 e MBRF3 existem na brapi mas recusam range=2y com INVALID_RANGE,
+    enquanto PETR4 aceita — logo a restricao e por ticker, nao do plano
+    inteiro. O momentum 12-1 precisa de ~260 pregoes: se o maior range
+    aceite nao chegar la, trocar o ticker nao resolve nada.
+    """
+    out = []
+    for tk in tickers or ["CPLE3", "MBRF3", "PETR4"]:
+        linha = [f"    {tk:8s}"]
+        for rng in ("2y", "1y", "6mo", "3mo", "1mo"):
+            try:
+                _, data = _brapi(tk, rng)
+                hist = ((data.get("results") or [{}])[0]
+                        .get("historicalDataPrice")) or []
+                linha.append(f"{rng}={len(hist)}")
+            except urllib.error.HTTPError as err:
+                linha.append(f"{rng}=HTTP{err.code}")
+            except Exception as err:  # noqa: BLE001
+                linha.append(f"{rng}={type(err).__name__}")
+        out.append(" ".join(linha))
+    return "\n" + "\n".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
@@ -280,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
         # Modo dirigido: so os simbolos da B3, sem gastar pedidos nas outras
         # fontes. Usado quando um evento societario muda um ticker.
         report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
+        report("brapi.dev — historico por ticker e range", probe_brapi_ranges)
         report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
         print("\nFim da sonda.")
         return 0
@@ -290,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
     report("Nasdaq API — profundidade, SPY e rajada", probe_nasdaq_deep)
     report("brapi.dev — historico B3", probe_brapi)
     report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
+    report("brapi.dev — historico por ticker e range", probe_brapi_ranges)
     report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
