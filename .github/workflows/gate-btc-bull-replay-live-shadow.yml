@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-bull-replay-live-shadow.yml
-      - research_protocols/GATE_BTC_BULL_REPLAY_LIVE_SHADOW_V1.json
+      - migration/reporting/bull_replay_contract.json
       - tools/gate_btc_bull_replay_live_shadow.py
       - tests/test_gate_btc_bull_replay_live_shadow.py
   workflow_dispatch:
@@ -118,7 +118,7 @@ jobs:
       - name: Append exact daily live-shadow observation
         run: >-
           python tools/gate_btc_bull_replay_live_shadow.py
-          --contract research_protocols/GATE_BTC_BULL_REPLAY_LIVE_SHADOW_V1.json
+          --contract migration/reporting/bull_replay_contract.json
           --v2a-zip source_artifact/qos_daily/qos_v2a_outputs.zip
           --delta-zip source_artifact/qos_daily/delta_walk_forward_outputs.zip
           --runtime-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
