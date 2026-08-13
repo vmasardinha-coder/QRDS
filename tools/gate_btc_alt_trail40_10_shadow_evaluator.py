@@ -110,7 +110,7 @@ def price_rows(rows, asset, start_day, end_day=None):
 
 def first_price(rows, asset, start_day, strict=False):
     for day, price in price_rows(rows, asset, start_day):
-        if (day > start_day) if strict else (day >= start_day):
+        if ((day > start_day) if strict else (day >= start_day)):
             return day, price
     return None
 
@@ -137,7 +137,6 @@ def evaluate_trade(contract, rows, cycle, next_signal_date, asset):
     path = price_rows(rows, asset, entry_day, last_day)
     require(path and path[0][0] == entry_day, f"missing entry path {cycle['strategy']} {asset}")
 
-    # Once entered, every confirmed daily snapshot through the control exit must be present.
     expected_days = [date.fromisoformat(r["snapshot_date"]) for r in rows if entry_day <= date.fromisoformat(r["snapshot_date"]) <= last_day]
     got_days = [day for day, _ in path]
     require(got_days == expected_days, f"missing daily price in active path {cycle['strategy']} {asset}")
@@ -175,13 +174,12 @@ def evaluate_trade(contract, rows, cycle, next_signal_date, asset):
             running_high = max(running_high, price)
         else:
             running_high = max(running_high, price)
-            if price / entry_price - 1.0 >= activation:
+            if price >= entry_price * (1.0 + activation):
                 armed = True
                 arm_date = day
 
     completed = baseline_exit is not None
     if completed and candidate_exit_date is None:
-        # This only occurs when entry and control exit are the same row, which the contract forbids.
         require(baseline_exit[0] > entry_day, "non-positive control holding period")
         candidate_exit_date, candidate_exit_price = baseline_exit
         exit_reason = "CONTROL_BOUNDARY"
@@ -303,7 +301,7 @@ def build_evaluation(contract, rows, trades):
         "bootstrap_probability_positive": p_positive,
         "aggregate_positive_benefit": positive_benefit,
         "aggregate_regret": regret,
-        "benefit_regret_ratio": positive_benefit / regret if regret > 0 else (None if positive_benefit == 0 else float("inf")),
+        "benefit_regret_ratio": positive_benefit / regret if regret > 0 else None,
         "trimmed_mean_advantage": trimmed_mean,
         "largest_positive_benefit_share": dominance,
         "checks": checks,
