@@ -7,7 +7,9 @@ on:
       - .github/workflows/gate-btc-alt-trail40-10-shadow.yml
       - tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
       - tools/gate_btc_alt_trail40_10_shadow_archive.py
+      - tools/gate_btc_alt_trail40_10_rollover_guard.py
       - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
+      - tests/test_gate_btc_alt_trail40_10_rollover_guard.py
   workflow_dispatch:
     inputs:
       run_id:
@@ -64,8 +66,11 @@ jobs:
           assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
           print('ALT_TRAIL40_10_CONTRACT=PASS')
           PY
-      - name: Test fail-closed prospective archive
-        run: python -m unittest -v tests/test_gate_btc_alt_trail40_10_shadow_archive.py
+      - name: Test fail-closed prospective archive and rollover guard
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_alt_trail40_10_shadow_archive.py
+          tests/test_gate_btc_alt_trail40_10_rollover_guard.py
 
   append-prospective-path:
     needs: contract-tests
@@ -170,10 +175,18 @@ jobs:
           --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
           --source-run-id "$SOURCE_RUN_ID"
 
+      - name: Preserve prior-cycle assets through executable monthly exit
+        run: >-
+          python tools/gate_btc_alt_trail40_10_rollover_guard.py
+          --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
+          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
+
       - name: Verify archive safety state
         run: |
           python - <<'PY'
           import json
+          from pathlib import Path
           p=json.load(open('runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json', encoding='utf-8'))
           assert p['candidate_name'] == 'ALT_TRAIL40_10_CLOSE_LAG1_V1'
           assert p['first_eligible_signal_date'] == '2026-08-31'
@@ -181,6 +194,11 @@ jobs:
           assert p['research_only'] is True and p['shadow_only'] is True
           assert p['not_approved'] is True and p['engine_feed'] is False
           assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
+          latest=p.get('latest_snapshot_date')
+          if latest:
+              row=json.load(open(Path('runtime_repo/runtime/ledgers/alt_trail40_10/snapshots') / f'{latest}.json', encoding='utf-8'))
+              assert row['row_sha256'] == p['latest_row_sha256']
+              assert row['economics_opened'] is False
           print('ALT_TRAIL40_10_ARCHIVE_SAFETY=PASS')
           PY
 
