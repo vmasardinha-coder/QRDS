@@ -8,8 +8,10 @@ on:
       - tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
       - tools/gate_btc_alt_trail40_10_shadow_archive.py
       - tools/gate_btc_alt_trail40_10_rollover_guard.py
+      - tools/gate_btc_alt_trail40_10_shadow_evaluator.py
       - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
       - tests/test_gate_btc_alt_trail40_10_rollover_guard.py
+      - tests/test_gate_btc_alt_trail40_10_shadow_evaluator.py
   workflow_dispatch:
     inputs:
       run_id:
@@ -61,16 +63,25 @@ jobs:
           assert h['result_sha256'] == 'c3e2139b33c537c791633d2b5a3605b6f773baf8ab5b64a5f96b51ab52d654cf'
           assert h['decision'] == 'HISTORICALLY_REJECTED_OR_INSUFFICIENT_FOR_PROMOTION'
           assert h['rule_search_status'] == 'CLOSED_NO_RETUNING_ON_THIS_SAMPLE'
+          g=p['prospective_gate']
+          assert g['freeze_date'] == '2026-08-12'
+          assert g['evaluation_cohort'] == 'ARMED_COMPLETED_JOURNEYS'
+          assert g['minimum_armed_completed_journeys'] == 30
+          assert g['minimum_calendar_days_since_freeze'] == 120
+          assert g['bootstrap_reps'] == 20000 and g['bootstrap_seed'] == 20260812
+          assert g['trim_top_positive_fraction'] == 0.05
+          assert g['max_single_case_positive_benefit_share'] == 0.20
           assert p['research_only'] is True and p['shadow_only'] is True
           assert p['not_approved'] is True and p['engine_feed'] is False
           assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
           print('ALT_TRAIL40_10_CONTRACT=PASS')
           PY
-      - name: Test fail-closed prospective archive and rollover guard
+      - name: Test fail-closed archive, rollover and evaluator
         run: >-
           python -m unittest -v
           tests/test_gate_btc_alt_trail40_10_shadow_archive.py
           tests/test_gate_btc_alt_trail40_10_rollover_guard.py
+          tests/test_gate_btc_alt_trail40_10_shadow_evaluator.py
 
   append-prospective-path:
     needs: contract-tests
@@ -182,12 +193,19 @@ jobs:
           --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
           --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
 
-      - name: Verify archive safety state
+      - name: Evaluate frozen shadow rule deterministically
+        run: >-
+          python tools/gate_btc_alt_trail40_10_shadow_evaluator.py
+          --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
+          --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
+
+      - name: Verify archive and evaluation safety state
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          p=json.load(open('runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json', encoding='utf-8'))
+          root=Path('runtime_repo/runtime/ledgers/alt_trail40_10')
+          p=json.load(open(root / 'STATUS.json', encoding='utf-8'))
           assert p['candidate_name'] == 'ALT_TRAIL40_10_CLOSE_LAG1_V1'
           assert p['first_eligible_signal_date'] == '2026-08-31'
           assert p['first_eligible_execution_date'] == '2026-09-01'
@@ -196,10 +214,17 @@ jobs:
           assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
           latest=p.get('latest_snapshot_date')
           if latest:
-              row=json.load(open(Path('runtime_repo/runtime/ledgers/alt_trail40_10/snapshots') / f'{latest}.json', encoding='utf-8'))
+              row=json.load(open(root / 'snapshots' / f'{latest}.json', encoding='utf-8'))
               assert row['row_sha256'] == p['latest_row_sha256']
               assert row['economics_opened'] is False
-          print('ALT_TRAIL40_10_ARCHIVE_SAFETY=PASS')
+          e=json.load(open(root / 'EVALUATION.json', encoding='utf-8'))
+          assert e['candidate_name'] == 'ALT_TRAIL40_10_CLOSE_LAG1_V1'
+          assert e['evaluation_cohort'] == 'ARMED_COMPLETED_JOURNEYS'
+          assert e['decision'] in {'WAITING_PROSPECTIVE_GATE','PROMOTION_CANDIDATE_RESEARCH_ONLY','NO_PROMOTION'}
+          assert e['research_only'] is True and e['shadow_only'] is True
+          assert e['not_approved'] is True and e['engine_feed'] is False
+          assert e['orders_generated'] == 0 and e['real_capital_used'] == 0
+          print('ALT_TRAIL40_10_ARCHIVE_AND_EVALUATION_SAFETY=PASS')
           PY
 
       - name: Commit ALT trail runtime evidence only
