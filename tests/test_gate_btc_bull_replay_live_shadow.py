@@ -9,7 +9,7 @@ from pathlib import Path
 from tools import gate_btc_bull_replay_live_shadow as live
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "migration" / "reporting" / "bull_replay_live_shadow_contract.json"
+CONTRACT = ROOT / "research_protocols" / "GATE_BTC_BULL_REPLAY_LIVE_SHADOW_V1.json"
 
 
 def zmake(path, asof, eqdates, delta_dates, cost_day=None):
