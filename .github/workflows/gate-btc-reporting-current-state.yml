@@ -1,0 +1,111 @@
+name: GATE BTC Reporting Current State
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-reporting-current-state.yml
+      - tools/gate_btc_reporting_current_state.py
+  workflow_dispatch:
+  schedule:
+    - cron: "30 3 * * *"
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  reporting-contract-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile reporting reconciler
+        run: python -m py_compile tools/gate_btc_reporting_current_state.py
+      - name: Smoke-test stale-counter suppression
+        run: |
+          python - <<'PY'
+          import json, tempfile
+          from pathlib import Path
+          from tools.gate_btc_reporting_current_state import reconcile
+          safe={"research_only":True,"shadow_only":True,"not_approved":True,"orders_generated":0,"real_capital_used":0}
+          with tempfile.TemporaryDirectory() as td:
+              r=Path(td)
+              def w(rel,obj):
+                  p=r/rel; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(json.dumps(obj),encoding='utf-8')
+              w('GATE_BTC_LATEST_ELIGIBLE_RUN.json',{"data_cutoff":"2026-08-12","research_only":True,"orders_generated":0,"real_capital_used":0})
+              w('GATE_BTC_MEASUREMENT_STATUS.json',{**safe,"data_as_of":"2026-08-12","delta_walk_forward":{"current":90,"status":"ACTIVE","targets":[90,120]},"qos_monthly":{"current":0,"target":3,"status":"ACTIVE_CALENDAR_GATED"}})
+              w('ledgers/d50/STATUS.json',{**safe,"data_as_of":"2026-08-06","prospective_immutable_ledger":{"current":4,"target":30,"status":"BLOCKED_LOCAL_SOURCE_REVISION_REPAIR_PENDING","blocker":"local updater repair pending"},"data_qualification":{"current":6,"target":7,"source":"LAST_VALIDATED_PROJECT_STATE"}})
+              w('ledgers/gateway_dynamics/STATUS.json',{**safe,"status":"ACTIVE","latest_source_data_as_of":"2026-08-13","valid_snapshot_count":8,"required_snapshot_count":80})
+              w('ledgers/lock25_50/STATUS.json',{**safe,"status":"ACTIVE","latest_snapshot_id":"2026-08-08","valid_snapshot_count":3})
+              w('ledgers/prl50_position/STATUS.json',{**safe,"status":"WAITING_FIRST_UNTOUCHED_SIGNAL","snapshot_count":0,"first_eligible_signal_date":"2026-08-31"})
+              w('ledgers/alt_trail40_10/STATUS.json',{**safe,"engine_feed":False,"status":"WAITING_FIRST_UNTOUCHED_SIGNAL","snapshot_count":0,"first_eligible_signal_date":"2026-08-31","first_eligible_execution_date":"2026-09-01"})
+              out=reconcile(r)
+              assert out['components']['d50']['display_current'] is None
+              assert out['components']['d50']['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT'
+              assert out['components']['gateway']['freshness']=='FRESH'
+              assert out['components']['lock25_50']['freshness']=='STALE'
+              assert out['components']['prl50']['freshness']=='CURRENT_CALENDAR_GATED'
+              assert out['components']['bull_replay_live_shadow']['status']=='PENDING_INITIALIZATION'
+              assert out['orders_generated']==0 and out['real_capital_used']==0
+          print('REPORTING_STATE_SMOKE=PASS')
+          PY
+
+  publish-reporting-state:
+    needs: reporting-contract-test
+    if: >-
+      github.event_name != 'pull_request' && github.ref_name == 'main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build fail-closed reporting state
+        run: >-
+          python main_repo/tools/gate_btc_reporting_current_state.py
+          --runtime-root runtime_repo/runtime
+          --output runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+      - name: Validate reporting-only safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json'
+          s=json.load(open(p,encoding='utf-8'))
+          assert s['reporting_only'] is True
+          assert s['methodology_changes'] == 0
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['orders_generated'] == 0
+          assert s['real_capital_used'] == 0
+          d50=s['components']['d50']
+          if d50['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT':
+              assert d50['display_current'] is None
+          PY
+      - name: Commit reporting state only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-reporting-bot
+          git config user.email gate-btc-reporting-bot@users.noreply.github.com
+          git add runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update reporting current state"
+          git push origin HEAD:gate-btc-runtime
