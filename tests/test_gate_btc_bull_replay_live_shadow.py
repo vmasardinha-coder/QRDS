@@ -49,9 +49,9 @@ class LiveShadowTests(unittest.TestCase):
     def test_anchor_and_first_observation(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp=Path(tmp); v2a=tmp/"v2a.zip"; delta=tmp/"delta.zip"; runtime=tmp/"runtime"
-            zmake(v2a,"2026-08-16",["2026-08-15","2026-08-16"],["2026-08-16"]); zmake(delta,"2026-08-16",["2026-08-15","2026-08-16"],["2026-08-16"])
+            zmake(v2a,"2026-08-13",["2026-08-12","2026-08-13"],["2026-08-13"]); zmake(delta,"2026-08-13",["2026-08-12","2026-08-13"],["2026-08-13"])
             self.assertEqual(live.process(CONTRACT,v2a,delta,runtime,"1")["status"],"ARMED_WAITING_FIRST_RETURN")
-            zmake(v2a,"2026-08-17",["2026-08-16","2026-08-17"],["2026-08-16","2026-08-17"],cost_day="2026-08-17"); zmake(delta,"2026-08-17",["2026-08-16","2026-08-17"],["2026-08-16","2026-08-17"],cost_day="2026-08-17")
+            zmake(v2a,"2026-08-14",["2026-08-13","2026-08-14"],["2026-08-13","2026-08-14"],cost_day="2026-08-14"); zmake(delta,"2026-08-14",["2026-08-13","2026-08-14"],["2026-08-13","2026-08-14"],cost_day="2026-08-14")
             result=live.process(CONTRACT,v2a,delta,runtime,"2"); self.assertEqual(result["observed_days"],1)
             with (runtime/"DAILY_LEDGER.csv").open(encoding="utf-8") as handle: rows=list(csv.DictReader(handle))
             self.assertEqual(len(rows),9); self.assertAlmostEqual(float(rows[0]["net_return"]),0.01,10); self.assertGreater(float(rows[0]["gross_return"]),0.01)
@@ -59,8 +59,8 @@ class LiveShadowTests(unittest.TestCase):
     def test_gap_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp=Path(tmp); v2a=tmp/"v2a.zip"; delta=tmp/"delta.zip"; runtime=tmp/"runtime"
-            zmake(v2a,"2026-08-16",["2026-08-16"],["2026-08-16"]); zmake(delta,"2026-08-16",["2026-08-16"],["2026-08-16"]); live.process(CONTRACT,v2a,delta,runtime,"1")
-            zmake(v2a,"2026-08-18",["2026-08-17","2026-08-18"],["2026-08-17","2026-08-18"]); zmake(delta,"2026-08-18",["2026-08-17","2026-08-18"],["2026-08-17","2026-08-18"])
+            zmake(v2a,"2026-08-13",["2026-08-13"],["2026-08-13"]); zmake(delta,"2026-08-13",["2026-08-13"],["2026-08-13"]); live.process(CONTRACT,v2a,delta,runtime,"1")
+            zmake(v2a,"2026-08-15",["2026-08-14","2026-08-15"],["2026-08-14","2026-08-15"]); zmake(delta,"2026-08-15",["2026-08-14","2026-08-15"],["2026-08-14","2026-08-15"])
             with self.assertRaises(live.LiveShadowError): live.process(CONTRACT,v2a,delta,runtime,"3")
 
 
