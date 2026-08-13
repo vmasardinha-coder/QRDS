@@ -185,27 +185,77 @@ def probe_stooq(ticker: str = "spy.us") -> str:
     return f"HTTP {status} · inicio {head!r} (controlo)"
 
 
-def probe_brapi(ticker: str = "PETR4") -> str:
+def _brapi(ticker: str, rng: str = "2y"):
+    """O token vai no cabecalho, nunca na query string — os logs do Actions
+    sao publicos neste repositorio, tal como os relatorios.
+    """
     import os
     token = os.environ.get("BRAPI_TOKEN", "").strip()
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     url = (f"https://brapi.dev/api/quote/{ticker}"
-           f"?range=2y&interval=1d&fundamental=false")
-    if token:
-        url += f"&token={token}"
-    status, body = _get(url)
-    data = json.loads(body.decode("utf-8"))
+           f"?range={rng}&interval=1d&fundamental=false")
+    status, body = _get(url, headers=headers)
+    return status, json.loads(body.decode("utf-8"))
+
+
+def probe_brapi(ticker: str = "PETR4") -> str:
+    import os
+    status, data = _brapi(ticker)
     hist = ((data.get("results") or [{}])[0].get("historicalDataPrice")) or []
+    token = os.environ.get("BRAPI_TOKEN", "").strip()
     return (f"HTTP {status} · token {'presente' if token else 'AUSENTE'} · "
             f"{len(hist)} pregoes")
 
 
-def main() -> int:
+# Candidatos a substituir tickers que sairam da B3 por evento societario,
+# com os antigos e dois controlos vivos na mesma corrida. O nome da empresa
+# e o que confirma a identidade: um simbolo que responde nao prova ser o
+# sucessor certo.
+B3_CANDIDATOS = ["CPLE3", "CPLE5", "CPLE6", "MBRF3", "BRFS3", "PETR4", "VALE3"]
+
+
+def probe_b3_tickers(tickers: list[str] | None = None) -> str:
+    out = []
+    for tk in tickers or B3_CANDIDATOS:
+        try:
+            status, data = _brapi(tk)
+        except urllib.error.HTTPError as err:
+            out.append(f"    {tk:8s} HTTP {err.code} {err.reason}")
+            continue
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    {tk:8s} FALHOU {type(err).__name__}")
+            continue
+        res = (data.get("results") or [{}])[0]
+        hist = res.get("historicalDataPrice") or []
+        ultimo = "-"
+        if hist:
+            ts = hist[-1].get("date")
+            if isinstance(ts, (int, float)):
+                ultimo = datetime.fromtimestamp(ts, timezone.utc).date().isoformat()
+        flag = "OK" if len(hist) >= 260 else ("curto" if hist else "VAZIO")
+        out.append(f"    {flag:5s} {tk:8s} HTTP {status} · {len(hist):>4} pregoes"
+                   f" · ate {ultimo} · nome={res.get('longName') or res.get('shortName')!r}"
+                   f" · preco={res.get('regularMarketPrice')}")
+    return "\n" + "\n".join(out)
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
+
+    if argv and argv[0] == "b3tickers":
+        # Modo dirigido: so os simbolos da B3, sem gastar pedidos nas outras
+        # fontes. Usado quando um evento societario muda um ticker.
+        report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
+        print("\nFim da sonda.")
+        return 0
+
     report("TradingView scanner — EUA (lote de 5)",
            lambda: probe_tradingview("america",
                                      ["AAPL", "MSFT", "NVDA", "JPM", "SPY"]))
     report("Nasdaq API — profundidade, SPY e rajada", probe_nasdaq_deep)
     report("brapi.dev — historico B3", probe_brapi)
+    report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
     print("\nFim da sonda.")
