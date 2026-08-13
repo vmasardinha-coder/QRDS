@@ -1,0 +1,196 @@
+name: GATE BTC ALT Trail40 10 Shadow Archive
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-alt-trail40-10-shadow.yml
+      - tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
+      - tools/gate_btc_alt_trail40_10_shadow_archive.py
+      - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Eligible Daily Research workflow run ID
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-alt-trail40-10-shadow-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  ALT_TRAIL_FIRST_SIGNAL: "2026-08-31"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify frozen candidate contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('tools/gate_btc_alt_trail40_10_shadow_contract_v1.json', encoding='utf-8'))
+          assert p['candidate_name'] == 'ALT_TRAIL40_10_CLOSE_LAG1_V1'
+          d=p['candidate_definition']
+          assert d['activation_gain'] == 0.40
+          assert d['trailing_buffer_fraction_of_running_close_high'] == 0.10
+          assert d['same_bar_arm_and_exit'] is False
+          assert d['parameter_retuning_before_gate'] is False
+          assert p['eligible_assets'] == 'ALT_PICKS_ONLY_EXCLUDING_BTC_ETH_BNB_CASH'
+          assert p['first_eligible_signal_date'] == '2026-08-31'
+          assert p['first_eligible_execution_date'] == '2026-09-01'
+          assert p['retrospective_backfill'] == 'PROHIBITED'
+          h=p['historical_evidence_freeze']['qos_crosscheck']
+          assert h['protocol_sha256'] == 'd1d7eceb8325e141e73aafe8645a8ed671e2e549ea81e41b04ec52f756f01cd7'
+          assert h['result_sha256'] == 'c3e2139b33c537c791633d2b5a3605b6f773baf8ab5b64a5f96b51ab52d654cf'
+          assert h['decision'] == 'HISTORICALLY_REJECTED_OR_INSUFFICIENT_FOR_PROMOTION'
+          assert h['rule_search_status'] == 'CLOSED_NO_RETUNING_ON_THIS_SAMPLE'
+          assert p['research_only'] is True and p['shadow_only'] is True
+          assert p['not_approved'] is True and p['engine_feed'] is False
+          assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
+          print('ALT_TRAIL40_10_CONTRACT=PASS')
+          PY
+      - name: Test fail-closed prospective archive
+        run: python -m unittest -v tests/test_gate_btc_alt_trail40_10_shadow_archive.py
+
+  append-prospective-path:
+    needs: contract-tests
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out canonical merged code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve and validate Daily Research source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name'] == 'GATE BTC Daily Research Collection'
+          assert run['head_branch'] == 'main'
+          assert run['status'] == 'completed'
+          assert run['conclusion'] == 'success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Download V2A daily evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source_artifact extracted/v2a
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          unzip -q artifact.zip -d source_artifact
+          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          test -f extracted/v2a/outputs/v2a_run_manifest.json
+          test -f extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
+
+      - name: Verify Daily Research safety and resolve snapshot
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          m=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json', encoding='utf-8-sig'))
+          assert m['status'] in {'PASS','PASS_WITH_DATA_WARNINGS'}
+          assert m['research_only'] is True
+          assert m['operational_status'] == 'NOT_APPROVED'
+          assert m['orders_generated'] == 0 and m['real_capital_used'] == 0
+          assert m['methodology_changes'] == 0
+          assert m['components']['v2a']['status'] == 'PASS'
+          v=json.load(open('extracted/v2a/outputs/v2a_run_manifest.json', encoding='utf-8-sig'))
+          assert v['operational_status'] == 'NOT_APPROVED'
+          assert v['technical_status'] == 'PASS'
+          assert v['real_orders'] == 0 and v['capital_used'] == 0
+          assert v['evidence_status'] == 'RESEARCH_ONLY_NOT_PROMOTED'
+          assert v['lookahead_guard'] == 'signals execute on next daily bar'
+          open('snapshot_id.txt','w',encoding='utf-8').write(v['data_as_of'])
+          PY
+          echo "ALT_TRAIL_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
+
+      - name: Check out immutable runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Initialize immutable ALT trail archive
+        run: >-
+          python tools/gate_btc_alt_trail40_10_shadow_archive.py initialize
+          --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
+          --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
+
+      - name: Append exact prospective daily path
+        run: >-
+          python tools/gate_btc_alt_trail40_10_shadow_archive.py append
+          --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
+          --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
+          --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
+          --source-run-id "$SOURCE_RUN_ID"
+
+      - name: Verify archive safety state
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json', encoding='utf-8'))
+          assert p['candidate_name'] == 'ALT_TRAIL40_10_CLOSE_LAG1_V1'
+          assert p['first_eligible_signal_date'] == '2026-08-31'
+          assert p['first_eligible_execution_date'] == '2026-09-01'
+          assert p['research_only'] is True and p['shadow_only'] is True
+          assert p['not_approved'] is True and p['engine_feed'] is False
+          assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
+          print('ALT_TRAIL40_10_ARCHIVE_SAFETY=PASS')
+          PY
+
+      - name: Commit ALT trail runtime evidence only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/alt_trail40_10
+          git diff --cached --quiet && exit 0
+          git commit -m "Append ALT trail40 10 shadow ${ALT_TRAIL_SNAPSHOT_ID}"
+          git push origin HEAD:gate-btc-runtime
