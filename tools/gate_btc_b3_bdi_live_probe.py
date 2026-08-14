@@ -10,17 +10,17 @@ OUT=Path('artifacts/b3_bdi_probe/B3_BDI_LIVE_PROBE.json')
 
 def main():
     s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-BDI-Probe/1.0'})
-    r=s.get(ROOT,timeout=45); r.raise_for_status()
+    r=s.get(ROOT,timeout=15); r.raise_for_status()
     html=r.text
     scripts=[urljoin(r.url,x) for x in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',html,re.I)]
     candidates=[]; bundles=[]
     pats=[r'https?://[^"\'\s)]+', r'/api/[^"\'\s)]+', r'[^"\']{0,100}(?:csv|download|export|tabelas|table)[^"\']{0,160}']
-    for u in scripts:
+    for u in scripts[:8]:
         try:
-            q=s.get(u,timeout=45)
+            q=s.get(u,timeout=15)
             bundles.append({'url':u,'status':q.status_code,'bytes':len(q.content)})
             if q.status_code!=200: continue
-            text=q.text
+            text=q.text[:8_000_000]
             for p in pats:
                 for m in re.findall(p,text,re.I):
                     x=' '.join(str(m).split())
