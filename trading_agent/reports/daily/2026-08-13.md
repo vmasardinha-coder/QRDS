@@ -60,36 +60,37 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,409.05 |
-| Retorno do dia | +0.27% |
-| Retorno desde inicio (2026-08-06) | -1.18% |
-| Benchmark BTC | -1.48% |
-| **Alfa vs BTC** | **+0.30%** |
-| Caixa | $24,600.69 |
+| NAV | $49,479.88 |
+| Retorno do dia | +0.42% |
+| Retorno desde inicio (2026-08-06) | -1.04% |
+| Benchmark BTC | -1.53% |
+| **Alfa vs BTC** | **+0.49%** |
+| Caixa | $24,823.91 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $63,466.27 | $12,315.37 | 24.9% |
-| SYN | 40034 | $0.11 | $4,305.66 | 8.7% |
-| ONDO | 12325.2 | $0.33 | $4,118.11 | 8.3% |
-| JTO | 7371.79 | $0.55 | $4,069.23 | 8.2% |
+| BTC | 0.194046 | $63,434.47 | $12,309.19 | 24.9% |
+| SYN | 37887.3 | $0.11 | $4,124.03 | 8.3% |
+| TRX | 12328.9 | $0.33 | $4,124.03 | 8.3% |
+| JTO | 7371.79 | $0.56 | $4,098.72 | 8.3% |
 
 ### Movimentacoes de hoje
 | Ativo | Operacao | Qtd | Preco | Valor | Motivo |
 |---|---|---|---|---|---|
-| TRX | VENDA | 12352.2 | $0.33 | $4,128.91 | rebalanceio |
-| ONDO | COMPRA | 12325.2 | $0.33 | $4,122.23 | rebalanceio |
+| ONDO | VENDA | 12325.2 | $0.33 | $4,117.93 | rebalanceio |
+| SYN | VENDA | 2146.73 | $0.11 | $233.44 | rebalanceio |
+| TRX | COMPRA | 12328.9 | $0.33 | $4,128.15 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ONDO: 0.0% vs alvo 8.3%
-- **Obstaculo (BTC):** momentum de -11.0% — so entram ativos acima disto
-- **Candidatos elegiveis:** 16
+- **Gatilho:** desvio de peso em TRX: 0.0% vs alvo 8.3%
+- **Obstaculo (BTC):** momentum de -10.4% — so entram ativos acima disto
+- **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
-- **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-07T00:00:00Z&end=2026-08-14T00:00:00Z: HTTP 404 (definitivo)`
+- **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-08T00:00:00Z&end=2026-08-15T00:00:00Z: HTTP 404 (definitivo)`
 
 | Rejeitado | Motivo |
 |---|---|
@@ -101,7 +102,7 @@ _Sem movimentacoes hoje._
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
 | APT | liquidez baixa (0.5M < 1M) |
-| _(+116 outros)_ | |
+| _(+115 outros)_ | |
 
 </details>
 
@@ -126,14 +127,9 @@ _Sem movimentacoes hoje._
 - **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 3
-- **Fontes usadas:** binance: 31, brapi: 49, coinbase: 119, nasdaq: 101
-- **Fonte brapi falhou 2x:** `: HTTP 400 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 400 (definitivo)]`
-- **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-07T00:00:00Z&end=2026-08-14T00:00:00Z: HTTP 404 (definitivo)`
-- **Fonte yahoo falhou 2x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+- **Fontes usadas:** binance: 31, brapi: 51, coinbase: 119, nasdaq: 101
+- **Fonte coinbase falhou 31x:** `anularity=86400&start=2025-12-08T00:00:00Z&end=2026-08-15T00:00:00Z: HTTP 404 (definitivo)`
 - **Nota:** piso de diversificacao nao atingido (3 < 4) -> 100% caixa
-- **Sem dado (excluidos, nao estimados):** CPLE6, BRFS3
-  - `CPLE6`: Sem fonte para CPLE6 — brapi: 1d&fundamental=false: HTTP 400 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 400 (definitivo)] | yahoo: Yahoo a li
-  - `BRFS3`: Sem fonte para BRFS3 — brapi: 1d&fundamental=false: HTTP 400 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 400 (definitivo)] | yahoo: Yahoo ja r
 
 | Rejeitado | Motivo |
 |---|---|
@@ -145,7 +141,7 @@ _Sem movimentacoes hoje._
 | BPAC11 | historico insuficiente |
 | BRKM5 | historico insuficiente |
 | CMIG4 | historico insuficiente |
-| _(+37 outros)_ | |
+| _(+39 outros)_ | |
 
 </details>
 
