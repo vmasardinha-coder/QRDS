@@ -40,18 +40,40 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pandas numpy
 
-      - name: Run frozen B3 H1 structural collector
-        id: h1
-        continue-on-error: true
+      - name: Resolve immutable target session
+        id: target
         env:
           MANUAL_DATE: ${{ inputs.date }}
         run: |
           set -euo pipefail
-          args=(--out-dir artifacts/b3_h1_daily)
           if [ -n "${MANUAL_DATE:-}" ]; then
-            args+=(--date "$MANUAL_DATE")
+            TARGET_DATE="$MANUAL_DATE"
+            SOURCE="MANUAL_EXPLICIT_DATE"
+          else
+            # The cron is intentionally just after 00:00 UTC on Tue-Sat and is
+            # collecting the immediately preceding Mon-Fri B3 session.  Binding
+            # to yesterday in UTC avoids the previous America/Sao_Paulo
+            # wall-clock rollover bug if the runner starts after local midnight.
+            TARGET_DATE=$(date -u -d 'yesterday' +%F)
+            SOURCE="SCHEDULE_PRIOR_UTC_DATE"
           fi
-          python tools/gate_btc_b3_h1_daily.py "${args[@]}"
+          python - "$TARGET_DATE" <<'PY'
+          import datetime as dt, sys
+          d=dt.date.fromisoformat(sys.argv[1])
+          assert d.weekday() < 5, f"B3 H1 target must be Mon-Fri, got {d}"
+          PY
+          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+          echo "source=$SOURCE" >> "$GITHUB_OUTPUT"
+          echo "B3_H1_TARGET_DATE=$TARGET_DATE source=$SOURCE"
+
+      - name: Run frozen B3 H1 structural collector
+        id: h1
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_b3_h1_daily.py \
+            --date "${{ steps.target.outputs.date }}" \
+            --out-dir artifacts/b3_h1_daily
 
       - name: Record safety boundary
         if: always()
@@ -59,6 +81,8 @@ jobs:
           mkdir -p artifacts/b3_h1_daily
           {
             echo "collector_outcome=${{ steps.h1.outcome }}"
+            echo "target_date=${{ steps.target.outputs.date }}"
+            echo "target_date_source=${{ steps.target.outputs.source }}"
             echo "RESEARCH_ONLY=true"
             echo "SHADOW_ONLY=true"
             echo "NOT_APPROVED=true"

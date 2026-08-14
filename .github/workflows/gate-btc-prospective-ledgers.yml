@@ -22,8 +22,11 @@ permissions:
   actions: read
   contents: read
 
+# All writers to gate-btc-runtime use the same group. This workflow also
+# rebases before publishing, so an unexpected external writer cannot silently
+# lose an otherwise valid measurement update.
 concurrency:
-  group: gate-btc-prospective-ledgers-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  group: gate-btc-runtime-writer
   cancel-in-progress: false
 
 env:
@@ -39,11 +42,9 @@ jobs:
     steps:
       - name: Check out code under review
         uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Test prospective ledger contracts
         run: >-
           python -m unittest -v
@@ -54,7 +55,8 @@ jobs:
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
-
+      - name: Compile immutable gap recovery helper
+        run: python -m py_compile tools/gate_btc_lock_gap_recovery.py
       - name: Reproduce direct-script runtime import path
         run: |
           set -euo pipefail
@@ -71,13 +73,12 @@ jobs:
       actions: read
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out canonical merged code
         uses: actions/checkout@v4
         with:
           ref: main
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -94,11 +95,10 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
           python - <<'PY'
           import json
-          run = json.load(open("source_run.json", encoding="utf-8"))
-          assert run["name"] == "GATE BTC Daily Research Collection", run["name"]
-          assert run["head_branch"] == "main", run["head_branch"]
-          assert run["status"] == "completed", run["status"]
-          assert run["conclusion"] == "success", run["conclusion"]
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name']=='GATE BTC Daily Research Collection'
+          assert run['head_branch']=='main'
+          assert run['status']=='completed' and run['conclusion']=='success'
           PY
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
@@ -108,8 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p source_artifact extracted/gateway extracted/v2a extracted/delta
-          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
@@ -124,26 +123,18 @@ jobs:
 
       - name: Validate fail-closed daily handoff
         run: |
-          set -euo pipefail
           python - <<'PY'
           import json
-          manifest = json.load(open("source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json", encoding="utf-8-sig"))
-          delivery = json.load(open("source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json", encoding="utf-8-sig"))
-          assert manifest["status"] in {"PASS", "PASS_WITH_DATA_WARNINGS"}
-          assert manifest["research_only"] is True
-          assert manifest["operational_status"] == "NOT_APPROVED"
-          assert manifest["orders_generated"] == 0
-          assert manifest["real_capital_used"] == 0
-          assert manifest["methodology_changes"] == 0
-          assert manifest["components"]["v2a"]["status"] == "PASS"
-          assert manifest["components"]["delta"]["status"] == "PASS"
-          assert manifest["components"]["gateway_upstream"]["status"] == "PASS"
-          assert manifest["components"]["gateway_downstream"]["status"] == "PASS"
-          assert delivery["status"] == "READY_FOR_RENDER"
-          assert delivery["contract"]["research_only"] is True
-          assert delivery["contract"]["operational_status"] == "NOT_APPROVED"
-          assert delivery["contract"]["orders_generated"] == 0
-          assert delivery["contract"]["real_capital_used"] == 0
+          manifest=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json', encoding='utf-8-sig'))
+          delivery=json.load(open('source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json', encoding='utf-8-sig'))
+          assert manifest['status'] in {'PASS','PASS_WITH_DATA_WARNINGS'}
+          assert manifest['research_only'] is True and manifest['operational_status']=='NOT_APPROVED'
+          assert manifest['orders_generated']==0 and manifest['real_capital_used']==0 and manifest['methodology_changes']==0
+          for k in ('v2a','delta','gateway_upstream','gateway_downstream'):
+              assert manifest['components'][k]['status']=='PASS'
+          assert delivery['status']=='READY_FOR_RENDER'
+          assert delivery['contract']['research_only'] is True and delivery['contract']['operational_status']=='NOT_APPROVED'
+          assert delivery['contract']['orders_generated']==0 and delivery['contract']['real_capital_used']==0
           PY
 
       - name: Resolve canonical prospective inputs
@@ -228,39 +219,36 @@ jobs:
 
       - name: Validate frozen LOCK source anchor
         run: |
-          set -euo pipefail
           test -f runtime_repo/runtime/ledgers/lock25_50/ANCHOR.json
           test -f runtime_repo/runtime/ledgers/lock25_50/SOURCE_ANCHOR.json
 
-      - name: Append LOCK25/50 eligible close
-        run: |
-          set -euo pipefail
-          if python - <<'PY'
-          from datetime import date
-          import os
-          close = date.fromisoformat(os.environ["LOCK_SNAPSHOT_ID"])
-          first = date.fromisoformat(os.environ["GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE"])
-          raise SystemExit(0 if close >= first else 1)
-          PY
-          then
-            python tools/gate_btc_measurement_ledgers.py append-lock \
-              --contract config/lock25_50_shadow_contract_v1.json \
-              --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv \
-              --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv \
-              --snapshot-id "$LOCK_SNAPSHOT_ID" \
-              --cycle-id "$GATE_BTC_LOCK_CYCLE_ID" \
-              --ledger-dir runtime_repo/runtime/ledgers/lock25_50
-          else
-            echo "LOCK close $LOCK_SNAPSHOT_ID precedes first eligible close; anchor remains at 0."
-          fi
+      - name: Recover any missing LOCK closes from exact immutable artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python tools/gate_btc_lock_gap_recovery.py
+          --repo "$GITHUB_REPOSITORY"
+          --ledger-dir runtime_repo/runtime/ledgers/lock25_50
+          --contract config/lock25_50_shadow_contract_v1.json
+          --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
+          --first-eligible-close "$GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE"
+          --target-exclusive "$LOCK_SNAPSHOT_ID"
+
+      - name: Append current LOCK25/50 eligible close
+        run: >-
+          python tools/gate_btc_measurement_ledgers.py append-lock
+          --contract config/lock25_50_shadow_contract_v1.json
+          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
+          --snapshot-id "$LOCK_SNAPSHOT_ID"
+          --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
+          --ledger-dir runtime_repo/runtime/ledgers/lock25_50
 
       - name: Rebuild canonical measurement status
         run: |
           set -euo pipefail
           d50_args=()
-          if test -f runtime_repo/runtime/ledgers/d50/STATUS.json; then
-            d50_args=(--d50-status runtime_repo/runtime/ledgers/d50/STATUS.json)
-          fi
+          if test -f runtime_repo/runtime/ledgers/d50/STATUS.json; then d50_args=(--d50-status runtime_repo/runtime/ledgers/d50/STATUS.json); fi
           python tools/gate_btc_measurement_ledgers.py build-status \
             --delta-gate extracted/delta/outputs/strategy_evidence_gate.csv \
             --gateway-status runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json \
@@ -268,7 +256,7 @@ jobs:
             "${d50_args[@]}" \
             --output runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
 
-      - name: Commit runtime evidence only
+      - name: Commit runtime evidence with fail-closed rebase/retry
         working-directory: runtime_repo
         run: |
           set -euo pipefail
@@ -277,4 +265,18 @@ jobs:
           git add runtime/ledgers/gateway_dynamics runtime/ledgers/lock25_50 runtime/universe_snapshots/gateway runtime/data_quality/v2a runtime/GATE_BTC_MEASUREMENT_STATUS.json
           git diff --cached --quiet && exit 0
           git commit -m "Append GATE BTC prospective measurements ${LOCK_SNAPSHOT_ID}"
-          git push origin HEAD:gate-btc-runtime
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              echo "RUNTIME_REBASE_CONFLICT_FAIL_CLOSED"
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then
+              echo "RUNTIME_PUBLISH=PASS attempt=$attempt"
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "RUNTIME_PUBLISH=FAILED_AFTER_RETRIES"
+          exit 1
