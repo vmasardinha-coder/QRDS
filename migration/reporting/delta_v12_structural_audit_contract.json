@@ -1,0 +1,43 @@
+{
+  "version": "DELTA_V12_STRUCTURAL_AUDIT_1.0",
+  "frozen_date": "2026-08-14",
+  "purpose": "Offline research comparison of structural hypotheses against immutable daily evidence.",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "source_workflow": "GATE BTC Daily Research Collection",
+  "source_branch": "main",
+  "hypotheses": [
+    "V12A_WEEKLY_5X5_EQUAL",
+    "V12B_WEEKLY_7X7_EQUAL",
+    "V12C_WEEKLY_7X7_INVOL",
+    "V12D_WEEKLY_10X10_EQUAL"
+  ],
+  "weekday_placebos": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
+  "frozen_score": "same momentum score already embedded in Delta V11 source evidence",
+  "external_evidence_use": "audit only; never tuning",
+  "known_external_features": [
+    "cross-sectional momentum",
+    "long winners and short losers",
+    "weekly Friday rebalance",
+    "volatility sizing",
+    "near market neutrality"
+  ],
+  "contaminated_diagnostics": ["1.5x gross exposure diagnostic"],
+  "forbidden": [
+    "change score lookbacks from external outcomes",
+    "copy observed external asset names into the research universe",
+    "add unobserved intrawweek exits",
+    "select a hypothesis using return alone",
+    "feed results to execution"
+  ],
+  "monitor_metrics": [
+    "return", "volatility", "max_drawdown", "win_rate", "btc_beta",
+    "turnover", "cost_drag", "funding", "gross_exposure", "net_exposure"
+  ],
+  "decision": "PROSPECTIVE_TEST_ONLY",
+  "promotion_eligible": false
+}
