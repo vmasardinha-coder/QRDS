@@ -1,0 +1,35 @@
+name: GATE BTC B3 BDI Live Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-b3-bdi-live-probe.yml
+      - tools/gate_btc_b3_bdi_live_probe.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  probe-bdi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3'
+      - name: Probe live BDI frontend and bundles
+        run: python tools/gate_btc_b3_bdi_live_probe.py
+      - name: Upload probe evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-bdi-probe-${{ github.run_id }}
+          path: artifacts/b3_bdi_probe/
+          retention-days: 14
+          if-no-files-found: error
