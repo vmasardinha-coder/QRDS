@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang='pt-BR'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta name='generator' content='gate_btc.delta_paper_report.v1'><meta name='data-as-of' content='2026-08-13'><meta name='generated-at-utc' content=''><title>Delta Paper Monitor — 2026-08-13</title><style>
+:root{color-scheme:light;--page:#f9f9f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink-2:#52514e;--muted:#898781;
+--grid:#e1e0d9;--axis:#c3c2b7;--ring:rgba(11,11,11,0.10);--up:#006300;--down:#d03b3b;--warn:#fab219;
+--series-1:#2a78d6;--series-2:#eb6834;--series-3:#1baf7a;--series-4:#eda100;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;
+--ink:#fff;--ink-2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--axis:#383835;--ring:rgba(255,255,255,0.10);
+--up:#0ca30c;--down:#d03b3b;--series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--series-4:#c98500;}}
+:root[data-theme="dark"]{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink-2:#c3c2b7;
+--muted:#898781;--grid:#2c2c2a;--axis:#383835;--ring:rgba(255,255,255,0.10);--up:#0ca30c;--down:#d03b3b;
+--series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--series-4:#c98500;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;overflow-wrap:anywhere;}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 64px}
+header.top h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--ink-2);margin:0 0 16px;font-size:.9rem}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px;padding:0;list-style:none}
+.pill{border:1px solid var(--ring);border-radius:999px;padding:4px 12px;font-size:.78rem;color:var(--ink-2);
+background:var(--surface);white-space:nowrap}
+.pill strong{color:var(--ink);font-weight:600}
+.banner{border:1px solid var(--ring);border-left:4px solid var(--warn);background:var(--surface);
+border-radius:8px;padding:12px 16px;margin:0 0 24px;font-size:.84rem;color:var(--ink-2)}
+.banner strong{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 16px}
+.tile header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tile h3{font-size:.82rem;margin:0;font-weight:600;color:var(--ink-2)}
+.tile-value{font-size:1.6rem;margin:0;font-variant-numeric:tabular-nums}
+.tile-meta{font-size:.72rem;color:var(--muted);margin:2px 0 10px}
+.tile-facts{display:flex;gap:18px;margin:0}
+.tile-facts div{margin:0}
+.tile-facts dt{font-size:.7rem;color:var(--muted);margin:0}
+.tile-facts dd{margin:0;font-size:.86rem;font-variant-numeric:tabular-nums}
+.delta-up{color:var(--up)}.delta-down{color:var(--down)}
+.swatch{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.panel{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px;margin:0 0 20px}
+.panel-title{font-size:.95rem;font-weight:600;margin:0 0 12px;color:var(--ink)}
+.chart-scroll,.table-scroll{overflow-x:auto}
+.chart{width:100%;min-width:640px;height:auto;display:block}
+.grid{stroke:var(--grid);stroke-width:1}
+.baseline{stroke:var(--axis);stroke-width:1}
+.tick{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.series-line{stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.series-label,.bar-label{fill:var(--ink-2);font-size:11px}
+.bar-value{fill:var(--ink-2);font-size:11px;font-variant-numeric:tabular-nums}
+.bar{stroke:var(--surface);stroke-width:2}
+.hover-dot{cursor:crosshair}
+.hover-dot:hover{fill:var(--ink);fill-opacity:.12}
+.legend{display:flex;flex-wrap:wrap;gap:14px;list-style:none;padding:0;margin:10px 0 0;font-size:.78rem;color:var(--ink-2)}
+.legend li{display:flex;align-items:center;gap:6px}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--grid)}
+th{color:var(--muted);font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{font-variant-numeric:tabular-nums;white-space:normal}
+.empty{color:var(--muted);font-size:.84rem;margin:0}
+footer.foot{color:var(--muted);font-size:.75rem;border-top:1px solid var(--grid);padding-top:16px;margin-top:8px}
+footer.foot code{word-break:break-all}
+</style></head><body><div class='wrap'><header class='top'><h1>GATE BTC — Delta Prospective Paper Monitor</h1><p class='sub'>Relatorio executivo diario · hipotese <strong>DELTA_RECONSTRUCTION_BEST_AVAILABLE_HYPOTHESIS</strong></p><ul class='pills'><li class='pill'>Status <strong>ARMED_WAITING_FIRST_RETURN</strong></li><li class='pill'>Data <strong>2026-08-13</strong></li><li class='pill'>Dias observados <strong>0</strong></li><li class='pill'>Ancora <strong>2026-08-13</strong></li><li class='pill'>Regime BTC <strong>STRESS</strong></li><li class='pill'>Zona <strong>ABOVE_60K</strong></li></ul><p class='banner'><strong>RESEARCH_ONLY · SHADOW_ONLY · NOT_APPROVED · ORDERS=0 · REAL_CAPITAL=0.</strong> Trades e posicoes abaixo sao simulados pela reconstrucao congelada, nao executados. Este monitor nao e o Delta oficial e nao afirma conhecer o mecanismo proprietario (official_replica_claim = false). As quatro carteiras aparecem sempre na ordem do contrato — a ordem nao e ranking e nao autoriza promocao.</p></header><div class='tiles'><article class='tile'><header><span class='swatch' style='background:var(--series-1)'></span><h3>Delta_LS_50_50</h3></header><p class='tile-value'>1.000000</p><p class='tile-meta'>NAV normalizado desde a ancora</p><dl class='tile-facts'><div><dt>Dia</dt><dd class='delta-flat'>+0.0000%</dd></div><div><dt>Drawdown</dt><dd>+0.0000%</dd></div></dl></article><article class='tile'><header><span class='swatch' style='background:var(--series-2)'></span><h3>Delta_LS_50_50_StopVol</h3></header><p class='tile-value'>1.000000</p><p class='tile-meta'>NAV normalizado desde a ancora</p><dl class='tile-facts'><div><dt>Dia</dt><dd class='delta-flat'>+0.0000%</dd></div><div><dt>Drawdown</dt><dd>+0.0000%</dd></div></dl></article><article class='tile'><header><span class='swatch' style='background:var(--series-3)'></span><h3>Delta_LS_70_30</h3></header><p class='tile-value'>1.000000</p><p class='tile-meta'>NAV normalizado desde a ancora</p><dl class='tile-facts'><div><dt>Dia</dt><dd class='delta-flat'>+0.0000%</dd></div><div><dt>Drawdown</dt><dd>+0.0000%</dd></div></dl></article><article class='tile'><header><span class='swatch' style='background:var(--series-4)'></span><h3>Delta_LS_70_30_StopVol</h3></header><p class='tile-value'>1.000000</p><p class='tile-meta'>NAV normalizado desde a ancora</p><dl class='tile-facts'><div><dt>Dia</dt><dd class='delta-flat'>+0.0000%</dd></div><div><dt>Drawdown</dt><dd>+0.0000%</dd></div></dl></article></div><figure class='panel'><figcaption class='panel-title'>NAV normalizado desde a ancora</figcaption><p class='empty'>Sem retornos prospectivos ainda. O primeiro dia contabilizado inicia a serie.</p></figure><figure class='panel'><figcaption class='panel-title'>Drawdown desde a ancora</figcaption><p class='empty'>Sem retornos prospectivos ainda. O primeiro dia contabilizado inicia a serie.</p></figure><figure class='panel' id='chart-daily'><figcaption class='panel-title'>Retorno liquido do dia (2026-08-13) por carteira</figcaption><div class='chart-scroll'><svg class='chart' viewBox='0 0 760 214' role='img' aria-label='Retorno liquido do dia (2026-08-13) por carteira'><line class='baseline' x1='453.00' y1='12' x2='453.00' y2='196'></line><text class='bar-label' x='232' y='39.00' text-anchor='end'>Delta_LS_50_50</text><rect class='bar' data-slot='0' x='453.00' y='24.00' width='1.50' height='22' rx='4' fill='var(--series-1)'><title>Delta_LS_50_50 — +0.0000%</title></rect><text class='bar-value' x='670.00' y='39.00' text-anchor='start'>+0.0000%</text><text class='bar-label' x='232' y='85.00' text-anchor='end'>Delta_LS_50_50_StopVol</text><rect class='bar' data-slot='1' x='453.00' y='70.00' width='1.50' height='22' rx='4' fill='var(--series-2)'><title>Delta_LS_50_50_StopVol — +0.0000%</title></rect><text class='bar-value' x='670.00' y='85.00' text-anchor='start'>+0.0000%</text><text class='bar-label' x='232' y='131.00' text-anchor='end'>Delta_LS_70_30</text><rect class='bar' data-slot='2' x='453.00' y='116.00' width='1.50' height='22' rx='4' fill='var(--series-3)'><title>Delta_LS_70_30 — +0.0000%</title></rect><text class='bar-value' x='670.00' y='131.00' text-anchor='start'>+0.0000%</text><text class='bar-label' x='232' y='177.00' text-anchor='end'>Delta_LS_70_30_StopVol</text><rect class='bar' data-slot='3' x='453.00' y='162.00' width='1.50' height='22' rx='4' fill='var(--series-4)'><title>Delta_LS_70_30_StopVol — +0.0000%</title></rect><text class='bar-value' x='670.00' y='177.00' text-anchor='start'>+0.0000%</text></svg></div></figure><section class='panel'><h2 class='panel-title'>Decomposicao economica do dia (tabela de apoio dos graficos)</h2><div class='table-scroll'><table><thead><tr><th scope='col'>Carteira</th><th scope='col'>Bruto</th><th scope='col'>Custo</th><th scope='col'>Funding</th><th scope='col'>Liquido</th><th scope='col'>Turnover</th><th scope='col'>Kill switch</th><th scope='col'>Evidence gate</th><th scope='col'>NAV</th></tr></thead><tbody><tr><td>Delta_LS_50_50</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>0.0000</td><td>nao</td><td>nao elegivel</td><td>1.000000</td></tr><tr><td>Delta_LS_50_50_StopVol</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>0.0000</td><td>nao</td><td>nao elegivel</td><td>1.000000</td></tr><tr><td>Delta_LS_70_30</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>0.0000</td><td>nao</td><td>nao elegivel</td><td>1.000000</td></tr><tr><td>Delta_LS_70_30_StopVol</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>+0.0000%</td><td>0.0000</td><td>nao</td><td>nao elegivel</td><td>1.000000</td></tr></tbody></table></div></section><section class='panel'><h2 class='panel-title'>Posicoes simuladas em aberto (2026-08-13)</h2><p class='empty'>Nenhuma posicao simulada em aberto nesta data.</p></section><section class='panel'><h2 class='panel-title'>Movimentacoes simuladas do dia (2026-08-13)</h2><p class='empty'>Nenhuma movimentacao simulada nesta data.</p></section><section class='panel'><h2 class='panel-title'>Selecoes com execucao teorica em 2026-08-13</h2><p class='empty'>Nenhuma selecao com execucao teorica nesta data.</p></section><footer class='foot'><p>Motor congelado: <strong></strong>. Convencao de execucao: </p><p>Run de origem <code>31764657396</code> · ZIP <code>8cd26d08b1255f25f36c75c011c487fda4da1a14aacfa17ce86a1487b719f968</code></p><p>Cadeia economica <code></code> · cadeia de fonte <code></code> · ancora registrada em 2026-08-13</p><p>Relatorio gerado apenas para leitura do ledger append-only; nao altera evidencia, metodologia, ordens ou capital.</p></footer></div></body></html>
