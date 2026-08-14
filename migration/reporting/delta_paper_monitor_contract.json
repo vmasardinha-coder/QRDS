@@ -1,0 +1,79 @@
+{
+  "schema": "gate_btc.delta_paper_monitor_contract.v1",
+  "status": "PREREGISTERED_EXACT_RULE_PAPER_SHADOW",
+  "decision_date": "2026-08-13",
+  "anchor_date": "2026-08-13",
+  "first_return_date": "2026-08-14",
+  "calendar": "UTC_DAILY",
+  "source_engine": "DELTA_WALK_FORWARD_1.1",
+  "hypothesis_label": "DELTA_RECONSTRUCTION_BEST_AVAILABLE_HYPOTHESIS",
+  "official_replica_claim": false,
+  "purpose": "Prospective paper monitor of the frozen GATE BTC Delta reconstruction. Records simulated trades, positions and normalized NAV without changing strategy methodology.",
+  "strategies": [
+    "Delta_LS_70_30",
+    "Delta_LS_70_30_StopVol",
+    "Delta_LS_50_50",
+    "Delta_LS_50_50_StopVol"
+  ],
+  "frozen_premises": {
+    "universe": ["BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "AVAX", "LINK", "LTC", "BCH", "DOT", "TRX", "SUI", "APT", "ARB", "OP", "NEAR", "FIL", "AAVE", "ETC"],
+    "score": "0.20*z(ret7)+0.35*z(ret14)+0.35*z(ret30)-0.10*z(vol30)+0.05*z(liquidity)",
+    "top_n": 5,
+    "bottom_n": 5,
+    "persistence_days": 2,
+    "signal_timing": "completed UTC daily close",
+    "execution_timing": "next UTC daily open",
+    "gross_books": ["70/30", "50/50"],
+    "stopvol_target_daily_vol": 0.04,
+    "fee_bps_per_side": 5.0,
+    "slippage_bps_per_side": 3.0,
+    "stop_vol_multiplier": 2.5,
+    "stop_floor": 0.06,
+    "stop_cap": 0.35,
+    "take_profit_r_multiple": 2.0,
+    "trailing_vol_multiplier": 1.5,
+    "trailing_floor": 0.04,
+    "trailing_cap": 0.25,
+    "reentry_cooldown_days": 2,
+    "daily_loss_kill_switch": 0.03,
+    "weekly_loss_kill_switch": 0.07,
+    "daily_kill_cooldown_days": 1,
+    "weekly_kill_cooldown_days": 3
+  },
+  "source_requirements": {
+    "manifest_suffix": "outputs/delta_v11_run_manifest.json",
+    "daily_suffix": "outputs/delta_daily_returns.csv",
+    "trades_suffix": "outputs/delta_trade_ledger.csv",
+    "positions_suffix": "outputs/delta_daily_positions.csv",
+    "selections_suffix": "outputs/delta_historical_selections.csv",
+    "evidence_gate_suffix": "outputs/strategy_evidence_gate.csv",
+    "selection_current_suffix": "outputs/strategy_selection_current.json",
+    "regime_suffix": "outputs/btc_regime_daily.csv"
+  },
+  "prospective_rules": {
+    "initial_nav": 1.0,
+    "no_pre_anchor_economic_rows": true,
+    "daily_gap_policy": "FAIL_CLOSED_NO_BACKFILL",
+    "duplicate_date_policy": "NO_OP_IF_IDENTICAL_ELSE_FAIL_CLOSED",
+    "source_revision_policy": "Each prospective date is bound to the exact Daily Research source run and source ZIP hash used on first acceptance.",
+    "parallel_variants_required": true,
+    "retrospective_winner_selection_forbidden": true,
+    "historical_outputs_role": "CONTEXT_ONLY"
+  },
+  "execution_caveat": "Crypto is 24/7; next UTC daily open is the boundary immediately after the completed close. This exact-rule paper shadow is not proof of a zero-latency executable fill.",
+  "reporting": {
+    "compare_with": ["BTC", "Victor_proxy", "BTC_ETH_70_30", "QOS_Moderada", "QOS_Ultra", "Bull_Replay_Live_Shadow"],
+    "leaderboard_role": "DESCRIPTIVE_ONLY",
+    "promotion_from_monitor": "FORBIDDEN"
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "methodology_changes": 0
+  }
+}
