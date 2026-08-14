@@ -351,6 +351,35 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
 
+    if argv and argv[0] == "b3arquivo":
+        # Ler o arquivo a serio, com o universo a serio. Os testes usam
+        # registos montados a mao: provam o formato que eu assumi, nao o que
+        # a B3 emite. So isto separa as duas coisas.
+        from trading_agent import config, cotahist
+
+        def ler() -> str:
+            alvo = config.B3_UNIVERSE + [config.B3S_UNDERLYING]
+            inicio = datetime.now(timezone.utc)
+            series = cotahist.load(alvo)
+            segundos = (datetime.now(timezone.utc) - inicio).total_seconds()
+            curtos = sorted(t for t in alvo
+                            if len(series.get(t, [])) < config.EQUITY_MIN_HISTORY_DAYS)
+            ausentes = sorted(t for t in alvo if t not in series)
+            exemplo = series.get("PETR4") or []
+            return (
+                f"{len(series)} de {len(alvo)} tickers em {segundos:.1f}s\n"
+                f"    pregoes: min={min((len(v) for v in series.values()), default=0)}"
+                f" max={max((len(v) for v in series.values()), default=0)}\n"
+                f"    PETR4 ultimo: {exemplo[-1] if exemplo else '-'}\n"
+                f"    PETR4 primeiro: {exemplo[0] if exemplo else '-'}\n"
+                f"    ausentes ({len(ausentes)}): {ausentes}\n"
+                f"    abaixo de {config.EQUITY_MIN_HISTORY_DAYS} pregoes "
+                f"({len(curtos)}): {curtos}")
+
+        report("COTAHIST — leitura real do universo da B3", ler)
+        print("\nFim da sonda.")
+        return 0
+
     if argv and argv[0] == "b3fonte":
         # Procurar substituto para a brapi na B3. A ordem reflecte a
         # preferencia: primeiro a que preserva a estrategia.
