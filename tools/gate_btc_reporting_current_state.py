@@ -99,6 +99,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "prl50": runtime_root / "ledgers" / "prl50_position" / "STATUS.json",
         "alt_trail": runtime_root / "ledgers" / "alt_trail40_10" / "STATUS.json",
         "bull_replay": runtime_root / "ledgers" / "bull_replay_live_shadow" / "STATUS.json",
+        "delta_paper_monitor": runtime_root / "ledgers" / "delta_paper_monitor" / "STATUS.json",
     }
     data = {name: load_json(path) for name, path in paths.items()}
     for name, obj in data.items():
@@ -200,6 +201,27 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
             "source": "ledgers/bull_replay_live_shadow/STATUS.json",
         }
     components["bull_replay_live_shadow"] = bull_component
+
+    paper = data["delta_paper_monitor"]
+    if paper is None:
+        paper_component = {
+            "status": "PENDING_INITIALIZATION",
+            "freshness": "PENDING_NOT_YET_WRITTEN",
+            "observed_days": 0,
+            "source": "ledgers/delta_paper_monitor/STATUS.json",
+        }
+    else:
+        paper_component = {
+            "status": paper.get("status"),
+            "freshness": fresh_label(iso_date(paper.get("data_as_of")), reference_date),
+            "observed_days": paper.get("observed_days", 0),
+            "data_as_of": paper.get("data_as_of"),
+            "hypothesis_label": paper.get("hypothesis_label"),
+            "official_replica_claim": paper.get("official_replica_claim"),
+            "leaderboard_descriptive_only": paper.get("leaderboard_descriptive_only"),
+            "source": "ledgers/delta_paper_monitor/STATUS.json",
+        }
+    components["delta_paper_monitor"] = paper_component
 
     qos = measurement.get("qos_monthly") or {}
     components["qos_monthly"] = {

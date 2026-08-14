@@ -52,6 +52,7 @@ jobs:
               assert out['components']['lock25_50']['freshness']=='STALE'
               assert out['components']['prl50']['freshness']=='CURRENT_CALENDAR_GATED'
               assert out['components']['bull_replay_live_shadow']['status']=='PENDING_INITIALIZATION'
+              assert out['components']['delta_paper_monitor']['status']=='PENDING_INITIALIZATION'
               assert out['orders_generated']==0 and out['real_capital_used']==0
           print('REPORTING_STATE_SMOKE=PASS')
           PY
