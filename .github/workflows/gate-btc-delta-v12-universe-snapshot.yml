@@ -1,0 +1,61 @@
+name: GATE BTC Delta V12 Universe Snapshot
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-delta-v12-universe-snapshot.yml'
+      - 'tools/gate_btc_delta_v12_universe_snapshot.py'
+      - 'migration/reporting/delta_v12_universe_expansion_contract.json'
+  schedule:
+    - cron: '35 1 * * *'
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  DELTA_V12_UNIVERSE_OUT: delta_v12_universe_snapshot
+
+jobs:
+  universe-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert research-only contract
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          python - <<'PY'
+          import json
+          p=json.load(open('migration/reporting/delta_v12_universe_expansion_contract.json'))
+          assert p['research_only'] is True
+          assert p['shadow_only'] is True
+          assert p['not_approved'] is True
+          assert p['engine_feed'] is False
+          assert p['orders'] == 0
+          assert p['real_capital'] == 0
+          assert p['promotion_eligible'] is False
+          PY
+      - name: Capture broad liquid shortable universe
+        run: python tools/gate_btc_delta_v12_universe_snapshot.py
+      - name: Verify manifest fail-closed
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('delta_v12_universe_snapshot/UNIVERSE_MANIFEST.json'))
+          assert p['research_only'] is True
+          assert p['shadow_only'] is True
+          assert p['not_approved'] is True
+          assert p['engine_feed'] is False
+          assert p['orders'] == 0
+          assert p['real_capital'] == 0
+          assert p['external_holdings_used_for_selection'] is False
+          assert p['eligible_count'] >= 30
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-delta-v12-universe-${{ github.run_id }}
+          path: delta_v12_universe_snapshot/
+          retention-days: 90
