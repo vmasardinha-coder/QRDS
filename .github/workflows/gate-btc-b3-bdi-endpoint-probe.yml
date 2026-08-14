@@ -1,0 +1,35 @@
+name: GATE BTC B3 BDI Endpoint Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_bdi_endpoint_probe.py
+      - .github/workflows/gate-btc-b3-bdi-endpoint-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  endpoint-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install 'requests>=2.31,<3'
+      - name: Extract live BDI endpoint contract
+        run: python tools/gate_btc_b3_bdi_endpoint_probe.py
+      - name: Upload endpoint evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-bdi-endpoint-${{ github.run_id }}
+          path: artifacts/b3_bdi_endpoint_probe/
+          retention-days: 14
+          if-no-files-found: error
