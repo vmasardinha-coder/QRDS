@@ -8,7 +8,9 @@ on:
       - migration/reporting/delta_paper_monitor_contract.json
       - migration/reporting/GATE_BTC_DELTA_PAPER_MONITOR_AGENT.md
       - tools/gate_btc_delta_paper_monitor.py
+      - tools/gate_btc_delta_paper_report.py
       - tests/test_gate_btc_delta_paper_monitor.py
+      - tests/test_gate_btc_delta_paper_report.py
   workflow_dispatch:
     inputs:
       run_id:
@@ -41,8 +43,10 @@ jobs:
           python-version: "3.12"
       - name: Test paper-monitor contract and append-only logic
         run: python -m unittest -v tests.test_gate_btc_delta_paper_monitor
-      - name: Compile paper monitor
-        run: python -m py_compile tools/gate_btc_delta_paper_monitor.py
+      - name: Test daily executive report rendering
+        run: python -m unittest -v tests.test_gate_btc_delta_paper_report
+      - name: Compile paper monitor and reporter
+        run: python -m py_compile tools/gate_btc_delta_paper_monitor.py tools/gate_btc_delta_paper_report.py
 
   append-paper-monitor:
     needs: contract-tests
@@ -121,6 +125,12 @@ jobs:
           --source-zip source_artifact/qos_daily/delta_walk_forward_outputs.zip
           --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor
           --source-run-id "$SOURCE_RUN_ID"
+
+      - name: Render daily executive report from the ledger
+        run: >-
+          python tools/gate_btc_delta_paper_report.py
+          --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor
+          --allow-missing
 
       - name: Verify runtime safety state when present
         run: |
