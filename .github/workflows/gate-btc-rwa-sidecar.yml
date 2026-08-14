@@ -2,6 +2,8 @@ name: GATE BTC RWA Tokenized Observation Sidecar
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "55 5 * * *"
   pull_request:
     branches: [main]
     paths:
@@ -23,38 +25,31 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Test sidecar safety boundary
         run: python -m unittest -v tests/test_gate_btc_rwa_sidecar_manifest.py
-
       - name: Resolve latest successful source-probe evidence for branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${BRANCH}&status=success&per_page=20" \
-            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${BRANCH}&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
           test -n "$RUN_ID"
-          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
           test -n "$ARTIFACT_ID"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
           mkdir -p source_probe artifacts/rwa_sidecar
           unzip -q source_probe.zip -d source_probe
           test -f source_probe/v2a_failure_diagnostic.json
           echo "SOURCE_PROBE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
-
       - name: Build point-in-time RWA tokenized observation sidecar
         run: >-
           python tools/gate_btc_rwa_sidecar_manifest.py
           --diagnostic source_probe/v2a_failure_diagnostic.json
           --output artifacts/rwa_sidecar/rwa_tokenized_observation_sidecar.json
-
       - name: Verify sidecar cannot change V2A or create a strategy universe
         run: |
           python - <<'PY'
@@ -74,11 +69,7 @@ jobs:
           assert p['real_capital_used'] == 0
           print('RWA_SIDECAR_SAFETY=PASS')
           print('STATUS='+p['status'])
-          print('CANDIDATES='+str(p['candidate_count']))
-          print('RWA_FLAGS='+str(p['rwa_or_tokenized_flag_count']))
-          print('CASHLIKE_FLAGS='+str(p['cashlike_or_stable_flag_count']))
           PY
-
       - name: Upload RWA sidecar evidence
         if: always()
         uses: actions/upload-artifact@v4
