@@ -30,13 +30,17 @@ jobs:
           python-version: "3.12"
       - name: Test sidecar safety boundary
         run: python -m unittest -v tests/test_gate_btc_rwa_sidecar_manifest.py
-      - name: Resolve latest successful source-probe evidence for branch
+      - name: Resolve latest successful source-probe evidence
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
           RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${BRANCH}&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          if [ -z "$RUN_ID" ]; then
+            echo "No successful source-probe on ${BRANCH}; using latest successful main evidence for observation-only sidecar."
+            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=main&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          fi
           test -n "$RUN_ID"
           ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
           test -n "$ARTIFACT_ID"
