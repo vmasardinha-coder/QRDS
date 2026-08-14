@@ -1,0 +1,41 @@
+{
+  "version": "DELTA_V12_UNIVERSE_EXPANSION_1.0",
+  "frozen_date": "2026-08-14",
+  "purpose": "Prospective reconstruction of a broad liquid and shortable USD-M perpetual universe without copying external Delta holdings.",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "source": {
+    "venue": "Binance USD-M Futures",
+    "exchange_info_endpoint": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "ticker_24h_endpoint": "https://fapi.binance.com/fapi/v1/ticker/24hr"
+  },
+  "eligibility": {
+    "status": "TRADING",
+    "contract_type": "PERPETUAL",
+    "quote_asset": "USDT",
+    "require_positive_quote_volume": true,
+    "stable_or_fiat_base_exclusions": ["USDT", "USDC", "FDUSD", "TUSD", "USDP", "DAI", "BUSD", "EUR", "BRL", "TRY", "JPY", "GBP", "AUD"]
+  },
+  "liquidity_strata": [30, 50, 75],
+  "ranking": "descending 24h quoteVolume at snapshot time",
+  "selection_policy": "Freeze all three strata prospectively. Do not select a stratum from external Delta return or visible portfolio overlap.",
+  "symbol_policy": "Preserve Binance raw symbol and baseAsset exactly. Any aliases such as 1000SHIB versus SHIB are stored only as audit aliases and never used to force overlap.",
+  "external_evidence_policy": "External Delta holdings are audit-only and must never determine eligibility, liquidity rank, inclusion or exclusion.",
+  "historical_replay_policy": "Any replay using a universe selected from this 2026-08-14 snapshot before the freeze date is DIAGNOSTIC_ONLY because of survivorship and current-liquidity conditioning.",
+  "clean_evidence_start": "2026-08-14T00:00:00Z",
+  "outputs": [
+    "RAW_EXCHANGE_INFO.json",
+    "RAW_TICKER_24H.json",
+    "UNIVERSE_ALL.csv",
+    "UNIVERSE_TOP30.csv",
+    "UNIVERSE_TOP50.csv",
+    "UNIVERSE_TOP75.csv",
+    "UNIVERSE_MANIFEST.json"
+  ],
+  "promotion_eligible": false,
+  "decision": "PROSPECTIVE_UNIVERSE_COLLECTION_ONLY"
+}
