@@ -2,7 +2,8 @@
 
 Cascatas por mercado, para nenhum bloqueio de uma fonte derrubar uma carteira:
   acoes EUA : Nasdaq -> Stooq -> Yahoo (query1, query2)
-  acoes B3  : brapi.dev -> Yahoo
+  acoes B3  : COTAHIST (arquivo oficial) -> brapi.dev -> Yahoo
+  indices B3: brapi.dev -> Yahoo (o COTAHIST nao cobre indices)
   crypto    : Coinbase -> Binance -> CoinGecko
   CDI       : SGS do Banco Central (4 formas de consulta) -> copia local
 
@@ -517,21 +518,56 @@ def fetch_brapi_daily(ticker: str,
     return best
 
 
+def fetch_cotahist_daily(ticker: str) -> list[tuple[str, float, float]]:
+    """Serie do arquivo oficial da B3, ja carregado para o ciclo.
+
+    Traduz o erro proprio do modulo para o da cascata; sao camadas separadas
+    para o cotahist nao precisar de importar este ficheiro.
+    """
+    from . import cotahist
+    try:
+        return cotahist.series_for(ticker)
+    except cotahist.CotahistError as err:
+        raise DataSourceError(str(err)) from err
+
+
+def prime_cotahist(tickers: list[str]) -> str | None:
+    """Carrega o arquivo da B3 uma vez por ciclo.
+
+    Devolve o motivo da falha em vez de a propagar: sem arquivo, a cascata
+    ainda tem brapi e Yahoo, e a carteira nao deve parar por isto. O motivo
+    fica registado para aparecer no relatorio.
+    """
+    from . import cotahist
+    try:
+        cotahist.prime(tickers)
+    except cotahist.CotahistError as err:
+        _note_failure("cotahist", err)
+        return str(err)
+    return None
+
+
 def fetch_b3_daily(ticker: str,
                    is_benchmark: bool = False) -> list[tuple[str, float, float]]:
     """Serie diaria da B3: brapi.dev primeiro, Yahoo como alternativa.
 
-    A brapi vem a frente porque o Yahoo passou a limitar por taxa os IPs do
-    GitHub Actions, e as 50 acoes da B3 mais os benchmarks eram metade dessa
-    carga. Sao servicos independentes, nao duas portas do mesmo.
+    O arquivo oficial da B3 vem a frente porque e o unico que entrega o
+    historico completo: o plano gratuito da brapi corta a serie por ticker
+    (PETR4 recebe 499 pregoes, CPLE3 recebe 63) e isso rejeitava 45 dos 48
+    nomes por historico insuficiente. A brapi fica como alternativa, e o Yahoo
+    a seguir — passou a limitar por taxa os IPs do GitHub Actions.
+
+    O COTAHIST nao cobre indices: o ^BVSP continua a vir da brapi.
     """
     from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
     errors: list[str] = []
-    for name, call in (
-            ("brapi", lambda: fetch_brapi_daily(ticker)),
-            ("yahoo", lambda: fetch_yahoo_daily(
-                symbol, retries=BENCHMARK_RETRIES if is_benchmark else None))):
+    fontes = [("brapi", lambda: fetch_brapi_daily(ticker)),
+              ("yahoo", lambda: fetch_yahoo_daily(
+                  symbol, retries=BENCHMARK_RETRIES if is_benchmark else None))]
+    if not ticker.startswith("^"):
+        fontes.insert(0, ("cotahist", lambda: fetch_cotahist_daily(ticker)))
+    for name, call in fontes:
         try:
             series = call()
         except DataSourceError as err:

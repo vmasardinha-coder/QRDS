@@ -170,6 +170,10 @@ def run_crypto(today: str) -> dict:
 
 def run_b3(today: str) -> dict:
     """Carteira de acoes B3 — obstaculo e o maior entre Ibovespa e CDI."""
+    # o arquivo da B3 cobre o mercado inteiro num ficheiro: le-se uma vez para
+    # o ciclo, nunca uma vez por ticker
+    # a falha, se houver, ja fica contada em FAILURE_TALLY e sai no relatorio
+    data_sources.prime_cotahist(config.B3_UNIVERSE + [config.B3S_UNDERLYING])
     bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
                                               is_benchmark=True)
     cdi_rates = data_sources.fetch_bcb_cdi_daily()
@@ -217,6 +221,9 @@ def run_b3(today: str) -> dict:
 def run_b3_structured(today: str) -> dict:
     """Carteira B3 estruturadas: financiamento coberto em BOVA11 vs CDI."""
     underlying = config.B3S_UNDERLYING
+    # esta carteira tambem corre sozinha quando a de acoes falha antes de
+    # carregar o arquivo; carregar aqui e barato porque o prime ja e idempotente
+    data_sources.prime_cotahist(config.B3_UNIVERSE + [underlying])
     series = data_sources.fetch_b3_daily(underlying)
     bench_series = data_sources.fetch_b3_daily(config.B3_BENCHMARK,
                                               is_benchmark=True)

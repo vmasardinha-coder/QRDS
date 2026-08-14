@@ -95,7 +95,8 @@ vieram de cada fonte (`log["sources"]`):
 |---|---|
 | Ações EUA | Nasdaq → Stooq → Yahoo (query1, query2) |
 | Crypto | Coinbase → Binance → CoinGecko |
-| Ações B3 e benchmarks | brapi.dev → Yahoo |
+| Ações B3 | COTAHIST (arquivo oficial da B3) → brapi.dev → Yahoo |
+| Índices B3 (Ibovespa) | brapi.dev → Yahoo — o COTAHIST não cobre índices |
 | CDI | SGS do Banco Central (4 formas) → cópia local |
 
 A ordem de cada cascata vem de medição feita no próprio runner
@@ -139,10 +140,21 @@ ficam elegiveis, e o piso de diversificacao (4) manda a carteira de acoes B3
 para 100% caixa desde 2026-08-12.
 
 Isto e o fail-closed a funcionar — a carteira recusa-se a operar com menos
-diversificacao do que a Carta exige, em vez de afrouxar o criterio. Mas o
-efeito pratico e uma carteira parada, e resolver exige decisao do mandante
-(plano pago na brapi, outra fonte para a B3, ou aceitar a carteira em caixa).
-O agente nao escolhe sozinho.
+diversificacao do que a Carta exige, em vez de afrouxar o criterio.
+
+**Resolvido a 2026-08-14, por decisao do mandante:** a fonte primaria da B3
+passou a ser o arquivo oficial COTAHIST. A escolha entre as duas candidatas
+nao foi indiferente:
+
+| Candidata | Entrega | Efeito na Carta |
+|---|---|---|
+| COTAHIST (B3) | serie diaria completa | nenhum — o sinal fica igual, muda so a origem do preco |
+| Scanner do TradingView | `Perf.Y`, `Perf.1M`, `SMA200` ja calculados | mudaria como o momentum e apurado → secao 6 |
+
+Adotou-se a primeira precisamente por nao mexer no criterio: substituir a
+serie propria por campos pre-calculados de terceiros seria alterar o sinal
+com a aparencia de uma troca de fonte. O scanner fica medido e documentado
+(`tools/probe_data_sources.py b3fonte`), sem estar em uso.
 
 ### Segredos
 

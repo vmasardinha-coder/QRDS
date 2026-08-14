@@ -21,7 +21,8 @@ mercado** e **dinheiro simulado** (paper trading):
    ciclo diário às **21:15 UTC** (18:15 em Brasília), depois do fecho de NY:
    - corre os testes offline (se falharem, não negoceia — fail-safe);
    - busca preços reais: ações EUA via Nasdaq → Stooq → Yahoo, ações B3
-     via brapi.dev → Yahoo, crypto via Coinbase → Binance → CoinGecko;
+     via COTAHIST (arquivo oficial da B3) → brapi.dev → Yahoo, crypto via
+     Coinbase → Binance → CoinGecko;
    - calcula sinais, decide rebalanceio, executa ordens simuladas com slippage;
    - atualiza o estado (`trading_agent/state/*.json`) e escreve o relatório;
    - faz commit e push de estado + relatório para o próprio branch.
@@ -45,7 +46,7 @@ gráficos. A rotina diária do Claude apenas **lê e entrega** — não escreve.
   50%, escolhidas entre 149 altcoins. Sem alts qualificadas → 100% BTC. Se o BTC fechar abaixo da SMA 200,
   exposição cai para 50%.
 - **Ações B3** — mesmo momentum 12-1 sobre ~50 ações líquidas da B3
-  (dados Yahoo `.SA`), top 8 em pesos iguais; filtro de regime Ibovespa vs
+  (série oficial COTAHIST), top 8 em pesos iguais; filtro de regime Ibovespa vs
   SMA 200. A caixa em BRL rende CDI diariamente (série SGS 12 do Banco
   Central). Benchmarks: Ibovespa e CDI acumulado.
 - **Estruturadas B3** — financiamento coberto (covered call) em BOVA11:

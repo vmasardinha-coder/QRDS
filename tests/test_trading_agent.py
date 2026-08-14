@@ -13,7 +13,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from trading_agent import config, portfolio, report, strategy
+from trading_agent import (config, cotahist, data_sources, portfolio, report,
+                           strategy)
 
 
 def flat_series(price: float, days: int) -> list[float]:
@@ -1208,3 +1209,155 @@ class TestUniverseHygiene(unittest.TestCase):
             with self.subTest(ticker=morto):
                 self.assertNotIn(morto, config.B3_UNIVERSE)
                 self.assertIn(vivo, config.B3_UNIVERSE)
+
+
+def _cotahist_record(date="20260813", codneg="PETR4", tpmerc="010",
+                     preult="0000000004190", quatot="000000000012345678",
+                     tipreg="01"):
+    """Monta um registo COTAHIST de 245 caracteres por posicao fixa."""
+    linha = (
+        tipreg                      # 01-02  TIPREG
+        + date                      # 03-10  DATA
+        + "02"                      # 11-12  CODBDI
+        + codneg.ljust(12)          # 13-24  CODNEG
+        + tpmerc                    # 25-27  TPMERC
+        + "PETROBRAS   "            # 28-39  NOMRES
+        + "PN        "              # 40-49  ESPECI
+        + "   "                     # 50-52  PRAZOT
+        + "R$  "                    # 53-56  MODREF
+        + "0000000004200"           # 57-69  PREABE
+        + "0000000004250"           # 70-82  PREMAX
+        + "0000000004150"           # 83-95  PREMIN
+        + "0000000004200"           # 96-108 PREMED
+        + preult                    # 109-121 PREULT
+        + "0000000004190"           # 122-134 PREOFC
+        + "0000000004200"           # 135-147 PREOFV
+        + "01234"                   # 148-152 TOTNEG
+        + quatot                    # 153-170 QUATOT
+        + "000000000051750000"      # 171-188 VOLTOT
+    )
+    return linha.ljust(245)
+
+
+def _cotahist_zip(linhas):
+    import io
+    import zipfile
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("COTAHIST_A2026.TXT",
+                    "\r\n".join(linhas).encode("latin-1"))
+    return buffer.getvalue()
+
+
+class TestCotahistParsing(unittest.TestCase):
+    """O arquivo da B3 e posicional: um desalinhamento de um caracter troca
+    silenciosamente preco por volume, por isso o formato e testado a serio.
+    """
+
+    def test_reads_price_with_implied_decimals(self):
+        blob = _cotahist_zip([_cotahist_record()])
+        series = cotahist.parse(blob, {"PETR4"})
+        self.assertEqual(series["PETR4"], [("2026-08-13", 41.90, 12345678.0)])
+
+    def test_only_the_requested_tickers_come_back(self):
+        blob = _cotahist_zip([_cotahist_record(codneg="PETR4"),
+                              _cotahist_record(codneg="VALE3")])
+        series = cotahist.parse(blob, {"PETR4"})
+        self.assertEqual(sorted(series), ["PETR4"])
+
+    def test_options_and_futures_are_excluded(self):
+        # so mercado a vista (TPMERC 010): uma opcao sobre PETR4 tem o mesmo
+        # prefixo mas nao e o ativo
+        blob = _cotahist_zip([_cotahist_record(tpmerc="070"),
+                              _cotahist_record(tpmerc="030")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_header_and_trailer_records_are_ignored(self):
+        blob = _cotahist_zip([_cotahist_record(tipreg="00"),
+                              _cotahist_record(tipreg="99")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_corrupt_row_is_skipped_not_guessed(self):
+        bom = _cotahist_record(date="20260813")
+        mau = _cotahist_record(date="20260812", preult="00000000041XX")
+        series = cotahist.parse(_cotahist_zip([mau, bom]), {"PETR4"})
+        self.assertEqual(series["PETR4"], [("2026-08-13", 41.90, 12345678.0)])
+
+    def test_zero_price_is_dropped(self):
+        blob = _cotahist_zip([_cotahist_record(preult="0000000000000")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_unreadable_zip_is_a_source_error(self):
+        with self.assertRaises(cotahist.CotahistError):
+            cotahist.parse(b"nao sou um zip", {"PETR4"})
+
+
+class TestCotahistWiring(unittest.TestCase):
+
+    def setUp(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+
+    def test_series_for_without_priming_is_an_error_not_a_silent_empty(self):
+        with self.assertRaises(cotahist.CotahistError):
+            cotahist.series_for("PETR4")
+
+    def test_priming_twice_does_not_download_twice(self):
+        chamadas = []
+
+        def falso_load(tickers, hoje=None):
+            chamadas.append(tuple(tickers))
+            return {"PETR4": [("2026-08-13", 41.9, 1.0)]}
+
+        with mock.patch.object(cotahist, "load", falso_load):
+            cotahist.prime(["PETR4"])
+            cotahist.prime(["PETR4"])
+        self.assertEqual(len(chamadas), 1)
+
+    def test_a_missing_ticker_does_not_force_a_reload(self):
+        # BOVA11 pedido mas ausente do arquivo: nao pode fazer o ciclo puxar
+        # 150 MB outra vez a cada chamada
+        chamadas = []
+
+        def falso_load(tickers, hoje=None):
+            chamadas.append(tuple(tickers))
+            return {"PETR4": [("2026-08-13", 41.9, 1.0)]}
+
+        with mock.patch.object(cotahist, "load", falso_load):
+            cotahist.prime(["PETR4", "BOVA11"])
+            cotahist.prime(["PETR4", "BOVA11"])
+        self.assertEqual(len(chamadas), 1)
+
+    def test_b3_cascade_tries_the_official_archive_first(self):
+        ordem = []
+
+        def falso_cotahist(ticker):
+            ordem.append("cotahist")
+            return [("2026-08-13", 41.9, 1.0)] * 300
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily",
+                               falso_cotahist):
+            series = data_sources.fetch_b3_daily("PETR4")
+        self.assertEqual(ordem, ["cotahist"])
+        self.assertEqual(len(series), 300)
+
+    def test_the_index_never_asks_the_archive(self):
+        # COTAHIST nao tem indices; pedir ^BVSP la seria uma falha garantida
+        ordem = []
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily",
+                               lambda t: ordem.append("cotahist")), \
+             mock.patch.object(data_sources, "fetch_brapi_daily",
+                               lambda t: [("2026-08-13", 130000.0, 0.0)]):
+            data_sources.fetch_b3_daily("^BVSP", is_benchmark=True)
+        self.assertEqual(ordem, [])
+
+    def test_archive_failure_falls_through_to_brapi(self):
+        def falha(ticker):
+            raise data_sources.DataSourceError("COTAHIST fora do ar")
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily", falha), \
+             mock.patch.object(data_sources, "fetch_brapi_daily",
+                               lambda t: [("2026-08-13", 41.9, 1.0)]):
+            series = data_sources.fetch_b3_daily("PETR4")
+        self.assertEqual(series, [("2026-08-13", 41.9, 1.0)])
