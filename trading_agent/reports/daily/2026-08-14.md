@@ -8,32 +8,73 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-14-grafico
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
-> ERRO nesta execucao: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+| Indicador | Valor |
+|---|---|
+| NAV | $51,762.48 |
+| Retorno do dia | +1.13% |
+| Retorno desde inicio (2026-08-06) | +3.52% |
+| Benchmark SPY | +1.05% |
+| **Alfa vs SPY** | **+2.47%** |
+| Caixa | $424.83 |
+| Regime | risco ligado |
 
-> Fonte stooq falhou 1x: `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
-> Fonte yahoo falhou 1x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+### Posicoes
+| Ativo | Qtd | Preco | Valor | Peso |
+|---|---|---|---|---|
+| LRCX | 16.2485 | $337.01 | $5,475.92 | 10.6% |
+| KLAC | 25.8103 | $209.37 | $5,403.90 | 10.4% |
+| MU | 5.68132 | $949.83 | $5,396.29 | 10.4% |
+| PANW | 13.1189 | $396.00 | $5,195.08 | 10.0% |
+| INTC | 49.4756 | $104.56 | $5,173.16 | 10.0% |
+| AMAT | 9.45018 | $534.54 | $5,051.50 | 9.8% |
+| AMD | 10.3724 | $483.01 | $5,009.96 | 9.7% |
+| LLY | 4.09275 | $1,209.00 | $4,948.14 | 9.6% |
+| CAT | 5.74 | $854.60 | $4,905.40 | 9.5% |
+| GOOGL | 13.7958 | $346.36 | $4,778.30 | 9.2% |
 
-O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
+_Sem movimentacoes hoje._
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (SPY):** momentum de +17.4% — so entram ativos acima disto
+- **Candidatos elegiveis:** 42
+- **Fontes usadas:** nasdaq: 101
+
+| Rejeitado | Motivo |
+|---|---|
+| ABT | nao bate o benchmark (-31.9% <= +17.4%) |
+| ACN | nao bate o benchmark (-42.4% <= +17.4%) |
+| ADBE | nao bate o benchmark (-33.6% <= +17.4%) |
+| AMT | nao bate o benchmark (-17.6% <= +17.4%) |
+| AMZN | nao bate o benchmark (+15.1% <= +17.4%) |
+| BA | nao bate o benchmark (-6.2% <= +17.4%) |
+| BKNG | nao bate o benchmark (-16.3% <= +17.4%) |
+| BLK | nao bate o benchmark (-5.7% <= +17.4%) |
+| _(+50 outros)_ | |
+
+</details>
 
 ## Crypto (objetivo: bater o BTC)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,224.83 |
-| Retorno do dia | -0.52% |
-| Retorno desde inicio (2026-08-06) | -1.55% |
-| Benchmark BTC | -2.48% |
-| **Alfa vs BTC** | **+0.93%** |
+| NAV | $49,337.54 |
+| Retorno do dia | -0.29% |
+| Retorno desde inicio (2026-08-06) | -1.32% |
+| Benchmark BTC | -2.40% |
+| **Alfa vs BTC** | **+1.07%** |
 | Caixa | $24,821.69 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $62,819.85 | $12,189.93 | 24.8% |
-| JTO | 7371.79 | $0.56 | $4,124.52 | 8.4% |
-| LINK | 457.992 | $8.94 | $4,095.37 | 8.3% |
-| SYN | 37887.3 | $0.11 | $3,993.32 | 8.1% |
+| BTC | 0.194046 | $62,872.21 | $12,200.09 | 24.7% |
+| JTO | 7371.79 | $0.57 | $4,183.49 | 8.5% |
+| LINK | 457.992 | $8.99 | $4,117.35 | 8.3% |
+| SYN | 37887.3 | $0.11 | $4,014.91 | 8.1% |
 
 _Sem movimentacoes hoje._
 
@@ -43,11 +84,8 @@ _Sem movimentacoes hoje._
 - **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (BTC):** momentum de -11.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 16
-- **Fontes usadas:** binance: 31, coinbase: 119
-- **Fonte stooq falhou 1x:** `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
-- **Fonte yahoo falhou 1x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+- **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
-- **Fonte nasdaq nao tem 1 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
 |---|---|
@@ -96,11 +134,8 @@ _Sem movimentacoes hoje._
 - **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 20
-- **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50
-- **Fonte stooq falhou 1x:** `Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)`
-- **Fonte yahoo falhou 1x:** `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+- **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
-- **Fonte nasdaq nao tem 1 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
 |---|---|

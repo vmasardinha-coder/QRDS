@@ -18,12 +18,12 @@
     "JTO": {
       "qty": 7371.793375278967,
       "avg_cost": 0.5576571,
-      "high_water": 0.5595
+      "high_water": 0.5675
     },
     "LINK": {
       "qty": 457.99234135103586,
       "avg_cost": 8.943935,
-      "high_water": 8.943935
+      "high_water": 8.99
     }
   },
   "benchmark": {
@@ -75,8 +75,8 @@
     },
     {
       "date": "2026-08-14",
-      "nav": 49224.83,
-      "benchmark_nav": 48759.72
+      "nav": 49337.54,
+      "benchmark_nav": 48800.36
     }
   ],
   "trades": [
@@ -2744,7 +2744,7 @@
       "date": "2026-08-14",
       "regime": "risk_off",
       "hurdle": "BTC",
-      "hurdle_score": -0.1125,
+      "hurdle_score": -0.1118,
       "rebalance_trigger": "nenhum (sem motivo para negociar)",
       "eligible_count": 16,
       "selected": [
@@ -2755,17 +2755,17 @@
         },
         {
           "symbol": "SYN",
-          "score": 0.2503,
+          "score": 0.2571,
           "weight": 0.0833
         },
         {
           "symbol": "JTO",
-          "score": 0.0896,
+          "score": 0.1052,
           "weight": 0.0833
         },
         {
           "symbol": "LINK",
-          "score": -0.0158,
+          "score": -0.0105,
           "weight": 0.0833
         }
       ],
@@ -2824,7 +2824,7 @@
         },
         {
           "symbol": "AVAX",
-          "reason": "nao bate o benchmark (-17.4% <= -11.3%)"
+          "reason": "nao bate o benchmark (-17.0% <= -11.2%)"
         },
         {
           "symbol": "AXS",
@@ -2844,7 +2844,7 @@
         },
         {
           "symbol": "BCH",
-          "reason": "nao bate o benchmark (-29.8% <= -11.3%)"
+          "reason": "nao bate o benchmark (-29.7% <= -11.2%)"
         },
         {
           "symbol": "BLUR",
@@ -2852,7 +2852,7 @@
         },
         {
           "symbol": "BONK",
-          "reason": "nao bate o benchmark (-48.6% <= -11.3%)"
+          "reason": "nao bate o benchmark (-48.6% <= -11.2%)"
         },
         {
           "symbol": "CAKE",
@@ -2900,11 +2900,11 @@
         },
         {
           "symbol": "DOGE",
-          "reason": "nao bate o benchmark (-20.9% <= -11.3%)"
+          "reason": "nao bate o benchmark (-20.8% <= -11.2%)"
         },
         {
           "symbol": "DOT",
-          "reason": "nao bate o benchmark (-25.2% <= -11.3%)"
+          "reason": "nao bate o benchmark (-25.1% <= -11.2%)"
         },
         {
           "symbol": "DYDX",
@@ -2936,7 +2936,7 @@
         },
         {
           "symbol": "FET",
-          "reason": "nao bate o benchmark (-24.5% <= -11.3%)"
+          "reason": "nao bate o benchmark (-24.5% <= -11.2%)"
         },
         {
           "symbol": "FIL",
@@ -2976,7 +2976,7 @@
         },
         {
           "symbol": "HBAR",
-          "reason": "nao bate o benchmark (-16.2% <= -11.3%)"
+          "reason": "nao bate o benchmark (-16.0% <= -11.2%)"
         },
         {
           "symbol": "HIGH",
@@ -2992,7 +2992,7 @@
         },
         {
           "symbol": "INJ",
-          "reason": "nao bate o benchmark (-13.9% <= -11.3%)"
+          "reason": "nao bate o benchmark (-13.5% <= -11.2%)"
         },
         {
           "symbol": "IOTA",
@@ -3004,7 +3004,7 @@
         },
         {
           "symbol": "JUP",
-          "reason": "nao bate o benchmark (-16.7% <= -11.3%)"
+          "reason": "nao bate o benchmark (-16.7% <= -11.2%)"
         },
         {
           "symbol": "KAVA",
@@ -3032,7 +3032,7 @@
         },
         {
           "symbol": "LTC",
-          "reason": "nao bate o benchmark (-12.8% <= -11.3%)"
+          "reason": "nao bate o benchmark (-12.8% <= -11.2%)"
         },
         {
           "symbol": "MAGIC",
@@ -3196,7 +3196,7 @@
         },
         {
           "symbol": "SUI",
-          "reason": "nao bate o benchmark (-23.1% <= -11.3%)"
+          "reason": "nao bate o benchmark (-23.0% <= -11.2%)"
         },
         {
           "symbol": "SUSHI",
@@ -3240,7 +3240,7 @@
         },
         {
           "symbol": "XRP",
-          "reason": "nao bate o benchmark (-20.3% <= -11.3%)"
+          "reason": "nao bate o benchmark (-20.0% <= -11.2%)"
         },
         {
           "symbol": "XTZ",
@@ -3271,24 +3271,12 @@
       "cooldowns": {},
       "data_failures": [],
       "sources": {
+        "nasdaq": 101,
         "coinbase": 119,
         "binance": 31
       },
-      "source_failures": {
-        "stooq": {
-          "n": 1,
-          "motivo": "Stooq devolveu HTML em vez de CSV para SPY (pagina anti-robo/bloqueio)"
-        },
-        "yahoo": {
-          "n": 1,
-          "motivo": "Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo"
-        }
-      },
+      "source_failures": {},
       "source_missing": {
-        "nasdaq": {
-          "n": 1,
-          "motivo": "TP 403 (definitivo); stocks: 24-06-05&todate=2026-08-14&limit=9999: HTTP 403 (definitivo)]"
-        },
         "coinbase": {
           "n": 31,
           "motivo": "anularity=86400&start=2025-12-08T00:00:00Z&end=2026-08-15T00:00:00Z: HTTP 404 (definitivo)"
