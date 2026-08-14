@@ -49,6 +49,10 @@ class RateLimited(SourceUnavailable):
 # resultado e, com universos grandes, custa dezenas de minutos por ciclo.
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
 
+# Destes, os que dizem "a fonte recusa-te" e nao "esse ativo nao existe".
+# A diferenca decide se o relatorio anuncia uma avaria ou uma ausencia.
+REFUSED_HTTP = {401, 403}
+
 
 SECRET_PARAMS = ("token", "apikey", "api_key", "key")
 
@@ -78,7 +82,12 @@ def _http_get(url: str, timeout: float = 30.0,
         except urllib.error.HTTPError as err:
             last_err = err
             if err.code in PERMANENT_HTTP:
-                raise DataSourceError(
+                # 401/403 e a fonte a recusar-nos: insistir nela para os outros
+                # ativos do universo nao muda nada. 404/410/400/422 e este ativo
+                # que ela nao serve, e o proximo pode correr bem.
+                classe = (SourceUnavailable if err.code in REFUSED_HTTP
+                          else DataSourceError)
+                raise classe(
                     f"GET {redact(url)}: HTTP {err.code} (definitivo)")
             if err.code == 429:
                 # a fonte pede para abrandar; obedece ao cabecalho se houver
@@ -177,6 +186,7 @@ def reset_source_breakers() -> None:
     _STOOQ_CONSECUTIVE_FAILURES = 0
     SOURCE_TALLY.clear()
     FAILURE_TALLY.clear()
+    MISSING_TALLY.clear()
 
 
 def fetch_yahoo_daily(ticker: str,
@@ -299,10 +309,16 @@ _STOOQ_TRIP_AFTER = 3
 # indistinguivel de uma que nem chegou a ser consultada.
 SOURCE_TALLY: dict[str, int] = {}
 FAILURE_TALLY: dict[str, dict] = {}
+# Uma fonte que nao lista um ativo nao esta avariada. Misturar as duas coisas
+# fazia o relatorio anunciar "coinbase falhou 31x" quando o que se passava era
+# que a Coinbase nao cota 31 das 150 moedas e a Binance as serviu todas — um
+# alarme falso que esconde as falhas verdadeiras.
+MISSING_TALLY: dict[str, dict] = {}
 
 
 def _note_failure(source: str, err: Exception) -> None:
-    entry = FAILURE_TALLY.setdefault(source, {"n": 0, "motivo": str(err)[-90:]})
+    alvo = FAILURE_TALLY if isinstance(err, SourceUnavailable) else MISSING_TALLY
+    entry = alvo.setdefault(source, {"n": 0, "motivo": str(err)[-90:]})
     entry["n"] += 1
 
 
@@ -527,6 +543,9 @@ def fetch_cotahist_daily(ticker: str) -> list[tuple[str, float, float]]:
     from . import cotahist
     try:
         return cotahist.series_for(ticker)
+    except cotahist.NotLoaded as err:
+        # o arquivo nao veio: e a fonte que esta em baixo, nao o ativo que falta
+        raise SourceUnavailable(str(err)) from err
     except cotahist.CotahistError as err:
         raise DataSourceError(str(err)) from err
 
@@ -542,7 +561,7 @@ def prime_cotahist(tickers: list[str]) -> str | None:
     try:
         cotahist.prime(tickers)
     except cotahist.CotahistError as err:
-        _note_failure("cotahist", err)
+        _note_failure("cotahist", SourceUnavailable(str(err)))
         return str(err)
     return None
 

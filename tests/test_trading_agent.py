@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import urllib.error
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -942,7 +943,7 @@ class TestFailureTelemetry(unittest.TestCase):
 
     def test_records_source_and_reason(self):
         with mock.patch.object(self.ds, "fetch_brapi_daily",
-                               side_effect=self.ds.DataSourceError("HTTP 401 (definitivo)")), \
+                               side_effect=self.ds.SourceUnavailable("HTTP 401 (definitivo)")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                side_effect=self.ds.RateLimited("429")):
             with self.assertRaises(self.ds.DataSourceError):
@@ -953,7 +954,7 @@ class TestFailureTelemetry(unittest.TestCase):
 
     def test_counts_accumulate_across_tickers(self):
         with mock.patch.object(self.ds, "fetch_brapi_daily",
-                               side_effect=self.ds.DataSourceError("HTTP 401")), \
+                               side_effect=self.ds.SourceUnavailable("HTTP 401")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                side_effect=self.ds.DataSourceError("x")):
             for _ in range(3):
@@ -1116,7 +1117,7 @@ class TestNasdaqSource(unittest.TestCase):
     def test_nasdaq_failure_falls_through_to_the_old_sources(self):
         series = [("2026-01-01", 10.0, 1000.0)] * 12
         with mock.patch.object(self.ds, "fetch_nasdaq_daily",
-                               side_effect=self.ds.DataSourceError("502")), \
+                               side_effect=self.ds.SourceUnavailable("502")), \
              mock.patch.object(self.ds, "fetch_stooq_daily",
                                side_effect=self.ds.SourceUnavailable("html")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
@@ -1361,3 +1362,114 @@ class TestCotahistWiring(unittest.TestCase):
                                lambda t: [("2026-08-13", 41.9, 1.0)]):
             series = data_sources.fetch_b3_daily("PETR4")
         self.assertEqual(series, [("2026-08-13", 41.9, 1.0)])
+
+
+class TestSourceFailureClassification(unittest.TestCase):
+    """Uma fonte que nao lista um ativo nao esta avariada.
+
+    Confundir as duas coisas fazia o relatorio anunciar "coinbase falhou 31x"
+    enquanto a Binance servia essas 31 e nenhuma moeda ficava de fora — um
+    alarme falso que faz perder a confianca nos alarmes verdadeiros.
+    """
+
+    def setUp(self):
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_missing_asset_is_not_counted_as_an_outage(self):
+        data_sources._note_failure(
+            "coinbase", data_sources.DataSourceError("HTTP 404 (definitivo)"))
+        self.assertEqual(data_sources.FAILURE_TALLY, {})
+        self.assertEqual(data_sources.MISSING_TALLY["coinbase"]["n"], 1)
+
+    def test_a_blocked_source_is_still_an_outage(self):
+        data_sources._note_failure(
+            "yahoo", data_sources.RateLimited("429 apos 3 tentativas"))
+        self.assertEqual(data_sources.MISSING_TALLY, {})
+        self.assertEqual(data_sources.FAILURE_TALLY["yahoo"]["n"], 1)
+
+    def test_the_archive_not_loading_is_an_outage_not_a_missing_ticker(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+        with self.assertRaises(data_sources.SourceUnavailable):
+            data_sources.fetch_cotahist_daily("PETR4")
+
+    def test_a_ticker_absent_from_the_archive_is_not_an_outage(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+        with mock.patch.object(cotahist, "load",
+                               lambda t, hoje=None: {"PETR4": [("2026-08-13", 1.0, 1.0)]}):
+            cotahist.prime(["PETR4", "NAOEXISTE3"])
+        with self.assertRaises(data_sources.DataSourceError) as caught:
+            data_sources.fetch_cotahist_daily("NAOEXISTE3")
+        self.assertNotIsInstance(caught.exception, data_sources.SourceUnavailable)
+
+
+class TestCotahistDownloadResilience(unittest.TestCase):
+    """O ciclo de 2026-08-14 caiu com IncompleteRead nos 62 MB do ano corrente
+    e mandou as 51 series para a brapi, que so tem historico truncado. Num dia
+    de rebalanceio isso teria liquidado a carteira por causa da rede.
+    """
+
+    def test_a_cut_transfer_resumes_instead_of_starting_over(self):
+        pedidos = []
+
+        def falso_pedaco(url, desde, timeout):
+            pedidos.append(desde)
+            if desde == 0:
+                return b"a" * 10, 25        # corta a meio
+            return b"b" * 15, 25
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco):
+            dados = cotahist._download(2026)
+        self.assertEqual(pedidos, [0, 10])   # retomou, nao recomecou
+        self.assertEqual(len(dados), 25)
+
+    def test_it_gives_up_with_a_reason_instead_of_looping_forever(self):
+        with mock.patch.object(cotahist, "_pedaco",
+                               lambda url, desde, timeout: (b"", None)), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError) as caught:
+                cotahist._download(2026)
+        self.assertIn("vazia", str(caught.exception))
+
+    def test_a_permanent_http_error_is_not_retried(self):
+        tentativas = []
+
+        def falha(url, desde, timeout):
+            tentativas.append(desde)
+            raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+
+        with mock.patch.object(cotahist, "_pedaco", falha), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError):
+                cotahist._download(2026)
+        self.assertEqual(len(tentativas), 1)
+
+
+class TestRefusedVersusMissing(unittest.TestCase):
+    """A classificacao tem de nascer onde o codigo HTTP e conhecido.
+
+    Antes vinha do tipo da excecao, e isso punha 401 ("a fonte recusa-te") no
+    mesmo saco que 404 ("esse ativo nao existe").
+    """
+
+    def _get(self, code):
+        def falso(req, timeout=None):
+            raise urllib.error.HTTPError("https://x/y", code, "erro", None, None)
+        with mock.patch.object(data_sources.urllib.request, "urlopen", falso):
+            return data_sources._http_get("https://x/y", retries=1)
+
+    def test_forbidden_is_a_source_refusing_us(self):
+        for code in (401, 403):
+            with self.subTest(code=code):
+                with self.assertRaises(data_sources.SourceUnavailable):
+                    self._get(code)
+
+    def test_not_found_is_just_a_missing_asset(self):
+        for code in (400, 404, 410, 422):
+            with self.subTest(code=code):
+                with self.assertRaises(data_sources.DataSourceError) as caught:
+                    self._get(code)
+                self.assertNotIsInstance(caught.exception,
+                                         data_sources.SourceUnavailable)

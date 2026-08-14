@@ -21,8 +21,10 @@ por isso e lido uma vez por ciclo e nao uma vez por ticker.
 
 from __future__ import annotations
 
+import http.client
 import io
 import json
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -54,6 +56,14 @@ class CotahistError(RuntimeError):
     """
 
 
+class NotLoaded(CotahistError):
+    """O arquivo nao chegou a ser carregado neste ciclo.
+
+    Separado de "este ticker nao esta no arquivo": o primeiro e a fonte em
+    baixo, o segundo e um ativo que ela nao tem, e o relatorio deve distingui-los.
+    """
+
+
 def _cache_dir() -> Path:
     return Path(__file__).resolve().parent / "state" / "cotahist"
 
@@ -62,16 +72,80 @@ def _cache_path(ano: int) -> Path:
     return _cache_dir() / f"{ano}.json"
 
 
+TENTATIVAS = 4
+ESPERA_S = (2.0, 5.0, 12.0)
+
+
+def _pedaco(url: str, desde: int, timeout: float) -> tuple[bytes, int | None]:
+    """Le a partir de um deslocamento, devolvendo tambem o tamanho total.
+
+    O servidor da B3 aceita pedidos por intervalo (responde 206), por isso um
+    corte a meio retoma de onde ficou em vez de deitar fora o que ja veio.
+    """
+    cabecalhos = {"User-Agent": UA}
+    if desde:
+        cabecalhos["Range"] = f"bytes={desde}-"
+    req = urllib.request.Request(url, headers=cabecalhos)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        total = None
+        intervalo = resp.headers.get("Content-Range")
+        if intervalo and "/" in intervalo:
+            try:
+                total = int(intervalo.rsplit("/", 1)[1])
+            except ValueError:
+                total = None
+        elif resp.headers.get("Content-Length"):
+            try:
+                total = int(resp.headers["Content-Length"]) + desde
+            except ValueError:
+                total = None
+        blocos = []
+        while True:
+            bloco = resp.read(1 << 20)
+            if not bloco:
+                break
+            blocos.append(bloco)
+        return b"".join(blocos), total
+
+
 def _download(ano: int, timeout: float = 240.0) -> bytes:
+    """Traz o ficheiro anual, retomando quando a ligacao corta.
+
+    Existe assim porque a 2026-08-14 o ciclo agendado falhou com
+    IncompleteRead nos 62 MB do ano corrente: um `read()` unico num ficheiro
+    grande e fragil, e a queda mandou as 51 series para a brapi, que so
+    entrega historico truncado. Num dia de rebalanceio isso teria liquidado a
+    carteira por causa da rede, e nao por causa do sinal.
+    """
     url = URL.format(ano=ano)
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read()
-    except urllib.error.HTTPError as err:
-        raise CotahistError(f"COTAHIST {ano}: HTTP {err.code} {err.reason}") from err
-    except Exception as err:  # noqa: BLE001 - rede falha de muitas maneiras
-        raise CotahistError(f"COTAHIST {ano}: {type(err).__name__}") from err
+    dados = b""
+    ultimo = ""
+    for tentativa in range(TENTATIVAS):
+        try:
+            pedaco, total = _pedaco(url, len(dados), timeout)
+            dados += pedaco
+            if not pedaco:
+                ultimo = "resposta vazia"
+            elif total is None or len(dados) >= total:
+                return dados
+            else:
+                ultimo = f"curto ({len(dados)}/{total} bytes)"
+        except urllib.error.HTTPError as err:
+            # sem retoma possivel: recomeca do principio na proxima volta
+            if err.code == 416:
+                dados = b""
+            ultimo = f"HTTP {err.code} {err.reason}"
+            if err.code in (401, 403, 404):
+                break
+        except (urllib.error.URLError, TimeoutError, OSError,
+                http.client.HTTPException) as err:
+            # so falhas de rede sao repetidas. Apanhar Exception aqui fazia um
+            # erro de programacao passar por instabilidade e ser tentado quatro
+            # vezes antes de aparecer disfarcado de falha de fonte.
+            ultimo = type(err).__name__
+        if tentativa < len(ESPERA_S):
+            time.sleep(ESPERA_S[tentativa])
+    raise CotahistError(f"COTAHIST {ano}: {ultimo}")
 
 
 def parse(blob: bytes, wanted: set[str]) -> dict[str, list[tuple[str, float, float]]]:
@@ -203,7 +277,7 @@ def series_for(ticker: str) -> list[tuple[str, float, float]]:
     e nao algo para resolver em silencio a meio de um ciclo.
     """
     if _MEMO is None:
-        raise CotahistError("COTAHIST nao carregado neste ciclo")
+        raise NotLoaded("COTAHIST nao carregado neste ciclo")
     simbolo = ticker.replace(".SA", "").upper()
     linhas = _MEMO.get(simbolo)
     if not linhas:

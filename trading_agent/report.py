@@ -110,6 +110,11 @@ def _audit_block(log: dict) -> list[str]:
         lines.append(f"- **Fontes usadas:** {tally}")
     for name, info in sorted((log.get("source_failures") or {}).items()):
         lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
+    # "esta fonte nao lista este ativo" nao e avaria: dizia-se "coinbase falhou
+    # 31x" quando a Binance servia essas 31 e nenhuma moeda ficava de fora
+    for name, info in sorted((log.get("source_missing") or {}).items()):
+        lines.append(f"- **Fonte {name} nao tem {info['n']} ativos** "
+                     f"(servidos pela fonte seguinte)")
     if log.get("note"):
         lines.append(f"- **Nota:** {log['note']}")
     if log.get("stops"):
