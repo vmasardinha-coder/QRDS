@@ -1,37 +1,36 @@
 {
   "d50_data_qualification": {
-    "current": 6,
-    "source": "LAST_VALIDATED_PROJECT_STATE",
-    "status": "ACTIVE_ONE_VALID_SNAPSHOT_REMAINING",
+    "current": 4,
+    "source": "LOCAL_READINESS_REPORT_2026-08-14",
+    "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_4_OF_7",
     "target": 7,
+    "snapshot_count_total": 14,
+    "hash_chain_valid": true,
+    "qualified": false,
     "user_action_required": false
   },
   "d50_prospective_immutable_ledger": {
-    "blocker": "provenance-only source revision confirmed for 2026-08-01 D50_CONTROL; local updater repair not yet validated",
-    "current": 4,
-    "economic_fields_identical": true,
-    "frozen_history_must_be_preserved": true,
-    "impact": "prospective append remains paused at 4/30 until the local updater repair passes copied-state dry run and frozen-row verification",
-    "mutation_performed": false,
-    "required_action": "run the final local source-revision repair; preserve all frozen rows; append only genuinely newer admissible dates",
-    "required_files": [
-      "successful final local repair result",
-      "post-repair frozen-row verification"
-    ],
-    "resume_from": "4/30",
-    "source_revision_only": true,
-    "status": "BLOCKED_LOCAL_SOURCE_REVISION_REPAIR_PENDING",
+    "current": 13,
+    "first_prospective_date": "2026-07-31",
+    "latest_prospective_date": "2026-08-14",
+    "historical_backfill_counts_as_prospective": false,
+    "excluded_historical_backfill_dates": ["2026-08-04", "2026-08-05"],
+    "checkpoint_due": false,
+    "next_checkpoint": 30,
+    "status": "ACTIVE",
     "target": 30,
-    "user_action_required": true
+    "source": "GATE_BTC_D50_DAILY_LATEST_2026-08-14",
+    "source_hashes": {
+      "ohlc": "b71dc7b5c41f98053f97f1af22817b879d203762b47ac8c2bf093e2e94becd7e",
+      "funding": "bcde60bfe246b540696546ced42898067c360ea22747ce49c30c20b42b261c88"
+    },
+    "user_action_required": false
   },
-  "data_as_of": "2026-08-12",
+  "data_as_of": "2026-08-14",
   "delta_walk_forward": {
     "current": 90,
     "status": "ACTIVE",
-    "targets": [
-      90,
-      120
-    ]
+    "targets": [90, 120]
   },
   "gateway_dynamics_prospective_ledger": {
     "current": 8,
@@ -58,11 +57,7 @@
   "qos_monthly": {
     "current": 0,
     "eligible_from": "2026-08-06",
-    "expected_closes": [
-      "2026-08-31",
-      "2026-09-30",
-      "2026-10-31"
-    ],
+    "expected_closes": ["2026-08-31", "2026-09-30", "2026-10-31"],
     "status": "ACTIVE_CALENDAR_GATED",
     "target": 3
   },
@@ -70,5 +65,5 @@
   "research_only": true,
   "schema": "gate_btc.measurement_status.v1",
   "shadow_only": true,
-  "status_sha256": "163b25b9f957d3d6b76414c98aef0efeef1822aa7729cc35cf23130934b3d5a6"
+  "reconciliation_note": "D50 and readiness counters reconciled on 2026-08-15 from latest local evidence for cutoff 2026-08-14. Previous 4/30 and 6/7 values were stale and must not be used as current state."
 }
