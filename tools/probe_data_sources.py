@@ -10,6 +10,7 @@ Uso: python -m tools.probe_data_sources
 
 from __future__ import annotations
 
+import io
 import json
 import sys
 import urllib.error
@@ -350,6 +351,84 @@ def probe_tradingview_b3() -> str:
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
+
+    if argv and argv[0] == "b3sucessores":
+        # Quem sucedeu a um ticker que parou de negociar.
+        #
+        # Nao se descobre adivinhando nomes: o proprio arquivo diz. Um papel
+        # que morre num dia e outro que nasce por essa altura sem historia
+        # anterior e a assinatura de uma sucessao, e o nome da empresa
+        # (NOMRES) e o ISIN confirmam ou desmentem.
+        from trading_agent import cotahist
+
+        SUSPEITOS = ["ELET3", "EMBR3", "JBSS3", "NTCO3", "MBRF3", "CPLE3"]
+
+        def indexar(blob):
+            """ticker -> (nome, isin, primeiro, ultimo, n) para o mercado todo."""
+            import zipfile
+            idx = {}
+            zf = zipfile.ZipFile(io.BytesIO(blob))
+            with zf.open(zf.namelist()[0]) as stream:
+                for raw in stream:
+                    if raw[:2] != b"01" or raw[24:27] != b"010":
+                        continue
+                    code = raw[12:24].rstrip().decode("latin-1")
+                    dia = raw[2:10].decode("latin-1")
+                    dia = f"{dia[:4]}-{dia[4:6]}-{dia[6:8]}"
+                    reg = idx.get(code)
+                    if reg is None:
+                        idx[code] = [raw[27:39].strip().decode("latin-1"),
+                                     raw[230:242].strip().decode("latin-1"),
+                                     dia, dia, 1]
+                    else:
+                        reg[2] = min(reg[2], dia)
+                        reg[3] = max(reg[3], dia)
+                        reg[4] += 1
+            return idx
+
+        def investigar() -> str:
+            idx = {}
+            ano = datetime.now(timezone.utc).year
+            for a in (ano - 1, ano):
+                for code, reg in indexar(cotahist._download(a)).items():
+                    if code in idx:
+                        idx[code][2] = min(idx[code][2], reg[2])
+                        idx[code][3] = max(idx[code][3], reg[3])
+                        idx[code][4] += reg[4]
+                    else:
+                        idx[code] = reg
+            fim_global = max(r[3] for r in idx.values())
+            out = [f"    universo do arquivo: {len(idx)} papeis a vista · "
+                   f"ultimo pregao {fim_global}"]
+            for tk in SUSPEITOS:
+                reg = idx.get(tk)
+                if not reg:
+                    out.append(f"\n    {tk}: ausente do arquivo")
+                    continue
+                nome, isin, ini, fim, n = reg
+                vivo = "VIVO" if fim >= fim_global else "PAROU"
+                out.append(f"\n    {tk} [{vivo}] {nome!r} isin={isin} "
+                           f"{ini} -> {fim} ({n} pregoes)")
+                if fim >= fim_global:
+                    continue
+                # candidatos: papeis que nasceram depois de este parar
+                nascidos = [(c, r) for c, r in idx.items()
+                            if c != tk and r[2] >= fim and r[3] >= fim_global]
+                nascidos.sort(key=lambda cr: cr[1][2])
+                emissor = isin[2:6] if len(isin) >= 6 else ""
+                for c, r in nascidos[:6]:
+                    marca = ""
+                    if emissor and len(r[1]) >= 6 and r[1][2:6] == emissor:
+                        marca = "  <== mesmo emissor no ISIN"
+                    elif nome[:5] and r[0].startswith(nome[:5]):
+                        marca = "  <== mesmo nome"
+                    out.append(f"        candidato {c:8s} {r[0]!r} "
+                               f"isin={r[1]} desde {r[2]} ({r[4]} pregoes){marca}")
+            return "\n" + "\n".join(out)
+
+        report("COTAHIST — quem sucedeu a quem", investigar)
+        print("\nFim da sonda.")
+        return 0
 
     if argv and argv[0] == "b3arquivo":
         # Ler o arquivo a serio, com o universo a serio. Os testes usam
