@@ -1204,12 +1204,23 @@ class TestUniverseHygiene(unittest.TestCase):
                 self.assertEqual(repetidos, set())
 
     def test_symbols_retired_by_corporate_action_are_gone(self):
-        # CPLE6 -> CPLE3 (Copel unificada); BRFS3 -> MBRF3 (BRF/Marfrig).
-        # Medido em 2026-08-13: /api/available da brapi so conhece os novos.
-        for morto, vivo in (("CPLE6", "CPLE3"), ("BRFS3", "MBRF3")):
+        # Sucessoes confirmadas no arquivo da B3 (2026-08-15): o antigo para de
+        # negociar e o novo comeca no pregao seguinte, com o nome da empresa ou
+        # o emissor do ISIN a confirmar.
+        for morto, vivo in (("CPLE6", "CPLE3"), ("BRFS3", "MBRF3"),
+                            ("ELET3", "AXIA3"), ("EMBR3", "EMBJ3"),
+                            ("NTCO3", "NATU3")):
             with self.subTest(ticker=morto):
                 self.assertNotIn(morto, config.B3_UNIVERSE)
                 self.assertIn(vivo, config.B3_UNIVERSE)
+
+    def test_jbs_is_out_because_what_remains_on_b3_is_a_bdr(self):
+        # A JBS passou a negociar em Nova Iorque; o que sobrou na B3 e JBSS32,
+        # um BDR. Um recibo de acoes estrangeiras tem exposicao cambial e nao
+        # e acao brasileira — nao entra numa carteira de acoes da B3 so para
+        # manter a contagem de nomes.
+        for ticker in ("JBSS3", "JBSS32"):
+            self.assertNotIn(ticker, config.B3_UNIVERSE)
 
 
 def _cotahist_record(date="20260813", codneg="PETR4", tpmerc="010",

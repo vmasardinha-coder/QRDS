@@ -45,7 +45,7 @@ gráficos. A rotina diária do Claude apenas **lê e entrega** — não escreve.
   (média dos retornos de 30 e 90 dias) superior ao do BTC partilham os outros
   50%, escolhidas entre 149 altcoins. Sem alts qualificadas → 100% BTC. Se o BTC fechar abaixo da SMA 200,
   exposição cai para 50%.
-- **Ações B3** — mesmo momentum 12-1 sobre ~50 ações líquidas da B3
+- **Ações B3** — mesmo momentum 12-1 sobre 49 ações líquidas da B3
   (série oficial COTAHIST), top 8 em pesos iguais; filtro de regime Ibovespa vs
   SMA 200. A caixa em BRL rende CDI diariamente (série SGS 12 do Banco
   Central). Benchmarks: Ibovespa e CDI acumulado.

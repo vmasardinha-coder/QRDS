@@ -126,6 +126,34 @@ medidos para nao regredirem.
 A confirmacao veio de `/api/available` da brapi, que lista os simbolos que a
 fonte tem — perguntar a fonte, em vez de testar candidatos um a um.
 
+Para os casos seguintes o metodo melhorou: o proprio arquivo da B3 diz quem
+sucedeu a quem (`tools/probe_data_sources.py b3sucessores`). Um papel que
+para de negociar e outro que comeca no pregao seguinte, com o mesmo nome de
+empresa (`NOMRES`) ou o mesmo emissor no `ISIN`, e uma sucessao — e isso e
+evidencia, ao contrario de adivinhar o nome novo.
+
+| Antigo | Novo | Parou → comecou | O que confirma |
+|---|---|---|---|
+| CPLE6 | CPLE3 | — | `/api/available` |
+| BRFS3 | MBRF3 | — | `/api/available` |
+| ELET3 | AXIA3 | 07/11 → 10/11/2025 | Eletrobras passou a Axia Energia |
+| EMBR3 | EMBJ3 | 31/10 → 03/11/2025 | mesmo `NOMRES` 'EMBRAER' |
+| NTCO3 | NATU3 | 01/07 → 02/07/2025 | 'GRUPO NATURA' passou a 'NATURA' |
+| JBSS3 | *(saiu)* | 06/06 → 09/06/2025 | so restou `JBSS32`, um **BDR** |
+
+**As series nao sao coladas.** A antiga fica para tras e a nova acumula do
+zero, mesmo custando meses ate chegar aos 260 pregoes do momentum 12-1. Uma
+mudanca de simbolo costuma vir acompanhada de reorganizacao societaria, e
+concatenar as duas pontas sem saber a relacao de troca inventaria um retorno
+que nunca existiu — exactamente o tipo de dado estimado que a seccao 7 proibe.
+
+**Porque a JBS saiu em vez de ser trocada.** A empresa passou a negociar em
+Nova Iorque e o que restou na B3 e `JBSS32`, um BDR — recibo de acoes
+estrangeiras, com exposicao cambial. Trocar o simbolo da mesma empresa e
+manutencao; trocar uma acao brasileira por um recibo de acao estrangeira
+muda a natureza do ativo, e isso e composicao de universo. Decidido pelo
+mandante a 2026-08-15: universo passa a 49 nomes.
+
 ### Limite conhecido: historico da B3 no plano gratuito
 
 Medido em 2026-08-13 no runner: a brapi so devolve serie longa para uma
