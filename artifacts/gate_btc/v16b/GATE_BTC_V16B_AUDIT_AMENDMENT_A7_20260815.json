@@ -1,0 +1,46 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A7_20260815",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "created_at_utc": "2026-08-15T14:10:00Z",
+  "purpose": "Formally abandon the invalid 2026-08-13 signal window and preregister the next eligible untouched V16B signal cycle without changing frozen economics.",
+  "invalid_window": {
+    "signal_date_utc": "2026-08-13",
+    "entry_date_utc": "2026-08-14",
+    "reason": "MANDATORY_CONTEMPORANEOUS_CMC_UNIVERSE_SNAPSHOT_AND_AVAILABILITY_MANIFEST_NOT_AVAILABLE_IN_THE_REQUIRED_CAUSAL_CHAIN",
+    "prospective_count": 0,
+    "backfill_allowed": false,
+    "result_reconstruction_allowed": false
+  },
+  "reanchor_rule": {
+    "cadence": "THURSDAY_SIGNAL_FRIDAY_ENTRY_WEEKLY",
+    "next_calendar_candidate_signal_date_utc": "2026-08-20",
+    "next_calendar_candidate_entry_date_utc": "2026-08-21",
+    "next_calendar_candidate_complete_exit_date_utc": "2026-08-28",
+    "calendar_candidate_is_not_automatic_acceptance": true,
+    "acceptance_requires": [
+      "CMC_TOP150_RAW_SNAPSHOT_WITH_ADJACENT_AVAILABILITY_MANIFEST_AND_MATCHING_SHA256_AVAILABLE_BY_SIGNAL_CLOSE",
+      "FEATURE_PANEL_CONTAINS_NO_ROWS_AFTER_SIGNAL_DATE_AND_ALL_FROZEN_FEATURE_RULES_PASS",
+      "SIGNAL_STAGE_USES_ONLY_STRICTLY_HISTORICAL_SHORTABILITY",
+      "POST_SIGNAL_PRE_ENTRY_BINANCE_SPOT_AND_USDM_EVIDENCE_PASSES_SERVER_TIME_AND_HASH_CHECKS",
+      "FIRST_10_CAUSALLY_SHORTABLE_NAMES_FROM_FROZEN_SHORT_RANKING_EXIST",
+      "NO_LONG_SHORT_OVERLAP",
+      "ALL_SELECTED_LONGS_HAVE_SPOT_USDT_TRADING_EVIDENCE",
+      "RESULT_STAGE_USES_ONLY_PRESERVED_BINANCE_DATA_VISION_PRICE_AND_FUNDING_ARCHIVES_WITH_CHECKSUMS"
+    ],
+    "if_any_requirement_fails": "FAIL_CLOSED_AND_ADVANCE_TO_NEXT_WEEKLY_CALENDAR_CANDIDATE_WITHOUT_BACKFILL"
+  },
+  "methodology_changed": false,
+  "economic_methodology_changed": false,
+  "historical_returns_reoptimized": false,
+  "external_delta_used_for_change": false,
+  "prospective_clock_reset_by_user_choice": false,
+  "prospective_clock_continues_from_zero_until_first_valid_complete_cycle": true,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  }
+}
