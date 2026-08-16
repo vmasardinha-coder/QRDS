@@ -71,6 +71,15 @@ class GateBTC2ChallengerFoundationTests(unittest.TestCase):
             registry["FREQTRADE_CRYPTO"]["license_boundary"],
             "GPLV3_EXTERNAL_CONTAINER_NO_CODE_COPY",
         )
+        self.assertEqual(
+            registry["VECTORBT_SCREEN"]["license_boundary"],
+            "APACHE2_COMMONS_CLAUSE_EXTERNAL_RESEARCH_ONLY_NO_RESALE",
+        )
+        self.assertEqual(
+            registry["PYBROKER_ML"]["license_boundary"],
+            "APACHE2_COMMONS_CLAUSE_EXTERNAL_RESEARCH_ONLY_NO_RESALE",
+        )
+        self.assertTrue(all(x["candidate_pin"] for x in registry.values()))
 
     def test_hash_is_deterministic_and_detects_mutation(self):
         first = build_contract(BASELINE_SHA)

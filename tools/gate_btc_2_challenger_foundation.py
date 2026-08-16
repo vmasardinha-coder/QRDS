@@ -101,7 +101,9 @@ CHALLENGERS = [
     {
         "challenger_id": "VECTORBT_SCREEN",
         "role": "HYPOTHESIS_SCREENING_ONLY",
-        "license_boundary": "EXTERNAL_LIBRARY_PINNED_VERSION",
+        "license_boundary": "APACHE2_COMMONS_CLAUSE_EXTERNAL_RESEARCH_ONLY_NO_RESALE",
+        "candidate_pin": "v1.1.0",
+        "pin_kind": "RELEASE_TAG",
         "official_stage": 6,
         "status": "REGISTERED_NOT_INSTALLED",
     },
@@ -109,13 +111,17 @@ CHALLENGERS = [
         "challenger_id": "JESSE_CRYPTO",
         "role": "DIRECT_CRYPTO_CHALLENGER",
         "license_boundary": "MIT_EXTERNAL_ENVIRONMENT",
+        "candidate_pin": "v3.0.6",
+        "pin_kind": "TAG_REQUIRES_COMPATIBILITY_SMOKE_BEFORE_ADOPTION",
         "official_stage": 6,
         "status": "REGISTERED_NOT_INSTALLED",
     },
     {
         "challenger_id": "PYBROKER_ML",
         "role": "SIMPLE_ML_BENCHMARK",
-        "license_boundary": "EXTERNAL_LIBRARY_PINNED_VERSION",
+        "license_boundary": "APACHE2_COMMONS_CLAUSE_EXTERNAL_RESEARCH_ONLY_NO_RESALE",
+        "candidate_pin": "v1.2.14",
+        "pin_kind": "RELEASE_TAG",
         "official_stage": 7,
         "status": "REGISTERED_NOT_INSTALLED",
     },
@@ -123,13 +129,17 @@ CHALLENGERS = [
         "challenger_id": "FREQTRADE_CRYPTO",
         "role": "INDEPENDENT_CRYPTO_REIMPLEMENTATION",
         "license_boundary": "GPLV3_EXTERNAL_CONTAINER_NO_CODE_COPY",
+        "candidate_pin": "2026.7",
+        "pin_kind": "RELEASE_TAG",
         "official_stage": 7,
         "status": "REGISTERED_NOT_INSTALLED",
     },
     {
         "challenger_id": "HFTBACKTEST_MICROSTRUCTURE",
         "role": "EXECUTION_AND_MICROSTRUCTURE_RESEARCH",
-        "license_boundary": "EXTERNAL_LAB_PINNED_VERSION",
+        "license_boundary": "MIT_EXTERNAL_LAB",
+        "candidate_pin": "rust-v0.9.4_py-v2.4.4",
+        "pin_kind": "RELEASE_TAG_PAIR",
         "official_stage": 10,
         "status": "REGISTERED_NOT_INSTALLED",
     },
@@ -248,6 +258,12 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     freqtrade = next((item for item in challengers if item.get("challenger_id") == "FREQTRADE_CRYPTO"), {})
     if "GPLV3_EXTERNAL_CONTAINER_NO_CODE_COPY" != freqtrade.get("license_boundary"):
         errors.append("Freqtrade GPL boundary missing")
+    commons_clause = {"VECTORBT_SCREEN", "PYBROKER_ML"}
+    for item in challengers:
+        if item.get("challenger_id") in commons_clause and item.get("license_boundary") != "APACHE2_COMMONS_CLAUSE_EXTERNAL_RESEARCH_ONLY_NO_RESALE":
+            errors.append(f"Commons Clause boundary missing for {item.get('challenger_id')}")
+        if not item.get("candidate_pin") or not item.get("pin_kind"):
+            errors.append(f"reproducible candidate pin missing for {item.get('challenger_id')}")
 
     data_contract = contract.get("data_contract", {})
     for field in INPUT_REQUIRED_FIELDS:
