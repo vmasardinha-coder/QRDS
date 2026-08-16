@@ -9,6 +9,10 @@ on:
       - tests/test_gate_btc_2_challenger_foundation.py
       - tests/test_gate_btc_2_dataset_seal_readiness.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
+  schedule:
+    # Daily collection starts at 00:15 UTC and has historically published its
+    # runtime pointer around 02:00 UTC.  This read-only assessment follows it.
+    - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
       expected_cutoff:
@@ -23,6 +27,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: gate-btc-2-dataset-seal-readiness-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   GATE_BTC_RESEARCH_ONLY: "true"
