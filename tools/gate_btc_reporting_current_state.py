@@ -157,7 +157,11 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         or str(d50_qual.get("source", "")).upper() == "LAST_VALIDATED_PROJECT_STATE"
     )
     if has_verified_reconciliation:
-        d50_freshness = fresh_label(iso_date(measurement.get("data_as_of")), reference_date)
+        d50_freshness = fresh_label(
+            iso_date(d50_ledger.get("latest_prospective_date"))
+            or iso_date(measurement.get("data_as_of")),
+            reference_date,
+        )
         d50_display_current = d50_ledger.get("current")
         d50_authority = "LOCAL_RECONCILED_MEASUREMENT"
     elif d50_remote_blocked:
