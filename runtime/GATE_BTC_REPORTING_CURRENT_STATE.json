@@ -9,74 +9,74 @@
       "status": "WAITING_FIRST_UNTOUCHED_SIGNAL"
     },
     "bull_replay_live_shadow": {
-      "data_as_of": "2026-08-14",
-      "freshness": "STALE",
+      "data_as_of": "2026-08-15",
+      "freshness": "FRESH",
       "leaderboard_descriptive_only": [
         {
           "max_drawdown": 0.0,
-          "net_nav": 1.0014181721,
-          "observations": 1,
-          "return_since_start": 0.001418172099999948,
+          "net_nav": 1.00394860379,
+          "observations": 2,
+          "return_since_start": 0.00394860379000006,
+          "series": "Delta_LS_50_50"
+        },
+        {
+          "max_drawdown": 0.0,
+          "net_nav": 1.00394860379,
+          "observations": 2,
+          "return_since_start": 0.00394860379000006,
+          "series": "Delta_LS_50_50_StopVol"
+        },
+        {
+          "max_drawdown": 0.0,
+          "net_nav": 1.00273376,
+          "observations": 2,
+          "return_since_start": 0.0027337599999999185,
+          "series": "Delta_LS_70_30"
+        },
+        {
+          "max_drawdown": 0.0,
+          "net_nav": 1.00273376,
+          "observations": 2,
+          "return_since_start": 0.0027337599999999185,
+          "series": "Delta_LS_70_30_StopVol"
+        },
+        {
+          "max_drawdown": -6.0600060172832926e-05,
+          "net_nav": 1.00115400874,
+          "observations": 2,
+          "return_since_start": 0.0011540087399999344,
+          "series": "QOS_Moderada"
+        },
+        {
+          "max_drawdown": -0.00047524500079909604,
+          "net_nav": 1.00094225312,
+          "observations": 2,
+          "return_since_start": 0.0009422531200000694,
           "series": "QOS_Ultra"
         },
         {
           "max_drawdown": 0.0,
-          "net_nav": 1.00121468241,
-          "observations": 1,
-          "return_since_start": 0.0012146824099998899,
-          "series": "QOS_Moderada"
-        },
-        {
-          "max_drawdown": 0.0,
-          "net_nav": 1.00096951302,
-          "observations": 1,
-          "return_since_start": 0.0009695130200000346,
-          "series": "Victor_proxy"
-        },
-        {
-          "max_drawdown": 0.0,
           "net_nav": 1.0,
-          "observations": 1,
+          "observations": 2,
           "return_since_start": 0.0,
           "series": "BTC_puro"
         },
         {
           "max_drawdown": 0.0,
           "net_nav": 1.0,
-          "observations": 1,
+          "observations": 2,
           "return_since_start": 0.0,
           "series": "BTC_ETH_70_30"
         },
         {
-          "max_drawdown": 0.0,
-          "net_nav": 0.999771570972,
-          "observations": 1,
-          "return_since_start": -0.00022842902800002118,
-          "series": "Delta_LS_50_50"
-        },
-        {
-          "max_drawdown": 0.0,
-          "net_nav": 0.999771570972,
-          "observations": 1,
-          "return_since_start": -0.00022842902800002118,
-          "series": "Delta_LS_50_50_StopVol"
-        },
-        {
-          "max_drawdown": 0.0,
-          "net_nav": 0.997855528737,
-          "observations": 1,
-          "return_since_start": -0.002144471262999992,
-          "series": "Delta_LS_70_30"
-        },
-        {
-          "max_drawdown": 0.0,
-          "net_nav": 0.997855528737,
-          "observations": 1,
-          "return_since_start": -0.002144471262999992,
-          "series": "Delta_LS_70_30_StopVol"
+          "max_drawdown": -0.001662930284437869,
+          "net_nav": 0.999304970503,
+          "observations": 2,
+          "return_since_start": -0.0006950294969999549,
+          "series": "Victor_proxy"
         }
       ],
-      "observed_days": 1,
+      "observed_days": 2,
       "source": "ledgers/bull_replay_live_shadow/STATUS.json",
       "status": "LIVE_DIAGNOSTIC_ACTIVE"
     },
@@ -92,8 +92,8 @@
       "target": 30
     },
     "delta": {
-      "freshness": "STALE",
-      "observations": 91,
+      "freshness": "FRESH",
+      "observations": 93,
       "source": "runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "status": "ACTIVE",
       "targets": [
@@ -112,12 +112,12 @@
       "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "gateway": {
-      "freshness": "STALE",
-      "latest_source_data_as_of": "2026-08-14",
+      "freshness": "FRESH",
+      "latest_source_data_as_of": "2026-08-16",
       "source": "runtime/ledgers/gateway_dynamics/STATUS.json",
       "status": "ACTIVE",
       "target": 80,
-      "valid_snapshot_count": 9
+      "valid_snapshot_count": 11
     },
     "lock25_50": {
       "freshness": "STALE",
@@ -152,7 +152,7 @@
     "d50_remote_rule": "When runtime says local repair/external local authority is pending, suppress the remote D50 counter from display.",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-08-16T11:32:51.864804+00:00",
+  "generated_at_utc": "2026-08-16T11:36:45.923222+00:00",
   "methodology_changes": 0,
   "not_approved": true,
   "orders_generated": 0,
@@ -174,7 +174,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/bull_replay_live_shadow/STATUS.json",
       "schema": "gate_btc.bull_replay_live_shadow.status.v1",
-      "sha256": "db45eee1fdac317d8fbc3797bf2b3f34743f4360e6c073bff980a549a80b1565"
+      "sha256": "9667d5d11401aef851125a06f1a1a1c405c88689ff887b85f89868856ba3a182"
     },
     "d50": {
       "exists": true,
@@ -192,7 +192,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json",
       "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
-      "sha256": "8c6f3b2fffde89d48f262a45b62c9f699f773dd431089a829fd28092936d297f"
+      "sha256": "24e111b4ab07179ffb6bbf758243aa63fe8ba2abac50c168fdbbce7d826585d9"
     },
     "lock25_50": {
       "exists": true,
@@ -204,7 +204,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "schema": "gate_btc.measurement_status.v1",
-      "sha256": "5ed5123cc390a28ba9397cf428ee6220a44f8ebadb4fc435fdf7bd0873f55ae4"
+      "sha256": "f97a9fd94bc7a36520c7228296458dc8cb3da57d3b4fd198a38c91c952719c04"
     },
     "pointer": {
       "exists": true,
@@ -223,11 +223,8 @@
   "warnings": {
     "missing_or_undated_components": [],
     "stale_components": [
-      "delta",
-      "gateway",
       "lock25_50",
-      "d50",
-      "bull_replay_live_shadow"
+      "d50"
     ]
   }
 }
