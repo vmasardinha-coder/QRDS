@@ -1,8 +1,10 @@
 import argparse
+import io
 import json
 import tempfile
 import unittest
 import urllib.request
+import zipfile
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
@@ -10,7 +12,7 @@ from unittest.mock import patch
 from tools.gate_btc_lock_gap_recovery import (
     _StripAuthOnCrossHostRedirect,
     _artifact_for_run,
-    _is_explicit_true,
+    _embedded_v2a,
     _successful_runs,
 )
 from tools.gate_btc_measurement_status import build_status
@@ -18,11 +20,22 @@ from tools.gate_btc_reporting_current_state import reconcile
 
 
 class ArtifactRedirectTest(unittest.TestCase):
-    def test_historical_string_research_only_is_explicitly_true(self):
-        self.assertTrue(_is_explicit_true(True))
-        self.assertTrue(_is_explicit_true("true"))
-        self.assertFalse(_is_explicit_true(False))
-        self.assertFalse(_is_explicit_true("false"))
+    def test_historical_v2a_uses_canonical_safety_fields(self):
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, "w") as archive:
+            archive.writestr("outputs/v2a_run_manifest.json", json.dumps({
+                "data_as_of": "2026-08-09",
+                "technical_status": "PASS",
+                "operational_status": "NOT_APPROVED",
+                "real_orders": 0,
+                "capital_used": 0,
+            }))
+        outer = io.BytesIO()
+        with zipfile.ZipFile(outer, "w") as archive:
+            archive.writestr("qos_daily/qos_v2a_outputs.zip", nested.getvalue())
+        data_as_of, recovered = _embedded_v2a(outer.getvalue())
+        self.assertEqual(data_as_of, "2026-08-09")
+        self.assertEqual(recovered, nested.getvalue())
 
     def test_cross_host_redirect_strips_github_authorization(self):
         handler = _StripAuthOnCrossHostRedirect()
