@@ -2,10 +2,12 @@ import json
 import tempfile
 import unittest
 from argparse import Namespace
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 from tools.gate_btc_lock_ledger import append_lock as strict_append_lock
+from tools.gate_btc_measurement_common import canonical_sha
 from tools.gate_btc_measurement_ledgers import (
     append_lock, audit_d50, initialize_lock, initialize_source_anchor,
     load_json, safe_gateway,
@@ -95,7 +97,44 @@ class MeasurementLedgerTests(unittest.TestCase):
 
     def _append(self, root, contract, master, ledger, day, eligible):
         signal = root / f"signal-{day}.csv"; signal.write_text(current_signal(day, eligible))
+        prior = (date.fromisoformat(day) - timedelta(days=1)).isoformat()
+        prices = {}
+        for row in master.read_text(encoding="utf-8").splitlines()[1:]:
+            row_day, symbol, close, *_ = row.split(",")
+            if symbol == "BTC" and row_day in {prior, day}:
+                prices[row_day] = float(close)
+        sidecar_payload = {
+            "schema": "gate_btc.lock_valuation_sidecar.v1",
+            "status": "PASS_EXACT_ACTIVE_HOLDING_CLOSES",
+            "snapshot_id": day,
+            "prior_date": prior,
+            "required_assets": ["BTC"],
+            "required_date_count": 2,
+            "observation_count": 2,
+            "observations": [
+                {
+                    "symbol": "BTC",
+                    "date": close_day,
+                    "close_usd": prices[close_day],
+                    "source": "canonical_v2a_master:test",
+                    "source_payload_sha256": "a" * 64,
+                    "evidence_type": "EXACT_CANONICAL_MASTER_ROW",
+                    "confirmed": True,
+                }
+                for close_day in (prior, day)
+            ],
+            "valuation_only": True,
+            "engine_feed": False,
+            "selection_membership_changed": False,
+            "forward_fill_allowed": False,
+            "synthetic_return_allowed": False,
+            "exact_close_required": True,
+        }
+        sidecar_payload["sidecar_sha256"] = canonical_sha(sidecar_payload, "sidecar_sha256")
+        sidecar = root / f"valuation-{day}.json"
+        sidecar.write_text(json.dumps(sidecar_payload), encoding="utf-8")
         return append_lock(Namespace(contract=contract, master_daily=master, current_portfolios=signal,
+                                     valuation_sidecar=sidecar,
                                      snapshot_id=day, cycle_id="QOS_CURRENT_COMPOSITION_2026-08-06",
                                      ledger_dir=ledger))
 
@@ -141,7 +180,7 @@ class MeasurementLedgerTests(unittest.TestCase):
             gap_signal = root / "signal-gap.csv"
             gap_signal.write_text(current_signal("2026-08-08", "2026-08-09"))
             gap_args = Namespace(
-                contract=contract, master_daily=master, current_portfolios=gap_signal,
+                contract=contract, master_daily=master, valuation_sidecar=None, current_portfolios=gap_signal,
                 snapshot_id="2026-08-08", cycle_id="QOS_CURRENT_COMPOSITION_2026-08-06",
                 ledger_dir=ledger,
             )
