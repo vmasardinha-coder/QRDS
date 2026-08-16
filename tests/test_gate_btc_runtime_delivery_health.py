@@ -10,6 +10,7 @@ from unittest.mock import patch
 from tools.gate_btc_lock_gap_recovery import (
     _StripAuthOnCrossHostRedirect,
     _artifact_for_run,
+    _is_explicit_true,
     _successful_runs,
 )
 from tools.gate_btc_measurement_status import build_status
@@ -17,6 +18,12 @@ from tools.gate_btc_reporting_current_state import reconcile
 
 
 class ArtifactRedirectTest(unittest.TestCase):
+    def test_historical_string_research_only_is_explicitly_true(self):
+        self.assertTrue(_is_explicit_true(True))
+        self.assertTrue(_is_explicit_true("true"))
+        self.assertFalse(_is_explicit_true(False))
+        self.assertFalse(_is_explicit_true("false"))
+
     def test_cross_host_redirect_strips_github_authorization(self):
         handler = _StripAuthOnCrossHostRedirect()
         request = urllib.request.Request(
