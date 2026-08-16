@@ -82,6 +82,29 @@ def fresh_label(component_date: date | None, reference_date: date | None) -> str
     return "STALE"
 
 
+def _as_int(value: Any, default: int = -1) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def d50_runtime_is_newer(
+    remote_ledger: dict[str, Any],
+    remote_qualification: dict[str, Any],
+    reconciled_ledger: dict[str, Any],
+    reconciled_qualification: dict[str, Any],
+) -> bool:
+    """Use monotonic tips; a qualification pass counter may legitimately reset."""
+    if _as_int(remote_ledger.get("current")) > _as_int(reconciled_ledger.get("current")):
+        return True
+    if str(remote_ledger.get("latest_prospective_date") or "") > str(reconciled_ledger.get("latest_prospective_date") or ""):
+        return True
+    return _as_int(remote_qualification.get("snapshot_count_total")) > _as_int(
+        reconciled_qualification.get("snapshot_count_total")
+    )
+
+
 def calendar_waiting(data: dict[str, Any] | None) -> bool:
     if not data:
         return False
@@ -162,6 +185,12 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         measurement.get("reconciliation_note")
         and reconciled_d50_ledger.get("user_action_required") is False
         and reconciled_d50_qual.get("hash_chain_valid") is True
+        and not d50_runtime_is_newer(
+            remote_d50_ledger,
+            remote_d50_qual,
+            reconciled_d50_ledger,
+            reconciled_d50_qual,
+        )
     )
     d50_ledger = reconciled_d50_ledger if has_verified_reconciliation else (remote_d50_ledger or reconciled_d50_ledger)
     d50_qual = reconciled_d50_qual if has_verified_reconciliation else (remote_d50_qual or reconciled_d50_qual)
@@ -185,7 +214,11 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
     else:
         d50_freshness = fresh_label(iso_date(d50.get("data_as_of")), reference_date)
         d50_display_current = d50_ledger.get("current")
-        d50_authority = "RUNTIME"
+        d50_authority = (
+            "RUNTIME_NEWER_THAN_RECONCILIATION"
+            if measurement.get("reconciliation_note")
+            else "RUNTIME"
+        )
     components["d50"] = {
         "status": d50_ledger.get("status", "MISSING"),
         "freshness": d50_freshness,
@@ -195,6 +228,10 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "authority": d50_authority,
         "data_qualification_current": d50_qual.get("current"),
         "data_qualification_raw_remote": remote_d50_qual.get("current"),
+        "data_qualification_status": d50_qual.get("status"),
+        "data_qualification_snapshot_count_total": d50_qual.get("snapshot_count_total"),
+        "data_qualification_synchronized_failure": d50_qual.get("synchronized_failure", False),
+        "data_qualification_qualified": d50_qual.get("qualified", False),
         "source": "runtime/ledgers/d50/STATUS.json",
     }
 
