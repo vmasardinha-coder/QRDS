@@ -25,14 +25,21 @@ def configured_base_urls():
     if not raw.strip(): return DEFAULT_BASE_URLS
     return tuple(x.strip().rstrip('/') for x in raw.split(',') if x.strip())
 
-def fetch_path(path, base_urls=None, attempts_per_base=2):
+def fetch_path(path, base_urls=None, attempts_per_base=2, json_root_type=None):
     errors=[]
     for base in base_urls or configured_base_urls():
         url=f'{base}{path}'
         for attempt in range(1,attempts_per_base+1):
             try:
-                return fetch_url(url), url, errors
-            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError) as exc:
+                body=fetch_url(url)
+                if not body: raise ValueError('empty response body')
+                parsed=None
+                if json_root_type is not None:
+                    parsed=json.loads(body)
+                    if not isinstance(parsed,json_root_type):
+                        raise ValueError(f'unexpected JSON root: {type(parsed).__name__}')
+                return body, url, errors, parsed
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
                 errors.append({'url':url,'attempt':attempt,'type':type(exc).__name__,'message':str(exc)})
                 if attempt < attempts_per_base: time.sleep(attempt)
     raise RuntimeError(json.dumps({'path':path,'attempts':errors},sort_keys=True))
@@ -50,8 +57,8 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     now=datetime.now(timezone.utc).isoformat()
     try:
-        ex_raw, ex_url, ex_errors=fetch_path(EXCHANGE_INFO_PATH)
-        tk_raw, tk_url, tk_errors=fetch_path(TICKER_24H_PATH)
+        ex_raw, ex_url, ex_errors, ex=fetch_path(EXCHANGE_INFO_PATH,json_root_type=dict)
+        tk_raw, tk_url, tk_errors, tick=fetch_path(TICKER_24H_PATH,json_root_type=list)
     except Exception as exc:
         failure={
           'version':'DELTA_V12_UNIVERSE_SNAPSHOT_FAILURE_1.0',
@@ -68,7 +75,6 @@ def main():
         return 1
     (out/'RAW_EXCHANGE_INFO.json').write_bytes(ex_raw)
     (out/'RAW_TICKER_24H.json').write_bytes(tk_raw)
-    ex=json.loads(ex_raw); tick=json.loads(tk_raw)
     tick_by_symbol={x.get('symbol'):x for x in tick if isinstance(x,dict) and x.get('symbol')}
     rows=[]
     for s in ex.get('symbols',[]):
