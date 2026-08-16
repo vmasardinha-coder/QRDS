@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      - name: Check out recovery orchestration context
+        uses: actions/checkout@v4
       - name: Replay missing prospective deliveries in causal order
         env:
           GH_TOKEN: ${{ github.token }}
