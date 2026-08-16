@@ -14,8 +14,14 @@ def _digest(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def fixture(*, recovered: bool = False, v2a_clean: bool = False, d50_qualified: bool = False):
-    cutoff = "2026-08-16"
+def fixture(
+    *,
+    recovered: bool = False,
+    v2a_clean: bool = False,
+    d50_qualified: bool = False,
+    cutoff: str = "2026-08-16",
+    first_eligible_close: str = "2026-08-16",
+):
     pointer = {
         "schema_version": "1.0.0",
         "branch": "main",
@@ -29,6 +35,7 @@ def fixture(*, recovered: bool = False, v2a_clean: bool = False, d50_qualified: 
     lock_snapshot = cutoff if recovered else None
     lock = {
         "schema": "gate_btc.lock25_50_ledger_status.v2",
+        "first_eligible_close": first_eligible_close,
         "valid_snapshot_count": lock_count,
         "latest_snapshot_id": lock_snapshot,
         "retroactive_fill_prohibited_dates": ["2026-08-09", "2026-08-10"],
@@ -55,6 +62,7 @@ def fixture(*, recovered: bool = False, v2a_clean: bool = False, d50_qualified: 
         "schema": "gate_btc.measurement_status.v1",
         "data_as_of": cutoff,
         "lock25_50_prospective_ledger": {
+            "first_eligible_close": first_eligible_close,
             "current": lock_count,
             "latest_snapshot_id": lock_snapshot,
         },
@@ -119,6 +127,7 @@ def fixture(*, recovered: bool = False, v2a_clean: bool = False, d50_qualified: 
         "generated_at_utc": "2026-08-16T23:59:00Z",
         "components": {
             "lock25_50": {
+                "first_eligible_close": first_eligible_close,
                 "valid_snapshot_count": lock_count,
                 "latest_snapshot_id": lock_snapshot,
             },
@@ -171,6 +180,19 @@ def fixture(*, recovered: bool = False, v2a_clean: bool = False, d50_qualified: 
 
 
 class GateBTC2DatasetSealReadinessTests(unittest.TestCase):
+    def test_default_cutoff_cannot_precede_authorized_reanchor(self):
+        documents, exact = fixture(
+            recovered=False,
+            cutoff="2026-08-15",
+            first_eligible_close="2026-08-16",
+        )
+        payload = evaluate_readiness(documents, exact)
+        self.assertEqual(payload["expected_cutoff"], "2026-08-16")
+        self.assertIn("POINTER_CUTOFF_NOT_EXPECTED", payload["delivery_gaps"])
+        self.assertIn("MEASUREMENT_CUTOFF_NOT_EXPECTED", payload["delivery_gaps"])
+        self.assertIn("REPORTING_CUTOFF_NOT_EXPECTED", payload["delivery_gaps"])
+        self.assertEqual(payload["status"], BLOCKED)
+
     def test_delivery_pass_does_not_hide_missing_untouched_close(self):
         documents, exact = fixture(recovered=False)
         payload = evaluate_readiness(

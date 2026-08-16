@@ -222,8 +222,12 @@ def evaluate_readiness(
     reporting_cutoff = _as_date(
         reporting.get("reference_data_date"), "REPORTING_CUTOFF_INVALID", hard_failures
     )
+    first_eligible_close = _as_date(
+        lock.get("first_eligible_close"), "LOCK_FIRST_ELIGIBLE_CLOSE_INVALID", hard_failures
+    )
     if expected_cutoff is None:
-        expected = pointer_cutoff
+        cutoff_candidates = [value for value in (pointer_cutoff, first_eligible_close) if value]
+        expected = max(cutoff_candidates) if cutoff_candidates else None
     else:
         expected = _as_date(expected_cutoff, "EXPECTED_CUTOFF_INVALID", hard_failures)
     if expected is None:
@@ -271,6 +275,13 @@ def evaluate_readiness(
     }
     if len(lock_snapshot_ids) != 1:
         hard_failures.append("CROSS_DOCUMENT_LOCK_SNAPSHOT_DIVERGENCE")
+    lock_first_eligible_dates = {
+        lock.get("first_eligible_close"),
+        measurement_lock.get("first_eligible_close"),
+        reporting_lock.get("first_eligible_close"),
+    }
+    if len(lock_first_eligible_dates) != 1:
+        hard_failures.append("CROSS_DOCUMENT_LOCK_FIRST_ELIGIBLE_DIVERGENCE")
 
     measurement_gateway = measurement.get("gateway_dynamics_prospective_ledger", {})
     reporting_gateway = reporting.get("components", {}).get("gateway", {})
