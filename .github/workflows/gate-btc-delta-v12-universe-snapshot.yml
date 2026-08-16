@@ -12,6 +12,7 @@ on:
     - cron: '35 1 * * *'
 
 permissions:
+  actions: read
   contents: read
 
 env:
@@ -38,7 +39,35 @@ jobs:
           assert p['real_capital'] == 0
           assert p['promotion_eligible'] is False
           PY
+      - name: Resolve exact successful Daily Research run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=success&per_page=20" --jq '.workflow_runs[] | select(.name=="GATE BTC Daily Research Collection") | .id' | head -1)
+          test -n "$RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('source_run.json'))
+          assert r['name']=='GATE BTC Daily Research Collection'
+          assert r['head_branch']=='main'
+          assert r['status']=='completed' and r['conclusion']=='success'
+          PY
+          echo "SOURCE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+      - name: Download immutable Daily Research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired==false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > daily.zip
+          unzip -t daily.zip >/dev/null
+          echo "SOURCE_ARTIFACT_ID=$artifact_id" >> "$GITHUB_ENV"
       - name: Capture broad liquid shortable universe
+        env:
+          DELTA_V12_DAILY_ARTIFACT: daily.zip
         run: python tools/gate_btc_delta_v12_universe_snapshot.py
       - name: Verify manifest fail-closed
         run: |
@@ -53,6 +82,9 @@ jobs:
           assert p['real_capital'] == 0
           assert p['external_holdings_used_for_selection'] is False
           assert p['eligible_count'] >= 30
+          assert p['source']['type'] == 'IMMUTABLE_GATE_BTC_DAILY_RESEARCH_ARTIFACT'
+          assert p['gateway_critical_failed_checks'] == []
+          assert p['synthetic_or_backfilled_data_used'] is False
           PY
       - uses: actions/upload-artifact@v4
         if: always()
