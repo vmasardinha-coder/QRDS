@@ -1,0 +1,120 @@
+name: GATE BTC 2 Dataset Seal Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_2_challenger_foundation.py
+      - tools/gate_btc_2_dataset_seal_readiness.py
+      - tests/test_gate_btc_2_challenger_foundation.py
+      - tests/test_gate_btc_2_dataset_seal_readiness.py
+      - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
+  workflow_dispatch:
+    inputs:
+      expected_cutoff:
+        description: Optional exact runtime cutoff (YYYY-MM-DD); empty derives it from the pointer
+        required: false
+        type: string
+      min_d50_economic:
+        description: Minimum immutable D50 economic count for this assessment
+        required: true
+        default: "0"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  readiness-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile readiness gate
+        run: >-
+          python -m py_compile
+          tools/gate_btc_2_challenger_foundation.py
+          tools/gate_btc_2_dataset_seal_readiness.py
+
+      - name: Run false-green and track-isolation tests
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_2_challenger_foundation.py
+          tests/test_gate_btc_2_dataset_seal_readiness.py
+
+  runtime-readiness-assessment:
+    needs: readiness-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout baseline tools
+        uses: actions/checkout@v4
+
+      - name: Checkout read-only runtime evidence
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Assess runtime evidence without sealing
+        env:
+          EXPECTED_CUTOFF: ${{ inputs.expected_cutoff }}
+          MIN_D50_ECONOMIC: ${{ inputs.min_d50_economic || '0' }}
+        run: |
+          args=(
+            --pointer runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+            --measurement runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
+            --reporting runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+            --v2a runtime_repo/runtime/data_quality/v2a/STATUS.json
+            --lock runtime_repo/runtime/ledgers/lock25_50/STATUS.json
+            --gateway runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json
+            --min-d50-economic "$MIN_D50_ECONOMIC"
+            --output artifacts/gate_btc_2/dataset_seal/readiness.json
+          )
+          if [[ -n "$EXPECTED_CUTOFF" ]]; then
+            args+=(--expected-cutoff "$EXPECTED_CUTOFF")
+          fi
+          python tools/gate_btc_2_dataset_seal_readiness.py "${args[@]}"
+
+      - name: Verify assessment cannot self-promote
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path(
+              'artifacts/gate_btc_2/dataset_seal/readiness.json'
+          ).read_text(encoding='utf-8'))
+          assert payload['assessment_kind'] == 'READINESS_ONLY_NOT_A_DATASET_SEAL'
+          assert payload['stage_3_dataset_sealed'] is False
+          assert payload['official_challenger_runs_allowed'] is False
+          assert payload['orders_generated'] == 0
+          assert payload['real_capital_used'] == 0
+          assert payload['promotion_allowed'] is False
+          print('GATE_BTC_2_DATASET_SEAL_READINESS=ASSESSMENT_ONLY')
+          PY
+
+      - name: Upload read-only readiness evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-dataset-seal-readiness-${{ github.run_id }}
+          path: artifacts/gate_btc_2/dataset_seal/
+          retention-days: 90
+          if-no-files-found: error
