@@ -100,13 +100,29 @@ def build_status(args) -> int:
     gateway = load_json(args.gateway_status) if args.gateway_status.exists() else None
     lock = load_json(args.lock_status) if args.lock_status.exists() else None
     d50 = load_json(args.d50_status) if args.d50_status and args.d50_status.exists() else None
+    previous = load_json(args.output) if args.output.exists() else None
+    previous_d50_ledger = (previous or {}).get("d50_prospective_immutable_ledger") or {}
+    previous_d50_qual = (previous or {}).get("d50_data_qualification") or {}
+    preserve_verified_reconciliation = bool(
+        (previous or {}).get("reconciliation_note")
+        and previous_d50_ledger.get("user_action_required") is False
+        and previous_d50_qual.get("hash_chain_valid") is True
+    )
+    d50_qualification = (
+        previous_d50_qual if preserve_verified_reconciliation
+        else (d50 or {}).get("data_qualification", {"current": None, "target": 7, "status": "UNVERIFIED"})
+    )
+    d50_ledger = (
+        previous_d50_ledger if preserve_verified_reconciliation
+        else (d50 or {}).get("prospective_immutable_ledger", {"current": None, "target": 30, "status": "UNVERIFIED"})
+    )
     expected = ["2026-08-31", "2026-09-30", "2026-10-31"]
     qos_count = sum(iso_day(as_of, "data_as_of") >= iso_day(day, "month close") for day in expected)
     payload = {
         "schema": "gate_btc.measurement_status.v1", "data_as_of": as_of,
         "delta_walk_forward": {"current": int(delta[0]["observations"]), "targets": [90, 120], "status": "ACTIVE"},
-        "d50_data_qualification": (d50 or {}).get("data_qualification", {"current": None, "target": 7, "status": "UNVERIFIED"}),
-        "d50_prospective_immutable_ledger": (d50 or {}).get("prospective_immutable_ledger", {"current": None, "target": 30, "status": "UNVERIFIED"}),
+        "d50_data_qualification": d50_qualification,
+        "d50_prospective_immutable_ledger": d50_ledger,
         "gateway_dynamics_prospective_ledger": {
             "current": gateway.get("valid_snapshot_count") if gateway else None,
             "target": gateway.get("required_snapshot_count", 80) if gateway else 80,
@@ -133,6 +149,8 @@ def build_status(args) -> int:
         "research_only": True, "shadow_only": True, "not_approved": True,
         "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
     }
+    if preserve_verified_reconciliation:
+        payload["reconciliation_note"] = previous["reconciliation_note"]
     payload["status_sha256"] = canonical_sha(payload, "status_sha256")
     atomic_json(args.output, payload)
     print(json.dumps(payload, indent=2))
