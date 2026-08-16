@@ -10,7 +10,7 @@
     },
     "bull_replay_live_shadow": {
       "data_as_of": "2026-08-14",
-      "freshness": "FRESH",
+      "freshness": "STALE",
       "leaderboard_descriptive_only": [
         {
           "max_drawdown": 0.0,
@@ -101,11 +101,11 @@
       ]
     },
     "delta_paper_monitor": {
-      "data_as_of": "2026-08-14",
+      "data_as_of": "2026-08-15",
       "freshness": "FRESH",
       "hypothesis_label": "DELTA_RECONSTRUCTION_BEST_AVAILABLE_HYPOTHESIS",
       "leaderboard_descriptive_only": true,
-      "observed_days": 1,
+      "observed_days": 2,
       "official_replica_claim": false,
       "source": "ledgers/delta_paper_monitor/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
@@ -150,13 +150,13 @@
     "d50_remote_rule": "When runtime says local repair/external local authority is pending, suppress the remote D50 counter from display.",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-08-15T04:05:29.419545+00:00",
+  "generated_at_utc": "2026-08-16T04:09:17.890870+00:00",
   "methodology_changes": 0,
   "not_approved": true,
   "orders_generated": 0,
   "real_capital_used": 0,
-  "reference_data_date": "2026-08-14",
-  "reporting_date_utc": "2026-08-15",
+  "reference_data_date": "2026-08-15",
+  "reporting_date_utc": "2026-08-16",
   "reporting_only": true,
   "research_only": true,
   "schema": "gate_btc.reporting_current_state.v1",
@@ -184,7 +184,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/delta_paper_monitor/STATUS.json",
       "schema": "gate_btc.delta_paper_monitor.v1",
-      "sha256": "46cf8b9e4a9db701f1233adca1aa3878601159b6094195788dc041718c8e53d6"
+      "sha256": "cff0c443b66d25d160a2925ce62d049d6dcc4fdea7ec50df98393d344e674a3c"
     },
     "gateway": {
       "exists": true,
@@ -202,13 +202,13 @@
       "exists": true,
       "path": "runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "schema": "gate_btc.measurement_status.v1",
-      "sha256": "beabf41941c7842bdf8de24811484cd1ffef5c7e3bec1c1943c7a66eda623db4"
+      "sha256": "6042705d8d1ff09e25ce5ccc63772a37e49828c55dd0f80d7a2e646874735a8a"
     },
     "pointer": {
       "exists": true,
       "path": "runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
       "schema": null,
-      "sha256": "2c14ae9d6d62cbaa20b33e5f34667316ed955cd91a6910696b943746de226cd3"
+      "sha256": "d469e97d2fe13ebd4fab49cf968c6b7902fcc76ad1612e9335312055ea3ef896"
     },
     "prl50": {
       "exists": true,
@@ -224,7 +224,8 @@
       "delta",
       "gateway",
       "lock25_50",
-      "d50"
+      "d50",
+      "bull_replay_live_shadow"
     ]
   }
 }
