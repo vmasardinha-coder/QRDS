@@ -30,11 +30,6 @@ RUNTIME_SAFETY = {
 }
 
 
-def _is_explicit_true(value: object) -> bool:
-    """Accept the boolean and the historical manifest string encoding only."""
-    return value is True or (isinstance(value, str) and value.strip().lower() == "true")
-
-
 def missing_dates(latest: str | None, first: str, target_exclusive: str) -> list[str]:
     first_day = date.fromisoformat(first)
     target = date.fromisoformat(target_exclusive)
@@ -106,10 +101,12 @@ def _embedded_v2a(artifact_bytes: bytes) -> tuple[str, bytes]:
         if len(manifests) != 1:
             raise RuntimeError(f"expected one v2a manifest, got {manifests}")
         manifest = json.loads(inner.read(manifests[0]).decode("utf-8-sig"))
-        if not _is_explicit_true(manifest.get("research_only")):
-            raise RuntimeError("V2A source is not research_only")
+        if manifest.get("technical_status") != "PASS":
+            raise RuntimeError("V2A source technical_status is not PASS")
         if manifest.get("operational_status") != "NOT_APPROVED":
             raise RuntimeError("V2A source is not NOT_APPROVED")
+        if manifest.get("real_orders", 0) != 0 or manifest.get("capital_used", 0) != 0:
+            raise RuntimeError("V2A source violates zero-order / zero-capital safety lock")
         return str(manifest["data_as_of"]), nested
 
 
