@@ -2,6 +2,14 @@ name: GATE BTC V16B Binance USD-M Funding Audit
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "50 20 * * 4"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-binance-usdm-v16b-funding-audit.yml
+      - tools/gate_btc_binance_usdm_funding_audit.py
+      - research_inputs/V16B_SELECTED_SHORTS_2026_11W.csv
   push:
     branches: [agent/gate-btc-migration-current]
     paths:

@@ -1,0 +1,60 @@
+{
+  "governance_id": "GATE_BTC_V16_FAMILY_GOVERNANCE_20260815",
+  "created_at_utc": "2026-08-15T14:12:00Z",
+  "family_goal": "Develop one allocation-ready V16 family without repeatedly rewriting the incumbent after observing future outcomes.",
+  "versions": {
+    "V16B": {
+      "role": "FROZEN_BASELINE",
+      "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+      "economics_mutable": false,
+      "objective": "Establish clean prospective causal evidence for the frozen baseline.",
+      "live_definition": "ACTIVE_SHADOW_LIVE after the first valid SIGNAL_SEAL, ENTRY_SEAL and RESULT_SEAL cycle is completed append-only.",
+      "formal_checkpoints_completed_cycles": [13, 26, 52]
+    },
+    "V16C": {
+      "role": "STRUCTURAL_CHALLENGER",
+      "status": "NOT_YET_FROZEN",
+      "may_be_designed_before_V16B_checkpoint": true,
+      "may_use_future_V16B_results_for_parameter_selection": false,
+      "allowed_change_class": "STRUCTURAL_ONLY",
+      "examples": ["universe construction", "ranking architecture", "portfolio breadth", "beta neutralization", "rebalance structure"],
+      "required_before_live": ["explicit hypothesis", "separate candidate_id", "frozen parameters", "same causal evidence standards", "prospective ledger independent from V16B"]
+    },
+    "V16D": {
+      "role": "RISK_ENGINE_CHALLENGER",
+      "status": "NOT_YET_FROZEN",
+      "selection_layer_must_remain_separable": true,
+      "allowed_change_class": "RISK_AND_SIZING_ONLY",
+      "examples": ["volatility targeting", "gross exposure", "concentration controls", "funding-aware risk budget", "turnover-aware sizing", "drawdown budget"],
+      "required_before_live": ["freeze incumbent selection layer", "predeclare risk objective", "predeclare risk limits", "independent prospective ledger"]
+    },
+    "V16E": {
+      "role": "ALLOCATION_READY_FINAL",
+      "status": "NOT_YET_FROZEN",
+      "purpose": "Select and freeze the final V16 configuration eligible to become an input to the Allocation Engine shadow.",
+      "must_compare": ["historical robustness", "prospective net return", "prospective drawdown", "volatility", "Sharpe/Sortino/Calmar when statistically meaningful", "turnover", "fees", "funding", "BTC beta", "regime stability", "Monte Carlo/stress distribution"],
+      "engine_feed_before_separate_approval": false
+    }
+  },
+  "version_cap": {
+    "normal_family_terminal_version": "V16E",
+    "do_not_create": ["V16F", "V16G", "V16H"],
+    "exception": "A materially new economic hypothesis must start a new family rather than extending V16 indefinitely."
+  },
+  "evidence_policy": {
+    "past": "BACKTEST_OR_REPLAY_ONLY",
+    "live": "APPEND_ONLY_PROSPECTIVE_ONLY",
+    "future": "MONTE_CARLO_STRESS_SCENARIOS_NOT_FORECAST_CERTAINTY",
+    "external_delta": "BENCHMARK_AND_AUDIT_ONLY_NEVER_TUNING",
+    "historical_backfill_counts_as_live": false,
+    "failed_or_missing_evidence": "FAIL_CLOSED"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  }
+}

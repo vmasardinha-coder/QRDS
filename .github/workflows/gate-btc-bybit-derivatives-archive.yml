@@ -2,6 +2,8 @@ name: GATE BTC Bybit Derivatives Archive Audit
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "45 4 * * *"
   pull_request:
     branches: [main]
     paths:
@@ -22,14 +24,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Test historical-redundancy safety boundary
         run: python -m unittest -v tests/test_gate_btc_bybit_derivatives_archive_probe.py
-
       - name: Resolve most recent completed UTC day
         run: |
           python - <<'PY'
@@ -40,14 +39,12 @@ jobs:
               f.write('PROBE_CUTOFF='+day+'\n')
           print('PROBE_CUTOFF='+day)
           PY
-
       - name: Probe Bybit public derivatives archives
         run: >-
           python tools/gate_btc_bybit_derivatives_archive_probe.py
           --cutoff-day "$PROBE_CUTOFF"
           --pairs BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT
           --output artifacts/bybit_derivatives/bybit_derivatives_archive.json
-
       - name: Verify archive evidence cannot replace V5 live feed
         run: |
           python - <<'PY'
@@ -67,7 +64,6 @@ jobs:
           print('STATUS='+p['status'])
           print('AVAILABLE='+str(p['historical_archive_available_count']))
           PY
-
       - name: Upload Bybit derivatives archive evidence
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,79 @@
+name: GATE BTC V16B CMC Prospective Snapshot
+
+on:
+  schedule:
+    # Two independent pre-close captures every day. Thursday is the V16B signal day;
+    # daily capture keeps the evidence chain healthy without relying on a single cron.
+    - cron: "15 21,23 * * *"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v16b-cmc-snapshot.yml
+      - tools/gate_btc_v16b_cmc_snapshot.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-v16b-cmc-prospective-snapshot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  capture-cmc-universe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install capture dependency
+        run: pip install 'requests>=2.31,<3'
+
+      - name: Capture raw CMC Top-150 and availability manifest
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_v16b_cmc_snapshot.py \
+            --out-dir artifacts/gate_btc/v16b/cmc_snapshots
+
+      - name: Verify adjacent provenance and fail closed
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          root=Path('artifacts/gate_btc/v16b/cmc_snapshots')
+          evidence=list(root.glob('*.evidence.json'))
+          raw=list(root.glob('*.raw.json'))
+          assert len(evidence)==1, f'expected one evidence manifest, found {len(evidence)}'
+          assert len(raw)==1, f'expected one raw snapshot, found {len(raw)}'
+          ev=json.loads(evidence[0].read_text(encoding='utf-8'))
+          digest=hashlib.sha256(raw[0].read_bytes()).hexdigest()
+          assert ev['raw_snapshot_sha256']==digest
+          assert ev['rows'] >= 100
+          assert ev['available_at_utc'].endswith('Z')
+          assert ev['source_ref'].startswith('https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map')
+          assert ev['research_only'] is True
+          assert ev['shadow_only'] is True
+          assert ev['not_approved'] is True
+          assert ev['engine_feed'] is False
+          assert ev['orders'] == 0 and ev['real_capital'] == 0
+          print('V16B_CMC_PROSPECTIVE_SNAPSHOT=PASS snapshot_id='+ev['snapshot_id'])
+          PY
+
+      - name: Upload immutable prospective evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v16b-cmc-snapshot-${{ github.run_id }}
+          path: artifacts/gate_btc/v16b/cmc_snapshots/
+          retention-days: 90
+          if-no-files-found: error

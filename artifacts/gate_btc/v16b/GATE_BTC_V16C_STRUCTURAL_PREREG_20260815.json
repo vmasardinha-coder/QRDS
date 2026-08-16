@@ -1,0 +1,51 @@
+{
+  "prereg_id": "GATE_BTC_V16C_STRUCTURAL_PREREG_20260815",
+  "family_governance": "GATE_BTC_V16_FAMILY_GOVERNANCE_20260815",
+  "status": "PREREGISTERED_RESEARCH_CHALLENGER_NOT_LIVE",
+  "created_at_utc": "2026-08-15T15:10:00Z",
+  "hypothesis": "Preserve the frozen V16B cross-sectional score and causal evidence chain, but neutralize portfolio ex-ante BTC beta at portfolio construction so that performance depends more on cross-sectional winner-minus-loser dispersion and less on residual market direction.",
+  "rationale": "V16 is intended to be a long-short cross-sectional engine. A structural challenger should first test market-neutrality quality without using future V16B outcomes or external Delta returns for parameter selection.",
+  "frozen_from_v16b": [
+    "point-in-time CMC Top-150 universe evidence",
+    "18 frozen features",
+    "HistGradientBoostingClassifier model specification",
+    "expanding training and 13-week retrain cadence",
+    "score=P(top10pct)-P(bottom10pct)",
+    "USD 10m/day liquidity threshold",
+    "Thursday signal / Friday entry weekly cadence",
+    "10 longs and 10 shorts selected from frozen rankings",
+    "causal shortability and executability gates",
+    "15 bps turnover cost",
+    "actual Binance USD-M funding evidence",
+    "append-only SIGNAL/ENTRY/RESULT evidence chain"
+  ],
+  "structural_change_only": {
+    "name": "EX_ANTE_BTC_BETA_NEUTRALIZATION",
+    "selection_unchanged": true,
+    "beta_estimator": "60-day trailing daily return beta versus BTC, using only data available by signal close",
+    "target_portfolio_beta": 0.0,
+    "beta_tolerance_abs": 0.05,
+    "gross_exposure_cap": 1.0,
+    "net_notional_target": 0.0,
+    "weight_signs_must_follow_selection": true,
+    "long_short_count_unchanged": true,
+    "no_asset_replacement_for_beta_fit": true,
+    "fail_closed_if_beta_inputs_missing": true
+  },
+  "evaluation": {
+    "historical_use": "RESEARCH_DIAGNOSTIC_ONLY; no promotion claim if detailed V16B replay remains unreproduced",
+    "prospective_ledger": "MUST_BE_INDEPENDENT_FROM_V16B",
+    "primary_comparison": "V16C versus V16B on identical future signal dates",
+    "metrics": ["net_return", "volatility", "max_drawdown", "BTC_beta", "gross_exposure", "net_exposure", "turnover", "fees", "funding", "Sharpe_when_meaningful", "dispersion_capture"],
+    "formal_checkpoints_completed_cycles": [13, 26, 52],
+    "winner_rule": "NO_SINGLE_METRIC_WINNER; require lower absolute BTC beta without material deterioration in net risk-adjusted performance and evidence integrity"
+  },
+  "forbidden": [
+    "using future V16B returns to tune beta estimator or tolerance",
+    "using external Delta returns or holdings for parameter tuning",
+    "changing score model, features, universe, liquidity threshold, cadence, asset count or cost assumption",
+    "calling V16C live before a separate causal prospective ledger exists",
+    "merging or allocating capital without separate approval"
+  ],
+  "safety": {"RESEARCH_ONLY": true, "SHADOW_ONLY": true, "NOT_APPROVED": true, "ENGINE_FEED": false, "ORDERS": 0, "REAL_CAPITAL": 0}
+}
