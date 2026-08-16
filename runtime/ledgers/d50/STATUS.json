@@ -1,36 +1,51 @@
 {
-  "data_as_of": "2026-08-06",
+  "data_as_of": "2026-08-14",
   "data_qualification": {
-    "current": 6,
-    "source": "LAST_VALIDATED_PROJECT_STATE",
-    "status": "ACTIVE_ONE_VALID_SNAPSHOT_REMAINING",
+    "current": 4,
+    "hash_chain_valid": true,
+    "latest_snapshot_id": "2026-08-14",
+    "latest_snapshot_sha256": "4b3b88b6fc8ab8d662dec98bd2cecefea8906c9851ceda85d888f767234a868c",
+    "qualified": false,
+    "snapshot_count_total": 14,
+    "source": "ATTACHED_LOCAL_READINESS_HASH_CHAIN",
+    "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_4_OF_7",
     "target": 7,
     "user_action_required": false
+  },
+  "mirror_alignment": {
+    "alignment_sha256": "bd94363ccf4759687d7f88313f131edb5ca1cdc268f355d5da2881880a20469b",
+    "economic_rows_mutated": 0,
+    "status": "PASS_STALE_MIRROR_ALIGNED_TO_PUBLISHED_RECONCILIATION"
   },
   "not_approved": true,
   "orders_generated": 0,
   "promotion_allowed": false,
   "prospective_immutable_ledger": {
-    "blocker": "provenance-only source revision confirmed for 2026-08-01 D50_CONTROL; local updater repair not yet validated",
-    "current": 4,
-    "economic_fields_identical": true,
-    "frozen_history_must_be_preserved": true,
-    "impact": "prospective append remains paused at 4/30 until the local updater repair passes copied-state dry run and frozen-row verification",
-    "mutation_performed": false,
-    "required_action": "run the final local source-revision repair; preserve all frozen rows; append only genuinely newer admissible dates",
-    "required_files": [
-      "successful final local repair result",
-      "post-repair frozen-row verification"
+    "checkpoint_due": false,
+    "current": 13,
+    "excluded_historical_backfill_dates": [
+      "2026-08-04",
+      "2026-08-05"
     ],
-    "resume_from": "4/30",
-    "source_revision_only": true,
-    "status": "BLOCKED_LOCAL_SOURCE_REVISION_REPAIR_PENDING",
+    "first_prospective_date": "2026-07-31",
+    "frozen_history_must_be_preserved": true,
+    "historical_backfill_counts_as_prospective": false,
+    "latest_prospective_date": "2026-08-14",
+    "mirror_alignment_only": true,
+    "mutation_performed": false,
+    "next_checkpoint": 30,
+    "source": "GATE_BTC_D50_DAILY_LATEST_2026-08-14",
+    "source_hashes": {
+      "funding": "bcde60bfe246b540696546ced42898067c360ea22747ce49c30c20b42b261c88",
+      "ohlc": "b71dc7b5c41f98053f97f1af22817b879d203762b47ac8c2bf093e2e94becd7e"
+    },
+    "status": "ACTIVE",
     "target": 30,
-    "user_action_required": true
+    "user_action_required": false
   },
   "real_capital_used": 0,
   "research_only": true,
   "schema": "gate_btc.d50_measurement_status.v1",
   "shadow_only": true,
-  "status_sha256": "bc78eb57e96caf6cfe8f4672dde18ebdf4f3ba63695b91d6d133c1e6af685790"
+  "status_sha256": "5444469bd00a95a9c82aa84be4a306dae96a0b240a87e5264cc309c774f16b29"
 }

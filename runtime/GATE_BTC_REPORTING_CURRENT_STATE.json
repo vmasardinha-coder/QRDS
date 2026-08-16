@@ -83,10 +83,10 @@
     "d50": {
       "authority": "LOCAL_RECONCILED_MEASUREMENT",
       "data_qualification_current": 4,
-      "data_qualification_raw_remote": 6,
+      "data_qualification_raw_remote": 4,
       "display_current": 13,
       "freshness": "STALE",
-      "raw_remote_current_for_audit_only": 4,
+      "raw_remote_current_for_audit_only": 13,
       "source": "runtime/ledgers/d50/STATUS.json",
       "status": "ACTIVE",
       "target": 30
@@ -120,11 +120,21 @@
       "valid_snapshot_count": 11
     },
     "lock25_50": {
-      "freshness": "STALE",
-      "latest_snapshot_id": "2026-08-08",
+      "first_eligible_close": "2026-08-16",
+      "freshness": "CURRENT_AUTHORIZED_REANCHOR_WAITING_UNTOUCHED_CLOSE",
+      "latest_snapshot_id": null,
+      "retroactive_fill_prohibited_dates": [
+        "2026-08-09",
+        "2026-08-10",
+        "2026-08-11",
+        "2026-08-12",
+        "2026-08-13",
+        "2026-08-14",
+        "2026-08-15"
+      ],
       "source": "runtime/ledgers/lock25_50/STATUS.json",
-      "status": "ACTIVE",
-      "valid_snapshot_count": 3
+      "status": "READY_WAITING_FIRST_ELIGIBLE_CLOSE",
+      "valid_snapshot_count": 0
     },
     "prl50": {
       "first_eligible_execution_date": null,
@@ -152,7 +162,7 @@
     "d50_remote_rule": "When runtime says local repair/external local authority is pending, suppress the remote D50 counter from display.",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-08-16T11:36:45.923222+00:00",
+  "generated_at_utc": "2026-08-16T13:37:37.801866+00:00",
   "methodology_changes": 0,
   "not_approved": true,
   "orders_generated": 0,
@@ -180,7 +190,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/d50/STATUS.json",
       "schema": "gate_btc.d50_measurement_status.v1",
-      "sha256": "1a36ca9a5d2d7ee819cd85c6ae0206556ab8d11899cd66d4148688698bb0d596"
+      "sha256": "42b80bd428cb080a25aa80e959b0e79429ae46a37b18d9d0d0b25aede6f44813"
     },
     "delta_paper_monitor": {
       "exists": true,
@@ -198,13 +208,13 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/lock25_50/STATUS.json",
       "schema": "gate_btc.lock25_50_ledger_status.v2",
-      "sha256": "f6d4d089afbc36ebbea51d906e78937cc236899bd690760970e30d35034428ee"
+      "sha256": "05618c774547ecf514734cdf2c7d3e050f7c3cd1b5a4050c53402f293458ca0b"
     },
     "measurement": {
       "exists": true,
       "path": "runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "schema": "gate_btc.measurement_status.v1",
-      "sha256": "f97a9fd94bc7a36520c7228296458dc8cb3da57d3b4fd198a38c91c952719c04"
+      "sha256": "8d8bebc835bff6df80ae6fb6dda0234b770fbe1f32fdece18f95be9c05a00020"
     },
     "pointer": {
       "exists": true,
@@ -223,7 +233,6 @@
   "warnings": {
     "missing_or_undated_components": [],
     "stale_components": [
-      "lock25_50",
       "d50"
     ]
   }
