@@ -27,7 +27,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-runtime-writer
+  group: gate-btc-alt-trail40-10-shadow-${{ github.event_name }}-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 env:

@@ -22,11 +22,10 @@ permissions:
   actions: read
   contents: read
 
-# All writers to gate-btc-runtime use the same group. This workflow also
-# rebases before publishing, so an unexpected external writer cannot silently
-# lose an otherwise valid measurement update.
+# This workflow retries a fetch/rebase/push sequence before publishing, so a
+# concurrent runtime writer cannot silently lose an otherwise valid update.
 concurrency:
-  group: gate-btc-runtime-writer
+  group: gate-btc-prospective-ledgers-${{ github.event_name }}-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 env:
