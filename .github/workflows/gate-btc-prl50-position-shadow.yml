@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-prl50-position-shadow-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  group: gate-btc-runtime-writer
   cancel-in-progress: false
 
 env:
@@ -183,4 +183,10 @@ jobs:
           git add runtime/ledgers/prl50_position
           git diff --cached --quiet && exit 0
           git commit -m "Append PRL50 position shadow ${PRL50_SNAPSHOT_ID}"
-          git push origin HEAD:gate-btc-runtime
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

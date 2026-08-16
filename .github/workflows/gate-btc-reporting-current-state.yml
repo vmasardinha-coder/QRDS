@@ -6,12 +6,18 @@ on:
     paths:
       - .github/workflows/gate-btc-reporting-current-state.yml
       - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_lock_gap_recovery.py
+      - tests/test_gate_btc_runtime_delivery_health.py
   workflow_dispatch:
   schedule:
     - cron: "30 3 * * *"
 
 permissions:
   contents: read
+
+concurrency:
+  group: gate-btc-runtime-writer
+  cancel-in-progress: false
 
 env:
   GATE_BTC_RESEARCH_ONLY: "true"
@@ -27,6 +33,8 @@ jobs:
           python-version: "3.12"
       - name: Compile reporting reconciler
         run: python -m py_compile tools/gate_btc_reporting_current_state.py
+      - name: Test runtime delivery health gates
+        run: python -m unittest -v tests.test_gate_btc_runtime_delivery_health
       - name: Smoke-test stale-counter suppression
         run: |
           python - <<'PY'
@@ -109,4 +117,28 @@ jobs:
           git add runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
           git diff --cached --quiet && exit 0
           git commit -m "Update reporting current state"
-          git push origin HEAD:gate-btc-runtime
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+      - name: Enforce complete daily delivery
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json'
+          s=json.load(open(p, encoding='utf-8'))
+          if not s.get('delivery_complete'):
+              raise SystemExit(
+                  'INCOMPLETE_RUNTIME_DELIVERY stale='
+                  f"{s['warnings']['stale_components']} missing="
+                  f"{s['warnings']['missing_or_undated_components']}"
+              )
+          assert s['status'] == 'PASS'
+          print('RUNTIME_DELIVERY_COMPLETE=PASS')
+          PY
