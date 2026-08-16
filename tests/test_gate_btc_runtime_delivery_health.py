@@ -5,8 +5,9 @@ import unittest
 import urllib.request
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
-from tools.gate_btc_lock_gap_recovery import _StripAuthOnCrossHostRedirect
+from tools.gate_btc_lock_gap_recovery import _StripAuthOnCrossHostRedirect, _successful_runs
 from tools.gate_btc_measurement_status import build_status
 from tools.gate_btc_reporting_current_state import reconcile
 
@@ -28,6 +29,27 @@ class ArtifactRedirectTest(unittest.TestCase):
         )
         self.assertIsNotNone(redirected)
         self.assertIsNone(redirected.get_header("Authorization"))
+
+    def test_successful_run_discovery_paginates_beyond_first_hundred(self):
+        eligible = {
+            "name": "GATE BTC Daily Research Collection",
+            "head_branch": "main",
+            "status": "completed",
+            "conclusion": "success",
+        }
+        first_page = [{**eligible, "id": i} for i in range(100)]
+        second_page = [{**eligible, "id": 31350117629}]
+        with patch(
+            "tools.gate_btc_lock_gap_recovery._request_json",
+            side_effect=[
+                {"workflow_runs": first_page},
+                {"workflow_runs": second_page},
+            ],
+        ) as request_json:
+            runs = _successful_runs("o/r", "token")
+        self.assertEqual(len(runs), 101)
+        self.assertEqual(runs[-1]["id"], 31350117629)
+        self.assertIn("page=2", request_json.call_args_list[-1].args[0])
 
 
 class DeliveryHealthTest(unittest.TestCase):
