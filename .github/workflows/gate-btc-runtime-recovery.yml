@@ -52,8 +52,8 @@ jobs:
 
           # These are exact successful Daily Research artifacts. Replaying them
           # in order recovers V2A/Gateway dates 13-15/14-16 and lets the LOCK
-          # helper recover closes 09-15 without synthesizing evidence. Artifact
-          # discovery paginates the full successful-run history.
+          # helper recover closes 09-15 from audited source-run IDs without
+          # synthesizing evidence or substituting a later close.
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31764657396
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31857524889
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31920701844
