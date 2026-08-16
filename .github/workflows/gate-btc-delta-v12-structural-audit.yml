@@ -77,7 +77,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             RUN_ID='${{ github.event.workflow_run.id }}'
           else
-            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=success&per_page=20" --jq '.workflow_runs[] | select(.name=="GATE BTC Daily Research Collection") | .id' | head -1)
+            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=success&per_page=20" --jq '[.workflow_runs[] | select(.name=="GATE BTC Daily Research Collection")] | first | .id // empty')
           fi
           test -n "$RUN_ID"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" > run.json
@@ -94,7 +94,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired==false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired==false) | select(.name | startswith("gate-btc-daily-research-"))] | first | .id // empty')
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > daily.zip
           unzip -t daily.zip >/dev/null
