@@ -7,7 +7,11 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.gate_btc_lock_gap_recovery import _StripAuthOnCrossHostRedirect, _successful_runs
+from tools.gate_btc_lock_gap_recovery import (
+    _StripAuthOnCrossHostRedirect,
+    _artifact_for_run,
+    _successful_runs,
+)
 from tools.gate_btc_measurement_status import build_status
 from tools.gate_btc_reporting_current_state import reconcile
 
@@ -50,6 +54,31 @@ class ArtifactRedirectTest(unittest.TestCase):
         self.assertEqual(len(runs), 101)
         self.assertEqual(runs[-1]["id"], 31350117629)
         self.assertIn("page=2", request_json.call_args_list[-1].args[0])
+
+    def test_rerun_uses_latest_same_named_artifact(self):
+        artifacts = {
+            "artifacts": [
+                {
+                    "id": 9048726101,
+                    "name": "gate-btc-daily-research-31350117629",
+                    "expired": False,
+                    "archive_download_url": "https://api.github.com/old.zip",
+                },
+                {
+                    "id": 9059764095,
+                    "name": "gate-btc-daily-research-31350117629",
+                    "expired": False,
+                    "archive_download_url": "https://api.github.com/latest.zip",
+                },
+            ]
+        }
+        with (
+            patch("tools.gate_btc_lock_gap_recovery._request_json", return_value=artifacts),
+            patch("tools.gate_btc_lock_gap_recovery._request_bytes", return_value=b"latest") as request_bytes,
+        ):
+            result = _artifact_for_run("o/r", "token", 31350117629)
+        self.assertEqual(result, b"latest")
+        self.assertEqual(request_bytes.call_args.args[0], "https://api.github.com/latest.zip")
 
 
 class DeliveryHealthTest(unittest.TestCase):

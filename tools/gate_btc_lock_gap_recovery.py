@@ -93,7 +93,11 @@ def _embedded_v2a(artifact_bytes: bytes) -> tuple[str, bytes]:
             raise RuntimeError(f"expected exactly one qos_v2a_outputs.zip, got {candidates}")
         nested = outer.read(candidates[0])
     with zipfile.ZipFile(io.BytesIO(nested)) as inner:
-        manifests = [n for n in inner.namelist() if n.endswith("outputs/v2a_run_manifest.json")]
+        manifests = [
+            n for n in inner.namelist()
+            if n.endswith("outputs/v2a_run_manifest.json")
+            or n.endswith("outputs/v2a1_run_manifest.json")
+        ]
         if len(manifests) != 1:
             raise RuntimeError(f"expected one v2a manifest, got {manifests}")
         manifest = json.loads(inner.read(manifests[0]).decode("utf-8-sig"))
@@ -129,9 +133,12 @@ def _artifact_for_run(repo: str, token: str, run_id: int) -> bytes | None:
     payload = _request_json(f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100", token)
     artifacts = [a for a in payload.get("artifacts", [])
                  if not a.get("expired") and str(a.get("name", "")).startswith("gate-btc-daily-research-")]
-    if len(artifacts) != 1:
+    if not artifacts:
         return None
-    return _request_bytes(artifacts[0]["archive_download_url"], token)
+    # A successful re-run can retain the previous attempt's same-named artifact.
+    # The greatest artifact id is the immutable upload from the latest attempt.
+    artifact = max(artifacts, key=lambda item: int(item["id"]))
+    return _request_bytes(artifact["archive_download_url"], token)
 
 
 def recover(args: argparse.Namespace) -> dict:
@@ -145,7 +152,12 @@ def recover(args: argparse.Namespace) -> dict:
     token = args.token or os.environ.get("GH_TOKEN", "")
     if not token:
         raise RuntimeError("GitHub token required for immutable artifact recovery")
-    runs = _successful_runs(args.repo, token)
+    explicit_run_ids = list(getattr(args, "source_run_id", []) or [])
+    runs = (
+        [{"id": run_id} for run_id in explicit_run_ids]
+        if explicit_run_ids
+        else _successful_runs(args.repo, token)
+    )
     by_date: dict[str, tuple[int, bytes]] = {}
     needed = set(dates)
     for run in runs:
@@ -157,6 +169,8 @@ def recover(args: argparse.Namespace) -> dict:
         try:
             data_as_of, nested = _embedded_v2a(raw)
         except Exception:
+            if explicit_run_ids:
+                raise
             continue
         if data_as_of in needed and data_as_of not in by_date:
             by_date[data_as_of] = (int(run["id"]), nested)
@@ -196,6 +210,7 @@ def main() -> int:
     p.add_argument("--cycle-id", required=True)
     p.add_argument("--first-eligible-close", required=True)
     p.add_argument("--target-exclusive", required=True)
+    p.add_argument("--source-run-id", action="append", type=int, default=[])
     p.add_argument("--token", default="")
     p.add_argument("--python", default="python")
     a = p.parse_args()
