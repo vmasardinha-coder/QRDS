@@ -54,7 +54,8 @@ jobs:
           # in order recovers V2A/Gateway dates 13-15/14-16 and lets the LOCK
           # helper recover closes 09-15 from audited source-run IDs without
           # synthesizing evidence or substituting a later close. Historical V2A
-          # safety is enforced by PASS/NOT_APPROVED/zero-orders/zero-capital.
+          # safety is enforced by PASS/NOT_APPROVED/zero-orders/zero-capital;
+          # exact price gaps remain explicit blockers without stalling other ledgers.
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31764657396
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31857524889
           dispatch_and_wait gate-btc-prospective-ledgers.yml 31920701844

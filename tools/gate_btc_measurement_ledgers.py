@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -70,7 +71,14 @@ def append_lock(args) -> int:
         if target.exists():
             existing = target.read_text(encoding="utf-8")
             if existing != rendered:
-                raise RuntimeError(f"LOCK blocker diagnostic conflict for {args.snapshot_id}")
+                # Preserve both immutable observations. Different exact source
+                # artifacts can expose different blockers for the same close;
+                # neither may overwrite the other or block independent ledgers.
+                suffix = hashlib.sha256(rendered.encode("utf-8")).hexdigest()[:12]
+                alternate = diagnostics / f"{args.snapshot_id}.{suffix}.json"
+                if alternate.exists() and alternate.read_text(encoding="utf-8") != rendered:
+                    raise RuntimeError(f"LOCK blocker diagnostic hash conflict for {args.snapshot_id}")
+                alternate.write_text(rendered, encoding="utf-8")
         else:
             target.write_text(rendered, encoding="utf-8")
         print(json.dumps(payload, indent=2))
