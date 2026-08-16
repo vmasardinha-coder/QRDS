@@ -136,6 +136,15 @@ def initialize_source_anchor(args) -> int:
             "funding_bps": 0.0,
             "protected_virtual_cash_return": 0.0,
         },
+        "valuation_policy": {
+            "mode": "EXACT_ACTIVE_HOLDING_CLOSE_SIDECAR",
+            "source_priority": ["canonical_v2a_master_exact", "cdd", "binance", "okx"],
+            "selection_engine_feed": False,
+            "selection_membership_change_allowed": False,
+            "exact_prior_and_current_close_required": True,
+            "forward_fill_allowed": False,
+            "synthetic_return_allowed": False,
+        },
         "portfolios": portfolios,
         "source_artifacts": {
             args.current_portfolios.name: file_sha(args.current_portfolios),
@@ -146,6 +155,13 @@ def initialize_source_anchor(args) -> int:
         "research_only": True, "shadow_only": True, "not_approved": True,
         "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
     }
+    source_run_id = getattr(args, "source_run_id", None)
+    source_artifact_sha256 = getattr(args, "source_artifact_sha256", None)
+    if source_run_id is not None or source_artifact_sha256 is not None:
+        source["source_daily_research"] = {
+            "run_id": int(source_run_id) if source_run_id is not None else None,
+            "artifact_sha256": source_artifact_sha256,
+        }
     source["source_anchor_sha256"] = canonical_sha(source, "source_anchor_sha256")
     duplicate = write_immutable(args.ledger_dir / "SOURCE_ANCHOR.json", source, "source_anchor_sha256")
     _write_status(args.ledger_dir, anchor, source)
@@ -159,7 +175,9 @@ def _write_status(ledger_dir: Path, anchor: dict[str, Any], source: dict[str, An
         paths = snapshot_paths(ledger_dir)
         latest = load_json(paths[-1]) if paths else None
     status = "ACTIVE" if latest else ("READY_WAITING_FIRST_ELIGIBLE_CLOSE" if source else "READY_WAITING_SOURCE_ANCHOR")
-    atomic_json(ledger_dir / "STATUS.json", {
+    history_path = ledger_dir / "SERIES_HISTORY.json"
+    history = load_json(history_path) if history_path.exists() else None
+    payload = {
         "schema": "gate_btc.lock25_50_ledger_status.v2",
         "status": status,
         "cycle_id": anchor["cycle_id"],
@@ -173,12 +191,40 @@ def _write_status(ledger_dir: Path, anchor: dict[str, Any], source: dict[str, An
         "execution_timing": "SIGNAL_AT_CONFIRMED_DAILY_CLOSE_EXECUTE_NEXT_ELIGIBLE_DAILY_BAR",
         "research_only": True, "shadow_only": True, "not_approved": True,
         "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
-    })
+    }
+    if history is not None:
+        require(
+            history.get("series_history_sha256") == canonical_sha(history, "series_history_sha256"),
+            "invalid LOCK series history hash",
+        )
+        payload["series_history_sha256"] = history["series_history_sha256"]
+        payload["interrupted_series_count"] = len(history.get("interrupted_series", []))
+        payload["retroactive_fill_prohibited_dates"] = history.get("retroactive_fill_prohibited_dates", [])
+        payload["reanchor_authorized_at_utc"] = history.get("reanchor_authorized_at_utc")
+    atomic_json(ledger_dir / "STATUS.json", payload)
 
 
-def _prices(master_path: Path, assets: set[str], prior: date, current: date) -> dict[str, float]:
+def _prices(
+    master_path: Path,
+    assets: set[str],
+    prior: date,
+    current: date,
+    valuation_sidecar: Path | None = None,
+) -> dict[str, float]:
+    risk_assets = {asset for asset in assets if asset != "CASH"}
+    if valuation_sidecar is not None:
+        from tools.gate_btc_lock_valuation_sidecar import validate_sidecar
+
+        payload = load_json(valuation_sidecar)
+        return validate_sidecar(
+            payload,
+            snapshot_id=current.isoformat(),
+            prior_date=prior.isoformat(),
+            required_assets=risk_assets,
+        )
+
     lower = prior - timedelta(days=5)
-    observations: dict[str, list[tuple[date, float]]] = {asset: [] for asset in assets if asset != "CASH"}
+    observations: dict[str, list[tuple[date, float]]] = {asset: [] for asset in risk_assets}
     for row in read_csv(master_path):
         symbol = row.get("symbol")
         if symbol not in observations:
@@ -358,7 +404,10 @@ def append_lock(args) -> int:
     require(all(signal["execution_eligible_from"] <= close for signal in active_signals.values()), "active signal not yet eligible")
 
     assets = {asset for signal in active_signals.values() for asset in signal["weights"]}
-    price_map = _prices(args.master_daily, assets, prior_day, close_day)
+    valuation_sidecar = getattr(args, "valuation_sidecar", None)
+    if source.get("valuation_policy", {}).get("mode") == "EXACT_ACTIVE_HOLDING_CLOSE_SIDECAR":
+        require(valuation_sidecar is not None, "exact active-holding valuation sidecar required")
+    price_map = _prices(args.master_daily, assets, prior_day, close_day, valuation_sidecar)
     stable_daily = (1.0 + float(source["v2a_parameters"]["stable_return_annual"])) ** (1.0 / 365.0) - 1.0
     rows = []
     for strategy in STRATEGIES:
@@ -383,7 +432,21 @@ def append_lock(args) -> int:
         "source_artifacts": {
             args.master_daily.name: file_sha(args.master_daily),
             args.current_portfolios.name: file_sha(args.current_portfolios),
+            **(
+                {valuation_sidecar.name: file_sha(valuation_sidecar)}
+                if valuation_sidecar is not None
+                else {}
+            ),
         },
+        "valuation_evidence": (
+            {
+                "mode": "EXACT_ACTIVE_HOLDING_CLOSE_SIDECAR",
+                "sidecar_sha256": load_json(valuation_sidecar)["sidecar_sha256"],
+                "engine_feed": False,
+            }
+            if valuation_sidecar is not None
+            else {"mode": "LEGACY_CANONICAL_MASTER", "engine_feed": False}
+        ),
         "rows": rows,
         "research_only": True, "shadow_only": True, "not_approved": True,
         "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,

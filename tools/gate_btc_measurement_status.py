@@ -25,6 +25,36 @@ def _without_fields(value: Any, fields: set[str]) -> Any:
     return value
 
 
+def _as_int(value: Any, default: int = -1) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _d50_runtime_is_newer(
+    d50: dict[str, Any] | None,
+    previous_ledger: dict[str, Any],
+    previous_qualification: dict[str, Any],
+) -> bool:
+    """Return true when monotonic runtime evidence supersedes a reconciliation.
+
+    Qualification ``current`` is deliberately not monotonic because a failed
+    prospective snapshot resets it. ``snapshot_count_total`` is the authority.
+    """
+    if not d50:
+        return False
+    runtime_ledger = d50.get("prospective_immutable_ledger") or {}
+    runtime_qualification = d50.get("data_qualification") or {}
+    if _as_int(runtime_ledger.get("current")) > _as_int(previous_ledger.get("current")):
+        return True
+    if str(runtime_ledger.get("latest_prospective_date") or "") > str(previous_ledger.get("latest_prospective_date") or ""):
+        return True
+    return _as_int(runtime_qualification.get("snapshot_count_total")) > _as_int(
+        previous_qualification.get("snapshot_count_total")
+    )
+
+
 def audit_d50(args) -> int:
     frozen, candidate = load_json(args.frozen_row), load_json(args.candidate_row)
     for field in args.ignore_field or []:
@@ -107,6 +137,7 @@ def build_status(args) -> int:
         (previous or {}).get("reconciliation_note")
         and previous_d50_ledger.get("user_action_required") is False
         and previous_d50_qual.get("hash_chain_valid") is True
+        and not _d50_runtime_is_newer(d50, previous_d50_ledger, previous_d50_qual)
     )
     d50_qualification = (
         previous_d50_qual if preserve_verified_reconciliation
@@ -145,12 +176,17 @@ def build_status(args) -> int:
             "tracks": lock.get("track_count") if lock else None,
             "source_anchor_sha256": lock.get("source_anchor_sha256") if lock else None,
             "execution_timing": lock.get("execution_timing") if lock else None,
+            "series_history_sha256": lock.get("series_history_sha256") if lock else None,
+            "retroactive_fill_prohibited_dates": lock.get("retroactive_fill_prohibited_dates", []) if lock else [],
+            "reanchor_authorized_at_utc": lock.get("reanchor_authorized_at_utc") if lock else None,
         },
         "research_only": True, "shadow_only": True, "not_approved": True,
         "orders_generated": 0, "real_capital_used": 0, "promotion_allowed": False,
     }
     if preserve_verified_reconciliation:
         payload["reconciliation_note"] = previous["reconciliation_note"]
+        if previous.get("d50_reconciliation"):
+            payload["d50_reconciliation"] = previous["d50_reconciliation"]
     payload["status_sha256"] = canonical_sha(payload, "status_sha256")
     atomic_json(args.output, payload)
     print(json.dumps(payload, indent=2))
