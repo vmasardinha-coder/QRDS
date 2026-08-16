@@ -181,6 +181,7 @@ def recover(args: argparse.Namespace) -> dict:
         raise RuntimeError(f"immutable successful Daily Research artifact missing for closes={sorted(needed)}")
 
     recovered = []
+    blocked = []
     for close in dates:
         run_id, nested = by_date[close]
         with tempfile.TemporaryDirectory(prefix=f"gate-btc-lock-{close}-") as td:
@@ -200,8 +201,17 @@ def recover(args: argparse.Namespace) -> dict:
                 "--cycle-id", args.cycle_id,
                 "--ledger-dir", str(args.ledger_dir),
             ], check=True)
-        recovered.append({"date": close, "source_run_id": run_id})
-    return {"status": "RECOVERED_IMMUTABLE_GAP", "recovered": recovered, **RUNTIME_SAFETY}
+        if (args.ledger_dir / "snapshots" / f"{close}.json").exists():
+            recovered.append({"date": close, "source_run_id": run_id})
+        else:
+            blocked.append({"date": close, "source_run_id": run_id})
+    status = "RECOVERED_IMMUTABLE_GAP" if not blocked else "PARTIAL_BLOCKED_EXACT_EVIDENCE_GAP"
+    return {
+        "status": status,
+        "recovered": recovered,
+        "blocked": blocked,
+        **RUNTIME_SAFETY,
+    }
 
 
 def main() -> int:
