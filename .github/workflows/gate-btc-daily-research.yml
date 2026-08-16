@@ -18,7 +18,9 @@ on:
       - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
+      - tests/test_gate_btc_lock_valuation_sidecar.py
       - tools/qos_orchestrator.py
+      - tools/gate_btc_lock_valuation_sidecar.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_upstream_equivalence_v3.py
@@ -37,7 +39,9 @@ on:
       - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
+      - tests/test_gate_btc_lock_valuation_sidecar.py
       - tools/qos_orchestrator.py
+      - tools/gate_btc_lock_valuation_sidecar.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_upstream_equivalence_v3.py
@@ -74,6 +78,11 @@ jobs:
             migration/canonical/v2a/requirements.txt
             migration/canonical/delta/requirements.txt
             migration/canonical/gateway/requirements.txt
+      - name: Check out active runtime contract for valuation only
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: lock_runtime
       - name: Install canonical research dependencies
         run: >-
           pip install
@@ -85,6 +94,7 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_daily_research.py
           tests/test_gate_btc_shadow_delivery.py
+          tests/test_gate_btc_lock_valuation_sidecar.py
       - name: Resolve most recent completed UTC close
         env:
           REQUESTED_CUTOFF: ${{ inputs.data_cutoff || '' }}
@@ -109,6 +119,13 @@ jobs:
           --public-data
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
+      - name: Freeze exact active-holding LOCK valuation closes
+        run: >-
+          python tools/gate_btc_lock_valuation_sidecar.py
+          --v2a-zip artifacts/qos_daily/qos_v2a_outputs.zip
+          --ledger-dir lock_runtime/runtime/ledgers/lock25_50
+          --snapshot-id "$GATE_BTC_DATA_CUTOFF"
+          --output artifacts/qos_daily/lock_valuation_sidecar.json
       - name: Collect Gateway public inputs and replay them offline
         run: >-
           python tools/gateway_upstream_equivalence_v3.py capture-replay

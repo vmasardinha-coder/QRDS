@@ -1,0 +1,83 @@
+name: GATE BTC Runtime Evidence Recovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-runtime-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: gate-btc-runtime-evidence-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover-immutable-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out recovery orchestration context
+        uses: actions/checkout@v4
+      - name: Replay missing prospective deliveries in causal order
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          dispatch_and_wait() {
+            workflow="$1"
+            source_run_id="${2:-}"
+            before=$(gh run list --workflow "$workflow" --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+            if [ -n "$source_run_id" ]; then
+              gh workflow run "$workflow" --ref main -f "run_id=$source_run_id"
+            else
+              gh workflow run "$workflow" --ref main
+            fi
+            created=""
+            for attempt in $(seq 1 30); do
+              candidate=$(gh run list --workflow "$workflow" --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+              if [ "$candidate" != "0" ] && [ "$candidate" != "$before" ]; then
+                created="$candidate"
+                break
+              fi
+              sleep 2
+            done
+            test -n "$created"
+            gh run watch "$created" --exit-status
+          }
+
+          # These are exact successful Daily Research artifacts. Replaying them
+          # in order recovers V2A/Gateway dates 13-15/14-16 and lets the LOCK
+          # helper recover closes 09-15 from audited source-run IDs without
+          # synthesizing evidence or substituting a later close. Historical V2A
+          # safety is enforced by PASS/NOT_APPROVED/zero-orders/zero-capital;
+          # exact price gaps remain explicit blockers without stalling other ledgers.
+          # Recovery sources cover every required close through 14-Aug.
+          dispatch_and_wait gate-btc-prospective-ledgers.yml 31764657396
+          dispatch_and_wait gate-btc-prospective-ledgers.yml 31857524889
+          dispatch_and_wait gate-btc-prospective-ledgers.yml 31920701844
+
+          # The 15-Aug Bull observation was computed previously but its push
+          # lost a writer race. Reprocess the same immutable source run.
+          dispatch_and_wait gate-btc-bull-replay-live-shadow.yml 31920701844
+
+      - name: Rebuild and enforce consolidated delivery state
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          before=$(gh run list --workflow gate-btc-reporting-current-state.yml --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+          gh workflow run gate-btc-reporting-current-state.yml --ref main
+          created=""
+          for attempt in $(seq 1 30); do
+            candidate=$(gh run list --workflow gate-btc-reporting-current-state.yml --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+            if [ "$candidate" != "0" ] && [ "$candidate" != "$before" ]; then created="$candidate"; break; fi
+            sleep 2
+          done
+          test -n "$created"
+          gh run watch "$created" --exit-status

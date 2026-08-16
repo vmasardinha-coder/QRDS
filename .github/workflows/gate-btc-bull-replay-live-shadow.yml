@@ -154,4 +154,13 @@ jobs:
           git add runtime/ledgers/bull_replay_live_shadow
           git diff --cached --quiet && exit 0
           git commit -m "Append Bull Replay live shadow ${SOURCE_RUN_ID}"
-          git push origin HEAD:gate-btc-runtime
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
