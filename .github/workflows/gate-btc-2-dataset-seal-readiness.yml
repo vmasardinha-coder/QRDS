@@ -57,7 +57,6 @@ jobs:
           tests/test_gate_btc_2_dataset_seal_readiness.py
 
   runtime-readiness-assessment:
-    if: github.event_name == 'workflow_dispatch'
     needs: readiness-contract
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -78,7 +77,7 @@ jobs:
       - name: Assess runtime evidence without sealing
         env:
           EXPECTED_CUTOFF: ${{ inputs.expected_cutoff }}
-          MIN_D50_ECONOMIC: ${{ inputs.min_d50_economic }}
+          MIN_D50_ECONOMIC: ${{ inputs.min_d50_economic || '0' }}
         run: |
           args=(
             --pointer runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
