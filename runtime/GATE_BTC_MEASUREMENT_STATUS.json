@@ -1,42 +1,48 @@
 {
   "d50_data_qualification": {
     "current": 4,
+    "hash_chain_valid": true,
+    "qualified": false,
+    "snapshot_count_total": 14,
     "source": "LOCAL_READINESS_REPORT_2026-08-14",
     "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_4_OF_7",
     "target": 7,
-    "snapshot_count_total": 14,
-    "hash_chain_valid": true,
-    "qualified": false,
     "user_action_required": false
   },
   "d50_prospective_immutable_ledger": {
-    "current": 13,
-    "first_prospective_date": "2026-07-31",
-    "latest_prospective_date": "2026-08-14",
-    "historical_backfill_counts_as_prospective": false,
-    "excluded_historical_backfill_dates": ["2026-08-04", "2026-08-05"],
     "checkpoint_due": false,
+    "current": 13,
+    "excluded_historical_backfill_dates": [
+      "2026-08-04",
+      "2026-08-05"
+    ],
+    "first_prospective_date": "2026-07-31",
+    "historical_backfill_counts_as_prospective": false,
+    "latest_prospective_date": "2026-08-14",
     "next_checkpoint": 30,
-    "status": "ACTIVE",
-    "target": 30,
     "source": "GATE_BTC_D50_DAILY_LATEST_2026-08-14",
     "source_hashes": {
-      "ohlc": "b71dc7b5c41f98053f97f1af22817b879d203762b47ac8c2bf093e2e94becd7e",
-      "funding": "bcde60bfe246b540696546ced42898067c360ea22747ce49c30c20b42b261c88"
+      "funding": "bcde60bfe246b540696546ced42898067c360ea22747ce49c30c20b42b261c88",
+      "ohlc": "b71dc7b5c41f98053f97f1af22817b879d203762b47ac8c2bf093e2e94becd7e"
     },
+    "status": "ACTIVE",
+    "target": 30,
     "user_action_required": false
   },
-  "data_as_of": "2026-08-14",
+  "data_as_of": "2026-08-13",
   "delta_walk_forward": {
-    "current": 90,
+    "current": 91,
     "status": "ACTIVE",
-    "targets": [90, 120]
+    "targets": [
+      90,
+      120
+    ]
   },
   "gateway_dynamics_prospective_ledger": {
-    "current": 8,
-    "latest_snapshot_id": "2026-08-13",
-    "latest_source_data_as_of": "2026-08-13",
-    "next_expected_source_data_as_of": "2026-08-14",
+    "current": 9,
+    "latest_snapshot_id": "2026-08-14",
+    "latest_source_data_as_of": "2026-08-14",
+    "next_expected_source_data_as_of": "2026-08-15",
     "raw_snapshots_are_not_automatically_counted": true,
     "same_source_close_diagnostic_count": 1,
     "status": "ACTIVE",
@@ -57,13 +63,18 @@
   "qos_monthly": {
     "current": 0,
     "eligible_from": "2026-08-06",
-    "expected_closes": ["2026-08-31", "2026-09-30", "2026-10-31"],
+    "expected_closes": [
+      "2026-08-31",
+      "2026-09-30",
+      "2026-10-31"
+    ],
     "status": "ACTIVE_CALENDAR_GATED",
     "target": 3
   },
   "real_capital_used": 0,
+  "reconciliation_note": "D50 and readiness counters reconciled on 2026-08-15 from latest local evidence for cutoff 2026-08-14. Previous 4/30 and 6/7 values were stale and must not be used as current state.",
   "research_only": true,
   "schema": "gate_btc.measurement_status.v1",
   "shadow_only": true,
-  "reconciliation_note": "D50 and readiness counters reconciled on 2026-08-15 from latest local evidence for cutoff 2026-08-14. Previous 4/30 and 6/7 values were stale and must not be used as current state."
+  "status_sha256": "983a53de2c936be0ef3a1e848b323fbc8564193dcb34ae0fe8b8efdcf302b930"
 }
