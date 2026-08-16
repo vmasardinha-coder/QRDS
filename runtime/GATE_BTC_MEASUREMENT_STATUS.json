@@ -1,33 +1,54 @@
 {
   "d50_data_qualification": {
-    "current": 4,
+    "coverage_pct": 0.0,
+    "current": 0,
+    "duplicate_reports_double_counted": false,
+    "fresh_count": 0,
     "hash_chain_valid": true,
+    "latest_snapshot_id": "2026-08-15",
+    "latest_snapshot_qualification_pass": false,
+    "latest_snapshot_sha256": "bfcbb2b3a4328b2d001ef8d381406b94b84346e9151452133ad394df436d26e7",
     "qualified": false,
-    "snapshot_count_total": 14,
-    "source": "LOCAL_READINESS_REPORT_2026-08-14",
-    "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_4_OF_7",
+    "retroactive_fill_used": false,
+    "snapshot_count_total": 15,
+    "source": "ATTACHED_LOCAL_READINESS_HASH_CHAIN",
+    "status": "ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7",
+    "synchronized_failure": true,
     "target": 7,
+    "universe_size": 20,
     "user_action_required": false
   },
   "d50_prospective_immutable_ledger": {
     "checkpoint_due": false,
-    "current": 13,
+    "current": 14,
     "excluded_historical_backfill_dates": [
       "2026-08-04",
       "2026-08-05"
     ],
     "first_prospective_date": "2026-07-31",
+    "frozen_history_must_be_preserved": true,
     "historical_backfill_counts_as_prospective": false,
-    "latest_prospective_date": "2026-08-14",
+    "latest_prospective_date": "2026-08-15",
+    "mirror_alignment_only": true,
+    "mutation_performed": false,
     "next_checkpoint": 30,
-    "source": "GATE_BTC_D50_DAILY_LATEST_2026-08-14",
+    "source": "ATTACHED_D50_SOURCE_APPEND_RECEIPT_2026-08-15",
     "source_hashes": {
-      "funding": "bcde60bfe246b540696546ced42898067c360ea22747ce49c30c20b42b261c88",
-      "ohlc": "b71dc7b5c41f98053f97f1af22817b879d203762b47ac8c2bf093e2e94becd7e"
+      "funding": "82b3509e78e23eb4af377504baa19e64ab6dfafdf035ca2108c088cc60db1866",
+      "ohlc": "b5899530c2ea8dce41a1474c658431e1e4f15158aa04f3d32167d5c826439214"
     },
+    "source_report": "GATE_BTC_D50_DAILY_LATEST(20260816-134023).txt",
+    "source_report_sha256": "506a78fe9920698405f53d9c1ae4ec55a875d9ade272f1c168094f6aab3f0cd1",
     "status": "ACTIVE",
     "target": 30,
     "user_action_required": false
+  },
+  "d50_reconciliation": {
+    "alignment_sha256": "b6cb81b584e1582b7db62192f5a8d7d9ba81484acad9d982e3f5d5857e8fb553",
+    "duplicate_reports_double_counted": false,
+    "economic_rows_imported_by_alignment": 0,
+    "economic_rows_mutated_by_alignment": 0,
+    "status": "PASS_D50_CURRENT_WITH_SYNCHRONIZED_FAILURE_CHAIN_RESET"
   },
   "data_as_of": "2026-08-15",
   "delta_walk_forward": {
@@ -82,9 +103,9 @@
     "target": 3
   },
   "real_capital_used": 0,
-  "reconciliation_note": "D50 and readiness counters reconciled on 2026-08-15 from latest local evidence for cutoff 2026-08-14. Previous 4/30 and 6/7 values were stale and must not be used as current state.",
+  "reconciliation_note": "D50 reconciled through 2026-08-15: economic ledger 14/30; qualification 0/7 after an all-universe synchronized collection failure. Repeated reports for the same snapshot were not double-counted; no historical or retroactive fill was used.",
   "research_only": true,
   "schema": "gate_btc.measurement_status.v1",
   "shadow_only": true,
-  "status_sha256": "1e7d3de1e70344d29576813f6b0f2bad6a4fc103c6e7a38b4f643119445814c2"
+  "status_sha256": "a8aa8ca0e830a0b0cda385f9f3b34afe3f8013b15d674f3e1465e374a0eb5f75"
 }
