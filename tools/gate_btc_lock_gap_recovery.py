@@ -105,13 +105,23 @@ def _embedded_v2a(artifact_bytes: bytes) -> tuple[str, bytes]:
 
 
 def _successful_runs(repo: str, token: str) -> list[dict]:
-    url = f"https://api.github.com/repos/{repo}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=success&per_page=100"
-    payload = _request_json(url, token)
     runs = []
-    for run in payload.get("workflow_runs", []):
-        if (run.get("name") == WORKFLOW_NAME and run.get("head_branch") == "main"
-                and run.get("status") == "completed" and run.get("conclusion") == "success"):
-            runs.append(run)
+    page = 1
+    while True:
+        url = (
+            f"https://api.github.com/repos/{repo}/actions/workflows/"
+            "gate-btc-daily-research.yml/runs"
+            f"?branch=main&status=success&per_page=100&page={page}"
+        )
+        payload = _request_json(url, token)
+        page_runs = payload.get("workflow_runs", [])
+        for run in page_runs:
+            if (run.get("name") == WORKFLOW_NAME and run.get("head_branch") == "main"
+                    and run.get("status") == "completed" and run.get("conclusion") == "success"):
+                runs.append(run)
+        if len(page_runs) < 100:
+            break
+        page += 1
     return runs
 
 
