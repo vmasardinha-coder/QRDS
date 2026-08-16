@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -48,6 +49,18 @@ class DailyResearchTests(unittest.TestCase):
         (qos / "QOS_ORCHESTRATION_MANIFEST_20260802_000000.json").write_text(
             json.dumps(qos_manifest), encoding="utf-8"
         )
+        sidecar = {
+            "schema": "gate_btc.lock_valuation_sidecar.v1",
+            "status": "WAITING_NOT_YET_ELIGIBLE",
+            "snapshot_id": "2026-08-01",
+            "valuation_only": True,
+            "engine_feed": False,
+            "selection_membership_changed": False,
+            "forward_fill_allowed": False,
+        }
+        raw = json.dumps(sidecar, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        sidecar["sidecar_sha256"] = hashlib.sha256(raw).hexdigest()
+        (qos / "lock_valuation_sidecar.json").write_text(json.dumps(sidecar), encoding="utf-8")
 
         gateway_manifest = {
             "version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
@@ -125,6 +138,7 @@ class DailyResearchTests(unittest.TestCase):
             self.assertEqual(payload["status"], "PASS_WITH_DATA_WARNINGS")
             self.assertEqual(payload["total_system_equivalence_baseline"], "PASS")
             self.assertTrue(payload["report_delivery"]["inputs_ready"])
+            self.assertFalse(payload["components"]["lock_valuation_sidecar"]["engine_feed"])
             self.assertTrue((args.output_dir / "GATE_BTC_DAILY_RESEARCH_EVIDENCE.zip").is_file())
 
     def test_daily_handoff_fails_closed_on_order_count(self) -> None:
@@ -138,6 +152,18 @@ class DailyResearchTests(unittest.TestCase):
             self.assertEqual(payload["status"], "FAIL")
             self.assertFalse(payload["report_delivery"]["inputs_ready"])
             self.assertIn("orders", payload["errors"][0]["message"].lower())
+
+    def test_runtime_pointer_write_is_main_only_and_isolated(self) -> None:
+        repo = Path(__file__).resolve().parents[1]
+        workflow = (repo / ".github/workflows/gate-btc-daily-research.yml").read_text(encoding="utf-8")
+        collection, publication = workflow.split("\n  publish-runtime-pointer:\n", 1)
+
+        self.assertIn("permissions:\n  contents: read", workflow)
+        self.assertNotIn("contents: write", collection)
+        self.assertIn("permissions:\n      actions: read\n      contents: write", publication)
+        self.assertIn("github.event_name != 'pull_request'", publication)
+        self.assertIn("github.ref_name == 'main'", publication)
+        self.assertIn("ref: gate-btc-runtime", publication)
 
 
 if __name__ == "__main__":

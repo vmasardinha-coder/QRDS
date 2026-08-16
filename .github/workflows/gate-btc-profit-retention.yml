@@ -1,0 +1,96 @@
+name: GATE BTC Profit Retention Phase 2
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-profit-retention.yml
+      - tools/gate_btc_profit_retention_study.py
+      - tests/test_gate_btc_profit_retention_study.py
+      - migration/GATE_BTC_PROFIT_RETENTION_PHASE2_PROTOCOL.md
+      - migration/GATE_BTC_SURVIVORSHIP_PHASE1_CONCLUSION.md
+
+concurrency:
+  group: gate-btc-profit-retention-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  profit-retention-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: pip install 'pandas>=2,<3' 'numpy>=1.24,<3'
+      - name: Test predeclared exit contracts
+        run: python -m unittest -v tests/test_gate_btc_profit_retention_study.py
+      - name: Download pinned Phase-1 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-survivorship-definitive-31276127634
+          path: artifacts/phase1_input
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 31276127634
+      - name: Verify pinned Phase-1 evidence
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/phase1_input/MANIFEST.json', encoding='utf-8'))
+          assert p['protocol'] == 'EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR'
+          assert p['canonical_v2a_script_sha256'] == '6eea7a1b8caef7ff19188ab32f32f2e1a26eef1a06027764b720b3d351e9e804'
+          assert p['cmc_snapshots'] == 74
+          assert p['history_pass_symbols'] == 444
+          assert p['engine_feed'] is False
+          assert p['methodology_changes'] == 0
+          print('PINNED_PHASE1_EVIDENCE=PASS')
+          PY
+      - name: Execute predeclared profit-retention study
+        run: >-
+          python tools/gate_btc_profit_retention_study.py
+          --input-dir artifacts/phase1_input
+          --output-dir artifacts/profit_retention
+          --bootstrap-reps 10000
+          --seed 20260808
+          --phase1-run-id 31276127634
+      - name: Verify Phase-2 safety and result contract
+        run: |
+          python - <<'PY'
+          import json, pandas as pd
+          p=json.load(open('artifacts/profit_retention/PHASE2_SUMMARY.json', encoding='utf-8'))
+          s=pd.read_csv('artifacts/profit_retention/POLICY_SUMMARY.csv')
+          b=pd.read_csv('artifacts/profit_retention/PAIRED_BOOTSTRAP.csv')
+          assert p['status'] == 'PASS_RESEARCH_ONLY'
+          assert p['phase1_run_id'] == 31276127634
+          assert p['complete_signal_months'] == 62
+          assert p['baseline_trades'] == 1240
+          assert p['policies'] == ['MONTH_END','FIXED_7D','FIXED_14D','FIXED_21D','LOCK_25','LOCK_50','LOCK_75']
+          assert p['lock_activation_gain'] == 0.20
+          assert p['research_only'] is True and p['shadow_only'] is True
+          assert p['not_approved'] is True and p['engine_feed'] is False
+          assert p['entry_selection_changed'] is False
+          assert p['methodology_changes_phase1'] == 0
+          assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
+          assert len(s) == 14 and len(b) == 12
+          print('PROFIT_RETENTION_PHASE2_CONTRACT=PASS')
+          PY
+      - name: Upload Phase-2 research package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-profit-retention-${{ github.run_id }}
+          path: artifacts/profit_retention/
+          retention-days: 30
+          if-no-files-found: warn

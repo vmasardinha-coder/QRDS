@@ -1,0 +1,97 @@
+{
+  "activation": {
+    "baseline_exit": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_NEXT_MONTH_END",
+    "economic_reveal": "ONLY_AFTER_COMPLETED_CYCLE",
+    "entry": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_SIGNAL",
+    "first_eligible_signal_date": "2026-08-31",
+    "signal_frequency": "MONTH_END"
+  },
+  "arms": {
+    "PIT_CONTROL": {
+      "definition": "equal-weight mean of baseline monthly returns for the frozen eligible PIT candidate set",
+      "role": "selector baseline"
+    },
+    "QOS_CONTROL": {
+      "definition": "equal-weight mean of baseline monthly returns for the exact frozen QOS alt picks",
+      "role": "selector treatment"
+    },
+    "QOS_PRL50": {
+      "definition": "same frozen QOS alt picks and entry, with PRL50_POSITION exit rule",
+      "role": "exit treatment"
+    }
+  },
+  "comparisons": {
+    "package_delta": "QOS_PRL50 - PIT_CONTROL",
+    "package_delta_guard": "ONLY_IF_ALL_FROZEN_CANDIDATE_OUTCOMES_RESOLVED",
+    "prl50_alpha": "QOS_PRL50 - QOS_CONTROL",
+    "prl50_alpha_guard": "VALID_IF_ALL_FROZEN_SELECTED_QOS_PATHS_RESOLVED",
+    "selector_alpha": "QOS_CONTROL - PIT_CONTROL",
+    "selector_alpha_guard": "ONLY_IF_ALL_FROZEN_CANDIDATE_OUTCOMES_RESOLVED"
+  },
+  "frozen_at_utc": "2026-08-09T19:00:00Z",
+  "historical_reference": {
+    "prl50_label": "PRL50_POSITION",
+    "profit_retention_protocol": "profit_retention_v1_1_execution_lag",
+    "survivorship_phase1_conclusion": "QOS selector alpha not proven versus unfiltered PIT cohort",
+    "survivorship_phase1_protocol": "EXTERNAL_MONTHLY_PIT_TOP150_STRICT_NEXT_BAR",
+    "survivorship_phase1_status": "CLOSED"
+  },
+  "point_in_time_universe": {
+    "candidate_definition": "current_features where is_core=false, is_stable=false, is_blocked=false",
+    "current_survivor_reconstruction": "FORBIDDEN",
+    "raw_coverage_reference_min": 0.95,
+    "raw_coverage_role": "DATA_QUALITY_DIAGNOSTIC_NOT_SIGNAL_ADMISSION_GATE",
+    "required_files": [
+      "outputs/v2a_run_manifest.json",
+      "outputs/data_quality_summary.csv",
+      "data/raw/coingecko_current_universe_v04.csv",
+      "data/processed/qos_v2a_current_features.csv",
+      "outputs/qos_v2a_current_portfolios.csv",
+      "data/processed/qos_v2a_master_daily.csv"
+    ],
+    "retrospective_backfill": "FORBIDDEN",
+    "selected_path_policy": "ALL_SELECTED_QOS_ASSETS_MUST_HAVE_RESOLVED_PATH_OR_FAIL_CLOSED",
+    "selector_inference_candidate_resolution": "ALL_FROZEN_CANDIDATES_MUST_HAVE_RESOLVED_MONTHLY_OUTCOME",
+    "source": "IMMUTABLE_V2A_SIGNAL_SNAPSHOT",
+    "unresolved_candidate_policy": "BLOCK_SELECTOR_ALPHA_AND_PACKAGE_DELTA; DO_NOT_DROP_ASSET; DO NOT_SYNTHESIZE_RETURN",
+    "upstream_immutable_snapshot_required": true
+  },
+  "price_source_policy": {
+    "mid_cycle_source_substitution": "FORBIDDEN",
+    "missing_control_price": "KEEP_IN_FROZEN_DENOMINATOR_AND_BLOCK_SELECTOR_INFERENCE_UNTIL_RESOLVED",
+    "missing_selected_price": "FAIL_CLOSED",
+    "per_symbol_source_locked_at_signal": true
+  },
+  "prl50": {
+    "activation_gain": 0.2,
+    "exit": "FIRST_VALIDATED_DAILY_CLOSE_STRICTLY_AFTER_TRIGGER",
+    "max_profit_giveback_fraction": 0.5,
+    "same_bar_exit": false,
+    "trigger_observation": "CONFIRMED_DAILY_CLOSE"
+  },
+  "purpose": "Prospectively separate selector alpha from PRL50 exit alpha using the exact point-in-time V2A candidate set available before outcome observation.",
+  "safety": {
+    "engine_feed": false,
+    "feeds_frozen_engine": false,
+    "frozen_engine_methodology_changes": 0,
+    "not_approved": true,
+    "operational_promotion_allowed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate-btc.qos-prospective-three-track.v1",
+  "scope": "ALT_SLEEVE_SELECTOR_AND_EXIT_LAYER_ONLY",
+  "status": "FROZEN_RESEARCH_ONLY",
+  "strategies": [
+    "QOS_Moderada",
+    "QOS_Ultra"
+  ],
+  "terminal_outcome_policy": {
+    "confirmed_terminal_economic_death": "REQUIRES_SEPARATELY_VALIDATED_EXPLICIT_TERMINAL_OUTCOME_POLICY",
+    "missing_candidate_without_validated_terminal_outcome": "KEEP_IN_DENOMINATOR_AND_BLOCK_SELECTOR_INFERENCE",
+    "missing_selected_asset_without_validated_terminal_outcome": "FAIL_CLOSED",
+    "provisional_or_unresolved_terminal_return": "FORBIDDEN_TO_SYNTHESIZE"
+  }
+}

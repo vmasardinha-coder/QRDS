@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="562" height="414"
+     viewBox="0 0 562 414" role="img"
+     aria-label="Historico das carteiras indexado a base 100, por carteira">
+<style>
+  svg { color-scheme: light; --series-1:#2a78d6;--series-2:#eb6834;--series-3:#1baf7a;
+        --surface-1:#fcfcfb; --text-primary:#0b0b0b; --text-secondary:#52514e;
+        --grid:#e6e5e1; --baseline:#b9b8b2;
+        background:var(--surface-1); }
+  @media (prefers-color-scheme: dark) {
+    svg { color-scheme: dark; --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;
+          --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7;
+          --grid:#2f2f2d; --baseline:#4d4c48; }
+  }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif; }
+  .title { font-size: 17px; font-weight: 600; fill: var(--text-primary); }
+  .subtitle { font-size: 12px; fill: var(--text-secondary); }
+  .panel-title { font-size: 13px; font-weight: 600; fill: var(--text-primary); }
+  .axis { font-size: 10px; fill: var(--text-secondary); }
+  .muted { font-size: 12px; fill: var(--text-secondary); }
+  .legend { font-size: 12px; fill: var(--text-secondary); }
+  .legend-mark { stroke-width: 2; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 3 3; }
+  .line { fill: none; stroke-width: 2; stroke-linecap: round;
+           stroke-linejoin: round; }
+  .dot { stroke: var(--surface-1); stroke-width: 2; }
+  .hit { fill: transparent; }
+  .direct { font-size: 11px; font-weight: 600; }
+  .base { font-size: 9px; }
+</style>
+<rect width="100%" height="100%" fill="var(--surface-1)"/>
+<text class="title" x="52" y="28">Historico das carteiras — 2026-08-11</text>
+<text class="subtitle" x="52" y="46">Base 100 na data de inicio de cada carteira. Paper trading.</text>
+<g transform="translate(52,76)">
+<line class="legend-mark" style="stroke:var(--series-1)" x1="0" y1="-4" x2="18" y2="-4"/>
+<circle style="fill:var(--series-1)" cx="9" cy="-4" r="4"/>
+<text class="legend" x="25" y="0">Carteira</text>
+<line class="legend-mark" style="stroke:var(--series-2)" x1="190" y1="-4" x2="208" y2="-4"/>
+<circle style="fill:var(--series-2)" cx="199" cy="-4" r="4"/>
+<text class="legend" x="215" y="0">Benchmark de mercado</text>
+<line class="legend-mark" style="stroke:var(--series-3)" x1="380" y1="-4" x2="398" y2="-4"/>
+<circle style="fill:var(--series-3)" cx="389" cy="-4" r="4"/>
+<text class="legend" x="405" y="0">CDI</text>
+</g>
+<g transform="translate(52,112)">
+<text class="panel-title" x="0" y="-12">Crypto vs BTC</text>
+<line class="grid" x1="0" y1="95.0" x2="400" y2="95.0"/>
+<line class="grid" x1="0" y1="8.8" x2="400" y2="8.8"/>
+<line class="grid" x1="0" y1="181.2" x2="400" y2="181.2"/>
+<line class="baseline" x1="0" y1="88.9" x2="400" y2="88.9"/>
+<text class="axis" x="-8" y="10" text-anchor="end">101.6</text>
+<text class="axis" x="-8" y="190" text-anchor="end">98.2</text>
+<text class="axis base" x="-8" y="91.9" text-anchor="end">100</text>
+<text class="axis" x="0" y="206">2026-08-06</text>
+<text class="axis" x="400" y="206" text-anchor="end">2026-08-11</text>
+<path class="line" style="stroke:var(--series-1)" d="M0.0,94.1 L80.0,79.8 L160.0,70.7 L240.0,69.8 L320.0,132.5 L400.0,109.1"/>
+<circle class="dot" style="fill:var(--series-1)" cx="0.0" cy="94.1" r="4"/>
+<circle class="dot" style="fill:var(--series-1)" cx="80.0" cy="79.8" r="4"/>
+<circle class="dot" style="fill:var(--series-1)" cx="160.0" cy="70.7" r="4"/>
+<circle class="dot" style="fill:var(--series-1)" cx="240.0" cy="69.8" r="4"/>
+<circle class="dot" style="fill:var(--series-1)" cx="320.0" cy="132.5" r="4"/>
+<circle class="dot" style="fill:var(--series-1)" cx="400.0" cy="109.1" r="4"/>
+<circle class="hit" cx="0.0" cy="94.1" r="10"><title>Carteira — 2026-08-06: 99.90 (base 100)</title></circle>
+<circle class="hit" cx="80.0" cy="79.8" r="10"><title>Carteira — 2026-08-07: 100.17 (base 100)</title></circle>
+<circle class="hit" cx="160.0" cy="70.7" r="10"><title>Carteira — 2026-08-08: 100.33 (base 100)</title></circle>
+<circle class="hit" cx="240.0" cy="69.8" r="10"><title>Carteira — 2026-08-09: 100.35 (base 100)</title></circle>
+<circle class="hit" cx="320.0" cy="132.5" r="10"><title>Carteira — 2026-08-10: 99.21 (base 100)</title></circle>
+<circle class="hit" cx="400.0" cy="109.1" r="10"><title>Carteira — 2026-08-11: 99.63 (base 100)</title></circle>
+<path class="line" style="stroke:var(--series-2)" d="M0.0,99.0 L80.0,46.5 L160.0,38.4 L240.0,25.1 L320.0,131.6 L400.0,164.9"/>
+<circle class="dot" style="fill:var(--series-2)" cx="0.0" cy="99.0" r="4"/>
+<circle class="dot" style="fill:var(--series-2)" cx="80.0" cy="46.5" r="4"/>
+<circle class="dot" style="fill:var(--series-2)" cx="160.0" cy="38.4" r="4"/>
+<circle class="dot" style="fill:var(--series-2)" cx="240.0" cy="25.1" r="4"/>
+<circle class="dot" style="fill:var(--series-2)" cx="320.0" cy="131.6" r="4"/>
+<circle class="dot" style="fill:var(--series-2)" cx="400.0" cy="164.9" r="4"/>
+<circle class="hit" cx="0.0" cy="99.0" r="10"><title>BTC — 2026-08-06: 99.82 (base 100)</title></circle>
+<circle class="hit" cx="80.0" cy="46.5" r="10"><title>BTC — 2026-08-07: 100.77 (base 100)</title></circle>
+<circle class="hit" cx="160.0" cy="38.4" r="10"><title>BTC — 2026-08-08: 100.92 (base 100)</title></circle>
+<circle class="hit" cx="240.0" cy="25.1" r="10"><title>BTC — 2026-08-09: 101.16 (base 100)</title></circle>
+<circle class="hit" cx="320.0" cy="131.6" r="10"><title>BTC — 2026-08-10: 99.22 (base 100)</title></circle>
+<circle class="hit" cx="400.0" cy="164.9" r="10"><title>BTC — 2026-08-11: 98.62 (base 100)</title></circle>
+<text class="direct" style="fill:var(--series-1)" x="409.0" y="112.1">Carteira</text>
+<text class="direct" style="fill:var(--series-2)" x="409.0" y="167.9">BTC</text>
+</g>
+</svg>

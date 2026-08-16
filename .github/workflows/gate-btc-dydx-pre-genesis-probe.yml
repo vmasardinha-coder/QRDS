@@ -1,0 +1,65 @@
+name: GATE BTC DYDX Pre-Genesis Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-dydx-pre-genesis-probe.yml
+      - tools/gate_btc_dydx_pre_genesis_probe.py
+      - tests/test_gate_btc_dydx_pre_genesis_probe.py
+      - tools/gate_btc_exchange_pit_history.py
+
+concurrency:
+  group: gate-btc-dydx-pre-genesis-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  dydx-pre-genesis-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install probe dependencies
+        run: pip install 'pandas>=2,<3' 'requests>=2,<3'
+      - name: Test pre-genesis identity boundaries
+        run: python -m unittest -v tests/test_gate_btc_dydx_pre_genesis_probe.py
+      - name: Query direct exchange DYDX history and bound before chain genesis
+        run: python tools/gate_btc_dydx_pre_genesis_probe.py --outdir artifacts/dydx_pre_genesis
+      - name: Verify research-only evidence contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/dydx_pre_genesis/DYDX_PRE_GENESIS_SUMMARY.json').read_text())
+          assert p['research_only'] is True
+          assert p['shadow_only'] is True
+          assert p['not_approved'] is True
+          assert p['pre_genesis_only'] is True
+          assert p['post_genesis_native_recovery_attempted'] is False
+          assert p['cross_token_stitching'] is False
+          assert p['native_dydx_continuity_assumed'] is False
+          assert p['integration_eligible'] is False
+          assert p['source_substitution_performed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['engine_feed'] is False
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('DYDX_PRE_GENESIS_CONTRACT=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-dydx-pre-genesis-${{ github.run_id }}
+          path: artifacts/dydx_pre_genesis
+          if-no-files-found: error
+          retention-days: 14

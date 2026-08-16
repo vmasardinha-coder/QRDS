@@ -1,0 +1,49 @@
+{
+  "schema": "gate_btc.prl50_position_shadow_contract.v1",
+  "status": "FROZEN_WAITING_FIRST_UNTOUCHED_MONTHLY_SIGNAL",
+  "candidate_name": "PRL50_POSITION",
+  "candidate_definition": {
+    "scope": "EACH_SELECTED_ALT_POSITION_INDEPENDENTLY",
+    "activation_gain": 0.20,
+    "giveback_fraction_of_peak_profit": 0.50,
+    "pre_activation_stop_loss": false,
+    "trigger_observation": "CONFIRMED_DAILY_CLOSE",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_TRIGGER",
+    "post_exit_state_until_next_monthly_signal": "VIRTUAL_CASH_ZERO_RETURN"
+  },
+  "control_definition": {
+    "name": "MONTH_END_EXEC_CONTROL",
+    "entry_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_MONTHLY_SIGNAL",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_NEXT_MONTHLY_SIGNAL"
+  },
+  "strategies": ["QOS_Moderada", "QOS_Ultra"],
+  "eligible_assets": "ALT_PICKS_ONLY_EXCLUDING_BTC_ETH_CASH",
+  "first_eligible_signal_date": "2026-08-31",
+  "first_eligible_execution_date": "2026-09-01",
+  "mid_cycle_initialization": "PROHIBITED",
+  "retrospective_backfill": "PROHIBITED",
+  "daily_gap_policy": "FAIL_CLOSED_INVALIDATE_CYCLE_IF_A_CONFIRMED_DAILY_SNAPSHOT_IS_MISSING_AFTER_ENTRY",
+  "source": {
+    "workflow": "GATE BTC Daily Research Collection",
+    "current_portfolios": "qos_v2a_current_portfolios.csv",
+    "master_daily": "qos_v2a_master_daily.csv",
+    "required_execution_lag_daily_bars": 1
+  },
+  "evidence_freeze": {
+    "phase1_run_id": 31276127634,
+    "phase2_v11_run_id": 31277917947,
+    "phase2_v11_artifact_id": 9027550308,
+    "phase2_v11_artifact_sha256": "85e9da1a118e671f307d9d049f014627faad20f5edcddbec7479469901ccefe7"
+  },
+  "name_collision_guard": {
+    "existing_project_lock50": "PORTFOLIO_LEVEL_ARM_1_50_HWM_RETRACE_15_PERCENT",
+    "must_remain_separate": true
+  },
+  "promotion_gate": "PROSPECTIVE_EVIDENCE_REQUIRED; NO_HISTORICAL_RETUNING",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders_generated": 0,
+  "real_capital_used": 0
+}

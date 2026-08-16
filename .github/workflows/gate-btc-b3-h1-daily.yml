@@ -1,0 +1,105 @@
+name: GATE BTC B3 H1 Daily Structural
+
+on:
+  schedule:
+    # 21:30, 22:30 and 23:30 America/Sao_Paulo on local Mon-Fri.
+    # GitHub cron is UTC, so those are Tue-Sat at 00:30, 01:30 and 02:30 UTC.
+    - cron: "30 0,1,2 * * 2-6"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional frozen H1 session date YYYY-MM-DD"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-b3-h1-daily
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  b3-h1-structural:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install structural dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas numpy
+
+      - name: Resolve immutable target session
+        id: target
+        env:
+          MANUAL_DATE: ${{ inputs.date }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MANUAL_DATE:-}" ]; then
+            TARGET_DATE="$MANUAL_DATE"
+            SOURCE="MANUAL_EXPLICIT_DATE"
+          else
+            # The cron is intentionally just after 00:00 UTC on Tue-Sat and is
+            # collecting the immediately preceding Mon-Fri B3 session.  Binding
+            # to yesterday in UTC avoids the previous America/Sao_Paulo
+            # wall-clock rollover bug if the runner starts after local midnight.
+            TARGET_DATE=$(date -u -d 'yesterday' +%F)
+            SOURCE="SCHEDULE_PRIOR_UTC_DATE"
+          fi
+          python - "$TARGET_DATE" <<'PY'
+          import datetime as dt, sys
+          d=dt.date.fromisoformat(sys.argv[1])
+          assert d.weekday() < 5, f"B3 H1 target must be Mon-Fri, got {d}"
+          PY
+          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+          echo "source=$SOURCE" >> "$GITHUB_OUTPUT"
+          echo "B3_H1_TARGET_DATE=$TARGET_DATE source=$SOURCE"
+
+      - name: Run frozen B3 H1 structural collector
+        id: h1
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_b3_h1_daily.py \
+            --date "${{ steps.target.outputs.date }}" \
+            --out-dir artifacts/b3_h1_daily
+
+      - name: Record safety boundary
+        if: always()
+        run: |
+          mkdir -p artifacts/b3_h1_daily
+          {
+            echo "collector_outcome=${{ steps.h1.outcome }}"
+            echo "target_date=${{ steps.target.outputs.date }}"
+            echo "target_date_source=${{ steps.target.outputs.source }}"
+            echo "RESEARCH_ONLY=true"
+            echo "SHADOW_ONLY=true"
+            echo "NOT_APPROVED=true"
+            echo "ECONOMICS_LOCKED=true"
+            echo "ORDERS=0"
+            echo "REAL_CAPITAL=0"
+          } > artifacts/b3_h1_daily/ACTIONS_STATUS.txt
+
+      - name: Upload structural evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h1-structural-${{ github.run_id }}
+          path: artifacts/b3_h1_daily/
+          retention-days: 45
+          if-no-files-found: error
+
+      - name: Fail job only on structural collector failure
+        if: steps.h1.outcome == 'failure'
+        run: exit 1

@@ -1,0 +1,123 @@
+name: GATE BTC Bybit Spot Recovery Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-bybit-spot-recovery.yml
+      - tools/gate_btc_bybit_spot_recovery_probe.py
+      - tools/gate_btc_bybit_public_archive_probe.py
+      - tests/test_gate_btc_bybit_spot_recovery_probe.py
+  workflow_run:
+    workflows: ["GATE BTC Source Redundancy Probes"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test Bybit recovery probe safety boundary
+        run: python -m unittest -v tests/test_gate_btc_bybit_spot_recovery_probe.py
+
+  bybit-spot-recovery-audit:
+    needs: contract-tests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve exact successful source-probe evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TRIGGER_RUN_ID}" ]; then
+            RUN_ID="${TRIGGER_RUN_ID}"
+          else
+            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=main&status=success&per_page=20" \
+              --jq '[.workflow_runs[] | select(.conclusion == "success" and .head_branch == "main")] | .[0].id // empty')
+          fi
+          test -n "$RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name'] == 'GATE BTC Source Redundancy Probes'
+          assert run['head_branch'] == 'main'
+          assert run['status'] == 'completed'
+          assert run['conclusion'] == 'success'
+          PY
+          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
+          test -n "$ARTIFACT_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+          mkdir -p source_probe artifacts/bybit_recovery
+          unzip -q source_probe.zip -d source_probe
+          test -f source_probe/v2a_failure_diagnostic.json
+          echo "SOURCE_PROBE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Probe all V2A recovery candidates on Bybit public Spot archive
+        run: >-
+          python tools/gate_btc_bybit_spot_recovery_probe.py
+          --diagnostic source_probe/v2a_failure_diagnostic.json
+          --output artifacts/bybit_recovery/bybit_spot_v2a_recovery_candidates.json
+
+      - name: Verify no bypass or engine integration occurred
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/bybit_recovery/bybit_spot_v2a_recovery_candidates.json', encoding='utf-8'))
+          assert p['engine_feed'] is False
+          assert p['feeds_frozen_engine'] is False
+          assert p['source_substitution_performed'] is False
+          assert p['strategy_inputs_changed'] is False
+          assert p['denominator_changed'] is False
+          assert p['universe_changed'] is False
+          assert p['methodology_changes'] == 0
+          assert p['proxy_or_geo_bypass_used'] is False
+          assert p['authentication_used'] is False
+          assert p['orders_generated'] == 0
+          assert p['real_capital_used'] == 0
+          print('BYBIT_RECOVERY_SAFETY=PASS')
+          print('SOURCE_PROBE_RUN_ID=' + str(__import__('os').environ['SOURCE_PROBE_RUN_ID']))
+          print('STATUS=' + p['status'])
+          print('CANDIDATES=' + str(p['candidate_count']))
+          print('ARCHIVE_PRESENT=' + str(p['archive_present_count']))
+          print('SYMBOLS=' + ','.join(p['archive_present_symbols']))
+          PY
+
+      - name: Upload Bybit recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-bybit-spot-recovery-${{ github.run_id }}
+          path: artifacts/bybit_recovery/
+          retention-days: 30
+          if-no-files-found: error

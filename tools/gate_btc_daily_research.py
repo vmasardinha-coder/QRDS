@@ -28,6 +28,13 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_payload_sha(payload: dict[str, Any], field: str) -> str:
+    clean = dict(payload)
+    clean.pop(field, None)
+    raw = json.dumps(clean, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
 def atomic_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".partial")
@@ -144,10 +151,22 @@ def run(args: argparse.Namespace) -> int:
         qos_path, qos = load_unique(args.qos_dir.resolve(), "QOS_ORCHESTRATION_MANIFEST_*.json")
         gateway_path = args.gateway_dir.resolve() / "GATE_BTC_GATEWAY_UPSTREAM_EQUIVALENCE.json"
         downstream_path = args.gateway_reference_dir.resolve() / "GATE_BTC_GATEWAY_V010_REPLAY.json"
+        lock_sidecar_path = args.qos_dir.resolve() / "lock_valuation_sidecar.json"
         require(gateway_path.is_file(), f"missing Gateway upstream evidence: {gateway_path}")
         require(downstream_path.is_file(), f"missing Gateway downstream evidence: {downstream_path}")
+        require(lock_sidecar_path.is_file(), f"missing LOCK valuation sidecar: {lock_sidecar_path}")
         gateway = json.loads(gateway_path.read_text(encoding="utf-8-sig"))
         downstream = json.loads(downstream_path.read_text(encoding="utf-8-sig"))
+        lock_sidecar = json.loads(lock_sidecar_path.read_text(encoding="utf-8-sig"))
+        require(
+            lock_sidecar.get("status") in {"PASS_EXACT_ACTIVE_HOLDING_CLOSES", "WAITING_NOT_YET_ELIGIBLE"},
+            f"LOCK valuation sidecar status={lock_sidecar.get('status')}",
+        )
+        require(lock_sidecar.get("snapshot_id") == args.data_cutoff, "LOCK valuation sidecar cutoff mismatch")
+        require(lock_sidecar.get("valuation_only") is True, "LOCK valuation sidecar is not valuation-only")
+        require(lock_sidecar.get("engine_feed") is False, "LOCK valuation sidecar cannot feed V2A")
+        require(lock_sidecar.get("selection_membership_changed") is False, "LOCK sidecar changed selection membership")
+        require(lock_sidecar.get("sidecar_sha256") == canonical_payload_sha(lock_sidecar, "sidecar_sha256"), "LOCK valuation sidecar hash invalid")
 
         require(qos.get("status") in {"PASS", "PASS_WITH_GATEWAY_PENDING"}, f"QOS orchestration status={qos.get('status')}")
         require(not qos.get("errors"), f"QOS orchestration errors={qos.get('errors')}")
@@ -224,6 +243,15 @@ def run(args: argparse.Namespace) -> int:
                 "scope": downstream.get("replay_scope"),
                 "files": downstream.get("frozen_replay", {}).get("files", {}),
             },
+            "lock_valuation_sidecar": {
+                "status": lock_sidecar["status"],
+                "data_as_of": lock_sidecar["snapshot_id"],
+                "required_assets": lock_sidecar.get("required_assets", []),
+                "observation_count": lock_sidecar.get("observation_count", 0),
+                "sidecar_sha256": lock_sidecar["sidecar_sha256"],
+                "valuation_only": True,
+                "engine_feed": False,
+            },
         }
         warning_state = (
             gateway_manifest.get("data_quality_status") != "PASS"
@@ -237,6 +265,7 @@ def run(args: argparse.Namespace) -> int:
             "qos_manifest": file_record(qos_path, args.qos_dir.resolve()),
             "gateway_upstream": file_record(gateway_path, args.gateway_dir.resolve()),
             "gateway_downstream": file_record(downstream_path, args.gateway_reference_dir.resolve()),
+            "lock_valuation_sidecar": file_record(lock_sidecar_path, args.qos_dir.resolve()),
         }
     except Exception as exc:
         payload["status"] = "FAIL"

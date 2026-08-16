@@ -1,0 +1,175 @@
+name: GATE BTC Delta Prospective Paper Monitor
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-delta-paper-monitor.yml
+      - migration/reporting/delta_paper_monitor_contract.json
+      - migration/reporting/GATE_BTC_DELTA_PAPER_MONITOR_AGENT.md
+      - tools/gate_btc_delta_paper_monitor.py
+      - tools/gate_btc_delta_paper_report.py
+      - tests/test_gate_btc_delta_paper_monitor.py
+      - tests/test_gate_btc_delta_paper_report.py
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Eligible Daily Research workflow run ID
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-delta-paper-monitor-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test paper-monitor contract and append-only logic
+        run: python -m unittest -v tests.test_gate_btc_delta_paper_monitor
+      - name: Test daily executive report rendering
+        run: python -m unittest -v tests.test_gate_btc_delta_paper_report
+      - name: Compile paper monitor and reporter
+        run: python -m py_compile tools/gate_btc_delta_paper_monitor.py tools/gate_btc_delta_paper_report.py
+
+  append-paper-monitor:
+    needs: contract-tests
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out canonical merged code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Resolve exact successful Daily Research source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name'] == 'GATE BTC Daily Research Collection'
+          assert run['head_branch'] == 'main'
+          assert run['status'] == 'completed'
+          assert run['conclusion'] == 'success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Download exact Daily Research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > source_artifact.zip
+          mkdir -p source_artifact
+          unzip -q source_artifact.zip -d source_artifact
+          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
+
+      - name: Verify source safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json', encoding='utf-8-sig'))
+          assert m['status'] in {'PASS','PASS_WITH_DATA_WARNINGS'}
+          assert m['research_only'] is True
+          assert m['operational_status'] == 'NOT_APPROVED'
+          assert m['orders_generated'] == 0
+          assert m['real_capital_used'] == 0
+          assert m['methodology_changes'] == 0
+          assert m['components']['delta']['status'] == 'PASS'
+          PY
+
+      - name: Check out immutable runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Append exact daily prospective paper observation
+        run: >-
+          python tools/gate_btc_delta_paper_monitor.py
+          --contract migration/reporting/delta_paper_monitor_contract.json
+          --source-zip source_artifact/qos_daily/delta_walk_forward_outputs.zip
+          --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor
+          --source-run-id "$SOURCE_RUN_ID"
+
+      - name: Render daily executive report from the ledger
+        run: >-
+          python tools/gate_btc_delta_paper_report.py
+          --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor
+          --allow-missing
+
+      - name: Verify runtime safety state when present
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/ledgers/delta_paper_monitor/STATUS.json')
+          if not p.exists():
+              print('DELTA_PAPER_MONITOR=BEFORE_ANCHOR_NO_RUNTIME_WRITE')
+              raise SystemExit(0)
+          s=json.load(open(p, encoding='utf-8'))
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['engine_feed'] is False
+          assert s['official_replica_claim'] is False
+          assert s['promotion_allowed'] is False
+          assert s['orders_generated'] == 0
+          assert s['real_capital_used'] == 0
+          assert s['methodology_changes'] == 0
+          PY
+
+      - name: Commit paper-monitor evidence only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          if [ ! -d runtime/ledgers/delta_paper_monitor ]; then
+            echo "Before anchor date; nothing to commit"
+            exit 0
+          fi
+          git add runtime/ledgers/delta_paper_monitor
+          git diff --cached --quiet && exit 0
+          git commit -m "Append Delta prospective paper monitor ${SOURCE_RUN_ID}"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

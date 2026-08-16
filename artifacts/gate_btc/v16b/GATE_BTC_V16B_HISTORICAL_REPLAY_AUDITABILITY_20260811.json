@@ -1,0 +1,69 @@
+{
+  "auditability_id": "GATE_BTC_V16B_HISTORICAL_REPLAY_AUDITABILITY_20260811",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "status": "BLOCKED_FOR_DETAILED_HISTORICAL_REPRODUCTION",
+  "scope": "11-week 2026 historical validation print only; prospective protocol is not modified",
+  "known_historical_print": {
+    "net_return_ex_funding": 0.073356,
+    "net_return_with_realized_funding": 0.073914,
+    "replay_20260806_sha256": "1f12c70a74ae9cee5ab1d4da3eeebcda39466f42c35b80bc0906614bea4acfb5",
+    "source": "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json",
+    "classification": "REFERENCE_ONLY_UNREPRODUCED"
+  },
+  "independently_reproducible_components": {
+    "selected_shorts_manifest": "research_inputs/V16B_SELECTED_SHORTS_2026_11W.csv",
+    "selected_short_positions": 110,
+    "weeks": 11,
+    "realized_binance_usdm_funding_audit": "PASS",
+    "funding_artifact_id": 9118501634,
+    "funding_workflow_run_id": 31535296910,
+    "funding_portfolio_weight_rule": "0.05 * exposure per selected short",
+    "funding_total_additive_approx": 0.00051506,
+    "causal_shortability_audit": "PASS"
+  },
+  "replay_recovery_search": {
+    "git_tree_search": "NO_REPLAY_FILE_FOUND",
+    "repository_code_search": "NO_MATCH_FOR_REPLAY_20260806_OR_0.073356",
+    "research_inputs_listing": [
+      "V16B_SELECTED_SHORTS_2026_11W.csv",
+      "V9C_SELECTED_SHORTS_2026_WINDOW.csv"
+    ],
+    "actions_packages_checked": [
+      "gate-btc-migration-31544375060",
+      "gate-btc-daily-research-31452386179",
+      "gate-btc-public-close-31536870244"
+    ],
+    "sha256_match_for_replay_20260806": false
+  },
+  "blocked_claims_until_replay_recovered": [
+    "weekly long-leg contribution for the 11-week validation window",
+    "weekly short-leg price-return contribution for the 11-week validation window",
+    "full weekly turnover-cost decomposition for the 11-week validation window",
+    "independent recomputation of the +7.3356% ex-funding print",
+    "independent recomputation of the +7.3914% with-funding print",
+    "mechanism-identity claim versus external Delta",
+    "promotion evidence based on the 11-week historical print"
+  ],
+  "allowed_use": [
+    "retain aggregate historical print as labeled reference-only diagnostic",
+    "retain independently audited funding and causal-shortability evidence",
+    "continue frozen prospective shadow protocol from its original evidence clock",
+    "compare future sealed prospective rows with external Delta only after self-result seal"
+  ],
+  "methodology_changed": false,
+  "historical_returns_reoptimized": false,
+  "prospective_clock_changed": false,
+  "external_delta_tuning_allowed": false,
+  "identity_claim_allowed": false,
+  "promotion_use_allowed": false,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}

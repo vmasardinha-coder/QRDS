@@ -1,0 +1,51 @@
+{
+  "amendment_id": "GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811",
+  "applies_to_freeze_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "prospective_count_at_amendment": 0,
+  "issue": "The legacy shadow-signal helper selected Friday-shortable names inside the same generate() call and returned only chosen names. That interface is suitable for historical replay but cannot prove a clean Thursday prospective signal because Friday shortability is not yet observable. The A2 staged sealer also represented the short traversal as reverse(long ranking), which can silently impose a new tie order when equal model scores exist.",
+  "correction": "Use a prospective-only Thursday signal builder and canonical dual-rank chain. Seal the exact descending score order already used by the frozen engine for longs and the exact ascending score order already used by the frozen engine for shorts as two independent lists. Friday entry traverses only the sealed ascending short list using contemporaneous public Binance evidence.",
+  "economic_methodology_changed": false,
+  "reason_no_new_candidate_id": "The two rank lists preserve the pre-existing engine's separate sort directions instead of adding a new tie-break. The Thursday/Friday split changes evidence timing only. No feature, score, model, long rule, short rule, portfolio weight, risk target or cost parameter is changed, and prospective_count was zero.",
+  "prospective_signal_contract": {
+    "tool": "tools/gate_btc_v16b_prospective_signal.py",
+    "friday_shortability_used_at_signal": false,
+    "historical_shortability_input": "strictly prior Friday rows only",
+    "sealed_rankings": ["long_ranking_desc", "short_ranking_asc"],
+    "risk_state_sealed": ["exposure", "trailing_vol", "prior_weights"],
+    "model_state_evidence": "hash of frozen model spec, input hashes, signal date and complete eligible score map",
+    "cmc_snapshot": "identifier and demonstrated availability timestamp required"
+  },
+  "prospective_entry_contract": {
+    "tool": "tools/gate_btc_v16b_prospective_entry.py",
+    "long_executability": "Binance Spot USDT instrument must be TRADING; unavailable selected long BLOCKS the week and is never replaced",
+    "short_executability": "Binance USD-M PERPETUAL must be TRADING; existing normalize_asset policy handles multiplier contracts; USDT preferred over USDC only when multiple contracts normalize to the same asset",
+    "short_selection": "walk sealed short_ranking_asc in order and stop exactly when the 10th verifiably shortable asset is found",
+    "raw_exchange_info_hashes": "persisted as source evidence",
+    "orders": 0,
+    "real_capital": 0
+  },
+  "anti_leakage": [
+    "Thursday builder rejects any historical-shortability row dated on or after the Thursday signal date",
+    "Thursday builder rejects panel rows after the signal date",
+    "Friday shortability is not an input to the signal builder",
+    "Friday entry references the exact signal seal SHA-256",
+    "external Delta remains forbidden until after result seal"
+  ],
+  "historical_replay_regenerated": false,
+  "historical_returns_reoptimized": false,
+  "external_delta_used_for_change": false,
+  "prospective_clock_changed": false,
+  "first_eligible_signal_close_utc": "2026-08-13",
+  "first_eligible_entry_close_utc": "2026-08-14",
+  "first_eligible_exit_close_utc": "2026-08-21",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}

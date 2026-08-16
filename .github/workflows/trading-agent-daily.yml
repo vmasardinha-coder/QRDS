@@ -1,0 +1,66 @@
+name: Trading Agent Daily
+
+# O branch main e protegido (so aceita PRs), por isso o ciclo diario opera
+# sempre no branch de operacoes abaixo: e dele que sai o codigo executado e
+# e para ele que vao os commits de estado e relatorios.
+
+env:
+  OPS_BRANCH: claude/autonomous-trading-agent-h1asy9
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 21:15 UTC — depois do fecho de NYSE (regular close 20:00/21:00 UTC)
+    - cron: "15 21 * * *"
+  push:
+    branches: [claude/autonomous-trading-agent-h1asy9]
+    paths:
+      - .github/workflows/trading-agent-daily.yml
+      - trading_agent/*.py
+      - tests/test_trading_agent.py
+      # a rotina diaria pede uma execucao tocando neste ficheiro
+      - trading_agent/RUN_REQUEST
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trading-agent-daily
+  cancel-in-progress: false
+
+jobs:
+  daily-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/autonomous-trading-agent-h1asy9
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Testes offline do agente
+        run: python -m unittest tests.test_trading_agent -v
+
+      - name: Ciclo diario de trading (paper)
+        env:
+          # opcional: define o secret BRAPI_TOKEN para o plano registado da
+          # brapi.dev, que devolve historico mais longo que o anonimo
+          BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
+        run: python -m trading_agent.run_daily
+
+      - name: Commit do estado e relatorio
+        run: |
+          git config user.name "qrds-trading-agent[bot]"
+          git config user.email "qrds-trading-agent@users.noreply.github.com"
+          git add trading_agent/state trading_agent/reports
+          if git diff --cached --quiet; then
+            echo "Nada para registar."
+            exit 0
+          fi
+          DATE_UTC=$(date -u +%Y-%m-%d)
+          git commit -m "Trading agent: ciclo diario ${DATE_UTC}"
+          git pull --rebase origin "${OPS_BRANCH}"
+          git push origin "HEAD:${OPS_BRANCH}"

@@ -1,0 +1,146 @@
+{
+  "readiness_id": "GATE_BTC_V16B_PRE_SIGNAL_READINESS_20260811",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "as_of_brt": "2026-08-11",
+  "status": "READY_TO_ATTEMPT_FIRST_CLEAN_SIGNAL_FAIL_CLOSED",
+  "prospective_count": 0,
+  "clock": {
+    "first_eligible_signal_close_utc": "2026-08-13",
+    "first_eligible_entry_close_utc": "2026-08-14",
+    "first_eligible_exit_close_utc": "2026-08-21",
+    "pre_freeze_or_reconstructed_rows_count_as_prospective": false
+  },
+  "frozen_components": {
+    "signal_engine": {
+      "path": "tools/gate_btc_v16b_shadow_signal.py",
+      "blob_sha": "e384ef2456d6fa0db2b1a9f4fe3be15b17c1fcfe",
+      "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811"
+    },
+    "prospective_signal_builder": {
+      "path": "tools/gate_btc_v16b_prospective_signal.py",
+      "blob_sha": "c6215307d3a6f96f30be54cc0f8135ef8e5357d5",
+      "policy": "Thursday-only; raw+manifest hashed CMC snapshot evidence; strictly-prior shortability only; complete independent long/short rankings; risk state sealed; no Friday shortability or external Delta"
+    },
+    "prospective_entry_builder": {
+      "path": "tools/gate_btc_v16b_prospective_entry.py",
+      "blob_sha": "192169ae653c5380a3818eaba3241daaec4afb52",
+      "policy": "Friday Binance Spot/USD-M evidence bound by serverTime to SIGNAL_SEAL -> before Friday close; immutable longs; first 10 causally shortable names in sealed ascending rank; overlap blocks"
+    },
+    "prospective_chain": {
+      "path": "tools/gate_btc_v16b_prospective_chain.py",
+      "blob_sha": "bc7466bbfb4f58573edecde0874eac5f8b25043c",
+      "policy": "append-only SIGNAL -> ENTRY -> RESULT -> external Delta"
+    },
+    "price_evidence_collector": {
+      "path": "tools/gate_btc_v16b_prospective_prices.py",
+      "blob_sha": "2a60a6a49317560afe8e9b07bbce3c8991520a00",
+      "policy": "exact sealed instruments; Binance Data Vision daily 1d entry/exit archives; adjacent CHECKSUM verification; raw ZIP preservation"
+    },
+    "funding_evidence_collector": {
+      "path": "tools/gate_btc_v16b_prospective_funding.py",
+      "blob_sha": "65cef650cc7bd9ab016e7a5733283847e02783bb",
+      "policy": "exact sealed shorts; Binance Data Vision fundingRate archives; adjacent CHECKSUM verification; raw archive preservation; unpublished archive remains pending/fail-closed"
+    },
+    "result_builder": {
+      "path": "tools/gate_btc_v16b_prospective_result.py",
+      "blob_sha": "48ffe4d4b4ca40e663b4473c2866476ebe85de61",
+      "policy": "reparse preserved raw price/funding archives; exact holdings/instruments; recompute all asset returns, frozen weights, funding, 15bp turnover cost, net PnL and BTC benchmark; no manual PnL"
+    },
+    "result_sealer": {
+      "path": "tools/gate_btc_v16b_prospective_seal.py",
+      "blob_sha": "6db91c6e8fa16795e410ef373549ec224e7e9da9",
+      "policy": "independent formula validation; append-only; no pre-freeze rows; external Delta only after RESULT_SEAL"
+    },
+    "protocol_json": {
+      "path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json",
+      "blob_sha": "a124473191057471c94d9ca61620b6343c0bb134"
+    },
+    "protocol_markdown": {
+      "path": "research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md",
+      "blob_sha": "db9d90bb1364b1d3c539a584132bce31e4391c5a"
+    },
+    "audit_amendments": [
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A4_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A5_20260811.json",
+      "artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A6_20260811.json"
+    ],
+    "amendments_a2_a6_prospective_count": 0,
+    "amendments_changed_economic_methodology": false
+  },
+  "prospective_evidence_chain": [
+    "after Thursday UTC close and before Friday close: create and seal full V16B signal evidence",
+    "after SIGNAL_SEAL and before Friday close: collect causal Binance entry evidence and seal exact holdings/instruments/risk/cost state",
+    "after following Friday close: collect checksum-verified raw price evidence",
+    "after required funding archives are publicly available: collect checksum-verified raw funding evidence; if unavailable remain pending, never synthesize zero",
+    "deterministically reparse all raw evidence and build RESULT input",
+    "seal V16B_RESULT_SEAL",
+    "only then attach external Delta for date-aligned diagnostic comparison"
+  ],
+  "historical_validation_only": {
+    "window": "11 reconstructed weeks in 2026",
+    "net_return_ex_funding": 0.073356,
+    "net_return_with_realized_funding": 0.073914,
+    "prospective_evidence": false,
+    "identity_claim_allowed": false,
+    "tuning_use_allowed": false,
+    "reproducibility_status": "REFERENCE_ONLY_UNREPRODUCED",
+    "detailed_replay_use_for_promotion": false
+  },
+  "historical_replay_auditability": {
+    "status": "BLOCKED_FOR_DETAILED_HISTORICAL_REPRODUCTION",
+    "evidence_path": "artifacts/gate_btc/v16b/GATE_BTC_V16B_HISTORICAL_REPLAY_AUDITABILITY_20260811.json",
+    "replay_20260806_sha256": "1f12c70a74ae9cee5ab1d4da3eeebcda39466f42c35b80bc0906614bea4acfb5",
+    "replay_file_recovered": false,
+    "prospective_protocol_affected": false
+  },
+  "first_signal_fail_closed_requirements": [
+    "fresh causal feature panel through Thursday 2026-08-13 UTC close",
+    "raw CMC snapshot plus hash-bound availability/source evidence demonstrably available by signal close",
+    "persist panel/model/input hashes, complete eligible score map, independent full long/short rankings, preliminary top-10 longs and risk state before Friday evidence"
+  ],
+  "first_entry_fail_closed_requirements": [
+    "read-only Binance Spot/USD-M payloads with serverTime on/after SIGNAL_SEAL creation and before Friday 2026-08-14 UTC close",
+    "selected longs must have frozen executable Spot USDT instruments or week blocks",
+    "shorts are exactly first 10 verifiably shortable names in sealed ascending rank; no replacement; any long/short overlap blocks",
+    "seal final instruments, exposure, trailing volatility, turnover and 15 bps cost before close"
+  ],
+  "first_result_fail_closed_requirements": [
+    "exact entry/exit daily-close archives for all 20 sealed instruments and BTCUSDT benchmark must pass Binance CHECKSUM and be preserved",
+    "every required funding symbol-month archive must pass Binance CHECKSUM and be preserved; unpublished archives remain pending",
+    "result builder must reparse raw price and funding archives and reproduce all component values before RESULT_SEAL",
+    "manual PnL, manual funding zero, substituted asset or changed instrument is forbidden"
+  ],
+  "benchmark_separation": {
+    "external_delta_before_result_seal": "FORBIDDEN",
+    "external_delta_after_result_seal": "ALLOWED_FOR_DATE_ALIGNED_DIAGNOSTIC_ONLY",
+    "parameter_change_from_delta": "FORBIDDEN"
+  },
+  "ci": {
+    "workflow": "GATE BTC V16B Prospective Seal",
+    "run_id": 31556082951,
+    "result": "SUCCESS",
+    "head_at_success": "36c3cd548352aec7c40828e1d4aa26c1a2122edf",
+    "tested_contract": [
+      "signal timing, CMC source provenance, independent rankings and no Friday leakage",
+      "entry timing, Binance serverTime bounds, immutable longs, causal ordered short selection and overlap blocker",
+      "price raw ZIP/CHECKSUM preservation and raw-close reparsing",
+      "funding raw ZIP/CHECKSUM preservation and raw-event reparsing",
+      "exact 20-holding result reconstruction, frozen weights/cost/funding formula and BTC benchmark",
+      "tamper detection for manifest close, funding CSV, wrong instrument, missing asset and modified raw archive",
+      "external Delta only after result seal",
+      "research-only safety boundary"
+    ]
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "MERGE_TO_MAIN_AUTHORIZED": false
+  }
+}

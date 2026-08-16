@@ -1,0 +1,58 @@
+name: GATE BTC D50 Mirror Reconciliation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/gate-btc-d50-mirror-reconcile.yml"
+      - "tools/gate_btc_d50_mirror_reconcile.py"
+      - "tools/gate_btc_d50_checkpoint_pack.py"
+      - "tools/gate_btc_d50_status_align.py"
+      - "tests/test_gate_btc_d50_mirror_reconcile.py"
+      - "tests/test_gate_btc_d50_checkpoint_pack.py"
+      - "tests/test_gate_btc_d50_status_align.py"
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile audit-only D50 evidence tools
+        run: >-
+          python -m py_compile
+          tools/gate_btc_d50_mirror_reconcile.py
+          tools/gate_btc_d50_checkpoint_pack.py
+          tools/gate_btc_d50_status_align.py
+
+      - name: Run fail-closed reconciliation and checkpoint-pack tests
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_d50_mirror_reconcile.py
+          tests/test_gate_btc_d50_checkpoint_pack.py
+          tests/test_gate_btc_d50_status_align.py
+
+      - name: Verify CLIs are evidence-only and importable
+        run: |
+          set -euo pipefail
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          python tools/gate_btc_d50_mirror_reconcile.py --help >/dev/null
+          python tools/gate_btc_d50_checkpoint_pack.py --help >/dev/null
+          python tools/gate_btc_d50_status_align.py --help >/dev/null
+          echo "D50_MIRROR_RECONCILER_CLI=PASS"
+          echo "D50_CHECKPOINT_PACK_CLI=PASS"
+          echo "D50_STATUS_ALIGN_CLI=PASS"
+          echo "RUNTIME_MUTATION=0"
+          echo "ORDERS=0"
+          echo "CAPITAL=0"

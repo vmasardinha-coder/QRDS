@@ -1,0 +1,113 @@
+name: GATE BTC V16B Prospective Seal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/gate-btc-migration-current]
+    paths:
+      - tools/gate_btc_v16b_prospective_seal.py
+      - tools/gate_btc_v16b_prospective_chain.py
+      - tools/gate_btc_v16b_prospective_signal.py
+      - tools/gate_btc_v16b_prospective_entry.py
+      - tools/gate_btc_v16b_prospective_prices.py
+      - tools/gate_btc_v16b_prospective_funding.py
+      - tools/gate_btc_v16b_prospective_result.py
+      - tools/gate_btc_v16b_shadow_signal.py
+      - tests/test_gate_btc_v16b_prospective_seal.py
+      - tests/test_gate_btc_v16b_prospective_pipeline.py
+      - tests/test_gate_btc_v16b_prospective_result.py
+      - research_protocols/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.md
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_PROSPECTIVE_PROTOCOL_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A1_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A2_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A3_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A4_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A5_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_A6_20260811.json
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_PRE_SIGNAL_READINESS_20260811.json
+      - .github/workflows/gate-btc-v16b-prospective-seal.yml
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  prospective-seal-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest pandas numpy scikit-learn requests
+      - name: Run prospective sealing contract tests
+        run: python -m pytest -q tests/test_gate_btc_v16b_prospective_seal.py tests/test_gate_btc_v16b_prospective_pipeline.py tests/test_gate_btc_v16b_prospective_result.py
+      - name: Verify frozen prospective invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from tools import gate_btc_v16b_prospective_seal as base
+          from tools import gate_btc_v16b_prospective_chain as chain
+          from tools import gate_btc_v16b_prospective_signal as signal
+
+          canonical='GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811'
+          assert base.CANDIDATE_ID == canonical == chain.CANDIDATE_ID
+          assert base.SAFETY['RESEARCH_ONLY'] is True and base.SAFETY['SHADOW_ONLY'] is True
+          assert base.SAFETY['NOT_APPROVED'] is True and base.SAFETY['ORDERS'] == 0 and base.SAFETY['REAL_CAPITAL'] == 0
+          assert base.SAFETY['ENGINE_FEED'] is False
+          assert base.FIRST_SIGNAL.isoformat() == '2026-08-13'
+          assert base.FIRST_ENTRY.isoformat() == '2026-08-14'
+          assert base.FIRST_COMPLETE_EXIT.isoformat() == '2026-08-21'
+          assert base.COST_BPS == 15.0 and base.WEIGHT_PER_ASSET_UNSCALED == 0.05
+          assert signal.MODEL_SPEC['features'] == [
+            'mom7','mom14','mom30','mom60','mom90','residmom7','residmom14','residmom30','residmom60','residmom90',
+            'vol14','vol30','vol60','corr30','corr60','beta30','beta60','logvol30'
+          ]
+
+          names=[f'A{i}' for i in range(1,7)]
+          amendments=[json.loads(Path(f'artifacts/gate_btc/v16b/GATE_BTC_V16B_AUDIT_AMENDMENT_{n}_20260811.json').read_text()) for n in names]
+          a1,a2,a3,a4,a5,a6=amendments
+          assert a1['methodology_changed'] is False and a1['historical_returns_reoptimized'] is False
+          for a in (a2,a3,a4,a5,a6):
+              assert a['prospective_count_at_amendment'] == 0
+              assert a['prospective_clock_changed'] is False
+              assert a['external_delta_used_for_change'] is False
+          assert a2['methodology_changed'] is False
+          assert a3['economic_methodology_changed'] is False
+          assert a3['prospective_signal_contract']['friday_shortability_used_at_signal'] is False
+          assert a3['prospective_signal_contract']['sealed_rankings'] == ['long_ranking_desc','short_ranking_asc']
+          assert a4['economic_methodology_changed'] is False
+          assert a4['universe_snapshot_evidence_contract']['raw_snapshot_sha256_recomputed'] is True
+          assert a4['universe_snapshot_evidence_contract']['input_hashes_sealed'] == ['universe_snapshot','universe_snapshot_evidence']
+          assert a5['economic_methodology_changed'] is False
+          assert a5['friday_evidence_contract']['binance_spot_serverTime_required'] is True
+          assert a5['friday_evidence_contract']['binance_usdm_serverTime_required'] is True
+          assert a5['friday_evidence_contract']['long_short_overlap_policy'] == 'BLOCK'
+          assert a6['economic_methodology_changed'] is False
+          assert a6['result_contract']['manual_pnl_input_allowed'] is False
+          assert a6['price_contract']['raw_zip_reparsed_by_result_builder'] is True
+          assert a6['funding_contract']['adjacent_checksum_required'] is True
+          assert 'short_ranking_asc' in chain.SIGNAL_REQUIRED
+
+          signal_source=Path('tools/gate_btc_v16b_prospective_signal.py').read_text()
+          entry_source=Path('tools/gate_btc_v16b_prospective_entry.py').read_text()
+          price_source=Path('tools/gate_btc_v16b_prospective_prices.py').read_text()
+          funding_source=Path('tools/gate_btc_v16b_prospective_funding.py').read_text()
+          result_source=Path('tools/gate_btc_v16b_prospective_result.py').read_text()
+          assert '--universe-snapshot-evidence' in signal_source
+          assert 'raw_snapshot_sha256 does not match snapshot file' in signal_source
+          assert 'BINANCE_EVIDENCE_PREDATES_SIGNAL_SEAL' in entry_source
+          assert 'BINANCE_EVIDENCE_AFTER_ENTRY_CLOSE' in entry_source
+          assert 'LONG_SHORT_OVERLAP' in entry_source
+          assert '.CHECKSUM' in price_source and 'parse_daily_close' in price_source
+          assert 'FUNDING_ARCHIVE_PENDING' in funding_source and '.CHECKSUM' in funding_source
+          assert 'parse_daily_close' in result_source and 'parse_funding_zip' in result_source
+          assert 'funding_rate_sum differs from preserved raw archives' in result_source
+          print('V16B_PROSPECTIVE_FULL_EVIDENCE_CHAIN_INVARIANTS=PASS')
+          PY
