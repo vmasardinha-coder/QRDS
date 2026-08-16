@@ -55,6 +55,7 @@ jobs:
           assert p['eligible_count'] >= 30
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: gate-btc-delta-v12-universe-${{ github.run_id }}
           path: delta_v12_universe_snapshot/
