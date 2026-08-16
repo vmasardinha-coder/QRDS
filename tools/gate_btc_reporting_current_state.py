@@ -131,11 +131,25 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
     }
 
     lock = data["lock25_50"]
+    lock_status = str((lock or {}).get("status", ""))
+    lock_first_close = iso_date((lock or {}).get("first_eligible_close"))
+    if (
+        lock_status == "READY_WAITING_FIRST_ELIGIBLE_CLOSE"
+        and lock_first_close is not None
+        and reference_date is not None
+        and lock_first_close >= reference_date
+        and (lock or {}).get("reanchor_authorized_at_utc")
+    ):
+        lock_freshness = "CURRENT_AUTHORIZED_REANCHOR_WAITING_UNTOUCHED_CLOSE"
+    else:
+        lock_freshness = fresh_label(iso_date((lock or {}).get("latest_snapshot_id")), reference_date)
     components["lock25_50"] = {
         "status": (lock or {}).get("status", "MISSING"),
-        "freshness": fresh_label(iso_date((lock or {}).get("latest_snapshot_id")), reference_date),
+        "freshness": lock_freshness,
         "valid_snapshot_count": (lock or {}).get("valid_snapshot_count"),
         "latest_snapshot_id": (lock or {}).get("latest_snapshot_id"),
+        "first_eligible_close": (lock or {}).get("first_eligible_close"),
+        "retroactive_fill_prohibited_dates": (lock or {}).get("retroactive_fill_prohibited_dates", []),
         "source": "runtime/ledgers/lock25_50/STATUS.json",
     }
 

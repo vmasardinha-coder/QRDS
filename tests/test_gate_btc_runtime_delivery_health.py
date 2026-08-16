@@ -12,6 +12,7 @@ from unittest.mock import patch
 from tools.gate_btc_lock_gap_recovery import (
     _StripAuthOnCrossHostRedirect,
     _artifact_for_run,
+    _embedded_lock_valuation_sidecar,
     _embedded_v2a,
     _successful_runs,
 )
@@ -20,6 +21,18 @@ from tools.gate_btc_reporting_current_state import reconcile
 
 
 class ArtifactRedirectTest(unittest.TestCase):
+    def test_historical_recovery_carries_valuation_only_sidecar(self):
+        outer = io.BytesIO()
+        sidecar = {
+            "schema": "gate_btc.lock_valuation_sidecar.v1",
+            "valuation_only": True,
+            "engine_feed": False,
+        }
+        with zipfile.ZipFile(outer, "w") as archive:
+            archive.writestr("qos_daily/lock_valuation_sidecar.json", json.dumps(sidecar))
+        recovered = _embedded_lock_valuation_sidecar(outer.getvalue())
+        self.assertEqual(json.loads(recovered), sidecar)
+
     def test_historical_v2a_uses_canonical_safety_fields(self):
         nested = io.BytesIO()
         with zipfile.ZipFile(nested, "w") as archive:
@@ -102,6 +115,32 @@ class ArtifactRedirectTest(unittest.TestCase):
 
 
 class DeliveryHealthTest(unittest.TestCase):
+    def test_authorized_reanchor_wait_is_current_until_first_close_arrives(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "ledgers" / "lock25_50").mkdir(parents=True)
+            (root / "GATE_BTC_LATEST_ELIGIBLE_RUN.json").write_text(
+                '{"data_cutoff":"2026-08-15","research_only":true,'
+                '"orders_generated":0,"real_capital_used":0}', encoding="utf-8"
+            )
+            (root / "ledgers" / "lock25_50" / "STATUS.json").write_text(json.dumps({
+                "status": "READY_WAITING_FIRST_ELIGIBLE_CLOSE",
+                "first_eligible_close": "2026-08-16",
+                "reanchor_authorized_at_utc": "2026-08-16T13:00:00Z",
+                "valid_snapshot_count": 0,
+                "research_only": True,
+                "not_approved": True,
+                "orders_generated": 0,
+                "real_capital_used": 0,
+            }), encoding="utf-8")
+            result = reconcile(root, date(2026, 8, 16))
+            self.assertEqual(
+                result["components"]["lock25_50"]["freshness"],
+                "CURRENT_AUTHORIZED_REANCHOR_WAITING_UNTOUCHED_CLOSE",
+            )
+            self.assertNotIn("lock25_50", result["warnings"]["stale_components"])
+            self.assertNotIn("lock25_50", result["warnings"]["missing_or_undated_components"])
+
     def test_stale_expected_component_blocks_green_status(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

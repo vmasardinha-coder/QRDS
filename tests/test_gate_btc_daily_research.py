@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -48,6 +49,18 @@ class DailyResearchTests(unittest.TestCase):
         (qos / "QOS_ORCHESTRATION_MANIFEST_20260802_000000.json").write_text(
             json.dumps(qos_manifest), encoding="utf-8"
         )
+        sidecar = {
+            "schema": "gate_btc.lock_valuation_sidecar.v1",
+            "status": "WAITING_NOT_YET_ELIGIBLE",
+            "snapshot_id": "2026-08-01",
+            "valuation_only": True,
+            "engine_feed": False,
+            "selection_membership_changed": False,
+            "forward_fill_allowed": False,
+        }
+        raw = json.dumps(sidecar, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        sidecar["sidecar_sha256"] = hashlib.sha256(raw).hexdigest()
+        (qos / "lock_valuation_sidecar.json").write_text(json.dumps(sidecar), encoding="utf-8")
 
         gateway_manifest = {
             "version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
@@ -125,6 +138,7 @@ class DailyResearchTests(unittest.TestCase):
             self.assertEqual(payload["status"], "PASS_WITH_DATA_WARNINGS")
             self.assertEqual(payload["total_system_equivalence_baseline"], "PASS")
             self.assertTrue(payload["report_delivery"]["inputs_ready"])
+            self.assertFalse(payload["components"]["lock_valuation_sidecar"]["engine_feed"])
             self.assertTrue((args.output_dir / "GATE_BTC_DAILY_RESEARCH_EVIDENCE.zip").is_file())
 
     def test_daily_handoff_fails_closed_on_order_count(self) -> None:

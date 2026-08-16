@@ -110,6 +110,23 @@ def _embedded_v2a(artifact_bytes: bytes) -> tuple[str, bytes]:
         return str(manifest["data_as_of"]), nested
 
 
+def _embedded_lock_valuation_sidecar(artifact_bytes: bytes) -> bytes | None:
+    with zipfile.ZipFile(io.BytesIO(artifact_bytes)) as outer:
+        matches = [
+            name for name in outer.namelist()
+            if name.endswith("qos_daily/lock_valuation_sidecar.json")
+            or name == "qos_daily/lock_valuation_sidecar.json"
+        ]
+        if not matches:
+            return None
+        if len(matches) != 1:
+            raise RuntimeError(f"expected at most one LOCK valuation sidecar, got {matches}")
+        payload = json.loads(outer.read(matches[0]).decode("utf-8-sig"))
+        if payload.get("engine_feed") is not False or payload.get("valuation_only") is not True:
+            raise RuntimeError("LOCK valuation sidecar violates engine isolation")
+        return outer.read(matches[0])
+
+
 def _successful_runs(repo: str, token: str) -> list[dict]:
     runs = []
     page = 1
@@ -160,7 +177,7 @@ def recover(args: argparse.Namespace) -> dict:
         if explicit_run_ids
         else _successful_runs(args.repo, token)
     )
-    by_date: dict[str, tuple[int, bytes]] = {}
+    by_date: dict[str, tuple[int, bytes, bytes | None]] = {}
     needed = set(dates)
     for run in runs:
         if not needed:
@@ -170,12 +187,13 @@ def recover(args: argparse.Namespace) -> dict:
             continue
         try:
             data_as_of, nested = _embedded_v2a(raw)
+            sidecar = _embedded_lock_valuation_sidecar(raw)
         except Exception:
             if explicit_run_ids:
                 raise
             continue
         if data_as_of in needed and data_as_of not in by_date:
-            by_date[data_as_of] = (int(run["id"]), nested)
+            by_date[data_as_of] = (int(run["id"]), nested, sidecar)
             needed.remove(data_as_of)
     if needed:
         raise RuntimeError(f"immutable successful Daily Research artifact missing for closes={sorted(needed)}")
@@ -183,7 +201,7 @@ def recover(args: argparse.Namespace) -> dict:
     recovered = []
     blocked = []
     for close in dates:
-        run_id, nested = by_date[close]
+        run_id, nested, sidecar = by_date[close]
         with tempfile.TemporaryDirectory(prefix=f"gate-btc-lock-{close}-") as td:
             root = Path(td)
             with zipfile.ZipFile(io.BytesIO(nested)) as zf:
@@ -192,7 +210,7 @@ def recover(args: argparse.Namespace) -> dict:
             portfolios = next(root.glob("**/outputs/qos_v2a_current_portfolios.csv"), None)
             if master is None or portfolios is None:
                 raise RuntimeError(f"required V2A files absent for {close}")
-            subprocess.run([
+            command = [
                 args.python, "tools/gate_btc_measurement_ledgers.py", "append-lock",
                 "--contract", str(args.contract),
                 "--master-daily", str(master),
@@ -200,7 +218,12 @@ def recover(args: argparse.Namespace) -> dict:
                 "--snapshot-id", close,
                 "--cycle-id", args.cycle_id,
                 "--ledger-dir", str(args.ledger_dir),
-            ], check=True)
+            ]
+            if sidecar is not None:
+                sidecar_path = root / "lock_valuation_sidecar.json"
+                sidecar_path.write_bytes(sidecar)
+                command.extend(["--valuation-sidecar", str(sidecar_path)])
+            subprocess.run(command, check=True)
         if (args.ledger_dir / "snapshots" / f"{close}.json").exists():
             recovered.append({"date": close, "source_run_id": run_id})
         else:

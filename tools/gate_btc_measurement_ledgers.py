@@ -119,6 +119,7 @@ def main() -> int:
     lock = sub.add_parser("append-lock")
     lock.add_argument("--contract", type=Path, required=True)
     lock.add_argument("--master-daily", type=Path, required=True)
+    lock.add_argument("--valuation-sidecar", type=Path)
     lock.add_argument("--current-portfolios", type=Path, required=True)
     lock.add_argument("--snapshot-id", required=True)
     lock.add_argument("--cycle-id", required=True)

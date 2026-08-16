@@ -30,8 +30,8 @@ concurrency:
 
 env:
   GATE_BTC_RESEARCH_ONLY: "true"
-  GATE_BTC_LOCK_CYCLE_ID: "QOS_CURRENT_COMPOSITION_2026-08-06"
-  GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE: "2026-08-06"
+  GATE_BTC_LOCK_CYCLE_ID: "QOS_CURRENT_COMPOSITION_2026-08-16"
+  GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE: "2026-08-16"
   PYTHONPATH: "."
 
 jobs:
@@ -50,10 +50,13 @@ jobs:
           tests/test_gate_btc_measurement_ledgers.py
           tests/test_gateway_measurement_status.py
           tests/test_gate_btc_d50_source_revision.py
+          tests/test_gate_btc_d50_status_align.py
           tests/test_gate_btc_prospective_ledgers.py
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
+          tests/test_gate_btc_lock_valuation_sidecar.py
+          tests/test_gate_btc_lock_reanchor.py
       - name: Compile immutable gap recovery helper
         run: python -m py_compile tools/gate_btc_lock_gap_recovery.py
       - name: Reproduce direct-script runtime import path
@@ -115,6 +118,7 @@ jobs:
           test -f source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
           test -f source_artifact/gateway_daily/linux_offline_replay_outputs.zip
           test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          test -f source_artifact/qos_daily/lock_valuation_sidecar.json
           test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
           unzip -q source_artifact/gateway_daily/linux_offline_replay_outputs.zip -d extracted/gateway
           unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
@@ -220,6 +224,7 @@ jobs:
         run: |
           test -f runtime_repo/runtime/ledgers/lock25_50/ANCHOR.json
           test -f runtime_repo/runtime/ledgers/lock25_50/SOURCE_ANCHOR.json
+          test -f runtime_repo/runtime/ledgers/lock25_50/SERIES_HISTORY.json
 
       - name: Recover any missing LOCK closes from exact immutable artifacts
         env:
@@ -244,6 +249,7 @@ jobs:
           python tools/gate_btc_measurement_ledgers.py append-lock
           --contract config/lock25_50_shadow_contract_v1.json
           --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --valuation-sidecar source_artifact/qos_daily/lock_valuation_sidecar.json
           --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
           --snapshot-id "$LOCK_SNAPSHOT_ID"
           --cycle-id "$GATE_BTC_LOCK_CYCLE_ID"
