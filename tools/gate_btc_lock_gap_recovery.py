@@ -15,6 +15,7 @@ import os
 import subprocess
 import tempfile
 import urllib.request
+import urllib.parse
 import zipfile
 from datetime import date, timedelta
 from pathlib import Path
@@ -53,6 +54,25 @@ def _request_json(url: str, token: str) -> dict:
         return json.load(r)
 
 
+class _StripAuthOnCrossHostRedirect(urllib.request.HTTPRedirectHandler):
+    """Keep GitHub API auth off the signed artifact-storage redirect.
+
+    GitHub's artifact download endpoint redirects to a short-lived signed blob URL.
+    urllib's default redirect handling forwards the Authorization header to that
+    different host; Azure/S3 rejects the otherwise-valid signed request with 401.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is None:
+            return None
+        old_host = urllib.parse.urlsplit(req.full_url).netloc.lower()
+        new_host = urllib.parse.urlsplit(newurl).netloc.lower()
+        if old_host != new_host:
+            redirected.remove_header("Authorization")
+        return redirected
+
+
 def _request_bytes(url: str, token: str) -> bytes:
     req = urllib.request.Request(url, headers={
         "Authorization": f"Bearer {token}",
@@ -60,7 +80,8 @@ def _request_bytes(url: str, token: str) -> bytes:
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "gate-btc-lock-gap-recovery",
     })
-    with urllib.request.urlopen(req, timeout=120) as r:
+    opener = urllib.request.build_opener(_StripAuthOnCrossHostRedirect())
+    with opener.open(req, timeout=120) as r:
         return r.read()
 
 

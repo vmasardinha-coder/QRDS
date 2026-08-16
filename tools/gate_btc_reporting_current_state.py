@@ -140,14 +140,27 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
     }
 
     d50 = data["d50"] or {}
-    d50_ledger = d50.get("prospective_immutable_ledger") or measurement.get("d50_prospective_immutable_ledger") or {}
-    d50_qual = d50.get("data_qualification") or measurement.get("d50_data_qualification") or {}
+    remote_d50_ledger = d50.get("prospective_immutable_ledger") or {}
+    remote_d50_qual = d50.get("data_qualification") or {}
+    reconciled_d50_ledger = measurement.get("d50_prospective_immutable_ledger") or {}
+    reconciled_d50_qual = measurement.get("d50_data_qualification") or {}
+    has_verified_reconciliation = bool(
+        measurement.get("reconciliation_note")
+        and reconciled_d50_ledger.get("user_action_required") is False
+        and reconciled_d50_qual.get("hash_chain_valid") is True
+    )
+    d50_ledger = reconciled_d50_ledger if has_verified_reconciliation else (remote_d50_ledger or reconciled_d50_ledger)
+    d50_qual = reconciled_d50_qual if has_verified_reconciliation else (remote_d50_qual or reconciled_d50_qual)
     d50_remote_blocked = (
         "LOCAL" in str(d50_ledger.get("status", "")).upper()
         or "local" in str(d50_ledger.get("blocker", "")).lower()
         or str(d50_qual.get("source", "")).upper() == "LAST_VALIDATED_PROJECT_STATE"
     )
-    if d50_remote_blocked:
+    if has_verified_reconciliation:
+        d50_freshness = fresh_label(iso_date(measurement.get("data_as_of")), reference_date)
+        d50_display_current = d50_ledger.get("current")
+        d50_authority = "LOCAL_RECONCILED_MEASUREMENT"
+    elif d50_remote_blocked:
         d50_freshness = "STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT"
         d50_display_current = None
         d50_authority = "LOCAL_EXTERNAL_EVIDENCE_REQUIRED"
@@ -159,10 +172,11 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "status": d50_ledger.get("status", "MISSING"),
         "freshness": d50_freshness,
         "display_current": d50_display_current,
-        "raw_remote_current_for_audit_only": d50_ledger.get("current"),
+        "raw_remote_current_for_audit_only": remote_d50_ledger.get("current"),
         "target": d50_ledger.get("target"),
         "authority": d50_authority,
-        "data_qualification_raw_remote": d50_qual.get("current"),
+        "data_qualification_current": d50_qual.get("current"),
+        "data_qualification_raw_remote": remote_d50_qual.get("current"),
         "source": "runtime/ledgers/d50/STATUS.json",
     }
 
@@ -241,7 +255,10 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "reporting_date_utc": now.isoformat(),
         "reference_data_date": reference_date.isoformat() if reference_date else None,
-        "status": "PASS_WITH_REPORTING_WARNINGS" if stale or missing else "PASS",
+        # Stale or missing expected evidence is an incomplete delivery, not a
+        # green collection with a cosmetic warning. Calendar-gated components
+        # are labelled CURRENT_CALENDAR_GATED above and do not trip this gate.
+        "status": "BLOCKED_INCOMPLETE_DELIVERY" if stale or missing else "PASS",
         "reporting_only": True,
         "methodology_changes": 0,
         "research_only": True,
@@ -258,6 +275,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
             "stale_components": stale,
             "missing_or_undated_components": missing,
         },
+        "delivery_complete": not stale and not missing,
         "sources": {name: source_record(paths[name], data[name]) for name in paths},
     }
     return result
