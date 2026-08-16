@@ -1,0 +1,126 @@
+name: GATE BTC Delta V12 Structural Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_delta_v12_structural_audit.py'
+      - 'migration/reporting/delta_v12_structural_audit_contract.json'
+      - '.github/workflows/gate-btc-delta-v12-structural-audit.yml'
+  workflow_run:
+    workflows: ['GATE BTC Daily Research Collection']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  contract-test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile research audit
+        run: python -m py_compile tools/gate_btc_delta_v12_structural_audit.py
+      - name: Validate frozen safety contract
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open('migration/reporting/delta_v12_structural_audit_contract.json'))
+          assert c['research_only'] is True
+          assert c['shadow_only'] is True
+          assert c['not_approved'] is True
+          assert c['engine_feed'] is False
+          assert c['orders']==0 and c['real_capital']==0
+          assert c['promotion_eligible'] is False
+          assert len(c['hypotheses'])==4
+          assert c['weekday_placebos']==['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY']
+          PY
+
+  structural-audit:
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.status == 'completed' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out research audit code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || (github.event_name == 'workflow_dispatch' && github.ref_name || 'main') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install audit dependencies
+        run: pip install pandas numpy
+      - name: Resolve exact Daily Research run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            RUN_ID='${{ github.event.workflow_run.id }}'
+          else
+            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=success&per_page=20" --jq '[.workflow_runs[] | select(.name=="GATE BTC Daily Research Collection")] | first | .id // empty')
+          fi
+          test -n "$RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" > run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('run.json'))
+          assert r['name']=='GATE BTC Daily Research Collection'
+          assert r['head_branch']=='main'
+          assert r['status']=='completed' and r['conclusion']=='success'
+          PY
+          echo "SOURCE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+      - name: Download immutable Daily Research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired==false) | select(.name | startswith("gate-btc-daily-research-"))] | first | .id // empty')
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > daily.zip
+          unzip -t daily.zip >/dev/null
+          echo "SOURCE_ARTIFACT_ID=$artifact_id" >> "$GITHUB_ENV"
+      - name: Run V12 offline structural audit
+        run: |
+          python tools/gate_btc_delta_v12_structural_audit.py \
+            --source-artifact daily.zip \
+            --contract migration/reporting/delta_v12_structural_audit_contract.json \
+            --out-dir artifacts/delta_v12
+      - name: Enforce no execution path
+        run: |
+          python - <<'PY'
+          import json
+          s=json.load(open('artifacts/delta_v12/STATUS.json'))
+          assert s['RESEARCH_ONLY'] is True and s['SHADOW_ONLY'] is True
+          assert s['NOT_APPROVED'] is True and s['ENGINE_FEED'] is False
+          assert s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['status']=='PASS_RESEARCH_AUDIT'
+          PY
+      - name: Preserve source binding
+        run: |
+          printf 'source_run_id=%s\nsource_artifact_id=%s\nRESEARCH_ONLY=true\nSHADOW_ONLY=true\nNOT_APPROVED=true\nENGINE_FEED=false\nORDERS=0\nREAL_CAPITAL=0\n' "$SOURCE_RUN_ID" "$SOURCE_ARTIFACT_ID" > artifacts/delta_v12/SOURCE_BINDING.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-delta-v12-structural-audit-${{ github.run_id }}
+          path: artifacts/delta_v12
+          retention-days: 90
+          if-no-files-found: error

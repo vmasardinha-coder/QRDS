@@ -1,6 +1,9 @@
 name: GATE BTC D50 Mirror Reconciliation
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 5 * * *"
   pull_request:
     branches: [main]
     paths:
@@ -24,11 +27,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Compile audit-only D50 evidence tools
         run: >-
           python -m py_compile
