@@ -115,6 +115,58 @@ class ArtifactRedirectTest(unittest.TestCase):
 
 
 class DeliveryHealthTest(unittest.TestCase):
+    def test_daily_dependents_propagate_upstream_failure_instead_of_green_skip(self):
+        repo = Path(__file__).resolve().parents[1]
+        workflows = (
+            "gate-btc-prospective-ledgers.yml",
+            "gate-btc-bull-replay-live-shadow.yml",
+            "gate-btc-delta-paper-monitor.yml",
+            "gate-btc-qos-three-track-shadow.yml",
+            "gate-btc-prl50-position-shadow.yml",
+            "gate-btc-alt-trail40-10-shadow.yml",
+            "gate-btc-delta-v12-structural-audit.yml",
+        )
+        for name in workflows:
+            text = (repo / ".github" / "workflows" / name).read_text(encoding="utf-8")
+            with self.subTest(workflow=name):
+                self.assertIn("upstream-daily-delivery:", text)
+                self.assertIn('test "$UPSTREAM_CONCLUSION" = "success"', text)
+                self.assertIn('test "$UPSTREAM_BRANCH" = "main"', text)
+
+    def test_missing_daily_pointer_cannot_borrow_measurement_date_and_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GATE_BTC_MEASUREMENT_STATUS.json").write_text(
+                '{"data_as_of":"2026-08-16","research_only":true,'
+                '"orders_generated":0,"real_capital_used":0}', encoding="utf-8"
+            )
+            result = reconcile(root, date(2026, 8, 17))
+            pointer = result["components"]["daily_delivery_pointer"]
+            self.assertEqual(result["reference_data_date"], "2026-08-16")
+            self.assertEqual(pointer["freshness"], "MISSING")
+            self.assertIn("daily_delivery_pointer", result["warnings"]["missing_or_undated_components"])
+            self.assertFalse(result["delivery_complete"])
+
+    def test_stale_daily_pointer_blocks_green_even_when_components_match_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GATE_BTC_LATEST_ELIGIBLE_RUN.json").write_text(
+                '{"data_cutoff":"2026-08-15","research_only":true,'
+                '"orders_generated":0,"real_capital_used":0}', encoding="utf-8"
+            )
+            (root / "GATE_BTC_MEASUREMENT_STATUS.json").write_text(
+                '{"data_as_of":"2026-08-15","research_only":true,'
+                '"orders_generated":0,"real_capital_used":0}', encoding="utf-8"
+            )
+            result = reconcile(root, date(2026, 8, 17))
+            pointer = result["components"]["daily_delivery_pointer"]
+            self.assertEqual(result["expected_data_cutoff"], "2026-08-16")
+            self.assertEqual(result["pointer_lag_days"], 1)
+            self.assertEqual(pointer["freshness"], "STALE")
+            self.assertIn("daily_delivery_pointer", result["warnings"]["stale_components"])
+            self.assertEqual(result["status"], "BLOCKED_INCOMPLETE_DELIVERY")
+            self.assertFalse(result["delivery_complete"])
+
     def test_authorized_reanchor_wait_is_current_until_first_close_arrives(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -138,7 +138,7 @@ def initialize_source_anchor(args) -> int:
         },
         "valuation_policy": {
             "mode": "EXACT_ACTIVE_HOLDING_CLOSE_SIDECAR",
-            "source_priority": ["canonical_v2a_master_exact", "cdd", "binance", "okx"],
+            "source_priority": ["canonical_v2a_master_exact", "cdd", "binance", "okx", "gateio"],
             "selection_engine_feed": False,
             "selection_membership_change_allowed": False,
             "exact_prior_and_current_close_required": True,

@@ -31,6 +31,19 @@ env:
   PRL50_FIRST_SIGNAL: "2026-08-31"
 
 jobs:
+  upstream-daily-delivery:
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Propagate failed or ineligible Daily collection
+        env:
+          UPSTREAM_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          UPSTREAM_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          test "$UPSTREAM_CONCLUSION" = "success"
+          test "$UPSTREAM_BRANCH" = "main"
+
   contract-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10

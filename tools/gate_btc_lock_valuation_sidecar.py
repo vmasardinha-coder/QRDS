@@ -35,7 +35,7 @@ except ModuleNotFoundError:  # direct ``python tools/...py`` execution
     )
 
 
-SOURCE_PRIORITY = ("cdd", "binance", "okx")
+SOURCE_PRIORITY = ("cdd", "binance", "okx", "gateio")
 SYMBOL = re.compile(r"^[A-Z0-9]{2,12}$")
 Fetcher = Callable[[str], tuple[dict[str, dict[str, Any]], str, str]]
 
@@ -124,10 +124,46 @@ def _okx(symbol: str) -> tuple[dict[str, dict[str, Any]], str, str]:
     return observations, _sha(raw), url
 
 
+def _gateio(symbol: str) -> tuple[dict[str, dict[str, Any]], str, str]:
+    """Read closed UTC daily spot candles from Gate.io's public API.
+
+    Gate returns ``[timestamp, quote_volume, close, high, low, open,
+    base_volume, window_closed]``.  The explicit closed flag is required in
+    addition to the UTC end-time check, so an in-progress candle can never be
+    admitted as valuation evidence.
+    """
+    params = urllib.parse.urlencode({
+        "currency_pair": f"{symbol}_USDT",
+        "interval": "1d",
+        "limit": 10,
+    })
+    url = f"https://api.gateio.ws/api/v4/spot/candlesticks?{params}"
+    raw = _request(url)
+    payload = json.loads(raw.decode("utf-8"))
+    require(isinstance(payload, list), f"Gate.io response unavailable for {symbol}")
+    observations: dict[str, dict[str, Any]] = {}
+    now_epoch = int(datetime.now(timezone.utc).timestamp())
+    for row in payload:
+        if not isinstance(row, list) or len(row) < 8:
+            continue
+        open_epoch = int(row[0])
+        day = datetime.fromtimestamp(open_epoch, timezone.utc).date().isoformat()
+        explicitly_closed = str(row[7]).strip().lower() == "true"
+        observations[day] = {
+            "close_usd": float(row[2]),
+            "confirmed": explicitly_closed and open_epoch + 86_400 <= now_epoch,
+            "market_open_at_utc": datetime.fromtimestamp(open_epoch, timezone.utc).isoformat(),
+            "market_close_at_utc": datetime.fromtimestamp(open_epoch + 86_400, timezone.utc).isoformat(),
+            "venue_window_closed": explicitly_closed,
+        }
+    return observations, _sha(raw), url
+
+
 DEFAULT_FETCHERS: dict[str, Fetcher] = {
     "cdd": _cdd,
     "binance": _binance,
     "okx": _okx,
+    "gateio": _gateio,
 }
 
 
@@ -236,6 +272,23 @@ def validate_sidecar(
     require(payload.get("forward_fill_allowed") is False, "valuation sidecar cannot forward-fill returns")
     require(payload.get("synthetic_return_allowed") is False, "valuation sidecar cannot synthesize returns")
     require(payload.get("exact_close_required") is True, "valuation sidecar lost exact-close requirement")
+    # Pre-extension v1 sidecars did not carry these audit fields.  Keep those
+    # immutable artifacts replayable, while requiring the stronger contract
+    # whenever the Gate.io redundancy extension is in the effective policy.
+    effective_priority = set(payload.get("source_priority", []))
+    policy_evolution = payload.get("source_policy_evolution") or {}
+    if "gateio" in effective_priority:
+        require(payload.get("methodology_changes") == 0, "valuation sidecar changed methodology")
+        require(
+            policy_evolution.get("selection_methodology_changed") is False,
+            "valuation source redundancy changed selection methodology",
+        )
+        require(
+            policy_evolution.get("economic_methodology_changed") is False,
+            "valuation source redundancy changed economic methodology",
+        )
+    elif "methodology_changes" in payload:
+        require(payload.get("methodology_changes") == 0, "valuation sidecar changed methodology")
     require(payload.get("snapshot_id") == snapshot_id, "valuation sidecar snapshot mismatch")
     require(payload.get("prior_date") == prior_date, "valuation sidecar prior-date mismatch")
     require(payload.get("sidecar_sha256") == canonical_sha(payload, "sidecar_sha256"), "invalid valuation sidecar hash")
@@ -265,6 +318,10 @@ def validate_sidecar(
         evidence_types = {str(row.get("evidence_type")) for row in rows}
         require(len(evidence_types) == 1, f"valuation evidence type differs across dates for {asset}")
         if evidence_types == {"EXACT_PUBLIC_DAILY_CANDLE"}:
+            require(
+                sources.issubset(set(payload.get("source_priority", []))),
+                f"public valuation source is outside effective priority for {asset}",
+            )
             payload_hashes = {str(row.get("source_payload_sha256")) for row in rows}
             require(len(payload_hashes) == 1, f"public valuation dates must share one payload for {asset}")
     return values
@@ -280,6 +337,7 @@ def build_sidecar(
 ) -> dict[str, Any]:
     fetchers = fetchers or DEFAULT_FETCHERS
     anchor = load_json(ledger_dir / "ANCHOR.json")
+    source_anchor = load_json(ledger_dir / "SOURCE_ANCHOR.json")
     if iso_day(snapshot_id, "snapshot id") < iso_day(anchor["first_eligible_close"], "first eligible close"):
         payload = {
             "schema": "gate_btc.lock_valuation_sidecar.v1",
@@ -321,6 +379,8 @@ def build_sidecar(
     require(not missing, f"exact valuation pair unavailable for active assets={missing}")
 
     now = generated_at or datetime.now(timezone.utc)
+    effective_priority = ["canonical_v2a_master_exact", *SOURCE_PRIORITY]
+    anchor_priority = source_anchor.get("valuation_policy", {}).get("source_priority", [])
     payload = {
         "schema": "gate_btc.lock_valuation_sidecar.v1",
         "status": "PASS_EXACT_ACTIVE_HOLDING_CLOSES",
@@ -333,7 +393,18 @@ def build_sidecar(
         "observation_count": len(observations),
         "observations": sorted(observations, key=lambda row: (row["symbol"], row["date"])),
         "source_attempts_before_selected_pair": attempts,
-        "source_priority": ["canonical_v2a_master_exact", *SOURCE_PRIORITY],
+        "source_priority": effective_priority,
+        "source_policy_evolution": {
+            "anchor_priority": anchor_priority,
+            "effective_priority": effective_priority,
+            "change_type": (
+                "ANCHOR_POLICY_MATCH"
+                if anchor_priority == effective_priority
+                else "VALUATION_SOURCE_REDUNDANCY_ONLY"
+            ),
+            "selection_methodology_changed": False,
+            "economic_methodology_changed": False,
+        },
         "active_signal_provenance": signal_provenance,
         "canonical_selection_master": {"member": master_member, "sha256": master_sha},
         "valuation_only": True,
@@ -342,6 +413,7 @@ def build_sidecar(
         "forward_fill_allowed": False,
         "synthetic_return_allowed": False,
         "exact_close_required": True,
+        "methodology_changes": 0,
         "research_only": True,
         "shadow_only": True,
         "not_approved": True,
