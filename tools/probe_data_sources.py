@@ -186,6 +186,115 @@ def probe_stooq(ticker: str = "spy.us") -> str:
     return f"HTTP {status} · inicio {head!r} (controlo)"
 
 
+def _csv_serie(body: bytes) -> list[tuple[str, float]]:
+    """(data, fecho) de um CSV estilo Stooq. Vazio se nao for CSV."""
+    import csv as _csv
+    texto = body.decode("utf-8", "replace")
+    if texto.lstrip()[:1] == "<":
+        return []
+    linhas = []
+    for row in _csv.DictReader(io.StringIO(texto)):
+        try:
+            fecho = float(row["Close"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if fecho > 0:
+            linhas.append((row["Date"], fecho))
+    linhas.sort()
+    return linhas
+
+
+def _retrato(linhas: list[tuple[str, float]]) -> str:
+    """Resumo comparavel entre fontes: quanto historico e que valores."""
+    if not linhas:
+        return "sem serie utilizavel"
+    caudas = " ".join(f"{d}={v:,.0f}" for d, v in linhas[-3:])
+    return (f"{len(linhas)} pregoes · {linhas[0][0]} -> {linhas[-1][0]}\n"
+            f"        ultimos: {caudas}")
+
+
+def probe_indice_b3() -> str:
+    """Terceira fonte para o Ibovespa.
+
+    O indice e o unico dado da carteira B3 com so duas fontes: o COTAHIST
+    cobre acoes, nao indices, e quando a brapi e o Yahoo cedem ao mesmo tempo
+    a carteira inteira para (aconteceu a 2026-08-17). Aqui pergunta-se a cada
+    candidata o mesmo: quantos pregoes da, e que valores.
+
+    Os ultimos fechos de cada uma sao impressos lado a lado de proposito: uma
+    fonte que responda 200 mas com outra escala, outro indice ou uma serie
+    parada e pior que fonte nenhuma, porque entra silenciosamente no filtro de
+    regime e na forca relativa. So entra a que bater com as outras.
+    """
+    linhas: list[str] = []
+    for host in ("https://stooq.com", "https://stooq.pl"):
+        for simbolo in ("^bvsp", "bvsp"):
+            try:
+                status, body = _get(f"{host}/q/d/l/?s={simbolo}&i=d")
+                serie = _csv_serie(body)
+                cabeca = " ".join(body[:70].decode("utf-8", "replace").split())
+                linhas.append(f"\n    stooq {host.split('//')[1]} {simbolo!r}: "
+                              f"HTTP {status} · {_retrato(serie)}"
+                              + ("" if serie else f"\n        corpo: {cabeca!r}"))
+            except Exception as err:  # noqa: BLE001
+                linhas.append(f"\n    stooq {host.split('//')[1]} {simbolo!r}: "
+                              f"{type(err).__name__}: {str(err)[:70]}")
+
+    # Controlos: as duas fontes actuais, para comparar escala e ultimo fecho.
+    try:
+        status, body = _get("https://query1.finance.yahoo.com/v8/finance/chart/"
+                            "%5EBVSP?range=1y&interval=1d")
+        d = json.loads(body)["chart"]["result"][0]
+        fechos = d["indicators"]["quote"][0]["close"]
+        datas = [datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%d")
+                 for t in d["timestamp"]]
+        serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
+        linhas.append(f"\n    yahoo ^BVSP (fonte actual): HTTP {status} · "
+                      f"{_retrato(serie)}")
+    except Exception as err:  # noqa: BLE001
+        linhas.append(f"\n    yahoo ^BVSP (fonte actual): "
+                      f"{type(err).__name__}: {str(err)[:70]}")
+
+    for rng in ("1y", "3mo"):
+        try:
+            status, data = _brapi("%5EBVSP", rng)
+            pontos = (data.get("results") or [{}])[0].get(
+                "historicalDataPrice") or []
+            serie = [(datetime.fromtimestamp(p["date"],
+                                             tz=timezone.utc).strftime("%Y-%m-%d"),
+                      float(p["close"]))
+                     for p in pontos if p.get("close") and p.get("date")]
+            serie.sort()
+            linhas.append(f"\n    brapi ^BVSP range={rng} (fonte actual): "
+                          f"HTTP {status} · {_retrato(serie)}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    brapi ^BVSP range={rng} (fonte actual): "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    # SGS do Banco Central: ja e fonte do CDI, logo host conhecido e estavel.
+    # 7832 e o Ibovespa; a duvida e a periodicidade — mensal nao serve para a
+    # SMA 200 diaria, e e isso que esta linha responde.
+    try:
+        fim = datetime.now(timezone.utc)
+        ini = fim - timedelta(days=400)
+        status, body = _get(
+            "https://api.bcb.gov.br/dados/serie/bcdata.sgs.7832/dados"
+            f"?formato=json&dataInicial={ini.strftime('%d/%m/%Y')}"
+            f"&dataFinal={fim.strftime('%d/%m/%Y')}")
+        pontos = json.loads(body)
+        serie = [(p["data"], float(p["valor"])) for p in pontos]
+        linhas.append(f"\n    bcb sgs 7832 (Ibovespa): HTTP {status} · "
+                      f"{len(serie)} pontos em 400 dias "
+                      f"({'diaria' if len(serie) > 200 else 'NAO diaria'})"
+                      f"\n        ultimos: "
+                      + " ".join(f"{d}={v:,.0f}" for d, v in serie[-3:]))
+    except Exception as err:  # noqa: BLE001
+        linhas.append(f"\n    bcb sgs 7832 (Ibovespa): "
+                      f"{type(err).__name__}: {str(err)[:70]}")
+
+    return "".join(linhas)
+
+
 def _brapi(ticker: str, rng: str = "2y"):
     """O token vai no cabecalho, nunca na query string — os logs do Actions
     sao publicos neste repositorio, tal como os relatorios.
@@ -466,6 +575,12 @@ def main(argv: list[str] | None = None) -> int:
                probe_cotahist)
         report("TradingView scanner — B3 (retrato, muda a metodologia)",
                probe_tradingview_b3)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3indice":
+        # Terceira fonte para o Ibovespa: ver 'probe_indice_b3'.
+        report("Ibovespa — candidatas a terceira fonte", probe_indice_b3)
         print("\nFim da sonda.")
         return 0
 
