@@ -32,15 +32,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-17-grafico
 | PANW | 13.1189 | $384.27 | $5,041.19 | 9.8% |
 | LLY | 4.21533 | $1,180.16 | $4,974.77 | 9.7% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| LRCX | VENDA | 0.794461 | $332.19 | $263.92 | rebalanceio |
-| MU | VENDA | 0.395194 | $971.17 | $383.80 | rebalanceio |
-| AMAT | COMPRA | 0.677028 | $507.43 | $343.55 | rebalanceio |
-| CAT | COMPRA | 0.256376 | $857.00 | $219.71 | rebalanceio |
-| GOOGL | COMPRA | 1.05337 | $346.07 | $364.54 | rebalanceio |
-| LLY | COMPRA | 0.122582 | $1,180.75 | $144.74 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
@@ -68,57 +60,96 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-17-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,852.40 |
-| Retorno do dia | +0.37% |
-| Retorno desde inicio (2026-08-06) | -0.30% |
-| Benchmark BTC | -0.20% |
-| **Alfa vs BTC** | **-0.09%** |
+| NAV | $49,830.69 |
+| Retorno do dia | +0.33% |
+| Retorno desde inicio (2026-08-06) | -0.34% |
+| Benchmark BTC | -0.26% |
+| **Alfa vs BTC** | **-0.07%** |
 | Caixa | $24,586.13 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,288.50 | $12,474.92 | 25.0% |
-| LINK | 457.992 | $9.51 | $4,353.22 | 8.7% |
-| JTO | 7371.79 | $0.58 | $4,283.75 | 8.6% |
-| SYN | 40162.3 | $0.10 | $4,154.39 | 8.3% |
+| BTC | 0.194046 | $64,247.71 | $12,467.00 | 25.0% |
+| LINK | 457.992 | $9.48 | $4,344.06 | 8.7% |
+| JTO | 7371.79 | $0.58 | $4,272.69 | 8.6% |
+| SYN | 40162.3 | $0.10 | $4,160.81 | 8.3% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| SYN | COMPRA | 2275.01 | $0.10 | $235.56 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
-- **Obstaculo (BTC):** momentum de -8.5% — so entram ativos acima disto
-- **Candidatos elegiveis:** 13
+- **Obstaculo (BTC):** momentum de -8.6% — so entram ativos acima disto
+- **Candidatos elegiveis:** 12
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (-12.7% <= -8.5%) |
+| ADA | nao bate o benchmark (-13.0% <= -8.6%) |
 | ALGO | liquidez baixa (0.8M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.0M < 1M) |
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
-| _(+119 outros)_ | |
+| _(+120 outros)_ | |
 
 </details>
 
 ## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
 
-> ERRO nesta execucao: `Sem fonte para ^BVSP — brapi: 1d&fundamental=false: HTTP 400 (definitivo); 1y: ange=1y&interval=1d&fundamental=false: HTTP 400 (definitivo)] | yahoo: Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+| Indicador | Valor |
+|---|---|
+| NAV | R$ 48,276.90 |
+| Retorno do dia | +0.00% |
+| Retorno desde inicio (2026-08-06) | -3.45% |
+| Benchmark IBOV | -4.99% |
+| Benchmark CDI | +0.31% |
+| **Alfa vs o maior (CDI)** | **-3.76%** |
+| Caixa | R$ 89.77 |
+| Regime | risco ligado |
 
-> Fonte yahoo falhou 1x: `Yahoo a limitar por volume (2 vezes); desisto da fonte neste ciclo`
+### Posicoes
+| Ativo | Qtd | Preco | Valor | Peso |
+|---|---|---|---|---|
+| UGPA3 | 188.719 | R$ 32.27 | R$ 6,089.96 | 12.6% |
+| PETR4 | 144.309 | R$ 42.09 | R$ 6,073.98 | 12.6% |
+| ABEV3 | 409.229 | R$ 14.75 | R$ 6,036.13 | 12.5% |
+| GGBR4 | 243.911 | R$ 24.65 | R$ 6,012.41 | 12.5% |
+| PRIO3 | 102.363 | R$ 58.63 | R$ 6,001.52 | 12.4% |
+| CPLE3 | 438.156 | R$ 13.69 | R$ 5,998.36 | 12.4% |
+| VALE3 | 84.0968 | R$ 71.30 | R$ 5,996.10 | 12.4% |
+| VBBR3 | 177.936 | R$ 33.60 | R$ 5,978.66 | 12.4% |
 
-O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
+_Sem movimentacoes hoje._
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** cadencia semanal (segunda-feira)
+- **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
+- **Candidatos elegiveis:** 15
+- **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 49, nasdaq: 101
+- **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
+
+| Rejeitado | Motivo |
+|---|---|
+| ASAI3 | nao bate o benchmark (-18.1% <= +13.4%) |
+| AXIA3 | historico insuficiente |
+| BBAS3 | nao bate o benchmark (+7.9% <= +13.4%) |
+| BBDC4 | nao bate o benchmark (+13.2% <= +13.4%) |
+| BRKM5 | nao bate o benchmark (-24.2% <= +13.4%) |
+| CMIG4 | nao bate o benchmark (+1.6% <= +13.4%) |
+| CMIN3 | nao bate o benchmark (+8.3% <= +13.4%) |
+| CSAN3 | nao bate o benchmark (-33.7% <= +13.4%) |
+| _(+26 outros)_ | |
+
+</details>
 
 ## Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)
 
