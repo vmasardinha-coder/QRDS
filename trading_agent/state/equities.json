@@ -3,7 +3,7 @@
   "currency": "USD",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 424.8256412301107,
+  "cash": 0.0,
   "positions": {
     "AMD": {
       "qty": 10.372368274278235,
@@ -11,13 +11,13 @@
       "high_water": 514.39
     },
     "CAT": {
-      "qty": 5.740000805786246,
-      "avg_cost": 871.5155570983886,
+      "qty": 5.996377069118904,
+      "avg_cost": 870.8948683172351,
       "high_water": 856.9600219726562
     },
     "GOOGL": {
-      "qty": 13.795767737337474,
-      "avg_cost": 362.6112076721191,
+      "qty": 14.849137629647819,
+      "avg_cost": 361.4380147812203,
       "high_water": 357.75
     },
     "INTC": {
@@ -26,13 +26,13 @@
       "high_water": 104.56
     },
     "LLY": {
-      "qty": 4.092752751123952,
-      "avg_cost": 1170.4449153442383,
+      "qty": 4.215334829175286,
+      "avg_cost": 1170.7445898776637,
       "high_water": 1231.93994140625
     },
     "AMAT": {
-      "qty": 9.450178273536782,
-      "avg_cost": 529.1744281311035,
+      "qty": 10.127206723638905,
+      "avg_cost": 527.7210001182771,
       "high_water": 548.15
     },
     "KLAC": {
@@ -41,12 +41,12 @@
       "high_water": 209.37
     },
     "LRCX": {
-      "qty": 16.248536955429646,
+      "qty": 15.454076020264713,
       "avg_cost": 307.7687977294922,
       "high_water": 337.01
     },
     "MU": {
-      "qty": 5.681319256169844,
+      "qty": 5.286125502845832,
       "avg_cost": 880.2168049621581,
       "high_water": 971.66
     },
@@ -60,7 +60,7 @@
     "symbol": "SPY",
     "inception_price": 769.7899780273438
   },
-  "last_rebalance": "2026-08-10",
+  "last_rebalance": "2026-08-17",
   "last_regime": "risk_on",
   "history": [
     {
@@ -111,6 +111,11 @@
     {
       "date": "2026-08-16",
       "nav": 51363.17,
+      "benchmark_nav": 50425.44
+    },
+    {
+      "date": "2026-08-17",
+      "nav": 51362.31,
       "benchmark_nav": 50425.44
     }
   ],
@@ -314,6 +319,54 @@
       "qty": 13.11888067,
       "price": 381.1905,
       "value": 5000.79
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "LRCX",
+      "side": "sell",
+      "qty": 0.79446094,
+      "price": 332.19382,
+      "value": 263.92
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "MU",
+      "side": "sell",
+      "qty": 0.39519375,
+      "price": 971.17417,
+      "value": 383.8
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "AMAT",
+      "side": "buy",
+      "qty": 0.67702845,
+      "price": 507.43359,
+      "value": 343.55
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "CAT",
+      "side": "buy",
+      "qty": 0.25637626,
+      "price": 856.998285,
+      "value": 219.71
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "GOOGL",
+      "side": "buy",
+      "qty": 1.05336989,
+      "price": 346.07295,
+      "value": 364.54
+    },
+    {
+      "date": "2026-08-17",
+      "symbol": "LLY",
+      "side": "buy",
+      "qty": 0.12258208,
+      "price": 1180.75008,
+      "value": 144.74
     }
   ],
   "cooldown": {},
@@ -2266,6 +2319,306 @@
       "hurdle": "SPY",
       "hurdle_score": 0.1641,
       "rebalance_trigger": "nenhum (sem motivo para negociar)",
+      "eligible_count": 43,
+      "selected": [
+        {
+          "symbol": "MU",
+          "score": 5.8657,
+          "weight": 0.1
+        },
+        {
+          "symbol": "INTC",
+          "score": 3.3645,
+          "weight": 0.1
+        },
+        {
+          "symbol": "LRCX",
+          "score": 2.0069,
+          "weight": 0.1
+        },
+        {
+          "symbol": "AMAT",
+          "score": 1.9518,
+          "weight": 0.1
+        },
+        {
+          "symbol": "AMD",
+          "score": 1.7163,
+          "weight": 0.1
+        },
+        {
+          "symbol": "KLAC",
+          "score": 1.3104,
+          "weight": 0.1
+        },
+        {
+          "symbol": "CAT",
+          "score": 1.1203,
+          "weight": 0.1
+        },
+        {
+          "symbol": "PANW",
+          "score": 1.0015,
+          "weight": 0.1
+        },
+        {
+          "symbol": "LLY",
+          "score": 0.7702,
+          "weight": 0.1
+        },
+        {
+          "symbol": "GOOGL",
+          "score": 0.7551,
+          "weight": 0.1
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ABT",
+          "reason": "nao bate o benchmark (-23.6% <= +16.4%)"
+        },
+        {
+          "symbol": "ACN",
+          "reason": "nao bate o benchmark (-41.1% <= +16.4%)"
+        },
+        {
+          "symbol": "ADBE",
+          "reason": "nao bate o benchmark (-33.0% <= +16.4%)"
+        },
+        {
+          "symbol": "AMT",
+          "reason": "nao bate o benchmark (-17.3% <= +16.4%)"
+        },
+        {
+          "symbol": "AMZN",
+          "reason": "nao bate o benchmark (+11.3% <= +16.4%)"
+        },
+        {
+          "symbol": "BA",
+          "reason": "nao bate o benchmark (-8.2% <= +16.4%)"
+        },
+        {
+          "symbol": "BKNG",
+          "reason": "nao bate o benchmark (-15.3% <= +16.4%)"
+        },
+        {
+          "symbol": "BLK",
+          "reason": "nao bate o benchmark (-6.3% <= +16.4%)"
+        },
+        {
+          "symbol": "CL",
+          "reason": "nao bate o benchmark (+9.0% <= +16.4%)"
+        },
+        {
+          "symbol": "COST",
+          "reason": "nao bate o benchmark (-3.4% <= +16.4%)"
+        },
+        {
+          "symbol": "CRM",
+          "reason": "nao bate o benchmark (-27.1% <= +16.4%)"
+        },
+        {
+          "symbol": "DHR",
+          "reason": "nao bate o benchmark (-2.0% <= +16.4%)"
+        },
+        {
+          "symbol": "DIS",
+          "reason": "nao bate o benchmark (-14.5% <= +16.4%)"
+        },
+        {
+          "symbol": "DUK",
+          "reason": "nao bate o benchmark (+0.3% <= +16.4%)"
+        },
+        {
+          "symbol": "EOG",
+          "reason": "nao bate o benchmark (+15.9% <= +16.4%)"
+        },
+        {
+          "symbol": "ETN",
+          "reason": "nao bate o benchmark (+10.8% <= +16.4%)"
+        },
+        {
+          "symbol": "GILD",
+          "reason": "nao bate o benchmark (+13.5% <= +16.4%)"
+        },
+        {
+          "symbol": "HD",
+          "reason": "nao bate o benchmark (-14.5% <= +16.4%)"
+        },
+        {
+          "symbol": "HON",
+          "reason": "nao bate o benchmark (-45.7% <= +16.4%)"
+        },
+        {
+          "symbol": "IBM",
+          "reason": "nao bate o benchmark (-8.8% <= +16.4%)"
+        },
+        {
+          "symbol": "ICE",
+          "reason": "nao bate o benchmark (-21.9% <= +16.4%)"
+        },
+        {
+          "symbol": "INTU",
+          "reason": "nao bate o benchmark (-58.6% <= +16.4%)"
+        },
+        {
+          "symbol": "ISRG",
+          "reason": "nao bate o benchmark (-16.6% <= +16.4%)"
+        },
+        {
+          "symbol": "LIN",
+          "reason": "nao bate o benchmark (+9.5% <= +16.4%)"
+        },
+        {
+          "symbol": "LMT",
+          "reason": "nao bate o benchmark (+16.0% <= +16.4%)"
+        },
+        {
+          "symbol": "LOW",
+          "reason": "nao bate o benchmark (-15.7% <= +16.4%)"
+        },
+        {
+          "symbol": "MA",
+          "reason": "nao bate o benchmark (-4.6% <= +16.4%)"
+        },
+        {
+          "symbol": "MCD",
+          "reason": "nao bate o benchmark (-10.4% <= +16.4%)"
+        },
+        {
+          "symbol": "MDLZ",
+          "reason": "nao bate o benchmark (-1.2% <= +16.4%)"
+        },
+        {
+          "symbol": "META",
+          "reason": "nao bate o benchmark (-14.8% <= +16.4%)"
+        },
+        {
+          "symbol": "MO",
+          "reason": "nao bate o benchmark (+11.5% <= +16.4%)"
+        },
+        {
+          "symbol": "MSFT",
+          "reason": "nao bate o benchmark (-23.0% <= +16.4%)"
+        },
+        {
+          "symbol": "NFLX",
+          "reason": "nao bate o benchmark (-38.3% <= +16.4%)"
+        },
+        {
+          "symbol": "NKE",
+          "reason": "nao bate o benchmark (-42.3% <= +16.4%)"
+        },
+        {
+          "symbol": "NOW",
+          "reason": "nao bate o benchmark (-39.8% <= +16.4%)"
+        },
+        {
+          "symbol": "NVDA",
+          "reason": "nao bate o benchmark (+14.2% <= +16.4%)"
+        },
+        {
+          "symbol": "ORCL",
+          "reason": "nao bate o benchmark (-49.1% <= +16.4%)"
+        },
+        {
+          "symbol": "PEP",
+          "reason": "nao bate o benchmark (-6.6% <= +16.4%)"
+        },
+        {
+          "symbol": "PFE",
+          "reason": "nao bate o benchmark (-0.1% <= +16.4%)"
+        },
+        {
+          "symbol": "PG",
+          "reason": "nao bate o benchmark (-2.5% <= +16.4%)"
+        },
+        {
+          "symbol": "PGR",
+          "reason": "nao bate o benchmark (-17.4% <= +16.4%)"
+        },
+        {
+          "symbol": "PM",
+          "reason": "nao bate o benchmark (+14.4% <= +16.4%)"
+        },
+        {
+          "symbol": "QCOM",
+          "reason": "nao bate o benchmark (+9.0% <= +16.4%)"
+        },
+        {
+          "symbol": "SBUX",
+          "reason": "nao bate o benchmark (+15.1% <= +16.4%)"
+        },
+        {
+          "symbol": "SCHW",
+          "reason": "nao bate o benchmark (+7.5% <= +16.4%)"
+        },
+        {
+          "symbol": "SHW",
+          "reason": "nao bate o benchmark (-8.3% <= +16.4%)"
+        },
+        {
+          "symbol": "SO",
+          "reason": "nao bate o benchmark (+1.4% <= +16.4%)"
+        },
+        {
+          "symbol": "SPGI",
+          "reason": "nao bate o benchmark (-17.1% <= +16.4%)"
+        },
+        {
+          "symbol": "SYK",
+          "reason": "nao bate o benchmark (-12.6% <= +16.4%)"
+        },
+        {
+          "symbol": "TJX",
+          "reason": "nao bate o benchmark (+15.4% <= +16.4%)"
+        },
+        {
+          "symbol": "TMO",
+          "reason": "nao bate o benchmark (+12.0% <= +16.4%)"
+        },
+        {
+          "symbol": "TMUS",
+          "reason": "nao bate o benchmark (-23.1% <= +16.4%)"
+        },
+        {
+          "symbol": "TSLA",
+          "reason": "nao bate o benchmark (+15.2% <= +16.4%)"
+        },
+        {
+          "symbol": "UBER",
+          "reason": "nao bate o benchmark (-18.5% <= +16.4%)"
+        },
+        {
+          "symbol": "V",
+          "reason": "nao bate o benchmark (+6.6% <= +16.4%)"
+        },
+        {
+          "symbol": "WFC",
+          "reason": "nao bate o benchmark (+13.1% <= +16.4%)"
+        },
+        {
+          "symbol": "WMT",
+          "reason": "nao bate o benchmark (+13.8% <= +16.4%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {},
+      "data_failures": [],
+      "sources": {
+        "nasdaq": 101
+      },
+      "source_failures": {},
+      "source_missing": {},
+      "note": "",
+      "cash_weight": 0.0
+    },
+    {
+      "date": "2026-08-17",
+      "regime": "risk_on",
+      "hurdle": "SPY",
+      "hurdle_score": 0.1641,
+      "rebalance_trigger": "cadencia semanal (segunda-feira)",
       "eligible_count": 43,
       "selected": [
         {
