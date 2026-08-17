@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -130,9 +130,33 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
 
     pointer = data["pointer"] or {}
     measurement = data["measurement"] or {}
-    reference_date = iso_date(pointer.get("data_cutoff")) or iso_date(measurement.get("data_as_of"))
+    pointer_date = iso_date(pointer.get("data_cutoff"))
+    reference_date = pointer_date or iso_date(measurement.get("data_as_of"))
+    expected_data_cutoff = now - timedelta(days=1)
 
     components: dict[str, Any] = {}
+
+    pointer_lag_days = (
+        (expected_data_cutoff - pointer_date).days
+        if pointer_date is not None and pointer_date < expected_data_cutoff
+        else 0
+    )
+    if pointer_date is None:
+        pointer_freshness = "MISSING"
+    elif pointer_date < expected_data_cutoff:
+        pointer_freshness = "STALE"
+    elif pointer_date > expected_data_cutoff:
+        pointer_freshness = "INVALID_FUTURE_DATE"
+    else:
+        pointer_freshness = "FRESH"
+    components["daily_delivery_pointer"] = {
+        "status": "CURRENT" if pointer_freshness == "FRESH" else "LATE_MISSING_OR_INVALID",
+        "freshness": pointer_freshness,
+        "data_cutoff": pointer_date.isoformat() if pointer_date else None,
+        "expected_data_cutoff": expected_data_cutoff.isoformat(),
+        "lag_days": pointer_lag_days if pointer_date is not None else None,
+        "source": "runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
+    }
 
     delta = measurement.get("delta_walk_forward") or {}
     components["delta"] = {
@@ -303,13 +327,18 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
     }
 
     stale = [name for name, comp in components.items() if str(comp.get("freshness", "")).startswith("STALE")]
-    missing = [name for name, comp in components.items() if comp.get("freshness") in {"MISSING", "UNKNOWN_DATE"}]
+    missing = [
+        name for name, comp in components.items()
+        if comp.get("freshness") in {"MISSING", "UNKNOWN_DATE", "INVALID_FUTURE_DATE"}
+    ]
 
     result = {
         "schema": SCHEMA,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "reporting_date_utc": now.isoformat(),
         "reference_data_date": reference_date.isoformat() if reference_date else None,
+        "expected_data_cutoff": expected_data_cutoff.isoformat(),
+        "pointer_lag_days": pointer_lag_days if pointer_date is not None else None,
         # Stale or missing expected evidence is an incomplete delivery, not a
         # green collection with a cosmetic warning. Calendar-gated components
         # are labelled CURRENT_CALENDAR_GATED above and do not trip this gate.
@@ -323,6 +352,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "real_capital_used": 0,
         "freshness_policy": {
             "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata.",
+            "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
             "d50_remote_rule": "When runtime says local repair/external local authority is pending, suppress the remote D50 counter from display.",
         },
         "components": components,
