@@ -255,7 +255,10 @@ def probe_indice_b3() -> str:
         linhas.append(f"\n    yahoo ^BVSP (fonte actual): "
                       f"{type(err).__name__}: {str(err)[:70]}")
 
-    for rng in ("1y", "3mo"):
+    # Todos os ranges que o agente tenta, pela mesma ordem: e a resposta a
+    # "quanto historico a brapi consegue dar para o indice", que decide se a
+    # SMA 200 do filtro de regime chega sequer a ser calculavel.
+    for rng in ("2y", "1y", "6mo", "3mo"):
         try:
             status, data = _brapi("%5EBVSP", rng)
             pontos = (data.get("results") or [{}])[0].get(
