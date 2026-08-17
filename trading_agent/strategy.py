@@ -48,6 +48,17 @@ def equity_momentum_score(closes: list[float]) -> float | None:
     return recent / old - 1.0
 
 
+def regime_avaliavel(closes: list[float]) -> bool:
+    """Ha pregoes que cheguem para a SMA 200 dizer alguma coisa?
+
+    Separado de 'equity_regime' de proposito: sem isto, uma serie curta devolve
+    'risk_on' — o mesmo valor que uma SMA calculada a serio — e o relatorio
+    escrevia 'risco ligado' sem distinguir 'o filtro correu e aprovou' de 'o
+    filtro nao chegou a correr'. Quem le tem direito a saber qual dos dois foi.
+    """
+    return len(closes) >= config.SMA_REGIME_DAYS
+
+
 def equity_regime(benchmark_closes: list[float]) -> str:
     avg = sma(benchmark_closes, config.SMA_REGIME_DAYS)
     if avg is None or benchmark_closes[-1] >= avg:
@@ -118,7 +129,8 @@ def equity_decision(universe: dict[str, Series],
                              config.EQUITY_MIN_POSITIONS,
                              config.MAX_ACTIVE_POSITION_WEIGHT)
     return _decision(weights, regime, benchmark_score, ranked, rejected, note,
-                     hurdle="SPY")
+                     hurdle="SPY",
+                     regime_avaliado=regime_avaliavel(benchmark_closes))
 
 
 def b3_decision(universe: dict[str, Series], benchmark_closes: list[float],
@@ -141,7 +153,8 @@ def b3_decision(universe: dict[str, Series], benchmark_closes: list[float],
                              config.B3_MIN_POSITIONS,
                              config.MAX_ACTIVE_POSITION_WEIGHT)
     return _decision(weights, regime, hurdle, ranked, rejected, note,
-                     hurdle=hurdle_name)
+                     hurdle=hurdle_name,
+                     regime_avaliado=regime_avaliavel(benchmark_closes))
 
 
 def crypto_momentum_score(closes: list[float]) -> float | None:
@@ -178,7 +191,8 @@ def crypto_decision(universe: dict[str, Series]) -> dict:
     if btc_score is None:
         weights = {"BTC": min(exposure, config.CRYPTO_BTC_ANCHOR_MAX)}
         return _decision(weights, regime, None, [], [],
-                         "sem historico do BTC: so ancora", hurdle="BTC")
+                         "sem historico do BTC: so ancora", hurdle="BTC",
+                         regime_avaliado=regime_avaliavel(btc_closes))
 
     alts = {s: series for s, series in universe.items() if s != "BTC"}
     # As duas fontes ja reportam volume em unidades da moeda base (a CoinGecko
@@ -206,16 +220,18 @@ def crypto_decision(universe: dict[str, Series]) -> dict:
         weights["BTC"] = min(exposure, config.CRYPTO_BTC_ANCHOR_MAX)
         note = "nenhuma alt bate o BTC: so ancora"
     return _decision(weights, regime, btc_score, ranked, rejected, note,
-                     hurdle="BTC")
+                     hurdle="BTC",
+                     regime_avaliado=regime_avaliavel(btc_closes))
 
 
 def _decision(weights: dict[str, float], regime: str, hurdle_score: float | None,
               ranked: list[tuple[str, float]], rejected: list[dict],
-              note: str, hurdle: str) -> dict:
+              note: str, hurdle: str, regime_avaliado: bool = True) -> dict:
     scores = dict(ranked)
     return {
         "weights": weights,
         "regime": regime,
+        "regime_avaliado": regime_avaliado,
         "hurdle": hurdle,
         "hurdle_score": hurdle_score,
         "eligible_count": len(ranked),

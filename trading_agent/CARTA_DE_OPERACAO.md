@@ -184,6 +184,46 @@ serie propria por campos pre-calculados de terceiros seria alterar o sinal
 com a aparencia de uma troca de fonte. O scanner fica medido e documentado
 (`tools/probe_data_sources.py b3fonte`), sem estar em uso.
 
+### O indice tem de ser acumulado, porque nenhuma fonte o da longo
+
+O ^BVSP era o unico dado da carteira B3 com so duas fontes — o COTAHIST cobre
+acoes, nao indices. A 2026-08-17 as duas cederam no mesmo ciclo e a carteira
+parou. A procura de uma terceira fonte, medida no runner
+(`tools/probe_data_sources.py b3indice`), nao encontrou nenhuma:
+
+| Candidata | Resposta no runner |
+|---|---|
+| Stooq `^bvsp`/`bvsp`, `.com` e `.pl` | HTTP 200 com pagina anti-robo — bloqueia os IPs do Actions |
+| BCB SGS 7832 | HTTP 404 — a serie nao existe |
+| Yahoo `^BVSP` | HTTP 429 |
+| brapi `^BVSP` 2y / 1y / 6mo | HTTP 400 |
+| brapi `^BVSP` 3mo | **HTTP 200 — 64 pregoes** |
+
+64 pregoes, quando a SMA 200 do filtro de regime precisa de 200 e o momentum
+12-1 precisa de 260. Isto revelou um problema maior que a falta de fonte:
+`equity_regime` devolvia `risk_on` tanto quando a SMA aprovava como quando nao
+havia historico para a calcular, e o relatorio escrevia "risco ligado" nos dois
+casos. **Fail-open num sistema que e fail-closed em tudo o resto** — e nao
+determinista, porque nos dias em que o Yahoo respondia vinha 1 ano e o filtro
+corria a serio. A mesma falta derrubava o obstaculo do IBOV para CDI sozinho,
+sem o dizer.
+
+Decisao (mandante, 2026-08-17): **acumular a serie do indice em disco**
+(`state/indice_cache.json`), juntando o que cada ciclo consegue obter.
+
+Isto nao viola a seccao 7 porque **nao estima nada**: guarda fechos reais que
+ja aconteceram. O fecho de hoje continua a ter de vir da fonte — sem fonte, o
+ciclo falha como falhava, e o cache nao serve de muleta para um dia sem dados.
+Antes de juntar, os pregoes em comum entre o guardado e o vivo tem de bater a
+menos de 1%; se nao batem, e outra escala ou outro indice, e colar fabricaria
+um salto de retorno inexistente — recomeca-se do vivo, pelo mesmo motivo que
+nao se emendam series de tickers sucedidos.
+
+Enquanto o cache nao chegar aos 200 pregoes, o relatorio declara
+`filtro NAO avaliado`, em vez de deixar passar por aprovacao. **Fica em aberto**
+para decisao do mandante que exposicao usar nesse intervalo: hoje mantem-se a
+de risco ligado, que e o comportamento anterior.
+
 ### Segredos
 
 As mensagens de falha são publicadas no relatório, que é versionado num

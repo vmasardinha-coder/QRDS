@@ -1484,3 +1484,106 @@ class TestRefusedVersusMissing(unittest.TestCase):
                     self._get(code)
                 self.assertNotIsInstance(caught.exception,
                                          data_sources.SourceUnavailable)
+
+
+class TestIndexHistoryCache(unittest.TestCase):
+    """O cache do indice existe porque nenhuma fonte da o Ibovespa longo.
+
+    Medido no runner a 2026-08-17: a brapi recusa range 2y/1y/6mo do ^BVSP com
+    HTTP 400 e so serve 3mo (64 pregoes); a Stooq devolve pagina anti-robo nos
+    dois hosts; o SGS nao tem a serie; o Yahoo estava em 429. A SMA 200 precisa
+    de 200 pregoes, por isso a serie tem de ser acumulada ao longo dos ciclos.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        caminho = Path(self.tmp.name) / "indice_cache.json"
+        p = mock.patch.object(data_sources, "_index_cache_path",
+                              lambda: caminho)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_history_accumulates_across_cycles(self):
+        # Dois ciclos com janelas curtas que se sobrepoem: o que fica guardado
+        # e a uniao, que e maior que qualquer uma das fontes isolada.
+        ciclo1 = [("2026-01-05", 100.0, 1.0), ("2026-01-06", 101.0, 1.0)]
+        ciclo2 = [("2026-01-06", 101.0, 1.0), ("2026-01-07", 102.0, 1.0)]
+        data_sources._absorb_index_history("^BVSP", ciclo1)
+        junto = data_sources._absorb_index_history("^BVSP", ciclo2)
+        self.assertEqual([d for d, _, _ in junto],
+                         ["2026-01-05", "2026-01-06", "2026-01-07"])
+
+    def test_cached_history_makes_the_regime_filter_evaluable(self):
+        # O ponto da coisa: 64 pregoes nao chegam para a SMA 200, e ao fim de
+        # ciclos suficientes chegam. Sem isto o filtro nunca corria.
+        curto = [(f"2026-01-{d:02d}", 100.0, 1.0) for d in range(1, 29)]
+        self.assertFalse(strategy.regime_avaliavel([c for _, c, _ in curto]))
+        longo = [(f"d{i:04d}", 100.0, 1.0) for i in range(config.SMA_REGIME_DAYS)]
+        data_sources._absorb_index_history("^BVSP", longo)
+        guardado = data_sources._load_index_cache("^BVSP")
+        self.assertTrue(strategy.regime_avaliavel([c for _, c, _ in guardado]))
+
+    def test_series_on_a_different_scale_is_refused_not_glued(self):
+        # Uma fonte que devolva outro indice, ou o mesmo noutra escala, faria
+        # um salto de retorno que nunca existiu. Recomeca-se do vivo.
+        # O pregao de 02/01 so existe no cache: e ele que denuncia se houve
+        # colagem, porque sobreviveria ao lado de valores 100x menores.
+        data_sources._absorb_index_history(
+            "^BVSP", [("2026-01-02", 129000.0, 1.0),
+                      ("2026-01-05", 130000.0, 1.0)])
+        vivo = [("2026-01-05", 1300.0, 1.0), ("2026-01-06", 1310.0, 1.0)]
+        junto = data_sources._absorb_index_history("^BVSP", vivo)
+        self.assertEqual(junto, vivo)
+        self.assertNotIn("2026-01-02", [d for d, _, _ in junto])
+
+    def test_cache_is_not_a_crutch_for_a_missing_day(self):
+        # O cache alonga a serie para tras; nao substitui o fecho de hoje.
+        # Sem fonte nenhuma, o ciclo tem de falhar como falhava antes.
+        data_sources._absorb_index_history(
+            "^BVSP", [("2026-01-05", 130000.0, 1.0)])
+        with mock.patch.object(data_sources, "fetch_brapi_daily",
+                               side_effect=data_sources.DataSourceError("x")), \
+             mock.patch.object(data_sources, "fetch_yahoo_daily",
+                               side_effect=data_sources.DataSourceError("y")):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources.fetch_b3_daily("^BVSP", is_benchmark=True)
+
+
+class TestRegimeIsDeclaredNotAssumed(unittest.TestCase):
+    """Uma SMA 200 sem 200 pregoes nao reprova ninguem.
+
+    'equity_regime' devolve 'risk_on' tanto quando o filtro corre e aprova como
+    quando nao ha historico para o correr — fail-open num sistema que e
+    fail-closed em tudo o resto. O valor da decisao mantem-se; o que muda e que
+    o relatorio passa a dizer qual dos dois casos foi.
+    """
+
+    def test_short_series_still_yields_risk_on(self):
+        self.assertEqual(strategy.equity_regime([100.0] * 10), "risk_on")
+
+    def test_but_it_is_marked_as_not_evaluated(self):
+        self.assertFalse(strategy.regime_avaliavel([100.0] * 10))
+        self.assertTrue(
+            strategy.regime_avaliavel([100.0] * config.SMA_REGIME_DAYS))
+
+    def test_report_says_the_filter_did_not_run(self):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", regime_avaliado=False)
+        regime = [ln for ln in linhas if "Regime" in ln]
+        self.assertTrue(regime)
+        self.assertIn("NAO avaliado", regime[0])
+
+    def test_report_stays_plain_when_the_filter_did_run(self):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", regime_avaliado=True)
+        regime = [ln for ln in linhas if "Regime" in ln]
+        self.assertNotIn("NAO avaliado", regime[0])

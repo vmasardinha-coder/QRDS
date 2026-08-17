@@ -576,7 +576,9 @@ def fetch_b3_daily(ticker: str,
     nomes por historico insuficiente. A brapi fica como alternativa, e o Yahoo
     a seguir — passou a limitar por taxa os IPs do GitHub Actions.
 
-    O COTAHIST nao cobre indices: o ^BVSP continua a vir da brapi.
+    O COTAHIST nao cobre indices: o ^BVSP continua a vir da brapi ou do Yahoo,
+    e o que essas devolvem e curto demais para o filtro de regime — por isso a
+    serie do indice passa por '_absorb_index_history', que a acumula em disco.
     """
     from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
@@ -595,8 +597,112 @@ def fetch_b3_daily(ticker: str,
             continue
         SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
         time.sleep(config.FETCH_DELAY_S)
+        if ticker.startswith("^"):
+            series = _absorb_index_history(ticker, series)
         return series
     raise DataSourceError(f"Sem fonte para {ticker} — " + " | ".join(errors))
+
+
+# Quanto historico do indice se guarda. 1500 pregoes sao ~6 anos: chega para
+# a SMA 200 e para o momentum 12-1 com folga, e o ficheiro fica na ordem das
+# dezenas de KB.
+INDEX_CACHE_MAX = 1500
+# Duas fontes do mesmo indice tem de bater no mesmo pregao. 1% e folga para
+# arredondamento e para fechos apurados a horas diferentes; acima disso ja nao
+# e ruido, e sim outra escala ou outro indice.
+INDEX_MERGE_TOLERANCE = 0.01
+
+
+class IndexCacheMismatch(Exception):
+    """O que a fonte deu nao bate com o que estava guardado."""
+
+
+def _index_cache_path():
+    from pathlib import Path
+    return Path(__file__).resolve().parent / "state" / "indice_cache.json"
+
+
+def _load_index_cache(ticker: str) -> list[tuple[str, float, float]]:
+    path = _index_cache_path()
+    if not path.exists():
+        return []
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8"))
+        rows = blob.get(ticker) or []
+        return [(str(d), float(c), float(v)) for d, c, v in rows]
+    except (ValueError, TypeError, OSError, AttributeError):
+        return []
+
+
+def _save_index_cache(ticker: str,
+                      rows: list[tuple[str, float, float]]) -> None:
+    path = _index_cache_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (ValueError, OSError):
+        blob = {}
+    if not isinstance(blob, dict):
+        blob = {}
+    blob[ticker] = [list(r) for r in rows[-INDEX_CACHE_MAX:]]
+    path.write_text(json.dumps(blob), encoding="utf-8")
+
+
+def _merge_index_series(cached: list[tuple[str, float, float]],
+                        live: list[tuple[str, float, float]]
+                        ) -> list[tuple[str, float, float]]:
+    """Junta o guardado com o que a fonte deu, o vivo a mandar em empate.
+
+    Antes de colar, confere os pregoes que as duas versoes tem em comum. Um
+    indice servido por fontes diferentes tem de dar o mesmo numero no mesmo
+    dia; se nao da, o que ha e uma diferenca de escala ou outro indice, e colar
+    as duas pontas fabricava um salto de retorno que nunca existiu — o mesmo
+    erro que se recusou ao nao emendar series de tickers sucedidos.
+    """
+    if not live:
+        return list(cached)
+    if not cached:
+        return list(live)
+    vivos = {d: (c, v) for d, c, v in live}
+    comuns = [(guardado, vivos[d][0]) for d, guardado, _ in cached if d in vivos]
+    if comuns:
+        antigo, novo = comuns[-1]
+        if antigo > 0 and abs(novo / antigo - 1.0) > INDEX_MERGE_TOLERANCE:
+            raise IndexCacheMismatch(
+                f"fecho guardado {antigo:.1f} vs fonte {novo:.1f} "
+                f"no mesmo pregao")
+    juntos = {d: (c, v) for d, c, v in cached}
+    juntos.update(vivos)
+    return sorted((d, c, v) for d, (c, v) in juntos.items())
+
+
+def _absorb_index_history(ticker: str,
+                          live: list[tuple[str, float, float]]
+                          ) -> list[tuple[str, float, float]]:
+    """Acumula em disco o historico do indice.
+
+    Existe porque nenhuma fonte alcancavel da o Ibovespa longo: o COTAHIST nao
+    cobre indices, a Stooq bloqueia os IPs do Actions, o SGS nao tem a serie, e
+    a brapi so serve range=3mo do ^BVSP — 64 pregoes, quando a SMA 200 do
+    filtro de regime precisa de 200 e o momentum 12-1 precisa de 260. Sem isto
+    o filtro nao chegava a correr e caia em 'risco ligado' por omissao, que e
+    fail-open num sistema fail-closed em todo o resto.
+
+    Guarda fecho real, nunca estimado: o cache lembra pregoes que aconteceram,
+    nao inventa os que faltam. O fecho de hoje continua a ter de vir da fonte —
+    se nenhuma responder, o ciclo falha como antes. O cache alonga a serie para
+    tras; nao serve de muleta para um dia sem dados.
+    """
+    cached = _load_index_cache(ticker)
+    try:
+        merged = _merge_index_series(cached, live)
+    except IndexCacheMismatch as err:
+        # Ficar com o vivo e recomecar: entre uma serie curta e uma serie
+        # colada a torto, a curta e a honesta.
+        _note_failure("indice_cache", SourceUnavailable(str(err)))
+        merged = list(live)
+    _save_index_cache(ticker, merged)
+    return merged
 
 
 def _cdi_cache_path():

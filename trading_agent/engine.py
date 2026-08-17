@@ -111,6 +111,7 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
     }
     portfolio.log_decision(state, log_entry)
     return {"trades": trades, "decision": decision, "regime": regime,
+            "regime_avaliado": decision.get("regime_avaliado", True),
             "log": log_entry, "targets": targets}
 
 
