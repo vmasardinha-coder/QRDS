@@ -17,6 +17,30 @@ from unittest import mock
 from trading_agent import (config, cotahist, data_sources, portfolio, report,
                            strategy)
 
+_CACHE_ISOLADO = None
+
+
+def setUpModule():
+    """Nenhum teste escreve no estado real do agente.
+
+    'fetch_b3_daily' passou a gravar a serie do indice em disco, e os testes
+    que substituem as fontes devolvem valores inventados. Sem este desvio, um
+    teste como 'test_the_index_never_asks_the_archive' gravava o seu stub em
+    trading_agent/state/ e o ficheiro seguia para o repositorio — aconteceu a
+    2026-08-17, com um fecho de 130000.0 numa data de pregao real.
+    """
+    global _CACHE_ISOLADO
+    _CACHE_ISOLADO = tempfile.TemporaryDirectory()
+    destino = Path(_CACHE_ISOLADO.name) / "indice_cache.json"
+    mock.patch.object(data_sources, "_index_cache_path",
+                      lambda: destino).start()
+
+
+def tearDownModule():
+    mock.patch.stopall()
+    if _CACHE_ISOLADO is not None:
+        _CACHE_ISOLADO.cleanup()
+
 
 def flat_series(price: float, days: int) -> list[float]:
     return [price] * days
@@ -1503,6 +1527,13 @@ class TestIndexHistoryCache(unittest.TestCase):
                               lambda: caminho)
         p.start()
         self.addCleanup(p.stop)
+
+    def test_the_suite_never_writes_to_the_real_state_dir(self):
+        # Guarda para o desvio de 'setUpModule' nao ser removido sem se dar por
+        # isso: se voltar a apontar para trading_agent/state/, os stubs dos
+        # testes voltam a ser commitados como se fossem cotacoes.
+        real = Path(data_sources.__file__).resolve().parent / "state"
+        self.assertNotIn(real, data_sources._index_cache_path().parents)
 
     def test_history_accumulates_across_cycles(self):
         # Dois ciclos com janelas curtas que se sobrepoem: o que fica guardado
