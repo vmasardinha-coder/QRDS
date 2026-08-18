@@ -60,21 +60,21 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,725.70 |
-| Retorno do dia | -0.30% |
-| Retorno desde inicio (2026-08-06) | -0.55% |
-| Benchmark BTC | +0.19% |
-| **Alfa vs BTC** | **-0.73%** |
+| NAV | $49,745.06 |
+| Retorno do dia | -0.26% |
+| Retorno desde inicio (2026-08-06) | -0.51% |
+| Benchmark BTC | +0.26% |
+| **Alfa vs BTC** | **-0.77%** |
 | Caixa | $24,801.29 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,537.15 | $12,523.17 | 25.2% |
-| SYN | 40162.3 | $0.10 | $4,194.95 | 8.4% |
-| LINK | 435.428 | $9.51 | $4,142.23 | 8.3% |
-| JTO | 7371.79 | $0.55 | $4,064.07 | 8.2% |
+| BTC | 0.194046 | $64,587.91 | $12,533.01 | 25.2% |
+| SYN | 40162.3 | $0.11 | $4,237.12 | 8.5% |
+| LINK | 435.428 | $9.48 | $4,128.73 | 8.3% |
+| JTO | 7371.79 | $0.55 | $4,044.90 | 8.1% |
 
 _Sem movimentacoes hoje._
 
@@ -82,7 +82,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de -8.5% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de -8.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 10
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
@@ -90,7 +90,7 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (-13.1% <= -8.5%) |
+| ADA | nao bate o benchmark (-13.2% <= -8.4%) |
 | ALGO | liquidez baixa (0.8M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
@@ -135,7 +135,6 @@ _Sem movimentacoes hoje._
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
 - **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 49, nasdaq: 101
-- **Fonte indice_cache falhou 1x:** `fecho guardado 130000.0 vs fonte 167101.0 no mesmo pregao`
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
