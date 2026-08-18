@@ -60,44 +60,47 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $49,830.69 |
-| Retorno do dia | +0.33% |
-| Retorno desde inicio (2026-08-06) | -0.34% |
-| Benchmark BTC | -0.26% |
-| **Alfa vs BTC** | **-0.07%** |
-| Caixa | $24,586.13 |
+| NAV | $49,873.74 |
+| Retorno do dia | +0.41% |
+| Retorno desde inicio (2026-08-06) | -0.25% |
+| Benchmark BTC | +0.08% |
+| **Alfa vs BTC** | **-0.34%** |
+| Caixa | $24,801.29 |
 | Regime | risco reduzido (defensivo) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.194046 | $64,247.71 | $12,467.00 | 25.0% |
-| LINK | 457.992 | $9.48 | $4,344.06 | 8.7% |
-| JTO | 7371.79 | $0.58 | $4,272.69 | 8.6% |
-| SYN | 40162.3 | $0.10 | $4,160.81 | 8.3% |
+| BTC | 0.194046 | $64,471.30 | $12,510.39 | 25.1% |
+| JTO | 7371.79 | $0.58 | $4,253.52 | 8.5% |
+| LINK | 435.428 | $9.54 | $4,156.16 | 8.3% |
+| SYN | 40162.3 | $0.10 | $4,152.38 | 8.3% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| LINK | VENDA | 22.564 | $9.54 | $215.16 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
-- **Obstaculo (BTC):** momentum de -8.6% — so entram ativos acima disto
-- **Candidatos elegiveis:** 12
+- **Obstaculo (BTC):** momentum de -8.3% — so entram ativos acima disto
+- **Candidatos elegiveis:** 11
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (-13.0% <= -8.6%) |
+| ADA | nao bate o benchmark (-12.6% <= -8.3%) |
 | ALGO | liquidez baixa (0.8M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.0M < 1M) |
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
-| _(+120 outros)_ | |
+| _(+121 outros)_ | |
 
 </details>
 
@@ -105,49 +108,53 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 48,276.90 |
-| Retorno do dia | +0.00% |
-| Retorno desde inicio (2026-08-06) | -3.45% |
+| NAV | R$ 48,986.89 |
+| Retorno do dia | +1.47% |
+| Retorno desde inicio (2026-08-06) | -2.03% |
 | Benchmark IBOV | -4.99% |
 | Benchmark CDI | +0.31% |
-| **Alfa vs o maior (CDI)** | **-3.76%** |
-| Caixa | R$ 89.77 |
-| Regime | risco ligado |
+| **Alfa vs o maior (CDI)** | **-2.34%** |
+| Caixa | R$ 348.60 |
+| Regime | risco ligado — filtro NAO avaliado (indice sem 200 pregoes) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| UGPA3 | 188.719 | R$ 32.27 | R$ 6,089.96 | 12.6% |
-| PETR4 | 144.309 | R$ 42.09 | R$ 6,073.98 | 12.6% |
-| ABEV3 | 409.229 | R$ 14.75 | R$ 6,036.13 | 12.5% |
-| GGBR4 | 243.911 | R$ 24.65 | R$ 6,012.41 | 12.5% |
-| PRIO3 | 102.363 | R$ 58.63 | R$ 6,001.52 | 12.4% |
-| CPLE3 | 438.156 | R$ 13.69 | R$ 5,998.36 | 12.4% |
-| VALE3 | 84.0968 | R$ 71.30 | R$ 5,996.10 | 12.4% |
-| VBBR3 | 177.936 | R$ 33.60 | R$ 5,978.66 | 12.4% |
+| PRIO3 | 102.363 | R$ 61.58 | R$ 6,303.49 | 12.9% |
+| PETR4 | 144.309 | R$ 42.47 | R$ 6,128.82 | 12.5% |
+| UGPA3 | 181.058 | R$ 33.82 | R$ 6,123.39 | 12.5% |
+| GGBR4 | 243.911 | R$ 24.78 | R$ 6,044.12 | 12.3% |
+| CPLE3 | 438.156 | R$ 13.79 | R$ 6,042.18 | 12.3% |
+| VALE3 | 84.0968 | R$ 71.41 | R$ 6,005.35 | 12.3% |
+| ABEV3 | 409.229 | R$ 14.67 | R$ 6,003.39 | 12.3% |
+| VBBR3 | 177.936 | R$ 33.65 | R$ 5,987.56 | 12.2% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| UGPA3 | VENDA | 7.6607 | R$ 33.79 | R$ 258.83 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
 - **Obstaculo (CDI):** momentum de +13.4% — so entram ativos acima disto
-- **Candidatos elegiveis:** 15
+- **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 49, nasdaq: 101
+- **Fonte indice_cache falhou 1x:** `fecho guardado 130000.0 vs fonte 167101.0 no mesmo pregao`
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 
 | Rejeitado | Motivo |
 |---|---|
-| ASAI3 | nao bate o benchmark (-18.1% <= +13.4%) |
+| ASAI3 | nao bate o benchmark (-14.4% <= +13.4%) |
 | AXIA3 | historico insuficiente |
-| BBAS3 | nao bate o benchmark (+7.9% <= +13.4%) |
-| BBDC4 | nao bate o benchmark (+13.2% <= +13.4%) |
-| BRKM5 | nao bate o benchmark (-24.2% <= +13.4%) |
-| CMIG4 | nao bate o benchmark (+1.6% <= +13.4%) |
-| CMIN3 | nao bate o benchmark (+8.3% <= +13.4%) |
-| CSAN3 | nao bate o benchmark (-33.7% <= +13.4%) |
-| _(+26 outros)_ | |
+| BBAS3 | nao bate o benchmark (+6.3% <= +13.4%) |
+| BRKM5 | nao bate o benchmark (-22.0% <= +13.4%) |
+| CMIG4 | nao bate o benchmark (+2.1% <= +13.4%) |
+| CMIN3 | nao bate o benchmark (+8.8% <= +13.4%) |
+| CSAN3 | nao bate o benchmark (-33.6% <= +13.4%) |
+| CSNA3 | nao bate o benchmark (-31.9% <= +13.4%) |
+| _(+25 outros)_ | |
 
 </details>
 
@@ -155,22 +162,22 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 48,242.24 |
-| Retorno do dia | +0.01% |
-| Retorno desde inicio (2026-08-06) | -3.52% |
+| NAV | R$ 48,227.59 |
+| Retorno do dia | -0.02% |
+| Retorno desde inicio (2026-08-06) | -3.54% |
 | Benchmark IBOV | -4.99% |
 | Benchmark CDI | +0.31% |
-| **Alfa vs o maior (CDI)** | **-3.83%** |
+| **Alfa vs o maior (CDI)** | **-3.86%** |
 | Caixa | R$ 679.00 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 163.90 | R$ 47,586.69 | 98.6% |
+| BOVA11 | 290.34 | R$ 163.80 | R$ 47,557.65 | 98.6% |
 
-> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 23.44
+> Call vendida (premio modelado): strike R$ 177.20, vence 2026-09-05, premio R$ 2.3314/un, valor atual da obrigacao R$ 9.06
 
-> Volatilidade usada na call (GARCH(1,1)): 16.8% a.a. | realizada 30d: 20.2% a.a. | CDI: 0.0517% a.d.
+> Volatilidade usada na call (GARCH(1,1)): 14.6% a.a. | realizada 30d: 20.0% a.a. | CDI: 0.0517% a.d.
 
 _Sem movimentacoes hoje._
 
