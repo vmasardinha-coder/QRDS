@@ -1,0 +1,109 @@
+name: GATE BTC QMASTER Publisher
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Optional Daily Research run id to republish
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-qmaster-publisher
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  publish-qmaster:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve source run id
+        id: source
+        env:
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          run_id="${MANUAL_RUN_ID:-${WORKFLOW_RUN_ID:-}}"
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Check out main exporter
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: source_repo
+
+      - name: Download Daily Research evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-daily-research-${{ steps.source.outputs.run_id }}
+          path: daily_evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+
+      - name: Export canonical QMASTER sidecar
+        run: >-
+          python source_repo/tools/gate_btc_qmaster_export.py
+          --source-zip daily_evidence/qos_daily/qos_v2a_public_collection.zip
+          --output-dir qmaster_out
+
+      - name: Validate QMASTER output
+        run: |
+          set -euo pipefail
+          test -s qmaster_out/GATE_BTC_QMASTER_LATEST.txt
+          test -s qmaster_out/GATE_BTC_QMASTER_LATEST.csv
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path('qmaster_out/GATE_BTC_QMASTER_LATEST.txt').read_text(encoding='utf-8'))
+          assert state['status'] == 'PASS'
+          assert state['research_only'] is True
+          assert state['operational_status'] == 'NOT_APPROVED'
+          assert state['orders_generated'] == 0
+          assert state['real_capital_used'] == 0
+          assert state['methodology_changed'] is False
+          assert state['rows'] > 0
+          assert state['symbols'] > 0
+          print(json.dumps(state, indent=2, sort_keys=True))
+          PY
+
+      - name: Check out runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Publish QMASTER to canonical runtime paths
+        run: |
+          set -euo pipefail
+          git -C runtime_repo config user.name "gate-btc-actions"
+          git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
+          mkdir -p runtime_repo/runtime/qmaster
+          cp qmaster_out/GATE_BTC_QMASTER_LATEST.txt runtime_repo/runtime/GATE_BTC_QMASTER_LATEST.txt
+          cp qmaster_out/GATE_BTC_QMASTER_LATEST.csv runtime_repo/runtime/GATE_BTC_QMASTER_LATEST.csv
+          cp qmaster_out/GATE_BTC_QMASTER_LATEST.txt runtime_repo/runtime/qmaster/GATE_BTC_QMASTER_LATEST.txt
+          cp qmaster_out/GATE_BTC_QMASTER_LATEST.csv runtime_repo/runtime/qmaster/GATE_BTC_QMASTER_LATEST.csv
+          git -C runtime_repo add runtime/GATE_BTC_QMASTER_LATEST.txt runtime/GATE_BTC_QMASTER_LATEST.csv runtime/qmaster/
+          if git -C runtime_repo diff --cached --quiet; then
+            echo "QMASTER already current"
+          else
+            git -C runtime_repo commit -m "Publish canonical QMASTER sidecar"
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
+          fi
