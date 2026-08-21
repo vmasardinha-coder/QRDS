@@ -3,7 +3,7 @@
   "currency": "USD",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 331.42716216988174,
+  "cash": 197.99698896075887,
   "positions": {
     "AMD": {
       "qty": 10.372368274278235,
@@ -41,26 +41,26 @@
       "high_water": 343.84
     },
     "MU": {
-      "qty": 5.286125502845832,
+      "qty": 4.998466020383239,
       "avg_cost": 880.2168049621581,
       "high_water": 1011.75
     },
     "PANW": {
-      "qty": 13.118880674192576,
-      "avg_cost": 381.19049999999993,
+      "qty": 13.932244529236758,
+      "avg_cost": 379.35411637719596,
       "high_water": 396.0
     },
-    "LLY": {
-      "qty": 3.8137734932377163,
-      "avg_cost": 1280.9801699999998,
-      "high_water": 1280.9801699999998
+    "CSCO": {
+      "qty": 44.439779155397396,
+      "avg_cost": 109.64479499999999,
+      "high_water": 109.644795
     }
   },
   "benchmark": {
     "symbol": "SPY",
     "inception_price": 769.7899780273438
   },
-  "last_rebalance": "2026-08-20",
+  "last_rebalance": "2026-08-21",
   "last_regime": "risk_on",
   "history": [
     {
@@ -132,6 +132,11 @@
       "date": "2026-08-20",
       "nav": 48824.22,
       "benchmark_nav": 49952.59
+    },
+    {
+      "date": "2026-08-21",
+      "nav": 48696.46,
+      "benchmark_nav": 49532.99
     }
   ],
   "trades": [
@@ -430,6 +435,38 @@
       "qty": 3.81377349,
       "price": 1280.98017,
       "value": 4885.37
+    },
+    {
+      "date": "2026-08-21",
+      "symbol": "LLY",
+      "side": "sell",
+      "qty": 3.81377349,
+      "price": 1243.7778,
+      "value": 4743.49
+    },
+    {
+      "date": "2026-08-21",
+      "symbol": "MU",
+      "side": "sell",
+      "qty": 0.28765948,
+      "price": 973.842835,
+      "value": 280.14
+    },
+    {
+      "date": "2026-08-21",
+      "symbol": "CSCO",
+      "side": "buy",
+      "qty": 44.43977916,
+      "price": 109.644795,
+      "value": 4872.59
+    },
+    {
+      "date": "2026-08-21",
+      "symbol": "PANW",
+      "side": "buy",
+      "qty": 0.81336386,
+      "price": 349.73478,
+      "value": 284.46
     }
   ],
   "cooldown": {},
@@ -3831,6 +3868,302 @@
         {
           "symbol": "WMT",
           "reason": "nao bate o benchmark (+9.6% <= +16.3%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {},
+      "data_failures": [],
+      "sources": {
+        "nasdaq": 101
+      },
+      "source_failures": {},
+      "source_missing": {},
+      "note": "",
+      "cash_weight": 0.0
+    },
+    {
+      "date": "2026-08-21",
+      "regime": "risk_on",
+      "hurdle": "SPY",
+      "hurdle_score": 0.1682,
+      "rebalance_trigger": "desvio de peso em CSCO: 0.0% vs alvo 10.0%",
+      "eligible_count": 44,
+      "selected": [
+        {
+          "symbol": "MU",
+          "score": 6.8614,
+          "weight": 0.1
+        },
+        {
+          "symbol": "INTC",
+          "score": 3.0545,
+          "weight": 0.1
+        },
+        {
+          "symbol": "AMAT",
+          "score": 2.4146,
+          "weight": 0.1
+        },
+        {
+          "symbol": "AMD",
+          "score": 2.3163,
+          "weight": 0.1
+        },
+        {
+          "symbol": "LRCX",
+          "score": 2.1824,
+          "weight": 0.1
+        },
+        {
+          "symbol": "KLAC",
+          "score": 1.4506,
+          "weight": 0.1
+        },
+        {
+          "symbol": "CAT",
+          "score": 1.1373,
+          "weight": 0.1
+        },
+        {
+          "symbol": "PANW",
+          "score": 0.8467,
+          "weight": 0.1
+        },
+        {
+          "symbol": "GOOGL",
+          "score": 0.6971,
+          "weight": 0.1
+        },
+        {
+          "symbol": "CSCO",
+          "score": 0.6808,
+          "weight": 0.1
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ABT",
+          "reason": "nao bate o benchmark (-23.4% <= +16.8%)"
+        },
+        {
+          "symbol": "ACN",
+          "reason": "nao bate o benchmark (-45.3% <= +16.8%)"
+        },
+        {
+          "symbol": "ADBE",
+          "reason": "nao bate o benchmark (-39.5% <= +16.8%)"
+        },
+        {
+          "symbol": "AMT",
+          "reason": "nao bate o benchmark (-19.6% <= +16.8%)"
+        },
+        {
+          "symbol": "AMZN",
+          "reason": "nao bate o benchmark (+7.4% <= +16.8%)"
+        },
+        {
+          "symbol": "AXP",
+          "reason": "nao bate o benchmark (+13.9% <= +16.8%)"
+        },
+        {
+          "symbol": "BA",
+          "reason": "nao bate o benchmark (-7.3% <= +16.8%)"
+        },
+        {
+          "symbol": "BKNG",
+          "reason": "nao bate o benchmark (-20.4% <= +16.8%)"
+        },
+        {
+          "symbol": "BLK",
+          "reason": "nao bate o benchmark (-6.4% <= +16.8%)"
+        },
+        {
+          "symbol": "CL",
+          "reason": "nao bate o benchmark (+6.7% <= +16.8%)"
+        },
+        {
+          "symbol": "COST",
+          "reason": "nao bate o benchmark (-5.5% <= +16.8%)"
+        },
+        {
+          "symbol": "CRM",
+          "reason": "nao bate o benchmark (-33.7% <= +16.8%)"
+        },
+        {
+          "symbol": "DHR",
+          "reason": "nao bate o benchmark (-15.6% <= +16.8%)"
+        },
+        {
+          "symbol": "DIS",
+          "reason": "nao bate o benchmark (-17.5% <= +16.8%)"
+        },
+        {
+          "symbol": "DUK",
+          "reason": "nao bate o benchmark (+3.4% <= +16.8%)"
+        },
+        {
+          "symbol": "ETN",
+          "reason": "nao bate o benchmark (+16.6% <= +16.8%)"
+        },
+        {
+          "symbol": "GILD",
+          "reason": "nao bate o benchmark (+10.5% <= +16.8%)"
+        },
+        {
+          "symbol": "HD",
+          "reason": "nao bate o benchmark (-18.6% <= +16.8%)"
+        },
+        {
+          "symbol": "HON",
+          "reason": "nao bate o benchmark (-43.3% <= +16.8%)"
+        },
+        {
+          "symbol": "IBM",
+          "reason": "nao bate o benchmark (-14.7% <= +16.8%)"
+        },
+        {
+          "symbol": "ICE",
+          "reason": "nao bate o benchmark (-20.0% <= +16.8%)"
+        },
+        {
+          "symbol": "INTU",
+          "reason": "nao bate o benchmark (-59.4% <= +16.8%)"
+        },
+        {
+          "symbol": "ISRG",
+          "reason": "nao bate o benchmark (-28.9% <= +16.8%)"
+        },
+        {
+          "symbol": "LIN",
+          "reason": "nao bate o benchmark (+6.0% <= +16.8%)"
+        },
+        {
+          "symbol": "LMT",
+          "reason": "nao bate o benchmark (+16.6% <= +16.8%)"
+        },
+        {
+          "symbol": "LOW",
+          "reason": "nao bate o benchmark (-20.3% <= +16.8%)"
+        },
+        {
+          "symbol": "MA",
+          "reason": "nao bate o benchmark (-9.1% <= +16.8%)"
+        },
+        {
+          "symbol": "MCD",
+          "reason": "nao bate o benchmark (-15.2% <= +16.8%)"
+        },
+        {
+          "symbol": "MDLZ",
+          "reason": "nao bate o benchmark (-2.9% <= +16.8%)"
+        },
+        {
+          "symbol": "META",
+          "reason": "nao bate o benchmark (-16.5% <= +16.8%)"
+        },
+        {
+          "symbol": "MO",
+          "reason": "nao bate o benchmark (+8.4% <= +16.8%)"
+        },
+        {
+          "symbol": "MSFT",
+          "reason": "nao bate o benchmark (-23.4% <= +16.8%)"
+        },
+        {
+          "symbol": "NFLX",
+          "reason": "nao bate o benchmark (-43.6% <= +16.8%)"
+        },
+        {
+          "symbol": "NKE",
+          "reason": "nao bate o benchmark (-45.1% <= +16.8%)"
+        },
+        {
+          "symbol": "NOW",
+          "reason": "nao bate o benchmark (-46.2% <= +16.8%)"
+        },
+        {
+          "symbol": "ORCL",
+          "reason": "nao bate o benchmark (-46.4% <= +16.8%)"
+        },
+        {
+          "symbol": "PEP",
+          "reason": "nao bate o benchmark (-10.9% <= +16.8%)"
+        },
+        {
+          "symbol": "PFE",
+          "reason": "nao bate o benchmark (-2.0% <= +16.8%)"
+        },
+        {
+          "symbol": "PG",
+          "reason": "nao bate o benchmark (-5.9% <= +16.8%)"
+        },
+        {
+          "symbol": "PGR",
+          "reason": "nao bate o benchmark (-18.4% <= +16.8%)"
+        },
+        {
+          "symbol": "PM",
+          "reason": "nao bate o benchmark (+15.1% <= +16.8%)"
+        },
+        {
+          "symbol": "QCOM",
+          "reason": "nao bate o benchmark (+12.4% <= +16.8%)"
+        },
+        {
+          "symbol": "SBUX",
+          "reason": "nao bate o benchmark (+14.4% <= +16.8%)"
+        },
+        {
+          "symbol": "SCHW",
+          "reason": "nao bate o benchmark (+5.3% <= +16.8%)"
+        },
+        {
+          "symbol": "SHW",
+          "reason": "nao bate o benchmark (-13.1% <= +16.8%)"
+        },
+        {
+          "symbol": "SO",
+          "reason": "nao bate o benchmark (+1.7% <= +16.8%)"
+        },
+        {
+          "symbol": "SPGI",
+          "reason": "nao bate o benchmark (-21.1% <= +16.8%)"
+        },
+        {
+          "symbol": "SYK",
+          "reason": "nao bate o benchmark (-20.7% <= +16.8%)"
+        },
+        {
+          "symbol": "TJX",
+          "reason": "nao bate o benchmark (+15.4% <= +16.8%)"
+        },
+        {
+          "symbol": "TMO",
+          "reason": "nao bate o benchmark (+5.7% <= +16.8%)"
+        },
+        {
+          "symbol": "TMUS",
+          "reason": "nao bate o benchmark (-26.1% <= +16.8%)"
+        },
+        {
+          "symbol": "TSLA",
+          "reason": "nao bate o benchmark (+13.6% <= +16.8%)"
+        },
+        {
+          "symbol": "UBER",
+          "reason": "nao bate o benchmark (-26.2% <= +16.8%)"
+        },
+        {
+          "symbol": "V",
+          "reason": "nao bate o benchmark (+3.2% <= +16.8%)"
+        },
+        {
+          "symbol": "WFC",
+          "reason": "nao bate o benchmark (+11.5% <= +16.8%)"
+        },
+        {
+          "symbol": "WMT",
+          "reason": "nao bate o benchmark (+7.9% <= +16.8%)"
         }
       ],
       "stops": [],
