@@ -1,4 +1,5 @@
 import json
+import statistics
 import tempfile
 import unittest
 from pathlib import Path
@@ -58,6 +59,40 @@ class TestDeltaPaperReport(unittest.TestCase):
             self.assertEqual(first, second)
             after = {p.name: p.read_bytes() for p in runtime.iterdir() if p.name != 'REPORT.html'}
             self.assertEqual(ledger, after)
+
+    def test_risk_metrics_are_undefined_rather_than_misleading(self):
+        for series in ([], [0.01], [0.01, 0.01, 0.01]):
+            m = rep.risk_metrics(series)
+            self.assertIsNone(m['sharpe_rf0'], series)
+            self.assertIsNone(m['sharpe_rf_frozen'], series)
+            self.assertIsNone(m['annualized_volatility'], series)
+            self.assertFalse(m['evidence_gate_admissible'])
+
+    def test_risk_metrics_match_frozen_annualization(self):
+        series = [0.01, -0.005, 0.02, -0.01]
+        m = rep.risk_metrics(series)
+        mean = statistics.fmean(series)
+        dev = statistics.stdev(series)
+        scale = rep.ANNUALIZATION_DAYS ** 0.5
+        self.assertAlmostEqual(m['sharpe_rf0'], mean / dev * scale, 12)
+        self.assertAlmostEqual(
+            m['sharpe_rf_frozen'],
+            (mean - rep.RISK_FREE_ANNUAL / rep.ANNUALIZATION_DAYS) / dev * scale, 12)
+        self.assertAlmostEqual(m['annualized_volatility'], dev * scale, 12)
+        self.assertLess(m['sharpe_rf_frozen'], m['sharpe_rf0'])
+        self.assertEqual(m['observations'], 4)
+
+    def test_report_shows_sharpe_with_insufficient_sample_caveat(self):
+        with tempfile.TemporaryDirectory() as td:
+            runtime = build_ledger(Path(td), (
+                ('2026-08-13', 0.0), ('2026-08-14', 0.01), ('2026-08-15', -0.02), ('2026-08-16', 0.015),
+            ))
+            page = rep.render(runtime).read_text(encoding='utf-8')
+            self.assertIn('Metricas de risco desde a ancora', page)
+            self.assertIn('Sharpe rf=0', page)
+            self.assertIn('Sharpe rf=4.5%', page)
+            self.assertIn('DESCRITIVOS', page)
+            self.assertIn(str(rep.EVIDENCE_GATE_MIN_OBSERVATIONS), page)
 
     def test_unsafe_ledger_status_is_refused(self):
         with tempfile.TemporaryDirectory() as td:
