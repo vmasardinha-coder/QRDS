@@ -26,7 +26,7 @@ Mandatory columns: collection/trail; lantern; effective data date/cutoff; canoni
 Local Coordinator; D50 local; Data Readiness; Daily Research main; automatic fallback; LOCK/JST input; Daily handoff; runtime pointer; dependent publishers; Reporting Current State; four-report PDF delivery.
 
 ### Group B - Measurements and economics
-D50 economic/qualification; D50 Control; D50 Cost Aware; D50 Exit 2Sigma; V2A; Delta V11; Delta Paper; Delta V12; LOCK25/50; Gateway Universe/Dynamics; Bull Replay; QOS/QMASTER; MacroQuant manual feed.
+D50 economic/qualification; D50 Control; D50 Cost Aware; D50 Exit 2Sigma; V2A; Delta V11; Delta Paper; Delta V12; LOCK25/50; Gateway Universe/Dynamics; Bull Replay; QOS/QMASTER; MacroQuant manual feed; Momentum M1/M2 shadow regime studies.
 
 ### Group C - Prospective trails and auxiliary sources
 CMC Top-150; B3 H1; Bybit Spot archive; Bybit Derivatives archive; Binance USD-M archive; Bybit V5 live; V2A recovery probes; RWA sidecar; V16 funding/shortability; V16B and registered challengers; PRL50; ALT Trail; QOS Three-Track; Gate BTC 2.0.
@@ -72,7 +72,58 @@ Current observed real-proxy checkpoints registered for reporting context:
 - 2026-08-14: BRL 179500;
 - 2026-08-21: BRL 197000.
 
+Current aligned-cycle interpretation frozen on 2026-08-21:
+- QOS Ultra was the best observed cycle performer among the V2A comparators primarily because it preserved more capital during the stress leg, not because it had the strongest rebound.
+- Proxy Real Atual stress drawdown from BRL 231000 to approximately BRL 171000 is about -25.97%.
+- Proxy Real Atual rebound from approximately BRL 171000 to BRL 197000 is about +15.20%.
+- Proxy Real Atual current total return from 2025-12-10 to 2026-08-21 is about -14.72%.
+- The Master must show the BRL path, not only end-period returns, so the source of outperformance (defense versus rebound) remains visible.
+
 These real values are manual observed evidence, not reconstructed model data. Future updates append new observed checkpoints and do not rewrite prior checkpoints without explicit correction evidence.
+
+### Universe B - Delta / Long-Short comparison
+The Master must maintain a distinct comparison universe for Delta/long-short engines. Do not mix this ranking with Universe A cyclical/proxy rankings.
+
+Core comparison set when same-window evidence exists: Delta 50/50; Delta 70/30; StopVol variants; D50 Control; D50 Cost Aware; D50 Exit 2Sigma; external commercial Delta checkpoints; MacroQuant challenger when current; Delta V12 when its independent evidence becomes valid.
+
+Mandatory metrics when available: return; BRL 180000 equivalent; realized volatility; Sharpe/Sortino/Calmar; MaxDD; turnover; costs/funding; beta BTC; trade count; peak giveback; regime; evidence/provenance status.
+
+External Delta handling:
+- screenshots are checkpoint evidence, not a continuous audited film;
+- never interpolate between screenshots as measured data;
+- compute checkpoint-to-checkpoint compounded changes when both cumulative-return points are available;
+- visually estimated high-water marks must be labeled estimates;
+- use external Delta only as benchmark/audit, never as tuning target.
+
+Current short-window internal Delta reference frozen on 2026-08-21 for reporting continuity: Delta 70/30 Live approximately +6.17% and Delta 50/50 Live approximately +4.10% over the current short live window. These must remain labeled by their actual anchor/window and must not be spliced into older formal series.
+
+### Momentum regime studies - M1 and M2
+Master must include a separate regime-monitor block once prospective snapshots exist.
+
+M1 status: frozen shadow challenger; retrospective discovery 2026-08-16 to 2026-08-19 only; no future tuning. Core formula and contract live in the dedicated M1 preregistration PR/contract.
+
+M2 status: separate volatility-adjusted challenger created after the 2026-08-21 external Sharpe/relative-volatility clue; M1 remains unchanged. M2 must remain a separate hypothesis and may not retroactively replace M1.
+
+Mandatory regime diagnostics when available: M1/M2 score distribution; breadth; breadth change; median score; cross-sectional dispersion; negative distance-to-zero; same-cutoff Delta rank correlation when universe overlap permits.
+
+M1/M2 remain `ENGINE_FEED=false`, `PROMOTION_ELIGIBLE=false`, `ALLOCATION_WEIGHT=0` until a later explicit scientific decision.
+
+### 2026-08-21 measurement baseline
+The following study states are the baseline from which subsequent measurements should advance; do not reset them merely because reporting code changes:
+- Delta V11 formal: 98/120 observations.
+- Gateway: 16/80.
+- LOCK25/LOCK50: 5 valid closes/snapshots.
+- Bull Replay Live Shadow: 7 days through 2026-08-20.
+- Delta paper shadow: 7 days through 2026-08-20.
+- QOS Monthly: 0/3, calendar-gated.
+- PRL50: 0, calendar-gated.
+- ALT Trail: 0, calendar-gated.
+- D50 runtime: stale 14/30 with qualification 0/7; prior 18/30 economics remain prior reference only, not current reconciled evidence.
+- B3 H1: 4/20 valid canonical observations preserved.
+- V16B: 0 complete valid cycles; current candidate remains SIGNAL 2026-08-20 -> ENTRY 2026-08-21 -> COMPLETE EXIT 2026-08-28 only if every causal/provenance gate passes.
+- V16C: preregistered, 0 independent causal ledger observations.
+- V16D/V16E: blocked by protocol.
+- Momentum M1/M2: prospective measurement begins only after freeze; retrospective 16-19 Aug evidence remains discovery-only.
 
 ## 4 - PROFIT_PRESERVATION
 Dedicated preservation module. Scope: LOCK25/50 and registered preservation variants; PRL50; ALT Trail; giveback/equity preservation diagnostics. MacroQuant is outside this module except for an explicit independent-trail note when context requires it.
