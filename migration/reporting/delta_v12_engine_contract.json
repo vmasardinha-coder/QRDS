@@ -1,0 +1,121 @@
+{
+  "anchor": {
+    "anchor_date": null,
+    "anchor_rule": "The anchor is the first completed UTC close processed by a production run that executes AFTER the venue pins have been established from an environment where all four venues are reachable. It is recorded at that moment and never chosen later.",
+    "backdating_prohibited": true,
+    "historical_replay_status": "DIAGNOSTIC_ONLY. Any replay before the anchor inherits survivorship and current-liquidity conditioning from the universe snapshot and is not prospective evidence.",
+    "initial_nav": 1.0,
+    "not_before": "2026-08-21"
+  },
+  "annualization_days": 365,
+  "books": {
+    "books": [
+      "V12_LS_70_30",
+      "V12_LS_70_30_StopVol",
+      "V12_LS_50_50",
+      "V12_LS_50_50_StopVol"
+    ],
+    "gross_books": [
+      "70/30",
+      "50/50"
+    ],
+    "parallel_variants_required": true,
+    "retrospective_winner_selection_forbidden": true,
+    "stopvol_observation": "In the V11 paper monitor the StopVol books returned figures identical to their base books on every observed day, including a plus 5.58 percent day, so the vol cap has not bound once. The variants are kept here for comparability with V11, not because they are known to differ.",
+    "stopvol_variants": true
+  },
+  "costs": {
+    "fee_bps_per_side": 5.0,
+    "model": "LIQUIDITY_TIERED_NOT_FLAT",
+    "rationale": "The V11 premise of 3 bps slippage was set for a 20-name high-liquidity universe. Median 24h liquidity in the 76-100 band is about 8 percent of the 1-30 band, so a flat rate would understate cost for exactly the names this universe adds.",
+    "slippage_by_band": {
+      "1-30": 3.0,
+      "31-50": 5.5,
+      "51-75": 8.4,
+      "76-100": 10.5
+    },
+    "source": "delta_v12_universe_expansion_contract.json cost_model_by_liquidity_band"
+  },
+  "decision": "PREREGISTERED_PREMISES_ONLY_NO_IMPLEMENTATION_NO_RESULT",
+  "evidence": {
+    "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
+    "leaderboard_role": "DESCRIPTIVE_ONLY",
+    "max_drawdown": -0.15,
+    "min_observations": 60,
+    "min_product_sharpe": 0.5
+  },
+  "frozen_date": "2026-08-21",
+  "prices": {
+    "bar_calendar": "UTC_DAILY_COMPLETED_ONLY",
+    "pipeline": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
+    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
+    "venue_preference_order": [
+      "BINANCE_FUTURES",
+      "BYBIT_LINEAR",
+      "OKX_SWAP",
+      "HYPERLIQUID"
+    ]
+  },
+  "purpose": "Preregister the frozen premises of a parallel long/short engine over the Delta V12 TOP100 universe, before any implementation exists and before any TOP100 return has been observed. The frozen V11 engine and its running paper monitor are untouched by this contract.",
+  "relationship_to_v11": "Same selection and risk rules as DELTA_WALK_FORWARD_1.1. What changes is the universe (20 to TOP100), the selection size, the price pipeline (OKX-only to multi-venue) and the cost model (flat to liquidity-tiered). V11 is not modified, replaced or reinterpreted.",
+  "risk": {
+    "daily_kill_cooldown_days": 1,
+    "daily_loss_kill_switch": 0.03,
+    "reentry_cooldown_days": 2,
+    "regime_persistence_days": 3,
+    "stop_cap": 0.35,
+    "stop_floor": 0.06,
+    "stop_vol_multiplier": 2.5,
+    "stopvol_target_daily_vol": 0.04,
+    "take_profit_r_multiple": 2.0,
+    "trailing_cap": 0.25,
+    "trailing_floor": 0.04,
+    "trailing_vol_multiplier": 1.5,
+    "weekly_kill_cooldown_days": 3,
+    "weekly_loss_kill_switch": 0.07
+  },
+  "risk_free_annual": 0.045,
+  "safety": {
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "methodology_changes": 0,
+    "not_approved": true,
+    "official_replica_claim": false,
+    "orders": 0,
+    "promotion_eligible": false,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc.delta_v12_engine_contract.v1",
+  "selection": {
+    "bottom_n": 10,
+    "execution_timing": "next UTC daily open",
+    "minimum_signal_history": 30,
+    "persistence_days": 2,
+    "score": "0.20*z(ret7)+0.35*z(ret14)+0.35*z(ret30)-0.10*z(vol30)+0.05*z(liquidity)",
+    "selected_fraction_of_universe": 0.2,
+    "signal_lookbacks": [
+      7,
+      14,
+      30
+    ],
+    "signal_timing": "completed UTC daily close",
+    "top_n": 10
+  },
+  "selection_size_policy": "top_n and bottom_n are frozen at 10 and 10 on 2026-08-21. Any other selection size is a NEW preregistration carrying its own freeze date and its own clean-evidence start. A size must never be added or switched after observing the return of another size, and no size may be backdated to this freeze.",
+  "selection_size_rationale_recorded_before_any_return": "V11 selects 5 long and 5 short from 20 names, half the universe. Holding 5+5 on 100 names would trade only the 10 percent extremes; holding the 50 percent proportion would mean 25+25 and push the book across the whole liquidity tail. 10+10 doubles V11 diversification while keeping the book out of the thinnest band by default. No TOP100 return existed when this was chosen; the engine was not implemented.",
+  "status": "PREREGISTERED_NOT_YET_IMPLEMENTED",
+  "universe": {
+    "other_strata_available": [
+      30,
+      50,
+      75
+    ],
+    "other_strata_status": "NOT_TRADED_BY_THIS_CONTRACT_SEPARATE_PREREGISTRATION_REQUIRED",
+    "source": "delta_v12_universe_expansion_contract.json",
+    "stratum": "TOP100",
+    "stratum_frozen_date": "2026-08-21"
+  },
+  "version": "DELTA_V12_ENGINE_1.0"
+}

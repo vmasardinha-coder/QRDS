@@ -13,7 +13,7 @@ DEFAULT_BASE_URLS=(
 EXCHANGE_INFO_PATH='/fapi/v1/exchangeInfo'
 TICKER_24H_PATH='/fapi/v1/ticker/24hr'
 EXCLUDED={'USDT','USDC','FDUSD','TUSD','USDP','DAI','BUSD','EUR','BRL','TRY','JPY','GBP','AUD'}
-STRATA=(30,50,75)
+STRATA=(30,50,75,100)
 
 def fetch_url(url):
     req=urllib.request.Request(url, headers={'User-Agent':'QRDS-GATE-BTC-Research/1.0'})

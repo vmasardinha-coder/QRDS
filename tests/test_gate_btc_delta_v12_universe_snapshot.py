@@ -102,5 +102,42 @@ class DeltaV12UniverseSnapshotTests(unittest.TestCase):
         self.assertFalse(failure['synthetic_or_backfilled_data_used'])
 
 
+    def test_top100_stratum_is_emitted_and_frozen_separately(self):
+        self.assertIn(100, snapshot.STRATA)
+        with tempfile.TemporaryDirectory() as td:
+            artifact = Path(td) / 'daily.zip'
+            out = Path(td) / 'out'
+            self.make_daily_artifact(artifact)
+            env = {'DELTA_V12_UNIVERSE_OUT': str(out), 'DELTA_V12_DAILY_ARTIFACT': str(artifact)}
+            with mock.patch.dict(snapshot.os.environ, env, clear=False), \
+                    mock.patch.object(snapshot, 'fetch_url', side_effect=AssertionError('network must not be used')):
+                self.assertEqual(snapshot.main(), 0)
+            manifest = json.loads((out / 'UNIVERSE_MANIFEST.json').read_text(encoding='utf-8'))
+            self.assertEqual(manifest['liquidity_strata'], [30, 50, 75, 100])
+            for stratum in (30, 50, 75, 100):
+                self.assertTrue((out / f'UNIVERSE_TOP{stratum}.csv').is_file(), stratum)
+
+    def test_contract_records_tiered_costs_without_backdating_the_new_stratum(self):
+        contract = json.loads(
+            Path('migration/reporting/delta_v12_universe_expansion_contract.json').read_text(encoding='utf-8-sig'))
+        self.assertEqual(contract['liquidity_strata'], [30, 50, 75, 100])
+
+        amendment = next(a for a in contract['amendments'] if a['stratum_added'] == 100)
+        # The new stratum must never inherit the original freeze date of the first three.
+        self.assertNotEqual(amendment['stratum_frozen_date'], contract['frozen_date'])
+        self.assertGreater(amendment['stratum_frozen_date'], contract['frozen_date'])
+
+        cost = contract['cost_model_by_liquidity_band']
+        slippage = [band['slippage_bps_per_side'] for band in cost['bands']]
+        capacity = [band['capacity_aum_usd_at_1pct_adv_10pct_weight'] for band in cost['bands']]
+        # Thinner bands must cost more and carry less capacity, never the reverse.
+        self.assertEqual(slippage, sorted(slippage))
+        self.assertEqual(capacity, sorted(capacity, reverse=True))
+        self.assertEqual(slippage[0], 3.0)
+        self.assertGreater(slippage[-1], 3.0)
+        self.assertFalse(contract['promotion_eligible'])
+        self.assertFalse(contract['engine_feed'])
+
+
 if __name__=='__main__':
     unittest.main()

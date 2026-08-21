@@ -1,35 +1,125 @@
 {
-  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.0",
-  "frozen_date": "2026-08-14",
-  "purpose": "Prospective reconstruction of a broad liquid and shortable multi-venue universe from the exact immutable successful Daily Research artifact, without copying external Delta holdings.",
-  "research_only": true,
-  "shadow_only": true,
-  "not_approved": true,
-  "engine_feed": false,
-  "orders": 0,
-  "real_capital": 0,
-  "source": {
-    "type": "IMMUTABLE_GATE_BTC_DAILY_RESEARCH_ARTIFACT",
-    "workflow": "GATE BTC Daily Research Collection",
-    "required_path": "gateway_daily/linux_public_capture_outputs.zip",
-    "scanner_path": "outputs/scanner_top500_raw.csv",
-    "status_path": "outputs/scanner_snapshot_status.json",
-    "critical_failed_checks_must_be_empty": true
+  "amendments": [
+    {
+      "amended_on": "2026-08-21",
+      "amendment": "ADD_TOP100_STRATUM_AND_TIERED_COST_MODEL",
+      "backdating_prohibited": "The TOP100 stratum carries its own freeze date. It must never be presented as frozen on 2026-08-14 with the original three strata, and no TOP100 result before 2026-08-21 is admissible as prospective evidence.",
+      "measurement_source": {
+        "archive": "runtime/universe_snapshots/gateway/archives",
+        "eligible_count_observed": 421,
+        "latest_snapshot_run_id": "32438055428",
+        "snapshots_used": 15,
+        "window": "2026-08-07..2026-08-21"
+      },
+      "selection_rationale_recorded_before_any_return": "Availability and stability were measured on the archived point-in-time Gateway scanner before any TOP100 return existed: 421 eligible shortable names, all 100 top-ranked names present in all 15 archived snapshots, and composition turnover of 7.5 percent per day for TOP100 against 22.5 percent per day for a 20-name set. No return series informed this choice.",
+      "stratum_added": 100,
+      "stratum_clean_evidence_start": "2026-08-21T00:00:00Z",
+      "stratum_frozen_date": "2026-08-21"
+    },
+    {
+      "amended_on": "2026-08-21",
+      "amendment": "MULTI_VENUE_DAILY_PRICE_PIPELINE_WITH_VENUE_PINNING",
+      "bar_admission": "Only completed UTC daily bars are admitted. OKX confirm=0 bars and any bar dated on the run date are rejected, and a bar whose open is not exactly UTC midnight fails closed.",
+      "first_pinning_run_requirement": "The first production run must execute where all four venues are reachable. A run from a restricted network silently pins every asset to whichever venues answered, and pins are sticky by design, so a degraded first run would persist a degraded assignment.",
+      "measurement_source": {
+        "multi_venue_coverage": "100/100",
+        "names_requiring_non_okx_venue": [
+          "PAXG",
+          "XMR",
+          "FET",
+          "MNT",
+          "ACE",
+          "CAKE"
+        ],
+        "okx_only_coverage": "94/100",
+        "universe": "UNIVERSE_TOP100 from snapshot 2026-08-21-run-32438055428"
+      },
+      "problem": "The V12 universe is multi-venue but the frozen V11 price pipeline reads OKX swaps only. Measured on the 2026-08-21 TOP100: 94 of 100 names have an OKX perpetual, and 6 (PAXG, XMR, FET, MNT, ACE, CAKE) do not, despite passing the shortable and liquid filter on another venue. An OKX-only engine would drop those 6 silently, making venue listing decisions act as an unregistered selection rule.",
+      "resolution": "Price each base asset through the frozen venue preference order BINANCE_FUTURES, BYBIT_LINEAR, OKX_SWAP, HYPERLIQUID. Measured coverage with this order is 100 of 100 priced and 100 of 100 meeting the 30-day minimum history.",
+      "unpriced_policy": "FAIL_VISIBLE_NEVER_SILENT_DROP",
+      "venue_pinning_rule": "A venue is PINNED to an asset at first admission and recorded with its pin date. Later runs must reuse the pinned venue even when a higher-preference venue becomes reachable. A change is permitted only when the pinned venue stops serving the instrument, and it is written as an explicit venue_changes event naming from, to and date. Without pinning, reachability alone could reprice an asset from a different venue day to day and inject level shifts that would read as returns."
+    }
+  ],
+  "clean_evidence_start": "2026-08-14T00:00:00Z",
+  "cost_model_by_liquidity_band": {
+    "bands": [
+      {
+        "band": "1-30",
+        "capacity_aum_usd_at_1pct_adv_10pct_weight": 22640621,
+        "liquidity_ratio_vs_band_1_30": 1.0,
+        "median_adv_usd": 496038735,
+        "min_adv_usd": 226406212,
+        "slippage_bps_per_side": 3.0
+      },
+      {
+        "band": "31-50",
+        "capacity_aum_usd_at_1pct_adv_10pct_weight": 11107951,
+        "liquidity_ratio_vs_band_1_30": 0.2989,
+        "median_adv_usd": 148245000,
+        "min_adv_usd": 111079514,
+        "slippage_bps_per_side": 5.5
+      },
+      {
+        "band": "51-75",
+        "capacity_aum_usd_at_1pct_adv_10pct_weight": 5546818,
+        "liquidity_ratio_vs_band_1_30": 0.1269,
+        "median_adv_usd": 62966690,
+        "min_adv_usd": 55468184,
+        "slippage_bps_per_side": 8.4
+      },
+      {
+        "band": "76-100",
+        "capacity_aum_usd_at_1pct_adv_10pct_weight": 3061825,
+        "liquidity_ratio_vs_band_1_30": 0.0818,
+        "median_adv_usd": 40591865,
+        "min_adv_usd": 30618251,
+        "slippage_bps_per_side": 10.5
+      }
+    ],
+    "capacity_convention": "position capped at 1 percent of the name 24h volume at 10 percent book weight",
+    "capacity_warning": "TOP100 divides usable capacity by roughly seven against TOP30. A TOP100 result is only meaningful for a book at or below the capacity ceiling of its worst band.",
+    "fee_bps_per_side": 5.0,
+    "reason": "The frozen V11 premise of 3 bps slippage per side was set for a 20-name high-liquidity universe. Median 24h liquidity in the 76-100 band is about 8 percent of the 1-30 band, so carrying 3 bps unchanged into the tail would understate cost. Slippage is therefore scaled per band instead of held constant.",
+    "recalibration_policy": "These bands are frozen for the prospective window. They may be replaced only by measured fills from an independent execution study, never by tuning against observed strategy return.",
+    "reference_snapshot": "2026-08-21-run-32438055428",
+    "rule_status": "HEURISTIC_CHOSEN_BEFORE_ANY_RESULT_NOT_CALIBRATED_TO_FILLS",
+    "scaling_rule": "slippage_bps = 3.0 * sqrt(median_adv_band_1_30 / median_adv_band)",
+    "status": "PREREGISTERED_ASSUMPTION_NOT_A_MEASURED_FILL"
   },
+  "decision": "PROSPECTIVE_UNIVERSE_COLLECTION_ONLY",
   "eligibility": {
-    "status": "short_available=true",
     "contract_type": "MULTI_VENUE_SHORTABLE",
     "quote_asset": "USDT_OR_VENUE_EQUIVALENT",
     "require_positive_liquidity_proxy": true,
-    "stable_or_fiat_base_exclusions": ["USDT", "USDC", "FDUSD", "TUSD", "USDP", "DAI", "BUSD", "EUR", "BRL", "TRY", "JPY", "GBP", "AUD"]
+    "stable_or_fiat_base_exclusions": [
+      "USDT",
+      "USDC",
+      "FDUSD",
+      "TUSD",
+      "USDP",
+      "DAI",
+      "BUSD",
+      "EUR",
+      "BRL",
+      "TRY",
+      "JPY",
+      "GBP",
+      "AUD"
+    ],
+    "status": "short_available=true"
   },
-  "liquidity_strata": [30, 50, 75],
-  "ranking": "descending maximum observed 24h liquidity across eligible Gateway venues; documented spot or CoinGecko volume proxy only where derivative venue volume is unavailable",
-  "selection_policy": "Freeze all three strata prospectively. Do not select a stratum from external Delta return or visible portfolio overlap.",
-  "symbol_policy": "Preserve base asset exactly and prefer an available raw derivative symbol in the order Binance Futures, Bybit linear, OKX swap, Hyperliquid perp. Aliases are never used to force external overlap.",
+  "engine_feed": false,
   "external_evidence_policy": "External Delta holdings are audit-only and must never determine eligibility, liquidity rank, inclusion or exclusion.",
+  "frozen_date": "2026-08-14",
   "historical_replay_policy": "Any replay using a universe selected from this 2026-08-14 snapshot before the freeze date is DIAGNOSTIC_ONLY because of survivorship and current-liquidity conditioning.",
-  "clean_evidence_start": "2026-08-14T00:00:00Z",
+  "liquidity_strata": [
+    30,
+    50,
+    75,
+    100
+  ],
+  "not_approved": true,
+  "orders": 0,
   "outputs": [
     "RAW_GATEWAY_SCANNER_TOP500.csv",
     "RAW_GATEWAY_STATUS.json",
@@ -37,8 +127,37 @@
     "UNIVERSE_TOP30.csv",
     "UNIVERSE_TOP50.csv",
     "UNIVERSE_TOP75.csv",
+    "UNIVERSE_TOP100.csv",
     "UNIVERSE_MANIFEST.json"
   ],
+  "price_pipeline": {
+    "bar_calendar": "UTC_DAILY_COMPLETED_ONLY",
+    "credentials_used": false,
+    "engine_feed": false,
+    "tool": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
+    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
+    "venue_preference_order": [
+      "BINANCE_FUTURES",
+      "BYBIT_LINEAR",
+      "OKX_SWAP",
+      "HYPERLIQUID"
+    ]
+  },
   "promotion_eligible": false,
-  "decision": "PROSPECTIVE_UNIVERSE_COLLECTION_ONLY"
+  "purpose": "Prospective reconstruction of a broad liquid and shortable multi-venue universe from the exact immutable successful Daily Research artifact, without copying external Delta holdings.",
+  "ranking": "descending maximum observed 24h liquidity across eligible Gateway venues; documented spot or CoinGecko volume proxy only where derivative venue volume is unavailable",
+  "real_capital": 0,
+  "research_only": true,
+  "selection_policy": "Freeze all four strata prospectively. Do not select a stratum from external Delta return, visible portfolio overlap, or observed strategy performance of any stratum.",
+  "shadow_only": true,
+  "source": {
+    "critical_failed_checks_must_be_empty": true,
+    "required_path": "gateway_daily/linux_public_capture_outputs.zip",
+    "scanner_path": "outputs/scanner_top500_raw.csv",
+    "status_path": "outputs/scanner_snapshot_status.json",
+    "type": "IMMUTABLE_GATE_BTC_DAILY_RESEARCH_ARTIFACT",
+    "workflow": "GATE BTC Daily Research Collection"
+  },
+  "symbol_policy": "Preserve base asset exactly and prefer an available raw derivative symbol in the order Binance Futures, Bybit linear, OKX swap, Hyperliquid perp. Aliases are never used to force external overlap.",
+  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.2"
 }

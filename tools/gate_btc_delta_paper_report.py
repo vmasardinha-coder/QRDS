@@ -11,10 +11,20 @@ import argparse
 import csv
 import html
 import json
+import statistics
 from pathlib import Path
 from typing import Any
 
 SCHEMA = "gate_btc.delta_paper_report.v1"
+
+# Frozen conventions mirrored from config_delta_v11.json so the report annualizes
+# exactly like the engine it observes. Changing them here would silently restate
+# published numbers, so they are constants, not options.
+ANNUALIZATION_DAYS = 365
+RISK_FREE_ANNUAL = 0.045
+# The frozen evidence gate needs this many observations before any Sharpe read is
+# admissible as evidence. Below it the figures are descriptive only.
+EVIDENCE_GATE_MIN_OBSERVATIONS = 60
 
 # Categorical slots 1-4 of the validated reference palette, light and dark steps.
 # Order is fixed and bound to the strategy, never to rank: a book keeps its hue
@@ -80,6 +90,40 @@ def assert_safe(status: dict[str, Any]) -> None:
     for key, want in expected.items():
         if key in status and status[key] != want:
             raise ReportError(f"unsafe ledger status: {key}={status[key]!r}")
+
+
+def risk_metrics(net_returns: list[float]) -> dict[str, Any]:
+    """Descriptive risk statistics over the prospective window.
+
+    Sharpe is reported two ways: rf=0, which is what the engine publishes as its
+    product-compatible figure, and rf=4.5% annual, the frozen risk-free premise.
+    Both are undefined for fewer than two observations or a degenerate series, and
+    are returned as None rather than a misleading zero.
+    """
+    count = len(net_returns)
+    compounded = 1.0
+    for value in net_returns:
+        compounded *= 1 + value
+    metrics: dict[str, Any] = {
+        "observations": count,
+        "total_return": compounded - 1,
+        "annualized_volatility": None,
+        "sharpe_rf0": None,
+        "sharpe_rf_frozen": None,
+        "evidence_gate_admissible": count >= EVIDENCE_GATE_MIN_OBSERVATIONS,
+    }
+    if count < 2:
+        return metrics
+    deviation = statistics.stdev(net_returns)
+    if deviation <= 0:
+        return metrics
+    mean = statistics.fmean(net_returns)
+    scale = ANNUALIZATION_DAYS ** 0.5
+    daily_risk_free = RISK_FREE_ANNUAL / ANNUALIZATION_DAYS
+    metrics["annualized_volatility"] = deviation * scale
+    metrics["sharpe_rf0"] = mean / deviation * scale
+    metrics["sharpe_rf_frozen"] = (mean - daily_risk_free) / deviation * scale
+    return metrics
 
 
 def contract_order(nav_rows: list[dict[str, str]], summary: dict[str, Any]) -> list[str]:
@@ -293,14 +337,19 @@ def empty_panel(title: str, message: str) -> str:
     )
 
 
-def table(caption: str, headers: list[str], rows: list[list[str]], empty_message: str) -> str:
+def table_body(headers: list[str], rows: list[list[str]], empty_message: str) -> str:
     if not rows:
-        return f"<section class='panel'><h2 class='panel-title'>{esc(caption)}</h2><p class='empty'>{esc(empty_message)}</p></section>"
+        return f"<p class='empty'>{esc(empty_message)}</p>"
     head = "".join(f"<th scope='col'>{esc(header)}</th>" for header in headers)
     body = "".join("<tr>" + "".join(f"<td>{esc(cell)}</td>" for cell in row) + "</tr>" for row in rows)
+    return f"<div class='table-scroll'><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>"
+
+
+def table(caption: str, headers: list[str], rows: list[list[str]], empty_message: str) -> str:
     return (
         f"<section class='panel'><h2 class='panel-title'>{esc(caption)}</h2>"
-        f"<div class='table-scroll'><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div></section>"
+        + table_body(headers, rows, empty_message)
+        + "</section>"
     )
 
 
@@ -388,6 +437,7 @@ th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--grid)}
 th{color:var(--muted);font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 td{font-variant-numeric:tabular-nums;white-space:normal}
 .empty{color:var(--muted);font-size:.84rem;margin:0}
+.caveat{color:var(--ink-2);font-size:.78rem;margin:0 0 12px;padding-left:10px;border-left:3px solid var(--warn)}
 footer.foot{color:var(--muted);font-size:.75rem;border-top:1px solid var(--grid);padding-top:16px;margin-top:8px}
 footer.foot code{word-break:break-all}
 """
@@ -468,6 +518,41 @@ def build_html(runtime: Path) -> str:
         decomposition,
         "Sem linhas economicas aceitas ainda.",
     ))
+
+    risk_rows = []
+    admissible = False
+    observations = 0
+    for name in strategies:
+        metrics = risk_metrics([point["net_return"] for point in series.get(name, [])])
+        observations = max(observations, metrics["observations"])
+        admissible = admissible or metrics["evidence_gate_admissible"]
+        fmt = lambda value, places=2: "—" if value is None else f"{value:.{places}f}"
+        risk_rows.append([
+            name,
+            str(metrics["observations"]),
+            fmt_pct(metrics["total_return"]),
+            "—" if metrics["annualized_volatility"] is None else f"{metrics['annualized_volatility']:.2%}",
+            fmt(metrics["sharpe_rf0"]),
+            fmt(metrics["sharpe_rf_frozen"]),
+        ])
+    caveat = (
+        f"Amostra prospectiva de {observations} observacao(oes); o portao de evidencia congelado exige "
+        f"{EVIDENCE_GATE_MIN_OBSERVATIONS}. "
+        + ("Amostra suficiente para leitura formal do portao." if admissible else
+           "Numeros abaixo sao DESCRITIVOS e nao suportam inferencia, ranking ou promocao.")
+        + f" Anualizacao {ANNUALIZATION_DAYS} dias; Sharpe rf=0 e a convencao publicada pelo motor, "
+        f"rf={RISK_FREE_ANNUAL:.1%} e a premissa congelada."
+    )
+    body.append(
+        f"<section class='panel'><h2 class='panel-title'>Metricas de risco desde a ancora</h2>"
+        f"<p class='caveat'>{esc(caveat)}</p>"
+        + table_body(
+            ["Carteira", "Obs.", "Retorno acumulado", "Vol. anualizada", "Sharpe rf=0", f"Sharpe rf={RISK_FREE_ANNUAL:.1%}"],
+            risk_rows,
+            "Sem observacoes prospectivas ainda.",
+        )
+        + "</section>"
+    )
 
     today_positions = [row for row in positions if row.get("paper_monitor_date") == as_of]
     body.append(table(
