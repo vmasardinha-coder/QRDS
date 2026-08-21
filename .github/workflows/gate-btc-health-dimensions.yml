@@ -1,0 +1,77 @@
+name: GATE BTC Health Dimensions
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC Reporting Current State"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-health-dimensions
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  publish-health-dimensions:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Derive health dimensions without relaxing delivery gates
+        run: >-
+          python main_repo/tools/gate_btc_health_dimensions.py
+          --reporting-state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          --output runtime_repo/runtime/GATE_BTC_HEALTH_DIMENSIONS.json
+      - name: Enforce reporting-only safety
+        run: |
+          python - <<'PY'
+          import json
+          s=json.load(open('runtime_repo/runtime/GATE_BTC_HEALTH_DIMENSIONS.json',encoding='utf-8'))
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['operational_authorization'] == 'NOT_APPROVED'
+          assert s['orders_generated'] == 0
+          assert s['real_capital_used'] == 0
+          print('HEALTH_DIMENSIONS_SAFETY=PASS')
+          PY
+      - name: Publish reporting sidecar
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-reporting-bot
+          git config user.email gate-btc-reporting-bot@users.noreply.github.com
+          git add runtime/GATE_BTC_HEALTH_DIMENSIONS.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish explicit health dimensions"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
