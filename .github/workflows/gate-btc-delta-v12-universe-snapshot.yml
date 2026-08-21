@@ -10,7 +10,9 @@ on:
       - 'tools/gate_btc_delta_v12_multi_venue_daily_prices.py'
       - 'tests/test_gate_btc_delta_v12_universe_snapshot.py'
       - 'tests/test_gate_btc_delta_v12_multi_venue_daily_prices.py'
+      - 'tests/test_gate_btc_delta_v12_engine_contract.py'
       - 'migration/reporting/delta_v12_universe_expansion_contract.json'
+      - 'migration/reporting/delta_v12_engine_contract.json'
   schedule:
     - cron: '35 1 * * *'
 
@@ -35,6 +37,8 @@ jobs:
         run: python -m unittest -v tests.test_gate_btc_delta_v12_universe_snapshot
       - name: Test multi-venue daily price adapter
         run: python -m unittest -v tests.test_gate_btc_delta_v12_multi_venue_daily_prices
+      - name: Test preregistered V12 engine premises
+        run: python -m unittest -v tests.test_gate_btc_delta_v12_engine_contract
       - name: Compile V12 tools
         run: >-
           python -m py_compile
