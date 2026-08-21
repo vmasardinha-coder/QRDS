@@ -1,0 +1,51 @@
+{
+  "schema": "gate-btc-momentum-m2-voladj-shadow-contract-v1",
+  "status": "FROZEN_SHADOW_CHALLENGER",
+  "freeze_date": "2026-08-21",
+  "discovery_source": "external whiteboard evidence observed 2026-08-21 suggesting Sharpe-like return/volatility scoring versus BTC",
+  "retrospective_policy": {
+    "pre_freeze_use": "DIAGNOSTIC_ONLY",
+    "future_parameter_tuning_allowed": false
+  },
+  "formula": {
+    "R14_i": "P_i_t/P_i_t_minus_14-1",
+    "R30_i": "P_i_t/P_i_t_minus_30-1",
+    "VOL14_i": "stddev_of_daily_returns_over_14_completed_utc_daily_bars",
+    "VOL30_i": "stddev_of_daily_returns_over_30_completed_utc_daily_bars",
+    "SR14_i": "R14_i/VOL14_i",
+    "SR30_i": "R30_i/VOL30_i",
+    "SR14_BTC": "R14_BTC/VOL14_BTC",
+    "SR30_BTC": "R30_BTC/VOL30_BTC",
+    "REL14_i": "SR14_i-SR14_BTC",
+    "REL30_i": "SR30_i-SR30_BTC",
+    "REL_IMPULSE_i": "REL14_i-REL30_i",
+    "M2": "0.65*REL30_i+0.25*REL14_i+0.10*REL_IMPULSE_i",
+    "display_score": "clip(M2,-0.8,+0.8)",
+    "display_clip_affects_ranking": false,
+    "risk_free_rate": 0,
+    "annualization": "NONE_FOR_SCORE; same-frequency ratio only"
+  },
+  "interpretation": {
+    "M2_gt_zero": "asset has stronger blended risk-adjusted momentum than BTC under the frozen proxy",
+    "M2_lt_zero": "asset has weaker blended risk-adjusted momentum than BTC under the frozen proxy",
+    "zero_has_btc_relative_meaning": true
+  },
+  "comparison_policy": {
+    "M1": "independent parallel challenger; M1 remains unchanged",
+    "empiricus": "external audit only; never target-fit M2 to external scores",
+    "delta": "diagnostic comparison only; never engine feed or tuning target",
+    "macro_quant": "independent replica encouraged"
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "promotion_eligible": false,
+    "allocation_weight": 0,
+    "orders": 0,
+    "real_capital": 0,
+    "automatic_tuning": false,
+    "merge_automatic": false
+  }
+}

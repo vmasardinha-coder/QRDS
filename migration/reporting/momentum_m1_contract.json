@@ -1,0 +1,63 @@
+{
+  "schema": "gate-btc-momentum-m1-shadow-contract-v1",
+  "status": "FROZEN_SHADOW_CHALLENGER",
+  "freeze_date": "2026-08-21",
+  "retrospective_discovery_window": {
+    "start": "2026-08-16",
+    "end": "2026-08-19",
+    "classification": "RETROSPECTIVE_DISCOVERY_ONLY"
+  },
+  "prospective_policy": {
+    "start": "AFTER_FREEZE_2026-08-21",
+    "first_eligible_input_cutoff": "2026-08-20_CLOSE",
+    "classification": "PROSPECTIVE_SHADOW",
+    "future_parameter_tuning_allowed": false,
+    "external_empiricus_snapshot_may_tune": false,
+    "delta_rank_may_tune": false,
+    "future_returns_may_tune": false
+  },
+  "formula": {
+    "R14": "P_t/P_t_minus_14-1",
+    "R30": "P_t/P_t_minus_30-1",
+    "Impulse": "R14-R30",
+    "zscore": "cross_sectional_population_zscore_per_cutoff",
+    "M0A": "Z(R30)",
+    "M0B": "0.70*Z(R30)+0.30*Z(R14)",
+    "M1": "0.65*Z(R30)+0.25*Z(R14)+0.10*Z(Impulse)",
+    "display_score": "clip(M1,-0.8,+0.8)",
+    "display_clip_affects_ranking": false
+  },
+  "regime_metrics": [
+    "breadth_pct_m1_gt_zero",
+    "delta_breadth_pct_points",
+    "median_m1",
+    "cross_sectional_dispersion_m1",
+    "negative_median_distance_to_zero"
+  ],
+  "comparison_policy": {
+    "empiricus": "EXTERNAL_CONTEMPORANEOUS_REGIME_EVIDENCE_ONLY",
+    "empiricus_use": "rank_and_scale_diagnostic_only_no_tuning",
+    "delta": "compare_only_when_same_cutoff_and_common-universe rank evidence exists",
+    "delta_metric": "spearman_rank_correlation",
+    "macro_quant": "independent_replica_expected_same_formula_no_shared_tuning"
+  },
+  "reporting": {
+    "collection": "clock_provenance_status_only",
+    "master": "full_scores_ranks_breadth_median_dispersion_negative_distance_and_comparisons",
+    "executive": "material_regime_change_only",
+    "profit_preservation": "EXCLUDED",
+    "allocation_engine": "EXCLUDED"
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "promotion_eligible": false,
+    "allocation_weight": 0,
+    "orders": 0,
+    "real_capital": 0,
+    "automatic_tuning": false,
+    "merge_automatic": false
+  }
+}
