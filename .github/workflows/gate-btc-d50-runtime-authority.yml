@@ -1,0 +1,90 @@
+name: GATE BTC D50 Runtime Authority
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC Reporting Current State"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-d50-runtime-authority
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  publish-canonical-d50:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main authority code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+
+      - name: Check out runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build fail-closed canonical D50 mirror
+        run: >-
+          python main_repo/tools/gate_btc_d50_runtime_authority.py
+          --measurement runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
+          --current runtime_repo/runtime/ledgers/d50/STATUS.json
+          --output runtime_repo/runtime/ledgers/d50/STATUS.json
+
+      - name: Validate immutable safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/ledgers/d50/STATUS.json'
+          s=json.load(open(p,encoding='utf-8'))
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['promotion_allowed'] is False
+          assert s['orders_generated'] == 0
+          assert s['real_capital_used'] == 0
+          assert s['prospective_immutable_ledger']['historical_backfill_counts_as_prospective'] is False
+          assert s['mirror_alignment']['economic_rows_imported'] == 0
+          assert s['mirror_alignment']['economic_rows_mutated'] == 0
+          print('D50_CANONICAL_RUNTIME_SAFETY=PASS')
+          PY
+
+      - name: Publish D50 status atomically to runtime branch
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/ledgers/d50/STATUS.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish canonical D50 runtime authority"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
