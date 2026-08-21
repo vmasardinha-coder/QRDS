@@ -47,6 +47,33 @@ Short daily decision cockpit. Mandatory: Collection Health trust headline; data 
 ## 3 - MASTER_ANALYTIC
 Technical/auditable research book. Mandatory: provenance/cutoff; methodology/version; QA/warnings; complete engine tables; costs/drawdowns/evidence stage; canonical counters/clocks; comparison limitations; historical vs prospective distinction; MacroQuant independent manual/external trail; research verdict and next scientific decision.
 
+### Universe A - Proxy Real Atual vs V2A aligned cycle
+The Master must maintain one explicit aligned-cycle block for the current real proxy portfolio and V2A comparators.
+
+Frozen anchor for the current real proxy: 2025-12-10, initial observed value BRL 231000. Do not inherit the synthetic proxy's 2020 history into the real proxy.
+
+Mandatory distinction:
+- `PROXY_REAL_ATUAL`: user-observed real portfolio checkpoints only.
+- `VICTOR_PROXY_SINTETICO`: model/simulated V2A comparator; never relabel as real.
+
+Mandatory comparison set when same-cutoff V2A data are available: QOS Ultra; QOS Agressiva Controlada; QOS Moderada; QOS Conservadora; Victor Proxy Sintetico; BTC; BTC/ETH 70/30.
+
+Mandatory presentation in the Master:
+1. table in BRL, all V2A series normalized to BRL 231000 at 2025-12-10;
+2. line chart using the same BRL scale;
+3. at minimum the checkpoints `START_2025-12-10`, `STRESS_JUN_2026`, `PRE_TURN_2026-08-14`, and `CURRENT` when supported;
+4. real-proxy checkpoints must never be interpolated or backfilled; if the real checkpoint is approximate, label it approximate;
+5. V2A checkpoints must come from the daily V2A series at the applicable date/cutoff;
+6. report separately total-cycle performance and rebound-from-stress performance so that defense and recovery are not conflated.
+
+Current observed real-proxy checkpoints registered for reporting context:
+- 2025-12-10: BRL 231000;
+- stress low around Jun-2026: approximately BRL 171000;
+- 2026-08-14: BRL 179500;
+- 2026-08-21: BRL 197000.
+
+These real values are manual observed evidence, not reconstructed model data. Future updates append new observed checkpoints and do not rewrite prior checkpoints without explicit correction evidence.
+
 ## 4 - PROFIT_PRESERVATION
 Dedicated preservation module. Scope: LOCK25/50 and registered preservation variants; PRL50; ALT Trail; giveback/equity preservation diagnostics. MacroQuant is outside this module except for an explicit independent-trail note when context requires it.
 
