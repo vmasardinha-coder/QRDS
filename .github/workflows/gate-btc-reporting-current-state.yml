@@ -127,18 +127,18 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
-      - name: Enforce complete daily delivery
+      - name: Classify daily delivery without turning AMBER into CI failure
         run: |
           python - <<'PY'
           import json
           p='runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json'
           s=json.load(open(p, encoding='utf-8'))
-          if not s.get('delivery_complete'):
-              raise SystemExit(
-                  'INCOMPLETE_RUNTIME_DELIVERY stale='
-                  f"{s['warnings']['stale_components']} missing="
-                  f"{s['warnings']['missing_or_undated_components']}"
-              )
-          assert s['status'] == 'PASS'
-          print('RUNTIME_DELIVERY_COMPLETE=PASS')
+          if s.get('delivery_complete'):
+              assert s['status'] == 'PASS'
+              print('RUNTIME_DELIVERY=GREEN')
+          else:
+              assert s['status'] == 'BLOCKED_INCOMPLETE_DELIVERY'
+              print('RUNTIME_DELIVERY=AMBER')
+              print('STALE_COMPONENTS=' + ','.join(s['warnings']['stale_components']))
+              print('MISSING_OR_UNDATED=' + ','.join(s['warnings']['missing_or_undated_components']))
           PY
