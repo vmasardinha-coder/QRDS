@@ -26,10 +26,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: |
-            migration/canonical/v2a/requirements.txt
-            migration/canonical/delta/requirements.txt
-            migration/canonical/gateway/requirements.txt
+          cache-dependency-path: migration/canonical/v2a/requirements.txt
       - name: Check out runtime ledger branch
         uses: actions/checkout@v4
         with:
@@ -45,12 +42,8 @@ jobs:
               json.load(open(p, encoding='utf-8'))
           print('MOMENTUM_CONTRACTS=PASS')
           PY
-      - name: Install canonical research dependencies
-        run: >-
-          pip install
-          -r migration/canonical/v2a/requirements.txt
-          -r migration/canonical/delta/requirements.txt
-          -r migration/canonical/gateway/requirements.txt
+      - name: Install canonical V2A dependencies
+        run: pip install -r migration/canonical/v2a/requirements.txt
       - name: Resolve latest completed UTC close
         run: |
           python - <<'PY'
@@ -61,12 +54,17 @@ jobs:
               f.write(f'MOMENTUM_CUTOFF={cutoff}\n')
           print(cutoff)
           PY
-      - name: Build canonical V2A evidence for the cutoff
+      - name: Collect canonical public V2A input
         run: >-
-          python tools/qos_orchestrator.py
-          --public-data
+          python migration/canonical/v2a/scripts/00_run_all_v2a.py
+          --output-zip artifacts/momentum_qos/qos_v2a_public_collection.zip
+      - name: Freeze V2A evidence to the target cutoff
+        run: >-
+          python tools/v2a_frozen_replay.py
+          artifacts/momentum_qos/qos_v2a_public_collection.zip
           --data-cutoff "$MOMENTUM_CUTOFF"
-          --output-dir artifacts/momentum_qos
+          --output-zip artifacts/momentum_qos/qos_v2a_outputs.zip
+          --evidence-dir artifacts/momentum_qos/v2a_frozen_replay_evidence
       - name: Collect M1 and M2 append-only shadow snapshot
         run: >-
           python tools/gate_btc_momentum_shadow_collect.py
@@ -78,7 +76,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-momentum-m1m2-${{ github.run_id }}
-          path: artifacts/momentum
+          path: |
+            artifacts/momentum
+            artifacts/momentum_qos/v2a_frozen_replay_evidence
           retention-days: 90
           if-no-files-found: error
       - name: Publish append-only runtime ledger snapshot
