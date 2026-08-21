@@ -1,0 +1,44 @@
+{
+  "schema": "gate-btc-momentum-m1m2-prospective-collection-v1",
+  "frozen_date": "2026-08-21",
+  "status": "FROZEN_BEFORE_FIRST_PROSPECTIVE_LEDGER_ROW",
+  "relationship": "Implementation-only follow-up to merged Momentum M1/M2 preregistration. No formula weights or interpretation thresholds change.",
+  "source": {
+    "type": "CANONICAL_V2A_PUBLIC_REPLAY_OUTPUT",
+    "required_zip": "qos_v2a_outputs.zip",
+    "required_price_columns": ["date", "symbol", "close_usd"],
+    "ambiguous_price_member_policy": "FAIL_CLOSED"
+  },
+  "universe": {
+    "rule": "All assets present in the canonical V2A price master with complete required closes at the target cutoff and frozen lookbacks; no return-ranked universe filtering is permitted.",
+    "btc_required_for_m2": true,
+    "missing_history_policy": "EXCLUDE_VISIBLE_WITH_COUNTS_NO_FORWARD_FILL"
+  },
+  "cadence": {
+    "schedule": "DAILY_AFTER_COMPLETED_UTC_CLOSE",
+    "target_cutoff": "previous UTC calendar day",
+    "backfill_allowed": false,
+    "manual_dispatch_must_equal_latest_completed_close": true
+  },
+  "ledger": {
+    "mode": "APPEND_ONLY_ONE_JSON_PER_CUTOFF",
+    "duplicate_policy": "IDENTICAL_HASH_NOOP_OTHERWISE_FAIL",
+    "runtime_path": "runtime/ledgers/momentum_m1_m2"
+  },
+  "evidence": {
+    "retrospective_2026_08_16_to_2026_08_19": "DISCOVERY_ONLY_NOT_LEDGER_EVIDENCE",
+    "first_automatic_eligible_cutoff": "first completed UTC close observed after this implementation is merged to main",
+    "no_result_existed_when_collection_boundary_was_frozen": true
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "promotion_eligible": false,
+    "allocation_weight": 0,
+    "orders": 0,
+    "real_capital": 0,
+    "automatic_tuning": false
+  }
+}
