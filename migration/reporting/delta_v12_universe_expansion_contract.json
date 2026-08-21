@@ -15,6 +15,29 @@
       "stratum_added": 100,
       "stratum_clean_evidence_start": "2026-08-21T00:00:00Z",
       "stratum_frozen_date": "2026-08-21"
+    },
+    {
+      "amended_on": "2026-08-21",
+      "amendment": "MULTI_VENUE_DAILY_PRICE_PIPELINE_WITH_VENUE_PINNING",
+      "bar_admission": "Only completed UTC daily bars are admitted. OKX confirm=0 bars and any bar dated on the run date are rejected, and a bar whose open is not exactly UTC midnight fails closed.",
+      "first_pinning_run_requirement": "The first production run must execute where all four venues are reachable. A run from a restricted network silently pins every asset to whichever venues answered, and pins are sticky by design, so a degraded first run would persist a degraded assignment.",
+      "measurement_source": {
+        "multi_venue_coverage": "100/100",
+        "names_requiring_non_okx_venue": [
+          "PAXG",
+          "XMR",
+          "FET",
+          "MNT",
+          "ACE",
+          "CAKE"
+        ],
+        "okx_only_coverage": "94/100",
+        "universe": "UNIVERSE_TOP100 from snapshot 2026-08-21-run-32438055428"
+      },
+      "problem": "The V12 universe is multi-venue but the frozen V11 price pipeline reads OKX swaps only. Measured on the 2026-08-21 TOP100: 94 of 100 names have an OKX perpetual, and 6 (PAXG, XMR, FET, MNT, ACE, CAKE) do not, despite passing the shortable and liquid filter on another venue. An OKX-only engine would drop those 6 silently, making venue listing decisions act as an unregistered selection rule.",
+      "resolution": "Price each base asset through the frozen venue preference order BINANCE_FUTURES, BYBIT_LINEAR, OKX_SWAP, HYPERLIQUID. Measured coverage with this order is 100 of 100 priced and 100 of 100 meeting the 30-day minimum history.",
+      "unpriced_policy": "FAIL_VISIBLE_NEVER_SILENT_DROP",
+      "venue_pinning_rule": "A venue is PINNED to an asset at first admission and recorded with its pin date. Later runs must reuse the pinned venue even when a higher-preference venue becomes reachable. A change is permitted only when the pinned venue stops serving the instrument, and it is written as an explicit venue_changes event naming from, to and date. Without pinning, reachability alone could reprice an asset from a different venue day to day and inject level shifts that would read as returns."
     }
   ],
   "clean_evidence_start": "2026-08-14T00:00:00Z",
@@ -107,6 +130,19 @@
     "UNIVERSE_TOP100.csv",
     "UNIVERSE_MANIFEST.json"
   ],
+  "price_pipeline": {
+    "bar_calendar": "UTC_DAILY_COMPLETED_ONLY",
+    "credentials_used": false,
+    "engine_feed": false,
+    "tool": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
+    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
+    "venue_preference_order": [
+      "BINANCE_FUTURES",
+      "BYBIT_LINEAR",
+      "OKX_SWAP",
+      "HYPERLIQUID"
+    ]
+  },
   "promotion_eligible": false,
   "purpose": "Prospective reconstruction of a broad liquid and shortable multi-venue universe from the exact immutable successful Daily Research artifact, without copying external Delta holdings.",
   "ranking": "descending maximum observed 24h liquidity across eligible Gateway venues; documented spot or CoinGecko volume proxy only where derivative venue volume is unavailable",
@@ -123,5 +159,5 @@
     "workflow": "GATE BTC Daily Research Collection"
   },
   "symbol_policy": "Preserve base asset exactly and prefer an available raw derivative symbol in the order Binance Futures, Bybit linear, OKX swap, Hyperliquid perp. Aliases are never used to force external overlap.",
-  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.1"
+  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.2"
 }
