@@ -1,0 +1,116 @@
+name: GATE BTC B3 H1 Runtime Publisher
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC B3 H1 Daily Structural"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful B3 H1 structural run id to republish
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-b3-h1-runtime-publisher
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  publish-qualified-h1:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Resolve source run id
+        id: source
+        env:
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          run_id="${MANUAL_RUN_ID:-${WORKFLOW_RUN_ID:-}}"
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Check out main publisher code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+
+      - name: Download exact successful structural artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-b3-h1-structural-${{ steps.source.outputs.run_id }}
+          path: b3_evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+
+      - name: Check out runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Append qualified observation idempotently
+        run: >-
+          python main_repo/tools/gate_btc_b3_h1_runtime_ledger.py
+          --artifact-root b3_evidence
+          --existing runtime_repo/runtime/ledgers/b3_h1/STATUS.json
+          --output runtime_repo/runtime/ledgers/b3_h1/STATUS.json
+          --run-id "${{ steps.source.outputs.run_id }}"
+
+      - name: Validate safety and no synthetic backfill
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/ledgers/b3_h1/STATUS.json'
+          s=json.load(open(p,encoding='utf-8'))
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['not_approved'] is True
+          assert s['orders_generated'] == 0
+          assert s['real_capital_used'] == 0
+          assert s['economics_locked'] is True
+          assert s['backfill_automatically_created'] is False
+          dates=[x['date'] for x in s['entries']]
+          assert len(dates)==len(set(dates))
+          print('B3_H1_RUNTIME_SAFETY=PASS')
+          PY
+
+      - name: Publish runtime ledger
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/ledgers/b3_h1/STATUS.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Append qualified B3 H1 structural observation"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
