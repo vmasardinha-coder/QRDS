@@ -6,7 +6,7 @@ on:
     - cron: '10 3 * * *'
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   GATE_BTC_RESEARCH_ONLY: 'true'
@@ -36,6 +36,15 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+      - name: Validate frozen collector code and contract
+        run: |
+          python -m py_compile migration/reporting/qrds_momentum_m1.py tools/gate_btc_momentum_shadow_collect.py
+          python - <<'PY'
+          import json
+          for p in ('migration/reporting/momentum_m1_contract.json','migration/reporting/momentum_m2_voladj_contract.json','migration/reporting/momentum_m1m2_collection_contract.json'):
+              json.load(open(p, encoding='utf-8'))
+          print('MOMENTUM_CONTRACTS=PASS')
+          PY
       - name: Install canonical research dependencies
         run: >-
           pip install
@@ -74,8 +83,6 @@ jobs:
           if-no-files-found: error
       - name: Publish append-only runtime ledger snapshot
         if: github.ref_name == 'main'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git -C runtime_repo config user.name 'gate-btc-actions'
