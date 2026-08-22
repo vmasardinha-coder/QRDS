@@ -1,0 +1,161 @@
+name: GATE BTC V16B One-Day Rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Rehearsal stage to execute
+        required: true
+        type: choice
+        options: [signal, entry]
+      source_run_id:
+        description: GitHub Actions run containing the immutable evidence artifact
+        required: true
+        type: string
+      source_artifact_name:
+        description: Exact artifact name to download from source_run_id
+        required: true
+        type: string
+      signal_date:
+        description: SIGNAL as-of UTC date (YYYY-MM-DD); required for signal stage
+        required: false
+        type: string
+      panel_path:
+        description: Relative path inside downloaded artifact to frozen V16B panel
+        required: false
+        type: string
+      historical_shortability_path:
+        description: Relative path inside downloaded artifact to strictly-prior shortability ledger
+        required: false
+        type: string
+      universe_snapshot_path:
+        description: Relative path inside downloaded artifact to raw CMC snapshot
+        required: false
+        type: string
+      universe_snapshot_evidence_path:
+        description: Relative path inside downloaded artifact to CMC evidence manifest
+        required: false
+        type: string
+      signal_event_path:
+        description: Relative path inside downloaded artifact to rehearsal signal event; required for entry stage
+        required: false
+        type: string
+      usdm_exchange_info_path:
+        description: Relative path inside downloaded artifact to Binance USD-M exchangeInfo
+        required: false
+        type: string
+      spot_exchange_info_path:
+        description: Relative path inside downloaded artifact to Binance Spot exchangeInfo
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install frozen V16B dependencies
+        run: python -m pip install --disable-pip-version-check pytest pandas numpy scikit-learn requests
+      - name: Prove rehearsal isolation contract
+        run: python -m pytest -q tests/test_gate_btc_v16b_rehearsal.py tests/test_gate_btc_v16b_prospective_pipeline.py
+      - name: Download immutable source evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.source_artifact_name }}
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ github.token }}
+          path: source_evidence
+      - name: Validate requested source paths fail-closed
+        shell: bash
+        env:
+          STAGE: ${{ inputs.stage }}
+          PANEL: ${{ inputs.panel_path }}
+          SHORT: ${{ inputs.historical_shortability_path }}
+          SNAP: ${{ inputs.universe_snapshot_path }}
+          SNAPEV: ${{ inputs.universe_snapshot_evidence_path }}
+          SIGEVENT: ${{ inputs.signal_event_path }}
+          USDM: ${{ inputs.usdm_exchange_info_path }}
+          SPOT: ${{ inputs.spot_exchange_info_path }}
+          SIGNAL_DATE: ${{ inputs.signal_date }}
+        run: |
+          set -euo pipefail
+          require_file() { test -n "$1" && test -f "source_evidence/$1" || { echo "missing required source_evidence/$1" >&2; exit 2; }; }
+          if [ "$STAGE" = signal ]; then
+            test -n "$SIGNAL_DATE" || { echo "signal_date required" >&2; exit 2; }
+            require_file "$PANEL"; require_file "$SHORT"; require_file "$SNAP"; require_file "$SNAPEV"
+          else
+            require_file "$SIGEVENT"; require_file "$USDM"; require_file "$SPOT"
+          fi
+      - name: Execute isolated SIGNAL rehearsal
+        if: inputs.stage == 'signal'
+        env:
+          SIGNAL_DATE: ${{ inputs.signal_date }}
+          PANEL: ${{ inputs.panel_path }}
+          SHORT: ${{ inputs.historical_shortability_path }}
+          SNAP: ${{ inputs.universe_snapshot_path }}
+          SNAPEV: ${{ inputs.universe_snapshot_evidence_path }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/gate_btc/v16b/rehearsal
+          python tools/gate_btc_v16b_rehearsal.py signal \
+            --panel "source_evidence/$PANEL" \
+            --historical-shortability "source_evidence/$SHORT" \
+            --signal-date "$SIGNAL_DATE" \
+            --universe-snapshot "source_evidence/$SNAP" \
+            --universe-snapshot-evidence "source_evidence/$SNAPEV" \
+            --code-commit "$GITHUB_SHA" \
+            --ledger artifacts/gate_btc/v16b/rehearsal/V16B_REHEARSAL_LEDGER.jsonl \
+            --output artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json
+      - name: Execute isolated ENTRY rehearsal
+        if: inputs.stage == 'entry'
+        env:
+          SIGEVENT: ${{ inputs.signal_event_path }}
+          USDM: ${{ inputs.usdm_exchange_info_path }}
+          SPOT: ${{ inputs.spot_exchange_info_path }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/gate_btc/v16b/rehearsal
+          cp "source_evidence/$SIGEVENT" artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json
+          python tools/gate_btc_v16b_rehearsal.py entry \
+            --signal-event artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json \
+            --usdm-exchange-info "source_evidence/$USDM" \
+            --spot-exchange-info "source_evidence/$SPOT" \
+            --ledger artifacts/gate_btc/v16b/rehearsal/V16B_REHEARSAL_LEDGER.jsonl \
+            --output artifacts/gate_btc/v16b/rehearsal/V16B_ENTRY_REHEARSAL.json
+      - name: Verify zero-count safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files=list(Path('artifacts/gate_btc/v16b/rehearsal').glob('V16B_*_REHEARSAL.json'))
+          assert files, 'no rehearsal event generated'
+          for p in files:
+              x=json.loads(p.read_text())
+              assert x['REHEARSAL'] is True
+              assert x['PROSPECTIVE_COUNT'] == 0
+              assert x['CANONICAL_LEDGER'] is False
+              assert x['RESEARCH_ONLY'] is True and x['SHADOW_ONLY'] is True and x['NOT_APPROVED'] is True
+              assert x['ENGINE_FEED'] is False and x['ORDERS'] == 0 and x['REAL_CAPITAL'] == 0
+          print('V16B_REHEARSAL_ISOLATION=PASS')
+          PY
+      - name: Upload rehearsal evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v16b-rehearsal-${{ github.run_id }}
+          path: artifacts/gate_btc/v16b/rehearsal/
+          retention-days: 30
+          if-no-files-found: error
