@@ -8,44 +8,68 @@ on:
         required: true
         type: choice
         options: [signal, entry]
-      source_run_id:
-        description: GitHub Actions run containing the immutable evidence artifact
-        required: true
-        type: string
-      source_artifact_name:
-        description: Exact artifact name to download from source_run_id
-        required: true
-        type: string
       signal_date:
         description: SIGNAL as-of UTC date (YYYY-MM-DD); required for signal stage
         required: false
         type: string
+      research_run_id:
+        description: Run containing frozen panel/strictly-prior shortability
+        required: false
+        type: string
+      research_artifact_name:
+        description: Exact research artifact name
+        required: false
+        type: string
+      cmc_run_id:
+        description: Run containing raw CMC snapshot/evidence
+        required: false
+        type: string
+      cmc_artifact_name:
+        description: Exact CMC artifact name
+        required: false
+        type: string
+      signal_run_id:
+        description: Rehearsal SIGNAL run for ENTRY stage
+        required: false
+        type: string
+      signal_artifact_name:
+        description: Exact rehearsal SIGNAL artifact name
+        required: false
+        type: string
+      binance_run_id:
+        description: Run containing post-signal Binance Spot/USD-M exchangeInfo
+        required: false
+        type: string
+      binance_artifact_name:
+        description: Exact Binance evidence artifact name
+        required: false
+        type: string
       panel_path:
-        description: Relative path inside downloaded artifact to frozen V16B panel
+        description: Relative path inside research artifact to frozen V16B panel
         required: false
         type: string
       historical_shortability_path:
-        description: Relative path inside downloaded artifact to strictly-prior shortability ledger
+        description: Relative path inside research artifact to strictly-prior shortability ledger
         required: false
         type: string
       universe_snapshot_path:
-        description: Relative path inside downloaded artifact to raw CMC snapshot
+        description: Relative path inside CMC artifact to raw snapshot
         required: false
         type: string
       universe_snapshot_evidence_path:
-        description: Relative path inside downloaded artifact to CMC evidence manifest
+        description: Relative path inside CMC artifact to evidence manifest
         required: false
         type: string
       signal_event_path:
-        description: Relative path inside downloaded artifact to rehearsal signal event; required for entry stage
+        description: Relative path inside rehearsal SIGNAL artifact
         required: false
         type: string
       usdm_exchange_info_path:
-        description: Relative path inside downloaded artifact to Binance USD-M exchangeInfo
+        description: Relative path inside Binance artifact to USD-M exchangeInfo
         required: false
         type: string
       spot_exchange_info_path:
-        description: Relative path inside downloaded artifact to Binance Spot exchangeInfo
+        description: Relative path inside Binance artifact to Spot exchangeInfo
         required: false
         type: string
 
@@ -72,17 +96,45 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest pandas numpy scikit-learn requests
       - name: Prove rehearsal isolation contract
         run: python -m pytest -q tests/test_gate_btc_v16b_rehearsal.py tests/test_gate_btc_v16b_prospective_pipeline.py
-      - name: Download immutable source evidence
+
+      - name: Download research evidence for SIGNAL
+        if: inputs.stage == 'signal'
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.source_artifact_name }}
-          run-id: ${{ inputs.source_run_id }}
+          name: ${{ inputs.research_artifact_name }}
+          run-id: ${{ inputs.research_run_id }}
           github-token: ${{ github.token }}
-          path: source_evidence
+          path: research_evidence
+      - name: Download CMC evidence for SIGNAL
+        if: inputs.stage == 'signal'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.cmc_artifact_name }}
+          run-id: ${{ inputs.cmc_run_id }}
+          github-token: ${{ github.token }}
+          path: cmc_evidence
+      - name: Download rehearsal SIGNAL for ENTRY
+        if: inputs.stage == 'entry'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.signal_artifact_name }}
+          run-id: ${{ inputs.signal_run_id }}
+          github-token: ${{ github.token }}
+          path: signal_evidence
+      - name: Download Binance evidence for ENTRY
+        if: inputs.stage == 'entry'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.binance_artifact_name }}
+          run-id: ${{ inputs.binance_run_id }}
+          github-token: ${{ github.token }}
+          path: binance_evidence
+
       - name: Validate requested source paths fail-closed
         shell: bash
         env:
           STAGE: ${{ inputs.stage }}
+          SIGNAL_DATE: ${{ inputs.signal_date }}
           PANEL: ${{ inputs.panel_path }}
           SHORT: ${{ inputs.historical_shortability_path }}
           SNAP: ${{ inputs.universe_snapshot_path }}
@@ -90,16 +142,21 @@ jobs:
           SIGEVENT: ${{ inputs.signal_event_path }}
           USDM: ${{ inputs.usdm_exchange_info_path }}
           SPOT: ${{ inputs.spot_exchange_info_path }}
-          SIGNAL_DATE: ${{ inputs.signal_date }}
         run: |
           set -euo pipefail
-          require_file() { test -n "$1" && test -f "source_evidence/$1" || { echo "missing required source_evidence/$1" >&2; exit 2; }; }
+          req() { test -n "$2" && test -f "$1/$2" || { echo "missing $1/$2" >&2; exit 2; }; }
           if [ "$STAGE" = signal ]; then
             test -n "$SIGNAL_DATE" || { echo "signal_date required" >&2; exit 2; }
-            require_file "$PANEL"; require_file "$SHORT"; require_file "$SNAP"; require_file "$SNAPEV"
+            req research_evidence "$PANEL"
+            req research_evidence "$SHORT"
+            req cmc_evidence "$SNAP"
+            req cmc_evidence "$SNAPEV"
           else
-            require_file "$SIGEVENT"; require_file "$USDM"; require_file "$SPOT"
+            req signal_evidence "$SIGEVENT"
+            req binance_evidence "$USDM"
+            req binance_evidence "$SPOT"
           fi
+
       - name: Execute isolated SIGNAL rehearsal
         if: inputs.stage == 'signal'
         env:
@@ -112,14 +169,15 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/gate_btc/v16b/rehearsal
           python tools/gate_btc_v16b_rehearsal.py signal \
-            --panel "source_evidence/$PANEL" \
-            --historical-shortability "source_evidence/$SHORT" \
+            --panel "research_evidence/$PANEL" \
+            --historical-shortability "research_evidence/$SHORT" \
             --signal-date "$SIGNAL_DATE" \
-            --universe-snapshot "source_evidence/$SNAP" \
-            --universe-snapshot-evidence "source_evidence/$SNAPEV" \
+            --universe-snapshot "cmc_evidence/$SNAP" \
+            --universe-snapshot-evidence "cmc_evidence/$SNAPEV" \
             --code-commit "$GITHUB_SHA" \
             --ledger artifacts/gate_btc/v16b/rehearsal/V16B_REHEARSAL_LEDGER.jsonl \
             --output artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json
+
       - name: Execute isolated ENTRY rehearsal
         if: inputs.stage == 'entry'
         env:
@@ -129,13 +187,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/gate_btc/v16b/rehearsal
-          cp "source_evidence/$SIGEVENT" artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json
+          cp "signal_evidence/$SIGEVENT" artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json
           python tools/gate_btc_v16b_rehearsal.py entry \
             --signal-event artifacts/gate_btc/v16b/rehearsal/V16B_SIGNAL_REHEARSAL.json \
-            --usdm-exchange-info "source_evidence/$USDM" \
-            --spot-exchange-info "source_evidence/$SPOT" \
+            --usdm-exchange-info "binance_evidence/$USDM" \
+            --spot-exchange-info "binance_evidence/$SPOT" \
             --ledger artifacts/gate_btc/v16b/rehearsal/V16B_REHEARSAL_LEDGER.jsonl \
             --output artifacts/gate_btc/v16b/rehearsal/V16B_ENTRY_REHEARSAL.json
+
       - name: Verify zero-count safety boundary
         run: |
           python - <<'PY'
