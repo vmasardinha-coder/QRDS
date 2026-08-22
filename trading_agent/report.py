@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import config
+
 REPORTS_DIR = Path(__file__).resolve().parent / "reports"
 LATEST_PATH = REPORTS_DIR / "RELATORIO_ATUAL.md"
 
@@ -25,7 +27,8 @@ def _money(value: float, cur: str) -> str:
 
 
 def _performance_table(state: dict, entry: dict, benchmark_name: str,
-                       benchmark2_name: str | None, regime: str) -> list[str]:
+                       benchmark2_name: str | None, regime: str,
+                       regime_avaliado: bool = True) -> list[str]:
     cur = state.get("currency", "USD")
     nav_now = entry["nav"]
     initial = state["initial_capital"]
@@ -58,7 +61,15 @@ def _performance_table(state: dict, entry: dict, benchmark_name: str,
 
     lines.append(f"| Caixa | {_money(state['cash'], cur)} |")
     if regime != "-":
-        lines.append(f"| Regime | {'risco ligado' if regime == 'risk_on' else 'risco reduzido (defensivo)'} |")
+        estado = ('risco ligado' if regime == 'risk_on'
+                  else 'risco reduzido (defensivo)')
+        if not regime_avaliado:
+            # Uma SMA 200 sem 200 pregoes nao reprova ninguem, e o valor que
+            # sai e o mesmo de uma aprovacao. Dizer qual dos dois foi e a
+            # diferenca entre um filtro e a aparencia de um filtro.
+            estado = (f"{estado} — filtro NAO avaliado "
+                      f"(indice sem {config.SMA_REGIME_DAYS} pregoes)")
+        lines.append(f"| Regime | {estado} |")
     return lines
 
 
@@ -110,6 +121,11 @@ def _audit_block(log: dict) -> list[str]:
         lines.append(f"- **Fontes usadas:** {tally}")
     for name, info in sorted((log.get("source_failures") or {}).items()):
         lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
+    # "esta fonte nao lista este ativo" nao e avaria: dizia-se "coinbase falhou
+    # 31x" quando a Binance servia essas 31 e nenhuma moeda ficava de fora
+    for name, info in sorted((log.get("source_missing") or {}).items()):
+        lines.append(f"- **Fonte {name} nao tem {info['n']} ativos** "
+                     f"(servidos pela fonte seguinte)")
     if log.get("note"):
         lines.append(f"- **Nota:** {log['note']}")
     if log.get("stops"):
@@ -148,7 +164,8 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
 
     lines = [f"## {title}", ""]
     lines += _performance_table(state, entry, benchmark_name, benchmark2_name,
-                               result.get("regime", "-"))
+                               result.get("regime", "-"),
+                               result.get("regime_avaliado", True))
     lines.append("")
     lines += _positions_table(state, result["prices"], entry["nav"], cur)
 

@@ -210,13 +210,26 @@ B3_BENCHMARK2 = "CDI"            # indice acumulado do CDI (BCB SGS 12)
 # Universo liquido da B3 (sufixo .SA no Yahoo Finance)
 B3_UNIVERSE = [
     "PETR4", "VALE3", "ITUB4", "BBDC4", "BBAS3", "ABEV3", "WEGE3", "RENT3",
-    "B3SA3", "ITSA4", "SUZB3", "GGBR4", "CSNA3", "EMBR3", "RADL3", "LREN3",
+    "B3SA3", "ITSA4", "SUZB3", "GGBR4", "CSNA3", "EMBJ3", "RADL3", "LREN3",
     "RAIL3", "PRIO3", "EQTL3", "VIVT3", "TOTS3", "HAPV3", "RDOR3", "CMIG4",
-    "ELET3", "SBSP3", "BPAC11", "CPLE6", "TIMS3", "UGPA3", "JBSS3", "BRFS3",
+    # Sucessoes confirmadas no arquivo da B3 (data em que o antigo parou e o
+    # novo comecou, com o nome da empresa ou o emissor do ISIN a confirmar):
+    #   CPLE6 -> CPLE3   Copel unificada numa unica classe
+    #   BRFS3 -> MBRF3   BRF fundida na Marfrig
+    #   ELET3 -> AXIA3   Eletrobras passou a Axia Energia (07/11 -> 10/11/2025)
+    #   EMBR3 -> EMBJ3   mesmo NOMRES 'EMBRAER'        (31/10 -> 03/11/2025)
+    #   NTCO3 -> NATU3   'GRUPO NATURA' passou a 'NATURA' (01/07 -> 02/07/2025)
+    # Manter o ticker morto encolhia o universo sem ninguem ter decidido isso.
+    #
+    # As series NAO sao coladas: a antiga fica para tras e a nova acumula do
+    # zero. Uma mudanca de simbolo costuma vir com reorganizacao societaria, e
+    # concatenar sem saber a relacao de troca inventaria um retorno que nunca
+    # existiu — pior do que esperar que a serie nova chegue aos 260 pregoes.
+    "AXIA3", "SBSP3", "BPAC11", "CPLE3", "TIMS3", "UGPA3", "MBRF3",
     "KLBN11", "CYRE3", "MULT3", "ASAI3",
     # --- ampliacao para ~50 nomes (agosto 2026) ---
     "SANB11", "CSAN3", "VBBR3", "BRKM5", "GOAU4", "ENGI11", "CPFE3",
-    "TAEE11", "EGIE3", "SLCE3", "PSSA3", "CMIN3", "NTCO3", "MGLU3",
+    "TAEE11", "EGIE3", "SLCE3", "PSSA3", "CMIN3", "NATU3", "MGLU3",
 ]
 
 B3_TOP_N = 8

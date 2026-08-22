@@ -2,7 +2,8 @@
 
 Cascatas por mercado, para nenhum bloqueio de uma fonte derrubar uma carteira:
   acoes EUA : Nasdaq -> Stooq -> Yahoo (query1, query2)
-  acoes B3  : brapi.dev -> Yahoo
+  acoes B3  : COTAHIST (arquivo oficial) -> brapi.dev -> Yahoo
+  indices B3: brapi.dev -> Yahoo (o COTAHIST nao cobre indices)
   crypto    : Coinbase -> Binance -> CoinGecko
   CDI       : SGS do Banco Central (4 formas de consulta) -> copia local
 
@@ -17,6 +18,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -47,19 +49,46 @@ class RateLimited(SourceUnavailable):
 # resultado e, com universos grandes, custa dezenas de minutos por ciclo.
 PERMANENT_HTTP = {400, 401, 403, 404, 410, 422}
 
+# Destes, os que dizem "a fonte recusa-te" e nao "esse ativo nao existe".
+# A diferenca decide se o relatorio anuncia uma avaria ou uma ausencia.
+REFUSED_HTTP = {401, 403}
+
+
+SECRET_PARAMS = ("token", "apikey", "api_key", "key")
+
+
+def redact(url: str) -> str:
+    """Remove segredos de uma URL antes de ela entrar num erro ou num log.
+
+    As mensagens de falha sao publicadas no relatorio, que e versionado num
+    repositorio publico — uma credencial na query string acabaria la.
+    """
+    out = url
+    for name in SECRET_PARAMS:
+        out = re.sub(rf"([?&]{name}=)[^&]*", r"\1***", out, flags=re.IGNORECASE)
+    return out
+
 
 def _http_get(url: str, timeout: float = 30.0,
-              retries: int | None = None) -> bytes:
+              retries: int | None = None,
+              headers: dict | None = None) -> bytes:
     last_err: Exception | None = None
     for attempt in range(retries or RETRIES):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            req = urllib.request.Request(
+                url, headers={"User-Agent": USER_AGENT, **(headers or {})})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as err:
             last_err = err
             if err.code in PERMANENT_HTTP:
-                raise DataSourceError(f"GET {url}: HTTP {err.code} (definitivo)")
+                # 401/403 e a fonte a recusar-nos: insistir nela para os outros
+                # ativos do universo nao muda nada. 404/410/400/422 e este ativo
+                # que ela nao serve, e o proximo pode correr bem.
+                classe = (SourceUnavailable if err.code in REFUSED_HTTP
+                          else DataSourceError)
+                raise classe(
+                    f"GET {redact(url)}: HTTP {err.code} (definitivo)")
             if err.code == 429:
                 # a fonte pede para abrandar; obedece ao cabecalho se houver
                 wait = RATE_LIMIT_SLEEP_S[min(attempt, len(RATE_LIMIT_SLEEP_S) - 1)]
@@ -77,8 +106,9 @@ def _http_get(url: str, timeout: float = 30.0,
             time.sleep(RETRY_SLEEP_S * (attempt + 1))
     attempts = retries or RETRIES
     if isinstance(last_err, urllib.error.HTTPError) and last_err.code == 429:
-        raise RateLimited(f"GET {url}: 429 apos {attempts} tentativas")
-    raise DataSourceError(f"GET {url} falhou apos {attempts} tentativas: {last_err}")
+        raise RateLimited(f"GET {redact(url)}: 429 apos {attempts} tentativas")
+    raise DataSourceError(
+        f"GET {redact(url)} falhou apos {attempts} tentativas: {last_err}")
 
 
 STOOQ_HOSTS = ("https://stooq.com", "https://stooq.pl")
@@ -156,6 +186,7 @@ def reset_source_breakers() -> None:
     _STOOQ_CONSECUTIVE_FAILURES = 0
     SOURCE_TALLY.clear()
     FAILURE_TALLY.clear()
+    MISSING_TALLY.clear()
 
 
 def fetch_yahoo_daily(ticker: str,
@@ -278,10 +309,16 @@ _STOOQ_TRIP_AFTER = 3
 # indistinguivel de uma que nem chegou a ser consultada.
 SOURCE_TALLY: dict[str, int] = {}
 FAILURE_TALLY: dict[str, dict] = {}
+# Uma fonte que nao lista um ativo nao esta avariada. Misturar as duas coisas
+# fazia o relatorio anunciar "coinbase falhou 31x" quando o que se passava era
+# que a Coinbase nao cota 31 das 150 moedas e a Binance as serviu todas — um
+# alarme falso que esconde as falhas verdadeiras.
+MISSING_TALLY: dict[str, dict] = {}
 
 
 def _note_failure(source: str, err: Exception) -> None:
-    entry = FAILURE_TALLY.setdefault(source, {"n": 0, "motivo": str(err)[-90:]})
+    alvo = FAILURE_TALLY if isinstance(err, SourceUnavailable) else MISSING_TALLY
+    entry = alvo.setdefault(source, {"n": 0, "motivo": str(err)[-90:]})
     entry["n"] += 1
 
 
@@ -445,12 +482,11 @@ def fetch_crypto_daily(asset: str, coingecko_id: str) -> list[tuple[str, float, 
 BRAPI_RANGES = ("2y", "1y", "6mo", "3mo")
 
 
-def _brapi_url(symbol: str, range_: str, token: str) -> str:
-    url = (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
-           f"?range={range_}&interval=1d&fundamental=false")
-    if token:
-        url += f"&token={urllib.parse.quote(token)}"
-    return url
+def _brapi_url(symbol: str, range_: str, token: str = "") -> str:
+    # o token vai no cabecalho Authorization, nunca na URL: URLs aparecem em
+    # mensagens de erro que sao publicadas no relatorio
+    return (f"https://brapi.dev/api/quote/{urllib.parse.quote(symbol)}"
+            f"?range={range_}&interval=1d&fundamental=false")
 
 
 def fetch_brapi_daily(ticker: str,
@@ -468,8 +504,10 @@ def fetch_brapi_daily(ticker: str,
     errors: list[str] = []
     for range_ in ranges:
         try:
+            headers = {"Authorization": f"Bearer {token}"} if token else None
             payload = json.loads(
-                _http_get(_brapi_url(symbol, range_, token)).decode("utf-8"))
+                _http_get(_brapi_url(symbol, range_),
+                          headers=headers).decode("utf-8"))
         except DataSourceError as err:
             errors.append(f"{range_}: {str(err)[-60:]}")
             continue
@@ -496,21 +534,61 @@ def fetch_brapi_daily(ticker: str,
     return best
 
 
+def fetch_cotahist_daily(ticker: str) -> list[tuple[str, float, float]]:
+    """Serie do arquivo oficial da B3, ja carregado para o ciclo.
+
+    Traduz o erro proprio do modulo para o da cascata; sao camadas separadas
+    para o cotahist nao precisar de importar este ficheiro.
+    """
+    from . import cotahist
+    try:
+        return cotahist.series_for(ticker)
+    except cotahist.NotLoaded as err:
+        # o arquivo nao veio: e a fonte que esta em baixo, nao o ativo que falta
+        raise SourceUnavailable(str(err)) from err
+    except cotahist.CotahistError as err:
+        raise DataSourceError(str(err)) from err
+
+
+def prime_cotahist(tickers: list[str]) -> str | None:
+    """Carrega o arquivo da B3 uma vez por ciclo.
+
+    Devolve o motivo da falha em vez de a propagar: sem arquivo, a cascata
+    ainda tem brapi e Yahoo, e a carteira nao deve parar por isto. O motivo
+    fica registado para aparecer no relatorio.
+    """
+    from . import cotahist
+    try:
+        cotahist.prime(tickers)
+    except cotahist.CotahistError as err:
+        _note_failure("cotahist", SourceUnavailable(str(err)))
+        return str(err)
+    return None
+
+
 def fetch_b3_daily(ticker: str,
                    is_benchmark: bool = False) -> list[tuple[str, float, float]]:
     """Serie diaria da B3: brapi.dev primeiro, Yahoo como alternativa.
 
-    A brapi vem a frente porque o Yahoo passou a limitar por taxa os IPs do
-    GitHub Actions, e as 50 acoes da B3 mais os benchmarks eram metade dessa
-    carga. Sao servicos independentes, nao duas portas do mesmo.
+    O arquivo oficial da B3 vem a frente porque e o unico que entrega o
+    historico completo: o plano gratuito da brapi corta a serie por ticker
+    (PETR4 recebe 499 pregoes, CPLE3 recebe 63) e isso rejeitava 45 dos 48
+    nomes por historico insuficiente. A brapi fica como alternativa, e o Yahoo
+    a seguir — passou a limitar por taxa os IPs do GitHub Actions.
+
+    O COTAHIST nao cobre indices: o ^BVSP continua a vir da brapi ou do Yahoo,
+    e o que essas devolvem e curto demais para o filtro de regime — por isso a
+    serie do indice passa por '_absorb_index_history', que a acumula em disco.
     """
     from . import config
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
     errors: list[str] = []
-    for name, call in (
-            ("brapi", lambda: fetch_brapi_daily(ticker)),
-            ("yahoo", lambda: fetch_yahoo_daily(
-                symbol, retries=BENCHMARK_RETRIES if is_benchmark else None))):
+    fontes = [("brapi", lambda: fetch_brapi_daily(ticker)),
+              ("yahoo", lambda: fetch_yahoo_daily(
+                  symbol, retries=BENCHMARK_RETRIES if is_benchmark else None))]
+    if not ticker.startswith("^"):
+        fontes.insert(0, ("cotahist", lambda: fetch_cotahist_daily(ticker)))
+    for name, call in fontes:
         try:
             series = call()
         except DataSourceError as err:
@@ -519,8 +597,112 @@ def fetch_b3_daily(ticker: str,
             continue
         SOURCE_TALLY[name] = SOURCE_TALLY.get(name, 0) + 1
         time.sleep(config.FETCH_DELAY_S)
+        if ticker.startswith("^"):
+            series = _absorb_index_history(ticker, series)
         return series
     raise DataSourceError(f"Sem fonte para {ticker} — " + " | ".join(errors))
+
+
+# Quanto historico do indice se guarda. 1500 pregoes sao ~6 anos: chega para
+# a SMA 200 e para o momentum 12-1 com folga, e o ficheiro fica na ordem das
+# dezenas de KB.
+INDEX_CACHE_MAX = 1500
+# Duas fontes do mesmo indice tem de bater no mesmo pregao. 1% e folga para
+# arredondamento e para fechos apurados a horas diferentes; acima disso ja nao
+# e ruido, e sim outra escala ou outro indice.
+INDEX_MERGE_TOLERANCE = 0.01
+
+
+class IndexCacheMismatch(Exception):
+    """O que a fonte deu nao bate com o que estava guardado."""
+
+
+def _index_cache_path():
+    from pathlib import Path
+    return Path(__file__).resolve().parent / "state" / "indice_cache.json"
+
+
+def _load_index_cache(ticker: str) -> list[tuple[str, float, float]]:
+    path = _index_cache_path()
+    if not path.exists():
+        return []
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8"))
+        rows = blob.get(ticker) or []
+        return [(str(d), float(c), float(v)) for d, c, v in rows]
+    except (ValueError, TypeError, OSError, AttributeError):
+        return []
+
+
+def _save_index_cache(ticker: str,
+                      rows: list[tuple[str, float, float]]) -> None:
+    path = _index_cache_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (ValueError, OSError):
+        blob = {}
+    if not isinstance(blob, dict):
+        blob = {}
+    blob[ticker] = [list(r) for r in rows[-INDEX_CACHE_MAX:]]
+    path.write_text(json.dumps(blob), encoding="utf-8")
+
+
+def _merge_index_series(cached: list[tuple[str, float, float]],
+                        live: list[tuple[str, float, float]]
+                        ) -> list[tuple[str, float, float]]:
+    """Junta o guardado com o que a fonte deu, o vivo a mandar em empate.
+
+    Antes de colar, confere os pregoes que as duas versoes tem em comum. Um
+    indice servido por fontes diferentes tem de dar o mesmo numero no mesmo
+    dia; se nao da, o que ha e uma diferenca de escala ou outro indice, e colar
+    as duas pontas fabricava um salto de retorno que nunca existiu — o mesmo
+    erro que se recusou ao nao emendar series de tickers sucedidos.
+    """
+    if not live:
+        return list(cached)
+    if not cached:
+        return list(live)
+    vivos = {d: (c, v) for d, c, v in live}
+    comuns = [(guardado, vivos[d][0]) for d, guardado, _ in cached if d in vivos]
+    if comuns:
+        antigo, novo = comuns[-1]
+        if antigo > 0 and abs(novo / antigo - 1.0) > INDEX_MERGE_TOLERANCE:
+            raise IndexCacheMismatch(
+                f"fecho guardado {antigo:.1f} vs fonte {novo:.1f} "
+                f"no mesmo pregao")
+    juntos = {d: (c, v) for d, c, v in cached}
+    juntos.update(vivos)
+    return sorted((d, c, v) for d, (c, v) in juntos.items())
+
+
+def _absorb_index_history(ticker: str,
+                          live: list[tuple[str, float, float]]
+                          ) -> list[tuple[str, float, float]]:
+    """Acumula em disco o historico do indice.
+
+    Existe porque nenhuma fonte alcancavel da o Ibovespa longo: o COTAHIST nao
+    cobre indices, a Stooq bloqueia os IPs do Actions, o SGS nao tem a serie, e
+    a brapi so serve range=3mo do ^BVSP — 64 pregoes, quando a SMA 200 do
+    filtro de regime precisa de 200 e o momentum 12-1 precisa de 260. Sem isto
+    o filtro nao chegava a correr e caia em 'risco ligado' por omissao, que e
+    fail-open num sistema fail-closed em todo o resto.
+
+    Guarda fecho real, nunca estimado: o cache lembra pregoes que aconteceram,
+    nao inventa os que faltam. O fecho de hoje continua a ter de vir da fonte —
+    se nenhuma responder, o ciclo falha como antes. O cache alonga a serie para
+    tras; nao serve de muleta para um dia sem dados.
+    """
+    cached = _load_index_cache(ticker)
+    try:
+        merged = _merge_index_series(cached, live)
+    except IndexCacheMismatch as err:
+        # Ficar com o vivo e recomecar: entre uma serie curta e uma serie
+        # colada a torto, a curta e a honesta.
+        _note_failure("indice_cache", SourceUnavailable(str(err)))
+        merged = list(live)
+    _save_index_cache(ticker, merged)
+    return merged
 
 
 def _cdi_cache_path():

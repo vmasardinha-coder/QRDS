@@ -9,11 +9,37 @@ from __future__ import annotations
 
 import json
 import tempfile
+import urllib.error
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from trading_agent import config, portfolio, report, strategy
+from trading_agent import (config, cotahist, data_sources, portfolio, report,
+                           strategy)
+
+_CACHE_ISOLADO = None
+
+
+def setUpModule():
+    """Nenhum teste escreve no estado real do agente.
+
+    'fetch_b3_daily' passou a gravar a serie do indice em disco, e os testes
+    que substituem as fontes devolvem valores inventados. Sem este desvio, um
+    teste como 'test_the_index_never_asks_the_archive' gravava o seu stub em
+    trading_agent/state/ e o ficheiro seguia para o repositorio — aconteceu a
+    2026-08-17, com um fecho de 130000.0 numa data de pregao real.
+    """
+    global _CACHE_ISOLADO
+    _CACHE_ISOLADO = tempfile.TemporaryDirectory()
+    destino = Path(_CACHE_ISOLADO.name) / "indice_cache.json"
+    mock.patch.object(data_sources, "_index_cache_path",
+                      lambda: destino).start()
+
+
+def tearDownModule():
+    mock.patch.stopall()
+    if _CACHE_ISOLADO is not None:
+        _CACHE_ISOLADO.cleanup()
 
 
 def flat_series(price: float, days: int) -> list[float]:
@@ -898,7 +924,7 @@ class TestBrapiRanges(unittest.TestCase):
     def test_falls_back_to_a_shorter_range_when_the_long_one_fails(self):
         seen = []
 
-        def fake(url, timeout=30.0, retries=None):
+        def fake(url, timeout=30.0, retries=None, headers=None):
             seen.append(url)
             if "range=2y" in url or "range=1y" in url:
                 raise self.ds.DataSourceError("HTTP 401 (definitivo)")
@@ -912,7 +938,7 @@ class TestBrapiRanges(unittest.TestCase):
     def test_stops_early_once_the_history_is_long_enough(self):
         seen = []
 
-        def fake(url, timeout=30.0, retries=None):
+        def fake(url, timeout=30.0, retries=None, headers=None):
             seen.append(url)
             return self._payload(300)
 
@@ -920,18 +946,6 @@ class TestBrapiRanges(unittest.TestCase):
             rows = self.ds.fetch_brapi_daily("PETR4")
         self.assertEqual(len(rows), 300)
         self.assertEqual(len(seen), 1)   # nao insiste depois de ter o que precisa
-
-    def test_token_is_sent_when_configured(self):
-        seen = []
-
-        def fake(url, timeout=30.0, retries=None):
-            seen.append(url)
-            return self._payload(300)
-
-        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "abc123"}), \
-             mock.patch.object(self.ds, "_http_get", fake):
-            self.ds.fetch_brapi_daily("PETR4")
-        self.assertIn("token=abc123", seen[0])
 
     def test_error_names_the_ranges_it_tried(self):
         with mock.patch.object(self.ds, "_http_get",
@@ -953,7 +967,7 @@ class TestFailureTelemetry(unittest.TestCase):
 
     def test_records_source_and_reason(self):
         with mock.patch.object(self.ds, "fetch_brapi_daily",
-                               side_effect=self.ds.DataSourceError("HTTP 401 (definitivo)")), \
+                               side_effect=self.ds.SourceUnavailable("HTTP 401 (definitivo)")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                side_effect=self.ds.RateLimited("429")):
             with self.assertRaises(self.ds.DataSourceError):
@@ -964,7 +978,7 @@ class TestFailureTelemetry(unittest.TestCase):
 
     def test_counts_accumulate_across_tickers(self):
         with mock.patch.object(self.ds, "fetch_brapi_daily",
-                               side_effect=self.ds.DataSourceError("HTTP 401")), \
+                               side_effect=self.ds.SourceUnavailable("HTTP 401")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily",
                                side_effect=self.ds.DataSourceError("x")):
             for _ in range(3):
@@ -1127,7 +1141,7 @@ class TestNasdaqSource(unittest.TestCase):
     def test_nasdaq_failure_falls_through_to_the_old_sources(self):
         series = [("2026-01-01", 10.0, 1000.0)] * 12
         with mock.patch.object(self.ds, "fetch_nasdaq_daily",
-                               side_effect=self.ds.DataSourceError("502")), \
+                               side_effect=self.ds.SourceUnavailable("502")), \
              mock.patch.object(self.ds, "fetch_stooq_daily",
                                side_effect=self.ds.SourceUnavailable("html")), \
              mock.patch.object(self.ds, "fetch_yahoo_daily", return_value=series), \
@@ -1135,3 +1149,472 @@ class TestNasdaqSource(unittest.TestCase):
             out = self.ds.fetch_equity_daily("AAPL")
         self.assertEqual(out, series)
         self.assertEqual(self.ds.FAILURE_TALLY["nasdaq"]["n"], 1)
+
+
+class TestSecretRedaction(unittest.TestCase):
+    """As mensagens de falha sao publicadas no relatorio, que vive num
+    repositorio publico. Uma credencial numa URL de erro acaba la — foi o que
+    aconteceu com o token da brapi no ciclo de 12/08."""
+
+    def setUp(self):
+        from trading_agent import data_sources
+        self.ds = data_sources
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_redact_hides_every_secret_parameter(self):
+        for name in self.ds.SECRET_PARAMS:
+            url = f"https://x.dev/api?range=2y&{name}=SEGREDO123&z=1"
+            out = self.ds.redact(url)
+            self.assertNotIn("SEGREDO123", out)
+            self.assertIn("range=2y", out)   # o resto continua legivel
+            self.assertIn("z=1", out)
+
+    def test_redact_is_case_insensitive(self):
+        self.assertNotIn("ABC", self.ds.redact("https://x.dev/a?TOKEN=ABC"))
+
+    def test_http_errors_never_carry_the_secret(self):
+        import urllib.error
+
+        def fake(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 400, "Bad", {}, None)
+
+        with mock.patch.object(self.ds.urllib.request, "urlopen", fake), \
+             mock.patch.object(self.ds.time, "sleep"):
+            with self.assertRaises(self.ds.DataSourceError) as ctx:
+                self.ds._http_get("https://brapi.dev/api/quote/PETR4?token=SEGREDO123")
+        self.assertNotIn("SEGREDO123", str(ctx.exception))
+
+    def test_brapi_sends_the_token_as_a_header_not_in_the_url(self):
+        seen = {}
+
+        def fake(url, timeout=30.0, retries=None, headers=None):
+            seen["url"] = url
+            seen["headers"] = headers or {}
+            return json.dumps({"results": [{"historicalDataPrice": [
+                {"date": 1767225600 + i * 86400, "close": 30.0, "volume": 1e6}
+                for i in range(300)]}]}).encode()
+
+        with mock.patch.dict("os.environ", {"BRAPI_TOKEN": "SEGREDO123"}), \
+             mock.patch.object(self.ds, "_http_get", fake):
+            self.ds.fetch_brapi_daily("PETR4")
+        self.assertNotIn("SEGREDO123", seen["url"])
+        self.assertNotIn("token=", seen["url"])
+        self.assertEqual(seen["headers"].get("Authorization"), "Bearer SEGREDO123")
+
+    def test_published_files_carry_no_token(self):
+        from pathlib import Path
+        import re
+        leaked = []
+        for path in list(Path("trading_agent/reports").rglob("*.md")) + \
+                    list(Path("trading_agent/state").glob("*.json")):
+            if re.search(r"token=(?!\*)[A-Za-z0-9]{4}", path.read_text(encoding="utf-8")):
+                leaked.append(str(path))
+        self.assertEqual(leaked, [])
+
+
+class TestUniverseHygiene(unittest.TestCase):
+    """Um ticker extinto encolhe o universo em silencio.
+
+    A carteira nao fica errada — fica mais pequena do que o mandante decidiu,
+    e o relatorio so mostra isso como uma linha de "sem dado" entre outras.
+    """
+
+    def test_no_duplicate_tickers(self):
+        for nome, universo in (("B3", config.B3_UNIVERSE),
+                               ("EUA", config.EQUITY_UNIVERSE)):
+            with self.subTest(universo=nome):
+                repetidos = {t for t in universo if universo.count(t) > 1}
+                self.assertEqual(repetidos, set())
+
+    def test_symbols_retired_by_corporate_action_are_gone(self):
+        # Sucessoes confirmadas no arquivo da B3 (2026-08-15): o antigo para de
+        # negociar e o novo comeca no pregao seguinte, com o nome da empresa ou
+        # o emissor do ISIN a confirmar.
+        for morto, vivo in (("CPLE6", "CPLE3"), ("BRFS3", "MBRF3"),
+                            ("ELET3", "AXIA3"), ("EMBR3", "EMBJ3"),
+                            ("NTCO3", "NATU3")):
+            with self.subTest(ticker=morto):
+                self.assertNotIn(morto, config.B3_UNIVERSE)
+                self.assertIn(vivo, config.B3_UNIVERSE)
+
+    def test_jbs_is_out_because_what_remains_on_b3_is_a_bdr(self):
+        # A JBS passou a negociar em Nova Iorque; o que sobrou na B3 e JBSS32,
+        # um BDR. Um recibo de acoes estrangeiras tem exposicao cambial e nao
+        # e acao brasileira — nao entra numa carteira de acoes da B3 so para
+        # manter a contagem de nomes.
+        for ticker in ("JBSS3", "JBSS32"):
+            self.assertNotIn(ticker, config.B3_UNIVERSE)
+
+
+def _cotahist_record(date="20260813", codneg="PETR4", tpmerc="010",
+                     preult="0000000004190", quatot="000000000012345678",
+                     tipreg="01"):
+    """Monta um registo COTAHIST de 245 caracteres por posicao fixa."""
+    linha = (
+        tipreg                      # 01-02  TIPREG
+        + date                      # 03-10  DATA
+        + "02"                      # 11-12  CODBDI
+        + codneg.ljust(12)          # 13-24  CODNEG
+        + tpmerc                    # 25-27  TPMERC
+        + "PETROBRAS   "            # 28-39  NOMRES
+        + "PN        "              # 40-49  ESPECI
+        + "   "                     # 50-52  PRAZOT
+        + "R$  "                    # 53-56  MODREF
+        + "0000000004200"           # 57-69  PREABE
+        + "0000000004250"           # 70-82  PREMAX
+        + "0000000004150"           # 83-95  PREMIN
+        + "0000000004200"           # 96-108 PREMED
+        + preult                    # 109-121 PREULT
+        + "0000000004190"           # 122-134 PREOFC
+        + "0000000004200"           # 135-147 PREOFV
+        + "01234"                   # 148-152 TOTNEG
+        + quatot                    # 153-170 QUATOT
+        + "000000000051750000"      # 171-188 VOLTOT
+    )
+    return linha.ljust(245)
+
+
+def _cotahist_zip(linhas):
+    import io
+    import zipfile
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("COTAHIST_A2026.TXT",
+                    "\r\n".join(linhas).encode("latin-1"))
+    return buffer.getvalue()
+
+
+class TestCotahistParsing(unittest.TestCase):
+    """O arquivo da B3 e posicional: um desalinhamento de um caracter troca
+    silenciosamente preco por volume, por isso o formato e testado a serio.
+    """
+
+    def test_reads_price_with_implied_decimals(self):
+        blob = _cotahist_zip([_cotahist_record()])
+        series = cotahist.parse(blob, {"PETR4"})
+        self.assertEqual(series["PETR4"], [("2026-08-13", 41.90, 12345678.0)])
+
+    def test_only_the_requested_tickers_come_back(self):
+        blob = _cotahist_zip([_cotahist_record(codneg="PETR4"),
+                              _cotahist_record(codneg="VALE3")])
+        series = cotahist.parse(blob, {"PETR4"})
+        self.assertEqual(sorted(series), ["PETR4"])
+
+    def test_options_and_futures_are_excluded(self):
+        # so mercado a vista (TPMERC 010): uma opcao sobre PETR4 tem o mesmo
+        # prefixo mas nao e o ativo
+        blob = _cotahist_zip([_cotahist_record(tpmerc="070"),
+                              _cotahist_record(tpmerc="030")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_header_and_trailer_records_are_ignored(self):
+        blob = _cotahist_zip([_cotahist_record(tipreg="00"),
+                              _cotahist_record(tipreg="99")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_corrupt_row_is_skipped_not_guessed(self):
+        bom = _cotahist_record(date="20260813")
+        mau = _cotahist_record(date="20260812", preult="00000000041XX")
+        series = cotahist.parse(_cotahist_zip([mau, bom]), {"PETR4"})
+        self.assertEqual(series["PETR4"], [("2026-08-13", 41.90, 12345678.0)])
+
+    def test_zero_price_is_dropped(self):
+        blob = _cotahist_zip([_cotahist_record(preult="0000000000000")])
+        self.assertEqual(cotahist.parse(blob, {"PETR4"}), {})
+
+    def test_unreadable_zip_is_a_source_error(self):
+        with self.assertRaises(cotahist.CotahistError):
+            cotahist.parse(b"nao sou um zip", {"PETR4"})
+
+
+class TestCotahistWiring(unittest.TestCase):
+
+    def setUp(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+
+    def test_series_for_without_priming_is_an_error_not_a_silent_empty(self):
+        with self.assertRaises(cotahist.CotahistError):
+            cotahist.series_for("PETR4")
+
+    def test_priming_twice_does_not_download_twice(self):
+        chamadas = []
+
+        def falso_load(tickers, hoje=None):
+            chamadas.append(tuple(tickers))
+            return {"PETR4": [("2026-08-13", 41.9, 1.0)]}
+
+        with mock.patch.object(cotahist, "load", falso_load):
+            cotahist.prime(["PETR4"])
+            cotahist.prime(["PETR4"])
+        self.assertEqual(len(chamadas), 1)
+
+    def test_a_missing_ticker_does_not_force_a_reload(self):
+        # BOVA11 pedido mas ausente do arquivo: nao pode fazer o ciclo puxar
+        # 150 MB outra vez a cada chamada
+        chamadas = []
+
+        def falso_load(tickers, hoje=None):
+            chamadas.append(tuple(tickers))
+            return {"PETR4": [("2026-08-13", 41.9, 1.0)]}
+
+        with mock.patch.object(cotahist, "load", falso_load):
+            cotahist.prime(["PETR4", "BOVA11"])
+            cotahist.prime(["PETR4", "BOVA11"])
+        self.assertEqual(len(chamadas), 1)
+
+    def test_b3_cascade_tries_the_official_archive_first(self):
+        ordem = []
+
+        def falso_cotahist(ticker):
+            ordem.append("cotahist")
+            return [("2026-08-13", 41.9, 1.0)] * 300
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily",
+                               falso_cotahist):
+            series = data_sources.fetch_b3_daily("PETR4")
+        self.assertEqual(ordem, ["cotahist"])
+        self.assertEqual(len(series), 300)
+
+    def test_the_index_never_asks_the_archive(self):
+        # COTAHIST nao tem indices; pedir ^BVSP la seria uma falha garantida
+        ordem = []
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily",
+                               lambda t: ordem.append("cotahist")), \
+             mock.patch.object(data_sources, "fetch_brapi_daily",
+                               lambda t: [("2026-08-13", 130000.0, 0.0)]):
+            data_sources.fetch_b3_daily("^BVSP", is_benchmark=True)
+        self.assertEqual(ordem, [])
+
+    def test_archive_failure_falls_through_to_brapi(self):
+        def falha(ticker):
+            raise data_sources.DataSourceError("COTAHIST fora do ar")
+
+        with mock.patch.object(data_sources, "fetch_cotahist_daily", falha), \
+             mock.patch.object(data_sources, "fetch_brapi_daily",
+                               lambda t: [("2026-08-13", 41.9, 1.0)]):
+            series = data_sources.fetch_b3_daily("PETR4")
+        self.assertEqual(series, [("2026-08-13", 41.9, 1.0)])
+
+
+class TestSourceFailureClassification(unittest.TestCase):
+    """Uma fonte que nao lista um ativo nao esta avariada.
+
+    Confundir as duas coisas fazia o relatorio anunciar "coinbase falhou 31x"
+    enquanto a Binance servia essas 31 e nenhuma moeda ficava de fora — um
+    alarme falso que faz perder a confianca nos alarmes verdadeiros.
+    """
+
+    def setUp(self):
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def test_missing_asset_is_not_counted_as_an_outage(self):
+        data_sources._note_failure(
+            "coinbase", data_sources.DataSourceError("HTTP 404 (definitivo)"))
+        self.assertEqual(data_sources.FAILURE_TALLY, {})
+        self.assertEqual(data_sources.MISSING_TALLY["coinbase"]["n"], 1)
+
+    def test_a_blocked_source_is_still_an_outage(self):
+        data_sources._note_failure(
+            "yahoo", data_sources.RateLimited("429 apos 3 tentativas"))
+        self.assertEqual(data_sources.MISSING_TALLY, {})
+        self.assertEqual(data_sources.FAILURE_TALLY["yahoo"]["n"], 1)
+
+    def test_the_archive_not_loading_is_an_outage_not_a_missing_ticker(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+        with self.assertRaises(data_sources.SourceUnavailable):
+            data_sources.fetch_cotahist_daily("PETR4")
+
+    def test_a_ticker_absent_from_the_archive_is_not_an_outage(self):
+        cotahist.reset()
+        self.addCleanup(cotahist.reset)
+        with mock.patch.object(cotahist, "load",
+                               lambda t, hoje=None: {"PETR4": [("2026-08-13", 1.0, 1.0)]}):
+            cotahist.prime(["PETR4", "NAOEXISTE3"])
+        with self.assertRaises(data_sources.DataSourceError) as caught:
+            data_sources.fetch_cotahist_daily("NAOEXISTE3")
+        self.assertNotIsInstance(caught.exception, data_sources.SourceUnavailable)
+
+
+class TestCotahistDownloadResilience(unittest.TestCase):
+    """O ciclo de 2026-08-14 caiu com IncompleteRead nos 62 MB do ano corrente
+    e mandou as 51 series para a brapi, que so tem historico truncado. Num dia
+    de rebalanceio isso teria liquidado a carteira por causa da rede.
+    """
+
+    def test_a_cut_transfer_resumes_instead_of_starting_over(self):
+        pedidos = []
+
+        def falso_pedaco(url, desde, timeout):
+            pedidos.append(desde)
+            if desde == 0:
+                return b"a" * 10, 25        # corta a meio
+            return b"b" * 15, 25
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco):
+            dados = cotahist._download(2026)
+        self.assertEqual(pedidos, [0, 10])   # retomou, nao recomecou
+        self.assertEqual(len(dados), 25)
+
+    def test_it_gives_up_with_a_reason_instead_of_looping_forever(self):
+        with mock.patch.object(cotahist, "_pedaco",
+                               lambda url, desde, timeout: (b"", None)), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError) as caught:
+                cotahist._download(2026)
+        self.assertIn("vazia", str(caught.exception))
+
+    def test_a_permanent_http_error_is_not_retried(self):
+        tentativas = []
+
+        def falha(url, desde, timeout):
+            tentativas.append(desde)
+            raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+
+        with mock.patch.object(cotahist, "_pedaco", falha), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError):
+                cotahist._download(2026)
+        self.assertEqual(len(tentativas), 1)
+
+
+class TestRefusedVersusMissing(unittest.TestCase):
+    """A classificacao tem de nascer onde o codigo HTTP e conhecido.
+
+    Antes vinha do tipo da excecao, e isso punha 401 ("a fonte recusa-te") no
+    mesmo saco que 404 ("esse ativo nao existe").
+    """
+
+    def _get(self, code):
+        def falso(req, timeout=None):
+            raise urllib.error.HTTPError("https://x/y", code, "erro", None, None)
+        with mock.patch.object(data_sources.urllib.request, "urlopen", falso):
+            return data_sources._http_get("https://x/y", retries=1)
+
+    def test_forbidden_is_a_source_refusing_us(self):
+        for code in (401, 403):
+            with self.subTest(code=code):
+                with self.assertRaises(data_sources.SourceUnavailable):
+                    self._get(code)
+
+    def test_not_found_is_just_a_missing_asset(self):
+        for code in (400, 404, 410, 422):
+            with self.subTest(code=code):
+                with self.assertRaises(data_sources.DataSourceError) as caught:
+                    self._get(code)
+                self.assertNotIsInstance(caught.exception,
+                                         data_sources.SourceUnavailable)
+
+
+class TestIndexHistoryCache(unittest.TestCase):
+    """O cache do indice existe porque nenhuma fonte da o Ibovespa longo.
+
+    Medido no runner a 2026-08-17: a brapi recusa range 2y/1y/6mo do ^BVSP com
+    HTTP 400 e so serve 3mo (64 pregoes); a Stooq devolve pagina anti-robo nos
+    dois hosts; o SGS nao tem a serie; o Yahoo estava em 429. A SMA 200 precisa
+    de 200 pregoes, por isso a serie tem de ser acumulada ao longo dos ciclos.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        caminho = Path(self.tmp.name) / "indice_cache.json"
+        p = mock.patch.object(data_sources, "_index_cache_path",
+                              lambda: caminho)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_the_suite_never_writes_to_the_real_state_dir(self):
+        # Guarda para o desvio de 'setUpModule' nao ser removido sem se dar por
+        # isso: se voltar a apontar para trading_agent/state/, os stubs dos
+        # testes voltam a ser commitados como se fossem cotacoes.
+        real = Path(data_sources.__file__).resolve().parent / "state"
+        self.assertNotIn(real, data_sources._index_cache_path().parents)
+
+    def test_history_accumulates_across_cycles(self):
+        # Dois ciclos com janelas curtas que se sobrepoem: o que fica guardado
+        # e a uniao, que e maior que qualquer uma das fontes isolada.
+        ciclo1 = [("2026-01-05", 100.0, 1.0), ("2026-01-06", 101.0, 1.0)]
+        ciclo2 = [("2026-01-06", 101.0, 1.0), ("2026-01-07", 102.0, 1.0)]
+        data_sources._absorb_index_history("^BVSP", ciclo1)
+        junto = data_sources._absorb_index_history("^BVSP", ciclo2)
+        self.assertEqual([d for d, _, _ in junto],
+                         ["2026-01-05", "2026-01-06", "2026-01-07"])
+
+    def test_cached_history_makes_the_regime_filter_evaluable(self):
+        # O ponto da coisa: 64 pregoes nao chegam para a SMA 200, e ao fim de
+        # ciclos suficientes chegam. Sem isto o filtro nunca corria.
+        curto = [(f"2026-01-{d:02d}", 100.0, 1.0) for d in range(1, 29)]
+        self.assertFalse(strategy.regime_avaliavel([c for _, c, _ in curto]))
+        longo = [(f"d{i:04d}", 100.0, 1.0) for i in range(config.SMA_REGIME_DAYS)]
+        data_sources._absorb_index_history("^BVSP", longo)
+        guardado = data_sources._load_index_cache("^BVSP")
+        self.assertTrue(strategy.regime_avaliavel([c for _, c, _ in guardado]))
+
+    def test_series_on_a_different_scale_is_refused_not_glued(self):
+        # Uma fonte que devolva outro indice, ou o mesmo noutra escala, faria
+        # um salto de retorno que nunca existiu. Recomeca-se do vivo.
+        # O pregao de 02/01 so existe no cache: e ele que denuncia se houve
+        # colagem, porque sobreviveria ao lado de valores 100x menores.
+        data_sources._absorb_index_history(
+            "^BVSP", [("2026-01-02", 129000.0, 1.0),
+                      ("2026-01-05", 130000.0, 1.0)])
+        vivo = [("2026-01-05", 1300.0, 1.0), ("2026-01-06", 1310.0, 1.0)]
+        junto = data_sources._absorb_index_history("^BVSP", vivo)
+        self.assertEqual(junto, vivo)
+        self.assertNotIn("2026-01-02", [d for d, _, _ in junto])
+
+    def test_cache_is_not_a_crutch_for_a_missing_day(self):
+        # O cache alonga a serie para tras; nao substitui o fecho de hoje.
+        # Sem fonte nenhuma, o ciclo tem de falhar como falhava antes.
+        data_sources._absorb_index_history(
+            "^BVSP", [("2026-01-05", 130000.0, 1.0)])
+        with mock.patch.object(data_sources, "fetch_brapi_daily",
+                               side_effect=data_sources.DataSourceError("x")), \
+             mock.patch.object(data_sources, "fetch_yahoo_daily",
+                               side_effect=data_sources.DataSourceError("y")):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources.fetch_b3_daily("^BVSP", is_benchmark=True)
+
+
+class TestRegimeIsDeclaredNotAssumed(unittest.TestCase):
+    """Uma SMA 200 sem 200 pregoes nao reprova ninguem.
+
+    'equity_regime' devolve 'risk_on' tanto quando o filtro corre e aprova como
+    quando nao ha historico para o correr — fail-open num sistema que e
+    fail-closed em tudo o resto. O valor da decisao mantem-se; o que muda e que
+    o relatorio passa a dizer qual dos dois casos foi.
+    """
+
+    def test_short_series_still_yields_risk_on(self):
+        self.assertEqual(strategy.equity_regime([100.0] * 10), "risk_on")
+
+    def test_but_it_is_marked_as_not_evaluated(self):
+        self.assertFalse(strategy.regime_avaliavel([100.0] * 10))
+        self.assertTrue(
+            strategy.regime_avaliavel([100.0] * config.SMA_REGIME_DAYS))
+
+    def test_report_says_the_filter_did_not_run(self):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", regime_avaliado=False)
+        regime = [ln for ln in linhas if "Regime" in ln]
+        self.assertTrue(regime)
+        self.assertIn("NAO avaliado", regime[0])
+
+    def test_report_stays_plain_when_the_filter_did_run(self):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", regime_avaliado=True)
+        regime = [ln for ln in linhas if "Regime" in ln]
+        self.assertNotIn("NAO avaliado", regime[0])
