@@ -1,0 +1,42 @@
+{
+  "protocol_id": "GATE_BTC_V16B_REHEARSAL_1D_V1_20260822",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "purpose": "Exercise the full V16B SIGNAL->ENTRY evidence path before the next canonical weekly cycle without advancing the prospective clock.",
+  "economic_methodology_changed": false,
+  "canonical_schedule_changed": false,
+  "canonical_next_cycle": {
+    "signal_date_utc": "2026-08-27",
+    "entry_date_utc": "2026-08-28",
+    "complete_exit_date_utc": "2026-09-04"
+  },
+  "rehearsal_window": {
+    "signal_as_of_utc": "2026-08-21",
+    "entry_rehearsal_utc": "2026-08-22",
+    "prospective_count": 0
+  },
+  "mandatory_event_flags": {
+    "REHEARSAL": true,
+    "PROSPECTIVE_COUNT": 0,
+    "CANONICAL_LEDGER": false,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  },
+  "isolation_contract": {
+    "canonical_ledger_write_forbidden": true,
+    "rehearsal_ledger_name_must_contain": "rehearsal",
+    "promotion_from_rehearsal_forbidden": true,
+    "backfill_to_canonical_forbidden": true,
+    "late_seal_to_canonical_forbidden": true
+  },
+  "causality_contract": {
+    "signal_uses_only_information_available_by_signal_day_close": true,
+    "current_entry_shortability_not_used_in_signal": true,
+    "entry_evidence_must_follow_rehearsal_signal_seal": true,
+    "binance_server_time_must_be_between_signal_seal_and_entry_close": true
+  },
+  "interpretation": "A PASS rehearsal proves orchestration/evidence plumbing only. It is not a prospective V16B observation and cannot count toward 13/26/52 checkpoints."
+}
