@@ -1,0 +1,143 @@
+name: Gate BTC V16B next-gate watchdog
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: preflight | signal_watchdog | entry_watchdog
+        required: true
+        default: preflight
+      signal_date:
+        description: Canonical signal date
+        required: true
+        default: '2026-08-27'
+      entry_date:
+        description: Canonical entry date
+        required: true
+        default: '2026-08-28'
+  schedule:
+    - cron: '15 2 25 8 *'
+    - cron: '15 2 26 8 *'
+    - cron: '40 23 27 8 *'
+    - cron: '40 23 28 8 *'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      NOT_APPROVED: 'true'
+      ENGINE_FEED: 'false'
+      ORDERS: '0'
+      REAL_CAPITAL: '0'
+      SIGNAL_DATE: ${{ inputs.signal_date || '2026-08-27' }}
+      ENTRY_DATE: ${{ inputs.entry_date || '2026-08-28' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Resolve mode
+        id: mode
+        shell: bash
+        run: |
+          MODE='${{ inputs.mode }}'
+          if [ -z "$MODE" ]; then
+            D=$(date -u +%d)
+            if [ "$D" = '25' ] || [ "$D" = '26' ]; then MODE=preflight; fi
+            if [ "$D" = '27' ]; then MODE=signal_watchdog; fi
+            if [ "$D" = '28' ]; then MODE=entry_watchdog; fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+      - name: Verify frozen safety invariants
+        shell: bash
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+      - name: Rehearsal/preflight contract
+        if: steps.mode.outputs.mode == 'preflight'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          required = [
+            Path('tools/gate_btc_v16b_rehearsal.py'),
+          ]
+          missing=[str(p) for p in required if not p.exists()]
+          if missing:
+              raise SystemExit('V16B_PREFLIGHT=FAIL missing=' + ','.join(missing))
+          print('V16B_PREFLIGHT=PASS_REPO_CONTRACT')
+          print('V16B_REHEARSAL=REQUIRED_BEFORE_CANONICAL_SIGNAL')
+          print('CANONICAL_CYCLE_COUNT=0')
+          print('NEXT_CANONICAL_EVENT=SIGNAL_2026-08-27')
+          PY
+      - name: Canonical signal seal watchdog
+        if: steps.mode.outputs.mode == 'signal_watchdog'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib, sys
+          candidates=list(Path('.').rglob('*V16B*SIGNAL*seal*.json')) + list(Path('.').rglob('*v16b*signal*seal*.json'))
+          if not candidates:
+              print('SIGNAL_SEAL=RED_MISSING_CANONICAL_SEAL')
+              sys.exit(1)
+          ok=False
+          for p in candidates:
+              try:
+                  obj=json.loads(p.read_text(encoding='utf-8'))
+              except Exception:
+                  continue
+              if obj.get('REHEARSAL') is True or obj.get('CANONICAL_LEDGER') is False:
+                  continue
+              text=p.read_bytes(); sha=hashlib.sha256(text).hexdigest()
+              print(f'SIGNAL_SEAL_CANDIDATE={p} SHA256={sha}')
+              ok=True
+          if not ok:
+              print('SIGNAL_SEAL=RED_NO_CANONICAL_CAUSAL_SEAL')
+              sys.exit(1)
+          print('SIGNAL_SEAL=PASS_PRESENT_FOR_FURTHER_CAUSAL_QA')
+          PY
+      - name: Canonical entry seal watchdog
+        if: steps.mode.outputs.mode == 'entry_watchdog'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib, sys
+          sig=list(Path('.').rglob('*V16B*SIGNAL*seal*.json')) + list(Path('.').rglob('*v16b*signal*seal*.json'))
+          ent=list(Path('.').rglob('*V16B*ENTRY*seal*.json')) + list(Path('.').rglob('*v16b*entry*seal*.json'))
+          def canonical(ps):
+              out=[]
+              for p in ps:
+                  try: obj=json.loads(p.read_text(encoding='utf-8'))
+                  except Exception: continue
+                  if obj.get('REHEARSAL') is True or obj.get('CANONICAL_LEDGER') is False: continue
+                  out.append(p)
+              return out
+          sig=canonical(sig); ent=canonical(ent)
+          if not sig:
+              print('ENTRY_SEAL=RED_PRIOR_SIGNAL_SEAL_MISSING'); sys.exit(1)
+          if not ent:
+              print('ENTRY_SEAL=RED_MISSING_CANONICAL_ENTRY_SEAL'); sys.exit(1)
+          for p in ent:
+              print(f'ENTRY_SEAL_CANDIDATE={p} SHA256={hashlib.sha256(p.read_bytes()).hexdigest()}')
+          print('ENTRY_SEAL=PASS_PRESENT_FOR_FURTHER_CAUSAL_QA')
+          PY
+      - name: Summary
+        shell: bash
+        run: |
+          echo 'RESEARCH_ONLY=true' >> "$GITHUB_STEP_SUMMARY"
+          echo 'SHADOW_ONLY=true' >> "$GITHUB_STEP_SUMMARY"
+          echo 'NOT_APPROVED=true' >> "$GITHUB_STEP_SUMMARY"
+          echo 'ORDERS=0' >> "$GITHUB_STEP_SUMMARY"
+          echo 'REAL_CAPITAL=0' >> "$GITHUB_STEP_SUMMARY"
+          echo "MODE=${{ steps.mode.outputs.mode }}" >> "$GITHUB_STEP_SUMMARY"
