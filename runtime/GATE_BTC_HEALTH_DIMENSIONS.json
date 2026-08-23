@@ -1,5 +1,7 @@
 {
-  "amber_collection_components": [],
+  "amber_collection_components": [
+    "v16b"
+  ],
   "collection_delivery": "RED_INCOMPLETE_DELIVERY",
   "components": {
     "alt_trail": {
@@ -7,6 +9,12 @@
       "freshness": "CURRENT_CALENDAR_GATED",
       "scientific_state": "VALID_PROTOCOL_WAITING",
       "source_status": "WAITING_FIRST_UNTOUCHED_SIGNAL"
+    },
+    "b3_h1": {
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "ACTIVE_STRUCTURAL_COLLECTION"
     },
     "bull_replay_live_shadow": {
       "collection_health": "GREEN",
@@ -50,6 +58,12 @@
       "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
       "source_status": "ACTIVE"
     },
+    "momentum_m1_m2": {
+      "collection_health": "RED_FAILED_DELIVERY",
+      "freshness": "FRESH",
+      "scientific_state": "PRESERVED_DELIVERY_FAILURE",
+      "source_status": "OPEN_DIAGNOSTIC_COLLECTION_DELIVERY"
+    },
     "prl50": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
       "freshness": "CURRENT_CALENDAR_GATED",
@@ -61,21 +75,28 @@
       "freshness": "CURRENT_CALENDAR_GATED",
       "scientific_state": "VALID_PROTOCOL_WAITING",
       "source_status": "ACTIVE_CALENDAR_GATED"
+    },
+    "v16b": {
+      "collection_health": "AMBER_BLOCKED_DEPENDENCY",
+      "freshness": "FRESH",
+      "scientific_state": "DEPENDENCY_BLOCKED_NOT_YET_EVALUABLE",
+      "source_status": "WAITING_NEXT_CANONICAL_WINDOW"
     }
   },
-  "generated_at_utc": "2026-08-23T04:10:45.129345+00:00",
-  "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale or missing component is promoted to GREEN.",
+  "generated_at_utc": "2026-08-23T20:02:31.965921+00:00",
+  "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
   "orders_generated": 0,
   "real_capital_used": 0,
   "red_collection_components": [
-    "d50"
+    "d50",
+    "momentum_m1_m2"
   ],
   "reference_data_date": "2026-08-22",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "9699c79541de1a5732eb6c06431757b6656ba02ed0913ba407d9a3fcf2927fcb"
+  "status_sha256": "279ff017232dbfe7778ab19ea1350e8152619ed1e887d79b0f7f85f5ff50f46a"
 }
