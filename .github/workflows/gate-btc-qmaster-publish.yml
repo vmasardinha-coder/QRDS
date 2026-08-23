@@ -116,6 +116,16 @@ jobs:
           print(json.dumps(state, indent=2, sort_keys=True))
           PY
 
+      - name: Upload canonical QMASTER artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-qmaster-latest-${{ steps.source.outputs.run_id }}
+          path: |
+            qmaster_out/GATE_BTC_QMASTER_LATEST.txt
+            qmaster_out/GATE_BTC_QMASTER_LATEST.csv
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Publish QMASTER to canonical runtime paths
         run: |
           set -euo pipefail
