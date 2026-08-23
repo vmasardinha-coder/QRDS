@@ -4,6 +4,8 @@ Status: SURVIVORS_READY_FOR_PROSPECTIVE
 
 H1 economics were not read. H1 contamination=false. orders=0. capital=0. engine_feed=false.
 
+Source provenance is immutable: `wesleyzilva/tradetech@0deb43c668dcd447ed169c9cafb52af625d5419e`. The runner records this commit in every status artifact.
+
 Data adequacy passed: discovery synchronized sessions=374 with median common-bar coverage=0.9912280701754386; independent replication synchronized sessions=780 with median common-bar coverage=1.0.
 
 Final family states:
