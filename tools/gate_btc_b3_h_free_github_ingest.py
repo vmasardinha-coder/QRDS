@@ -57,9 +57,22 @@ def list_source_items(session: requests.Session) -> list[dict]:
     return items
 
 
+def _drop_noncontiguous_sessions(x: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    y = x.sort_values('timestamp', kind='mergesort').copy()
+    y['_session'] = y['timestamp'].dt.date
+    bad = []
+    for session, g in y.groupby('_session', sort=True):
+        delta = g['timestamp'].diff().dropna().dt.total_seconds()
+        if not delta.empty and (delta != 300).any():
+            bad.append(session)
+    if bad:
+        y = y[~y['_session'].isin(bad)].copy()
+    return y.drop(columns=['_session']), [d.isoformat() for d in bad]
+
+
 def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     s = requests.Session()
-    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.1'})
+    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.2'})
     items = list_source_items(s)
     item = next((x for x in items if x.get('name') == CONTINUOUS_NAME), None)
     if item is None or not item.get('download_url'):
@@ -73,13 +86,14 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     if x.empty:
         raise RuntimeError('NO_PRE_H1_CONTINUOUS_ROWS')
 
-    # This source is used only for same-session, translation-invariant families.
-    # No absolute-level or cross-roll inference is permitted. We attach the
-    # causal front-contract label by calendar only for session bookkeeping.
     x['symbol'] = x['timestamp'].dt.date.map(lambda z: win_front(z).symbol)
     x = x.sort_values('timestamp', kind='mergesort').drop_duplicates(['timestamp'], keep='last').reset_index(drop=True)
     if (x['timestamp'].dt.date >= H1_CUTOFF).any():
         raise RuntimeError('H1_CUTOFF_BREACH')
+
+    x, dropped_sessions = _drop_noncontiguous_sessions(x)
+    if x.empty:
+        raise RuntimeError('NO_COMPLETE_M5_SESSIONS_AFTER_GAP_FILTER')
 
     off_grid = {}
     for c in PRICE_COLS:
@@ -104,6 +118,7 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'absolute_level_research_allowed': False,
         'fixed_point_economics_allowed': False,
         'off_tick_rows_by_price_column': off_grid,
+        'dropped_noncontiguous_sessions': dropped_sessions,
         'bar_minutes': 5,
         'timezone': TZ,
         'roll_policy': 'PROFIT_CONTINUOUS_INTRADAY_ONLY',
@@ -128,6 +143,7 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'absolute_level_research_allowed': False,
         'fixed_point_economics_allowed': False,
         'off_tick_rows_by_price_column': off_grid,
+        'dropped_noncontiguous_sessions': dropped_sessions,
         'research_only': True,
         'h1_economics_read': False,
         'orders': 0,
