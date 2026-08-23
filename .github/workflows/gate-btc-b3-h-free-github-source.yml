@@ -1,0 +1,57 @@
+name: GATE BTC B3 H Free GitHub Source
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h_free_github_ingest.py
+      - .github/workflows/gate-btc-b3-h-free-github-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  build-pre-h1-win-m5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas requests
+      - name: Build canonical pre-H1 M5 from explicit community contract exports
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+      - name: Validate with Stage1 anti-contamination adapter
+        run: |
+          python tools/gate_btc_b3_h_stage1_adapter.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+      - name: Assert useful coverage and H1 isolation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.report.json').read_text())
+          a=json.loads(Path('artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json').read_text())
+          assert r['h1_economics_read'] is False and a['h1_economics_read'] is False
+          assert r['orders']==0 and r['real_capital']==0
+          assert r['rows'] >= 20000, r
+          assert r['sessions'] >= 200, r
+          assert r['last_timestamp'] < '2026-08-10', r
+          print('B3_H_FREE_GITHUB_M5=PASS_RESEARCH_ONLY')
+          PY
+      - name: Upload canonical historical source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h-free-github-m5-${{ github.run_id }}
+          path: artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB*
+          retention-days: 30
+          if-no-files-found: error
