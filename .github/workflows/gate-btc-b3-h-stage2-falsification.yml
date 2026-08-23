@@ -1,0 +1,72 @@
+name: GATE BTC B3 H Stage2 Falsification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h_stage2_falsification.py
+      - tools/gate_btc_b3_h_free_github_ingest.py
+      - tools/gate_btc_b3_h_stage1_adapter.py
+      - .github/workflows/gate-btc-b3-h-stage2-falsification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  falsify-h2-h4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests
+      - name: Build guarded pre-H1 community M5 source
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+      - name: Revalidate Stage1 anti-contamination boundary
+        run: |
+          python tools/gate_btc_b3_h_stage1_adapter.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+      - name: Run preregistered normalized H4 H2 H3 falsification
+        run: |
+          python tools/gate_btc_b3_h_stage2_falsification.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out-json artifacts/b3_h_nextgen/STAGE2_FALSIFICATION.json \
+            --out-cells-csv artifacts/b3_h_nextgen/STAGE2_CELLS.csv
+      - name: Assert research-only activation semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/b3_h_nextgen/STAGE2_FALSIFICATION.json').read_text())
+          assert p['h1_economics_read'] is False
+          assert p['orders'] == 0 and p['real_capital'] == 0
+          assert p['not_approved_for_trading'] is True
+          assert p['fixed_point_economics_used'] is False
+          assert p['h1_cutoff_exclusive'] == '2026-08-10'
+          assert len(p['activated_prospective_candidates']) <= 2
+          for c in p['activated_prospective_candidates']:
+              assert c['activation_capital'] == 0 and c['orders'] == 0
+              assert c['raw_tradable_price_confirmation_required_before_any_execution'] is True
+          print('B3_H_STAGE2=PASS_RESEARCH_ONLY')
+          print('B3_H_STAGE2_ACTIVATED=' + ','.join(x['family'] for x in p['activated_prospective_candidates']))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h-stage2-${{ github.run_id }}
+          path: |
+            artifacts/b3_h_nextgen/STAGE2_*
+            artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.report.json
+            artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+          retention-days: 30
+          if-no-files-found: error

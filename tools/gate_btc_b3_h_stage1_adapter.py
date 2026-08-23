@@ -20,9 +20,11 @@ FORBIDDEN_COLUMNS = {
     "expectancy", "win_rate", "winner", "loser", "entry", "exit",
     "target", "stop", "signal", "position", "equity", "capital",
 }
+CONTINUOUS_INTRADAY_MODE = "CONTINUOUS_INTRADAY_TRANSLATION_INVARIANT_ONLY"
 ALLOWED_ADJUSTMENT_MODES = {
     "UNADJUSTED_REAL_CONTRACT_PRICES",
     "EXPLICIT_CONTRACTS_NO_BACK_ADJUSTMENT",
+    CONTINUOUS_INTRADAY_MODE,
 }
 ALLOWED_BAR_MINUTES = {5}
 SYMBOL_RE = re.compile(r"^WIN[A-Z][0-9]{2}$")
@@ -43,6 +45,7 @@ class InputAttestation:
     adjustment_mode: str
     bar_minutes: int
     symbols: tuple[str, ...]
+    research_scope: str | None
 
     def as_dict(self) -> dict:
         return {
@@ -64,6 +67,7 @@ class InputAttestation:
             "adjustment_mode": self.adjustment_mode,
             "bar_minutes": self.bar_minutes,
             "symbols": list(self.symbols),
+            "research_scope": self.research_scope,
         }
 
 
@@ -90,7 +94,8 @@ def _load_metadata(path: Path) -> dict:
     missing = required - set(meta)
     if missing:
         raise Stage1InputError(f"METADATA_MISSING:{sorted(missing)}")
-    if meta["adjustment_mode"] not in ALLOWED_ADJUSTMENT_MODES:
+    mode = meta["adjustment_mode"]
+    if mode not in ALLOWED_ADJUSTMENT_MODES:
         raise Stage1InputError("ADJUSTED_OR_UNKNOWN_PRICE_SERIES_REJECTED")
     if int(meta["bar_minutes"]) not in ALLOWED_BAR_MINUTES:
         raise Stage1InputError("ONLY_M5_ALLOWED_FOR_STAGE1")
@@ -98,6 +103,13 @@ def _load_metadata(path: Path) -> dict:
         raise Stage1InputError("TIMEZONE_MUST_BE_AMERICA_SAO_PAULO")
     if not str(meta["roll_policy"]).strip():
         raise Stage1InputError("ROLL_POLICY_REQUIRED")
+    if mode == CONTINUOUS_INTRADAY_MODE:
+        if meta.get("research_scope") != "INTRADAY_TRANSLATION_INVARIANT_FAMILIES_ONLY":
+            raise Stage1InputError("CONTINUOUS_INTRADAY_SCOPE_REQUIRED")
+        if meta.get("roll_policy") != "PROFIT_CONTINUOUS_INTRADAY_ONLY":
+            raise Stage1InputError("CONTINUOUS_INTRADAY_ROLL_POLICY_REQUIRED")
+        if meta.get("absolute_level_research_allowed") is not False:
+            raise Stage1InputError("CONTINUOUS_INTRADAY_ABSOLUTE_LEVEL_MUST_BE_FALSE")
     return meta
 
 
@@ -145,12 +157,20 @@ def validate(csv_path: Path, metadata_path: Path) -> tuple[pd.DataFrame, InputAt
         raise Stage1InputError(f"IMPOSSIBLE_OHLC:{int(bad_ohlc.sum())}")
     if (df["volume"] < 0).any():
         raise Stage1InputError("NEGATIVE_VOLUME")
+    if (df[["open", "high", "low", "close"]] <= 0).any().any():
+        raise Stage1InputError("NONPOSITIVE_PRICE")
 
-    for col in ["open", "high", "low", "close"]:
-        ratio = df[col] / TICK
-        off = (ratio - ratio.round()).abs() > 1e-7 * ratio.abs().clip(lower=1.0)
-        if off.any():
-            raise Stage1InputError(f"OFF_WIN_TICK_GRID:{col}:{int(off.sum())}")
+    # The 5-point grid is a proof of raw tradable WIN prices. Deliberately keep
+    # it mandatory for raw/unadjusted modes. A vendor-adjusted continuous series
+    # is admitted only in the explicit intraday translation-invariant mode above;
+    # it may contain off-grid historical adjusted levels and is never approved for
+    # absolute levels, fixed-point P&L, execution, or live trading.
+    if meta["adjustment_mode"] != CONTINUOUS_INTRADAY_MODE:
+        for col in ["open", "high", "low", "close"]:
+            ratio = df[col] / TICK
+            off = (ratio - ratio.round()).abs() > 1e-7 * ratio.abs().clip(lower=1.0)
+            if off.any():
+                raise Stage1InputError(f"OFF_WIN_TICK_GRID:{col}:{int(off.sum())}")
 
     diffs = df["timestamp"].diff().dropna()
     same_day = df["timestamp"].dt.date.eq(df["timestamp"].shift(1).dt.date)
@@ -163,9 +183,11 @@ def validate(csv_path: Path, metadata_path: Path) -> tuple[pd.DataFrame, InputAt
         syms = tuple(sorted(set(df["symbol"].astype(str).str.strip().str.upper())))
         explicit = all(SYMBOL_RE.match(s) for s in syms)
         if not explicit:
-            if meta["adjustment_mode"] != "UNADJUSTED_REAL_CONTRACT_PRICES":
+            if meta["adjustment_mode"] == CONTINUOUS_INTRADAY_MODE:
+                pass
+            elif meta["adjustment_mode"] != "UNADJUSTED_REAL_CONTRACT_PRICES":
                 raise Stage1InputError("CONTINUOUS_SYMBOL_REQUIRES_UNADJUSTED_REAL_PRICES")
-            if meta["roll_policy"] not in {
+            elif meta["roll_policy"] not in {
                 "PROFIT_REAL_CONTRACT_ROLL_UNADJUSTED",
                 "EXPLICIT_REAL_CONTRACT_STITCH",
             }:
@@ -182,6 +204,7 @@ def validate(csv_path: Path, metadata_path: Path) -> tuple[pd.DataFrame, InputAt
         adjustment_mode=str(meta["adjustment_mode"]),
         bar_minutes=int(meta["bar_minutes"]),
         symbols=symbols,
+        research_scope=meta.get("research_scope"),
     )
     return df, att
 
