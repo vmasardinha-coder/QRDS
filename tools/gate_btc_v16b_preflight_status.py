@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -28,25 +29,30 @@ class Check:
     matches: list[str]
 
 
-def _find(root: Path, words: Iterable[str]) -> list[str]:
+def _find(roots: list[Path], words: Iterable[str]) -> list[str]:
     words=tuple(w.lower() for w in words)
     out=[]
-    for p in root.rglob('*'):
-        if not p.is_file():
+    for root in roots:
+        if not root.exists():
             continue
-        s=str(p).lower()
-        if all(w in s for w in words):
-            out.append(str(p))
-    return out[:50]
+        for p in root.rglob('*'):
+            if not p.is_file():
+                continue
+            s=str(p).lower()
+            if all(w in s for w in words):
+                out.append(str(p))
+                if len(out) >= 50:
+                    return out
+    return out
 
 
-def evaluate(root: Path) -> dict:
+def evaluate(roots: list[Path], source_root: Path) -> dict:
     checks=[]
     for name, words in REQUIRED_KEYWORDS.items():
-        matches=_find(root, words)
+        matches=_find(roots, words)
         checks.append(Check(name, 'PASS_PRESENT' if matches else 'FAIL_MISSING', matches))
-    rehearsal=(root/'tools/gate_btc_v16b_rehearsal.py').exists()
-    checks.append(Check('REHEARSAL_TOOL', 'PASS_PRESENT' if rehearsal else 'FAIL_MISSING', ['tools/gate_btc_v16b_rehearsal.py'] if rehearsal else []))
+    rehearsal=(source_root/'tools/gate_btc_v16b_rehearsal.py').exists()
+    checks.append(Check('REHEARSAL_TOOL', 'PASS_PRESENT' if rehearsal else 'FAIL_MISSING', [str(source_root/'tools/gate_btc_v16b_rehearsal.py')] if rehearsal else []))
     overall='PASS_PREFLIGHT_DISCOVERY' if all(c.status.startswith('PASS') for c in checks) else 'FAIL_PREFLIGHT_MISSING_INPUT'
     return {
         'schema':'gate_btc.v16b.preflight_status.v1',
@@ -55,6 +61,7 @@ def evaluate(root: Path) -> dict:
         'entry_date':'2026-08-28',
         'complete_exit_date':'2026-09-04',
         'canonical_cycle_count':0,
+        'roots':[str(r) for r in roots],
         'checks':[asdict(c) for c in checks],
         'RESEARCH_ONLY':RESEARCH_ONLY,
         'SHADOW_ONLY':SHADOW_ONLY,
@@ -67,4 +74,9 @@ def evaluate(root: Path) -> dict:
     }
 
 if __name__=='__main__':
-    print(json.dumps(evaluate(Path('.')), indent=2, sort_keys=True))
+    ap=argparse.ArgumentParser()
+    ap.add_argument('--root', action='append', default=[])
+    ap.add_argument('--source-root', default='.')
+    ns=ap.parse_args()
+    roots=[Path(x) for x in (ns.root or ['.'])]
+    print(json.dumps(evaluate(roots, Path(ns.source_root)), indent=2, sort_keys=True))
