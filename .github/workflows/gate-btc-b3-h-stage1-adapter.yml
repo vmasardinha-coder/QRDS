@@ -1,0 +1,49 @@
+name: GATE BTC B3 H Stage1 Adapter
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h_stage1_adapter.py
+      - tests/test_gate_btc_b3_h_stage1_adapter.py
+      - research/b3_h_stage1_preregistration.md
+      - .github/workflows/gate-btc-b3-h-stage1-adapter.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  stage1-adapter-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas pytest
+      - name: Run Stage1 anti-contamination tests
+        run: pytest -q tests/test_gate_btc_b3_h_stage1_adapter.py
+      - name: Compile Stage1 adapter
+        run: python -m py_compile tools/gate_btc_b3_h_stage1_adapter.py
+      - name: Assert preregistration safety boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('research/b3_h_stage1_preregistration.md').read_text(encoding='utf-8')
+          for token in [
+              'H1_ECONOMICS_READ=false',
+              'ORDERS=0',
+              'REAL_CAPITAL=0',
+              'A zero-survivor conclusion is valid',
+              'strictly before 2026-08-10',
+          ]:
+              assert token in p, token
+          print('B3_H_STAGE1_PREREGISTRATION=PASS_RESEARCH_ONLY')
+          PY
