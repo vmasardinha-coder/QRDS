@@ -1,0 +1,38 @@
+name: GATE BTC B3 H14-H29 Batch
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h14_h29_batch.py'
+      - '.github/workflows/gate-btc-b3-h14-h29-batch.yml'
+  workflow_dispatch:
+jobs:
+  falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pandas numpy requests
+      - name: Run isolated WIN WDO batch
+        run: |
+          python tools/gate_btc_b3_h14_h29_batch.py --out /tmp/B3_H14_H29_STATUS.json --ledger /tmp/B3_H14_H29_LEDGER.jsonl --cells /tmp/B3_H14_H29_CELLS.csv
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/B3_H14_H29_STATUS.json'))
+          assert p['h1_economics_read'] is False
+          assert p['h1_contaminated'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0
+          assert p['engine_feed'] is False
+          assert set(p['assets'])=={'WIN','WDO'}
+          print(p['status'])
+          for a in p['assets']: print(a,p['assets'][a]['survivors'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h14-h29-results
+          path: |
+            /tmp/B3_H14_H29_STATUS.json
+            /tmp/B3_H14_H29_LEDGER.jsonl
+            /tmp/B3_H14_H29_CELLS.csv
