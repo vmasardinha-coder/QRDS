@@ -8,6 +8,7 @@ on:
       - tests/test_gate_btc_b3_h_win_contract_manifest.py
       - tools/gate_btc_b3_bdi_endpoint_probe.py
       - tools/gate_btc_b3_h_stage0_source_probe.py
+      - tools/gate_btc_b3_h_bdi_historical_probe.py
       - .github/workflows/gate-btc-b3-h-nextgen-stage0.yml
   workflow_dispatch:
 
@@ -22,13 +23,14 @@ env:
 jobs:
   stage0-source-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install 'requests>=2.31,<3' pytest
+      - run: pip install 'requests>=2.31,<3' pytest playwright
+      - run: python -m playwright install --with-deps chromium
       - name: Validate pre-H1 manifest contract
         run: pytest -q tests/test_gate_btc_b3_h_win_contract_manifest.py
       - name: Build pre-H1 manifest
@@ -37,6 +39,8 @@ jobs:
         run: python tools/gate_btc_b3_bdi_endpoint_probe.py
       - name: Probe current and legacy trade-by-trade routes on pre-H1 dates
         run: python tools/gate_btc_b3_h_stage0_source_probe.py
+      - name: Probe BDI TradesDone historical discovery on pre-H1 dates
+        run: python tools/gate_btc_b3_h_bdi_historical_probe.py
       - name: Assert research-only boundary
         run: |
           python - <<'PY'
@@ -45,11 +49,14 @@ jobs:
           m=json.loads(Path('artifacts/b3_h_nextgen/WIN_PRE_H1_MANIFEST.json').read_text())
           p=json.loads(Path('artifacts/b3_bdi_endpoint_probe/B3_BDI_ENDPOINT_PROBE.json').read_text())
           s=json.loads(Path('artifacts/b3_h_nextgen/B3_H_STAGE0_SOURCE_PROBE.json').read_text())
+          h=json.loads(Path('artifacts/b3_h_nextgen/bdi_historical_probe/SUMMARY.json').read_text())
           assert m['research_only'] is True and m['orders']==0 and m['real_capital']==0
           assert m['h1_economics_read'] is False and m['stage0_required_before_economics'] is True
           assert p['research_only'] is True and p['orders']==0 and p['real_capital']==0
           assert s['research_only'] is True and s['orders']==0 and s['real_capital']==0
           assert s['h1_economics_read'] is False and s['dates_all_pre_h1_cutoff'] is True
+          assert h['research_only'] is True and h['orders']==0 and h['real_capital']==0
+          assert h['h1_economics_read'] is False and h['dates_all_pre_h1_cutoff'] is True
           print('B3_H_NEXTGEN_STAGE0_SOURCE_CONTRACT=PASS_RESEARCH_ONLY')
           PY
       - name: Upload Stage0 source evidence
