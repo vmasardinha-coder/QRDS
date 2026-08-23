@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,json,math
+import argparse,json,math,sys
 from pathlib import Path
 import numpy as np,pandas as pd
-from tools import gate_btc_b3_h30_h39_cross_asset as b
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+import gate_btc_b3_h30_h39_cross_asset as b
 FAMS=tuple(f'H{i}' for i in range(40,50))
 def add(R,f,s,g,a,side,i,h,p,bar): b.add(R,f,s,g,a,side,i,h,p,bar)
 def gen(ss,bar):
@@ -26,7 +27,7 @@ def gen(ss,bar):
    if i+1<len(g) and len(hist)>=20:
     for leader,traded in [('WIN','WDO'),('WDO','WIN')]:
      cur=(float(g.iloc[i][f'close_{leader}'])/float(g.iloc[0][f'open_{leader}'])-1)*10000
-     sc=np.median([abs(x.get(f'r{minute}_{leader}',np.nan)) for x in hist[-20:] if math.isfinite(x.get(f'r{minute}_{leader}',np.nan))])
+     vals=[abs(x.get(f'r{minute}_{leader}',np.nan)) for x in hist[-20:] if math.isfinite(x.get(f'r{minute}_{leader}',np.nan))];sc=np.median(vals) if vals else np.nan
      if math.isfinite(sc) and sc>0:
       for th in (1.,1.5):
        if abs(cur)>=th*sc:
@@ -37,12 +38,10 @@ def gen(ss,bar):
    for a in ('WIN','WDO'):
     pr=float(pg[f'high_{a}'].max()-pg[f'low_{a}'].min());gap=float(g.iloc[0][f'open_{a}']-pg.iloc[-1][f'close_{a}'])
     if pr>0:
-     z=abs(gap)/pr
      for th in (.25,.5):
-      if z>=th:
+      if abs(gap)/pr>=th:
        gs=1 if gap>0 else -1;os=1 if ret[(a,30)]>0 else -1
-       if os==gs or os==-gs:
-        for sd,nm in [(gs,'cont'),(-gs,'fade')]: add(R,'H41',s,g,a,sd,n30-1,120,f'{"same" if os==gs else "opp"}_{nm}_{th}',bar)
+       for sd,nm in [(gs,'cont'),(-gs,'fade')]: add(R,'H41',s,g,a,sd,n30-1,120,f'{"same" if os==gs else "opp"}_{nm}_{th}',bar)
    psgn={a:int(np.sign(float(pg.iloc[-1][f'close_{a}']/pg.iloc[0][f'open_{a}']-1))) for a in ('WIN','WDO')}
    for a in ('WIN','WDO'):
     pr=float(pg[f'high_{a}'].max()-pg[f'low_{a}'].min());gap=float(g.iloc[0][f'open_{a}']-pg.iloc[-1][f'close_{a}'])
@@ -89,7 +88,7 @@ def gen(ss,bar):
        sg=1 if z>0 else -1
        for H in (60,120): add(R,'H48',s,g,'WIN',-sg,n30-1,H,f'conv_{th}',bar);add(R,'H48',s,g,'WIN',sg,n30-1,H,f'cont_{th}',bar)
    for a,other in [('WIN','WDO'),('WDO','WIN')]:
-    medrv=np.median([x[f'rv_{a}'] for x in hist[-20:]]);hv=-1 if medrv>0 and rv[a]>=1.5*medrv else 0;votes=[int(np.sign(ret[(a,30)])),int(np.sign(ret[(a,60)])),int(np.sign(ret[(other,30)])),hv];v=sum(votes)
+    medrv=np.median([x[f'rv_{a}'] for x in hist[-20:]]);hv=-1 if medrv>0 and rv[a]>=1.5*medrv else 0;v=sum([int(np.sign(ret[(a,30)])),int(np.sign(ret[(a,60)])),int(np.sign(ret[(other,30)])),hv])
     for th in (2,3):
      if abs(v)>=th:
       for H in (60,120): add(R,'H49',s,g,a,1 if v>0 else -1,n60-1,H,f'vote_{th}',bar)
