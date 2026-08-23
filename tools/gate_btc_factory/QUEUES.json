@@ -1,0 +1,11 @@
+{
+  "schema":"qrds.factory.queues.v1",
+  "append_only":true,
+  "queues":{
+    "hypotheses":{"owner":"QRDS-LAB","allowed_track_class":"OPEN_DISCOVERY","required":["id","created_at_utc","track","mechanism_class","economic_rationale","direction","coarse_grid","cost_model","delay_model","preregister_hash","status"],"forbidden_partial_holdout_feedback":true},
+    "data_gaps":{"owner":"QRDS-DATA","required":["id","created_at_utc","track","gap_type","required_coverage","required_granularity","candidate_sources","licence_status","provenance_requirements","qa_requirements","status"],"source_priority":["official_free","open_source_auditable","community_auditable"],"paid_or_private_requires_user_decision":true,"synthetic_backfill_forbidden":true},
+    "survivors":{"owner":"QRDS-VALIDATE","required":["id","created_at_utc","source_track","rule_version","parameter_hash","cost_model_hash","source_manifest_hash","replication_evidence","freeze_hash","handoff_status"],"existing_survivors_read_only":true,"retuning_forbidden":true,"partial_prospective_feedback_forbidden":true},
+    "handoffs":{"owner":"QRDS-VALIDATE","required":["id","created_at_utc","source_product","target_product","source_track","artifact_refs","freeze_hash","preconditions","status"],"direct_mutation_of_existing_monitors_forbidden":true},
+    "rejections":{"owner":"QRDS-LAB","required":["id","closed_at_utc","source_track","mechanism_class","preregister_hash","test_artifacts","rejection_reason","equivalence_fingerprint"],"disguised_retest_forbidden":true,"reopen_only_with_materially_different_mechanism_or_data":true}
+  }
+}
