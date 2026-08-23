@@ -1,0 +1,148 @@
+{
+  "schema": "qrds.research_factory_status.v1",
+  "generated_at_utc": "2026-08-23T20:12:00Z",
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false,
+    "no_holdout_contamination": true
+  },
+  "tracks": {
+    "B3_H1": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_STRUCTURAL_COLLECTION",
+      "economics_locked": true,
+      "owner": "B3 specialist agent",
+      "action": "monitor only; no family creation, no partial economics"
+    },
+    "B3_H2_H29": {
+      "classification": "CLOSED_NULL",
+      "status": "REJECTED_HISTORY_PRESERVED",
+      "action": "do not reopen except with materially different mechanism/data"
+    },
+    "B3_H31": {
+      "classification": "SURVIVOR_MONITORING",
+      "status": "ELIGIBLE_FOR_SEPARATE_PROSPECTIVE",
+      "source_issue": 102,
+      "prospective_issue": 105,
+      "owner": "B3 specialist agent",
+      "action": "freeze exact rule and activate separate blind ledger after infrastructure freeze"
+    },
+    "B3_H40_PLUS": {
+      "classification": "OPEN_DISCOVERY",
+      "status": "DELEGATED_CONTINUOUS_DISCOVERY",
+      "owner": "B3 specialist agent",
+      "action": "continue preregistered mechanism generations without duplicating closed families"
+    },
+    "MOMENTUM_M1_M2": {
+      "classification": "DATA_BLOCKED",
+      "status": "OPEN_DIAGNOSTIC_COLLECTION_DELIVERY",
+      "methodology_frozen": true,
+      "open_issue": 85,
+      "blocker": "failed main collection delivery; root cause not yet proven",
+      "action": "repair orchestration/data delivery only; no retuning or backfill"
+    },
+    "QOS_V2A_MONTHLY": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_CALENDAR_GATED_0_OF_3",
+      "action": "wait for untouched monthly closes; no new families in frozen track"
+    },
+    "DELTA_WALK_FORWARD": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_100_OF_120",
+      "action": "continue clock only; no recalibration on same evidence"
+    },
+    "DELTA_PAPER_MONITOR": {
+      "classification": "SURVIVOR_MONITORING",
+      "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW",
+      "action": "monitor frozen reconstruction variants descriptively; no retroactive winner selection"
+    },
+    "DELTA_V12": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "PREREGISTERED_ENGINE_CONTRACT_WITH_MULTI_VENUE_DATA_PATH",
+      "action": "collect independent evidence under frozen contract; do not retune V11-derived fields"
+    },
+    "GATEWAY_DYNAMICS": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_18_OF_80",
+      "action": "continue append-only prospective ledger"
+    },
+    "PROFIT_PRESERVATION_LOCK25_LOCK50": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_7_CLOSES",
+      "action": "continue CONTROL/LOCK25/LOCK50 only; no retroactive fill"
+    },
+    "PRL50": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "WAITING_FIRST_UNTOUCHED_SIGNAL_2026_08_31",
+      "action": "calendar wait only"
+    },
+    "ALT_TRAIL40_10": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "WAITING_FIRST_UNTOUCHED_SIGNAL_2026_08_31",
+      "action": "calendar wait only"
+    },
+    "V16B": {
+      "classification": "DATA_BLOCKED",
+      "status": "WAITING_NEXT_CANONICAL_WINDOW",
+      "methodology_frozen": true,
+      "open_issue": 83,
+      "blocker": "fresh causal feature-panel mapping/signal producer not yet verified",
+      "next_event": "SIGNAL_2026-08-27",
+      "action": "resolve source/mapping and rehearsal only; no backfill, late seal, or retune"
+    },
+    "V16C": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "PREREGISTERED_STRUCTURAL_CHALLENGER_PENDING_CAUSAL_LEDGER",
+      "action": "preserve preregistration; wait for independent causal evidence"
+    },
+    "V16D_V16E": {
+      "classification": "INFRA_ONLY",
+      "status": "BLOCKED_BY_UPSTREAM_STAGE_ORDER",
+      "action": "do not activate economic search until prerequisite B/C evidence exists"
+    },
+    "D50_ECONOMIC": {
+      "classification": "FROZEN_PROSPECTIVE",
+      "status": "ACTIVE_14_OF_30",
+      "action": "continue immutable ledger to checkpoint 30"
+    },
+    "D50_DATA_QUALIFICATION": {
+      "classification": "DATA_BLOCKED",
+      "status": "ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7",
+      "blocker": "all-universe synchronized collection failure/reset",
+      "action": "repair source/collection quality without modifying economic ledger"
+    },
+    "BULL_REPLAY": {
+      "classification": "SURVIVOR_MONITORING",
+      "status": "LIVE_DIAGNOSTIC_ACTIVE",
+      "action": "descriptive shadow monitoring only; no winner promotion from short sample"
+    },
+    "GATE_BTC_2_CORE": {
+      "classification": "DATA_BLOCKED",
+      "status": "READINESS_AND_TEMPORAL_CAUSALITY_INFRA_PRESENT",
+      "blocker": "official dataset seal/readiness and full causal data evidence not yet complete",
+      "action": "continue read-only readiness/causality audits; no challenger economics until data gate passes"
+    },
+    "COLLECTION_HEALTH_REPORTING": {
+      "classification": "INFRA_ONLY",
+      "status": "CLOSED_IMPLEMENTED_FAIL_CLOSED_CONTRACT",
+      "action": "maintain provenance/QA/reporting semantics only"
+    }
+  },
+  "orchestrator_policy": {
+    "open_discovery_loop": "preregister -> test -> falsify -> replicate -> freeze or reject",
+    "data_blocked_loop": "diagnose -> seek auditable free source -> build fail-closed ingestion -> QA -> resume or open DATA_GAP",
+    "frozen_rule": "no new families, no retune, no partial-holdout-guided discovery",
+    "closed_null_rule": "reopen only with materially different mechanism or data dimension",
+    "survivor_rule": "version+hash freeze, blind separate ledger, no backfill, no partial-result feedback to discovery"
+  },
+  "material_blockers": [
+    "Momentum M1/M2 collection delivery failure",
+    "V16B causal feature-panel/signal-producer mapping not verified",
+    "D50 data qualification synchronized failure chain at 0/7",
+    "GATE BTC 2.0 official dataset readiness not yet complete"
+  ]
+}
