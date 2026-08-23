@@ -4,8 +4,18 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '10 3 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-momentum-shadow.yml'
+      - 'tools/gate_btc_momentum_shadow_collect.py'
+      - 'migration/reporting/qrds_momentum_m1.py'
+      - 'migration/reporting/momentum_m1_contract.json'
+      - 'migration/reporting/momentum_m2_voladj_contract.json'
+      - 'migration/reporting/momentum_m1m2_collection_contract.json'
 
 permissions:
+  actions: read
   contents: write
 
 env:
@@ -54,10 +64,27 @@ jobs:
               f.write(f'MOMENTUM_CUTOFF={cutoff}\n')
           print(cutoff)
           PY
-      - name: Collect canonical public V2A input
-        run: >-
-          python migration/canonical/v2a/scripts/00_run_all_v2a.py
-          --output-zip artifacts/momentum_qos/qos_v2a_public_collection.zip
+      - name: Collect canonical public V2A input with bounded retry
+        id: v2a
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/momentum_qos artifacts/momentum_diagnostics
+          ok=0
+          for attempt in 1 2 3; do
+            echo "V2A_ATTEMPT=$attempt"
+            if python migration/canonical/v2a/scripts/00_run_all_v2a.py \
+              --output-zip artifacts/momentum_qos/qos_v2a_public_collection.zip; then
+              ok=1
+              break
+            fi
+            sleep $((attempt * 15))
+          done
+          if [ "$ok" -ne 1 ] || [ ! -s artifacts/momentum_qos/qos_v2a_public_collection.zip ]; then
+            printf '{"status":"BLOCKED_V2A_SOURCE_AFTER_RETRIES","cutoff":"%s","attempts":3,"research_only":true,"shadow_only":true,"not_approved":true,"engine_feed":false,"orders":0,"real_capital":0}\n' "$MOMENTUM_CUTOFF" > artifacts/momentum_diagnostics/STATUS.json
+            exit 1
+          fi
+          echo 'V2A_SOURCE=PASS'
       - name: Freeze V2A evidence to the target cutoff
         run: >-
           python tools/v2a_frozen_replay.py
@@ -72,17 +99,47 @@ jobs:
           --cutoff "$MOMENTUM_CUTOFF"
           --ledger-dir runtime_repo/runtime/ledgers/momentum_m1_m2
           --output artifacts/momentum/GATE_BTC_MOMENTUM_M1M2_${MOMENTUM_CUTOFF}.json
-      - name: Upload shadow evidence
+      - name: Build canonical Momentum status
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
+          snaps=sorted(p for p in root.glob('*.json') if p.name != 'STATUS.json')
+          assert snaps, 'no momentum snapshots'
+          latest=json.loads(snaps[-1].read_text(encoding='utf-8'))
+          safety=latest['safety']
+          assert safety['research_only'] is True and safety['shadow_only'] is True and safety['not_approved'] is True
+          assert safety['engine_feed'] is False and safety['orders'] == 0 and safety['real_capital'] == 0
+          status={
+            'schema':'gate_btc.momentum_m1_m2.status.v1',
+            'status':'ACTIVE_PROSPECTIVE_SHADOW',
+            'data_as_of':latest['cutoff'],
+            'observed_snapshots':len(snaps),
+            'latest_snapshot_sha256':latest['snapshot_sha256'],
+            'm1_summary':latest['m1']['summary'],
+            'm2_summary':latest['m2']['summary'],
+            'research_only':True,'shadow_only':True,'not_approved':True,
+            'engine_feed':False,'orders_generated':0,'real_capital_used':0,
+            'promotion_allowed':False,
+          }
+          (root/'STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('artifacts/momentum/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print(json.dumps({'status':status['status'],'data_as_of':status['data_as_of'],'observed_snapshots':status['observed_snapshots']},sort_keys=True))
+          PY
+      - name: Upload shadow evidence and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-momentum-m1m2-${{ github.run_id }}
           path: |
             artifacts/momentum
             artifacts/momentum_qos/v2a_frozen_replay_evidence
+            artifacts/momentum_diagnostics
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn
       - name: Publish append-only runtime ledger snapshot
-        if: github.ref_name == 'main'
+        if: success() && github.ref_name == 'main'
         run: |
           set -euo pipefail
           git -C runtime_repo config user.name 'gate-btc-actions'
@@ -93,4 +150,15 @@ jobs:
             exit 0
           fi
           git -C runtime_repo commit -m "Append Momentum M1/M2 shadow snapshot ${MOMENTUM_CUTOFF}"
-          git -C runtime_repo push origin HEAD:gate-btc-runtime
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+              git -C runtime_repo rebase --abort || true
+              exit 1
+            fi
+            if git -C runtime_repo push origin HEAD:gate-btc-runtime; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
