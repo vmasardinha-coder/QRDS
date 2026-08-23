@@ -62,23 +62,37 @@ jobs:
           test "$ENGINE_FEED" = false
           test "$ORDERS" = 0
           test "$REAL_CAPITAL" = 0
-      - name: Rehearsal/preflight contract
+      - name: V16B D-2 / D-1 preflight discovery
         if: steps.mode.outputs.mode == 'preflight'
         shell: bash
         run: |
+          set -euo pipefail
+          python tools/gate_btc_v16b_preflight_status.py > GATE_BTC_V16B_PREFLIGHT_STATUS.json
+          cat GATE_BTC_V16B_PREFLIGHT_STATUS.json
           python - <<'PY'
-          from pathlib import Path
-          required = [
-            Path('tools/gate_btc_v16b_rehearsal.py'),
-          ]
-          missing=[str(p) for p in required if not p.exists()]
-          if missing:
-              raise SystemExit('V16B_PREFLIGHT=FAIL missing=' + ','.join(missing))
-          print('V16B_PREFLIGHT=PASS_REPO_CONTRACT')
+          import json
+          s=json.load(open('GATE_BTC_V16B_PREFLIGHT_STATUS.json',encoding='utf-8'))
+          assert s['RESEARCH_ONLY'] is True
+          assert s['SHADOW_ONLY'] is True
+          assert s['NOT_APPROVED'] is True
+          assert s['ENGINE_FEED'] is False
+          assert s['ORDERS'] == 0
+          assert s['REAL_CAPITAL'] == 0
+          if s['status'] != 'PASS_PREFLIGHT_DISCOVERY':
+              raise SystemExit('V16B_PREFLIGHT=RED ' + s['status'])
+          print('V16B_PREFLIGHT=PASS_DISCOVERY')
           print('V16B_REHEARSAL=REQUIRED_BEFORE_CANONICAL_SIGNAL')
           print('CANONICAL_CYCLE_COUNT=0')
           print('NEXT_CANONICAL_EVENT=SIGNAL_2026-08-27')
           PY
+      - name: Upload preflight status
+        if: always() && steps.mode.outputs.mode == 'preflight'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v16b-preflight-${{ github.run_id }}
+          path: GATE_BTC_V16B_PREFLIGHT_STATUS.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Canonical signal seal watchdog
         if: steps.mode.outputs.mode == 'signal_watchdog'
         shell: bash
@@ -92,14 +106,10 @@ jobs:
               sys.exit(1)
           ok=False
           for p in candidates:
-              try:
-                  obj=json.loads(p.read_text(encoding='utf-8'))
-              except Exception:
-                  continue
-              if obj.get('REHEARSAL') is True or obj.get('CANONICAL_LEDGER') is False:
-                  continue
-              text=p.read_bytes(); sha=hashlib.sha256(text).hexdigest()
-              print(f'SIGNAL_SEAL_CANDIDATE={p} SHA256={sha}')
+              try: obj=json.loads(p.read_text(encoding='utf-8'))
+              except Exception: continue
+              if obj.get('REHEARSAL') is True or obj.get('CANONICAL_LEDGER') is False: continue
+              print(f'SIGNAL_SEAL_CANDIDATE={p} SHA256={hashlib.sha256(p.read_bytes()).hexdigest()}')
               ok=True
           if not ok:
               print('SIGNAL_SEAL=RED_NO_CANONICAL_CAUSAL_SEAL')
