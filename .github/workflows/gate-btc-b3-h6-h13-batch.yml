@@ -1,0 +1,66 @@
+name: GATE BTC B3 H6-H13 Batch
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h6_h13_batch.py
+      - .github/workflows/gate-btc-b3-h6-h13-batch.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  falsify-and-replicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests
+      - name: Build guarded pre-H1 community discovery source
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+      - name: Revalidate H1 isolation boundary
+        run: |
+          python tools/gate_btc_b3_h_stage1_adapter.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+      - name: Run preregistered H6-H13 discovery and untouched replication
+        run: |
+          python tools/gate_btc_b3_h6_h13_batch.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/B3_H6_H13_STATUS.json \
+            --ledger artifacts/b3_h_nextgen/B3_HYPOTHESIS_LEDGER_H6_H13.jsonl \
+            --cells artifacts/b3_h_nextgen/B3_H6_H13_CELLS.csv
+      - name: Assert safety semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/b3_h_nextgen/B3_H6_H13_STATUS.json').read_text())
+          assert p['h1_economics_read'] is False and p['h1_contaminated'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0
+          assert p['promotion_allowed'] is False and p['engine_feed'] is False
+          assert len(p['activated_candidates']) <= 2
+          print('B3_H6_H13_SAFETY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h6-h13-${{ github.run_id }}
+          path: |
+            artifacts/b3_h_nextgen/B3_H6_H13_STATUS.json
+            artifacts/b3_h_nextgen/B3_HYPOTHESIS_LEDGER_H6_H13.jsonl
+            artifacts/b3_h_nextgen/B3_H6_H13_CELLS.csv
+            artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+          retention-days: 30
+          if-no-files-found: error
