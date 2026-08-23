@@ -7,8 +7,11 @@ on:
       - .github/workflows/gate-btc-reporting-current-state.yml
       - tools/gate_btc_reporting_current_state.py
       - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_health_dimensions.py
+      - tools/gate_btc_collection_health_item1_closeout_v1.json
       - tools/gate_btc_lock_gap_recovery.py
       - tests/test_gate_btc_runtime_delivery_health.py
+      - tests/test_gate_btc_collection_health_item1.py
   workflow_dispatch:
   schedule:
     - cron: "30 3 * * *"
@@ -32,10 +35,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile reporting reconcilers
-        run: python -m py_compile tools/gate_btc_reporting_current_state.py tools/gate_btc_reporting_operational_overlay.py
+      - name: Compile reporting and health reconcilers
+        run: >-
+          python -m py_compile
+          tools/gate_btc_reporting_current_state.py
+          tools/gate_btc_reporting_operational_overlay.py
+          tools/gate_btc_health_dimensions.py
       - name: Test runtime delivery health gates
-        run: python -m unittest -v tests.test_gate_btc_runtime_delivery_health
+        run: >-
+          python -m unittest -v
+          tests.test_gate_btc_runtime_delivery_health
+          tests.test_gate_btc_collection_health_item1
       - name: Smoke-test stale-counter suppression and operational overlay
         run: |
           python - <<'PY'
@@ -43,6 +53,7 @@ jobs:
           from pathlib import Path
           from tools.gate_btc_reporting_current_state import reconcile
           from tools.gate_btc_reporting_operational_overlay import enrich
+          from tools.gate_btc_health_dimensions import build
           safe={"research_only":True,"shadow_only":True,"not_approved":True,"orders_generated":0,"real_capital_used":0}
           with tempfile.TemporaryDirectory() as td:
               r=Path(td)
@@ -55,6 +66,7 @@ jobs:
               w('ledgers/lock25_50/STATUS.json',{**safe,"status":"ACTIVE","latest_snapshot_id":"2026-08-08","valid_snapshot_count":3})
               w('ledgers/prl50_position/STATUS.json',{**safe,"status":"WAITING_FIRST_UNTOUCHED_SIGNAL","snapshot_count":0,"first_eligible_signal_date":"2026-08-31"})
               w('ledgers/alt_trail40_10/STATUS.json',{**safe,"engine_feed":False,"status":"WAITING_FIRST_UNTOUCHED_SIGNAL","snapshot_count":0,"first_eligible_signal_date":"2026-08-31","first_eligible_execution_date":"2026-09-01"})
+              w('ledgers/b3_h1/STATUS.json',{**safe,"schema":"gate_btc.b3.h1.runtime_ledger.v1","status":"ACTIVE_STRUCTURAL_COLLECTION","latest_valid_date":"2026-08-12","valid_observation_count":1,"economics_locked":True,"backfill_automatically_created":False})
               w('ledgers/v16b/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"WAITING_NEXT_CANONICAL_WINDOW","canonical_cycle_count":0,"v16b_preflight":"WAITING","v16b_rehearsal":"READY","signal_producer":"WAITING","signal_seal":"WAITING","entry_seal":"WAITING","next_canonical_event":"SIGNAL_2026-08-27"})
               w('ledgers/momentum_m1_m2/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"ACTIVE_PROSPECTIVE_SHADOW","observed_snapshots":1,"methodology_failure":False})
               out=reconcile(r)
@@ -66,10 +78,15 @@ jobs:
               assert out['components']['bull_replay_live_shadow']['status']=='PENDING_INITIALIZATION'
               assert out['components']['delta_paper_monitor']['status']=='PENDING_INITIALIZATION'
               out=enrich(r,out)
+              assert out['components']['b3_h1']['freshness']=='FRESH'
+              assert out['components']['b3_h1']['economics_locked'] is True
               assert out['components']['v16b']['canonical_cycle_count']==0
               assert out['components']['v16b']['next_canonical_event']=='SIGNAL_2026-08-27'
               assert out['components']['momentum_m1_m2']['observed_snapshots']==1
               assert out['components']['momentum_m1_m2']['methodology_failure'] is False
+              health=build(out)
+              assert health['components']['d50']['collection_health']=='RED_STALE'
+              assert health['operational_authorization']=='NOT_APPROVED'
               assert out['orders_generated']==0 and out['real_capital_used']==0
           print('REPORTING_STATE_SMOKE=PASS')
           PY
@@ -100,7 +117,7 @@ jobs:
           python main_repo/tools/gate_btc_reporting_current_state.py
           --runtime-root runtime_repo/runtime
           --output runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
-      - name: Add V16B and Momentum operational status
+      - name: Add B3 H1, V16B and Momentum operational status
         run: >-
           python main_repo/tools/gate_btc_reporting_operational_overlay.py
           --runtime-root runtime_repo/runtime
@@ -118,7 +135,7 @@ jobs:
           assert s['not_approved'] is True
           assert s['orders_generated'] == 0
           assert s['real_capital_used'] == 0
-          assert 'v16b' in s['components'] and 'momentum_m1_m2' in s['components']
+          assert {'b3_h1','v16b','momentum_m1_m2'} <= set(s['components'])
           d50=s['components']['d50']
           if d50['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT':
               assert d50['display_current'] is None
@@ -142,7 +159,7 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
-      - name: Classify daily delivery without turning AMBER into CI failure
+      - name: Classify daily delivery without turning an evidence state into CI failure
         run: |
           python - <<'PY'
           import json
@@ -153,7 +170,9 @@ jobs:
               print('RUNTIME_DELIVERY=GREEN')
           else:
               assert s['status'] == 'BLOCKED_INCOMPLETE_DELIVERY'
-              print('RUNTIME_DELIVERY=AMBER')
+              print('RUNTIME_DELIVERY=BLOCKED')
               print('STALE_COMPONENTS=' + ','.join(s['warnings']['stale_components']))
               print('MISSING_OR_UNDATED=' + ','.join(s['warnings']['missing_or_undated_components']))
+              print('FAILED_DELIVERY=' + ','.join(s['warnings']['failed_delivery_components']))
+              print('BLOCKED_DEPENDENCIES=' + ','.join(s['warnings']['blocked_dependency_components']))
           PY
