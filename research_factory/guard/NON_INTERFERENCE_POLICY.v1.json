@@ -1,0 +1,46 @@
+{
+  "schema": "qrds.factory.non_interference.v1",
+  "phase": "ARCHITECTURE_BOOTSTRAP",
+  "default": "DENY",
+  "write_allow_prefixes": ["research_factory/"],
+  "read_only_external_sources": ["tools/gate_btc_research_factory_status.json"],
+  "explicit_write_denies": [
+    ".github/workflows/",
+    "runtime/",
+    "daily_handoff/",
+    "migration/",
+    "gate-btc-runtime",
+    "B3_H1",
+    "D50",
+    "DELTA",
+    "Gateway",
+    "QOS",
+    "V16",
+    "LOCK25",
+    "LOCK50",
+    "PRL50"
+  ],
+  "protected_semantics": [
+    "workflow_triggers",
+    "cron_schedules",
+    "secrets",
+    "runtime_pointers",
+    "prospective_ledgers",
+    "strategy_parameters",
+    "cost_models",
+    "calendars",
+    "counters",
+    "hashes",
+    "canonical_reports",
+    "blind_holdout_economics"
+  ],
+  "merge_preconditions": [
+    "all_changed_files_under_write_allow_prefixes",
+    "no_active_workflow_changes",
+    "no_runtime_changes",
+    "no_existing_ledger_changes",
+    "mergeable_clean",
+    "available_checks_not_failed"
+  ],
+  "on_uncertainty": "FAIL_CLOSED"
+}
