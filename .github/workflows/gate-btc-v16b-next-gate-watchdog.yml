@@ -38,8 +38,16 @@ jobs:
       SIGNAL_DATE: ${{ inputs.signal_date || '2026-08-27' }}
       ENTRY_DATE: ${{ inputs.entry_date || '2026-08-28' }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out source branch
+        uses: actions/checkout@v4
         with:
+          path: source_repo
+          fetch-depth: 1
+      - name: Check out runtime evidence branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
           fetch-depth: 1
       - name: Resolve mode
         id: mode
@@ -67,7 +75,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python tools/gate_btc_v16b_preflight_status.py > GATE_BTC_V16B_PREFLIGHT_STATUS.json
+          python source_repo/tools/gate_btc_v16b_preflight_status.py \
+            --source-root source_repo \
+            --root source_repo \
+            --root runtime_repo \
+            > GATE_BTC_V16B_PREFLIGHT_STATUS.json
           cat GATE_BTC_V16B_PREFLIGHT_STATUS.json
           python - <<'PY'
           import json
@@ -100,7 +112,8 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, hashlib, sys
-          candidates=list(Path('.').rglob('*V16B*SIGNAL*seal*.json')) + list(Path('.').rglob('*v16b*signal*seal*.json'))
+          root=Path('runtime_repo')
+          candidates=list(root.rglob('*V16B*SIGNAL*seal*.json')) + list(root.rglob('*v16b*signal*seal*.json'))
           if not candidates:
               print('SIGNAL_SEAL=RED_MISSING_CANONICAL_SEAL')
               sys.exit(1)
@@ -123,8 +136,9 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, hashlib, sys
-          sig=list(Path('.').rglob('*V16B*SIGNAL*seal*.json')) + list(Path('.').rglob('*v16b*signal*seal*.json'))
-          ent=list(Path('.').rglob('*V16B*ENTRY*seal*.json')) + list(Path('.').rglob('*v16b*entry*seal*.json'))
+          root=Path('runtime_repo')
+          sig=list(root.rglob('*V16B*SIGNAL*seal*.json')) + list(root.rglob('*v16b*signal*seal*.json'))
+          ent=list(root.rglob('*V16B*ENTRY*seal*.json')) + list(root.rglob('*v16b*entry*seal*.json'))
           def canonical(ps):
               out=[]
               for p in ps:
