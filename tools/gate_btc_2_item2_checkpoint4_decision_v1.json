@@ -1,0 +1,137 @@
+{
+  "schema": "gate_btc.2_0.item2_checkpoint_decision.v1",
+  "checkpoint": 4,
+  "roadmap_item": 2,
+  "module": "Anti-look-ahead and recursive lineage audit",
+  "decision_date": "2026-08-23",
+  "decision": "BLOCKED_OFFICIAL_EVIDENCE_NOT_READY",
+  "implementation_status": "CONTRACTS_CONFORMANT_OFFICIAL_VALIDATION_BLOCKED",
+  "source_commits": {
+    "main": "e88c0c5aaabd64ba9913b013dbba3c9412f99268",
+    "runtime": "e98fa4018535a73c7b05a2292348a2605927bb8b"
+  },
+  "reporting_provenance_repair": {
+    "runtime_commit": "e98fa4018535a73c7b05a2292348a2605927bb8b",
+    "changed_files": [
+      "runtime/GATE_BTC_REPORTING_CURRENT_STATE.json",
+      "runtime/GATE_BTC_HEALTH_DIMENSIONS.json"
+    ],
+    "source_ledgers_mutated": 0,
+    "exact_source_hash_checks": 12,
+    "health_classification_changed": false
+  },
+  "dataset_readiness": {
+    "schema": "gate_btc.2_0.dataset_seal_readiness.v1",
+    "assessment_kind": "READINESS_ONLY_NOT_A_DATASET_SEAL",
+    "status": "BLOCKED",
+    "expected_cutoff": "2026-08-22",
+    "assessment_sha256": "6acd48161f812f527746753a22a8ef0a3573e4064dacccc5883fe6f19b0ff1d8",
+    "source_manifest_sha256": "e8be537bd1e12efebe7921b7bea26835f69c5a713c9b21c58c672fccd64cf4dc",
+    "hard_failures": [],
+    "delivery_gaps": [
+      "REPORTING_COMPONENTS_STALE",
+      "REPORTING_DELIVERY_INCOMPLETE",
+      "REPORTING_STATUS_NOT_PASS"
+    ],
+    "ready_scopes": [],
+    "blocked_scopes": [
+      "BTC_CORE",
+      "D50_ECONOMIC",
+      "D50_QUALIFIED",
+      "MULTIASSET_V2A"
+    ],
+    "source_manifest": {
+      "gateway": {
+        "byte_length": 732,
+        "sha256": "ead08ae26bec9f4d5edcfe55b6fd74ab1d953704955fe465bacdf58a31a377e1"
+      },
+      "lock": {
+        "byte_length": 1259,
+        "sha256": "3fbcbc516ba98d98d7b6267fcab8ae6e6ab2f2d84dcc7526e62128a22c51c267"
+      },
+      "measurement": {
+        "byte_length": 3974,
+        "sha256": "b1106ab30ae22154f19efdbde586215a249c5a42e39d81cdc768a70ef7fd8ccb"
+      },
+      "pointer": {
+        "byte_length": 760,
+        "sha256": "38d4688e2a2d63fca0684a03e1e1ef818980727abd1d16e2d2f4b315d7aec641"
+      },
+      "reporting": {
+        "byte_length": 10985,
+        "sha256": "b5f11d4cfcdfd6aa23608f3850dcd6d089f104ab86bc0ead8cd0f068533062ac"
+      },
+      "v2a": {
+        "byte_length": 882,
+        "sha256": "0c4f7afaa69318daf620cf43c707a4298d8eec734e1a15a5363a30ef98a307e7"
+      }
+    },
+    "track_blockers": {
+      "BTC_CORE": [
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "D50_ECONOMIC": [
+        "D50_ECONOMIC_BEFORE_EXPECTED_CUTOFF",
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "D50_QUALIFIED": [
+        "D50_QUALIFICATION_BEFORE_EXPECTED_CUTOFF",
+        "D50_QUALIFICATION_NOT_COMPLETE",
+        "D50_QUALIFICATION_TARGET_NOT_REACHED",
+        "D50_SYNCHRONIZED_FAILURE_ACTIVE",
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "MULTIASSET_V2A": [
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS",
+        "V2A_INCOMPLETE_POINT_IN_TIME_COVERAGE",
+        "V2A_SURVIVORSHIP_BIAS_PRESENT",
+        "V2A_SYMBOL_LOAD_GAP"
+      ]
+    }
+  },
+  "temporal_causality": {
+    "schema": "gate_btc.2_0.temporal_causality_audit.v1",
+    "status": "PASS_SYNTHETIC_CONFORMANCE_ONLY",
+    "audit_scope": "SYNTHETIC_TRACE_CONFORMANCE_ONLY",
+    "foundation_contract_sha256": "a4e5ece27dec65db69fcfafb8c01e0aea1d05f9238bccacaa1350d72aebb9856",
+    "trace_sha256": "0c1501b284aa2a0ad4cbdf5e63b5a646b04286688424b3f6726d9f388034b3b7",
+    "audit_sha256": "dd3253ba4b1c8f239500598f5104a4a73b6a70843c43057d8ae1096ef93b3984",
+    "event_count": 3,
+    "violation_count": 0,
+    "official_dataset_audited": false,
+    "predictive_validity_established": false,
+    "stage_5_core_audits_passed": false
+  },
+  "decision_rules": {
+    "synthetic_pass_cannot_unlock_official_validation": true,
+    "official_dataset_must_be_sealed_first": true,
+    "stale_or_incomplete_delivery_blocks": true,
+    "survivorship_bias_blocks_multiasset": true,
+    "no_retroactive_fill": true,
+    "no_threshold_relaxation": true
+  },
+  "next_action": "RECOVER_CURRENT_D50_DELIVERY_AND_V2A_POINT_IN_TIME_COVERAGE_WITHOUT_RETROACTIVE_FILL_THEN_RERUN_READINESS",
+  "safety_boundary": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "promotion_allowed": false,
+    "official_challenger_runs_allowed": false,
+    "dataset_sealed": false,
+    "methodology_changes": 0,
+    "source_ledger_mutations": 0
+  },
+  "decision_hash_rule": "sha256 of canonical JSON excluding decision_sha256",
+  "decision_sha256": "befaf105ac07e8f55059a2eb7c4ce944803aa7f90f522b065986adec4b95d7ca"
+}
