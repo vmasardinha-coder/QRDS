@@ -1,0 +1,58 @@
+name: GATE BTC B3 H Stage2b Replication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h_stage2b_h4_replication.py
+      - .github/workflows/gate-btc-b3-h-stage2b-replication.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  replicate-h4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas requests
+      - name: Run frozen H4 120-minute independent replication
+        run: |
+          python tools/gate_btc_b3_h_stage2b_h4_replication.py \
+            --out-json artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json \
+            --out-cells artifacts/b3_h_nextgen/STAGE2B_H4_CELLS.csv \
+            --out-source artifacts/b3_h_nextgen/STAGE2B_SOURCE.json
+      - name: Assert isolation and frozen replication semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json').read_text())
+          assert p['h1_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0
+          assert p['not_approved_for_trading'] is True
+          assert p['fixed_point_economics_used'] is False
+          assert p['replication_data_strictly_before']=='2024-06-19'
+          assert p['replication_rule']['central_30x120_must_qualify'] is True
+          assert p['replication_rule']['at_least_2_of_3_lookbacks_must_qualify'] is True
+          assert len(p['activated_prospective_candidates']) <= 1
+          print('B3_H_STAGE2B=PASS_RESEARCH_ONLY')
+          print('B3_H_STAGE2B_REPLICATED=' + str(p['replicated']))
+          print('B3_H_STAGE2B_ACTIVATED=' + ','.join(x['family'] for x in p['activated_prospective_candidates']))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h-stage2b-${{ github.run_id }}
+          path: artifacts/b3_h_nextgen/STAGE2B_*
+          retention-days: 30
+          if-no-files-found: error
