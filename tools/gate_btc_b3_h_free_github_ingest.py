@@ -59,7 +59,7 @@ def list_source_items(session: requests.Session) -> list[dict]:
 
 def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     s = requests.Session()
-    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.0'})
+    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.1'})
     items = list_source_items(s)
     item = next((x for x in items if x.get('name') == CONTINUOUS_NAME), None)
     if item is None or not item.get('download_url'):
@@ -80,9 +80,12 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     x = x.sort_values('timestamp', kind='mergesort').drop_duplicates(['timestamp'], keep='last').reset_index(drop=True)
     if (x['timestamp'].dt.date >= H1_CUTOFF).any():
         raise RuntimeError('H1_CUTOFF_BREACH')
+
+    off_grid = {}
     for c in PRICE_COLS:
-        if (((x[c] / 5.0) - (x[c] / 5.0).round()).abs() > 1e-9).any():
-            raise RuntimeError(f'OFF_TICK:{c}')
+        ratio = x[c] / 5.0
+        off = (ratio - ratio.round()).abs() > 1e-9
+        off_grid[c] = int(off.sum())
 
     x['timestamp'] = x['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
     out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -99,6 +102,8 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'adjustment_mode': 'CONTINUOUS_INTRADAY_TRANSLATION_INVARIANT_ONLY',
         'research_scope': 'INTRADAY_TRANSLATION_INVARIANT_FAMILIES_ONLY',
         'absolute_level_research_allowed': False,
+        'fixed_point_economics_allowed': False,
+        'off_tick_rows_by_price_column': off_grid,
         'bar_minutes': 5,
         'timezone': TZ,
         'roll_policy': 'PROFIT_CONTINUOUS_INTRADAY_ONLY',
@@ -121,6 +126,8 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'symbols': sorted(x['symbol'].unique().tolist()),
         'research_scope': meta['research_scope'],
         'absolute_level_research_allowed': False,
+        'fixed_point_economics_allowed': False,
+        'off_tick_rows_by_price_column': off_grid,
         'research_only': True,
         'h1_economics_read': False,
         'orders': 0,
