@@ -1,0 +1,30 @@
+{
+  "schema": "qrds.factory.transition_contract.v1",
+  "allowed_transitions": {
+    "DATA_BLOCKED": ["OPEN_DISCOVERY", "DATA_BLOCKED"],
+    "OPEN_DISCOVERY": ["CLOSED_NULL", "SURVIVOR_MONITORING", "DATA_BLOCKED"],
+    "CLOSED_NULL": ["CLOSED_NULL", "OPEN_DISCOVERY"],
+    "SURVIVOR_MONITORING": ["SURVIVOR_MONITORING", "FROZEN_PROSPECTIVE"],
+    "FROZEN_PROSPECTIVE": ["FROZEN_PROSPECTIVE"],
+    "INFRA_ONLY": ["INFRA_ONLY", "DATA_BLOCKED"]
+  },
+  "gates": {
+    "DATA_BLOCKED_to_OPEN_DISCOVERY": ["auditable_source_or_causal_derived_data", "provenance_manifest", "schema_timezone_cutoff_qa", "no_synthetic_backfill"],
+    "OPEN_DISCOVERY_to_CLOSED_NULL": ["preregistered_test_complete", "rejection_ledger_append"],
+    "OPEN_DISCOVERY_to_SURVIVOR_MONITORING": ["replicated_survivor", "rule_version_parameters_costs_sources_hashes_frozen", "blind_separate_handoff"],
+    "SURVIVOR_MONITORING_to_FROZEN_PROSPECTIVE": ["independent_prospective_contract", "append_only_ledger", "no_backfill", "no_retuning"]
+  },
+  "closed_null_reopen_requirement": "materially different mechanism or data dimension justified before economic results",
+  "forbidden": [
+    "partial_holdout_feedback_to_discovery",
+    "active_workflow_mutation",
+    "active_runtime_pointer_mutation",
+    "existing_prospective_ledger_mutation",
+    "frozen_parameter_retuning",
+    "backfill",
+    "real_orders",
+    "real_capital",
+    "engine_feed"
+  ],
+  "default_on_uncertainty": "FAIL_CLOSED"
+}
