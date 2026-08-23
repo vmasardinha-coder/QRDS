@@ -1,0 +1,88 @@
+name: GATE BTC B3 H NextGen Final
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h_free_github_ingest.py
+      - tools/gate_btc_b3_h_stage1_adapter.py
+      - tools/gate_btc_b3_h_stage2_falsification.py
+      - tools/gate_btc_b3_h_stage2b_h4_replication.py
+      - tools/gate_btc_b3_h_nextgen_final_status.py
+      - .github/workflows/gate-btc-b3-h-nextgen-final.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  close-nextgen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests
+      - name: Build guarded community source
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+      - name: Revalidate Stage1 boundary
+        run: |
+          python tools/gate_btc_b3_h_stage1_adapter.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+      - name: Reproduce Stage2 discovery falsification
+        run: |
+          python tools/gate_btc_b3_h_stage2_falsification.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out-json artifacts/b3_h_nextgen/STAGE2_FALSIFICATION.json \
+            --out-cells-csv artifacts/b3_h_nextgen/STAGE2_CELLS.csv
+      - name: Reproduce untouched H4 replication
+        run: |
+          python tools/gate_btc_b3_h_stage2b_h4_replication.py \
+            --out-json artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json \
+            --out-cells artifacts/b3_h_nextgen/STAGE2B_H4_CELLS.csv \
+            --out-source artifacts/b3_h_nextgen/STAGE2B_SOURCE.json
+      - name: Build machine-readable reporting close
+        run: |
+          python tools/gate_btc_b3_h_nextgen_final_status.py \
+            --stage2 artifacts/b3_h_nextgen/STAGE2_FALSIFICATION.json \
+            --stage2b artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json \
+            --source artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.report.json \
+            --out artifacts/b3_h_nextgen/B3_H_NEXTGEN_STATUS.json
+      - name: Assert final null-result semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/b3_h_nextgen/B3_H_NEXTGEN_STATUS.json').read_text())
+          assert p['status']=='CLOSED_NO_NEXTGEN_SURVIVOR'
+          assert p['h1_economics_read'] is False and p['h1_contaminated'] is False
+          assert p['activated_candidates']==[]
+          assert p['orders_generated']==0 and p['real_capital_used']==0
+          assert p['promotion_allowed'] is False and p['engine_feed'] is False
+          assert p['candidate_states']['H4']=='REJECTED_FAILED_INDEPENDENT_REPLICATION'
+          print('B3_H_NEXTGEN_FINAL=PASS_CLOSED_NO_SURVIVOR')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h-nextgen-final-${{ github.run_id }}
+          path: |
+            artifacts/b3_h_nextgen/B3_H_NEXTGEN_STATUS.json
+            artifacts/b3_h_nextgen/STAGE2_FALSIFICATION.json
+            artifacts/b3_h_nextgen/STAGE2_CELLS.csv
+            artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json
+            artifacts/b3_h_nextgen/STAGE2B_H4_CELLS.csv
+            artifacts/b3_h_nextgen/STAGE2B_SOURCE.json
+            artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.report.json
+            artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.attestation.json
+          retention-days: 30
+          if-no-files-found: error
