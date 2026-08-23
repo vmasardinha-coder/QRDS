@@ -1,0 +1,15 @@
+{
+  "schema":"qrds.factory.master_state.v1",
+  "mode":"READ_ONLY_INTEGRATION",
+  "source_status":"tools/gate_btc_research_factory_status.json",
+  "products":{
+    "QRDS-DATA":{"role":"auditable data products","mutates_active_tracks":false},
+    "QRDS-LAB":{"role":"OPEN_DISCOVERY only","mutates_active_tracks":false},
+    "QRDS-VALIDATE":{"role":"new survivor freeze and handoff only","mutates_active_tracks":false},
+    "QRDS-GUARD":{"role":"non-interference and transition enforcement","mutates_active_tracks":false},
+    "QRDS-REPORT":{"role":"read-only factory reporting","mutates_active_tracks":false}
+  },
+  "classifications":["OPEN_DISCOVERY","FROZEN_PROSPECTIVE","DATA_BLOCKED","CLOSED_NULL","SURVIVOR_MONITORING","INFRA_ONLY"],
+  "external_read_only":["B3_H1","B3_H31","B3_H40_PLUS","QOS_V2A_MONTHLY","DELTA_WALK_FORWARD","DELTA_PAPER_MONITOR","DELTA_V12","GATEWAY_DYNAMICS","PROFIT_PRESERVATION_LOCK25_LOCK50","PRL50","ALT_TRAIL40_10","V16B","V16C","D50_ECONOMIC","D50_DATA_QUALIFICATION","BULL_REPLAY"],
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ORDERS":0,"REAL_CAPITAL":0,"ENGINE_FEED":false,"partial_holdout_economics_allowed":false,"backfill_allowed":false,"retune_frozen_allowed":false}
+}
