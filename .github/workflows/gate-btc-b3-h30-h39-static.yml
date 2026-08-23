@@ -1,0 +1,17 @@
+name: GATE BTC B3 H30-H39 Static Guard
+on:
+  pull_request:
+    paths:
+      - 'research/b3_h30_h39_prereg.md'
+      - 'tools/gate_btc_b3_h30_h39_cross_asset.py'
+      - 'tools/gate_btc_b3_h30_h39_static_test.py'
+      - '.github/workflows/gate-btc-b3-h30-h39-static.yml'
+  workflow_dispatch:
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python tools/gate_btc_b3_h30_h39_static_test.py

@@ -1,0 +1,37 @@
+name: GATE BTC B3 H30-H39 Cross Asset
+on:
+  pull_request:
+    paths:
+      - 'research/b3_h30_h39_prereg.md'
+      - 'tools/gate_btc_b3_h30_h39_cross_asset.py'
+      - '.github/workflows/gate-btc-b3-h30-h39-cross-asset.yml'
+  workflow_dispatch:
+jobs:
+  falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pandas numpy requests
+      - name: Run isolated exact-sync WIN WDO cross-asset batch
+        run: |
+          python tools/gate_btc_b3_h30_h39_cross_asset.py --out /tmp/B3_H30_H39_STATUS.json --ledger /tmp/B3_H30_H39_LEDGER.jsonl --cells /tmp/B3_H30_H39_CELLS.csv
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/B3_H30_H39_STATUS.json'))
+          assert p['h1_economics_read'] is False and p['h1_contaminated'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          assert p['status'] in {'DATA_INADEQUATE','SURVIVORS_READY_FOR_PROSPECTIVE','CLOSED_NO_H30_H39_SURVIVOR'}
+          print(p['status'],p['survivors'])
+          print('sync',p['discovery_sync_sessions'],p['replication_sync_sessions'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h30-h39-cross-asset-results
+          path: |
+            /tmp/B3_H30_H39_STATUS.json
+            /tmp/B3_H30_H39_LEDGER.jsonl
+            /tmp/B3_H30_H39_CELLS.csv
