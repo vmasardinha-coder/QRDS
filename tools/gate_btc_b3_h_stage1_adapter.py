@@ -157,12 +157,20 @@ def validate(csv_path: Path, metadata_path: Path) -> tuple[pd.DataFrame, InputAt
         raise Stage1InputError(f"IMPOSSIBLE_OHLC:{int(bad_ohlc.sum())}")
     if (df["volume"] < 0).any():
         raise Stage1InputError("NEGATIVE_VOLUME")
+    if (df[["open", "high", "low", "close"]] <= 0).any().any():
+        raise Stage1InputError("NONPOSITIVE_PRICE")
 
-    for col in ["open", "high", "low", "close"]:
-        ratio = df[col] / TICK
-        off = (ratio - ratio.round()).abs() > 1e-7 * ratio.abs().clip(lower=1.0)
-        if off.any():
-            raise Stage1InputError(f"OFF_WIN_TICK_GRID:{col}:{int(off.sum())}")
+    # The 5-point grid is a proof of raw tradable WIN prices. Deliberately keep
+    # it mandatory for raw/unadjusted modes. A vendor-adjusted continuous series
+    # is admitted only in the explicit intraday translation-invariant mode above;
+    # it may contain off-grid historical adjusted levels and is never approved for
+    # absolute levels, fixed-point P&L, execution, or live trading.
+    if meta["adjustment_mode"] != CONTINUOUS_INTRADAY_MODE:
+        for col in ["open", "high", "low", "close"]:
+            ratio = df[col] / TICK
+            off = (ratio - ratio.round()).abs() > 1e-7 * ratio.abs().clip(lower=1.0)
+            if off.any():
+                raise Stage1InputError(f"OFF_WIN_TICK_GRID:{col}:{int(off.sum())}")
 
     diffs = df["timestamp"].diff().dropna()
     same_day = df["timestamp"].dt.date.eq(df["timestamp"].shift(1).dt.date)
