@@ -1,6 +1,6 @@
 {
   "schema": "qrds.research_factory_status.v1",
-  "generated_at_utc": "2026-08-23T20:12:00Z",
+  "generated_at_utc": "2026-08-23T22:23:00Z",
   "safety": {
     "research_only": true,
     "shadow_only": true,
@@ -14,8 +14,8 @@
     "B3_H1": {"classification":"FROZEN_PROSPECTIVE","status":"ACTIVE_STRUCTURAL_COLLECTION","economics_locked":true,"owner":"B3 specialist agent","action":"monitor only; no family creation, no partial economics"},
     "B3_H2_H29": {"classification":"CLOSED_NULL","status":"REJECTED_HISTORY_PRESERVED","action":"do not reopen except with materially different mechanism/data"},
     "B3_H31": {"classification":"SURVIVOR_MONITORING","status":"ELIGIBLE_FOR_SEPARATE_PROSPECTIVE","source_issue":102,"prospective_issue":105,"owner":"B3 specialist agent","action":"freeze exact rule and activate separate blind ledger after infrastructure freeze"},
-    "B3_H40_PLUS": {"classification":"OPEN_DISCOVERY","status":"DELEGATED_CONTINUOUS_DISCOVERY","owner":"B3 specialist agent","action":"continue preregistered mechanism generations without duplicating closed families"},
-    "MOMENTUM_M1_M2": {"classification":"DATA_BLOCKED","status":"OPEN_DIAGNOSTIC_COLLECTION_DELIVERY","methodology_frozen":true,"open_issue":85,"blocker":"failed main collection delivery; root cause not yet proven","action":"repair orchestration/data delivery only; no retuning or backfill"},
+    "B3_H40_PLUS": {"classification":"OPEN_DISCOVERY","status":"H40_H49_PREREGISTERED_EXECUTING","owner":"B3 specialist agent","open_pr":109,"action":"continue specialist-run generation; orchestrator must not duplicate or retune"},
+    "MOMENTUM_M1_M2": {"classification":"DATA_BLOCKED","status":"OPEN_DIAGNOSTIC_COLLECTION_DELIVERY","methodology_frozen":true,"open_issue":85,"blocker":"fresh runtime still reports RED_FAILED_DELIVERY with 0 observed snapshots; root cause not yet proven","action":"repair orchestration/data delivery only; no retuning or backfill"},
     "QOS_V2A_MONTHLY": {"classification":"FROZEN_PROSPECTIVE","status":"ACTIVE_CALENDAR_GATED_0_OF_3","action":"wait for untouched monthly closes; no new families in frozen track"},
     "DELTA_WALK_FORWARD": {"classification":"FROZEN_PROSPECTIVE","status":"ACTIVE_100_OF_120","action":"continue clock only; no recalibration on same evidence"},
     "DELTA_PAPER_MONITOR": {"classification":"SURVIVOR_MONITORING","status":"ACTIVE_PROSPECTIVE_PAPER_SHADOW","action":"monitor frozen reconstruction variants descriptively; no retroactive winner selection"},
@@ -28,9 +28,9 @@
     "V16C": {"classification":"FROZEN_PROSPECTIVE","status":"PREREGISTERED_STRUCTURAL_CHALLENGER_PENDING_CAUSAL_LEDGER","action":"preserve preregistration; wait for independent causal evidence"},
     "V16D_V16E": {"classification":"INFRA_ONLY","status":"BLOCKED_BY_UPSTREAM_STAGE_ORDER","action":"do not activate economic search until prerequisite B/C evidence exists"},
     "D50_ECONOMIC": {"classification":"FROZEN_PROSPECTIVE","status":"ACTIVE_14_OF_30","action":"continue immutable ledger to checkpoint 30"},
-    "D50_DATA_QUALIFICATION": {"classification":"DATA_BLOCKED","status":"ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7","blocker":"all-universe synchronized collection failure/reset","action":"repair source/collection quality without modifying economic ledger"},
+    "D50_DATA_QUALIFICATION": {"classification":"DATA_BLOCKED","status":"ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7","open_issue":110,"blocker":"all-universe synchronized collection failure/reset; runtime freshness stale","action":"diagnose exact source/symbol/time/schema boundary and restore qualification only; never alter economic 14/30 ledger"},
     "BULL_REPLAY": {"classification":"SURVIVOR_MONITORING","status":"LIVE_DIAGNOSTIC_ACTIVE","action":"descriptive shadow monitoring only; no winner promotion from short sample"},
-    "GATE_BTC_2_CORE": {"classification":"DATA_BLOCKED","status":"READINESS_AND_TEMPORAL_CAUSALITY_INFRA_PRESENT","blocker":"official dataset seal/readiness and full causal data evidence not yet complete","action":"continue read-only readiness/causality audits; no challenger economics until data gate passes"},
+    "GATE_BTC_2_CORE": {"classification":"DATA_BLOCKED","status":"READINESS_AND_TEMPORAL_CAUSALITY_INFRA_PRESENT","open_issue":111,"blocker":"official dataset seal/readiness and full causal data evidence not yet complete","action":"complete auditable dataset seal/readiness first; no challenger economics until data gate passes"},
     "COLLECTION_HEALTH_REPORTING": {"classification":"INFRA_ONLY","status":"CLOSED_IMPLEMENTED_FAIL_CLOSED_CONTRACT","action":"maintain provenance/QA/reporting semantics only"}
   },
   "orchestrator_policy": {
@@ -41,9 +41,9 @@
     "survivor_rule":"version+hash freeze, blind separate ledger, no backfill, no partial-result feedback to discovery"
   },
   "material_blockers":[
-    "Momentum M1/M2 collection delivery failure",
-    "V16B causal feature-panel/signal-producer mapping not verified",
-    "D50 data qualification synchronized failure chain at 0/7",
-    "GATE BTC 2.0 official dataset readiness not yet complete"
+    "Momentum M1/M2 collection delivery failure (issue #85)",
+    "V16B causal feature-panel/signal-producer mapping not verified (issue #83)",
+    "D50 data qualification synchronized failure chain at 0/7 (issue #110)",
+    "GATE BTC 2.0 official dataset readiness not yet complete (issue #111)"
   ]
 }
