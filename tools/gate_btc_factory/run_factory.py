@@ -15,6 +15,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+import ledger_guard
+
 FACTORY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = FACTORY_DIR.parents[1]
 DEFAULT_OUTPUT = FACTORY_DIR / "FACTORY_STATUS_LATEST.json"
@@ -85,6 +87,7 @@ def build_report(source: dict, master: dict, source_path: Path) -> dict:
         raise SystemExit("FAIL source status has no tracks")
 
     source_hash = sha256(source_path)
+    ledger_status = ledger_guard.validate_ledgers(FACTORY_DIR)
     observed_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     track_map = {}
     counts = Counter()
@@ -151,7 +154,7 @@ def build_report(source: dict, master: dict, source_path: Path) -> dict:
 
     return {
         "generated_at": observed_at,
-        "factory_version": "3.0-shadow-runner",
+        "factory_version": "3.1-ledger-bound-shadow-runner",
         "source_generated_at": source.get("generated_at_utc"),
         "source_hash": source_hash,
         "global_safety": EXPECTED_FACTORY_SAFETY,
@@ -160,6 +163,7 @@ def build_report(source: dict, master: dict, source_path: Path) -> dict:
         "queue_counts": queue_counts,
         "data_gaps": data_gaps,
         "survivor_handoffs": survivor_handoffs,
+        "ledger_status": ledger_status,
         "parity_readiness": {
             "shadow_runner": "ACTIVE",
             "active_path_rollout": "NOT_REQUESTED_AND_NOT_ALLOWED",
