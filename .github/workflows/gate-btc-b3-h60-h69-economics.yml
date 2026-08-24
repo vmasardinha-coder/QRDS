@@ -1,0 +1,63 @@
+name: GATE BTC B3 H60-H69 Economics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h60_h69_economics.py'
+      - 'tools/gate_btc_b3_h60_h69_data_probe.py'
+      - 'tools/gate_btc_b3_h60_h69_prereg.md'
+      - '.github/workflows/gate-btc-b3-h60-h69-economics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  economics-ready-families:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas numpy requests
+      - name: Revalidate source QA then run only preregistered DATA_READY families
+        run: |
+          python tools/gate_btc_b3_h60_h69_data_probe.py --out /tmp/B3_H60_H69_DATA_QA.json
+          python tools/gate_btc_b3_h60_h69_economics.py \
+            --out /tmp/B3_H60_H69_ECONOMICS.json \
+            --ledger /tmp/B3_H60_H69_LEDGER.jsonl \
+            --cells /tmp/B3_H60_H69_CELLS.csv
+      - name: Assert isolation and no unsafe activation
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/B3_H60_H69_ECONOMICS.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          assert set(p['tested_families'])=={'H60','H63'}
+          assert set(p['untested_data_gap_families'])=={'H61','H62','H64','H65','H66','H67','H68','H69'}
+          print('B3_H60_H69_READY_ECONOMICS=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h60-h69-economics-${{ github.run_id }}
+          path: |
+            /tmp/B3_H60_H69_DATA_QA.json
+            /tmp/B3_H60_H69_ECONOMICS.json
+            /tmp/B3_H60_H69_LEDGER.jsonl
+            /tmp/B3_H60_H69_CELLS.csv
+          retention-days: 30
+          if-no-files-found: error
