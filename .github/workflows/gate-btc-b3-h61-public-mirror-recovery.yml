@@ -6,6 +6,7 @@ on:
     paths:
       - 'tools/gate_btc_b3_h61_public_mirror_prereg.md'
       - 'tools/gate_btc_b3_h61_public_mirror_recovery.py'
+      - 'tools/gate_btc_b3_h61_stooq_schema_recovery.py'
       - '.github/workflows/gate-btc-b3-h61-public-mirror-recovery.yml'
   workflow_dispatch:
 
@@ -31,7 +32,7 @@ jobs:
       - run: pip install pandas numpy requests
       - name: Run fail-closed mirror QA and frozen H61 economics only if QA passes
         run: |
-          python tools/gate_btc_b3_h61_public_mirror_recovery.py \
+          python tools/gate_btc_b3_h61_stooq_schema_recovery.py \
             --out /tmp/B3_H61_PUBLIC_MIRROR_RECOVERY.json \
             --cells /tmp/B3_H61_PUBLIC_MIRROR_CELLS.csv \
             --ledger /tmp/B3_H61_PUBLIC_MIRROR_LEDGER.jsonl
