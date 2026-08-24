@@ -8,6 +8,7 @@ on:
       - '.github/workflows/gate-btc-b3-h80-h89-source-qa.yml'
       - 'tools/gate_btc_b3_bdi_live_probe.py'
       - 'tools/gate_btc_b3_bdi_endpoint_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_catalog_probe.py'
   workflow_dispatch:
 
 permissions:
@@ -24,7 +25,7 @@ env:
 jobs:
   source-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,16 +35,22 @@ jobs:
         run: python tools/gate_btc_b3_bdi_live_probe.py
       - name: Probe official B3 BDI endpoint contract
         run: python tools/gate_btc_b3_bdi_endpoint_probe.py
+      - name: Probe official B3 BDI catalog surfaces
+        run: python tools/gate_btc_b3_h80_h89_catalog_probe.py
       - name: Assert pre-economics safety boundary
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           live=json.loads(Path('artifacts/b3_bdi_probe/B3_BDI_LIVE_PROBE.json').read_text())
-          endpoint=list(Path('artifacts/b3_bdi_endpoint_probe').glob('*.json'))
-          assert live['research_only'] is True and live['orders']==0 and live['real_capital']==0
-          assert endpoint, 'missing endpoint evidence'
-          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED')
+          endpoint=json.loads(Path('artifacts/b3_bdi_endpoint_probe/B3_BDI_ENDPOINT_PROBE.json').read_text())
+          catalog=json.loads(Path('artifacts/b3_h80_h89_catalog/B3_H80_H89_BDI_CATALOG.json').read_text())
+          for p in (live,endpoint,catalog):
+              assert p['research_only'] is True and p['orders']==0 and p['real_capital']==0
+              assert p.get('engine_feed',False) is False
+              assert p.get('h1_economics_read',False) is False
+              assert p.get('economics_run',False) is False
+          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED',live['status'],catalog['status'])
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -51,5 +58,6 @@ jobs:
           path: |
             artifacts/b3_bdi_probe/
             artifacts/b3_bdi_endpoint_probe/
+            artifacts/b3_h80_h89_catalog/
           retention-days: 30
           if-no-files-found: error
