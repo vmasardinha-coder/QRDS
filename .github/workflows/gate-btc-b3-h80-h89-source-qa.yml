@@ -1,0 +1,55 @@
+name: GATE BTC B3 H80-H89 Source QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h80_h89_prereg.md'
+      - '.github/workflows/gate-btc-b3-h80-h89-source-qa.yml'
+      - 'tools/gate_btc_b3_bdi_live_probe.py'
+      - 'tools/gate_btc_b3_bdi_endpoint_probe.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install 'requests>=2.31,<3'
+      - name: Probe official B3 BDI live surface
+        run: python tools/gate_btc_b3_bdi_live_probe.py
+      - name: Probe official B3 BDI endpoint contract
+        run: python tools/gate_btc_b3_bdi_endpoint_probe.py
+      - name: Assert pre-economics safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          live=json.loads(Path('artifacts/b3_bdi_probe/B3_BDI_LIVE_PROBE.json').read_text())
+          endpoint=list(Path('artifacts/b3_bdi_endpoint_probe').glob('*.json'))
+          assert live['research_only'] is True and live['orders']==0 and live['real_capital']==0
+          assert endpoint, 'missing endpoint evidence'
+          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h80-h89-source-qa-${{ github.run_id }}
+          path: |
+            artifacts/b3_bdi_probe/
+            artifacts/b3_bdi_endpoint_probe/
+          retention-days: 30
+          if-no-files-found: error
