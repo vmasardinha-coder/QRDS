@@ -1,0 +1,96 @@
+{
+  "allowed_dataset_scopes": [
+    "BTC_CORE",
+    "MULTIASSET_V2A"
+  ],
+  "allowed_formats": [
+    "csv",
+    "jsonl"
+  ],
+  "contract_sha256": "b57281c6eb9850d45bfff96ff52bdabb4942e3e6dff404e5745ac7e3af26381b",
+  "contract_version": 1,
+  "descriptor_required_fields": [
+    "schema",
+    "dataset_id",
+    "dataset_version",
+    "baseline_commit_sha",
+    "created_at_utc",
+    "cutoff_utc",
+    "contract_sha256",
+    "required_readiness_scopes",
+    "sources",
+    "partitions",
+    "policies",
+    "safety"
+  ],
+  "partition_required_fields": [
+    "partition_id",
+    "scope",
+    "relative_path",
+    "schema_path",
+    "source_id",
+    "observed_or_derived",
+    "format",
+    "granularity",
+    "expected_sha256",
+    "expected_schema_sha256"
+  ],
+  "policies": {
+    "canonical_dataset_write_allowed": false,
+    "economic_calibration_allowed": false,
+    "future_known_metadata_allowed": false,
+    "late_seal_allowed": false,
+    "partial_scope_seal_allowed": false,
+    "retrospective_backfill_allowed": false,
+    "seal_requires_explicit_review": true
+  },
+  "required_readiness_scopes": [
+    "BTC_CORE",
+    "D50_ECONOMIC",
+    "D50_QUALIFIED",
+    "MULTIASSET_V2A"
+  ],
+  "safety": {
+    "engine_feed": false,
+    "not_approved": true,
+    "orders_generated": 0,
+    "promotion_allowed": false,
+    "real_capital_used": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc.2_0.official_dataset_contract.v1",
+  "source_required_fields": [
+    "source_id",
+    "provider",
+    "source_reference",
+    "access_class",
+    "license_status",
+    "observed_or_derived",
+    "timezone",
+    "causal_availability_rule",
+    "immutable_reference",
+    "provenance_path",
+    "expected_provenance_sha256"
+  ],
+  "source_provenance_schema": "gate_btc.2_0.source_provenance.v1",
+  "status": "FROZEN_DATA_READINESS_ONLY",
+  "tabular_schema_contract": {
+    "column_required_fields": [
+      "name",
+      "type",
+      "role"
+    ],
+    "required_fields": [
+      "schema",
+      "schema_id",
+      "format",
+      "timezone",
+      "columns",
+      "primary_key",
+      "economic_fields",
+      "future_known_metadata_allowed"
+    ],
+    "schema": "gate_btc.2_0.tabular_dataset_schema.v1"
+  }
+}

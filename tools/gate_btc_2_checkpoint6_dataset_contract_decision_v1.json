@@ -1,0 +1,116 @@
+{
+  "checkpoint": 6,
+  "contract_layer": {
+    "allowed_dataset_scopes": [
+      "BTC_CORE",
+      "MULTIASSET_V2A"
+    ],
+    "allowed_formats": [
+      "csv",
+      "jsonl"
+    ],
+    "contract_file_sha256": "64c5efa4538b293efff87eabd7384d93355c09d1854b7009ab3205c9e28bc032",
+    "contract_sha256": "b57281c6eb9850d45bfff96ff52bdabb4942e3e6dff404e5745ac7e3af26381b",
+    "descriptor_schema": "gate_btc.2_0.official_dataset_descriptor.v1",
+    "manifest_schema": "gate_btc.2_0.official_dataset_manifest.v1",
+    "required_readiness_scopes": [
+      "BTC_CORE",
+      "D50_ECONOMIC",
+      "D50_QUALIFIED",
+      "MULTIASSET_V2A"
+    ],
+    "schema": "gate_btc.2_0.official_dataset_contract.v1",
+    "tabular_schema": "gate_btc.2_0.tabular_dataset_schema.v1",
+    "tool_sha256": "d007c9e6c9d7bbaa02e60dee95d7222bdb413fef33b7715a0715582efac08ae1"
+  },
+  "current_official_readiness": {
+    "assessment_sha256": "9fa146ca971dd98049b7d37835ab96c8c04764b6938dce2951e9e46b6c776afc",
+    "blocked_scopes": [
+      "BTC_CORE",
+      "D50_ECONOMIC",
+      "D50_QUALIFIED",
+      "MULTIASSET_V2A"
+    ],
+    "delivery_gaps": [
+      "REPORTING_COMPONENTS_STALE",
+      "REPORTING_DELIVERY_INCOMPLETE",
+      "REPORTING_STATUS_NOT_PASS"
+    ],
+    "expected_cutoff": "2026-08-23",
+    "hard_failures": [],
+    "ready_scopes": [],
+    "source_manifest_sha256": "255a55d1f95c000cd95f3b8034a1f81738a04327bbc0f476699a1163235f7242",
+    "status": "BLOCKED",
+    "track_blockers": {
+      "BTC_CORE": [
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "D50_ECONOMIC": [
+        "D50_ECONOMIC_BEFORE_EXPECTED_CUTOFF",
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "D50_QUALIFIED": [
+        "D50_QUALIFICATION_BEFORE_EXPECTED_CUTOFF",
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS"
+      ],
+      "MULTIASSET_V2A": [
+        "REPORTING_COMPONENTS_STALE",
+        "REPORTING_DELIVERY_INCOMPLETE",
+        "REPORTING_STATUS_NOT_PASS",
+        "V2A_INCOMPLETE_POINT_IN_TIME_COVERAGE",
+        "V2A_SURVIVORSHIP_BIAS_PRESENT",
+        "V2A_SYMBOL_LOAD_GAP"
+      ]
+    }
+  },
+  "decision": "BLOCKED_OFFICIAL_DATASET_EVIDENCE_NOT_READY",
+  "decision_date": "2026-08-24",
+  "decision_hash_rule": "sha256 of canonical JSON excluding decision_sha256",
+  "decision_sha256": "bd37e69494364ccc71ec49a456ff8bc80c242333de71b90c300a0c1cd5f5b628",
+  "implementation_status": "OFFICIAL_DATASET_ADMISSION_CONTRACT_READY",
+  "isolation": {
+    "b3_mutations": 0,
+    "delta_mutations": 0,
+    "economic_families_released": 0,
+    "incumbent_mutations": 0,
+    "regime_mutations": 0,
+    "runtime_mutations": 0
+  },
+  "module": "Official dataset schema, exact hashes and provenance admission",
+  "next_action": "RECOVER_GENUINE_CURRENT_DELIVERY_AND_COMPLETE_V2A_POINT_IN_TIME_COVERAGE_THEN_BUILD_AN_EXACT_DATASET_CANDIDATE_WITHOUT_BACKFILL",
+  "safety_boundary": {
+    "canonical_data_writes": 0,
+    "economic_calibration_allowed": false,
+    "engine_feed": false,
+    "late_seal_allowed": false,
+    "not_approved": true,
+    "official_challenger_runs_allowed": false,
+    "official_dataset_sealed": false,
+    "orders_generated": 0,
+    "partial_scope_seal_allowed": false,
+    "promotion_allowed": false,
+    "real_capital_used": 0,
+    "retrospective_backfill_allowed": false,
+    "research_only": true,
+    "seal_requires_explicit_review": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc.2_0.checkpoint6_dataset_contract_decision.v1",
+  "source_commits": {
+    "main": "38de132bcac86f3c0703dd20633fa131b2650d8b",
+    "runtime": "695183cbdb1310b4ec609040b78140e0ea7386ac"
+  },
+  "validation": {
+    "complete_gate_btc_2_suite_expected": 49,
+    "decision_integrity_tests": 5,
+    "new_manifest_contract_tests": 11,
+    "new_test_file_sha256": "132883cc913aae8d5f06e7b9993119adf1d0033ebab7f92237060c27047d949c",
+    "workflow_file_sha256": "73ef2f058b286bba31a9c006014e48dcc245e274c252da097cecd7541d5d6356"
+  }
+}
