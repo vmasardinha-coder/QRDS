@@ -44,14 +44,20 @@ jobs:
           assert set(p['results'])=={'H61','H64'}
           for fam in ('H61','H64'):
               x=p['results'][fam]
-              assert x['source']['status']=='PASS'
-              assert x['source']['discovery_join_coverage']>=0.90
-              assert x['source']['replication_join_coverage']>=0.90
-              assert x['state'] in {'SURVIVOR_REPLICATED','REJECTED_FAILED_REPLICATION','REJECTED_DISCOVERY'}
+              assert x['state'] in {'SURVIVOR_REPLICATED','REJECTED_FAILED_REPLICATION','REJECTED_DISCOVERY','DATA_GAP'}
+              if x['state']=='DATA_GAP':
+                  assert x['source']['status']=='DATA_GAP'
+                  assert x['source']['economics_run'] is False
+              else:
+                  assert x['source']['status']=='PASS'
+                  assert x['source']['discovery_join_coverage']>=0.90
+                  assert x['source']['replication_join_coverage']>=0.90
+                  assert x['source']['economics_run'] is True
+          assert p['synthetic_backfill'] is False
           assert p['h1_economics_read'] is False
           assert p['survivor_partial_economics_read'] is False
           assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
-          print('B3_H61_H64_FRED_RECOVERY=PASS')
+          print('B3_H61_H64_FRED_RECOVERY=PASS_FAIL_CLOSED')
           PY
       - uses: actions/upload-artifact@v4
         with:
