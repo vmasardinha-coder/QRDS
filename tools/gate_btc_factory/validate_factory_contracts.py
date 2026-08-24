@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import ledger_guard
+
 ROOT = Path(__file__).resolve().parent
 REQUIRED_JSON = [
     "MASTER_STATE.json",
@@ -17,6 +19,7 @@ REQUIRED_JSON = [
     "WORKFLOW_CONTRACT.v1.json",
     "FACTORY_STATUS_LATEST.json",
     "DATA_GAPS_LATEST.json",
+    "LEDGER_CONTRACT.v1.json",
 ]
 EXPECTED_SAFETY = {
     "RESEARCH_ONLY": True,
@@ -205,7 +208,7 @@ def main() -> int:
     if status.get("queue_counts", {}).get("total_tracks") != len(track_map):
         raise SystemExit("FAIL queue total does not match track map")
 
-    data_gaps = docs["DATA_GAPS_LATEST.json"]
+    ledger_summary = ledger_guard.validate_ledgers(ROOT)\n    expected_ledgers = {"hypotheses", "rejections", "survivors", "handoffs", "data_gaps", "sources"}\n    if set(ledger_summary) != expected_ledgers:\n        raise SystemExit(f"FAIL living ledger set mismatch: {sorted(ledger_summary)}")\n\n    data_gaps = docs["DATA_GAPS_LATEST.json"]
     if data_gaps.get("schema") != "qrds.factory.data_gaps.v1":
         raise SystemExit("FAIL unexpected data-gap schema")
     if data_gaps.get("append_only_semantics") is not True:
@@ -260,7 +263,7 @@ def main() -> int:
         stale_gaps = sorted(gap_tracks - blocked_tracks)
         raise SystemExit(f"FAIL data-gap/status drift missing={missing_gaps} stale={stale_gaps}")
 
-    print("PASS factory v4 single hourly shadow machine is active, freshness-guarded, fail-closed, non-invasive and DATA_BLOCKED queue-synchronized")
+    print("PASS factory v5 shadow machine is ledger-bound, freshness-guarded, fail-closed, non-invasive and DATA_BLOCKED queue-synchronized")
     return 0
 
 
