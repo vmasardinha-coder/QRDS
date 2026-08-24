@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-PREREG = ROOT / "research" / "factory_delta_c1_prereg.json"
+PREREG = ROOT / "tools" / "gate_btc_factory_delta_c1_prereg.json"
 CANONICAL = ROOT / "migration" / "canonical" / "delta" / "scripts" / "00_run_delta_v11.py"
 
 
