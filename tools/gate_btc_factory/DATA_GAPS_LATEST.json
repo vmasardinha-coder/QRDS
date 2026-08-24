@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.data_gaps.v1",
-  "generated_at_utc": "2026-08-24T08:17:36Z",
+  "generated_at_utc": "2026-08-24T10:23:00Z",
   "append_only_semantics": true,
   "safety": {
     "RESEARCH_ONLY": true,
@@ -69,14 +69,26 @@
       "id": "DG-D50-QUAL-110",
       "track": "D50_DATA_QUALIFICATION",
       "issue": 110,
-      "gap_type": "synchronized_data_qualification",
-      "status": "ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7",
-      "required_coverage": "one fully synchronized qualifying session before qualification clock advances",
-      "required_granularity": "exact source/symbol/time/schema boundary",
+      "gap_type": "delivery_freshness_after_qualification_recovery",
+      "status": "QUALIFICATION_RECOVERED_7_OF_7__DELIVERY_STALE_READ_ONLY",
+      "required_coverage": "reconcile delivery/freshness through the current eligible cutoff or document external source-publication blocker",
+      "required_granularity": "existing synchronized D50 source path; forward-only current cutoff",
       "candidate_sources": ["existing official/free/auditable D50 qualification sources"],
-      "provenance_requirements": ["manifest/hash", "source identity", "timezone/calendar boundary", "append-only qualification history"],
-      "qa_requirements": ["no copy from economic 14/30 ledger", "no synthetic backfill", "all-universe synchronization proven"],
-      "next_action": "diagnose exact failing source/symbol/time/schema boundary and restore qualification only"
+      "provenance_requirements": ["manifest/hash", "source identity", "timezone/calendar boundary", "append-only qualification history", "runtime delivery evidence"],
+      "qa_requirements": ["qualification remains 7/7", "no copy/backfill into economic ledger", "no synthetic backfill", "FRESH versus STALE_READ_ONLY explicit"],
+      "runtime_evidence": {
+        "recovery_pr": 129,
+        "runtime_commit": "695183cbdb1310b4ec609040b78140e0ea7386ac",
+        "qualification_state": "RECOVERED_7_OF_7",
+        "total_snapshots": 22,
+        "latest_evidence_date": "2026-08-22",
+        "expected_cutoff_date": "2026-08-23",
+        "freshness": "STALE_READ_ONLY",
+        "economic_ledger_observed_checkpoint": "21_OF_30",
+        "economic_rows_imported": 0,
+        "economic_rows_mutated": 0
+      },
+      "next_action": "inspect newest coordinator/readiness/runtime evidence for an eligible 2026-08-23 delivery; reconcile forward-only if present, otherwise document exact external source-publication blocker; never backfill or retune"
     },
     {
       "id": "DG-GATE-BTC2-111",
