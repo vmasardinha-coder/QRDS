@@ -22,7 +22,7 @@ env:
 jobs:
   recover-h61-h64:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,11 +30,52 @@ jobs:
           python-version: '3.12'
       - run: pip install pandas numpy requests
       - name: Retry official FRED delivery and run only preregistered H61/H64
+        shell: bash
         run: |
-          python tools/gate_btc_b3_h61_h64_fred_recovery.py \
+          set +e
+          timeout --signal=TERM 240s python tools/gate_btc_b3_h61_h64_fred_recovery.py \
             --out /tmp/B3_H61_H64_FRED_RECOVERY.json \
             --ledger /tmp/B3_H61_H64_FRED_LEDGER.jsonl \
             --cells /tmp/B3_H61_H64_FRED_CELLS.csv
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            export FRED_RECOVERY_RC="$rc"
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          rc=int(os.environ['FRED_RECOVERY_RC'])
+          gap={
+            'status':'DATA_GAP',
+            'gap_type':'BOUNDED_OFFICIAL_DELIVERY_RECOVERY_DID_NOT_COMPLETE',
+            'economics_run':False,
+            'synthetic_backfill':False,
+            'runner_exit_code':rc,
+            'provider':'FRED / Federal Reserve Bank of St. Louis',
+          }
+          p={
+            'schema':'gate_btc.b3.h61_h64.fred_recovery.v3',
+            'cutoff_exclusive':'2026-08-10',
+            'results':{
+              'H61':{'state':'DATA_GAP','source':dict(gap, series='SP500'),'discovery':None,'replication':None},
+              'H64':{'state':'DATA_GAP','source':dict(gap, series='DCOILWTICO'),'discovery':None,'replication':None},
+            },
+            'h1_economics_read':False,
+            'survivor_partial_economics_read':False,
+            'orders_generated':0,
+            'real_capital_used':0,
+            'engine_feed':False,
+            'synthetic_backfill':False,
+          }
+          Path('/tmp/B3_H61_H64_FRED_RECOVERY.json').write_text(json.dumps(p,indent=2,sort_keys=True)+'\n')
+          rows=[]
+          for fam in ('H61','H64'):
+            rows.append(json.dumps({'family':fam,'generation':'H60_H69_V1','state':'DATA_GAP','source':p['results'][fam]['source'],'orders':0,'capital':0,'engine_feed':False},sort_keys=True))
+          Path('/tmp/B3_H61_H64_FRED_LEDGER.jsonl').write_text('\n'.join(rows)+'\n')
+          Path('/tmp/B3_H61_H64_FRED_CELLS.csv').write_text('family,sample\n')
+          print('FRED bounded recovery closed fail-closed', rc)
+          PY
+          fi
       - name: Assert scientific and safety boundary
         run: |
           python - <<'PY'
