@@ -1,0 +1,43 @@
+{
+  "schema": "gate_btc.b3.h31.source_binding.v1",
+  "approval_status": "APPROVED_FOR_SEPARATE_PROSPECTIVE",
+  "approval_issue": 105,
+  "approval_comment_id": 5397358433,
+  "freeze_file": "tools/gate_btc_b3_h31_prospective_freeze.json",
+  "freeze_rule_hash_sha256": "b9e60d46a39a60c2e1d440b18a4a6a98883849f1de2b4c3d0ab06a48e849bfbd",
+  "first_eligible_date": "2026-08-25",
+  "target_timezone": "America/Sao_Paulo",
+  "official_b3_tick_source": "https://arquivos.b3.com.br/rapinegocios/tickercsv/{date}",
+  "structural_parser": "tools/gate_btc_b3_h1_parser.py",
+  "structural_schedule_source": "tools/gate_btc_b3_h1_daily.py::load_schedule",
+  "historical_warmup": {
+    "source_repo": "wesleyzilva/tradetech",
+    "source_commit": "0deb43c668dcd447ed169c9cafb52af625d5419e",
+    "file": "CandlesHistoryDatas/2024_26/WDOFUT_F_0_5min.csv",
+    "cutoff_exclusive": "2026-08-10",
+    "use": "warmup_only_no_scored_prospective_rows"
+  },
+  "rule": {
+    "signal_asset": "WDO",
+    "observation_minutes": 30,
+    "standardizer": "trailing_20_session_median_absolute_30m_move_bps",
+    "trigger_abs_z_gte": 1.5,
+    "traded_asset": "WIN",
+    "direction": "opposite_signal",
+    "execution": "next_bar_open",
+    "hold_minutes": 120,
+    "reference_roundtrip_cost_bp": 2,
+    "stress_roundtrip_cost_bp": 3
+  },
+  "runtime_ledger_dir": "runtime/ledgers/b3_h31_prospective",
+  "persistence": "append_only_runtime_branch",
+  "backfill_forbidden": true,
+  "late_reconstruction_forbidden": true,
+  "retune_forbidden": true,
+  "partial_prospective_feedback_forbidden": true,
+  "h1_economics_read": false,
+  "orders": 0,
+  "real_capital": 0,
+  "engine_feed": false,
+  "not_approved": true
+}
