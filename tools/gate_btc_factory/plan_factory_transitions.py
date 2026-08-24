@@ -12,21 +12,28 @@ OUT = ROOT / "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json"
 APPROVAL_PREFIXES = ("APPROVED_FOR_SEPARATE_PROSPECTIVE", "APPROVED_PROSPECTIVE")
 
 
-def highest_generation_end(status: str) -> int | None:
-    ends = [int(b) for _, b in re.findall(r"H(\d+)[-_]H(\d+)", status or "")]
-    return max(ends) if ends else None
+def generation_matches(status: str) -> list[tuple[int, int, int]]:
+    rows: list[tuple[int, int, int]] = []
+    for match in re.finditer(r"H(\d+)[-_]H(\d+)", status or ""):
+        rows.append((int(match.group(1)), int(match.group(2)), match.start()))
+    return rows
 
 
 def build_next_generation(track: dict) -> dict | None:
     if track.get("classification") != "OPEN_DISCOVERY":
         return None
-    if track.get("open_issue") or track.get("open_pr"):
-        return None
     status = str(track.get("status", ""))
-    if "CLOSED" not in status:
+    rows = generation_matches(status)
+    if not rows:
         return None
-    end = highest_generation_end(status)
-    if end is None or end < 40:
+    start0, end, pos = max(rows, key=lambda row: row[1])
+    if end < 40:
+        return None
+    tail = status[pos:]
+    # The latest generation itself must be closed. Older CLOSED tokens cannot advance an open/preregistered generation.
+    if "CLOSED" not in tail:
+        return None
+    if any(token in tail for token in ("PREREGISTERED", "OPEN_DISCOVERY", "DATA_QA", "IN_PROGRESS")):
         return None
     start = end + 1
     finish = start + 9
@@ -37,13 +44,13 @@ def build_next_generation(track: dict) -> dict | None:
         "marker": marker,
         "title": f"{marker}: automatic next discovery generation",
         "body": (
-            f"Factory-generated continuation request after the prior generation closed.\n\n"
+            f"Factory-generated continuation request after H{start0}-H{end} closed.\n\n"
             f"Pre-register H{start}-H{finish} before reading results. Use materially new mechanisms/data dimensions; "
             "do not recycle rejected cells or retune frozen survivors. Preserve the historical cutoff, independent replication, "
             "frozen execution/cost/side/calendar/concentration gates, and all provenance/causality checks. "
             "H1 economics and partial prospective survivor economics remain forbidden inputs. "
             "Orders=0, real capital=0, engine_feed=false. Null result is valid.\n\n"
-            "AUTO_FACTORY_CONTINUATION=true"
+            f"{marker}\nAUTO_FACTORY_CONTINUATION=true"
         ),
     }
 
@@ -84,13 +91,11 @@ def main() -> int:
 
     tracks = src.get("tracks", {})
     actions: list[dict] = []
-    b3 = tracks.get("B3_H40_PLUS", {})
-    nxt = build_next_generation(b3)
+    nxt = build_next_generation(tracks.get("B3_H40_PLUS", {}))
     if nxt:
         actions.append(nxt)
     actions.extend(approved_activations(tracks))
 
-    # ELIGIBLE is intentionally not APPROVED. H31-like candidates stay frozen until explicit approval state exists.
     blocked_eligible = [
         name for name, track in tracks.items()
         if str(track.get("status", "")).startswith("ELIGIBLE_")
