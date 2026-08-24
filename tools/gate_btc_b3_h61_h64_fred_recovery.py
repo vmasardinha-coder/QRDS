@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse, hashlib, json, math, time
+import argparse, hashlib, json, math, re, time
 from io import StringIO
 from pathlib import Path
 
@@ -41,25 +41,47 @@ def parse_fred(raw):
     return z
 
 
+def parse_fred_static(raw):
+    text = raw.decode('utf-8-sig', errors='replace')
+    rows=[]
+    for line in text.splitlines():
+        m=re.match(r'^\s*(\d{4}-\d{2}-\d{2})\s+([^\s]+)\s*$', line)
+        if not m:
+            continue
+        value=pd.to_numeric(m.group(2), errors='coerce')
+        if pd.notna(value):
+            rows.append((m.group(1), float(value)))
+    if not rows:
+        raise ValueError('unexpected/empty FRED static data')
+    z=pd.DataFrame(rows, columns=['date','value'])
+    z['date']=pd.to_datetime(z['date'], errors='coerce')
+    z=z.dropna().sort_values('date').drop_duplicates('date')
+    z=z[(z.date >= pd.Timestamp('2019-01-01')) & (z.date < CUTOFF)]
+    if z.empty or not z.date.is_monotonic_increasing or z.date.duplicated().any():
+        raise ValueError('invalid/empty FRED static series')
+    return z
+
+
 def fetch_fred(name, series):
     endpoints = [
-        ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}),
-        ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None),
+        ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'},'csv'),
+        ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None,'csv'),
+        ('static_data',f'https://fred.stlouisfed.org/data/{series}.txt',None,'txt'),
     ]
     s = http_session(); last = None; attempt = 0
     for round_no in range(3):
-        for delivery, url, params in endpoints:
+        for delivery, url, params, fmt in endpoints:
             attempt += 1
             try:
                 r = s.get(url, params=params, timeout=(10,60), headers={'User-Agent':'QRDS-research/1.0'})
                 r.raise_for_status(); raw = r.content
-                if not raw or b'DATE' not in raw[:256].upper():
-                    raise ValueError('unexpected/empty FRED CSV')
-                x = parse_fred(raw)
+                if not raw:
+                    raise ValueError('empty FRED response')
+                x = parse_fred_static(raw) if fmt == 'txt' else parse_fred(raw)
                 meta = {'name':name,'series':series,'provider':'FRED / Federal Reserve Bank of St. Louis',
                         'delivery_path':delivery,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),
                         'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),
-                        'fetch_attempt':attempt}
+                        'fetch_attempt':attempt,'format':fmt}
                 return meta, x
             except Exception as exc:
                 last = exc
