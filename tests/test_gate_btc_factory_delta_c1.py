@@ -3,12 +3,11 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
-import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools" / "gate_btc_factory_delta_c1.py"
-PREREG = ROOT / "research" / "factory_delta_c1_prereg.json"
+PREREG = ROOT / "tools" / "gate_btc_factory_delta_c1_prereg.json"
 
 
 def load_module():
