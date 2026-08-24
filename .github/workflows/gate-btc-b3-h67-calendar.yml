@@ -42,15 +42,19 @@ jobs:
           assert p['family']=='H67'
           assert p['state'] in {'SURVIVOR_REPLICATED','REJECTED_FAILED_REPLICATION','REJECTED_DISCOVERY'}
           assert set(p['tested_flags'])=={'MONTH_TURN','WEEKDAY_EDGE'}
-          assert set(p['untested_data_gap_flags'])=={'FOMC_DECISION_DAY','COPOM_DECISION_DAY'}
+          assert set(p['structurally_rejected_without_economics'])=={'FOMC_DECISION_DAY','COPOM_DECISION_DAY'}
           assert p['flag_status']['MONTH_TURN']['status']=='DATA_READY'
           assert p['flag_status']['WEEKDAY_EDGE']['status']=='DATA_READY'
-          assert p['flag_status']['FOMC_DECISION_DAY']['status']=='DATA_GAP'
-          assert p['flag_status']['COPOM_DECISION_DAY']['status']=='DATA_GAP'
+          for flag in ('FOMC_DECISION_DAY','COPOM_DECISION_DAY'):
+              x=p['flag_status'][flag]
+              assert x['status']=='REJECTED_STRUCTURAL_SAMPLE_CAP'
+              assert x['minimum_trades_gate']==60
+              assert x['discovery_max_possible_events']<60
+              assert x['event_economics_run'] is False
           assert p['synthetic_backfill'] is False
           assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
           assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
-          print('B3_H67_CALENDAR=PASS_FAIL_CLOSED')
+          print('B3_H67_CALENDAR=PASS_STRUCTURAL_EVENT_CAP')
           PY
       - uses: actions/upload-artifact@v4
         with:
