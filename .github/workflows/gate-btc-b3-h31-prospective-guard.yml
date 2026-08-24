@@ -1,0 +1,34 @@
+name: GATE BTC B3 H31 Prospective Guard
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h31_prospective_freeze.json'
+      - 'tools/gate_btc_b3_h31_prospective_ledger.jsonl'
+      - 'tools/gate_btc_b3_h31_prospective_guard.py'
+      - '.github/workflows/gate-btc-b3-h31-prospective-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Validate frozen H31 prospective boundary
+        run: |
+          python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_STATUS.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/H31_STATUS.json'))
+          assert p['status']=='BLOCKED_SOURCE_ADAPTER_NOT_BOUND'
+          assert p['clock_started'] is False and p['eligible_observations']==0
+          assert p['h1_economics_read'] is False
+          assert p['partial_prospective_economics_exposed'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h31-prospective-guard
+          path: /tmp/H31_STATUS.json
