@@ -1,0 +1,58 @@
+name: GATE BTC Calendar Gate Preflight
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          path: main-src
+      - name: Checkout canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime-src
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve canonical QMASTER fallback
+        run: |
+          python main-src/tools/gate_btc_factory/qmaster_discovery_fallback.py \
+            --runtime-root runtime-src \
+            --output qmaster_discovery_status.json
+      - name: Calendar gate preflight
+        run: |
+          python main-src/tools/gate_btc_factory/calendar_gate_preflight.py \
+            --runtime-root runtime-src \
+            --output calendar_gate_preflight_status.json
+      - name: Safety assertion
+        run: |
+          python - <<'PY'
+          import json
+          for p in ('qmaster_discovery_status.json','calendar_gate_preflight_status.json'):
+              x=json.load(open(p,encoding='utf-8'))
+              assert x.get('orders',0)==0
+              assert x.get('real_capital',0)==0
+              assert x.get('engine_feed') is False
+              assert x.get('not_approved') is True
+          print('SAFETY_BOUNDARY=PASS')
+          PY
+      - name: Upload preflight evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-calendar-gate-preflight-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            qmaster_discovery_status.json
+            calendar_gate_preflight_status.json
