@@ -8,6 +8,8 @@ BASE='https://arquivos.b3.com.br/bdi/table/export'
 OUT=Path('artifacts/b3_h80_h89_export/B3_H80_H89_EXPORT_PROBE.json')
 DATES=['2026-08-07','2026-03-30','2025-01-03']
 TABLES=['InstrumentsDerivatives','ConsolidatedTradesDerivatives','OpenPositionsDerivatives','AnalyticalFramework2']
+# Public client identifier published by official B3 BDI config.js; this is not a credential.
+CLIENT_ID='5B34D25D-7044-4872-B8BA-28A5050CB7A6'
 
 def post_bounded(s,payload):
     errs=[]
@@ -33,11 +35,14 @@ def shape(obj):
     return {'type':type(obj).__name__}
 
 def main():
-    s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-H80-Export-Probe/1.0'})
+    s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 GATE-BTC-H80-Export-Probe/1.1'})
     rows=[]
     for date in DATES:
         for name in TABLES:
-            payload={'Name':name,'Date':date,'FinalDate':date,'ClientId':'','Filters':[]}
+            # Official ASP.NET validation says Filters is IDictionary<string,object>, so the
+            # frontend contract must send an object rather than an array. ClientId is the
+            # public value exposed by B3 config.js. This is source-contract repair only.
+            payload={'Name':name,'Date':date,'FinalDate':date,'ClientId':CLIENT_ID,'Filters':{}}
             r,errs=post_bounded(s,payload)
             if r is None:
                 rows.append({'table':name,'date':date,'status':'DATA_GAP_TRANSIENT_DELIVERY','errors':errs}); continue
@@ -50,7 +55,7 @@ def main():
     payload={
       'schema':'qrds.b3.h80_h89.export_probe.v1',
       'status':'PASS_EXPORT_CONTRACT' if usable else 'DATA_GAP_EXPORT_CONTRACT_NOT_USABLE',
-      'contract':{'method':'POST','url':BASE,'body_fields':['Name','Date','FinalDate','ClientId','Filters'],'source':'official B3 frontend bundle contract'},
+      'contract':{'method':'POST','url':BASE,'body_fields':['Name','Date','FinalDate','ClientId','Filters'],'filters_type':'object','client_id_source':'official B3 config.js public clientId','source':'official B3 frontend bundle + server validation contract'},
       'dates_all_pre_cutoff':all(d<'2026-08-10' for d in DATES),
       'rows':rows,
       'economics_run':False,'h1_economics_read':False,'survivor_partial_economics_read':False,
