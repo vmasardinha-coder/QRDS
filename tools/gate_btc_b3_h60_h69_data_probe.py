@@ -22,13 +22,17 @@ FAMILY_REQ={
  'H68':['SP500','VIX','BRLUSD','US10Y'],'H69':['SP500','BRLUSD']
 }
 
+# The frozen H30-H39 loader uses a 180s per-request timeout. For this source-QA
+# stage only, cap those exact same public GitHub source reads so transport stalls
+# become explicit DATA_GAP/CI failures rather than consuming the whole workflow.
+# This does not alter bytes, source commit, cutoff, session filters or economics.
+_ORIG_GET=requests.get
+def _bounded_b3_get(url,*args,**kwargs):
+ kwargs['timeout']=(5,30)
+ return _ORIG_GET(url,*args,**kwargs)
+b.requests.get=_bounded_b3_get
+
 def _http_session():
- # Deliberately no transport retries here. This QA probes multiple official
- # endpoints and must finish well inside the workflow timeout. A failed path
- # falls through immediately to the second official FRED path, and a complete
- # failure is recorded fail-closed as DATA_GAP_FETCH. This changes delivery
- # mechanics only; observations, cutoff, causal joins, families and economics
- # remain frozen.
  retry=Retry(total=0,connect=0,read=0,status=0,redirect=2,
              allowed_methods=frozenset(['GET']))
  s=requests.Session();s.mount('https://',HTTPAdapter(max_retries=retry));return s
@@ -45,7 +49,6 @@ def _parse_fred_csv(raw):
  return x
 
 def fetch_fred(name,series):
- # Two official FRED delivery paths; each gets one short bounded attempt.
  endpoints=[
    ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}),
    ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None),
@@ -67,7 +70,6 @@ def session_dates(periods,bar):
  ss,_=b.sample(periods,bar);return pd.DatetimeIndex(pd.to_datetime(sorted(ss.keys())))
 
 def causal_coverage(x,sessions):
- # strictly prior available observation; never same-day input
  d=x[['date','value']].sort_values('date').copy(); left=pd.DataFrame({'session':sessions}).sort_values('session')
  j=pd.merge_asof(left,d,left_on='session',right_on='date',direction='backward',allow_exact_matches=False)
  age=(j['session']-j['date']).dt.days
