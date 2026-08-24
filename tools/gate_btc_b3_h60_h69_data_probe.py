@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json
+import argparse,hashlib,json,time
 from io import StringIO
 from pathlib import Path
 import pandas as pd,requests
@@ -22,10 +22,7 @@ FAMILY_REQ={
  'H68':['SP500','VIX','BRLUSD','US10Y'],'H69':['SP500','BRLUSD']
 }
 
-# The frozen H30-H39 loader uses a 180s per-request timeout. For this source-QA
-# stage only, cap those exact same public GitHub source reads so transport stalls
-# become explicit DATA_GAP/CI failures rather than consuming the whole workflow.
-# This does not alter bytes, source commit, cutoff, session filters or economics.
+# Source-QA only: bound transport stalls without changing bytes/cutoff/economics.
 _ORIG_GET=requests.get
 def _bounded_b3_get(url,*args,**kwargs):
  kwargs['timeout']=(5,30)
@@ -53,17 +50,22 @@ def fetch_fred(name,series):
    ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}),
    ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None),
  ]
- last=None
+ last=None;attempt=0
  session=_http_session()
- for source_name,url,params in endpoints:
-  try:
-   r=session.get(url,params=params,timeout=(5,10),headers={'User-Agent':'QRDS-research/1.0'})
-   r.raise_for_status();raw=r.content
-   if not raw or b'DATE' not in raw[:128].upper(): raise ValueError('unexpected/empty FRED CSV')
-   x=_parse_fred_csv(raw)
-   return {'name':name,'series':series,'provider':'FRED','delivery_path':source_name,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':1},x
-  except Exception as e:
-   last=e
+ # Two bounded rounds make transient FRED read timeouts retryable while preserving
+ # fail-closed DATA_GAP behavior. No alternate economic data or synthetic fill.
+ for round_no in range(2):
+  for source_name,url,params in endpoints:
+   attempt+=1
+   try:
+    r=session.get(url,params=params,timeout=(5,25),headers={'User-Agent':'QRDS-research/1.0'})
+    r.raise_for_status();raw=r.content
+    if not raw or b'DATE' not in raw[:128].upper(): raise ValueError('unexpected/empty FRED CSV')
+    x=_parse_fred_csv(raw)
+    return {'name':name,'series':series,'provider':'FRED','delivery_path':source_name,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':attempt},x
+   except Exception as e:
+    last=e
+  if round_no==0: time.sleep(2)
  raise last
 
 def session_dates(periods,bar):
