@@ -9,6 +9,7 @@ on:
       - 'tools/gate_btc_b3_bdi_live_probe.py'
       - 'tools/gate_btc_b3_bdi_endpoint_probe.py'
       - 'tools/gate_btc_b3_h80_h89_catalog_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_table_probe.py'
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,7 @@ env:
 jobs:
   source-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,6 +38,8 @@ jobs:
         run: python tools/gate_btc_b3_bdi_endpoint_probe.py
       - name: Probe official B3 BDI catalog surfaces
         run: python tools/gate_btc_b3_h80_h89_catalog_probe.py
+      - name: Probe official B3 derivative tables on pre-cutoff dates
+        run: python tools/gate_btc_b3_h80_h89_table_probe.py
       - name: Assert pre-economics safety boundary
         run: |
           python - <<'PY'
@@ -45,12 +48,14 @@ jobs:
           live=json.loads(Path('artifacts/b3_bdi_probe/B3_BDI_LIVE_PROBE.json').read_text())
           endpoint=json.loads(Path('artifacts/b3_bdi_endpoint_probe/B3_BDI_ENDPOINT_PROBE.json').read_text())
           catalog=json.loads(Path('artifacts/b3_h80_h89_catalog/B3_H80_H89_BDI_CATALOG.json').read_text())
-          for p in (live,endpoint,catalog):
+          tables=json.loads(Path('artifacts/b3_h80_h89_tables/B3_H80_H89_TABLE_PROBE.json').read_text())
+          for p in (live,endpoint,catalog,tables):
               assert p['research_only'] is True and p['orders']==0 and p['real_capital']==0
               assert p.get('engine_feed',False) is False
               assert p.get('h1_economics_read',False) is False
               assert p.get('economics_run',False) is False
-          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED',live['status'],catalog['status'])
+          assert tables['dates_all_pre_cutoff'] is True
+          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED',live['status'],catalog['status'],tables['status'])
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -59,5 +64,6 @@ jobs:
             artifacts/b3_bdi_probe/
             artifacts/b3_bdi_endpoint_probe/
             artifacts/b3_h80_h89_catalog/
+            artifacts/b3_h80_h89_tables/
           retention-days: 30
           if-no-files-found: error
