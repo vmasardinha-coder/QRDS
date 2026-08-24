@@ -1,0 +1,57 @@
+{
+  "schema": "qrds.factory.rollout_readiness.v1",
+  "generated_at_utc": "2026-08-24T10:27:00Z",
+  "global_decision": "NOT_APPROVED",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "components": {
+    "factory_shadow_runner": {
+      "readiness": "SHADOW_READY",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["single hourly factory workflow", "contents:read", "artifact-only runtime status", "freshness guard"],
+      "missing_before_rollout": ["explicit future user authorization"]
+    },
+    "living_ledgers": {
+      "readiness": "SHADOW_READY",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["append-only ledger contract", "six ledger surfaces", "fail-closed validator/runner binding"],
+      "missing_before_rollout": ["operational write adapters with proven duplicate/fingerprint handling", "explicit future user authorization"]
+    },
+    "data_blocked_queue": {
+      "readiness": "SHADOW_ACTIVE",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["machine-readable queue", "synchronization validator", "paid/private escalation gate", "synthetic backfill forbidden"],
+      "missing_before_rollout": ["resolver adapters validated per blocker", "explicit future user authorization"]
+    },
+    "source_registry": {
+      "readiness": "STRUCTURE_READY",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["append-only SOURCE_REGISTRY.jsonl", "ledger contract validation"],
+      "missing_before_rollout": ["source/provenance entry validation against concrete adapters", "explicit future user authorization"]
+    },
+    "qrds_report_cockpit": {
+      "readiness": "SHADOW_READY",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["machine-readable cockpit", "six-item mandate state", "non-interference surface"],
+      "missing_before_rollout": ["runtime binding and schema validation", "explicit future user authorization"]
+    },
+    "collection_parity": {
+      "readiness": "NOT_YET_PROVEN",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["parity contract exists"],
+      "missing_before_rollout": ["parallel comparison of provenance", "schema", "timezone", "causal cutoff", "keys", "row counts", "gaps", "duplicates", "hashes", "status semantics", "explicit future user authorization"]
+    },
+    "active_collection_replacement": {
+      "readiness": "FORBIDDEN",
+      "active_rollout": "NOT_APPROVED",
+      "evidence": ["existing local and GitHub collections remain active and unchanged"],
+      "missing_before_rollout": ["consistent parity evidence", "explicit future user authorization"]
+    }
+  }
+}
