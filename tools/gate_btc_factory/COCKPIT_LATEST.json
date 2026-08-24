@@ -11,21 +11,75 @@
     "ENGINE_FEED": false
   },
   "products": {
-    "QRDS-DATA": {"status": "SHADOW_ACTIVE", "next": "resolve actionable DATA_BLOCKED items with read-only adapters/QA"},
-    "QRDS-LAB": {"status": "SHADOW_ACTIVE", "next": "continue non-specialist OPEN_DISCOVERY only"},
-    "QRDS-VALIDATE": {"status": "SHADOW_ACTIVE", "next": "freeze new survivors and create blind handoffs only"},
-    "QRDS-GUARD": {"status": "SHADOW_ACTIVE", "next": "enforce fail-closed transition and non-interference"},
-    "QRDS-REPORT": {"status": "SHADOW_ACTIVE", "next": "publish read-only cockpit/parity/readiness surfaces"}
+    "QRDS-DATA": {
+      "status": "SHADOW_ACTIVE",
+      "next": "resolve actionable DATA_BLOCKED items with read-only adapters/QA"
+    },
+    "QRDS-LAB": {
+      "status": "SHADOW_ACTIVE",
+      "next": "continue non-specialist OPEN_DISCOVERY only"
+    },
+    "QRDS-VALIDATE": {
+      "status": "SHADOW_ACTIVE",
+      "next": "freeze new survivors and create blind handoffs only"
+    },
+    "QRDS-GUARD": {
+      "status": "SHADOW_ACTIVE",
+      "next": "enforce fail-closed transition and non-interference"
+    },
+    "QRDS-REPORT": {
+      "status": "SHADOW_ACTIVE",
+      "next": "consume taxonomy + factory-stage map in future collection/PDF reporting without touching active collectors"
+    }
   },
   "mandate_6": {
-    "D50_FRESHNESS_DELIVERY": {"state": "BLOCKED_STALE_READ_ONLY", "issue": 110, "evidence": "qualification recovered 7/7; 22 synchronized snapshots through 2026-08-22; expected cutoff 2026-08-23", "next": "reconcile forward-only if source exists or document external publication blocker"},
-    "MOMENTUM_M1_M2": {"state": "BLOCKED_RED_TRUE_PROCESSING_FAILURE", "issue": 85, "next": "identify exact freeze/collector/status failing step; orchestration/data-delivery only"},
-    "V16B": {"state": "BLOCKED_WAITING_D_MINUS_2", "issue": 83, "next_event": "2026-08-25 preflight / 2026-08-27 SIGNAL", "next": "real immutable-artifact rehearsal + source convergence + canonical SIGNAL producer proof"},
-    "B3_H60_H69": {"state": "SPECIALIST_OPEN_DISCOVERY_READ_ONLY", "issue": 124, "pr": 125, "next": "observe specialist test/replication/freeze-or-reject and verify same-cycle continuation"},
-    "FACTORY_BUILD": {"state": "IN_PROGRESS", "completed": ["scheduled shadow runner", "DATA_BLOCKED queue", "DATA_BLOCKED validator", "living append-only ledgers", "source registry ledger", "ledger validator/runner binding"], "next": "cockpit + parity + rollout-readiness + operational resolution bindings"},
-    "GATE_BTC_2_0": {"state": "DATA_BLOCKED", "issue": 111, "next": "complete dataset seal/readiness and causal evidence before challenger economics"}
+    "D50_FRESHNESS_DELIVERY": {
+      "state": "BLOCKED_STALE_READ_ONLY",
+      "issue": 110,
+      "evidence": "qualification recovered 7/7; 22 synchronized snapshots through 2026-08-22; expected cutoff 2026-08-23",
+      "next": "reconcile forward-only if source exists or document external publication blocker"
+    },
+    "MOMENTUM_M1_M2": {
+      "state": "BLOCKED_RED_TRUE_PROCESSING_FAILURE",
+      "issue": 85,
+      "next": "identify exact freeze/collector/status failing step; orchestration/data-delivery only"
+    },
+    "V16B": {
+      "state": "BLOCKED_WAITING_D_MINUS_2",
+      "issue": 83,
+      "next_event": "2026-08-25 preflight / 2026-08-27 SIGNAL",
+      "next": "real immutable-artifact rehearsal + source convergence + canonical SIGNAL producer proof"
+    },
+    "B3_H60_H69": {
+      "state": "SPECIALIST_OPEN_DISCOVERY_READ_ONLY",
+      "issue": 124,
+      "pr": 125,
+      "next": "observe specialist test/replication/freeze-or-reject and verify same-cycle continuation"
+    },
+    "FACTORY_BUILD": {
+      "state": "IN_PROGRESS",
+      "completed": [
+        "scheduled shadow runner",
+        "DATA_BLOCKED queue",
+        "DATA_BLOCKED validator",
+        "living append-only ledgers",
+        "source registry ledger",
+        "ledger validator/runner binding"
+      ],
+      "next": "cockpit + parity + rollout-readiness + operational resolution bindings"
+    },
+    "GATE_BTC_2_0": {
+      "state": "DATA_BLOCKED",
+      "issue": 111,
+      "next": "complete dataset seal/readiness and causal evidence before challenger economics"
+    }
   },
-  "data_blocked_priority": ["D50_DATA_QUALIFICATION", "MOMENTUM_M1_M2", "V16B", "GATE_BTC_2_CORE"],
+  "data_blocked_priority": [
+    "D50_DATA_QUALIFICATION",
+    "MOMENTUM_M1_M2",
+    "V16B",
+    "GATE_BTC_2_CORE"
+  ],
   "structural_clocks_allowed": {
     "DELTA_WALK_FORWARD": "read-only",
     "GATEWAY_DYNAMICS": "read-only",
@@ -43,5 +97,11 @@
     "parameters_or_clocks_mutated": false,
     "partial_holdout_economics_read": false,
     "backfill_performed": false
+  },
+  "factory_reporting_taxonomy": {
+    "status": "MATERIALIZED",
+    "taxonomy_ref": "tools/gate_btc_factory/FAMILY_TAXONOMY.v1.json",
+    "report_stage_map_ref": "tools/gate_btc_factory/REPORT_STAGE_MAP.v1.json",
+    "pdf_regeneration": false
   }
 }
