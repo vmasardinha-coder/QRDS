@@ -1,0 +1,95 @@
+name: GATE BTC Factory Shadow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_research_factory_status.json'
+      - 'tools/gate_btc_factory/**'
+      - '.github/workflows/gate-btc-factory-shadow.yml'
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  factory-shadow-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate factory contracts before cycle
+        run: python tools/gate_btc_factory/validate_factory_contracts.py
+
+      - name: Run fail-closed factory shadow cycle
+        run: python tools/gate_btc_factory/run_factory.py
+
+      - name: Validate generated factory state
+        run: python tools/gate_btc_factory/validate_factory_contracts.py
+
+      - name: Assert non-interference in checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GATE_BTC_RESEARCH_ONLY" = 'true'
+          test "$GATE_BTC_SHADOW_ONLY" = 'true'
+          test "$GATE_BTC_ORDERS" = '0'
+          test "$GATE_BTC_REAL_CAPITAL" = '0'
+          test "$GATE_BTC_ENGINE_FEED" = 'false'
+          git diff --name-only > /tmp/factory_changed.txt
+          if grep -Ev '^tools/gate_btc_factory/FACTORY_STATUS_LATEST\.json$' /tmp/factory_changed.txt | grep -q .; then
+            echo 'FAIL factory shadow cycle changed files outside its report'
+            cat /tmp/factory_changed.txt
+            exit 1
+          fi
+          echo 'PASS factory shadow cycle changed no protected path'
+
+      - name: Write factory summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('tools/gate_btc_factory/FACTORY_STATUS_LATEST.json').read_text(encoding='utf-8'))
+          q=report['queue_counts']
+          lines=[
+              '# QRDS Factory Shadow Cycle',
+              '',
+              f"Generated: {report['generated_at']}",
+              f"Tracks: {q['total_tracks']}",
+              f"Open discovery: {q['hypotheses_open_discovery']}",
+              f"Data blocked: {q['data_gaps']}",
+              f"Survivor monitoring: {q['survivor_handoffs']}",
+              f"Frozen prospective: {q['frozen_watch']}",
+              f"Closed null: {q['closed_null']}",
+              f"Infra only: {q['infra_only']}",
+              '',
+              'Safety: RESEARCH_ONLY=true; SHADOW_ONLY=true; ORDERS=0; REAL_CAPITAL=0; ENGINE_FEED=false',
+          ]
+          with Path(__import__('os').environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as fh:
+              fh.write('\n'.join(lines) + '\n')
+          PY
+
+      - name: Upload factory status artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qrds-factory-status-${{ github.run_id }}
+          path: tools/gate_btc_factory/FACTORY_STATUS_LATEST.json
+          if-no-files-found: error
+          retention-days: 30
