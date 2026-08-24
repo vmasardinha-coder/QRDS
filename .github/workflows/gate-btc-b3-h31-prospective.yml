@@ -1,0 +1,109 @@
+name: GATE BTC B3 H31 Prospective
+
+on:
+  schedule:
+    - cron: "45 0,1,2 * * 2-6"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
+      - "tools/gate_btc_b3_h31_prospective_collect.py"
+      - ".github/workflows/gate-btc-b3-h31-prospective.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-b3-h31-prospective
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  PYTHONPATH: "."
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas numpy
+      - name: Validate H31 frozen source binding
+        run: |
+          python tools/gate_btc_b3_h31_prospective_collect.py --validate-contract-only
+          python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
+
+  collect:
+    needs: contract
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas numpy
+      - name: Resolve immutable target session
+        id: target
+        run: |
+          TARGET_DATE=$(date -u -d 'yesterday' +%F)
+          python - "$TARGET_DATE" <<'PY'
+          import datetime as dt, sys
+          d=dt.date.fromisoformat(sys.argv[1])
+          assert d.weekday() < 5, f"H31 target must be Mon-Fri, got {d}"
+          PY
+          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+      - name: Check out append-only runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Collect H31 prospective observation
+        run: |
+          python tools/gate_btc_b3_h31_prospective_collect.py \
+            --date "${{ steps.target.outputs.date }}" \
+            --ledger-dir runtime_repo/runtime/ledgers/b3_h31_prospective
+      - name: Assert public status contains no partial economics
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json'))
+          assert p['status']=='ACTIVE_PROSPECTIVE'
+          assert p['clock_started'] is True
+          assert p['partial_prospective_economics_exposed'] is False
+          assert p['h1_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          PY
+      - name: Publish append-only H31 runtime evidence
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/b3_h31_prospective
+          git diff --cached --quiet && exit 0
+          git commit -m "Append B3 H31 prospective ${{ steps.target.outputs.date }}"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
