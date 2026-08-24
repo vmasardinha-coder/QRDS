@@ -1,0 +1,44 @@
+{
+  "registry_version": "1.0",
+  "mode": "RESEARCH_ONLY_SHADOW",
+  "sources": [
+    {
+      "track": "B3_H1",
+      "path": "tools/gate_btc_b3_h1_status.py",
+      "classification": "SURVIVOR_MONITORING",
+      "read_depth": "STRUCTURAL_ONLY"
+    },
+    {
+      "track": "D50_ECONOMIC",
+      "path": "tools/gate_btc_d50_position_audit.py",
+      "classification": "FROZEN_PROSPECTIVE",
+      "read_depth": "METADATA_ONLY"
+    },
+    {
+      "track": "DAILY_RESEARCH_COLLECTION",
+      "path": "tools/gate_btc_daily_research.py",
+      "classification": "INFRA_ONLY",
+      "read_depth": "STRUCTURAL_ONLY"
+    },
+    {
+      "track": "DAILY_SNAPSHOT_REPORT",
+      "path": "tools/gate_btc_daily_snapshot_report.py",
+      "classification": "INFRA_ONLY",
+      "read_depth": "STRUCTURAL_ONLY"
+    }
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "rules": [
+    "Registry entries are observation targets only.",
+    "No source listed here may be modified by the factory runner.",
+    "Economic payloads are never parsed by the shadow runner.",
+    "Missing or ambiguous sources fail closed into BLOCKED_SOURCE_UNAVAILABLE."
+  ]
+}
