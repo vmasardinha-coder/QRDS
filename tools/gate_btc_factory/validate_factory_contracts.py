@@ -14,6 +14,7 @@ REQUIRED_JSON = [
     "PARITY_DRYRUN_CONTRACT.v1.json",
     "FACTORY_REPORT_SCHEMA.v1.json",
     "FAMILY_FLOW_CONTRACT.v1.json",
+    "WORKFLOW_CONTRACT.v1.json",
     "FACTORY_STATUS_LATEST.json",
 ]
 EXPECTED_SAFETY = {
@@ -37,6 +38,8 @@ FORBIDDEN_TOKENS = {
     "existing_active_schedules_mutated": True,
     "protected_path_mutation": True,
     "commits_generated_status": True,
+    "writes_repository": True,
+    "stale_transition_or_promotion_allowed": True,
 }
 
 
@@ -65,9 +68,9 @@ def walk(node):
 
 def main() -> int:
     docs = {name: load(name) for name in REQUIRED_JSON}
-    runner = ROOT / "run_factory.py"
-    if not runner.is_file():
-        raise SystemExit("FAIL missing shadow runner: run_factory.py")
+    for runner_name in ("run_factory.py", "run_factory_ci.py"):
+        if not (ROOT / runner_name).is_file():
+            raise SystemExit(f"FAIL missing shadow runner: {runner_name}")
 
     safety_seen = False
     for doc in docs.values():
@@ -124,8 +127,8 @@ def main() -> int:
     )
     if any(activation.get(key) is not False for key in required_false):
         raise SystemExit("FAIL factory shadow activation crosses protected boundary")
-    if activation.get("factory_owned_schedule") != "17 */6 * * *":
-        raise SystemExit("FAIL unexpected factory-owned schedule")
+    if activation.get("factory_owned_schedule") != "23 * * * *":
+        raise SystemExit("FAIL unexpected factory-owned hourly schedule")
     if activation.get("orders") != 0 or activation.get("real_capital") != 0:
         raise SystemExit("FAIL shadow activation permits orders/capital")
 
@@ -138,8 +141,36 @@ def main() -> int:
         raise SystemExit("FAIL factory workflow must emit artifact only")
     if workflow_policy.get("protected_path_mutation") is not False:
         raise SystemExit("FAIL factory workflow may mutate protected paths")
-    if workflow_policy.get("allowed_checkout_diff") != ["tools/gate_btc_factory/FACTORY_STATUS_LATEST.json"]:
+    if workflow_policy.get("allowed_checkout_diff") != ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json"]:
         raise SystemExit("FAIL factory workflow checkout diff boundary changed")
+
+    freshness_policy = flow.get("freshness_policy", {})
+    if freshness_policy.get("source_limit_minutes") != 180:
+        raise SystemExit("FAIL unexpected source freshness limit")
+    if freshness_policy.get("stale") != "STALE_READ_ONLY":
+        raise SystemExit("FAIL stale source is not read-only")
+    if freshness_policy.get("stale_transition_or_promotion_allowed") is not False:
+        raise SystemExit("FAIL stale source may drive transition/promotion")
+
+    workflow = docs["WORKFLOW_CONTRACT.v1.json"]
+    if workflow.get("workflow_path") != ".github/workflows/gate-btc-factory-shadow.yml":
+        raise SystemExit("FAIL workflow contract points to unexpected path")
+    if workflow.get("schedule_cron") != "23 * * * *":
+        raise SystemExit("FAIL workflow contract is not hourly")
+    if workflow.get("permissions") != {"contents": "read"}:
+        raise SystemExit("FAIL workflow contract permissions are not read-only")
+    if workflow.get("writes_repository") is not False:
+        raise SystemExit("FAIL workflow contract permits repository writes")
+    if workflow.get("uploads_artifact_only") is not True:
+        raise SystemExit("FAIL workflow contract must be artifact-only")
+    if workflow.get("runner") != "tools/gate_btc_factory/run_factory_ci.py":
+        raise SystemExit("FAIL workflow contract runner mismatch")
+    if workflow.get("runtime_output") != "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json":
+        raise SystemExit("FAIL workflow contract runtime output mismatch")
+    if workflow.get("source_freshness_minutes") != 180:
+        raise SystemExit("FAIL workflow freshness contract mismatch")
+    if workflow.get("safety") != EXPECTED_SAFETY:
+        raise SystemExit("FAIL workflow safety block mismatch")
 
     report_schema = docs["FACTORY_REPORT_SCHEMA.v1.json"]
     status = docs["FACTORY_STATUS_LATEST.json"]
@@ -173,7 +204,7 @@ def main() -> int:
     if status.get("queue_counts", {}).get("total_tracks") != len(track_map):
         raise SystemExit("FAIL queue total does not match track map")
 
-    print("PASS factory v4 scheduled shadow machine is active, fail-closed and non-invasive")
+    print("PASS factory v4 single hourly shadow machine is active, freshness-guarded, fail-closed and non-invasive")
     return 0
 
 
