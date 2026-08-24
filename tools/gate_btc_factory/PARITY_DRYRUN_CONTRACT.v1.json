@@ -1,0 +1,55 @@
+{
+  "contract_version": "1.0",
+  "purpose": "Prepare future rollout evidence without changing or replacing any active QRDS collection or runtime.",
+  "mode": "PARALLEL_SHADOW_ONLY",
+  "activation_allowed": false,
+  "requirements_before_any_future_rollout": [
+    "EXPLICIT_USER_ROLLOUT_AUTHORIZATION",
+    "SOURCE_PROVENANCE_MATCH",
+    "SCHEMA_PARITY_PASS",
+    "TIMEZONE_AND_CUTOFF_PARITY_PASS",
+    "ROW_COUNT_AND_KEY_PARITY_PASS",
+    "HASH_OR_CONTENT_EQUIVALENCE_WHERE_APPLICABLE",
+    "DUPLICATE_AND_GAP_CHECK_PASS",
+    "NO_ACTIVE_PATH_MUTATION",
+    "NO_CLOCK_OR_COUNTER_CHANGE",
+    "NO_ECONOMIC_PARAMETER_CHANGE",
+    "FAIL_CLOSED_BEHAVIOR_VERIFIED"
+  ],
+  "dry_run_rules": {
+    "write_target": "FACTORY_NAMESPACE_ONLY",
+    "read_existing_sources": true,
+    "mutate_existing_sources": false,
+    "emit_orders": false,
+    "use_real_capital": false,
+    "feed_engine": false,
+    "backfill_missing_active_history": false,
+    "replace_daily_collection": false,
+    "redirect_runtime_pointer": false
+  },
+  "comparison_dimensions": [
+    "artifact_identity",
+    "source_binding",
+    "schema",
+    "time_lattice",
+    "timezone",
+    "causal_cutoff",
+    "row_keys",
+    "row_counts",
+    "missingness",
+    "duplicates",
+    "hashes",
+    "status_semantics"
+  ],
+  "result_enum": [
+    "PASS_PARITY",
+    "PASS_WITH_NON_MATERIAL_WARNINGS",
+    "BLOCKED_SOURCE_UNAVAILABLE",
+    "FAIL_SCHEMA",
+    "FAIL_TIME",
+    "FAIL_PROVENANCE",
+    "FAIL_CONTENT",
+    "FAIL_NON_INTERFERENCE"
+  ],
+  "fail_closed": "Any mismatch that could affect causality, provenance, clocks, economics, or active collection continuity blocks rollout readiness."
+}
