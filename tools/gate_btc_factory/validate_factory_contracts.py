@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed validator for QRDS factory contracts and shadow runner state."""
+"""Fail-closed validator for QRDS factory contracts and controlled shadow transitions."""
 from __future__ import annotations
 
 import json
@@ -20,6 +20,7 @@ REQUIRED_JSON = [
     "FACTORY_STATUS_LATEST.json",
     "DATA_GAPS_LATEST.json",
     "LEDGER_CONTRACT.v1.json",
+    "PROSPECTIVE_ACTIVATIONS.json",
 ]
 EXPECTED_SAFETY = {
     "RESEARCH_ONLY": True,
@@ -44,6 +45,7 @@ FORBIDDEN_TOKENS = {
     "commits_generated_status": True,
     "writes_repository": True,
     "stale_transition_or_promotion_allowed": True,
+    "production_activation": True,
 }
 
 
@@ -72,9 +74,14 @@ def walk(node):
 
 def main() -> int:
     docs = {name: load(name) for name in REQUIRED_JSON}
-    for runner_name in ("run_factory.py", "run_factory_ci.py"):
+    for runner_name in (
+        "run_factory.py",
+        "run_factory_ci.py",
+        "plan_factory_transitions.py",
+        "apply_factory_transitions.py",
+    ):
         if not (ROOT / runner_name).is_file():
-            raise SystemExit(f"FAIL missing shadow runner: {runner_name}")
+            raise SystemExit(f"FAIL missing factory runner: {runner_name}")
 
     safety_seen = False
     for doc in docs.values():
@@ -89,6 +96,17 @@ def main() -> int:
         for key, value in walk(doc):
             if key in FORBIDDEN_TOKENS and value == FORBIDDEN_TOKENS[key]:
                 raise SystemExit(f"FAIL unsafe factory setting in {name}: {key}={value}")
+
+    master = docs["MASTER_STATE.json"]
+    if master.get("mode") != "CONTROLLED_TRANSITION_ORCHESTRATION":
+        raise SystemExit("FAIL factory is not in controlled transition orchestration mode")
+    approval = master.get("approval_semantics", {})
+    if approval.get("eligible_is_approved") is not False:
+        raise SystemExit("FAIL ELIGIBLE may be treated as APPROVED")
+    if approval.get("automatic_activation_target") != "ACTIVE_PROSPECTIVE_SHADOW":
+        raise SystemExit("FAIL automatic activation target escaped prospective shadow")
+    if approval.get("production_activation") is not False:
+        raise SystemExit("FAIL master permits production activation")
 
     adapter = docs["READ_ADAPTER_CONTRACT.v1.json"]
     mandatory_forbidden = {
@@ -118,34 +136,58 @@ def main() -> int:
         "factory_owned_schedule_enabled",
         "push_refresh_enabled",
         "manual_dispatch_enabled",
+        "issue_transition_mutations_enabled",
     )
     if any(activation.get(key) is not True for key in required_true):
-        raise SystemExit("FAIL factory shadow activation is incomplete")
+        raise SystemExit("FAIL controlled factory activation is incomplete")
     required_false = (
         "existing_active_workflows_mutated",
         "existing_active_schedules_mutated",
         "active_path_rollout_enabled",
+        "production_path_rollout_enabled",
         "replace_daily_collection",
         "redirect_runtime_pointer",
         "engine_feed",
     )
     if any(activation.get(key) is not False for key in required_false):
-        raise SystemExit("FAIL factory shadow activation crosses protected boundary")
+        raise SystemExit("FAIL controlled activation crosses protected boundary")
     if activation.get("factory_owned_schedule") != "23 * * * *":
         raise SystemExit("FAIL unexpected factory-owned hourly schedule")
     if activation.get("orders") != 0 or activation.get("real_capital") != 0:
         raise SystemExit("FAIL shadow activation permits orders/capital")
 
+    transition = flow.get("automatic_transition_policy", {})
+    nxt = transition.get("next_generation", {})
+    if nxt.get("enabled") is not True or nxt.get("generation_width") != 10:
+        raise SystemExit("FAIL next-generation continuation is not enabled at width 10")
+    if nxt.get("must_preregister_before_results") is not True or nxt.get("failed_cell_recycling") is not False:
+        raise SystemExit("FAIL next-generation scientific isolation weakened")
+    approved = transition.get("approved_survivor_activation", {})
+    expected_prefixes = ["APPROVED_FOR_SEPARATE_PROSPECTIVE", "APPROVED_PROSPECTIVE"]
+    if approved.get("accepted_status_prefixes") != expected_prefixes:
+        raise SystemExit("FAIL unexpected automatic approval statuses")
+    if approved.get("eligible_status_is_sufficient") is not False:
+        raise SystemExit("FAIL ELIGIBLE can auto-activate")
+    if approved.get("target") != "ACTIVE_PROSPECTIVE_SHADOW" or approved.get("production_activation") is not False:
+        raise SystemExit("FAIL approved activation target is unsafe")
+    if approved.get("engine_feed") is not False or approved.get("orders") != 0 or approved.get("real_capital") != 0:
+        raise SystemExit("FAIL approved activation can reach engine/orders/capital")
+
     workflow_policy = flow.get("workflow_write_policy", {})
-    if workflow_policy.get("repository_permissions") != "contents:read":
-        raise SystemExit("FAIL factory workflow has non-read-only repository permission")
+    if workflow_policy.get("repository_permissions") != "contents:read, issues:write":
+        raise SystemExit("FAIL factory workflow permissions exceed controlled issue-write scope")
     if workflow_policy.get("commits_generated_status") is not False:
         raise SystemExit("FAIL factory workflow may commit generated status")
     if workflow_policy.get("artifact_only") is not True:
-        raise SystemExit("FAIL factory workflow must emit artifact only")
+        raise SystemExit("FAIL factory runtime files must remain artifact-only")
     if workflow_policy.get("protected_path_mutation") is not False:
         raise SystemExit("FAIL factory workflow may mutate protected paths")
-    if workflow_policy.get("allowed_checkout_diff") != ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json"]:
+    expected_diff = [
+        "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
+        "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json",
+        "tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json",
+    ]
+    if workflow_policy.get("allowed_checkout_diff") != expected_diff:
         raise SystemExit("FAIL factory workflow checkout diff boundary changed")
 
     freshness_policy = flow.get("freshness_policy", {})
@@ -161,20 +203,33 @@ def main() -> int:
         raise SystemExit("FAIL workflow contract points to unexpected path")
     if workflow.get("schedule_cron") != "23 * * * *":
         raise SystemExit("FAIL workflow contract is not hourly")
-    if workflow.get("permissions") != {"contents": "read"}:
-        raise SystemExit("FAIL workflow contract permissions are not read-only")
+    if workflow.get("permissions") != {"contents": "read", "issues": "write"}:
+        raise SystemExit("FAIL workflow contract permissions are not controlled issue-only")
     if workflow.get("writes_repository") is not False:
         raise SystemExit("FAIL workflow contract permits repository writes")
+    if workflow.get("creates_transition_issues") is not True:
+        raise SystemExit("FAIL transition issues are not enabled")
     if workflow.get("uploads_artifact_only") is not True:
-        raise SystemExit("FAIL workflow contract must be artifact-only")
+        raise SystemExit("FAIL runtime outputs must remain artifact-only")
     if workflow.get("runner") != "tools/gate_btc_factory/run_factory_ci.py":
         raise SystemExit("FAIL workflow contract runner mismatch")
+    if workflow.get("transition_planner") != "tools/gate_btc_factory/plan_factory_transitions.py":
+        raise SystemExit("FAIL transition planner mismatch")
+    if workflow.get("transition_applier") != "tools/gate_btc_factory/apply_factory_transitions.py":
+        raise SystemExit("FAIL transition applier mismatch")
     if workflow.get("runtime_output") != "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json":
-        raise SystemExit("FAIL workflow contract runtime output mismatch")
+        raise SystemExit("FAIL workflow runtime output mismatch")
     if workflow.get("source_freshness_minutes") != 180:
         raise SystemExit("FAIL workflow freshness contract mismatch")
     if workflow.get("safety") != EXPECTED_SAFETY:
         raise SystemExit("FAIL workflow safety block mismatch")
+
+    registry = docs["PROSPECTIVE_ACTIVATIONS.json"]
+    reg_safety = registry.get("safety", {})
+    if reg_safety.get("ORDERS") != 0 or reg_safety.get("REAL_CAPITAL") != 0 or reg_safety.get("ENGINE_FEED") is not False:
+        raise SystemExit("FAIL prospective registry can reach execution")
+    if reg_safety.get("production_activation_allowed") is not False:
+        raise SystemExit("FAIL prospective registry permits production")
 
     report_schema = docs["FACTORY_REPORT_SCHEMA.v1.json"]
     status = docs["FACTORY_STATUS_LATEST.json"]
@@ -208,7 +263,12 @@ def main() -> int:
     if status.get("queue_counts", {}).get("total_tracks") != len(track_map):
         raise SystemExit("FAIL queue total does not match track map")
 
-    ledger_summary = ledger_guard.validate_ledgers(ROOT)\n    expected_ledgers = {"hypotheses", "rejections", "survivors", "handoffs", "data_gaps", "sources"}\n    if set(ledger_summary) != expected_ledgers:\n        raise SystemExit(f"FAIL living ledger set mismatch: {sorted(ledger_summary)}")\n\n    data_gaps = docs["DATA_GAPS_LATEST.json"]
+    ledger_summary = ledger_guard.validate_ledgers(ROOT)
+    expected_ledgers = {"hypotheses", "rejections", "survivors", "handoffs", "data_gaps", "sources"}
+    if set(ledger_summary) != expected_ledgers:
+        raise SystemExit(f"FAIL living ledger set mismatch: {sorted(ledger_summary)}")
+
+    data_gaps = docs["DATA_GAPS_LATEST.json"]
     if data_gaps.get("schema") != "qrds.factory.data_gaps.v1":
         raise SystemExit("FAIL unexpected data-gap schema")
     if data_gaps.get("append_only_semantics") is not True:
@@ -263,7 +323,7 @@ def main() -> int:
         stale_gaps = sorted(gap_tracks - blocked_tracks)
         raise SystemExit(f"FAIL data-gap/status drift missing={missing_gaps} stale={stale_gaps}")
 
-    print("PASS factory v5 shadow machine is ledger-bound, freshness-guarded, fail-closed, non-invasive and DATA_BLOCKED queue-synchronized")
+    print("PASS factory controlled transition machine is ledger-bound, freshness-guarded, issue-only, fail-closed, and execution-isolated")
     return 0
 
 
