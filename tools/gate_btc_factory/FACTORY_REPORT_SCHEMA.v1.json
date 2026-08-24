@@ -10,6 +10,7 @@
     "queue_counts",
     "data_gaps",
     "survivor_handoffs",
+    "ledger_status",
     "parity_readiness",
     "blockers",
     "non_interference_assertion"
@@ -43,6 +44,7 @@
     "Do not reuse stale values as current without an explicit stale marker.",
     "Every blocker must cite its source ref or DATA_GAP id.",
     "Every survivor handoff must reference a frozen rule/version/source hash set.",
-    "Every rollout-readiness statement must come from parity evidence and remains NOT_APPROVED until explicit user authorization."
+    "Every rollout-readiness statement must come from parity evidence and remains NOT_APPROVED until explicit user authorization.",
+    "Living ledgers and source registry must pass the fail-closed ledger guard before any factory status is emitted."
   ]
 }
