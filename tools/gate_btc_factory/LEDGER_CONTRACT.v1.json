@@ -1,0 +1,31 @@
+{
+  "schema": "qrds.factory.ledger_contract.v1",
+  "append_only": true,
+  "write_scope": "tools/gate_btc_factory/",
+  "ledgers": {
+    "hypotheses": "HYPOTHESES_LEDGER.jsonl",
+    "rejections": "REJECTIONS_LEDGER.jsonl",
+    "survivors": "SURVIVORS_LEDGER.jsonl",
+    "handoffs": "HANDOFFS_LEDGER.jsonl",
+    "data_gaps": "DATA_GAPS_LEDGER.jsonl",
+    "sources": "SOURCE_REGISTRY.jsonl"
+  },
+  "entry_rules": {
+    "id_required": true,
+    "timestamp_utc_required": true,
+    "immutable_identity_fields_required": true,
+    "duplicate_id_forbidden": true,
+    "rewrite_or_delete_forbidden": true,
+    "partial_blind_holdout_economics_forbidden": true,
+    "backfill_forbidden": true,
+    "retune_frozen_forbidden": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  }
+}
