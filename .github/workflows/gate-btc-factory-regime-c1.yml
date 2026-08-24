@@ -1,0 +1,65 @@
+name: GATE BTC Factory Regime C1
+
+on:
+  pull_request:
+    paths:
+      - "research/factory_regime_c1_prereg.json"
+      - "tools/gate_btc_factory_regime_c1.py"
+      - "tests/test_gate_btc_factory_regime_c1.py"
+      - ".github/workflows/gate-btc-factory-regime-c1.yml"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "fixture or public"
+        required: false
+        default: "public"
+        type: choice
+        options: [public, fixture]
+  schedule:
+    - cron: "47 4 * * 2,5"
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  regime-c1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests
+      - name: Contract tests
+        run: python -m unittest -v tests/test_gate_btc_factory_regime_c1.py
+      - name: Run preregistered generation
+        env:
+          REQUESTED_MODE: ${{ inputs.mode || 'fixture' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          MODE="$REQUESTED_MODE"
+          if [ "$EVENT_NAME" = "pull_request" ]; then MODE=fixture; fi
+          mkdir -p artifacts/factory_regime_c1
+          python tools/gate_btc_factory_regime_c1.py --mode "$MODE" --out artifacts/factory_regime_c1/RESULT.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/factory_regime_c1/RESULT.json'))
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          assert p['h1_economics_read'] is False
+          assert p['partial_prospective_economics_read'] is False
+          assert p['comparison_capital_brl']==180000
+          assert p['status'] in {'CLOSED_NULL','CLOSED_NULL_WITH_DATA_GAPS','SURVIVORS_READY_FOR_FREEZE','DATA_BLOCKED'}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-factory-regime-c1-${{ github.run_id }}
+          path: artifacts/factory_regime_c1/
+          retention-days: 30
+          if-no-files-found: error
