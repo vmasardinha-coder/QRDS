@@ -1,0 +1,33 @@
+name: GATE BTC B3 H60-H69 Data QA
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h60_h69_prereg.md'
+      - 'tools/gate_btc_b3_h60_h69_data_probe.py'
+      - '.github/workflows/gate-btc-b3-h60-h69-data-qa.yml'
+  workflow_dispatch:
+jobs:
+  data-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy requests
+      - name: Probe cross-market sources without economics
+        run: |
+          python tools/gate_btc_b3_h60_h69_data_probe.py --out /tmp/B3_H60_H69_DATA_QA.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/B3_H60_H69_DATA_QA.json'))
+          assert p['economics_run'] is False
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          print({k:v['status'] for k,v in p['families'].items()})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h60-h69-data-qa
+          path: /tmp/B3_H60_H69_DATA_QA.json
