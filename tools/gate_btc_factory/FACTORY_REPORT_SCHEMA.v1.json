@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "report_name": "QRDS_FACTORY_STATUS",
+  "required_sections": [
+    "generated_at",
+    "factory_version",
+    "global_safety",
+    "product_status",
+    "track_map",
+    "queue_counts",
+    "data_gaps",
+    "survivor_handoffs",
+    "parity_readiness",
+    "blockers",
+    "non_interference_assertion"
+  ],
+  "global_safety_required": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "product_enum": [
+    "QRDS-DATA",
+    "QRDS-LAB",
+    "QRDS-VALIDATE",
+    "QRDS-GUARD",
+    "QRDS-REPORT"
+  ],
+  "track_classification_enum": [
+    "OPEN_DISCOVERY",
+    "FROZEN_PROSPECTIVE",
+    "DATA_BLOCKED",
+    "CLOSED_NULL",
+    "SURVIVOR_MONITORING",
+    "INFRA_ONLY"
+  ],
+  "reporting_rules": [
+    "Do not include partial blind-holdout economics.",
+    "Do not convert infrastructure PASS into economic evidence.",
+    "Do not reuse stale values as current without an explicit stale marker.",
+    "Every blocker must cite its source ref or DATA_GAP id.",
+    "Every survivor handoff must reference a frozen rule/version/source hash set.",
+    "Every rollout-readiness statement must come from parity evidence and remains NOT_APPROVED until explicit user authorization."
+  ]
+}
