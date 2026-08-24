@@ -1,0 +1,21 @@
+{
+  "schema": "qrds.factory.delta_c1_prereg.v1",
+  "issue": 165,
+  "generated_before_results": true,
+  "group_id": "TREND_MOMENTUM",
+  "capital_comparison_brl": 180000,
+  "historical_cutoff_exclusive": "2026-08-10",
+  "discovery_end_inclusive": "2026-03-31",
+  "replication_start_inclusive": "2026-04-01",
+  "families": {
+    "DELTA_C1_PERSISTENCE": {"central": {"lookback": 14, "rebalance_days": 3, "gross_long": 0.70, "gross_short": 0.30}, "neighbors": [{"lookback": 7, "rebalance_days": 3, "gross_long": 0.70, "gross_short": 0.30}, {"lookback": 30, "rebalance_days": 3, "gross_long": 0.70, "gross_short": 0.30}]},
+    "DELTA_C1_BETA_NEUTRAL": {"central": {"lookback": 14, "beta_window": 60, "rebalance_days": 3}, "neighbors": [{"lookback": 7, "beta_window": 45, "rebalance_days": 3}, {"lookback": 30, "beta_window": 60, "rebalance_days": 3}]},
+    "DELTA_C1_REGIME": {"central": {"lookback": 14, "trend_window": 30, "vol_window": 20, "rebalance_days": 3}, "neighbors": [{"lookback": 14, "trend_window": 20, "vol_window": 20, "rebalance_days": 3}, {"lookback": 14, "trend_window": 60, "vol_window": 30, "rebalance_days": 3}]},
+    "DELTA_C1_CADENCE": {"central": {"lookback": 14, "rebalance_days": 7, "gross_long": 0.70, "gross_short": 0.30}, "neighbors": [{"lookback": 14, "rebalance_days": 5, "gross_long": 0.70, "gross_short": 0.30}, {"lookback": 14, "rebalance_days": 10, "gross_long": 0.70, "gross_short": 0.30}]},
+    "DELTA_C1_RISK_BUDGET": {"central": {"lookback": 14, "vol_window": 20, "rebalance_days": 3}, "neighbors": [{"lookback": 7, "vol_window": 20, "rebalance_days": 3}, {"lookback": 30, "vol_window": 30, "rebalance_days": 3}]}
+  },
+  "execution": {"signal_on_completed_close": true, "return_starts_next_bar": true, "fee_bps_per_turnover_unit": 8.0, "top_n": 5, "bottom_n": 5},
+  "gates": {"min_observations_each_block": 60, "min_sharpe": 0.50, "max_drawdown_floor": -0.15, "require_positive_total_return": true, "require_discovery_neighbor": true, "require_central_replication": true},
+  "source_contract": {"primary": "canonical Delta public OHLC snapshot or canonical OKX public collector", "incumbents_read_only": true, "external_delta_not_tuning_target": true},
+  "safety": {"RESEARCH_ONLY": true, "SHADOW_ONLY": true, "NOT_APPROVED": true, "ORDERS": 0, "REAL_CAPITAL": 0, "ENGINE_FEED": false, "NO_BACKFILL": true, "NO_PARTIAL_PROSPECTIVE_FEEDBACK": true}
+}
