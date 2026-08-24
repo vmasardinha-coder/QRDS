@@ -69,10 +69,14 @@ def check(root: pathlib.Path, today: date):
             first=parse_day(cfg["expected_first"])
             days=(first-today).days
             if cfg["mode"] == "measurement_qos":
-                current=obj.get("qos_monthly_current")
-                expected=obj.get("qos_monthly_expected_closes") or obj.get("qos_expected_closes")
-                if expected is not None and cfg["expected_first"] not in expected:
-                    raise ValueError("frozen 2026-08-31 QOS close missing from measurement status")
+                qos_monthly=obj.get("qos_monthly")
+                if not isinstance(qos_monthly, dict):
+                    raise ValueError("canonical qos_monthly object missing from measurement status")
+                expected=qos_monthly.get("expected_closes")
+                if not isinstance(expected, list):
+                    raise ValueError("canonical qos_monthly.expected_closes missing or malformed")
+                if cfg["expected_first"] not in expected:
+                    raise ValueError("frozen 2026-08-31 QOS close missing from qos_monthly.expected_closes")
             elif cfg["mode"] == "status_signal":
                 if obj.get("first_eligible_signal_date") != cfg["expected_first"]:
                     raise ValueError("unexpected first eligible signal date")
