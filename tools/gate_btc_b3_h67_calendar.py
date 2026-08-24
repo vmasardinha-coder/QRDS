@@ -15,7 +15,7 @@ CUTOFF='2026-08-10'
 ASSETS=('WIN','WDO')
 HORIZONS=(60,120)
 MAPPINGS=('CONTINUE','FADE')
-PARSER_VERSION='h67-calendar-v1'
+PARSER_VERSION='h67-calendar-v2'
 OFFICIAL_SOURCES={
     'FOMC_2019':'https://www.federalreserve.gov/monetarypolicy/fomchistorical2019.htm',
     'FOMC_2020':'https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm',
@@ -50,6 +50,11 @@ def derived_flags(ss):
         month_turn.add(vals[0]); month_turn.add(vals[-1])
     weekday_edge={d for d in dates if d.weekday() in (0,4)}
     return {'MONTH_TURN':month_turn,'WEEKDAY_EDGE':weekday_edge}
+
+
+def regular_event_sample_cap(ss, events_per_year=8):
+    years={d.year for d in session_dates(ss)}
+    return len(years)*events_per_year
 
 
 def add(rows,fam,s,g,asset,side,horizon,param,bar):
@@ -99,21 +104,34 @@ def summarize(t):
 
 def main(out,cells):
     official=fetch_official()
-    # Event-day flags stay fail-closed until a deterministic date parser/coverage attestation is separately green.
+    ds,dcov=b.sample(['2024_26'],5); rs,rcov=b.sample(['2020_22','2022_24'],15)
+    discovery_event_cap=regular_event_sample_cap(ds)
+    replication_event_cap=regular_event_sample_cap(rs)
+    # Regular FOMC and Copom schedules have eight planned decisions per year. Under the frozen
+    # >=60-trade cell gate, even the theoretical maximum event count in discovery is insufficient.
+    # Therefore event-day cells are rejected structurally without opening event-conditioned economics.
+    event_structural={
+        'status':'REJECTED_STRUCTURAL_SAMPLE_CAP',
+        'events_per_year_max':8,
+        'discovery_max_possible_events':discovery_event_cap,
+        'replication_max_possible_events':replication_event_cap,
+        'minimum_trades_gate':60,
+        'event_economics_run':False,
+        'reason':'maximum scheduled regular-event observations in frozen discovery years is below minimum-trades gate'
+    }
     flag_status={
-        'FOMC_DECISION_DAY':{'status':'DATA_GAP','reason':'official pages fetched/probed but deterministic historical date extraction/coverage attestation not yet frozen'},
-        'COPOM_DECISION_DAY':{'status':'DATA_GAP','reason':'official calendar fetched/probed but deterministic historical date extraction/coverage attestation not yet frozen'},
+        'FOMC_DECISION_DAY':dict(event_structural, source='official Federal Reserve pages fetched and hashed'),
+        'COPOM_DECISION_DAY':dict(event_structural, source='official Banco Central do Brasil calendar fetched and hashed'),
         'MONTH_TURN':{'status':'DATA_READY','source':'derived causally from observed B3 session dates'},
         'WEEKDAY_EDGE':{'status':'DATA_READY','source':'derived causally from observed B3 session dates'},
     }
-    ds,dcov=b.sample(['2024_26'],5); rs,rcov=b.sample(['2020_22','2022_24'],15)
     D,dc=summarize(generate(ds,5,derived_flags(ds)))
     R,rc=summarize(generate(rs,15,derived_flags(rs)))
     state='SURVIVOR_REPLICATED' if D['survives'] and R['survives'] else 'REJECTED_FAILED_REPLICATION' if D['survives'] else 'REJECTED_DISCOVERY'
     report={
-      'schema':'gate_btc.b3.h67.calendar.v1','cutoff_exclusive':CUTOFF,'family':'H67','state':state,
+      'schema':'gate_btc.b3.h67.calendar.v2','cutoff_exclusive':CUTOFF,'family':'H67','state':state,
       'official_source_probe':official,'flag_status':flag_status,'tested_flags':['MONTH_TURN','WEEKDAY_EDGE'],
-      'untested_data_gap_flags':['FOMC_DECISION_DAY','COPOM_DECISION_DAY'],'discovery':D,'replication':R,
+      'structurally_rejected_without_economics':['FOMC_DECISION_DAY','COPOM_DECISION_DAY'],'discovery':D,'replication':R,
       'discovery_sync_sessions':len(ds),'replication_sync_sessions':len(rs),
       'h1_economics_read':False,'survivor_partial_economics_read':False,'synthetic_backfill':False,
       'orders_generated':0,'real_capital_used':0,'engine_feed':False
