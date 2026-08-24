@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools" / "gate_btc_factory_regime_c1.py"
-PREREG = ROOT / "research" / "factory_regime_c1_prereg.json"
+PREREG = ROOT / "tools" / "gate_btc_factory_regime_c1_prereg.json"
 
 
 def load_module():
