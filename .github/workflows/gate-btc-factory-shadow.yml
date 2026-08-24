@@ -1,0 +1,134 @@
+name: GATE BTC Factory Shadow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_research_factory_status.json'
+      - 'tools/gate_btc_factory/**'
+      - '.github/workflows/gate-btc-factory-shadow.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-factory-shadow
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  factory-shadow-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository read-only
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable safety boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GATE_BTC_RESEARCH_ONLY" = 'true'
+          test "$GATE_BTC_SHADOW_ONLY" = 'true'
+          test "$GATE_BTC_NOT_APPROVED" = 'true'
+          test "$GATE_BTC_ORDERS" = '0'
+          test "$GATE_BTC_REAL_CAPITAL" = '0'
+          test "$GATE_BTC_ENGINE_FEED" = 'false'
+
+      - name: Validate installed factory contracts
+        run: python tools/gate_btc_factory/validate_factory_contracts.py
+
+      - name: Run fail-closed factory shadow cycle
+        run: python tools/gate_btc_factory/run_factory_ci.py
+
+      - name: Validate runtime status safety and freshness marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json')
+          report=json.loads(p.read_text(encoding='utf-8'))
+          expected={
+              'RESEARCH_ONLY': True,
+              'SHADOW_ONLY': True,
+              'NOT_APPROVED': True,
+              'ORDERS': 0,
+              'REAL_CAPITAL': 0,
+              'ENGINE_FEED': False,
+          }
+          if report.get('global_safety') != expected:
+              raise SystemExit('FAIL runtime safety block mismatch')
+          fresh=report.get('source_freshness', {}).get('status')
+          if fresh not in {'FRESH','STALE_READ_ONLY'}:
+              raise SystemExit('FAIL missing/invalid source freshness marker')
+          if report.get('parity_readiness', {}).get('active_path_rollout') != 'NOT_REQUESTED_AND_NOT_ALLOWED':
+              raise SystemExit('FAIL active rollout boundary changed')
+          print('PASS runtime status safety/freshness', fresh)
+          PY
+
+      - name: Assert no protected checkout mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only > /tmp/factory_changed.txt
+          if grep -Ev '^tools/gate_btc_factory/FACTORY_STATUS_RUNTIME\.json$' /tmp/factory_changed.txt | grep -q .; then
+            echo 'FAIL factory shadow cycle changed files outside its runtime artifact'
+            cat /tmp/factory_changed.txt
+            exit 1
+          fi
+          git diff --cached --exit-code
+          test -f tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json
+          echo 'PASS no protected path mutated'
+
+      - name: Write factory summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report=json.loads(Path('tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json').read_text(encoding='utf-8'))
+          q=report['queue_counts']
+          freshness=report['source_freshness']
+          lines=[
+              '# QRDS Factory Shadow Cycle',
+              '',
+              f"Generated: {report['generated_at']}",
+              f"Source freshness: {freshness['status']} ({freshness['age_minutes']} min)",
+              f"Tracks: {q['total_tracks']}",
+              f"Open discovery: {q['hypotheses_open_discovery']}",
+              f"Data blocked: {q['data_gaps']}",
+              f"Survivor monitoring: {q['survivor_handoffs']}",
+              f"Frozen prospective: {q['frozen_watch']}",
+              f"Closed null: {q['closed_null']}",
+              f"Infra only: {q['infra_only']}",
+              '',
+              'Safety: RESEARCH_ONLY=true; SHADOW_ONLY=true; NOT_APPROVED=true; ORDERS=0; REAL_CAPITAL=0; ENGINE_FEED=false',
+          ]
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as fh:
+              fh.write('\n'.join(lines) + '\n')
+          PY
+
+      - name: Upload factory status artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qrds-factory-shadow-status-${{ github.run_id }}
+          path: tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
