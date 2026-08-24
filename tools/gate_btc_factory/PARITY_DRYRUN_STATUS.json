@@ -1,0 +1,45 @@
+{
+  "schema": "qrds.factory.parity_dryrun_status.v1",
+  "generated_at_utc": "2026-08-24T10:27:30Z",
+  "mode": "READ_ONLY_PARALLEL",
+  "active_collection_replacement": false,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "comparison_dimensions": [
+    "provenance",
+    "schema",
+    "timezone",
+    "causal_cutoff",
+    "keys",
+    "row_count",
+    "gaps",
+    "duplicates",
+    "hashes",
+    "status_semantics"
+  ],
+  "sources": {
+    "existing_local_collections": {"state": "ACTIVE_UNCHANGED", "mutation_allowed": false},
+    "existing_github_collections": {"state": "ACTIVE_UNCHANGED", "mutation_allowed": false},
+    "factory_readers": {"state": "STRUCTURE_READY", "mutation_allowed": false}
+  },
+  "overall_status": "NOT_YET_PROVEN",
+  "gates": {
+    "provenance_match": "PENDING",
+    "schema_match": "PENDING",
+    "timezone_match": "PENDING",
+    "causal_cutoff_match": "PENDING",
+    "key_match": "PENDING",
+    "row_count_reconciled": "PENDING",
+    "gap_semantics_reconciled": "PENDING",
+    "duplicate_semantics_reconciled": "PENDING",
+    "hash_or_manifest_reconciled": "PENDING",
+    "status_semantics_reconciled": "PENDING"
+  },
+  "rollout_policy": "FAIL_CLOSED_UNTIL_ALL_REQUIRED_PARITY_GATES_PASS_AND_USER_EXPLICITLY_AUTHORIZES_FUTURE_ROLLOUT"
+}
