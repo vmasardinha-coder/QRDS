@@ -1,0 +1,81 @@
+name: GATE BTC B3 H80-H89 Source QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h80_h89_prereg.md'
+      - '.github/workflows/gate-btc-b3-h80-h89-source-qa.yml'
+      - 'tools/gate_btc_b3_bdi_live_probe.py'
+      - 'tools/gate_btc_b3_bdi_endpoint_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_catalog_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_table_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_export_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_pricereport_probe.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install 'requests>=2.31,<3'
+      - name: Probe official B3 BDI live surface
+        run: python tools/gate_btc_b3_bdi_live_probe.py
+      - name: Probe official B3 BDI endpoint contract
+        run: python tools/gate_btc_b3_bdi_endpoint_probe.py
+      - name: Probe official B3 BDI catalog surfaces
+        run: python tools/gate_btc_b3_h80_h89_catalog_probe.py
+      - name: Probe official B3 derivative tables on pre-cutoff dates
+        run: python tools/gate_btc_b3_h80_h89_table_probe.py
+      - name: Probe exact official B3 export POST contract
+        run: python tools/gate_btc_b3_h80_h89_export_probe.py
+      - name: Probe official B3 retroactive PriceReport files
+        run: python tools/gate_btc_b3_h80_h89_pricereport_probe.py
+      - name: Assert pre-economics safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          live=json.loads(Path('artifacts/b3_bdi_probe/B3_BDI_LIVE_PROBE.json').read_text())
+          endpoint=json.loads(Path('artifacts/b3_bdi_endpoint_probe/B3_BDI_ENDPOINT_PROBE.json').read_text())
+          catalog=json.loads(Path('artifacts/b3_h80_h89_catalog/B3_H80_H89_BDI_CATALOG.json').read_text())
+          tables=json.loads(Path('artifacts/b3_h80_h89_tables/B3_H80_H89_TABLE_PROBE.json').read_text())
+          export=json.loads(Path('artifacts/b3_h80_h89_export/B3_H80_H89_EXPORT_PROBE.json').read_text())
+          pr=json.loads(Path('artifacts/b3_h80_h89_pricereport/B3_H80_H89_PRICEREPORT_PROBE.json').read_text())
+          for p in (live,endpoint,catalog,tables,export,pr):
+              assert p['research_only'] is True and p['orders']==0 and p['real_capital']==0
+              assert p.get('engine_feed',False) is False
+              assert p.get('h1_economics_read',False) is False
+              assert p.get('economics_run',False) is False
+          assert tables['dates_all_pre_cutoff'] is True
+          assert export['dates_all_pre_cutoff'] is True
+          assert pr['dates_all_pre_cutoff'] is True
+          print('H80_H89_SOURCE_DISCOVERY=ACTIVE_FAIL_CLOSED',live['status'],catalog['status'],tables['status'],export['status'],pr['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h80-h89-source-qa-${{ github.run_id }}
+          path: |
+            artifacts/b3_bdi_probe/
+            artifacts/b3_bdi_endpoint_probe/
+            artifacts/b3_h80_h89_catalog/
+            artifacts/b3_h80_h89_tables/
+            artifacts/b3_h80_h89_export/
+            artifacts/b3_h80_h89_pricereport/
+          retention-days: 30
+          if-no-files-found: error
