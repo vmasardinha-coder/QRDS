@@ -1,0 +1,70 @@
+{
+  "contract_version": "1.0",
+  "purpose": "Non-invasive observation of existing QRDS tracks for factory state integration without mutating any active/frozen/prospective/shadow runtime.",
+  "global_mode": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "allowed_operations": [
+    "READ_PUBLIC_REPOSITORY_STATUS",
+    "READ_PUBLIC_ARTIFACT_METADATA",
+    "READ_NON_BLIND_STRUCTURAL_STATUS",
+    "HASH_OBSERVED_INPUTS",
+    "NORMALIZE_STATUS_WITHOUT_REWRITING_SOURCE",
+    "EMIT_FACTORY_HANDOFF"
+  ],
+  "forbidden_operations": [
+    "WRITE_ACTIVE_RUNTIME",
+    "WRITE_EXISTING_LEDGER",
+    "ALTER_WORKFLOW",
+    "ALTER_SCHEDULE",
+    "ALTER_COLLECTOR",
+    "ALTER_CANONICAL_REPORT",
+    "ALTER_FROZEN_PARAMETER",
+    "ALTER_COST_MODEL",
+    "ALTER_CLOCK_OR_COUNTER",
+    "BACKFILL",
+    "RETUNE",
+    "REANCHOR",
+    "READ_PARTIAL_BLIND_HOLDOUT_ECONOMICS"
+  ],
+  "protected_tracks": [
+    "B3_H1",
+    "B3_SPECIALIST_DISCOVERY",
+    "D50_ECONOMIC",
+    "DELTA_WALK_FORWARD",
+    "GATEWAY_DYNAMICS",
+    "QOS_CLOCKS",
+    "LOCK25_LOCK50_PRL50",
+    "V16_PROSPECTIVE",
+    "DAILY_RESEARCH_COLLECTION",
+    "DAILY_SNAPSHOT_REPORT",
+    "DATA_READINESS",
+    "COLLECTION_COORDINATOR"
+  ],
+  "reader_output": {
+    "required_fields": [
+      "source_track",
+      "source_ref",
+      "observed_at",
+      "classification",
+      "structural_status",
+      "provenance",
+      "source_hash",
+      "read_only_assertion"
+    ],
+    "classification_enum": [
+      "OPEN_DISCOVERY",
+      "FROZEN_PROSPECTIVE",
+      "DATA_BLOCKED",
+      "CLOSED_NULL",
+      "SURVIVOR_MONITORING",
+      "INFRA_ONLY"
+    ]
+  },
+  "fail_closed": "If a source is ambiguous, protected, stale, missing provenance, or may expose forbidden partial economics, record UNKNOWN/blocked metadata only and do not read deeper."
+}
