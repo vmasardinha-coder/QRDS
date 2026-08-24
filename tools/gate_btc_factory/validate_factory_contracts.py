@@ -16,6 +16,7 @@ REQUIRED_JSON = [
     "FAMILY_FLOW_CONTRACT.v1.json",
     "WORKFLOW_CONTRACT.v1.json",
     "FACTORY_STATUS_LATEST.json",
+    "DATA_GAPS_LATEST.json",
 ]
 EXPECTED_SAFETY = {
     "RESEARCH_ONLY": True,
@@ -204,7 +205,62 @@ def main() -> int:
     if status.get("queue_counts", {}).get("total_tracks") != len(track_map):
         raise SystemExit("FAIL queue total does not match track map")
 
-    print("PASS factory v4 single hourly shadow machine is active, freshness-guarded, fail-closed and non-invasive")
+    data_gaps = docs["DATA_GAPS_LATEST.json"]
+    if data_gaps.get("schema") != "qrds.factory.data_gaps.v1":
+        raise SystemExit("FAIL unexpected data-gap schema")
+    if data_gaps.get("append_only_semantics") is not True:
+        raise SystemExit("FAIL data-gap queue is not append-only")
+    if data_gaps.get("safety") != EXPECTED_SAFETY:
+        raise SystemExit("FAIL data-gap queue safety block mismatch")
+    if data_gaps.get("synthetic_backfill_forbidden") is not True:
+        raise SystemExit("FAIL data-gap queue permits synthetic backfill")
+    if data_gaps.get("paid_private_or_licensed_requires_user_decision") is not True:
+        raise SystemExit("FAIL data-gap queue can bypass user decision for paid/private/licensed sources")
+    if data_gaps.get("source_priority") != ["official_free", "open_source_auditable", "community_auditable"]:
+        raise SystemExit("FAIL data-gap source priority changed")
+
+    items = data_gaps.get("items")
+    if not isinstance(items, list) or not items:
+        raise SystemExit("FAIL data-gap queue has no items")
+    ids = [item.get("id") for item in items if isinstance(item, dict)]
+    if len(ids) != len(items) or any(not isinstance(value, str) or not value for value in ids):
+        raise SystemExit("FAIL data-gap queue contains invalid IDs")
+    if len(set(ids)) != len(ids):
+        raise SystemExit("FAIL duplicate data-gap IDs")
+
+    gap_tracks = set()
+    for item in items:
+        track = item.get("track")
+        if not isinstance(track, str) or not track:
+            raise SystemExit("FAIL data-gap item missing track")
+        if track in gap_tracks:
+            raise SystemExit(f"FAIL duplicate data-gap track: {track}")
+        gap_tracks.add(track)
+        if not isinstance(item.get("issue"), int) or item.get("issue") <= 0:
+            raise SystemExit(f"FAIL data-gap item has invalid issue: {track}")
+        if track not in track_map:
+            raise SystemExit(f"FAIL data-gap track missing from factory status: {track}")
+        if track_map[track].get("classification") != "DATA_BLOCKED":
+            raise SystemExit(f"FAIL data-gap track is not DATA_BLOCKED in factory status: {track}")
+        if not item.get("gap_type") or not item.get("status") or not item.get("next_action"):
+            raise SystemExit(f"FAIL incomplete data-gap metadata: {track}")
+        if not isinstance(item.get("candidate_sources"), list) or not item.get("candidate_sources"):
+            raise SystemExit(f"FAIL data-gap item has no candidate sources: {track}")
+        if not isinstance(item.get("provenance_requirements"), list) or not item.get("provenance_requirements"):
+            raise SystemExit(f"FAIL data-gap item has no provenance requirements: {track}")
+        if not isinstance(item.get("qa_requirements"), list) or not item.get("qa_requirements"):
+            raise SystemExit(f"FAIL data-gap item has no QA requirements: {track}")
+
+    blocked_tracks = {
+        track for track, meta in track_map.items()
+        if isinstance(meta, dict) and meta.get("classification") == "DATA_BLOCKED"
+    }
+    if gap_tracks != blocked_tracks:
+        missing_gaps = sorted(blocked_tracks - gap_tracks)
+        stale_gaps = sorted(gap_tracks - blocked_tracks)
+        raise SystemExit(f"FAIL data-gap/status drift missing={missing_gaps} stale={stale_gaps}")
+
+    print("PASS factory v4 single hourly shadow machine is active, freshness-guarded, fail-closed, non-invasive and DATA_BLOCKED queue-synchronized")
     return 0
 
 
