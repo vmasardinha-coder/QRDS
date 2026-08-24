@@ -1,0 +1,35 @@
+{
+  "schema": "qrds.factory.report_stage_map.v1",
+  "generated_at_utc": "2026-08-24T11:40:00Z",
+  "purpose": "Machine-readable bridge for future collection/PDF reporting; no PDF regeneration and no active-path mutation.",
+  "mapping": {
+    "OPEN_DISCOVERY": "FACTORY_DISCOVERY",
+    "DATA_BLOCKED": "FACTORY_DATA_BLOCKED",
+    "CLOSED_NULL": "FACTORY_REJECTED_CLOSED_NULL",
+    "SURVIVOR_MONITORING": "FACTORY_PROSPECTIVE",
+    "FROZEN_PROSPECTIVE": "FACTORY_PROSPECTIVE",
+    "INFRA_ONLY": "FACTORY_DATA"
+  },
+  "explicit_overrides": {
+    "B3_H31": "FACTORY_SURVIVOR_FROZEN",
+    "B3_H60_H69": "FACTORY_DISCOVERY",
+    "MOMENTUM_M1_M2": "FACTORY_DATA_BLOCKED",
+    "V16B": "FACTORY_DATA_BLOCKED",
+    "D50_DATA_QUALIFICATION": "FACTORY_DATA_BLOCKED",
+    "GATE_BTC_2_CORE": "FACTORY_DATA_BLOCKED"
+  },
+  "report_rules": [
+    "Tracks absent from the factory map render as NOT_IN_FACTORY.",
+    "Discovery vs replication must be promoted only from explicit specialist/factory evidence; never inferred from economics.",
+    "Prospective partial economics remain sealed where required.",
+    "Existing local/GitHub collection outputs remain ACTIVE_UNCHANGED."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  }
+}
