@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "tools/gate_btc_research_factory_status.json"
+OUT = ROOT / "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json"
+APPROVAL_PREFIXES = ("APPROVED_FOR_SEPARATE_PROSPECTIVE", "APPROVED_PROSPECTIVE")
+
+
+def generation_matches(status: str) -> list[tuple[int, int, int]]:
+    rows: list[tuple[int, int, int]] = []
+    for match in re.finditer(r"H(\d+)[-_]H(\d+)", status or ""):
+        rows.append((int(match.group(1)), int(match.group(2)), match.start()))
+    return rows
+
+
+def build_next_generation(track: dict) -> dict | None:
+    if track.get("classification") != "OPEN_DISCOVERY":
+        return None
+    status = str(track.get("status", ""))
+    rows = generation_matches(status)
+    if not rows:
+        return None
+    start0, end, pos = max(rows, key=lambda row: row[1])
+    if end < 40:
+        return None
+    tail = status[pos:]
+    # The latest generation itself must be closed. Older CLOSED tokens cannot advance an open/preregistered generation.
+    if "CLOSED" not in tail:
+        return None
+    if any(token in tail for token in ("PREREGISTERED", "OPEN_DISCOVERY", "DATA_QA", "IN_PROGRESS")):
+        return None
+    start = end + 1
+    finish = start + 9
+    marker = f"B3 H{start}-H{finish}"
+    return {
+        "action": "CREATE_NEXT_GENERATION_ISSUE",
+        "track": "B3_H40_PLUS",
+        "marker": marker,
+        "title": f"{marker}: automatic next discovery generation",
+        "body": (
+            f"Factory-generated continuation request after H{start0}-H{end} closed.\n\n"
+            f"Pre-register H{start}-H{finish} before reading results. Use materially new mechanisms/data dimensions; "
+            "do not recycle rejected cells or retune frozen survivors. Preserve the historical cutoff, independent replication, "
+            "frozen execution/cost/side/calendar/concentration gates, and all provenance/causality checks. "
+            "H1 economics and partial prospective survivor economics remain forbidden inputs. "
+            "Orders=0, real capital=0, engine_feed=false. Null result is valid.\n\n"
+            f"{marker}\nAUTO_FACTORY_CONTINUATION=true"
+        ),
+    }
+
+
+def approved_activations(tracks: dict) -> list[dict]:
+    actions = []
+    for name, track in sorted(tracks.items()):
+        status = str(track.get("status", ""))
+        if not status.startswith(APPROVAL_PREFIXES):
+            continue
+        actions.append({
+            "action": "ACTIVATE_APPROVED_PROSPECTIVE_SHADOW",
+            "track": name,
+            "status": status,
+            "marker": f"AUTO-PROSPECTIVE:{name}",
+            "activation_state": "ACTIVE_PROSPECTIVE_SHADOW",
+            "orders": 0,
+            "real_capital": 0,
+            "engine_feed": False,
+        })
+    return actions
+
+
+def main() -> int:
+    src = json.loads(SOURCE.read_text(encoding="utf-8"))
+    safety = src.get("safety", {})
+    required = {
+        "research_only": True,
+        "shadow_only": True,
+        "orders": 0,
+        "real_capital": 0,
+        "engine_feed": False,
+        "no_holdout_contamination": True,
+    }
+    for key, expected in required.items():
+        if safety.get(key) != expected:
+            raise SystemExit(f"FAIL safety boundary {key}={safety.get(key)!r}")
+
+    tracks = src.get("tracks", {})
+    actions: list[dict] = []
+    nxt = build_next_generation(tracks.get("B3_H40_PLUS", {}))
+    if nxt:
+        actions.append(nxt)
+    actions.extend(approved_activations(tracks))
+
+    blocked_eligible = [
+        name for name, track in tracks.items()
+        if str(track.get("status", "")).startswith("ELIGIBLE_")
+    ]
+
+    report = {
+        "schema": "qrds.factory.transitions.v1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source_generated_at_utc": src.get("generated_at_utc"),
+        "actions": actions,
+        "eligible_not_activated": sorted(blocked_eligible),
+        "safety": {
+            "RESEARCH_ONLY": True,
+            "SHADOW_ONLY": True,
+            "ORDERS": 0,
+            "REAL_CAPITAL": 0,
+            "ENGINE_FEED": False,
+            "production_activation_allowed": False,
+        },
+    }
+    OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps({"actions": len(actions), "eligible_not_activated": blocked_eligible}, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

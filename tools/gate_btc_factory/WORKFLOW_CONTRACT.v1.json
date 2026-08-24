@@ -1,29 +1,30 @@
 {
-  "contract_version": "1.3",
-  "workflow_name": "GATE BTC Factory Shadow",
+  "contract_version": "1.4",
+  "workflow_name": "GATE BTC Factory Controlled Orchestrator",
   "workflow_path": ".github/workflows/gate-btc-factory-shadow.yml",
-  "mode": "PARALLEL_SHADOW_ONLY",
+  "mode": "CONTROLLED_SHADOW_TRANSITIONS",
   "schedule_cron": "23 * * * *",
   "push_refresh_enabled": true,
   "manual_dispatch_enabled": true,
-  "permissions": {
-    "contents": "read"
-  },
+  "permissions": {"contents":"read","issues":"write"},
   "writes_repository": false,
+  "creates_transition_issues": true,
   "uploads_artifact_only": true,
-  "artifact_name_prefix": "qrds-factory-shadow-status-",
+  "artifact_name_prefix": "qrds-factory-controlled-status-",
   "runner": "tools/gate_btc_factory/run_factory_ci.py",
+  "transition_planner": "tools/gate_btc_factory/plan_factory_transitions.py",
+  "transition_applier": "tools/gate_btc_factory/apply_factory_transitions.py",
   "runtime_output": "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
+  "transition_output": "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json",
   "source": "tools/gate_btc_research_factory_status.json",
   "source_freshness_minutes": 180,
-  "stale_policy": "MARK_STALE_READ_ONLY_DO_NOT_PROMOTE",
-  "safety": {
-    "RESEARCH_ONLY": true,
-    "SHADOW_ONLY": true,
-    "NOT_APPROVED": true,
-    "ORDERS": 0,
-    "REAL_CAPITAL": 0,
-    "ENGINE_FEED": false
+  "stale_policy": "MARK_STALE_READ_ONLY_DO_NOT_TRANSITION_OR_PROMOTE",
+  "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ORDERS":0,"REAL_CAPITAL":0,"ENGINE_FEED":false},
+  "transition_scope": {
+    "next_generation_issue": true,
+    "approved_prospective_shadow_activation_issue": true,
+    "eligible_candidate_auto_activation": false,
+    "production_activation": false
   },
   "non_interference": {
     "existing_workflow_mutation": false,
@@ -34,18 +35,5 @@
     "generated_status_commit": false,
     "artifact_only": true
   },
-  "forbidden": [
-    "commit_generated_status",
-    "mutate_active_workflow",
-    "mutate_existing_schedule",
-    "mutate_runtime_pointer",
-    "mutate_existing_ledger",
-    "alter_clock_or_counter",
-    "retune",
-    "backfill",
-    "read_partial_blind_holdout_economics",
-    "orders",
-    "real_capital",
-    "engine_feed"
-  ]
+  "forbidden": ["commit_generated_status","mutate_active_workflow","mutate_existing_schedule","mutate_runtime_pointer","mutate_existing_ledger","alter_clock_or_counter","retune","backfill","read_partial_blind_holdout_economics","orders","real_capital","engine_feed","production_activation"]
 }
