@@ -1,10 +1,10 @@
 {
-  "contract_version": "1.1",
+  "contract_version": "1.2",
   "mode": "SHADOW_ACTIVE_SCHEDULED",
   "purpose": "Keep QRDS research families moving through the preregister/test/falsify/replicate/freeze flow without mutating active or frozen tracks.",
   "source_of_truth": "tools/gate_btc_research_factory_status.json",
-  "runner": "tools/gate_btc_factory/run_factory.py",
-  "output": "tools/gate_btc_factory/FACTORY_STATUS_LATEST.json",
+  "runner": "tools/gate_btc_factory/run_factory_ci.py",
+  "output": "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
   "workflow": ".github/workflows/gate-btc-factory-shadow.yml",
   "routes": {
     "OPEN_DISCOVERY": {
@@ -50,7 +50,7 @@
     "shadow_runner_enabled": true,
     "factory_owned_workflow_enabled": true,
     "factory_owned_schedule_enabled": true,
-    "factory_owned_schedule": "17 */6 * * *",
+    "factory_owned_schedule": "23 * * * *",
     "push_refresh_enabled": true,
     "manual_dispatch_enabled": true,
     "existing_active_workflows_mutated": false,
@@ -66,8 +66,14 @@
     "repository_permissions": "contents:read",
     "commits_generated_status": false,
     "artifact_only": true,
-    "allowed_checkout_diff": ["tools/gate_btc_factory/FACTORY_STATUS_LATEST.json"],
+    "allowed_checkout_diff": ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json"],
     "protected_path_mutation": false
+  },
+  "freshness_policy": {
+    "source_limit_minutes": 180,
+    "fresh": "FRESH",
+    "stale": "STALE_READ_ONLY",
+    "stale_transition_or_promotion_allowed": false
   },
   "fail_closed": "Any ambiguity in classification, provenance, freeze evidence, causality or source status blocks the transition and leaves the source track unchanged."
 }
