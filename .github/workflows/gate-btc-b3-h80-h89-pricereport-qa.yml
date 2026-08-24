@@ -1,0 +1,49 @@
+name: GATE BTC B3 H80-H89 PriceReport QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h80_h89_pricereport_probe.py'
+      - '.github/workflows/gate-btc-b3-h80-h89-pricereport-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  pricereport-source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install 'requests>=2.31,<3'
+      - name: Probe official B3 historical PriceReport source
+        run: python tools/gate_btc_b3_h80_h89_pricereport_probe.py
+      - name: Assert source-only fail-closed boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/b3_h80_h89_pricereport/B3_H80_H89_PRICEREPORT_PROBE.json').read_text())
+          assert p['dates_all_pre_cutoff'] is True
+          assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          print('H80_H89_PRICEREPORT_QA',p['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h80-h89-pricereport-qa-${{ github.run_id }}
+          path: artifacts/b3_h80_h89_pricereport/
+          retention-days: 30
+          if-no-files-found: error
