@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-PREREG = ROOT / "research" / "factory_regime_c1_prereg.json"
+PREREG = ROOT / "tools" / "gate_btc_factory_regime_c1_prereg.json"
 CANONICAL = ROOT / "migration" / "canonical" / "delta" / "scripts" / "00_run_delta_v11.py"
 
 
@@ -175,7 +175,6 @@ def strategy_returns(prices: pd.DataFrame, state: pd.Series, switch_cost_bps: fl
     ret = prices.pct_change()
     alt = ret.drop(columns=["BTC"], errors="ignore").mean(axis=1)
     defensive = 0.50 * ret["BTC"].fillna(0.0)
-    # State at completed close t is applied only to return t+1.
     applied = state.shift(1)
     gross = applied * alt + (1.0 - applied) * defensive
     switches = applied.diff().abs().fillna(0.0)
