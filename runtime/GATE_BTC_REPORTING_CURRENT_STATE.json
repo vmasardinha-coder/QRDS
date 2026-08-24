@@ -92,15 +92,15 @@
     },
     "d50": {
       "authority": "LOCAL_RECONCILED_MEASUREMENT",
-      "data_qualification_current": 0,
-      "data_qualification_qualified": false,
-      "data_qualification_raw_remote": 0,
-      "data_qualification_snapshot_count_total": 15,
-      "data_qualification_status": "ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7",
-      "data_qualification_synchronized_failure": true,
-      "display_current": 14,
+      "data_qualification_current": 7,
+      "data_qualification_qualified": true,
+      "data_qualification_raw_remote": 7,
+      "data_qualification_snapshot_count_total": 22,
+      "data_qualification_status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_7_OF_7",
+      "data_qualification_synchronized_failure": false,
+      "display_current": 21,
       "freshness": "STALE",
-      "raw_remote_current_for_audit_only": 14,
+      "raw_remote_current_for_audit_only": 21,
       "source": "runtime/ledgers/d50/STATUS.json",
       "status": "ACTIVE",
       "target": 30
@@ -210,7 +210,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-08-24T04:23:02.435344+00:00",
+  "generated_at_utc": "2026-08-24T08:49:06.162145+00:00",
   "methodology_changes": 0,
   "not_approved": true,
   "orders_generated": 0,
@@ -225,73 +225,73 @@
   "sources": {
     "alt_trail": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/alt_trail40_10/STATUS.json",
       "schema": "gate_btc.alt_trail40_10_shadow_status.v1",
       "sha256": "3915ef9536b033f86cbbb6992d6df7e585d400e6936fd7d3b29bffb27f377463"
     },
     "b3_h1": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/b3_h1/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/b3_h1/STATUS.json",
       "schema": "gate_btc.b3.h1.runtime_ledger.v1",
       "sha256": "aa81184d0c4f61b1b7294987d0b59bf4408bd457073b3b48735e8361397db391"
     },
     "bull_replay": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/bull_replay_live_shadow/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/bull_replay_live_shadow/STATUS.json",
       "schema": "gate_btc.bull_replay_live_shadow.status.v1",
       "sha256": "c98fd7128fe6b16c73368e4cc137afcbcc2740406d8b8b6bd13e4515c4e60ef6"
     },
     "d50": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/d50/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/d50/STATUS.json",
       "schema": "gate_btc.d50_measurement_status.v1",
-      "sha256": "a52fe1edea27e1fe1b72192cfc7aea9ec21ffc4b56c05326a7efd06f8dcd9ec2"
+      "sha256": "3f10609f66ad709079f72f80518e9b6df31376f4f3b2f67be0aa790384e31464"
     },
     "delta_paper_monitor": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/delta_paper_monitor/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/delta_paper_monitor/STATUS.json",
       "schema": "gate_btc.delta_paper_monitor.v1",
       "sha256": "7d3fc6a1a581507d333439561a9cdad8f923515a0df45c30b02dcb46fdd2c882"
     },
     "gateway": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/gateway_dynamics/STATUS.json",
       "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
       "sha256": "a02eb41596baf4d118652a2ac923a3e266518c209656e784dcc1ae156c8e8372"
     },
     "lock25_50": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/lock25_50/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/lock25_50/STATUS.json",
       "schema": "gate_btc.lock25_50_ledger_status.v2",
       "sha256": "a23c772ef118f7b69fe6abffa411c072340cfa51bbc87a6745380bfb39792087"
     },
     "measurement": {
       "exists": true,
-      "path": "runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "schema": "gate_btc.measurement_status.v1",
-      "sha256": "011152b24b8502b8ed059210dcd4d5465bcee2134621be78a2acb727f30b0ccd"
+      "sha256": "7cfbf1d8e2d6413286dff0637be5b6584eda0181c75e60084be46f7c740ea45b"
     },
     "momentum_m1_m2": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/momentum_m1_m2/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/momentum_m1_m2/STATUS.json",
       "schema": "gate_btc.momentum_m1_m2.status.v1",
       "sha256": "6d69dbd9947a3d987208a806bc695a621207e378e9e6a59332b672cce8fb5d36"
     },
     "pointer": {
       "exists": true,
-      "path": "runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
       "schema": null,
       "sha256": "444529c02ff94a02251c06ac4d1bbd4072a4453117cedec606d43595d94cbfc8"
     },
     "prl50": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/prl50_position/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/prl50_position/STATUS.json",
       "schema": "gate_btc.prl50_position_shadow_status.v1",
       "sha256": "0377f952a9ab7766304fb46284ce056a50d02f00cf202971c58eb8800313adbb"
     },
     "v16b": {
       "exists": true,
-      "path": "runtime_repo/runtime/ledgers/v16b/STATUS.json",
+      "path": "/workspace/scratch/30fec350951b/runtime/runtime/ledgers/v16b/STATUS.json",
       "schema": "gate_btc.v16b.status.v1",
       "sha256": "31ac8bc73a1204f166acf18442145fce4ffeb8dfb2b19706756d1372f4a24b28"
     }
