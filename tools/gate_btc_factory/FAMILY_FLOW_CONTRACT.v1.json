@@ -1,15 +1,17 @@
 {
-  "contract_version": "1.2",
-  "mode": "SHADOW_ACTIVE_SCHEDULED",
-  "purpose": "Keep QRDS research families moving through the preregister/test/falsify/replicate/freeze flow without mutating active or frozen tracks.",
+  "contract_version": "1.3",
+  "mode": "CONTROLLED_TRANSITION_ORCHESTRATION",
+  "purpose": "Keep QRDS research families moving through preregister/test/falsify/replicate/freeze and automatically activate only explicitly approved survivors into separate blind prospective shadow tracking.",
   "source_of_truth": "tools/gate_btc_research_factory_status.json",
   "runner": "tools/gate_btc_factory/run_factory_ci.py",
+  "transition_planner": "tools/gate_btc_factory/plan_factory_transitions.py",
+  "transition_applier": "tools/gate_btc_factory/apply_factory_transitions.py",
   "output": "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
   "workflow": ".github/workflows/gate-btc-factory-shadow.yml",
   "routes": {
     "OPEN_DISCOVERY": {
       "owner": "QRDS-LAB",
-      "flow": ["PREREGISTER", "TEST", "FALSIFY_OR_REPLICATE", "REJECT_OR_FREEZE"],
+      "flow": ["PREREGISTER", "TEST", "FALSIFY_OR_REPLICATE", "REJECT_OR_FREEZE", "OPEN_NEXT_GENERATION_IF_CLOSED"],
       "may_create_new_family": true,
       "partial_holdout_feedback": false
     },
@@ -44,7 +46,30 @@
   },
   "specialist_non_duplication": {
     "B3_H1": "MONITOR_ONLY",
-    "B3_H40_PLUS": "SPECIALIST_OWNED_DISCOVERY_CONTINUES; FACTORY_MUST_NOT_DUPLICATE_OR_RETUNE"
+    "B3_H40_PLUS": "SPECIALIST_OWNED_DISCOVERY_CONTINUES; FACTORY MAY CREATE THE NEXT GENERATION REQUEST ONLY AFTER THE CURRENT GENERATION IS CLOSED AND HAS NO OPEN ISSUE/PR"
+  },
+  "automatic_transition_policy": {
+    "next_generation": {
+      "enabled": true,
+      "requires_classification": "OPEN_DISCOVERY",
+      "requires_closed_status": true,
+      "requires_no_open_issue": true,
+      "requires_no_open_pr": true,
+      "generation_width": 10,
+      "must_preregister_before_results": true,
+      "failed_cell_recycling": false
+    },
+    "approved_survivor_activation": {
+      "enabled": true,
+      "accepted_status_prefixes": ["APPROVED_FOR_SEPARATE_PROSPECTIVE", "APPROVED_PROSPECTIVE"],
+      "eligible_status_is_sufficient": false,
+      "target": "ACTIVE_PROSPECTIVE_SHADOW",
+      "separate_blind_ledger_required": true,
+      "production_activation": false,
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0
+    }
   },
   "activation": {
     "shadow_runner_enabled": true,
@@ -53,9 +78,10 @@
     "factory_owned_schedule": "23 * * * *",
     "push_refresh_enabled": true,
     "manual_dispatch_enabled": true,
+    "issue_transition_mutations_enabled": true,
     "existing_active_workflows_mutated": false,
     "existing_active_schedules_mutated": false,
-    "active_path_rollout_enabled": false,
+    "production_path_rollout_enabled": false,
     "replace_daily_collection": false,
     "redirect_runtime_pointer": false,
     "engine_feed": false,
@@ -63,10 +89,10 @@
     "real_capital": 0
   },
   "workflow_write_policy": {
-    "repository_permissions": "contents:read",
+    "repository_permissions": "contents:read, issues:write",
     "commits_generated_status": false,
     "artifact_only": true,
-    "allowed_checkout_diff": ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json"],
+    "issue_creation_allowed_for": ["NEXT_GENERATION", "APPROVED_PROSPECTIVE_SHADOW_ACTIVATION"],
     "protected_path_mutation": false
   },
   "freshness_policy": {
@@ -75,5 +101,5 @@
     "stale": "STALE_READ_ONLY",
     "stale_transition_or_promotion_allowed": false
   },
-  "fail_closed": "Any ambiguity in classification, provenance, freeze evidence, causality or source status blocks the transition and leaves the source track unchanged."
+  "fail_closed": "Any ambiguity in classification, provenance, freeze evidence, causal status, explicit approval state or source freshness blocks the transition and leaves the source track unchanged."
 }
