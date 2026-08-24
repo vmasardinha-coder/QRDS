@@ -9,67 +9,20 @@
   "output": "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
   "workflow": ".github/workflows/gate-btc-factory-shadow.yml",
   "routes": {
-    "OPEN_DISCOVERY": {
-      "owner": "QRDS-LAB",
-      "flow": ["PREREGISTER", "TEST", "FALSIFY_OR_REPLICATE", "REJECT_OR_FREEZE", "OPEN_NEXT_GENERATION_IF_CLOSED"],
-      "may_create_new_family": true,
-      "partial_holdout_feedback": false
-    },
-    "DATA_BLOCKED": {
-      "owner": "QRDS-DATA",
-      "flow": ["DIAGNOSE", "AUDITABLE_SOURCE", "FAIL_CLOSED_INGESTION", "QA", "RESUME_OR_DATA_GAP"],
-      "economic_retune": false,
-      "synthetic_backfill": false
-    },
-    "SURVIVOR_MONITORING": {
-      "owner": "QRDS-VALIDATE",
-      "flow": ["VERIFY_FREEZE_EVIDENCE", "SEPARATE_BLIND_HANDOFF", "MONITOR"],
-      "retune": false,
-      "backfill": false
-    },
-    "FROZEN_PROSPECTIVE": {
-      "owner": "QRDS-GUARD",
-      "flow": ["CLOCK_OR_LEDGER_CONTINUATION_ONLY"],
-      "new_family_creation": false,
-      "retune": false
-    },
-    "CLOSED_NULL": {
-      "owner": "QRDS-GUARD",
-      "flow": ["PRESERVE_REJECTION"],
-      "reopen_only_if": "MATERIALLY_DIFFERENT_MECHANISM_OR_DATA"
-    },
-    "INFRA_ONLY": {
-      "owner": "QRDS-DATA",
-      "flow": ["MAINTAIN_INFRASTRUCTURE_ONLY"],
-      "economic_search": false
-    }
+    "OPEN_DISCOVERY": {"owner":"QRDS-LAB","flow":["PREREGISTER","TEST","FALSIFY_OR_REPLICATE","REJECT_OR_FREEZE","OPEN_NEXT_GENERATION_IF_CLOSED"],"may_create_new_family":true,"partial_holdout_feedback":false},
+    "DATA_BLOCKED": {"owner":"QRDS-DATA","flow":["DIAGNOSE","AUDITABLE_SOURCE","FAIL_CLOSED_INGESTION","QA","RESUME_OR_DATA_GAP"],"economic_retune":false,"synthetic_backfill":false},
+    "SURVIVOR_MONITORING": {"owner":"QRDS-VALIDATE","flow":["VERIFY_FREEZE_EVIDENCE","SEPARATE_BLIND_HANDOFF","MONITOR"],"retune":false,"backfill":false},
+    "FROZEN_PROSPECTIVE": {"owner":"QRDS-GUARD","flow":["CLOCK_OR_LEDGER_CONTINUATION_ONLY"],"new_family_creation":false,"retune":false},
+    "CLOSED_NULL": {"owner":"QRDS-GUARD","flow":["PRESERVE_REJECTION"],"reopen_only_if":"MATERIALLY_DIFFERENT_MECHANISM_OR_DATA"},
+    "INFRA_ONLY": {"owner":"QRDS-DATA","flow":["MAINTAIN_INFRASTRUCTURE_ONLY"],"economic_search":false}
   },
   "specialist_non_duplication": {
     "B3_H1": "MONITOR_ONLY",
     "B3_H40_PLUS": "SPECIALIST_OWNED_DISCOVERY_CONTINUES; FACTORY MAY CREATE THE NEXT GENERATION REQUEST ONLY AFTER THE CURRENT GENERATION IS CLOSED AND HAS NO OPEN ISSUE/PR"
   },
   "automatic_transition_policy": {
-    "next_generation": {
-      "enabled": true,
-      "requires_classification": "OPEN_DISCOVERY",
-      "requires_closed_status": true,
-      "requires_no_open_issue": true,
-      "requires_no_open_pr": true,
-      "generation_width": 10,
-      "must_preregister_before_results": true,
-      "failed_cell_recycling": false
-    },
-    "approved_survivor_activation": {
-      "enabled": true,
-      "accepted_status_prefixes": ["APPROVED_FOR_SEPARATE_PROSPECTIVE", "APPROVED_PROSPECTIVE"],
-      "eligible_status_is_sufficient": false,
-      "target": "ACTIVE_PROSPECTIVE_SHADOW",
-      "separate_blind_ledger_required": true,
-      "production_activation": false,
-      "engine_feed": false,
-      "orders": 0,
-      "real_capital": 0
-    }
+    "next_generation": {"enabled":true,"requires_classification":"OPEN_DISCOVERY","requires_closed_status":true,"requires_no_open_issue":true,"requires_no_open_pr":true,"generation_width":10,"must_preregister_before_results":true,"failed_cell_recycling":false},
+    "approved_survivor_activation": {"enabled":true,"accepted_status_prefixes":["APPROVED_FOR_SEPARATE_PROSPECTIVE","APPROVED_PROSPECTIVE"],"eligible_status_is_sufficient":false,"target":"ACTIVE_PROSPECTIVE_SHADOW","separate_blind_ledger_required":true,"production_activation":false,"engine_feed":false,"orders":0,"real_capital":0}
   },
   "activation": {
     "shadow_runner_enabled": true,
@@ -81,6 +34,7 @@
     "issue_transition_mutations_enabled": true,
     "existing_active_workflows_mutated": false,
     "existing_active_schedules_mutated": false,
+    "active_path_rollout_enabled": false,
     "production_path_rollout_enabled": false,
     "replace_daily_collection": false,
     "redirect_runtime_pointer": false,
@@ -93,13 +47,9 @@
     "commits_generated_status": false,
     "artifact_only": true,
     "issue_creation_allowed_for": ["NEXT_GENERATION", "APPROVED_PROSPECTIVE_SHADOW_ACTIVATION"],
+    "allowed_checkout_diff": ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json","tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json","tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json"],
     "protected_path_mutation": false
   },
-  "freshness_policy": {
-    "source_limit_minutes": 180,
-    "fresh": "FRESH",
-    "stale": "STALE_READ_ONLY",
-    "stale_transition_or_promotion_allowed": false
-  },
+  "freshness_policy": {"source_limit_minutes":180,"fresh":"FRESH","stale":"STALE_READ_ONLY","stale_transition_or_promotion_allowed":false},
   "fail_closed": "Any ambiguity in classification, provenance, freeze evidence, causal status, explicit approval state or source freshness blocks the transition and leaves the source track unchanged."
 }
