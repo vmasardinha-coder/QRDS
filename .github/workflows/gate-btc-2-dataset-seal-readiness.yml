@@ -6,8 +6,10 @@ on:
     paths:
       - tools/gate_btc_2_challenger_foundation.py
       - tools/gate_btc_2_dataset_seal_readiness.py
+      - tools/gate_btc_2_item2_checkpoint4_decision_v1.json
       - tests/test_gate_btc_2_challenger_foundation.py
       - tests/test_gate_btc_2_dataset_seal_readiness.py
+      - tests/test_gate_btc_2_item2_checkpoint4_decision.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
   schedule:
     # Daily collection starts at 00:15 UTC and has historically published its
@@ -63,6 +65,7 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_2_challenger_foundation.py
           tests/test_gate_btc_2_dataset_seal_readiness.py
+          tests/test_gate_btc_2_item2_checkpoint4_decision.py
 
   runtime-readiness-assessment:
     needs: readiness-contract
