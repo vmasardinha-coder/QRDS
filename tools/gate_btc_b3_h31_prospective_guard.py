@@ -21,4 +21,4 @@ def main(freeze_path,status_out):
  s={'schema':'gate_btc.b3.h31.prospective_status.v1','status':'BLOCKED_SOURCE_ADAPTER_NOT_BOUND','clock_started':False,'eligible_observations':0,'freeze_hash_sha256':EXPECTED_HASH,'h1_economics_read':False,'partial_prospective_economics_exposed':False,'orders':0,'real_capital':0,'engine_feed':False,'not_approved':True}
  Path(status_out).write_text(json.dumps(s,indent=2,sort_keys=True)+'\n');print(json.dumps(s,sort_keys=True))
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--freeze',default='research/b3_h31_prospective_freeze.json');p.add_argument('--status-out',required=True);a=p.parse_args();main(a.freeze,a.status_out)
+ p=argparse.ArgumentParser();p.add_argument('--freeze',default='tools/gate_btc_b3_h31_prospective_freeze.json');p.add_argument('--status-out',required=True);a=p.parse_args();main(a.freeze,a.status_out)
