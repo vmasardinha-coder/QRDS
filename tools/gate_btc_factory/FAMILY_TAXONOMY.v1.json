@@ -1,0 +1,54 @@
+{
+  "schema": "qrds.factory.taxonomy.v1",
+  "generated_at_utc": "2026-08-24T11:40:00Z",
+  "required_fields": [
+    "group_id",
+    "mechanism_class",
+    "horizon_class",
+    "comparable_benchmarks",
+    "factory_stage"
+  ],
+  "group_enum": [
+    "CYCLICAL_REGIME",
+    "SHORT_HORIZON_TACTICAL",
+    "TREND_MOMENTUM",
+    "MEAN_REVERSION",
+    "CROSS_ASSET_RELATIVE_VALUE",
+    "VOLATILITY_RISK",
+    "HEDGE_PROTECTION",
+    "ALLOCATION_META",
+    "DATA_INFRA_ONLY"
+  ],
+  "horizon_enum": [
+    "INTRADAY",
+    "DAILY",
+    "WEEKLY",
+    "MONTHLY",
+    "MULTI_HORIZON",
+    "NON_ECONOMIC"
+  ],
+  "factory_stage_enum": [
+    "NOT_IN_FACTORY",
+    "FACTORY_DATA",
+    "FACTORY_DISCOVERY",
+    "FACTORY_REPLICATION",
+    "FACTORY_SURVIVOR_FROZEN",
+    "FACTORY_PROSPECTIVE",
+    "FACTORY_REJECTED_CLOSED_NULL",
+    "FACTORY_DATA_BLOCKED"
+  ],
+  "comparison_rules": [
+    "Compare economics only within compatible horizon/mechanism groups unless explicitly marked cross-group benchmark.",
+    "Frozen/prospective incumbents remain read-only benchmarks for isolated challengers.",
+    "Partial prospective economics must never feed discovery or retuning.",
+    "Infrastructure PASS is never economic evidence."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  }
+}
