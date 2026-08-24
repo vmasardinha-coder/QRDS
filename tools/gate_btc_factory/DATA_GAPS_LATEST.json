@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.data_gaps.v1",
-  "generated_at_utc": "2026-08-24T07:17:00Z",
+  "generated_at_utc": "2026-08-24T08:17:36Z",
   "append_only_semantics": true,
   "safety": {
     "RESEARCH_ONLY": true,
@@ -46,13 +46,24 @@
       "track": "V16B",
       "issue": 83,
       "gap_type": "immutable_source_rehearsal_and_signal_producer",
-      "status": "OPEN_PREFLIGHT_REHEARSAL_AND_SIGNAL_PRODUCER_GAP",
+      "status": "PREFLIGHT_ARMED_REHEARSAL_PENDING_SIGNAL_PRODUCER_BLOCKED",
       "required_coverage": "real immutable source rehearsal before 2026-08-27 SIGNAL gate",
       "required_granularity": "canonical V16B source artifacts and SIGNAL producer path",
       "candidate_sources": ["existing frozen V16B public/auditable source path"],
       "provenance_requirements": ["immutable source binding", "single canonical artifact", "watchdog-visible SIGNAL seal"],
       "qa_requirements": ["no late seal", "no synthetic causal panel", "no retune", "redundant collection converges to one canonical artifact"],
-      "next_action": "verify isolated rehearsal and canonical SIGNAL producer path; keep economics blocked"
+      "runtime_evidence": {
+        "source_issue": 83,
+        "source_comment_id": 5384481815,
+        "hardening_merge_sha": "bbb30d36291e657c74c9ed69aaec9e39665e3771",
+        "canonical_cycle_count": 0,
+        "next_signal_date": "2026-08-27",
+        "preflight_state": "WAITING_D_MINUS_2_2026-08-25",
+        "rehearsal_state": "TOOL_READY_REAL_IMMUTABLE_ARTIFACT_RUN_PENDING",
+        "signal_producer_state": "BLOCKED_PENDING_FRESH_CAUSAL_FEATURE_PANEL_MAPPING",
+        "reporting_surface": "STRUCTURALLY_PRESENT"
+      },
+      "next_action": "on/after 2026-08-25 verify preflight and execute isolated rehearsal against real immutable artifacts; confirm redundant-source convergence and only arm the canonical SIGNAL producer after fresh causal feature-panel mapping is proven; never fabricate the panel, late-seal, backfill or retune"
     },
     {
       "id": "DG-D50-QUAL-110",
