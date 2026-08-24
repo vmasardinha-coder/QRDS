@@ -1,0 +1,74 @@
+{
+  "schema": "qrds.factory.data_gaps.v1",
+  "generated_at_utc": "2026-08-24T02:17:20Z",
+  "append_only_semantics": true,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false
+  },
+  "source_priority": [
+    "official_free",
+    "open_source_auditable",
+    "community_auditable"
+  ],
+  "synthetic_backfill_forbidden": true,
+  "paid_private_or_licensed_requires_user_decision": true,
+  "items": [
+    {
+      "id": "DG-MOMENTUM-M1M2-85",
+      "track": "MOMENTUM_M1_M2",
+      "issue": 85,
+      "gap_type": "collection_delivery_source_availability",
+      "status": "OPEN_DIAGNOSTIC_COLLECTION_DELIVERY",
+      "required_coverage": "next eligible scheduled/manual shadow collection with usable artifact/status",
+      "required_granularity": "frozen M1/M2 contract only",
+      "candidate_sources": ["existing canonical public-source chain"],
+      "provenance_requirements": ["canonical STATUS.json", "diagnostic artifact", "append-only runtime state"],
+      "qa_requirements": ["AMBER on bounded public-source exhaustion", "RED on true collector/freeze/status failure", "no duplicate main-push attempt"],
+      "next_action": "observe first post-hardening main run; close only after behavior is proven and append-only snapshot progresses when data exists"
+    },
+    {
+      "id": "DG-V16B-83",
+      "track": "V16B",
+      "issue": 83,
+      "gap_type": "immutable_source_rehearsal_and_signal_producer",
+      "status": "OPEN_PREFLIGHT_REHEARSAL_AND_SIGNAL_PRODUCER_GAP",
+      "required_coverage": "real immutable source rehearsal before 2026-08-27 SIGNAL gate",
+      "required_granularity": "canonical V16B source artifacts and SIGNAL producer path",
+      "candidate_sources": ["existing frozen V16B public/auditable source path"],
+      "provenance_requirements": ["immutable source binding", "single canonical artifact", "watchdog-visible SIGNAL seal"],
+      "qa_requirements": ["no late seal", "no synthetic causal panel", "no retune", "redundant collection converges to one canonical artifact"],
+      "next_action": "verify isolated rehearsal and canonical SIGNAL producer path; keep economics blocked"
+    },
+    {
+      "id": "DG-D50-QUAL-110",
+      "track": "D50_DATA_QUALIFICATION",
+      "issue": 110,
+      "gap_type": "synchronized_data_qualification",
+      "status": "ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7",
+      "required_coverage": "one fully synchronized qualifying session before qualification clock advances",
+      "required_granularity": "exact source/symbol/time/schema boundary",
+      "candidate_sources": ["existing official/free/auditable D50 qualification sources"],
+      "provenance_requirements": ["manifest/hash", "source identity", "timezone/calendar boundary", "append-only qualification history"],
+      "qa_requirements": ["no copy from economic 14/30 ledger", "no synthetic backfill", "all-universe synchronization proven"],
+      "next_action": "diagnose exact failing source/symbol/time/schema boundary and restore qualification only"
+    },
+    {
+      "id": "DG-GATE-BTC2-111",
+      "track": "GATE_BTC_2_CORE",
+      "issue": 111,
+      "gap_type": "official_dataset_seal_readiness",
+      "status": "READINESS_AND_TEMPORAL_CAUSALITY_INFRA_PRESENT",
+      "required_coverage": "complete auditable official dataset seal/readiness before challenger economics",
+      "required_granularity": "dataset-by-dataset source, interval, timestamp, schema and causal-availability boundary",
+      "candidate_sources": ["official_free", "open_source_auditable", "community_auditable"],
+      "provenance_requirements": ["raw capture or immutable reference", "manifest/hash", "source identity", "observed-vs-derived labels"],
+      "qa_requirements": ["schema/timezone/cutoff checks", "duplicate/missing-row QA", "no future-known metadata", "no late seal"],
+      "next_action": "inventory missing readiness fields and attempt only auditable free sources; user decision required if paid/private/licensed is the sole remaining route"
+    }
+  ]
+}
