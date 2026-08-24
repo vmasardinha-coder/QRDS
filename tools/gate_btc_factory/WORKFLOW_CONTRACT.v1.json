@@ -1,9 +1,9 @@
 {
-  "contract_version": "1.1",
+  "contract_version": "1.2",
   "workflow_name": "GATE BTC Factory Shadow",
   "workflow_path": ".github/workflows/gate-btc-factory-shadow.yml",
   "mode": "PARALLEL_SHADOW_ONLY",
-  "schedule_cron": "23 * * * *",
+  "schedule_cron": "17 */6 * * *",
   "push_refresh_enabled": true,
   "manual_dispatch_enabled": true,
   "permissions": {
@@ -11,12 +11,11 @@
   },
   "writes_repository": false,
   "uploads_artifact_only": true,
-  "artifact_name_prefix": "qrds-factory-shadow-status-",
-  "runner": "tools/gate_btc_factory/run_factory_ci.py",
-  "runtime_output": "tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json",
+  "artifact_name_prefix": "qrds-factory-status-",
+  "runner": "tools/gate_btc_factory/run_factory.py",
+  "runtime_output": "tools/gate_btc_factory/FACTORY_STATUS_LATEST.json",
   "source": "tools/gate_btc_research_factory_status.json",
-  "source_freshness_minutes": 180,
-  "stale_policy": "MARK_STALE_READ_ONLY_DO_NOT_PROMOTE",
+  "source_freshness_policy": "SOURCE_STATUS_IS_REPORTED_AS_OBSERVED; AMBIGUITY_OR_STALENESS_CANNOT_PROMOTE_OR_MUTATE_ACTIVE_TRACKS",
   "safety": {
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true,
@@ -24,6 +23,15 @@
     "ORDERS": 0,
     "REAL_CAPITAL": 0,
     "ENGINE_FEED": false
+  },
+  "non_interference": {
+    "existing_workflow_mutation": false,
+    "existing_schedule_mutation": false,
+    "runtime_pointer_mutation": false,
+    "existing_ledger_mutation": false,
+    "clock_or_counter_mutation": false,
+    "generated_status_commit": false,
+    "artifact_only": true
   },
   "forbidden": [
     "commit_generated_status",
