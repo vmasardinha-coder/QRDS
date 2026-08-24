@@ -1,0 +1,74 @@
+{
+  "schema": "gate_btc.d50_checkpoint5_decision.v1",
+  "checkpoint": 5,
+  "generated_at_utc": "2026-08-24T08:48:38Z",
+  "decision": "PASS_LOCAL_FORWARD_ONLY_RECONCILIATION_RUNTIME_PUBLICATION_PENDING",
+  "scope": "D50_CURRENT_DELIVERY_ONLY",
+  "runtime_base": {
+    "branch": "gate-btc-runtime",
+    "commit": "b56fc9fe579637f135fa4ef21adc097e0f6e1722",
+    "economic": "14/30",
+    "qualification": "0/7",
+    "qualification_snapshot_count_total": 15,
+    "data_as_of": "2026-08-15"
+  },
+  "evidence": {
+    "audit_schema": "gate_btc.d50_delivery_replay_audit.v1",
+    "audit_sha256": "83c95591fd439a8a84c02d44f1dee6d93014692cf73384b86503b1c10475a4c5",
+    "base_evidence_files": 2,
+    "forward_transitions": 7,
+    "transition_evidence_files": 21,
+    "snapshot_ids": [
+      "2026-08-16",
+      "2026-08-17",
+      "2026-08-18",
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22"
+    ],
+    "qualification_tip_sha256": "2b05c16430f4ca1340efdbcc3c97eb40167004dd3c09c6a2eb3cdecd2ca0b0b0",
+    "latest_economic_append_report_sha256": "6e7481120358930fae9c948090460cf4d34f8ba043abc41fbd853756467d13c4",
+    "latest_ohlc_sha256": "f79f3e51baca1dbf46ac6180cffc4e3682cf7751add50c9a1721f31f864c5f81",
+    "latest_funding_sha256": "24f4c71c6c7a8db56956e46845a834268e2b396992d47ada3afee8652fe2bd3d"
+  },
+  "candidate_runtime": {
+    "local_commit": "39468a378970a772b1be0060ca6d8c93d26b896b",
+    "publication_status": "PENDING_EXPLICIT_EXTERNAL_WRITE_APPROVAL",
+    "data_as_of": "2026-08-22",
+    "economic": "21/30",
+    "qualification": "7/7",
+    "qualification_snapshot_count_total": 22,
+    "qualified": true,
+    "d50_status_file_sha256": "3f10609f66ad709079f72f80518e9b6df31376f4f3b2f67be0aa790384e31464",
+    "measurement_status_file_sha256": "7cfbf1d8e2d6413286dff0637be5b6584eda0181c75e60084be46f7c740ea45b",
+    "reporting_state_file_sha256": "ac83b0fbf85e7a3710ebc48c6c2299d9a41e72343c3fbc7c92a535aaeb10d54b",
+    "health_dimensions_file_sha256": "8903a583de0bc84e78ba06baf1910e8c475bcf2aff635c17d0fddaaae18a4b86"
+  },
+  "interpretation": {
+    "economic_delivery": "RECOVERED_LOCALLY_TO_21_OF_30",
+    "qualification_delivery": "RECOVERED_LOCALLY_TO_7_OF_7",
+    "collection_health": "RED_STALE",
+    "stale_reason": "latest verified D50 evidence is 2026-08-22 while the 2026-08-24 reporting cutoff expects 2026-08-23",
+    "scientific_integrity": "PRESERVED_FAIL_CLOSED",
+    "operational_authorization": "NOT_APPROVED"
+  },
+  "non_interference": {
+    "economic_rows_imported": 0,
+    "economic_rows_mutated": 0,
+    "source_evidence_mutated": false,
+    "historical_or_retroactive_fill_used": false,
+    "methodology_changes": 0,
+    "retuning_performed": false,
+    "late_seal_performed": false,
+    "h1_economics_read": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  }
+}
