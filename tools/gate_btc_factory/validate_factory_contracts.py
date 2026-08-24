@@ -33,7 +33,10 @@ FORBIDDEN_TOKENS = {
     "use_real_capital": True,
     "feed_engine": True,
     "active_path_rollout_enabled": True,
-    "alter_workflow_or_schedule": True,
+    "existing_active_workflows_mutated": True,
+    "existing_active_schedules_mutated": True,
+    "protected_path_mutation": True,
+    "commits_generated_status": True,
 }
 
 
@@ -102,13 +105,41 @@ def main() -> int:
 
     flow = docs["FAMILY_FLOW_CONTRACT.v1.json"]
     activation = flow.get("activation", {})
-    if activation.get("shadow_runner_enabled") is not True:
-        raise SystemExit("FAIL shadow runner is not enabled")
-    for key in ("active_path_rollout_enabled", "replace_daily_collection", "redirect_runtime_pointer", "alter_workflow_or_schedule", "engine_feed"):
-        if activation.get(key) is not False:
-            raise SystemExit(f"FAIL unsafe activation setting: {key}")
+    required_true = (
+        "shadow_runner_enabled",
+        "factory_owned_workflow_enabled",
+        "factory_owned_schedule_enabled",
+        "push_refresh_enabled",
+        "manual_dispatch_enabled",
+    )
+    if any(activation.get(key) is not True for key in required_true):
+        raise SystemExit("FAIL factory shadow activation is incomplete")
+    required_false = (
+        "existing_active_workflows_mutated",
+        "existing_active_schedules_mutated",
+        "active_path_rollout_enabled",
+        "replace_daily_collection",
+        "redirect_runtime_pointer",
+        "engine_feed",
+    )
+    if any(activation.get(key) is not False for key in required_false):
+        raise SystemExit("FAIL factory shadow activation crosses protected boundary")
+    if activation.get("factory_owned_schedule") != "17 */6 * * *":
+        raise SystemExit("FAIL unexpected factory-owned schedule")
     if activation.get("orders") != 0 or activation.get("real_capital") != 0:
         raise SystemExit("FAIL shadow activation permits orders/capital")
+
+    workflow_policy = flow.get("workflow_write_policy", {})
+    if workflow_policy.get("repository_permissions") != "contents:read":
+        raise SystemExit("FAIL factory workflow has non-read-only repository permission")
+    if workflow_policy.get("commits_generated_status") is not False:
+        raise SystemExit("FAIL factory workflow may commit generated status")
+    if workflow_policy.get("artifact_only") is not True:
+        raise SystemExit("FAIL factory workflow must emit artifact only")
+    if workflow_policy.get("protected_path_mutation") is not False:
+        raise SystemExit("FAIL factory workflow may mutate protected paths")
+    if workflow_policy.get("allowed_checkout_diff") != ["tools/gate_btc_factory/FACTORY_STATUS_LATEST.json"]:
+        raise SystemExit("FAIL factory workflow checkout diff boundary changed")
 
     report_schema = docs["FACTORY_REPORT_SCHEMA.v1.json"]
     status = docs["FACTORY_STATUS_LATEST.json"]
@@ -123,7 +154,7 @@ def main() -> int:
     if parity_status.get("engine_feed") is not False or parity_status.get("orders") != 0:
         raise SystemExit("FAIL status violates shadow-only boundary")
     non_interference = status.get("non_interference_assertion", {})
-    required_false = [
+    status_required_false = [
         "active_workflows_mutated",
         "active_ledgers_mutated",
         "runtime_pointers_mutated",
@@ -131,7 +162,7 @@ def main() -> int:
         "backfill_performed",
         "partial_holdout_economics_read",
     ]
-    if any(non_interference.get(k) is not False for k in required_false):
+    if any(non_interference.get(k) is not False for k in status_required_false):
         raise SystemExit("FAIL non-interference assertion is incomplete or unsafe")
     if non_interference.get("write_prefix") != "tools/gate_btc_factory/":
         raise SystemExit("FAIL write boundary escaped factory namespace")
@@ -142,7 +173,7 @@ def main() -> int:
     if status.get("queue_counts", {}).get("total_tracks") != len(track_map):
         raise SystemExit("FAIL queue total does not match track map")
 
-    print("PASS factory v3 shadow runner is active, fail-closed and non-invasive")
+    print("PASS factory v4 scheduled shadow machine is active, fail-closed and non-invasive")
     return 0
 
 
