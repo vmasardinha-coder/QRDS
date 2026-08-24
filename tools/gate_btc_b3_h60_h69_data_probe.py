@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json
+import argparse,hashlib,json,time
 from io import StringIO
 from pathlib import Path
 import pandas as pd,requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import gate_btc_b3_h30_h39_cross_asset as b
 
 CUTOFF=pd.Timestamp('2026-08-10')
@@ -20,11 +22,29 @@ FAMILY_REQ={
  'H68':['SP500','VIX','BRLUSD','US10Y'],'H69':['SP500','BRLUSD']
 }
 
+def _http_session():
+ retry=Retry(total=4,connect=4,read=4,status=4,backoff_factor=2,
+             status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
+ s=requests.Session();s.mount('https://',HTTPAdapter(max_retries=retry));return s
+
 def fetch_fred(name,series):
- url=f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}'
- r=requests.get(url,timeout=120,headers={'User-Agent':'QRDS-research/1.0'});r.raise_for_status();raw=r.content
- x=pd.read_csv(StringIO(raw.decode('utf-8')));x.columns=['date','value'];x['date']=pd.to_datetime(x['date'],errors='coerce');x['value']=pd.to_numeric(x['value'],errors='coerce');x=x.dropna().sort_values('date').drop_duplicates('date');x=x[x.date<CUTOFF]
- return {'name':name,'series':series,'url':url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat() if len(x) else None,'last':x.date.max().date().isoformat() if len(x) else None},x
+ # Bound the request to the preregistered historical horizon. This changes only
+ # transport volume, never the causal cutoff or observations used by the study.
+ base='https://fred.stlouisfed.org/graph/fredgraph.csv'
+ params={'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}
+ last=None
+ for attempt in range(3):
+  try:
+   r=_http_session().get(base,params=params,timeout=(20,45),headers={'User-Agent':'QRDS-research/1.0'})
+   r.raise_for_status();raw=r.content
+   if not raw or b'DATE' not in raw[:64].upper(): raise ValueError('unexpected/empty FRED CSV')
+   x=pd.read_csv(StringIO(raw.decode('utf-8')));x.columns=['date','value'];x['date']=pd.to_datetime(x['date'],errors='coerce');x['value']=pd.to_numeric(x['value'],errors='coerce');x=x.dropna().sort_values('date').drop_duplicates('date');x=x[x.date<CUTOFF]
+   if x.empty: raise ValueError('FRED series empty before cutoff')
+   return {'name':name,'series':series,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':attempt+1},x
+  except Exception as e:
+   last=e
+   if attempt<2: time.sleep(3*(attempt+1))
+ raise last
 
 def session_dates(periods,bar):
  ss,_=b.sample(periods,bar);return pd.DatetimeIndex(pd.to_datetime(sorted(ss.keys())))
