@@ -169,7 +169,7 @@ def main() -> int:
     m2_rows, m2_summary = compute_m2(work, args.cutoff)
 
     args.ledger_dir.mkdir(parents=True, exist_ok=True)
-    prior_files = sorted(args.ledger_dir.glob("*.json"))
+    prior_files = sorted(p for p in args.ledger_dir.glob("*.json") if p.name != "STATUS.json")
     if prior_files:
         prior = json.loads(prior_files[-1].read_text(encoding="utf-8"))
         if prior.get("cutoff") >= args.cutoff and prior.get("cutoff") != args.cutoff:
