@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_b3_h80_h89_pricereport_probe.py'
+      - 'tools/gate_btc_b3_h80_h89_pricereport_nested_probe.py'
       - '.github/workflows/gate-btc-b3-h80-h89-pricereport-qa.yml'
   workflow_dispatch:
 
@@ -28,14 +29,14 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install 'requests>=2.31,<3'
-      - name: Probe official B3 historical PriceReport source
-        run: python tools/gate_btc_b3_h80_h89_pricereport_probe.py
+      - name: Probe official B3 historical nested PriceReport source
+        run: python tools/gate_btc_b3_h80_h89_pricereport_nested_probe.py
       - name: Assert source-only fail-closed boundary
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          p=json.loads(Path('artifacts/b3_h80_h89_pricereport/B3_H80_H89_PRICEREPORT_PROBE.json').read_text())
+          p=json.loads(Path('artifacts/b3_h80_h89_pricereport_nested/B3_H80_H89_PRICEREPORT_NESTED_PROBE.json').read_text())
           assert p['dates_all_pre_cutoff'] is True
           assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
           assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
@@ -44,6 +45,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: b3-h80-h89-pricereport-qa-${{ github.run_id }}
-          path: artifacts/b3_h80_h89_pricereport/
+          path: artifacts/b3_h80_h89_pricereport_nested/
           retention-days: 30
           if-no-files-found: error
