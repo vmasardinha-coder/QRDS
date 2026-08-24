@@ -1,0 +1,33 @@
+{
+  "schema": "gate_btc.b3.h60_h69.result.v1",
+  "generation": "H60_H69_V1",
+  "status": "CLOSED_NO_REPLICATED_SURVIVOR_WITH_DATA_GAPS",
+  "cutoff_exclusive": "2026-08-10",
+  "survivors": [],
+  "states": {
+    "H60": "REJECTED_FAILED_REPLICATION",
+    "H61": "DATA_GAP",
+    "H62": "REJECTED_DISCOVERY",
+    "H63": "REJECTED_DISCOVERY",
+    "H64": "REJECTED_FAILED_REPLICATION",
+    "H65": "DATA_GAP_DEPENDS_H61",
+    "H66": "REJECTED_FAILED_REPLICATION",
+    "H67": "DATA_GAP",
+    "H68": "DATA_GAP_DEPENDS_H61",
+    "H69": "DATA_GAP_DEPENDS_H61"
+  },
+  "data_gaps": {
+    "H61": "Official FRED delivery timed out and the preregistered Stooq public mirror returned a browser/JavaScript verification page in GitHub Actions; economics remained unrun.",
+    "H65": "Depends on unavailable H61 US-equity state.",
+    "H67": "Frozen historical ex-ante FOMC/Copom calendar definition lacks sufficient reproducible official historical schedule coverage.",
+    "H68": "Depends on unavailable H61 US-equity state.",
+    "H69": "Depends on unavailable H61 US-equity state."
+  },
+  "recovery_policy": "DATA_GAP is preserved and is not scientific rejection; no provenance or coverage gate was weakened.",
+  "h1_economics_read": false,
+  "survivor_partial_economics_read": false,
+  "synthetic_backfill": false,
+  "orders_generated": 0,
+  "real_capital_used": 0,
+  "engine_feed": false
+}

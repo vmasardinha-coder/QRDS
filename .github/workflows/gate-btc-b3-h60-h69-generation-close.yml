@@ -1,0 +1,54 @@
+name: GATE BTC B3 H60-H69 Generation Close
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h60_h69_result.json'
+      - 'tools/gate_btc_b3_h60_h69_ledger.jsonl'
+      - '.github/workflows/gate-btc-b3-h60-h69-generation-close.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+
+jobs:
+  validate-close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate generation terminal record and append-only ledger
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('tools/gate_btc_b3_h60_h69_result.json').read_text())
+          assert r['generation']=='H60_H69_V1'
+          assert r['status']=='CLOSED_NO_REPLICATED_SURVIVOR_WITH_DATA_GAPS'
+          assert r['cutoff_exclusive']=='2026-08-10'
+          assert r['survivors']==[]
+          expected={
+            'H60':'REJECTED_FAILED_REPLICATION','H61':'DATA_GAP','H62':'REJECTED_DISCOVERY','H63':'REJECTED_DISCOVERY','H64':'REJECTED_FAILED_REPLICATION',
+            'H65':'DATA_GAP_DEPENDS_H61','H66':'REJECTED_FAILED_REPLICATION','H67':'DATA_GAP','H68':'DATA_GAP_DEPENDS_H61','H69':'DATA_GAP_DEPENDS_H61'}
+          assert r['states']==expected
+          assert r['h1_economics_read'] is False and r['survivor_partial_economics_read'] is False
+          assert r['synthetic_backfill'] is False
+          assert r['orders_generated']==0 and r['real_capital_used']==0 and r['engine_feed'] is False
+          rows=[json.loads(x) for x in Path('tools/gate_btc_b3_h60_h69_ledger.jsonl').read_text().splitlines() if x.strip()]
+          assert len(rows)==10 and {x['family'] for x in rows}==set(expected)
+          for x in rows:
+              assert x['generation']=='H60_H69_V1'
+              assert x['state']==expected[x['family']]
+              assert x['h1_economics_read'] is False and x['survivor_partial_economics_read'] is False
+          print('B3_H60_H69_GENERATION_CLOSE=PASS')
+          PY
