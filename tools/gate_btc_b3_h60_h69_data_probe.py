@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json,time
+import argparse,hashlib,json
 from io import StringIO
 from pathlib import Path
 import pandas as pd,requests
@@ -23,11 +23,14 @@ FAMILY_REQ={
 }
 
 def _http_session():
- # Keep transport retries bounded well below the workflow timeout. This is
- # mechanical source-delivery hardening only; it does not alter observations,
- # cutoff, causal joins, family definitions, thresholds, or economics.
- retry=Retry(total=2,connect=2,read=2,status=2,backoff_factor=1,
-             status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
+ # Deliberately no transport retries here. This QA probes multiple official
+ # endpoints and must finish well inside the workflow timeout. A failed path
+ # falls through immediately to the second official FRED path, and a complete
+ # failure is recorded fail-closed as DATA_GAP_FETCH. This changes delivery
+ # mechanics only; observations, cutoff, causal joins, families and economics
+ # remain frozen.
+ retry=Retry(total=0,connect=0,read=0,status=0,redirect=2,
+             allowed_methods=frozenset(['GET']))
  s=requests.Session();s.mount('https://',HTTPAdapter(max_retries=retry));return s
 
 def _parse_fred_csv(raw):
@@ -42,10 +45,7 @@ def _parse_fred_csv(raw):
  return x
 
 def fetch_fred(name,series):
- # Try two official FRED delivery paths. The static per-series download endpoint
- # is an official mirror/fallback for the graph endpoint and changes transport
- # only; observations, cutoff, causal joins, family definitions and economics
- # remain exactly frozen.
+ # Two official FRED delivery paths; each gets one short bounded attempt.
  endpoints=[
    ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}),
    ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None),
@@ -53,16 +53,14 @@ def fetch_fred(name,series):
  last=None
  session=_http_session()
  for source_name,url,params in endpoints:
-  for attempt in range(2):
-   try:
-    r=session.get(url,params=params,timeout=(10,20),headers={'User-Agent':'QRDS-research/1.0'})
-    r.raise_for_status();raw=r.content
-    if not raw or b'DATE' not in raw[:128].upper(): raise ValueError('unexpected/empty FRED CSV')
-    x=_parse_fred_csv(raw)
-    return {'name':name,'series':series,'provider':'FRED','delivery_path':source_name,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':attempt+1},x
-   except Exception as e:
-    last=e
-    if attempt<1: time.sleep(2)
+  try:
+   r=session.get(url,params=params,timeout=(5,10),headers={'User-Agent':'QRDS-research/1.0'})
+   r.raise_for_status();raw=r.content
+   if not raw or b'DATE' not in raw[:128].upper(): raise ValueError('unexpected/empty FRED CSV')
+   x=_parse_fred_csv(raw)
+   return {'name':name,'series':series,'provider':'FRED','delivery_path':source_name,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':1},x
+  except Exception as e:
+   last=e
  raise last
 
 def session_dates(periods,bar):
