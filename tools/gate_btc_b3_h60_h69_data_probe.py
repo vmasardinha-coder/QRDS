@@ -30,24 +30,39 @@ def _http_session():
              status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
  s=requests.Session();s.mount('https://',HTTPAdapter(max_retries=retry));return s
 
+def _parse_fred_csv(raw):
+ x=pd.read_csv(StringIO(raw.decode('utf-8-sig')))
+ if x.shape[1] < 2: raise ValueError('unexpected FRED CSV schema')
+ x=x.iloc[:, :2].copy(); x.columns=['date','value']
+ x['date']=pd.to_datetime(x['date'],errors='coerce')
+ x['value']=pd.to_numeric(x['value'],errors='coerce')
+ x=x.dropna().sort_values('date').drop_duplicates('date')
+ x=x[(x.date>=pd.Timestamp('2019-01-01')) & (x.date<CUTOFF)]
+ if x.empty: raise ValueError('FRED series empty before cutoff')
+ return x
+
 def fetch_fred(name,series):
- # Bound the request to the preregistered historical horizon. This changes only
- # transport volume, never the causal cutoff or observations used by the study.
- base='https://fred.stlouisfed.org/graph/fredgraph.csv'
- params={'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}
+ # Try two official FRED delivery paths. The static per-series download endpoint
+ # is an official mirror/fallback for the graph endpoint and changes transport
+ # only; observations, cutoff, causal joins, family definitions and economics
+ # remain exactly frozen.
+ endpoints=[
+   ('fredgraph','https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':series,'cosd':'2019-01-01','coed':'2026-08-09'}),
+   ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None),
+ ]
  last=None
  session=_http_session()
- for attempt in range(2):
-  try:
-   r=session.get(base,params=params,timeout=(10,20),headers={'User-Agent':'QRDS-research/1.0'})
-   r.raise_for_status();raw=r.content
-   if not raw or b'DATE' not in raw[:64].upper(): raise ValueError('unexpected/empty FRED CSV')
-   x=pd.read_csv(StringIO(raw.decode('utf-8')));x.columns=['date','value'];x['date']=pd.to_datetime(x['date'],errors='coerce');x['value']=pd.to_numeric(x['value'],errors='coerce');x=x.dropna().sort_values('date').drop_duplicates('date');x=x[x.date<CUTOFF]
-   if x.empty: raise ValueError('FRED series empty before cutoff')
-   return {'name':name,'series':series,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':attempt+1},x
-  except Exception as e:
-   last=e
-   if attempt<1: time.sleep(2)
+ for source_name,url,params in endpoints:
+  for attempt in range(2):
+   try:
+    r=session.get(url,params=params,timeout=(10,20),headers={'User-Agent':'QRDS-research/1.0'})
+    r.raise_for_status();raw=r.content
+    if not raw or b'DATE' not in raw[:128].upper(): raise ValueError('unexpected/empty FRED CSV')
+    x=_parse_fred_csv(raw)
+    return {'name':name,'series':series,'provider':'FRED','delivery_path':source_name,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),'fetch_attempt':attempt+1},x
+   except Exception as e:
+    last=e
+    if attempt<1: time.sleep(2)
  raise last
 
 def session_dates(periods,bar):
