@@ -172,6 +172,31 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
         self.assertEqual(coverage["meets_min_history"], 0)
         self.assertFalse(provenance["provenance"]["BTC"]["meets_min_history"])
 
+    def test_unreachable_venues_is_empty_when_all_four_answer(self):
+        with mock.patch.object(adapter, "fetch_url", side_effect=router(
+                binance=binance_payload(), bybit=bybit_payload(),
+                okx=okx_payload(), hyper=hyperliquid_payload())):
+            self.assertEqual(adapter.unreachable_venues("BTC", TODAY), [])
+
+    def test_unreachable_venues_names_every_venue_that_cannot_serve(self):
+        # The degraded case this guard exists for: only part of the venue set
+        # answers, which would silently pin every asset onto the survivors.
+        with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
+            failures = adapter.unreachable_venues("BTC", TODAY)
+        named = {line.split(":")[0] for line in failures}
+        self.assertEqual(named, {"BINANCE_FUTURES", "BYBIT_LINEAR", "HYPERLIQUID"})
+        self.assertNotIn("OKX_SWAP", named)
+
+    def test_unreachable_venues_counts_an_empty_answer_as_unreachable(self):
+        # A venue that responds with no completed bars is no more usable for
+        # pinning than one that refuses the connection.
+        with mock.patch.object(adapter, "fetch_url", side_effect=router(
+                binance=binance_payload(), bybit=bybit_payload(),
+                okx=okx_payload(count=0), hyper=hyperliquid_payload())):
+            failures = adapter.unreachable_venues("BTC", TODAY)
+        self.assertEqual(len(failures), 1)
+        self.assertTrue(failures[0].startswith("OKX_SWAP"), failures)
+
     def test_safety_flags_are_present_in_coverage(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
