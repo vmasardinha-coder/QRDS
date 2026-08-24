@@ -1,0 +1,36 @@
+name: GATE BTC B3 H50-H59
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h50_h59_prereg.md'
+      - 'tools/gate_btc_b3_h50_h59_batch.py'
+      - '.github/workflows/gate-btc-b3-h50-h59.yml'
+  workflow_dispatch:
+jobs:
+  falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy requests
+      - name: Run H50-H59 isolated batch
+        run: |
+          python tools/gate_btc_b3_h50_h59_batch.py --out /tmp/B3_H50_H59_STATUS.json --ledger /tmp/B3_H50_H59_LEDGER.jsonl --cells /tmp/B3_H50_H59_CELLS.csv
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/B3_H50_H59_STATUS.json'))
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          assert p['status'] in {'DATA_INADEQUATE','SURVIVORS_READY_FOR_PROSPECTIVE','CLOSED_NO_H50_H59_SURVIVOR'}
+          print(p['status'],p['survivors'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h50-h59-results
+          path: |
+            /tmp/B3_H50_H59_STATUS.json
+            /tmp/B3_H50_H59_LEDGER.jsonl
+            /tmp/B3_H50_H59_CELLS.csv
