@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 env:
   GATE_BTC_RESEARCH_ONLY: 'true'
@@ -62,6 +63,32 @@ jobs:
           assert len(rows)==10
           print({'status':p['status'],'states':p['states'],'survivors':p['survivors']})
           PY
+      - name: Persist scientific state on issue 163
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' >/tmp/h70_h79_issue_comment.md
+          import json
+          p=json.load(open('/tmp/B3_H70_H79_ECONOMICS.json'))
+          print('<!-- B3_H70_H79_SCIENTIFIC_RESULT_V1 -->')
+          print('## H70-H79 scientific result')
+          print('')
+          print(f"Status: `{p['status']}`")
+          print('')
+          for fam,state in sorted(p['states'].items()):
+              print(f'- {fam}: `{state}`')
+          print('')
+          print('Survivors: ' + (', '.join(f'`{x}`' for x in p['survivors']) if p['survivors'] else '`NONE`'))
+          print('')
+          print('Safety: cutoff exclusive 2026-08-10; H1 economics unread; survivor partial economics unread; synthetic_backfill=false; orders=0; capital=0; engine_feed=false.')
+          PY
+          existing=$(gh api repos/${{ github.repository }}/issues/163/comments --paginate --jq '.[] | select(.body | contains("B3_H70_H79_SCIENTIFIC_RESULT_V1")) | .id' | head -n1 || true)
+          if [ -n "$existing" ]; then
+            body=$(cat /tmp/h70_h79_issue_comment.md)
+            gh api --method PATCH repos/${{ github.repository }}/issues/comments/$existing -f body="$body" >/dev/null
+          else
+            gh issue comment 163 --body-file /tmp/h70_h79_issue_comment.md >/dev/null
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: b3-h70-h79-economics-${{ github.run_id }}
