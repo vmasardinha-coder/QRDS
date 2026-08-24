@@ -68,7 +68,7 @@ def fetch_fred(name, series):
         ('series_download',f'https://fred.stlouisfed.org/series/{series}/downloaddata/{series}.csv',None,'csv'),
         ('static_data',f'https://fred.stlouisfed.org/data/{series}.txt',None,'txt'),
     ]
-    s = http_session(); last = None; attempt = 0
+    s = http_session(); last = None; attempt = 0; failures=[]
     for round_no in range(3):
         for delivery, url, params, fmt in endpoints:
             attempt += 1
@@ -81,13 +81,19 @@ def fetch_fred(name, series):
                 meta = {'name':name,'series':series,'provider':'FRED / Federal Reserve Bank of St. Louis',
                         'delivery_path':delivery,'url':r.url,'sha256':hashlib.sha256(raw).hexdigest(),
                         'rows':len(x),'first':x.date.min().date().isoformat(),'last':x.date.max().date().isoformat(),
-                        'fetch_attempt':attempt,'format':fmt}
+                        'fetch_attempt':attempt,'format':fmt,'status':'FETCHED'}
                 return meta, x
             except Exception as exc:
                 last = exc
+                failures.append({'attempt':attempt,'delivery_path':delivery,'error_type':type(exc).__name__,'error':str(exc)[:300]})
         if round_no < 2:
             time.sleep(4 * (round_no + 1))
-    raise last if last else RuntimeError('FRED fetch failed')
+    return {
+        'name':name,'series':series,'provider':'FRED / Federal Reserve Bank of St. Louis',
+        'status':'DATA_GAP','gap_type':'EXTERNAL_DELIVERY_UNAVAILABLE','attempts':attempt,
+        'failures':failures,'last_error':str(last)[:500] if last else 'unknown FRED failure',
+        'synthetic_backfill':False,'economics_run':False
+    }, None
 
 
 def coverage(x, sessions):
@@ -155,19 +161,29 @@ def main(out, ledger, cells):
     results={}; allcells=[]; ledger_rows=[]
     for fam,(name,series) in SERIES.items():
         meta,x=fetch_fred(name,series)
-        dcv,dn,dt,dm=coverage(x,ds); rcv,rn,rt,rm=coverage(x,rs)
-        meta.update({'discovery_join_coverage':dcv,'replication_join_coverage':rcv,'discovery_join_n':f'{dn}/{dt}','replication_join_n':f'{rn}/{rt}','max_stale_days_discovery':dm,'max_stale_days_replication':rm})
-        if dcv < .90 or rcv < .90: raise SystemExit(f'FAIL {fam} coverage below gate')
-        meta['status']='PASS'
+        if x is None:
+            state='DATA_GAP'
+            results[fam]={'state':state,'source':meta,'discovery':None,'replication':None}
+            ledger_rows.append({'family':fam,'generation':'H60_H69_V1','state':state,'source':meta,'orders':0,'capital':0,'engine_feed':False})
+            continue
+        dcv_f,dn,dt,dm=coverage(x,ds); rcv_f,rn,rt,rm=coverage(x,rs)
+        meta.update({'discovery_join_coverage':dcv_f,'replication_join_coverage':rcv_f,'discovery_join_n':f'{dn}/{dt}','replication_join_n':f'{rn}/{rt}','max_stale_days_discovery':dm,'max_stale_days_replication':rm})
+        if dcv_f < .90 or rcv_f < .90:
+            meta.update({'status':'DATA_GAP','gap_type':'CAUSAL_JOIN_COVERAGE_BELOW_90PCT','economics_run':False})
+            state='DATA_GAP'
+            results[fam]={'state':state,'source':meta,'discovery':None,'replication':None}
+            ledger_rows.append({'family':fam,'generation':'H60_H69_V1','state':state,'source':meta,'orders':0,'capital':0,'engine_feed':False})
+            continue
+        meta['status']='PASS'; meta['economics_run']=True
         D,dc=summarize(fam,generate(fam,ds,5,causal_signals(x,ds))); R,rc=summarize(fam,generate(fam,rs,15,causal_signals(x,rs)))
         state='SURVIVOR_REPLICATED' if D['survives'] and R['survives'] else 'REJECTED_FAILED_REPLICATION' if D['survives'] else 'REJECTED_DISCOVERY'
         results[fam]={'state':state,'source':meta,'discovery':D,'replication':R}
         allcells += [dict(sample='DISCOVERY',**z) for z in dc] + [dict(sample='REPLICATION',**z) for z in rc]
         ledger_rows.append({'family':fam,'generation':'H60_H69_V1','state':state,'source':meta,'discovery':D,'replication':R,'orders':0,'capital':0,'engine_feed':False})
-    p={'schema':'gate_btc.b3.h61_h64.fred_recovery.v1','cutoff_exclusive':'2026-08-10','results':results,
+    p={'schema':'gate_btc.b3.h61_h64.fred_recovery.v2','cutoff_exclusive':'2026-08-10','results':results,
        'discovery_sync_sessions':len(ds),'replication_sync_sessions':len(rs),'discovery_median_common_bar_coverage':float(np.median(dcov)) if dcov else 0,
        'replication_median_common_bar_coverage':float(np.median(rcov)) if rcov else 0,'h1_economics_read':False,'survivor_partial_economics_read':False,
-       'orders_generated':0,'real_capital_used':0,'engine_feed':False}
+       'orders_generated':0,'real_capital_used':0,'engine_feed':False,'synthetic_backfill':False}
     Path(out).write_text(json.dumps(p,indent=2,sort_keys=True))
     Path(ledger).write_text(''.join(json.dumps(x,sort_keys=True)+'\n' for x in ledger_rows))
     pd.DataFrame(allcells).to_csv(cells,index=False)
