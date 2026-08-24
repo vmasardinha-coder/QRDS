@@ -1,0 +1,278 @@
+{
+  "schema": "qrds.factory.production_line_map.v1",
+  "generated_at_utc": "2026-08-24T18:30:00Z",
+  "purpose": "Classify current collected/reported tracks by whether they are finished, collect-only frozen, active factory evolution, challenger-capable, data/feed-only, or future-dependent. This metadata does not mutate any active collector, clock, methodology, ledger, or economics.",
+  "state_enum": [
+    "CLOSED_DELIVERED_NO_COLLECTION",
+    "PRESERVE_AS_BENCHMARK_ONLY",
+    "COLLECT_ONLY_FROZEN",
+    "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+    "FACTORY_ACTIVE_DISCOVERY",
+    "FACTORY_DATA_BLOCKED",
+    "DATA_FEED_ONLY",
+    "FUTURE_DEPENDENT"
+  ],
+  "tracks": [
+    {
+      "track": "HISTORICAL_RAW_DEFENSIVE",
+      "group_id": "ALLOCATION_META",
+      "state": "CLOSED_DELIVERED_NO_COLLECTION",
+      "evolve": false,
+      "collect": false,
+      "reason": "Historical question answered; retain artifacts only."
+    },
+    {
+      "track": "PIT_SURVIVORSHIP_SELECTOR_AUDIT",
+      "group_id": "DATA_INFRA_ONLY",
+      "state": "CLOSED_DELIVERED_NO_COLLECTION",
+      "evolve": false,
+      "collect": false,
+      "reason": "Causal selector not proven; audit conclusion is permanent unless a materially new PIT data/mechanism design is preregistered."
+    },
+    {
+      "track": "REGIME_2026_06_29_2026_08_16",
+      "group_id": "CYCLICAL_REGIME",
+      "state": "PRESERVE_AS_BENCHMARK_ONLY",
+      "evolve": false,
+      "collect": false,
+      "reason": "Fixed historical regime benchmark; do not keep re-running the same window."
+    },
+    {
+      "track": "DELTA_EXTERNAL_HISTORICAL",
+      "group_id": "TREND_MOMENTUM",
+      "state": "PRESERVE_AS_BENCHMARK_ONLY",
+      "evolve": false,
+      "collect": false,
+      "reason": "Independent historical ruler; never retune internal models to match it."
+    },
+    {
+      "track": "DELTA_V12_REPLICATION_ATTEMPTS",
+      "group_id": "TREND_MOMENTUM",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Frozen replication contract may collect independent evidence; no retune. New Delta ideas must be isolated challengers."
+    },
+    {
+      "track": "BULL_REPLAY_DELTA_70_30",
+      "group_id": "TREND_MOMENTUM",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Keep current LIVE shadow arm frozen as incumbent; create new Delta challengers outside the incumbent using distinct mechanisms/cadences/risk controls."
+    },
+    {
+      "track": "BULL_REPLAY_DELTA_50_50",
+      "group_id": "TREND_MOMENTUM",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Same as 70/30: incumbent remains untouched while challengers are researched separately."
+    },
+    {
+      "track": "BULL_REPLAY_PROXY_SYNTHETIC",
+      "group_id": "ALLOCATION_META",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Retain as benchmark; allow isolated challengers for defensive allocation/regime switching."
+    },
+    {
+      "track": "BULL_REPLAY_QOS_MODERADA_ULTRA",
+      "group_id": "CYCLICAL_REGIME",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Frozen LIVE arms are benchmarks; cyclic/regime challenger families should evolve independently."
+    },
+    {
+      "track": "D50_CONTROL_COST_AWARE_EXIT2SIGMA",
+      "group_id": "SHORT_HORIZON_TACTICAL",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Current 30-observation clock remains immutable; after checkpoint, preserve arms and open D50 challengers rather than retuning the same evidence."
+    },
+    {
+      "track": "PROXY_REAL_NAV",
+      "group_id": "ALLOCATION_META",
+      "state": "DATA_FEED_ONLY",
+      "evolve": false,
+      "collect": true,
+      "reason": "Observed real-world benchmark/data stream. Do not turn discretionary history into a fitted strategy; use only as read-only benchmark for protection/allocation studies."
+    },
+    {
+      "track": "LOCK25_LOCK50_NO_LOCK",
+      "group_id": "HEDGE_PROTECTION",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Current arms stay frozen and continue prospectively; future protection variants must be separately preregistered challengers."
+    },
+    {
+      "track": "PRL50",
+      "group_id": "HEDGE_PROTECTION",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Frozen calendar-gated prospective track. No retune while clock is open."
+    },
+    {
+      "track": "ALT_TRAIL40_10",
+      "group_id": "HEDGE_PROTECTION",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Frozen calendar-gated challenger already defined; collect only until its gate resolves."
+    },
+    {
+      "track": "DELTA_WALK_FORWARD_EXPANDING",
+      "group_id": "TREND_MOMENTUM",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Finish 120 clock under frozen contract. Any evolution is a separate Delta challenger line."
+    },
+    {
+      "track": "GATEWAY_DYNAMICS",
+      "group_id": "DATA_INFRA_ONLY",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Current prospective ledger remains frozen; isolated Gateway challengers can research alternative quality/dynamics mechanisms."
+    },
+    {
+      "track": "B3_H1",
+      "group_id": "SHORT_HORIZON_TACTICAL",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Blind structural holdout only. Never use partial economics for evolution."
+    },
+    {
+      "track": "B3_H31",
+      "group_id": "CROSS_ASSET_RELATIVE_VALUE",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Replicated survivor is frozen and separate prospective; no H31 retune. Distinct cross-asset families continue separately."
+    },
+    {
+      "track": "B3_H60_PLUS",
+      "group_id": "CROSS_ASSET_RELATIVE_VALUE",
+      "state": "FACTORY_ACTIVE_DISCOVERY",
+      "evolve": true,
+      "collect": true,
+      "reason": "Current active B3 research production line; data gaps are repaired mechanically and families advance to rejection/replication/freeze."
+    },
+    {
+      "track": "D50_DATA_QUALIFICATION",
+      "group_id": "DATA_INFRA_ONLY",
+      "state": "DATA_FEED_ONLY",
+      "evolve": false,
+      "collect": true,
+      "reason": "Source-quality gate only; maintain health/freshness and do not confuse with economic strategy evolution."
+    },
+    {
+      "track": "V16B",
+      "group_id": "ALLOCATION_META",
+      "state": "FACTORY_DATA_BLOCKED",
+      "evolve": false,
+      "collect": true,
+      "reason": "Frozen design awaiting causal feature-panel/rehearsal and calendar event; repair data/producer only."
+    },
+    {
+      "track": "V16C",
+      "group_id": "ALLOCATION_META",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Preregistered challenger pending independent causal ledger."
+    },
+    {
+      "track": "V16D_V16E",
+      "group_id": "ALLOCATION_META",
+      "state": "FUTURE_DEPENDENT",
+      "evolve": false,
+      "collect": false,
+      "reason": "Do not activate economics until prerequisite B/C evidence exists."
+    },
+    {
+      "track": "MOMENTUM_M1_M2",
+      "group_id": "TREND_MOMENTUM",
+      "state": "FACTORY_DATA_BLOCKED",
+      "evolve": false,
+      "collect": true,
+      "reason": "Frozen track needs post-fix operational evidence first. Once healthy, keep incumbent frozen and open separate Momentum challengers."
+    },
+    {
+      "track": "QOS_MONTHLY",
+      "group_id": "CYCLICAL_REGIME",
+      "state": "COLLECT_ONLY_FROZEN",
+      "evolve": false,
+      "collect": true,
+      "reason": "Calendar-gated prospective incumbent; no retune. New cyclical/QOS challengers belong in isolated factory lines."
+    },
+    {
+      "track": "D100",
+      "group_id": "SHORT_HORIZON_TACTICAL",
+      "state": "FUTURE_DEPENDENT",
+      "evolve": false,
+      "collect": false,
+      "reason": "Do not start before D50 evidence gate and explicit preregistration of a materially distinct horizon design."
+    },
+    {
+      "track": "REGIME_BOTTOM_PROBABILITY_SCENARIOS",
+      "group_id": "CYCLICAL_REGIME",
+      "state": "INCUMBENT_PLUS_ISOLATED_CHALLENGERS",
+      "evolve": true,
+      "collect": true,
+      "reason": "Current probabilities are exploratory and should not be frozen as truth; build calibrated regime/cyclical challengers from causal observable features."
+    },
+    {
+      "track": "EXTERNAL_BOTTOM_RADAR",
+      "group_id": "DATA_INFRA_ONLY",
+      "state": "DATA_FEED_ONLY",
+      "evolve": false,
+      "collect": true,
+      "reason": "External reference feed only; can supply hypotheses/features but is not itself a strategy."
+    },
+    {
+      "track": "META_2030",
+      "group_id": "ALLOCATION_META",
+      "state": "FUTURE_DEPENDENT",
+      "evolve": true,
+      "collect": true,
+      "reason": "Keep reporting/sensitivity now; serious allocation engine only after enough independently validated survivors exist."
+    },
+    {
+      "track": "GATE_BTC_2_CORE",
+      "group_id": "DATA_INFRA_ONLY",
+      "state": "FACTORY_DATA_BLOCKED",
+      "evolve": false,
+      "collect": true,
+      "reason": "Complete official dataset seal/readiness before any challenger economics."
+    }
+  ],
+  "factory_priorities": [
+    "Continue B3 H60+ autonomous discovery/replication/freeze loop.",
+    "Create isolated Delta challenger generation while preserving all current Delta incumbents.",
+    "Create CYCLICAL_REGIME challenger generation using QOS/regime ideas without retuning frozen QOS arms.",
+    "After D50 checkpoint, open isolated D50 challenger generation; never retune the 30-observation incumbent on the same evidence.",
+    "Evolve HEDGE_PROTECTION only through isolated challengers after current LOCK/PRL/ALT clocks provide sufficient evidence.",
+    "Keep V16/Momentum/GateBTC2 data-blocked tracks focused on causal data readiness before economics.",
+    "Defer Meta 2030 allocation optimization until multiple independent survivors are frozen/prospective."
+  ],
+  "non_interference": {
+    "existing_local_collections": "ACTIVE_UNCHANGED",
+    "existing_github_collections": "ACTIVE_UNCHANGED",
+    "no_collector_shutdown_without_user_authorization": true,
+    "no_backfill": true,
+    "no_retune_frozen_tracks": true,
+    "no_partial_prospective_feedback": true,
+    "h1_economics_read": false,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false
+  }
+}
