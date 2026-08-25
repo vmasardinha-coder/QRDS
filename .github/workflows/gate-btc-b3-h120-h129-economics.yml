@@ -4,6 +4,8 @@ on:
     paths:
       - 'tools/gate_btc_b3_h120_h129_economics.py'
       - 'tools/gate_btc_b3_h120_h129_guarded.py'
+      - 'tools/gate_btc_b3_h120_h129_source_probe.py'
+      - 'tests/test_gate_btc_b3_h120_h129_source_probe.py'
       - '.github/workflows/gate-btc-b3-h120-h129-economics.yml'
   workflow_dispatch:
 permissions:
@@ -17,6 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install pandas numpy requests
+      - name: Test fail-closed source delivery retries
+        run: python -m unittest -v tests/test_gate_btc_b3_h120_h129_source_probe.py
       - name: Recheck frozen B3 source gate
         run: |
           python tools/gate_btc_b3_h120_h129_source_probe.py

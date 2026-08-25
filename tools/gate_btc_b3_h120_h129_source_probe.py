@@ -14,8 +14,9 @@ def get(s,u):
  e=[]
  for i in range(1,4):
   try:return s.get(u,timeout=(10,45)),e
-  except (requests.Timeout,requests.ConnectionError) as x:
-   e.append({'attempt':i,'error':type(x).__name__+': '+str(x)[:180]});time.sleep(i*2)
+  except requests.RequestException as x:
+   e.append({'attempt':i,'error':type(x).__name__+': '+str(x)[:180]})
+   if i<3:time.sleep(i*2)
  return None,e
 def xml_from(body):
  with zipfile.ZipFile(io.BytesIO(body)) as z:
