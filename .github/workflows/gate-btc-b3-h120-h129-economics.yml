@@ -1,0 +1,62 @@
+name: GATE BTC B3 H120-H129 Economics
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h120_h129_economics.py'
+      - '.github/workflows/gate-btc-b3-h120-h129-economics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  historical-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - name: Recheck frozen B3 source gate
+        run: |
+          python tools/gate_btc_b3_h120_h129_source_probe.py
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json'))
+          assert p['status']=='SOURCE_QA_READY_STRATIFIED'
+          assert p['older_replication_dates_passed']==p['older_replication_dates_total']
+          assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          PY
+      - name: Run preregistered H120-H129 validation
+        run: |
+          python tools/gate_btc_b3_h120_h129_economics.py \
+            --out artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json \
+            --ledger artifacts/b3_h120_h129/H120_H129_RESULT_LEDGER.jsonl \
+            --cells artifacts/b3_h120_h129/H120_H129_CELLS.csv \
+            --manifest artifacts/b3_h120_h129/H120_H129_DAILY_MANIFEST.json
+      - name: Assert hard safety and fail-closed semantics
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert set(p['states'])=={f'H{i}' for i in range(120,130)}
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          assert len(p['survivors'])<=2
+          if p['status'].startswith('DATA_GAP_'):
+              assert p['discovery_coverage']<0.90 or p['replication_coverage']<0.90
+          else:
+              assert p['discovery_coverage']>=0.90 and p['replication_coverage']>=0.90
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h120-h129-economics-${{ github.run_id }}
+          path: |
+            artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json
+            artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json
+            artifacts/b3_h120_h129/H120_H129_RESULT_LEDGER.jsonl
+            artifacts/b3_h120_h129/H120_H129_CELLS.csv
+            artifacts/b3_h120_h129/H120_H129_DAILY_MANIFEST.json
+          retention-days: 30
+          if-no-files-found: error
