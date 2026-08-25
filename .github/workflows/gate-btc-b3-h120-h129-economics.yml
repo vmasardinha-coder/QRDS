@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/gate_btc_b3_h120_h129_economics.py'
+      - 'tools/gate_btc_b3_h120_h129_guarded.py'
       - '.github/workflows/gate-btc-b3-h120-h129-economics.yml'
   workflow_dispatch:
 permissions:
@@ -27,9 +28,9 @@ jobs:
           assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
           assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
           PY
-      - name: Run preregistered H120-H129 validation
+      - name: Run preregistered H120-H129 validation with exact previous-session joins
         run: |
-          python tools/gate_btc_b3_h120_h129_economics.py \
+          python tools/gate_btc_b3_h120_h129_guarded.py \
             --out artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json \
             --ledger artifacts/b3_h120_h129/H120_H129_RESULT_LEDGER.jsonl \
             --cells artifacts/b3_h120_h129/H120_H129_CELLS.csv \
