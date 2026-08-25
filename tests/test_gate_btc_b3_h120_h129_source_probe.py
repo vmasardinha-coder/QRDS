@@ -77,6 +77,23 @@ class H120H129SourceProbeRetryTests(unittest.TestCase):
 
         sleep.assert_not_called()
 
+    def test_schema_scan_distinguishes_exact_futures_from_options(self):
+        xml = b"""<root>
+          <TckrSymb>WINQ26</TckrSymb>
+          <TckrSymb>WDOQ26</TckrSymb>
+          <TckrSymb>WDOQ26C005500</TckrSymb>
+          <TradQty>1</TradQty><RglrTraddCtrcts>1</RglrTraddCtrcts>
+          <FinInstrmQty>1</FinInstrmQty><OpnIntrst>1</OpnIntrst>
+          <FrstPric>1</FrstPric><MinPric>1</MinPric>
+          <MaxPric>1</MaxPric><LastPric>1</LastPric>
+        </root>"""
+
+        _, prefix_counts, future_counts, samples = probe.scan(xml)
+
+        self.assertEqual(prefix_counts, {"WIN": 1, "WDO": 2})
+        self.assertEqual(future_counts, {"WIN": 1, "WDO": 1})
+        self.assertEqual(samples, ["WINQ26", "WDOQ26"])
+
 
 if __name__ == "__main__":
     unittest.main()

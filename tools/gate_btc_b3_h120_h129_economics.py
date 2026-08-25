@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, io, json, math, time, zipfile
+import argparse, hashlib, io, json, math, re, time, zipfile
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -15,6 +15,7 @@ HOLDS=(60,120)
 BASE='https://www.b3.com.br/pesquisapregao/download?filelist=PR{date}.zip'
 CUTOFF='2026-08-10'
 GEN='H120_H129_V1'
+FUTURE_RE=re.compile(r'^(WIN|WDO)[FGHJKMNQUVXZ][0-9]{2}$')
 
 
 def local(t): return t.rsplit('}',1)[-1]
@@ -46,8 +47,9 @@ def parse_day(day):
             for e in root.iter():
                 vals={local(c.tag):(c.text or '').strip() for c in list(e)}
                 ticker=vals.get('TckrSymb','').upper()
-                if not ticker.startswith(ASSETS): continue
-                asset='WIN' if ticker.startswith('WIN') else 'WDO'
+                match=FUTURE_RE.fullmatch(ticker)
+                if not match: continue
+                asset=match.group(1)
                 volume=num(vals.get('FinInstrmQty', vals.get('RglrTraddCtrcts')))
                 row={'date':day,'asset':asset,'ticker':ticker,'trade_count':num(vals.get('TradQty')),'volume':volume,
                      'oi':num(vals.get('OpnIntrst')),'open':num(vals.get('FrstPric')),'low':num(vals.get('MinPric')),
@@ -179,7 +181,7 @@ def main(out,ledger,cells,manifest):
     ds,dc=b.sample(['2024_26'],5); rs,rc=b.sample(['2020_22','2022_24'],15)
     days=sorted(set(ds)|set(rs)); daily,recs=daily_table(days)
     got=set(daily.date.unique()) if not daily.empty else set(); dcover=sum(1 for x in ds if x in got)/len(ds); rcover=sum(1 for x in rs if x in got)/len(rs)
-    Path(manifest).parent.mkdir(parents=True,exist_ok=True); Path(manifest).write_text(json.dumps({'schema':'qrds.b3.h120_h129.daily_manifest.v1','front_selection':'max observed FinInstrmQty/RglrTraddCtrcts, lexical ticker tie-break','requested_days':len(days),'pass_days':sum(x['status']=='PASS' for x in recs),'discovery_coverage':dcover,'replication_coverage':rcover,'records':recs,'cutoff_exclusive':CUTOFF},indent=2,sort_keys=True)+'\n')
+    Path(manifest).parent.mkdir(parents=True,exist_ok=True); Path(manifest).write_text(json.dumps({'schema':'qrds.b3.h120_h129.daily_manifest.v1','contract_identity_regex':FUTURE_RE.pattern,'front_selection':'exact WIN/WDO future with max observed FinInstrmQty/RglrTraddCtrcts, lexical ticker tie-break','requested_days':len(days),'pass_days':sum(x['status']=='PASS' for x in recs),'discovery_coverage':dcover,'replication_coverage':rcover,'records':recs,'cutoff_exclusive':CUTOFF},indent=2,sort_keys=True)+'\n')
     if dcover<.90 or rcover<.90:
         states={f:'DATA_GAP_COVERAGE' for f in FAMS}; p={'schema':'gate_btc.b3.h120_h129.economics.v1','status':'DATA_GAP_H120_H129_COVERAGE','cutoff_exclusive':CUTOFF,'states':states,'survivors':[],'discovery_coverage':dcover,'replication_coverage':rcover,'h1_economics_read':False,'survivor_partial_economics_read':False,'orders_generated':0,'real_capital_used':0,'engine_feed':False,'not_approved':True}
         Path(out).write_text(json.dumps(p,indent=2,sort_keys=True)+'\n'); Path(ledger).write_text(''.join(json.dumps({'family':f,'generation':GEN,'state':states[f],'orders':0,'capital':0,'engine_feed':False,'not_approved':True},sort_keys=True)+'\n' for f in FAMS)); pd.DataFrame().to_csv(cells,index=False); print(json.dumps({'status':p['status'],'discovery_coverage':dcover,'replication_coverage':rcover})); return

@@ -18,4 +18,6 @@ Frozen family budget before results:
 
 Source QA before economics: official B3 PriceReport/derivatives-report bytes only. Record URL, raw/nested hashes, schema, date semantics, contract identity/front selection, dedupe, coverage and causal availability. Observed fields and derived fields remain explicit. No synthetic trade count, OI, volume, high/low or historical reconstruction. Every family requires >=90% eligible-session join coverage in discovery and replication; otherwise only that family is DATA_GAP.
 
+Exact contract identity for front selection is frozen as `^(WIN|WDO)[FGHJKMNQUVXZ][0-9]{2}$`. Option tickers or any other suffix-bearing instruments are excluded before volume ranking.
+
 Frozen scientific gates: >=60 trades; reference net edge >0.25 bp/trade; positive stress result; positive one-extra-bar delay; long and short each >=15 and positive; >=2 eligible half-year buckets with >=15 and positive; top-5 contribution <=40%; family breadth >=2 qualified cells plus parameter/horizon breadth; identical independent 2020_22 + 2022_24 replication rule; max 2 survivors; null valid.
