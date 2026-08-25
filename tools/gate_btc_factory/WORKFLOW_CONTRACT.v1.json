@@ -1,5 +1,5 @@
 {
-  "contract_version": "1.4",
+  "contract_version": "1.5",
   "workflow_name": "GATE BTC Factory Controlled Orchestrator",
   "workflow_path": ".github/workflows/gate-btc-factory-shadow.yml",
   "mode": "CONTROLLED_SHADOW_TRANSITIONS",
@@ -18,7 +18,9 @@
   "transition_output": "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json",
   "source": "tools/gate_btc_research_factory_status.json",
   "source_freshness_minutes": 180,
+  "future_timestamp_tolerance_minutes": 5,
   "stale_policy": "MARK_STALE_READ_ONLY_DO_NOT_TRANSITION_OR_PROMOTE",
+  "stale_runtime_behavior": "SUCCESSFUL_READ_ONLY_NOOP_WITH_ARTIFACT_AND_WARNING",
   "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ORDERS":0,"REAL_CAPITAL":0,"ENGINE_FEED":false},
   "transition_scope": {
     "next_generation_issue": true,

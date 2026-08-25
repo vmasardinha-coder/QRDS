@@ -72,9 +72,20 @@ def main() -> int:
     }:
         raise SystemExit("FAIL transition plan safety mismatch")
 
+    freshness = plan.get("source_freshness")
+    transitions_allowed = plan.get("transitions_allowed")
+    actions = plan.get("actions", [])
+    if freshness == "STALE_READ_ONLY":
+        if transitions_allowed is not False or actions:
+            raise SystemExit("FAIL stale source produced transition actions")
+        print("NOOP stale source is read-only; no issue or activation mutation")
+        return 0
+    if freshness != "FRESH" or transitions_allowed is not True:
+        raise SystemExit("FAIL transition plan missing fresh-source authorization")
+
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     changed = False
-    for action in plan.get("actions", []):
+    for action in actions:
         kind = action.get("action")
         if kind == "CREATE_NEXT_GENERATION_ISSUE":
             create_issue(action)
