@@ -1,0 +1,160 @@
+{
+  "admission_scopes": [
+    "BTC_CORE",
+    "D50_ECONOMIC",
+    "D50_QUALIFIED"
+  ],
+  "allowed_access_classes": [
+    "official_authenticated",
+    "official_free",
+    "official_free_fixture",
+    "project_generated",
+    "verified_public_mirror"
+  ],
+  "allowed_formats": [
+    "csv",
+    "jsonl"
+  ],
+  "allowed_market_types": [
+    "inverse_perpetual",
+    "linear_perpetual",
+    "spot"
+  ],
+  "allowed_license_statuses": [
+    "auditable_fixture",
+    "project_generated",
+    "verified_permitted"
+  ],
+  "availability_modes": [
+    "FILE_LEVEL_CONSERVATIVE_GIT_COMMIT",
+    "ROW_LEVEL_PROVIDER_OR_VERIFIABLE_CAPTURE"
+  ],
+  "contract_sha256": "b8fb01f1aa0ab3708db98589abeb4d3029dc8ba346f658c034d4ae8a15ca9afc",
+  "contract_version": 1,
+  "descriptor_required_fields": [
+    "schema",
+    "bundle_id",
+    "bundle_version",
+    "baseline_commit_sha",
+    "created_at_utc",
+    "cutoff_utc",
+    "assessment_at_utc",
+    "contract_sha256",
+    "scopes",
+    "d50_claimed_source_hashes",
+    "sources",
+    "partitions",
+    "prospective_credit",
+    "policies",
+    "safety"
+  ],
+  "parent_dataset_contract_sha256": "b57281c6eb9850d45bfff96ff52bdabb4942e3e6dff404e5745ac7e3af26381b",
+  "partition_required_fields": [
+    "partition_id",
+    "source_id",
+    "source_role",
+    "relative_path",
+    "schema_path",
+    "format",
+    "granularity",
+    "expected_sha256",
+    "expected_schema_sha256",
+    "availability_mode",
+    "file_available_at_utc",
+    "row_count",
+    "first_observation_utc",
+    "last_observation_utc",
+    "contains_unconfirmed_rows",
+    "recovered_historical"
+  ],
+  "policies": {
+    "admission_requires_explicit_review": true,
+    "canonical_dataset_write_allowed": false,
+    "economic_calibration_allowed": false,
+    "file_level_git_commit_is_conservative_availability": true,
+    "funding_inferred_from_ohlc_allowed": false,
+    "mixed_market_partition_allowed": false,
+    "official_dataset_seal_allowed": false,
+    "partial_role_admission_allowed": false,
+    "provider_availability_may_be_invented": false,
+    "recovered_historical_counts_as_prospective": false,
+    "retrospective_backfill_allowed": false,
+    "unconfirmed_rows_allowed": false
+  },
+  "provenance_required_fields": [
+    "schema",
+    "source_id",
+    "source_role",
+    "provider",
+    "venue",
+    "market_type",
+    "instrument",
+    "normalized_asset",
+    "source_reference",
+    "access_class",
+    "license_status",
+    "observed_or_derived",
+    "timezone",
+    "causal_availability_rule",
+    "immutable_reference",
+    "availability_evidence_type",
+    "availability_evidence_reference",
+    "retrieved_at_utc",
+    "retrieval_method",
+    "original_filename",
+    "content_sha256"
+  ],
+  "required_column_roles": {
+    "FUNDING": [
+      "funding_rate",
+      "identifier",
+      "observation_timestamp"
+    ],
+    "OHLC": [
+      "close",
+      "high",
+      "identifier",
+      "low",
+      "observation_timestamp",
+      "open",
+      "volume"
+    ]
+  },
+  "required_source_roles": [
+    "FUNDING",
+    "OHLC"
+  ],
+  "safety": {
+    "engine_feed": false,
+    "not_approved": true,
+    "orders_generated": 0,
+    "promotion_allowed": false,
+    "real_capital_used": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc.2_0.source_admission_contract.v1",
+  "source_provenance_schema": "gate_btc.2_0.source_admission_provenance.v1",
+  "source_required_fields": [
+    "source_id",
+    "source_role",
+    "provider",
+    "venue",
+    "market_type",
+    "instrument",
+    "normalized_asset",
+    "source_reference",
+    "access_class",
+    "license_status",
+    "observed_or_derived",
+    "timezone",
+    "causal_availability_rule",
+    "immutable_reference",
+    "availability_evidence_type",
+    "availability_evidence_reference",
+    "provenance_path",
+    "expected_provenance_sha256"
+  ],
+  "status": "FROZEN_DATA_READINESS_ONLY",
+  "tabular_schema": "gate_btc.2_0.tabular_dataset_schema.v1"
+}
