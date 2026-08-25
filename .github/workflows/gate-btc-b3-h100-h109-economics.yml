@@ -1,0 +1,66 @@
+name: GATE BTC B3 H100-H109 Economics Stage1
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h100_h109_economics.py'
+      - 'tools/gate_btc_b3_h100_h109_cftc_probe.py'
+      - 'tools/gate_btc_b3_h100_h109_cftc_publication_qa.py'
+      - 'tools/gate_btc_b3_h100_h109_cftc_publication_contract.json'
+      - 'tools/gate_btc_b3_h100_h104_exact_identity.py'
+      - '.github/workflows/gate-btc-b3-h100-h109-economics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+jobs:
+  economics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - name: Revalidate publication timing contract
+        run: python tools/gate_btc_b3_h100_h109_cftc_publication_qa.py
+      - name: Revalidate exact CFTC identities
+        run: python tools/gate_btc_b3_h100_h104_exact_identity.py
+      - name: Execute only preregistered data-ready families
+        run: |
+          python tools/gate_btc_b3_h100_h109_economics.py \
+            --out artifacts/b3_h100_h109/B3_H100_H109_ECONOMICS.json \
+            --ledger artifacts/b3_h100_h109/B3_H100_H109_ECONOMICS_LEDGER.jsonl \
+            --cells artifacts/b3_h100_h109/B3_H100_H109_CELLS.csv
+      - name: Assert isolation, frozen scope and fail-closed dependencies
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h100_h109/B3_H100_H109_ECONOMICS.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['tested_families']==['H100','H101','H102','H103','H104','H105','H106','H108']
+          assert p['untested_data_gap_families']==['H107','H109']
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          assert p['not_approved'] is True
+          assert set(p['states'])==set(p['tested_families'])
+          assert len(p['survivors'])<=2
+          print(p['states']); print('survivors',p['survivors'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h100-h109-economics-stage1-${{ github.run_id }}
+          path: |
+            artifacts/b3_h100_h109/B3_H100_H109_ECONOMICS.json
+            artifacts/b3_h100_h109/B3_H100_H109_ECONOMICS_LEDGER.jsonl
+            artifacts/b3_h100_h109/B3_H100_H109_CELLS.csv
+            artifacts/b3_h100_h109/B3_H100_H109_CFTC_PUBLICATION_QA.json
+            artifacts/b3_h100_h109/B3_H100_H104_EXACT_IDENTITY.json
+          retention-days: 30
+          if-no-files-found: error
