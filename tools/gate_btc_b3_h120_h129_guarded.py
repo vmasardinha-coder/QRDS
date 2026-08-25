@@ -12,7 +12,7 @@ def guarded_daily(days):
     # increasing concurrent official-B3 fetches. No source, parsing, front selection,
     # provenance/hash, retry, coverage, feature, or economic rule changes here.
     recs=[]
-    with ThreadPoolExecutor(max_workers=16) as ex:
+    with ThreadPoolExecutor(max_workers=32) as ex:
         fs={ex.submit(m.parse_day,d):d for d in days}
         for f in as_completed(fs):
             recs.append(f.result())
