@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse, math
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import pandas as pd
 import gate_btc_b3_h120_h129_economics as m
 
-_ORIG_DAILY=m.daily_table
 
 def guarded_daily(days):
-    d,recs=_ORIG_DAILY(days)
+    # Mechanical-only acceleration: reuse the exact frozen parse_day contract while
+    # increasing concurrent official-B3 fetches. No source, parsing, front selection,
+    # provenance/hash, retry, coverage, feature, or economic rule changes here.
+    recs=[]
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        fs={ex.submit(m.parse_day,d):d for d in days}
+        for f in as_completed(fs):
+            recs.append(f.result())
+    rows=[r for x in recs if x['status']=='PASS' for r in x['rows']]
+    d=pd.DataFrame(rows)
     if d.empty: return d,recs
+    d=d.sort_values(['date','asset']).reset_index(drop=True)
     out=[]; idx=pd.Index(sorted(days),name='date')
     for a in m.ASSETS:
         g=d[d.asset==a].set_index('date').reindex(idx); present=g['ticker'].notna(); g['asset']=a
@@ -21,6 +31,7 @@ def guarded_daily(days):
         g['range_per_trade']=(g['high']-g['low'])/g['trade_count'].replace(0,np.nan); delta=g['range_per_trade'].diff(); scale=delta.abs().shift(1).rolling(20,min_periods=15).median(); g['d_range_per_trade']=delta; g['z_range_per_trade']=delta/scale.replace(0,np.nan)
         out.append(g[present].reset_index())
     return pd.concat(out,ignore_index=True),recs
+
 
 def guarded_feature_map(d,sessions):
     ordered=sorted(sessions); piv={}
@@ -45,9 +56,11 @@ def guarded_feature_map(d,sessions):
         hist.append({'zcW':zc['WIN'],'zcD':zc['WDO'],'relA':rec['rel_avg'],'retW':float(r['WIN'].ret)})
     return mapp
 
+
 def main():
     m.daily_table=guarded_daily; m.feature_map=guarded_feature_map
     a=argparse.ArgumentParser(); a.add_argument('--out',required=True); a.add_argument('--ledger',required=True); a.add_argument('--cells',required=True); a.add_argument('--manifest',required=True); z=a.parse_args()
     m.main(z.out,z.ledger,z.cells,z.manifest)
+
 
 if __name__=='__main__': main()
