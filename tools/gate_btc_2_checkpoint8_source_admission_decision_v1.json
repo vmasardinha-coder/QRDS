@@ -1,0 +1,137 @@
+{
+  "adapter_contract": {
+    "availability_modes": [
+      "FILE_LEVEL_CONSERVATIVE_GIT_COMMIT",
+      "ROW_LEVEL_PROVIDER_OR_VERIFIABLE_CAPTURE"
+    ],
+    "contract_file_sha256": "fbdc109e5d79c8871ac2735b50c560988274f725f3565f90a7118c64ce1b0025",
+    "contract_sha256": "b8fb01f1aa0ab3708db98589abeb4d3029dc8ba346f658c034d4ae8a15ca9afc",
+    "parent_dataset_contract_sha256": "b57281c6eb9850d45bfff96ff52bdabb4942e3e6dff404e5745ac7e3af26381b",
+    "required_scopes": [
+      "BTC_CORE",
+      "D50_ECONOMIC",
+      "D50_QUALIFIED"
+    ],
+    "required_source_roles": [
+      "FUNDING",
+      "OHLC"
+    ],
+    "status": "FROZEN_DATA_READINESS_ONLY"
+  },
+  "adapter_guards": [
+    "EXACT_SOURCE_BYTES_SHA256_REQUIRED",
+    "D50_STATUS_CLAIM_MUST_MATCH_PHYSICAL_BYTES",
+    "FORMAL_TABULAR_SCHEMA_AND_EXACT_HASH_REQUIRED",
+    "SOURCE_PROVENANCE_AND_EXACT_HASH_REQUIRED",
+    "ROW_LEVEL_PROVIDER_OR_VERIFIABLE_CAPTURE_AVAILABILITY_OR_CONSERVATIVE_GIT_COMMIT_REQUIRED",
+    "PROVIDER_AVAILABILITY_TIMESTAMP_MAY_NOT_BE_INVENTED",
+    "OHLC_AND_FUNDING_BOTH_REQUIRED_NO_PARTIAL_ADMISSION",
+    "MIXED_MARKET_PARTITIONS_PROHIBITED",
+    "UNCONFIRMED_ROWS_PROHIBITED",
+    "FUNDING_MAY_NOT_BE_INFERRED_FROM_OHLC",
+    "RECOVERED_HISTORICAL_BYTES_RECEIVE_ZERO_PROSPECTIVE_CREDIT",
+    "READY_RESULT_REQUIRES_EXPLICIT_REVIEW_AND_DOES_NOT_ADMIT_OR_SEAL"
+  ],
+  "checkpoint": 8,
+  "current_preflight": {
+    "admissible_source_bundle_count": 0,
+    "blocking_reasons": [
+      "BTC_CORE_EXPECTED_CUTOFF_NOT_MET",
+      "CAUSAL_AVAILABILITY_NOT_BOUND",
+      "CURRENT_INVENTORY_HAS_NO_ADMISSIBLE_PARTITION",
+      "D50_FUNDING_CLAIM_HAS_NO_EXACT_PHYSICAL_MATCH",
+      "D50_OHLC_CLAIM_HAS_NO_EXACT_PHYSICAL_MATCH",
+      "PARTIAL_ROLE_ADMISSION_PROHIBITED",
+      "SOURCE_ADMISSION_BUNDLE_NOT_SUPPLIED",
+      "SOURCE_ADMISSION_PROVENANCE_NOT_BOUND",
+      "SOURCE_ADMISSION_SCHEMA_NOT_BOUND"
+    ],
+    "complete_role_count": 0,
+    "economics_allowed": false,
+    "exact_physical_hash_matches": {
+      "FUNDING": [],
+      "OHLC": []
+    },
+    "official_dataset_sealed": false,
+    "preflight_sha256": "09471a1944678ed56eca174f61f0273822fc7a730287015caaa7fe357c78463b",
+    "prospective_rows_credited": 0,
+    "recoverable_manual_btc_ohlc_count": 3,
+    "source_admitted": false,
+    "status": "BLOCKED_SOURCE_ADMISSION_NO_COMPLETE_BUNDLE"
+  },
+  "decision": "ADAPTER_READY_CURRENT_SOURCE_BUNDLE_BLOCKED",
+  "decision_date": "2026-08-24",
+  "decision_hash_rule": "sha256 of canonical JSON excluding decision_sha256",
+  "decision_sha256": "7f9750fe3f3ea673e3b79f356457faa49c0f9a8154e0ec8578e057ac131bf267",
+  "hash_claim_recovery_sweep": {
+    "conclusion": "NO_EXACT_VERSIONED_SOURCE_BYTES_BOUND_OR_RECOVERED_AT_CURRENT_RUNTIME_COMMIT",
+    "current_claims": {
+      "funding": "24f4c71c6c7a8db56956e46845a834268e2b396992d47ada3afee8652fe2bd3d",
+      "ohlc": "f79f3e51baca1dbf46ac6180cffc4e3682cf7751add50c9a1721f31f864c5f81"
+    },
+    "current_runtime_physical_matches": {
+      "funding": [],
+      "ohlc": []
+    },
+    "first_current_claim_commit": "695183cbdb1310b4ec609040b78140e0ea7386ac",
+    "first_current_claim_commit_parent": "b56fc9fe579637f135fa4ef21adc097e0f6e1722",
+    "first_current_claim_commit_timestamp": "2026-08-24T06:27:18-03:00",
+    "referenced_external_report": {
+      "filename": "GATE_BTC_D50_DAILY_LATEST(20260823-032904).txt",
+      "physically_present_at_runtime_commit": false,
+      "sha256_claim": "6e7481120358930fae9c948090460cf4d34f8ba043abc41fbd853756467d13c4"
+    },
+    "scope": "CURRENT_RUNTIME_TREE_PLUS_COMMIT_HISTORY_OF_D50_STATUS_CLAIMS",
+    "status_only_claim_can_admit_source": false
+  },
+  "implementation_status": "SOURCE_ADMISSION_ADAPTER_READY_FAIL_CLOSED",
+  "isolation": {
+    "b3_mutations": 0,
+    "delta_mutations": 0,
+    "economic_families_released": 0,
+    "incumbent_mutations": 0,
+    "regime_mutations": 0,
+    "runtime_mutations": 0
+  },
+  "module": "BTC_CORE/D50 Source Admission Adapter v1",
+  "next_action": "RECOVER_EXACT_D50_OHLC_AND_FUNDING_BYTES_OR_START_FORWARD_ONLY_CAPTURE_THEN_AUTHOR_COMPLETE_BUNDLE_AND_RERUN_ADMISSION_PREFLIGHT",
+  "outcome_boundary": {
+    "complete_fixture_result": "READY_FOR_EXPLICIT_SOURCE_ADMISSION_REVIEW",
+    "complete_fixture_source_admitted": false,
+    "current_evidence_result": "BLOCKED_SOURCE_ADMISSION_NO_COMPLETE_BUNDLE",
+    "economics_released": false,
+    "official_dataset_sealed": false,
+    "stage_3_dataset_sealed": false
+  },
+  "safety_boundary": {
+    "canonical_data_writes": 0,
+    "economic_calibration_performed": false,
+    "engine_feed": false,
+    "historical_rows_backfilled": 0,
+    "ledger_mutations": 0,
+    "not_approved": true,
+    "official_challenger_runs_executed": 0,
+    "official_dataset_descriptor_created": false,
+    "official_dataset_sealed": false,
+    "orders_generated": 0,
+    "promotion_allowed": false,
+    "prospective_rows_credited": 0,
+    "real_capital_used": 0,
+    "research_only": true,
+    "shadow_only": true,
+    "source_admitted": false
+  },
+  "schema": "gate_btc.2_0.checkpoint8_source_admission_decision.v1",
+  "source_commits": {
+    "main_baseline": "3e4d36d9e22648365cf0430f8785db02aa563db2",
+    "runtime": "695183cbdb1310b4ec609040b78140e0ea7386ac"
+  },
+  "validation": {
+    "complete_gate_btc_2_suite_expected_after_decision_tests": 91,
+    "decision_integrity_tests": 6,
+    "source_admission_contract_tests": 17,
+    "source_admission_test_file_sha256": "1feebad154f804ce23d13bac20191c77f548f70d27f3d6a8d4a176668c05e09d",
+    "source_admission_tool_sha256": "4f89b90f9f3dcca7d1a559e808d20334a676c5fae51ec220cab278c5c5073377",
+    "workflow_file_sha256": "5137c531ac8c83ffd4f9780486f3950207384baf98a17e05af203ca0dcbd8731"
+  }
+}

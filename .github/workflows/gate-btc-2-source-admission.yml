@@ -1,0 +1,160 @@
+name: GATE BTC 2 Source Admission
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_2_source_admission.py
+      - tools/gate_btc_2_source_admission_contract_v1.json
+      - tools/gate_btc_2_checkpoint8_source_admission_decision_v1.json
+      - tests/test_gate_btc_2_source_admission.py
+      - tests/test_gate_btc_2_checkpoint8_source_admission_decision.py
+      - .github/workflows/gate-btc-2-source-admission.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-source-admission-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  deterministic-source-admission-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile source-admission and prerequisite layers
+        run: >-
+          python -m py_compile
+          tools/gate_btc_2_dataset_seal_readiness.py
+          tools/gate_btc_2_official_dataset_manifest.py
+          tools/gate_btc_2_official_evidence_inventory.py
+          tools/gate_btc_2_source_admission.py
+
+      - name: Run complete GATE BTC 2.0 contract suite
+        run: >-
+          python -m unittest discover
+          -s tests
+          -p 'test_gate_btc_2_*.py'
+          -v
+
+  current-runtime-remains-fail-closed:
+    needs: deterministic-source-admission-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout baseline tools
+        uses: actions/checkout@v4
+
+      - name: Checkout read-only committed evidence
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bind clean runtime commit
+        run: |
+          test -z "$(git -C runtime_repo status --porcelain)"
+          git -C runtime_repo rev-parse HEAD | tee runtime_commit.txt
+          test "$(wc -c < runtime_commit.txt)" -eq 41
+
+      - name: Recompute readiness and physical evidence inventory
+        run: |
+          python tools/gate_btc_2_dataset_seal_readiness.py \
+            --pointer runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json \
+            --measurement runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json \
+            --reporting runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json \
+            --v2a runtime_repo/runtime/data_quality/v2a/STATUS.json \
+            --lock runtime_repo/runtime/ledgers/lock25_50/STATUS.json \
+            --gateway runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json \
+            --output artifacts/gate_btc_2/checkpoint8/current_readiness.json
+          python tools/gate_btc_2_official_evidence_inventory.py \
+            --runtime-root runtime_repo \
+            --runtime-commit "$(tr -d '\n' < runtime_commit.txt)" \
+            --readiness artifacts/gate_btc_2/checkpoint8/current_readiness.json \
+            --contract tools/gate_btc_2_official_dataset_contract_v1.json \
+            --output artifacts/gate_btc_2/checkpoint8/current_evidence_inventory.json
+
+      - name: Run current BTC_CORE/D50 source-admission preflight
+        run: |
+          python tools/gate_btc_2_source_admission.py \
+            --current-inventory artifacts/gate_btc_2/checkpoint8/current_evidence_inventory.json \
+            --contract tools/gate_btc_2_source_admission_contract_v1.json \
+            --output artifacts/gate_btc_2/checkpoint8/current_source_admission_preflight.json
+
+      - name: Verify exact decision and non-promotion boundary
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          commit = Path('runtime_commit.txt').read_text().strip()
+          inventory = json.loads(Path(
+              'artifacts/gate_btc_2/checkpoint8/current_evidence_inventory.json'
+          ).read_text(encoding='utf-8'))
+          preflight = json.loads(Path(
+              'artifacts/gate_btc_2/checkpoint8/current_source_admission_preflight.json'
+          ).read_text(encoding='utf-8'))
+          decision = json.loads(Path(
+              'tools/gate_btc_2_checkpoint8_source_admission_decision_v1.json'
+          ).read_text(encoding='utf-8'))
+          expected = decision['current_preflight']
+          assert commit == decision['source_commits']['runtime']
+          assert inventory['runtime_commit'] == commit
+          assert inventory['admissible_candidate_count'] == 0
+          assert inventory['tabular_discovery']['unclassified_paths'] == []
+          assert preflight['runtime_commit'] == commit
+          assert preflight['status'] == expected['status']
+          assert preflight['preflight_sha256'] == expected['preflight_sha256']
+          assert preflight['complete_role_count'] == expected['complete_role_count'] == 0
+          assert preflight['admissible_source_bundle_count'] == 0
+          assert preflight['exact_physical_hash_matches'] == {'FUNDING': [], 'OHLC': []}
+          assert len(preflight['recoverable_manual_btc_ohlc']) == 3
+          assert preflight['prospective_rows_credited'] == 0
+          assert preflight['source_admitted'] is False
+          assert preflight['official_dataset_sealed'] is False
+          assert preflight['economics_allowed'] is False
+          assert preflight['safety']['engine_feed'] is False
+          assert preflight['safety']['orders_generated'] == 0
+          assert preflight['safety']['real_capital_used'] == 0
+          assert preflight['isolation'] == {
+              'delta_mutations': 0,
+              'regime_mutations': 0,
+              'b3_mutations': 0,
+              'incumbent_mutations': 0,
+              'runtime_mutations': 0,
+          }
+          assert subprocess.check_output(
+              ['git', '-C', 'runtime_repo', 'status', '--porcelain'], text=True
+          ) == ''
+          print('GATE_BTC_2_SOURCE_ADMISSION=VERIFIED_FAIL_CLOSED_NO_SEAL')
+          PY
+
+      - name: Upload read-only checkpoint evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-checkpoint8-source-admission-${{ github.run_id }}
+          path: artifacts/gate_btc_2/checkpoint8/
+          retention-days: 90
+          if-no-files-found: error
