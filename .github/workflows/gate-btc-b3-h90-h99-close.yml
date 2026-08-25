@@ -1,0 +1,40 @@
+name: GATE BTC B3 H90-H99 Close
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h90_h99_result.json'
+      - 'tools/gate_btc_b3_h90_h99_ledger.jsonl'
+      - '.github/workflows/gate-btc-b3-h90-h99-close.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  close-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate persisted scientific close
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('tools/gate_btc_b3_h90_h99_result.json').read_text())
+          expected={
+            'H90':'DATA_GAP_LICENSE_HISTORY','H91':'DATA_GAP_LICENSE_HISTORY','H92':'DATA_GAP_LICENSE_HISTORY',
+            'H93':'REJECTED_DISCOVERY','H94':'REJECTED_DISCOVERY','H95':'REJECTED_DISCOVERY','H96':'REJECTED_DISCOVERY',
+            'H97':'DATA_GAP_DEPENDENCY_HY','H98':'DATA_GAP_DEPENDENCY_CREDIT','H99':'DATA_GAP_DEPENDENCY_HY'}
+          assert result['generation']=='H90_H99_V1'
+          assert result['status']=='CLOSED_NO_H90_H99_SURVIVOR_WITH_DATA_GAPS'
+          assert result['cutoff_exclusive']=='2026-08-10'
+          assert result['states']==expected and result['survivors']==[]
+          assert result['h1_economics_read'] is False and result['survivor_partial_economics_read'] is False
+          assert result['synthetic_backfill'] is False
+          assert result['orders_generated']==0 and result['real_capital_used']==0 and result['engine_feed'] is False
+          assert result['not_approved'] is True
+          rows=[json.loads(x) for x in Path('tools/gate_btc_b3_h90_h99_ledger.jsonl').read_text().splitlines() if x.strip()]
+          assert len(rows)==10 and {x['family']:x['state'] for x in rows}==expected
+          assert all(x['orders']==0 and x['capital']==0 and x['engine_feed'] is False and x['not_approved'] is True for x in rows)
+          print('H90_H99_CLOSE=PASS')
+          PY
