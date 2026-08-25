@@ -1,0 +1,51 @@
+name: GATE BTC B3 H95 H10 Economics
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h95_h10_economics.py'
+      - '.github/workflows/gate-btc-b3-h95-h10-economics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_ENGINE_FEED: 'false'
+jobs:
+  economics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - run: |
+          python tools/gate_btc_b3_h95_h10_economics.py \
+            --out artifacts/b3_h90_h99/B3_H95_ECONOMICS.json \
+            --ledger artifacts/b3_h90_h99/B3_H95_ECONOMICS_LEDGER.jsonl \
+            --cells artifacts/b3_h90_h99/B3_H95_CELLS.csv
+      - name: Assert frozen H95 scope
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h90_h99/B3_H95_ECONOMICS.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['source']['series_name']=='JRXWTFB_N.B'
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False
+          assert p['not_approved'] is True
+          print(p['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h95-h10-economics-${{ github.run_id }}
+          path: |
+            artifacts/b3_h90_h99/B3_H95_ECONOMICS.json
+            artifacts/b3_h90_h99/B3_H95_ECONOMICS_LEDGER.jsonl
+            artifacts/b3_h90_h99/B3_H95_CELLS.csv
+          retention-days: 30
+          if-no-files-found: error
