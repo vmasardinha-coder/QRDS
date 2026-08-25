@@ -55,15 +55,20 @@ jobs:
       - name: Run factory status cycle
         run: python tools/gate_btc_factory/run_factory_ci.py
 
-      - name: Reject stale source for transitions
+      - name: Classify source freshness for controlled transitions
         shell: bash
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.loads(Path('tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json').read_text())
-          if p.get('source_freshness', {}).get('status') != 'FRESH':
-              raise SystemExit('FAIL stale factory source cannot drive automatic transitions')
+          freshness=p.get('source_freshness', {}).get('status')
+          if freshness not in {'FRESH','STALE_READ_ONLY'}:
+              raise SystemExit(f'FAIL invalid factory source freshness: {freshness!r}')
+          if freshness == 'STALE_READ_ONLY':
+              print('::warning::Factory source is stale; cycle continues read-only with zero transitions')
+          else:
+              print('PASS factory source is fresh for controlled transitions')
           PY
 
       - name: Plan controlled transitions
@@ -89,6 +94,15 @@ jobs:
               'SHADOW_ONLY': True,
               'production_activation_allowed': False,
           }
+          freshness=plan.get('source_freshness')
+          allowed=plan.get('transitions_allowed')
+          if freshness == 'STALE_READ_ONLY':
+              assert allowed is False and plan['actions'] == []
+              assert plan.get('blocked_reason') == 'STALE_SOURCE_READ_ONLY_NO_TRANSITIONS'
+          elif freshness == 'FRESH':
+              assert allowed is True
+          else:
+              raise AssertionError(f'invalid transition freshness {freshness!r}')
           for a in plan['actions']:
               assert a['action'] in {'CREATE_NEXT_GENERATION_ISSUE','ACTIVATE_APPROVED_PROSPECTIVE_SHADOW'}
               if a['action']=='ACTIVATE_APPROVED_PROSPECTIVE_SHADOW':
@@ -121,6 +135,7 @@ jobs:
           lines=[
               '# QRDS Factory Controlled Cycle','',
               f"Source freshness: {status['source_freshness']['status']}",
+              f"Transitions allowed: {plan['transitions_allowed']}",
               f"Automatic actions: {len(plan['actions'])}",
               f"Eligible but not approved/activated: {', '.join(plan['eligible_not_activated']) or 'none'}",'',
               'Automatic activation means separate prospective SHADOW only.',

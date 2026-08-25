@@ -16,6 +16,7 @@ FACTORY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = FACTORY_DIR.parents[1]
 OUTPUT = FACTORY_DIR / "FACTORY_STATUS_RUNTIME.json"
 FRESH_MINUTES = 180
+FUTURE_SKEW_MINUTES = 5
 
 
 def parse_utc(value: str) -> datetime:
@@ -28,6 +29,13 @@ def parse_utc(value: str) -> datetime:
     if parsed.tzinfo is None:
         raise SystemExit("FAIL source generated_at_utc must be timezone-aware")
     return parsed.astimezone(timezone.utc)
+
+
+def age_minutes(now: datetime, source_time: datetime) -> float:
+    age = (now - source_time).total_seconds() / 60.0
+    if age < -FUTURE_SKEW_MINUTES:
+        raise SystemExit("FAIL canonical source timestamp is materially in the future")
+    return max(0.0, age)
 
 
 def main() -> int:
@@ -43,12 +51,13 @@ def main() -> int:
 
     now = datetime.now(timezone.utc)
     source_time = parse_utc(source.get("generated_at_utc"))
-    age_minutes = max(0.0, (now - source_time).total_seconds() / 60.0)
-    freshness = "FRESH" if age_minutes <= FRESH_MINUTES else "STALE_READ_ONLY"
+    source_age_minutes = age_minutes(now, source_time)
+    freshness = "FRESH" if source_age_minutes <= FRESH_MINUTES else "STALE_READ_ONLY"
     report["source_freshness"] = {
         "status": freshness,
-        "age_minutes": round(age_minutes, 2),
+        "age_minutes": round(source_age_minutes, 2),
         "freshness_limit_minutes": FRESH_MINUTES,
+        "future_timestamp_tolerance_minutes": FUTURE_SKEW_MINUTES,
         "policy": "STALE_SOURCE_MAY_BE_REPORTED_BUT_MUST_NOT_DRIVE_PROMOTION_OR_ACTIVE_MUTATION",
     }
     report["parity_readiness"]["source_freshness"] = freshness
@@ -60,7 +69,7 @@ def main() -> int:
     OUTPUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("PASS QRDS factory CI shadow cycle", json.dumps({
         "freshness": freshness,
-        "age_minutes": round(age_minutes, 2),
+        "age_minutes": round(source_age_minutes, 2),
         "queue_counts": report["queue_counts"],
         "output": str(OUTPUT.relative_to(REPO_ROOT)),
     }, sort_keys=True))

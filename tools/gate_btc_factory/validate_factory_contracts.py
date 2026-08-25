@@ -193,10 +193,14 @@ def main() -> int:
     freshness_policy = flow.get("freshness_policy", {})
     if freshness_policy.get("source_limit_minutes") != 180:
         raise SystemExit("FAIL unexpected source freshness limit")
+    if freshness_policy.get("future_timestamp_tolerance_minutes") != 5:
+        raise SystemExit("FAIL unexpected future source timestamp tolerance")
     if freshness_policy.get("stale") != "STALE_READ_ONLY":
         raise SystemExit("FAIL stale source is not read-only")
     if freshness_policy.get("stale_transition_or_promotion_allowed") is not False:
         raise SystemExit("FAIL stale source may drive transition/promotion")
+    if freshness_policy.get("stale_cycle_behavior") != "SUCCESSFUL_READ_ONLY_NOOP_WITH_ARTIFACT_AND_WARNING":
+        raise SystemExit("FAIL stale cycle is not an explicit read-only no-op")
 
     workflow = docs["WORKFLOW_CONTRACT.v1.json"]
     if workflow.get("workflow_path") != ".github/workflows/gate-btc-factory-shadow.yml":
@@ -221,6 +225,10 @@ def main() -> int:
         raise SystemExit("FAIL workflow runtime output mismatch")
     if workflow.get("source_freshness_minutes") != 180:
         raise SystemExit("FAIL workflow freshness contract mismatch")
+    if workflow.get("future_timestamp_tolerance_minutes") != 5:
+        raise SystemExit("FAIL workflow future timestamp tolerance mismatch")
+    if workflow.get("stale_runtime_behavior") != "SUCCESSFUL_READ_ONLY_NOOP_WITH_ARTIFACT_AND_WARNING":
+        raise SystemExit("FAIL workflow stale behavior is not an explicit read-only no-op")
     if workflow.get("safety") != EXPECTED_SAFETY:
         raise SystemExit("FAIL workflow safety block mismatch")
 

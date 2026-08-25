@@ -1,5 +1,5 @@
 {
-  "contract_version": "1.3",
+  "contract_version": "1.4",
   "mode": "CONTROLLED_TRANSITION_ORCHESTRATION",
   "purpose": "Keep QRDS research families moving through preregister/test/falsify/replicate/freeze and automatically activate only explicitly approved survivors into separate blind prospective shadow tracking.",
   "source_of_truth": "tools/gate_btc_research_factory_status.json",
@@ -50,6 +50,6 @@
     "allowed_checkout_diff": ["tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json","tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json","tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json"],
     "protected_path_mutation": false
   },
-  "freshness_policy": {"source_limit_minutes":180,"fresh":"FRESH","stale":"STALE_READ_ONLY","stale_transition_or_promotion_allowed":false},
+  "freshness_policy": {"source_limit_minutes":180,"future_timestamp_tolerance_minutes":5,"fresh":"FRESH","stale":"STALE_READ_ONLY","stale_transition_or_promotion_allowed":false,"stale_cycle_behavior":"SUCCESSFUL_READ_ONLY_NOOP_WITH_ARTIFACT_AND_WARNING"},
   "fail_closed": "Any ambiguity in classification, provenance, freeze evidence, causal status, explicit approval state or source freshness blocks the transition and leaves the source track unchanged."
 }
