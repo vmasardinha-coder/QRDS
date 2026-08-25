@@ -1,7 +1,5 @@
 {
-  "amber_collection_components": [
-    "v16b"
-  ],
+  "amber_collection_components": [],
   "collection_delivery": "RED_INCOMPLETE_DELIVERY",
   "components": {
     "alt_trail": {
@@ -11,9 +9,9 @@
       "source_status": "WAITING_FIRST_UNTOUCHED_SIGNAL"
     },
     "b3_h1": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
       "source_status": "ACTIVE_STRUCTURAL_COLLECTION"
     },
     "bull_replay_live_shadow": {
@@ -77,26 +75,28 @@
       "source_status": "ACTIVE_CALENDAR_GATED"
     },
     "v16b": {
-      "collection_health": "AMBER_BLOCKED_DEPENDENCY",
-      "freshness": "FRESH",
-      "scientific_state": "DEPENDENCY_BLOCKED_NOT_YET_EVALUABLE",
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
       "source_status": "WAITING_NEXT_CANONICAL_WINDOW"
     }
   },
-  "generated_at_utc": "2026-08-24T08:49:06.336642+00:00",
+  "generated_at_utc": "2026-08-25T04:10:39.428086+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
   "orders_generated": 0,
   "real_capital_used": 0,
   "red_collection_components": [
+    "b3_h1",
     "d50",
-    "momentum_m1_m2"
+    "momentum_m1_m2",
+    "v16b"
   ],
-  "reference_data_date": "2026-08-23",
+  "reference_data_date": "2026-08-24",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "ac38c811dccaffdc562e8a1e6cc2f4cb6225c2de8e3087551a699362856708df"
+  "status_sha256": "75cb0d9ebf9e5ba44d20c5b0a3aff6fd3e29a050bbc8f2cc15006ad17f0f859c"
 }
