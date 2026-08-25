@@ -1,0 +1,37 @@
+name: GATE BTC B3 H120-H129 Source QA
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h120_h129_prereg.md'
+      - 'tools/gate_btc_b3_h120_h129_source_probe.py'
+      - '.github/workflows/gate-btc-b3-h120-h129-source-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install requests
+      - name: Probe official B3 PriceReport fields before economics
+        run: python tools/gate_btc_b3_h120_h129_source_probe.py
+      - name: Assert fail-closed safety
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          assert p['status'] in {'SOURCE_QA_READY_STRATIFIED','SOURCE_QA_PARTIAL_DATA_GAP'}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h120-h129-source-qa-${{ github.run_id }}
+          path: artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json
+          retention-days: 30
+          if-no-files-found: error
