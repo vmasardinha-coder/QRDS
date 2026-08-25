@@ -1,0 +1,56 @@
+name: GATE BTC B3 H110-H119 Economics
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h110_h119_features.py'
+      - 'tools/gate_btc_b3_h110_h119_economics.py'
+      - '.github/workflows/gate-btc-b3-h110-h119-economics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  historical-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - name: Recheck frozen Cboe source gate
+        run: |
+          python tools/gate_btc_b3_h110_h119_cboe_probe.py
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h110_h119/B3_H110_H119_CBOE_SOURCE_QA.json'))
+          assert p['status']=='SOURCE_QA_READY'
+          assert all(x['status']=='SOURCE_READY' for x in p['families'].values())
+          assert p['economics_run'] is False and p['h1_economics_read'] is False
+          PY
+      - name: Run preregistered H110-H119 historical validation
+        run: |
+          python tools/gate_btc_b3_h110_h119_economics.py \
+            --out artifacts/b3_h110_h119/B3_H110_H119_ECONOMICS.json \
+            --ledger artifacts/b3_h110_h119/H110_H119_RESULT_LEDGER.jsonl \
+            --cells artifacts/b3_h110_h119/H110_H119_CELLS.csv
+      - name: Assert safety and complete family accounting
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h110_h119/B3_H110_H119_ECONOMICS.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert set(p['states'])=={f'H{i}' for i in range(110,120)}
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          assert len(p['survivors'])<=2
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h110-h119-economics-${{ github.run_id }}
+          path: |
+            artifacts/b3_h110_h119/B3_H110_H119_CBOE_SOURCE_QA.json
+            artifacts/b3_h110_h119/B3_H110_H119_ECONOMICS.json
+            artifacts/b3_h110_h119/H110_H119_RESULT_LEDGER.jsonl
+            artifacts/b3_h110_h119/H110_H119_CELLS.csv
+          retention-days: 30
+          if-no-files-found: error
