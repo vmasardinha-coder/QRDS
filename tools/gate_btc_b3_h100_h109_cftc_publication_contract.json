@@ -1,0 +1,51 @@
+{
+  "schema": "gate_btc.b3.h100_h109.cftc_publication_contract.v1",
+  "generation": "H100_H109_V1",
+  "status": "FROZEN_PRE_ECONOMICS",
+  "purpose": "Conservative fail-closed availability rule for CFTC COT observations before any B3 economics.",
+  "official_evidence": {
+    "normal_release_schedule": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/ReleaseSchedule/index.htm",
+    "faq_release_rule": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+    "historical_special_announcements": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/HistoricalSpecialAnnouncements/index.htm",
+    "known_2025_shutdown_schedule": "https://www.cftc.gov/PressRoom/PressReleases/9138-25"
+  },
+  "normal_rule": {
+    "report_asof_day": "TUESDAY",
+    "usual_release": "FRIDAY_15_30_AMERICA_NEW_YORK",
+    "conservative_available_from": "REPORT_ASOF_PLUS_9_CALENDAR_DAYS_AT_00_00_AMERICA_SAO_PAULO",
+    "rationale": "CFTC states normal Friday 15:30 ET release and holiday delays of one or two days. Plus nine calendar days moves use to Thursday after the report-as-of Tuesday, strictly later than normal Friday and ordinary holiday-delayed Monday/Tuesday releases.",
+    "never_use_same_week": true
+  },
+  "exception_policy": {
+    "rule": "If an official special announcement gives an actual/new publication date later than the conservative normal-rule timestamp, the later official publication date governs. If a special announcement indicates interruption but exact publication is unresolved, affected observations are unavailable until resolved.",
+    "unknown_or_ambiguous_exception": "DATA_GAP_PUBLICATION_TIMESTAMP",
+    "no_inference_from_file_row_date": true,
+    "no_web_archive_guess": true
+  },
+  "known_2025_shutdown": {
+    "interruption_start": "2025-10-01",
+    "normal_operations_resumed": "2025-11-12",
+    "first_catchup_publication": "2025-11-19T15:30:00-05:00",
+    "policy": "Use only the official CFTC catch-up publication schedule for affected report dates; never apply the normal +9-day rule inside the interrupted backlog window.",
+    "affected_report_asof_dates": [
+      "2025-09-30","2025-10-07","2025-10-14","2025-10-21","2025-10-28","2025-11-04","2025-11-10","2025-11-18","2025-11-25","2025-12-02","2025-12-09","2025-12-16","2025-12-23"
+    ]
+  },
+  "b3_join_rule": {
+    "timezone": "America/Sao_Paulo",
+    "selection": "For each B3 session use the most recent CFTC report whose effective_available_at is strictly earlier than the B3 session signal time.",
+    "strict_before_signal": true,
+    "forward_fill_between_publications": "allowed_only_as_state_carry_of_last_observed_published_report",
+    "synthetic_backfill": false,
+    "partial_future_report_use": false
+  },
+  "scientific_invariants": {
+    "historical_cutoff_exclusive": "2026-08-10",
+    "h1_economics_read": false,
+    "survivor_partial_economics_read": false,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false,
+    "not_approved": true
+  }
+}
