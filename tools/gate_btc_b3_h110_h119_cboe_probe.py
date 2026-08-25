@@ -21,11 +21,13 @@ def fetch(sym):
     url=BASE+f'{sym}_History.csv'
     r=requests.get(url,timeout=(5,45),headers={'User-Agent':'QRDS-research-source-QA/1.0'}); r.raise_for_status(); raw=r.content
     x=pd.read_csv(StringIO(raw.decode('utf-8-sig'))); cols={c.strip().upper():c for c in x.columns}
-    if 'DATE' not in cols or 'CLOSE' not in cols: raise ValueError(f'{sym} unexpected schema {list(x.columns)}')
-    d=pd.DataFrame({'date':pd.to_datetime(x[cols['DATE']],errors='coerce',dayfirst=False),'close':pd.to_numeric(x[cols['CLOSE']],errors='coerce')}).dropna().sort_values('date').drop_duplicates('date')
+    if 'DATE' not in cols: raise ValueError(f'{sym} unexpected schema {list(x.columns)}')
+    value_col=cols.get('CLOSE') or cols.get(sym.upper())
+    if value_col is None: raise ValueError(f'{sym} unexpected schema {list(x.columns)}')
+    d=pd.DataFrame({'date':pd.to_datetime(x[cols['DATE']],errors='coerce',dayfirst=False),'close':pd.to_numeric(x[value_col],errors='coerce')}).dropna().sort_values('date').drop_duplicates('date')
     d=d[(d.date>=pd.Timestamp('2019-01-01'))&(d.date<CUTOFF)]
     if d.empty or d.date.duplicated().any() or not d.date.is_monotonic_increasing: raise ValueError(f'{sym} invalid history')
-    return d,{'provider':'Cboe Global Markets','url':r.url,'raw_sha256':hashlib.sha256(raw).hexdigest(),'rows':len(d),'first':d.date.min().date().isoformat(),'last':d.date.max().date().isoformat(),'schema':list(x.columns),'date_semantics':'US month/day/year','duplicate_dates':False}
+    return d,{'provider':'Cboe Global Markets','url':r.url,'raw_sha256':hashlib.sha256(raw).hexdigest(),'rows':len(d),'first':d.date.min().date().isoformat(),'last':d.date.max().date().isoformat(),'schema':list(x.columns),'value_column':value_col,'date_semantics':'US month/day/year','duplicate_dates':False}
 
 def coverage(d,sessions):
     left=pd.DataFrame({'session':pd.to_datetime(sorted(sessions))}).sort_values('session')
