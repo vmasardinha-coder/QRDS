@@ -1,0 +1,191 @@
+name: GATE BTC Delta V12 Price Pinning
+
+# Establishes and maintains the venue pins for the V12 TOP100 universe. Pins are
+# permanent by design, so this must run where all four venues are reachable; a run
+# from a restricted network would freeze a degraded assignment. GitHub runners
+# reach all four, which is why this exists as a workflow and not a local step.
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["GATE BTC Delta V12 Universe Snapshot"]
+    types: [completed]
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-delta-v12-price-pinning.yml'
+      - 'tools/gate_btc_delta_v12_multi_venue_daily_prices.py'
+      - 'tests/test_gate_btc_delta_v12_multi_venue_daily_prices.py'
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-delta-v12-price-pinning
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  PIN_LEDGER: runtime/ledgers/delta_v12_prices
+
+jobs:
+  adapter-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test multi-venue daily price adapter
+        run: python -m unittest -v tests.test_gate_btc_delta_v12_multi_venue_daily_prices
+      - name: Compile adapter
+        run: python -m py_compile tools/gate_btc_delta_v12_multi_venue_daily_prices.py
+
+  pin-and-price:
+    needs: adapter-tests
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out canonical merged code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve exact successful universe snapshot run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          if [ -n "$EVENT_RUN_ID" ]; then
+            SOURCE_RUN_ID="$EVENT_RUN_ID"
+          else
+            SOURCE_RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-delta-v12-universe-snapshot.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].id')
+          fi
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json
+          run = json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name'] == 'GATE BTC Delta V12 Universe Snapshot', run['name']
+          assert run['head_branch'] == 'main'
+          assert run['status'] == 'completed'
+          assert run['conclusion'] == 'success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Download the exact universe artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-delta-v12-universe-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > universe.zip
+          mkdir -p universe && unzip -q universe.zip -d universe
+          test -f universe/UNIVERSE_TOP100.csv
+          test -f universe/UNIVERSE_MANIFEST.json
+          python - <<'PY'
+          import json
+          m = json.load(open('universe/UNIVERSE_MANIFEST.json', encoding='utf-8-sig'))
+          assert m['research_only'] is True
+          assert m['engine_feed'] is False
+          assert m['orders'] == 0
+          assert m['real_capital'] == 0
+          assert 100 in m['liquidity_strata'], m['liquidity_strata']
+          PY
+
+      - name: Check out immutable runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Verify all four venues are reachable before pinning
+        run: |
+          python - <<'PY'
+          # Pins are permanent. A run that cannot see a venue would pin every asset
+          # to whichever venues answered, so refuse to pin from a degraded network.
+          import json, os, sys
+          sys.path.insert(0, '.')
+          from tools import gate_btc_delta_v12_multi_venue_daily_prices as adapter
+
+          unreachable = adapter.unreachable_venues()
+          print(json.dumps({'unreachable': unreachable}, indent=2))
+          first_run = not os.path.isfile(os.path.join('runtime_repo', os.environ['PIN_LEDGER'], 'PINS.json'))
+          if unreachable and first_run:
+              raise SystemExit('FAIL_CLOSED: refusing to establish first pins from a degraded network')
+          PY
+
+      - name: Price the TOP100 universe and maintain pins
+        run: >-
+          python tools/gate_btc_delta_v12_multi_venue_daily_prices.py
+          --universe-csv universe/UNIVERSE_TOP100.csv
+          --out-dir prices_out
+          --pins "runtime_repo/${PIN_LEDGER}/PINS.json"
+
+      - name: Upload full price panel as evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-delta-v12-prices-${{ github.run_id }}
+          path: prices_out/
+          retention-days: 90
+
+      - name: Verify coverage and safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          c = json.load(open('prices_out/COVERAGE.json', encoding='utf-8'))
+          for key, expected in {
+              'research_only': True, 'shadow_only': True, 'not_approved': True,
+              'engine_feed': False, 'orders': 0, 'real_capital': 0,
+          }.items():
+              assert c[key] == expected, (key, c[key])
+          assert c['unpriced'] == 0, c['unpriced_detail']
+          assert c['priced'] == c['universe_size'], (c['priced'], c['universe_size'])
+          # A venue change is legitimate but never silent: surface it in the log.
+          for change in c['venue_changes']:
+              print(f"VENUE_CHANGE {change['base']} {change['from_venue']} -> {change['to_venue']} on {change['changed_on']}")
+          print(json.dumps({
+              'priced': c['priced'],
+              'meets_min_history': c['meets_min_history'],
+              'venue_counts': c['venue_counts'],
+              'venue_changes': len(c['venue_changes']),
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Commit the pin ledger only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p "${PIN_LEDGER}"
+          # The full daily panel stays a workflow artifact; only the small,
+          # durable pin evidence is committed, so the runtime branch stays light.
+          cp ../prices_out/COVERAGE.json "${PIN_LEDGER}/COVERAGE.json"
+          cp ../prices_out/PRICE_PROVENANCE.json "${PIN_LEDGER}/PRICE_PROVENANCE.json"
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add "${PIN_LEDGER}"
+          git diff --cached --quiet && exit 0
+          git commit -m "Update Delta V12 venue pins from universe run ${SOURCE_RUN_ID}"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

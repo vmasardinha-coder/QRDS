@@ -129,6 +129,24 @@ VENUE_READERS: dict[str, Callable[[str, date], list[dict[str, Any]]]] = {
 }
 
 
+def unreachable_venues(probe_base: str = "BTC", today: date | None = None) -> list[str]:
+    """Venues that cannot serve a completed daily bar for a reference asset.
+
+    Pins are permanent, so a first run from a network that cannot see a venue
+    would freeze every asset onto whichever venues answered. Callers establishing
+    pins for the first time must refuse when this is non-empty.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    failures = []
+    for venue, reader in VENUE_READERS.items():
+        try:
+            if not reader(probe_base, today):
+                failures.append(f"{venue}: no completed daily bars")
+        except Exception as exc:
+            failures.append(f"{venue}: {type(exc).__name__}: {exc}")
+    return failures
+
+
 def read_universe(path: Path) -> list[str]:
     with path.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
