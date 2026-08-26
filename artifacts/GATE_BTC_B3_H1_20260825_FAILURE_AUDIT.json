@@ -1,0 +1,155 @@
+{
+  "schema": "gate_btc.b3.h1.failure_audit.v1",
+  "target_date": "2026-08-25",
+  "classification": {
+    "failure_class": "D",
+    "failure_label": "INGESTION/DISCOVERY_FAILURE",
+    "root_cause": "The official B3 tickercsv endpoint returned HTTP 200 and a syntactically valid ZIP before publication had finalized. The collector accepted that first valid ZIP as SOURCE_CAPTURED, but the immutable captured bytes contained only a late partial WINV26 session and zero WDO rows. Structural QA correctly failed closed at M1_WDO_MISSING. The operational gap was the absence of later same-session source-finalization retry windows after a structurally incomplete HTTP-200 snapshot.",
+    "secondary_factor": "G_SCHEDULER_WORKFLOW_FAILURE_NO_LATE_PUBLICATION_RETRY_WINDOW",
+    "not_antivirus": true,
+    "not_parser_schema_failure": true,
+    "wrong_contract_or_roll_proven": false,
+    "valid_observation_not_appended_proven": false
+  },
+  "source_bytes": {
+    "source_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2026-08-25",
+    "source_run_id": "32921641712",
+    "source_artifact_id": 9590032255,
+    "source_artifact_name": "gate-btc-b3-h1-structural-32921641712",
+    "source_artifact_digest_sha256": "2ad0defff02f8118800ba29ec67ca32aea2e3a5a15b0c3ca274ce5059e7a62c9",
+    "capture_started_at_utc": "2026-08-26T02:09:22Z",
+    "artifact_created_at_utc": "2026-08-26T02:09:58Z",
+    "http_status": 200,
+    "source_state": "SOURCE_CAPTURED",
+    "source_zip_bytes": 29760138,
+    "source_raw_sha256": "63404a7aa5a3d6328feb9aa947b961364ed57beb597195065976f655f035e95a",
+    "zip_member": "25-08-2026_NEGOCIOSAVISTA.txt",
+    "zip_member_uncompressed_bytes": 300605216,
+    "represented_date": "2026-08-25",
+    "source_rows": 4229972,
+    "win_present": true,
+    "wdo_present": false,
+    "wrong_session_bytes_detected": false,
+    "provenance_auditable": true
+  },
+  "contracts_and_roll": {
+    "timezone": "America/Sao_Paulo",
+    "freeze_status": "FROZEN_BEFORE_H1",
+    "expected_WIN": "WINV26",
+    "observed_WIN": "WINV26",
+    "expected_WDO": "WDOV26",
+    "observed_WDO": null,
+    "other_WDO_contract_present": false,
+    "assessment": "The WINV26/WDOV26 mapping was frozen before the target session. Because the captured source contained no WDO symbol at all, the evidence does not support changing ticker/roll."
+  },
+  "raw_data": {
+    "WIN": {
+      "m1_count": 431,
+      "first_timestamp": "2026-08-25T10:19:00-03:00",
+      "last_timestamp": "2026-08-25T17:29:00-03:00",
+      "duplicate_keys": 0,
+      "ohlc_integrity": "PASS_AVAILABLE_ROWS",
+      "tick_grid": "PASS_AVAILABLE_ROWS",
+      "session": "2026-08-25",
+      "timezone": "America/Sao_Paulo"
+    },
+    "WDO": {
+      "m1_count": 0,
+      "first_timestamp": null,
+      "last_timestamp": null,
+      "duplicate_keys": 0,
+      "ohlc_integrity": "NOT_TESTABLE_NO_ROWS",
+      "tick_grid": "FAIL_MISSING_ROOT",
+      "session": "2026-08-25",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "m1_to_m5": {
+    "expected_m5_per_root": 102,
+    "expected_first": "2026-08-25T09:00:00-03:00",
+    "expected_last": "2026-08-25T17:25:00-03:00",
+    "WIN_m5_count": 87,
+    "WDO_m5_count": 0,
+    "WIN_102_bar_requirement": "FAIL",
+    "WDO_102_bar_requirement": "FAIL",
+    "WIN_missing_buckets": [
+      "09:00", "09:05", "09:10", "09:15", "09:20", "09:25", "09:30", "09:35", "09:40", "09:45", "09:50", "09:55", "10:00", "10:05", "10:10"
+    ],
+    "WDO_missing_buckets": "ALL_102_EXPECTED_BUCKETS",
+    "structural_qa": "FAIL",
+    "terminal_error": "RuntimeError('M1_WDO_MISSING')"
+  },
+  "freeze_and_causality": {
+    "blind_lock_sha256": "ceb5ed9b48f2c4f616eee82a78942f39deceb41272369be02ad207b49425cbf1",
+    "full_frozen_schedule_sha256": "5fd7314f55fb1c6394628d94227fdc0ed375016a57453a07f05828ffd5a9282f",
+    "h1_schedule_prefix_sha256": "c9ff28b4d1b6c8e2aceb3281da51bc41858780493c99a0eeac148f2bdd0bc4f6",
+    "upstream_engine_sha256": "1e313614e4f8dd318488e3abdde1d56848c076f9e57bb47a4fd5ce4f9c06410c",
+    "all_present_before_target_session": true,
+    "future_information_used": false,
+    "methodology_changed": false,
+    "retune": false,
+    "synthetic_reconstruction": false,
+    "h1_economics_read": false
+  },
+  "pipeline": [
+    {"stage": "source_discovery", "status": "PASS_BUT_PREMATURE_FINALITY_ASSUMPTION", "detail": "HTTP 200 valid ZIP accepted on first attempt"},
+    {"stage": "download", "status": "PASS", "detail": "29,760,138 official bytes captured and hashed"},
+    {"stage": "parser", "status": "PASS_FAIL_CLOSED", "detail": "Parser exposed WIN partial coverage and no WDO"},
+    {"stage": "structural_QA", "status": "FAIL", "detail": "M1_WDO_MISSING; WIN also only 87/102 M5 bars"},
+    {"stage": "deterministic_recomputation", "status": "NOT_QUALIFIED", "detail": "Full two-root 102-bar requirement could not be reached"},
+    {"stage": "qualification", "status": "FAIL_CLOSED", "detail": "qualified=false; h1_increment_candidate=0"},
+    {"stage": "append", "status": "NOT_RUN", "detail": "No structurally valid observation existed in the captured artifact"},
+    {"stage": "publish_gate_btc_runtime", "status": "NOT_RUN", "detail": "Publisher only consumes successful structural runs"},
+    {"stage": "reporting", "status": "NO_INCREMENT", "detail": "Canonical pre-count preserved"}
+  ],
+  "local_cloud_reconciliation": {
+    "github_actions_run": 32921641712,
+    "github_actions_initial_conclusion": "failure",
+    "artifact_exists": true,
+    "gate_btc_runtime_target_date_present": false,
+    "latest_runtime_mirror_date": "2026-08-21",
+    "note": "The current gate-btc-runtime mirror began publishing H1 later and is not used to override the stated canonical PRE_COUNT=6/20.",
+    "local_later_file_claim": "User reports a later 2026-08-26 morning availability; the safe recovery path requires the official same-date bytes to pass the frozen structural gates before append."
+  },
+  "safe_recovery": {
+    "scientifically_eligible_if_current_official_bytes_pass": true,
+    "recovery_allowed": false,
+    "reason_not_yet_allowed": "A later finalized official snapshot has not yet completed the frozen structural QA in the recovery run. Recovery remains fail closed until that proof exists.",
+    "recovery_run_id": 32921641712,
+    "recovery_rerun_requested": true,
+    "recovery_rerun_status_at_audit_write": "QUEUED",
+    "recovery_executed": false,
+    "append_executed": false,
+    "backfill_authorization_created": false
+  },
+  "regression_fix": {
+    "type": "PLUMBING_ONLY",
+    "description": "Add two bounded same-day late-publication schedule windows at 09:30 and 12:30 UTC Tue-Sat. Every scheduled window still resolves only the immediately preceding UTC Mon-Fri session and runs the unchanged frozen H1 structural collector. No older-date sweep, synthetic fill, methodology, contract, cutoff, cost, parameter or schedule-prefix change.",
+    "test": "tests/test_gate_btc_b3_h1_late_publication_recovery.py"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "H1_ECONOMICS_READ": false
+  },
+  "final": {
+    "TARGET_DATE": "2026-08-25",
+    "ROOT_CAUSE": "Official B3 HTTP-200 ZIP was captured before publication finalized; snapshot had partial WIN and zero WDO, and plumbing had no later same-session publication-finalization retry window.",
+    "FAILURE_CLASS": "D",
+    "SOURCE_VALID": false,
+    "STRUCTURAL_QA": "FAIL",
+    "RECOVERY_ALLOWED": false,
+    "RECOVERY_EXECUTED": false,
+    "REGRESSION_FIX": "Bounded late-publication retry windows for the immediately prior frozen session only",
+    "PRE_COUNT": "6/20",
+    "POST_COUNT": "6/20",
+    "LATEST_VALID_DATE": "2026-08-21",
+    "H1_ECONOMICS_READ": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  }
+}
