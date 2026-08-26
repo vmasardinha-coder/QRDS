@@ -1,0 +1,110 @@
+name: GATE BTC Momentum Operational Recovery
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 * * * *'
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  PYTHONDONTWRITEBYTECODE: '1'
+
+concurrency:
+  group: gate-btc-momentum-operational-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read canonical runtime failure state
+        id: state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gate-btc-runtime
+          git show origin/gate-btc-runtime:runtime/ledgers/momentum_m1_m2/STATUS.json > /tmp/momentum_status.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timedelta, timezone
+          s=json.load(open('/tmp/momentum_status.json',encoding='utf-8'))
+          target=(datetime.now(timezone.utc).date()-timedelta(days=1)).isoformat()
+          recoverable=(
+              s.get('repair_scope')=='ORCHESTRATION_AND_DATA_DELIVERY_ONLY'
+              and s.get('status') in {'RED_TRUE_PROCESSING_FAILURE','BLOCKED_SOURCE_RETRY_EXHAUSTED'}
+              and s.get('data_as_of')==target
+          )
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              f.write(f"recoverable={str(recoverable).lower()}\n")
+              f.write(f"target={target}\n")
+              f.write(f"status={s.get('status','UNKNOWN')}\n")
+          print(json.dumps({'recoverable':recoverable,'target':target,'status':s.get('status'),'repair_scope':s.get('repair_scope')},sort_keys=True))
+          PY
+
+      - name: Refuse overlapping Momentum run
+        id: overlap
+        if: steps.state.outputs.recoverable == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          active=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
+          if [ "$active" -gt 0 ]; then
+            echo 'skip=true' >> "$GITHUB_OUTPUT"
+            echo 'MOMENTUM_RECOVERY=SKIP_ACTIVE_RUN'
+          else
+            echo 'skip=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enforce bounded attempts for current UTC day
+        id: budget
+        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          today=$(date -u +%Y-%m-%d)
+          attempts=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 50 --json createdAt,conclusion --jq --arg d "$today" '[.[] | select(.createdAt|startswith($d)) | select(.conclusion=="failure")] | length')
+          echo "attempts=$attempts" >> "$GITHUB_OUTPUT"
+          if [ "$attempts" -ge 6 ]; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'MOMENTUM_RECOVERY=FAIL_CLOSED_ATTEMPT_BUDGET_EXHAUSTED'
+          else
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispatch safe mechanical rerun
+        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true' && steps.budget.outputs.allowed == 'true'
+        run: |
+          gh workflow run gate-btc-momentum-shadow.yml --repo "${{ github.repository }}" --ref main
+          echo 'MOMENTUM_RECOVERY=DISPATCHED_SAFE_MECHANICAL_RERUN'
+
+      - name: Escalate only after bounded recovery is exhausted
+        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true' && steps.budget.outputs.allowed == 'false'
+        shell: bash
+        run: |
+          TITLE="[AUTO-REPAIR:MOMENTUM_M1_M2:${{ steps.state.outputs.target }}] bounded recovery exhausted"
+          BODY=$(cat <<EOF
+          Momentum M1/M2 remains fail-closed after the bounded automatic orchestration/data-delivery recovery budget was exhausted for cutoff ${{ steps.state.outputs.target }}.
+
+          Current runtime status: ${{ steps.state.outputs.status }}
+          Repair scope: ORCHESTRATION_AND_DATA_DELIVERY_ONLY
+          Failed-run budget observed today: ${{ steps.budget.outputs.attempts }}
+
+          No methodology, thresholds, universe, costs, scientific gates, backfill or tuning were changed. Human review is required only to decide whether the remaining blocker is an external DATA_GAP/source-publication issue or requires a source/methodology decision.
+          EOF
+          )
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "${{ github.repository }}" --body "$BODY"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY"
+          fi
