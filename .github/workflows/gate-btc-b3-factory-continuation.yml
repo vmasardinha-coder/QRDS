@@ -2,6 +2,11 @@ name: GATE BTC B3 Factory Continuation
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-b3-factory-continuation.yml'
+      - 'tools/gate_btc_factory/continuation_guard.py'
   schedule:
     - cron: '20 */6 * * *'
 
