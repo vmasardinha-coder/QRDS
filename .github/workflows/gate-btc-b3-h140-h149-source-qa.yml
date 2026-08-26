@@ -1,0 +1,49 @@
+name: GATE BTC B3 H140-H149 PTAX Source QA
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h140_h149_prereg.md'
+      - 'tools/gate_btc_b3_h140_h149_source_probe.py'
+      - '.github/workflows/gate-btc-b3-h140-h149-source-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gate-btc-b3-h140-h149-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas requests
+      - name: Probe official BCB PTAX history
+        run: python tools/gate_btc_b3_h140_h149_source_probe.py
+      - name: Assert fail-closed PTAX contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h140_h149/B3_H140_H149_SOURCE_QA.json'))
+          assert p['schema']=='qrds.b3.h140_h149.source_qa.v1'
+          assert p['provider'].startswith('Banco Central do Brasil')
+          assert p['system']=='PTAX' and p['cutoff_exclusive']=='2026-08-10'
+          assert p['required_fields']==['cotacaoCompra','cotacaoVenda','dataHoraCotacao']
+          assert p['duplicate_timestamps']==0
+          assert p['economics_run'] is False and p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          assert p['status'] in {'SOURCE_QA_READY_STRATIFIED','SOURCE_QA_BULLETIN_COVERAGE_GAP'}
+          if p['status']=='SOURCE_QA_READY_STRATIFIED': assert p['bulletin_day_coverage']>=0.90
+          else: assert p['bulletin_day_coverage']<0.90
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h140-h149-source-qa-${{ github.run_id }}
+          path: |
+            artifacts/b3_h140_h149/B3_H140_H149_SOURCE_QA.json
+            artifacts/b3_h140_h149/B3_H140_H149_PTAX_BULLETINS.csv
+          retention-days: 30
+          if-no-files-found: error
