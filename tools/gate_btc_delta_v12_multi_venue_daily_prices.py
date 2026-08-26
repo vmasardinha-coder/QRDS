@@ -26,7 +26,20 @@ from typing import Any, Callable
 SCHEMA = "gate_btc.delta_v12_multi_venue_daily_prices.v1"
 
 # Frozen order from delta_v12_universe_expansion_contract.json symbol_policy.
-VENUE_ORDER = ("BINANCE_FUTURES", "BYBIT_LINEAR", "OKX_SWAP", "HYPERLIQUID")
+#
+# Binance and Bybit sit last because they are not reachable from the networks
+# that establish pins: Binance answers HTTP 451 and Bybit HTTP 403 from GitHub
+# runners (evidence: run 33024423248) and from the research container. Putting
+# them first made venue assignment depend on where the pinning run happened,
+# which is intolerable for a permanent pin. They remain in the order as a real
+# fallback for an instrument neither primary venue carries.
+VENUE_ORDER = ("OKX_SWAP", "HYPERLIQUID", "BINANCE_FUTURES", "BYBIT_LINEAR")
+
+# The venues a first pinning run must be able to see. Measured 2026-08-26 over
+# the TOP100 universe: OKX priced 93 and Hyperliquid the remaining 7, so these
+# two alone cover the stratum with 100/100 meeting minimum history. A run that
+# cannot see both is degraded and must not freeze pins.
+REQUIRED_VENUES = ("OKX_SWAP", "HYPERLIQUID")
 DAILY_BAR_LIMIT = 100
 USER_AGENT = "QRDS-GATE-BTC-Research/1.0"
 
@@ -129,18 +142,23 @@ VENUE_READERS: dict[str, Callable[[str, date], list[dict[str, Any]]]] = {
 }
 
 
-def unreachable_venues(probe_base: str = "BTC", today: date | None = None) -> list[str]:
+def unreachable_venues(probe_base: str = "BTC", today: date | None = None,
+                       venues: tuple[str, ...] | None = None) -> list[str]:
     """Venues that cannot serve a completed daily bar for a reference asset.
 
-    Pins are permanent, so a first run from a network that cannot see a venue
-    would freeze every asset onto whichever venues answered. Callers establishing
-    pins for the first time must refuse when this is non-empty.
+    Defaults to REQUIRED_VENUES, not every venue in VENUE_ORDER: Binance and
+    Bybit are permanently unreachable from the pinning networks, so demanding
+    them would mean no run could ever establish pins. What actually has to hold
+    is that both primary venues answer, because pins are permanent and a run
+    that saw only one of them would freeze the whole universe onto it.
+
+    Pass venues=VENUE_ORDER to audit the full set.
     """
     today = today or datetime.now(timezone.utc).date()
     failures = []
-    for venue, reader in VENUE_READERS.items():
+    for venue in (venues or REQUIRED_VENUES):
         try:
-            if not reader(probe_base, today):
+            if not VENUE_READERS[venue](probe_base, today):
                 failures.append(f"{venue}: no completed daily bars")
         except Exception as exc:
             failures.append(f"{venue}: {type(exc).__name__}: {exc}")

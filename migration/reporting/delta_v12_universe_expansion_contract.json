@@ -38,6 +38,37 @@
       "resolution": "Price each base asset through the frozen venue preference order BINANCE_FUTURES, BYBIT_LINEAR, OKX_SWAP, HYPERLIQUID. Measured coverage with this order is 100 of 100 priced and 100 of 100 meeting the 30-day minimum history.",
       "unpriced_policy": "FAIL_VISIBLE_NEVER_SILENT_DROP",
       "venue_pinning_rule": "A venue is PINNED to an asset at first admission and recorded with its pin date. Later runs must reuse the pinned venue even when a higher-preference venue becomes reachable. A change is permitted only when the pinned venue stops serving the instrument, and it is written as an explicit venue_changes event naming from, to and date. Without pinning, reachability alone could reprice an asset from a different venue day to day and inject level shifts that would read as returns."
+    },
+    {
+      "amended_on": "2026-08-26",
+      "amendment": "VENUE_PREFERENCE_REORDER_AND_REQUIRED_VENUE_SET",
+      "coverage_measured_before_any_return": {
+        "measured_on": "2026-08-26",
+        "meets_min_history": "100/100",
+        "note": "The two required venues cover the stratum on their own. Binance and Bybit were never load-bearing for TOP100 coverage. No return series informed this reorder; it was fixed before any V12 price panel was committed.",
+        "priced": "100/100",
+        "universe": "UNIVERSE_TOP100 from snapshot run 32924215671",
+        "venue_counts": {
+          "HYPERLIQUID": 7,
+          "OKX_SWAP": 93
+        }
+      },
+      "evidence": {
+        "binance_futures": "HTTP 451",
+        "bybit_linear": "HTTP 403 Forbidden",
+        "failed_job_id": "98362340028",
+        "failed_run_id": "33024423248",
+        "networks_tested": [
+          "github_hosted_runner",
+          "research_container"
+        ],
+        "observed_on": "2026-08-26"
+      },
+      "methodology_changes_to_frozen_strategy_parameters": 0,
+      "no_pins_were_established_under_the_old_order": true,
+      "problem": "Amendment MULTI_VENUE_DAILY_PRICE_PIPELINE_WITH_VENUE_PINNING required the first pinning run to execute where all four venues are reachable. That premise is false. Binance Futures answers HTTP 451 and Bybit linear answers HTTP 403 from GitHub runners and from the research container, so the guard refused every run and no pins could ever be established. The premise was asserted without being measured.",
+      "resolution": "The frozen venue preference order becomes OKX_SWAP, HYPERLIQUID, BINANCE_FUTURES, BYBIT_LINEAR, and the required venue set for a first pinning run becomes OKX_SWAP and HYPERLIQUID. Putting the reachable venues first makes venue assignment independent of where the pinning run executes, which is the property a permanent pin needs. Binance and Bybit remain in the order as a genuine fallback for an instrument neither primary venue carries.",
+      "supersedes": "first_pinning_run_requirement of MULTI_VENUE_DAILY_PRICE_PIPELINE_WITH_VENUE_PINNING: 'all four venues reachable' is replaced by 'both required venues reachable'."
     }
   ],
   "clean_evidence_start": "2026-08-14T00:00:00Z",
@@ -158,6 +189,6 @@
     "type": "IMMUTABLE_GATE_BTC_DAILY_RESEARCH_ARTIFACT",
     "workflow": "GATE BTC Daily Research Collection"
   },
-  "symbol_policy": "Preserve base asset exactly and prefer an available raw derivative symbol in the order Binance Futures, Bybit linear, OKX swap, Hyperliquid perp. Aliases are never used to force external overlap.",
-  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.2"
+  "symbol_policy": "Preserve base asset exactly and prefer an available raw derivative symbol in the order OKX swap, Hyperliquid perp, Binance Futures, Bybit linear. Aliases are never used to force external overlap.",
+  "version": "DELTA_V12_UNIVERSE_EXPANSION_2.3"
 }

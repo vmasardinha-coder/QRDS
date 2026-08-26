@@ -81,33 +81,35 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
             coverage = adapter.build(universe(root, bases), root / "out", pins, TODAY)
         return coverage, pins
 
-    def test_preference_order_prefers_binance_when_available(self):
+    def test_preference_order_prefers_okx_when_available(self):
+        # OKX leads the frozen order because it is reachable from the networks
+        # that pin; Binance answering must not change the assignment.
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             coverage, _ = self.run_build(root, router(
                 binance=binance_payload(), bybit=bybit_payload(), okx=okx_payload()))
-        self.assertEqual(coverage["venue_counts"], {"BINANCE_FUTURES": 1})
+        self.assertEqual(coverage["venue_counts"], {"OKX_SWAP": 1})
         self.assertEqual(coverage["unpriced"], 0)
 
     def test_falls_through_the_frozen_order_to_the_last_venue(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            coverage, _ = self.run_build(root, router(hyper=hyperliquid_payload()))
-        self.assertEqual(coverage["venue_counts"], {"HYPERLIQUID": 1})
+            coverage, _ = self.run_build(root, router(bybit=bybit_payload()))
+        self.assertEqual(coverage["venue_counts"], {"BYBIT_LINEAR": 1})
         self.assertEqual(coverage["meets_min_history"], 1)
 
     def test_pin_survives_a_higher_preference_venue_coming_back(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            # First run: only OKX answers, so OKX gets pinned.
-            _, pins = self.run_build(root, router(okx=okx_payload()))
-            self.assertEqual(json.loads(pins.read_text())["pins"]["BTC"]["venue"], "OKX_SWAP")
+            # First run: only Hyperliquid answers, so Hyperliquid gets pinned.
+            _, pins = self.run_build(root, router(hyper=hyperliquid_payload()))
+            self.assertEqual(json.loads(pins.read_text())["pins"]["BTC"]["venue"], "HYPERLIQUID")
 
-            # Second run: Binance is reachable again, but the pin must win.
+            # Second run: OKX outranks it and is reachable, but the pin must win.
             with mock.patch.object(adapter, "fetch_url", side_effect=router(
-                    binance=binance_payload(), okx=okx_payload())):
+                    okx=okx_payload(), hyper=hyperliquid_payload())):
                 coverage = adapter.build(root / "UNIVERSE_TOP100.csv", root / "out", pins, TODAY)
-        self.assertEqual(coverage["venue_counts"], {"OKX_SWAP": 1})
+        self.assertEqual(coverage["venue_counts"], {"HYPERLIQUID": 1})
         self.assertEqual(coverage["venue_changes"], [])
 
     def test_venue_change_is_recorded_when_the_pinned_venue_loses_the_instrument(self):
@@ -172,30 +174,42 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
         self.assertEqual(coverage["meets_min_history"], 0)
         self.assertFalse(provenance["provenance"]["BTC"]["meets_min_history"])
 
-    def test_unreachable_venues_is_empty_when_all_four_answer(self):
+    def test_unreachable_venues_ignores_the_permanently_blocked_fallbacks(self):
+        # Binance (451) and Bybit (403) are unreachable from every network that
+        # pins. The guard must still pass, or no run could ever establish pins.
         with mock.patch.object(adapter, "fetch_url", side_effect=router(
-                binance=binance_payload(), bybit=bybit_payload(),
                 okx=okx_payload(), hyper=hyperliquid_payload())):
             self.assertEqual(adapter.unreachable_venues("BTC", TODAY), [])
 
-    def test_unreachable_venues_names_every_venue_that_cannot_serve(self):
-        # The degraded case this guard exists for: only part of the venue set
-        # answers, which would silently pin every asset onto the survivors.
+    def test_unreachable_venues_names_a_required_venue_that_cannot_serve(self):
+        # The degraded case this guard exists for: one primary answers and the
+        # other does not, which would silently pin every asset onto the survivor.
         with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
             failures = adapter.unreachable_venues("BTC", TODAY)
         named = {line.split(":")[0] for line in failures}
-        self.assertEqual(named, {"BINANCE_FUTURES", "BYBIT_LINEAR", "HYPERLIQUID"})
-        self.assertNotIn("OKX_SWAP", named)
+        self.assertEqual(named, {"HYPERLIQUID"})
+
+    def test_unreachable_venues_can_audit_the_full_venue_order(self):
+        with mock.patch.object(adapter, "fetch_url", side_effect=router(
+                okx=okx_payload(), hyper=hyperliquid_payload())):
+            failures = adapter.unreachable_venues("BTC", TODAY, venues=adapter.VENUE_ORDER)
+        named = {line.split(":")[0] for line in failures}
+        self.assertEqual(named, {"BINANCE_FUTURES", "BYBIT_LINEAR"})
 
     def test_unreachable_venues_counts_an_empty_answer_as_unreachable(self):
         # A venue that responds with no completed bars is no more usable for
         # pinning than one that refuses the connection.
         with mock.patch.object(adapter, "fetch_url", side_effect=router(
-                binance=binance_payload(), bybit=bybit_payload(),
                 okx=okx_payload(count=0), hyper=hyperliquid_payload())):
             failures = adapter.unreachable_venues("BTC", TODAY)
         self.assertEqual(len(failures), 1)
         self.assertTrue(failures[0].startswith("OKX_SWAP"), failures)
+
+    def test_required_venues_are_the_head_of_the_frozen_order(self):
+        # A fallback must never outrank a primary, or the pin a run produces
+        # would depend on which network it ran from.
+        self.assertEqual(adapter.VENUE_ORDER[:len(adapter.REQUIRED_VENUES)],
+                         adapter.REQUIRED_VENUES)
 
     def test_safety_flags_are_present_in_coverage(self):
         with tempfile.TemporaryDirectory() as td:
