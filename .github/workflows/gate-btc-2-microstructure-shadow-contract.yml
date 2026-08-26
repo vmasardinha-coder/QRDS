@@ -1,0 +1,45 @@
+name: GATE BTC 2 Microstructure Shadow Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_2_microstructure_shadow_contract.py
+      - tools/gate_btc_2_microstructure_shadow_contract_v1.json
+      - tests/test_gate_btc_2_microstructure_shadow_contract.py
+      - .github/workflows/gate-btc-2-microstructure-shadow-contract.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-microstructure-shadow-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile contract preflight
+        run: python -m py_compile tools/gate_btc_2_microstructure_shadow_contract.py
+      - name: Run Stage 9 fail-closed tests
+        run: python -m unittest -v tests/test_gate_btc_2_microstructure_shadow_contract.py
+      - name: Prove scaffold does not collect or self-promote
+        run: |
+          python tools/gate_btc_2_microstructure_shadow_contract.py \
+            --output artifacts/gate_btc_2/microstructure_shadow/preflight.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/gate_btc_2/microstructure_shadow/preflight.json').read_text())
+          assert p['status']=='SCAFFOLD_READY_CAPTURE_NOT_STARTED'
+          assert p['shadow_feeds_reconciled'] is False
+          assert p['stage_9_complete'] is False
+          assert p['economics_allowed'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0
+          PY

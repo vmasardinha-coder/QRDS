@@ -1,0 +1,87 @@
+{
+  "schema": "gate_btc.2_0.microstructure_shadow_capture_contract.v1",
+  "contract_version": 1,
+  "contract_sha256": "002de032163275b3ddcd4c72b75ce5beb0812906b308bf91ed583e31929df8b5",
+  "stage_id": 9,
+  "stage_key": "MICROSTRUCTURE_SHADOW_COLLECTION",
+  "status": "SCAFFOLD_ONLY_FORWARD_CAPTURE_NOT_STARTED",
+  "hypothesis_family": "H-BEH",
+  "registered_hypotheses": [
+    "H-BEH-01",
+    "H-BEH-02",
+    "H-BEH-03",
+    "H-BEH-04",
+    "H-BEH-05",
+    "H-BEH-06"
+  ],
+  "required_source_roles": [
+    "FUNDING",
+    "OPEN_INTEREST",
+    "PERP_VOLUME",
+    "SPOT_VOLUME"
+  ],
+  "optional_source_roles": [
+    "LIQUIDATIONS",
+    "ORDER_BOOK"
+  ],
+  "capture_policy": {
+    "forward_only": true,
+    "provider_or_verifiable_capture_timestamp_required": true,
+    "raw_content_sha256_required": true,
+    "exact_venue_market_and_instrument_required": true,
+    "historical_recovery_counts_as_prospective": false,
+    "retrospective_backfill_allowed": false,
+    "psychology_or_addiction_inference_allowed": false,
+    "derived_regime_labels_allowed_before_source_reconciliation": false,
+    "partial_required_role_reconciliation_allowed": false
+  },
+  "collection_budget": {
+    "active_workflow_check_required": true,
+    "artifact_reuse_first": true,
+    "implementation_and_network_collection_same_checkpoint": false,
+    "max_new_network_capture_jobs_per_checkpoint": 1,
+    "defer_network_capture_when_protected_workflow_active": true,
+    "protected_workflows": [
+      "GATE BTC Daily Research Collection",
+      "GATE BTC Bybit Derivatives Archive",
+      "GATE BTC Source Redundancy Probes",
+      "GATE BTC V16B CMC Snapshot",
+      "GATE BTC 2 Dataset Seal Readiness",
+      "GATE BTC Factory Controlled Orchestrator"
+    ]
+  },
+  "manifest_required_fields": [
+    "schema",
+    "capture_id",
+    "created_at_utc",
+    "forward_only",
+    "historical_rows_backfilled",
+    "recovered_historical",
+    "sources"
+  ],
+  "source_required_fields": [
+    "source_id",
+    "source_role",
+    "provider",
+    "venue",
+    "market_type",
+    "instrument",
+    "source_reference",
+    "captured_at_utc",
+    "first_observation_utc",
+    "last_observation_utc",
+    "row_count",
+    "content_sha256"
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "promotion_allowed": false,
+    "economic_calibration_allowed": false,
+    "stage_9_complete": false
+  }
+}
