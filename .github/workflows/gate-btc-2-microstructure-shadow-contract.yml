@@ -7,9 +7,12 @@ on:
       - tools/gate_btc_2_microstructure_shadow_contract.py
       - tools/gate_btc_2_microstructure_shadow_contract_v1.json
       - tools/gate_btc_2_microstructure_shadow_manifest.py
+      - tools/gate_btc_2_microstructure_shadow_capture.py
       - tests/test_gate_btc_2_microstructure_shadow_contract.py
       - tests/test_gate_btc_2_microstructure_shadow_manifest.py
+      - tests/test_gate_btc_2_microstructure_shadow_capture.py
       - .github/workflows/gate-btc-2-microstructure-shadow-contract.yml
+      - .github/workflows/gate-btc-2-microstructure-shadow-manual-capture.yml
 
 permissions:
   contents: read
@@ -32,11 +35,13 @@ jobs:
           python -m py_compile
           tools/gate_btc_2_microstructure_shadow_contract.py
           tools/gate_btc_2_microstructure_shadow_manifest.py
+          tools/gate_btc_2_microstructure_shadow_capture.py
       - name: Run Stage 9 fail-closed tests
         run: >-
           python -m unittest -v
           tests/test_gate_btc_2_microstructure_shadow_contract.py
           tests/test_gate_btc_2_microstructure_shadow_manifest.py
+          tests/test_gate_btc_2_microstructure_shadow_capture.py
       - name: Prove scaffold does not collect or self-promote
         run: |
           python tools/gate_btc_2_microstructure_shadow_contract.py \
