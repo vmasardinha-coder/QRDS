@@ -1,0 +1,88 @@
+name: GATE BTC 2 Selector Alpha Phase 1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-selector-alpha-phase1.yml
+      - tools/gate_btc_2_selector_alpha_phase1.py
+      - tests/test_gate_btc_2_selector_alpha_phase1.py
+      - migration/GATE_BTC_2_SELECTOR_ALPHA_SOURCE_RECOVERY_MATRIX.json
+      - migration/GATE_BTC_2_SELECTOR_ALPHA_STATUS.json
+      - migration/GATE_BTC_2_SELECTOR_ALPHA_STATUS.md
+      - migration/GATE_BTC_SURVIVORSHIP_PHASE1_CONCLUSION.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-selector-alpha-phase1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  offline-gap-inventory-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile offline Phase-1 builder
+        run: python -m py_compile tools/gate_btc_2_selector_alpha_phase1.py
+
+      - name: Run Selector Alpha Phase-1 fail-closed tests
+        run: python -m unittest -v tests/test_gate_btc_2_selector_alpha_phase1.py
+
+      - name: Verify canonical status boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          matrix = json.loads(Path(
+              'migration/GATE_BTC_2_SELECTOR_ALPHA_SOURCE_RECOVERY_MATRIX.json'
+          ).read_text(encoding='utf-8'))
+          status = json.loads(Path(
+              'migration/GATE_BTC_2_SELECTOR_ALPHA_STATUS.json'
+          ).read_text(encoding='utf-8'))
+          assert matrix['inventory_status'] == 'PASS_ALL_CURRENT_GAPS_INDIVIDUALLY_IDENTIFIED'
+          assert matrix['gap_count'] == len(matrix['rows']) == 55
+          assert matrix['source_probe_summary']['formal_source_admissions'] == 0
+          assert matrix['source_probe_summary']['new_assets_recovered_into_official_dataset'] == 0
+          assert status['CURRENT_GATE'] == 'GAP_INVENTORY_PASS__SOURCE_ADMISSION_PENDING'
+          assert status['PIT_EXPECTED'] == 150
+          assert status['PIT_RECOVERED'] == 95
+          assert status['UNRESOLVED'] == 55
+          assert status['PIT_SCOPE'].endswith('NOT_HISTORICAL_PIT_COMPLETENESS')
+          assert status['SOURCES_ADMITTED'] == 0
+          assert status['SELECTOR_ALPHA_STATUS'] == 'SELECTOR_NOT_PROVEN'
+          assert status['financial_metrics'] == []
+          assert status['promotion_ladders'] == {
+              'DATA_SCIENCE_PROMOTION': 'G2_DATA_UNPROVEN',
+              'SELECTOR_ALPHA_PROMOTION': 'SELECTOR_NOT_PROVEN',
+              'OPERATIONAL_PROMOTION': 'NOT_APPROVED',
+          }
+          assert status['boundary'] == {
+              'RESEARCH_ONLY': True,
+              'SHADOW_ONLY': True,
+              'NOT_APPROVED': True,
+              'ENGINE_FEED': False,
+              'ORDERS': 0,
+              'REAL_CAPITAL_BRL': 0,
+          }
+          print('SELECTOR_ALPHA_PHASE1=PASS_GAP_INVENTORY_SOURCE_ADMISSION_PENDING')
+          print('ECONOMICS_EXECUTED=0 ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
+          PY
