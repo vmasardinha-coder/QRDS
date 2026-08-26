@@ -1,0 +1,77 @@
+name: GATE BTC B3 H130-H139 Economics
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h130_h139_economics.py'
+      - 'tools/gate_btc_b3_h130_h139_source_probe.py'
+      - 'tests/test_gate_btc_b3_h130_h139_economics.py'
+      - '.github/workflows/gate-btc-b3-h130-h139-economics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gate-btc-b3-h130-h139-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  historical-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - name: Contract tests
+        run: python -m unittest -v tests/test_gate_btc_b3_h130_h139_economics.py
+      - name: Reproduce frozen Tesouro source gate
+        run: |
+          python tools/gate_btc_b3_h130_h139_source_probe.py
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h130_h139/B3_H130_H139_SOURCE_QA.json'))
+          assert p['status']=='SOURCE_QA_READY_STRATIFIED'
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['derived_node_csv_sha256']=='9cf3dd950e696a9e6033c777d75298463c8e9b148dce8f29ea9e531b9619bd02'
+          assert min(p['node_coverage_on_source_dates'].values()) >= 0.90
+          assert p['economics_run'] is False and p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          PY
+      - name: Run preregistered H130-H139 economics
+        run: |
+          python tools/gate_btc_b3_h130_h139_economics.py \
+            --nodes artifacts/b3_h130_h139/B3_H130_H139_CURVE_NODES.csv \
+            --source-qa artifacts/b3_h130_h139/B3_H130_H139_SOURCE_QA.json \
+            --out artifacts/b3_h130_h139/B3_H130_H139_ECONOMICS.json \
+            --ledger artifacts/b3_h130_h139/H130_H139_RESULT_LEDGER.jsonl \
+            --cells artifacts/b3_h130_h139/H130_H139_CELLS.csv \
+            --manifest artifacts/b3_h130_h139/H130_H139_MANIFEST.json
+      - name: Assert hard gates and safety
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h130_h139/B3_H130_H139_ECONOMICS.json'))
+          m=json.load(open('artifacts/b3_h130_h139/H130_H139_MANIFEST.json'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert set(p['states'])=={f'H{i}' for i in range(130,140)}
+          assert len(p['survivors'])<=2
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          assert m['node_hash_frozen']=='9cf3dd950e696a9e6033c777d75298463c8e9b148dce8f29ea9e531b9619bd02'
+          assert m['h1_economics_read'] is False and m['survivor_partial_economics_read'] is False
+          assert m['orders']==0 and m['capital']==0 and m['engine_feed'] is False and m['not_approved'] is True
+          failed=p['discovery_join']['coverage']<0.90 or p['replication_join']['coverage']<0.90
+          assert all((state=='DATA_GAP_COVERAGE')==failed for state in p['states'].values())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h130-h139-economics-${{ github.run_id }}
+          path: |
+            artifacts/b3_h130_h139/B3_H130_H139_SOURCE_QA.json
+            artifacts/b3_h130_h139/B3_H130_H139_CURVE_NODES.csv
+            artifacts/b3_h130_h139/B3_H130_H139_ECONOMICS.json
+            artifacts/b3_h130_h139/H130_H139_RESULT_LEDGER.jsonl
+            artifacts/b3_h130_h139/H130_H139_CELLS.csv
+            artifacts/b3_h130_h139/H130_H139_MANIFEST.json
+          retention-days: 30
+          if-no-files-found: error
