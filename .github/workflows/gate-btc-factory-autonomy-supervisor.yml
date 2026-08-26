@@ -3,13 +3,14 @@ name: GATE BTC Factory Autonomy Supervisor
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '*/15 * * * *'
   push:
     branches: [main]
     paths:
       - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
       - '.github/workflows/gate-btc-b3-nextgen-progression.yml'
       - 'tools/gate_btc_factory/state_master_refresh.py'
+      - 'tools/gate_btc_factory/reconcile_nextgen_progression.py'
       - 'tools/gate_btc_factory/universal_watchdog.py'
       - 'tools/gate_btc_factory/survivor_health.py'
       - 'tools/gate_btc_factory/self_audit.py'
@@ -73,6 +74,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python tools/gate_btc_factory/apply_factory_transitions.py
+
+      - name: Reconcile explicit B3 NextGen stage progression
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/gate_btc_factory/reconcile_nextgen_progression.py
 
       - name: Diagnose universal operational stalls
         run: python tools/gate_btc_factory/universal_watchdog.py

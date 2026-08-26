@@ -102,9 +102,10 @@ def test_survivor_health_never_grants_scientific_change(tmp_path, monkeypatch):
     assert d['safety']['backfill_allowed'] is False
 
 
-def test_progression_controller_has_only_frozen_stage_chain():
-    text = (ROOT / '.github/workflows/gate-btc-b3-nextgen-progression.yml').read_text(encoding='utf-8')
+def test_explicit_progression_reconciler_has_only_frozen_stage_chain():
+    text = (ROOT / 'tools/gate_btc_factory/reconcile_nextgen_progression.py').read_text(encoding='utf-8')
     expected = [
+        'gate-btc-b3-h-nextgen-stage0.yml',
         'gate-btc-b3-h-stage1-adapter.yml',
         'gate-btc-b3-h-stage2-falsification.yml',
         'gate-btc-b3-h-stage2b-replication.yml',
@@ -112,6 +113,12 @@ def test_progression_controller_has_only_frozen_stage_chain():
     ]
     for item in expected:
         assert item in text
-    assert 'NO_RETUNE=true' in text
-    assert 'NO_BACKFILL=true' in text
-    assert 'SCIENTIFIC_PIPELINE=FAIL_CLOSED_NO_AUTOMATIC_ADVANCE' in text
+    assert 'FAIL_CLOSED_PREDECESSOR' in text
+    assert 'FAIL_CLOSED_STAGE' in text
+    assert 'SINGLE_FLIGHT' in text
+
+    legacy = (ROOT / '.github/workflows/gate-btc-b3-nextgen-progression.yml').read_text(encoding='utf-8')
+    assert 'workflow_run:' not in legacy
+    assert 'NEXTGEN_PROGRESSION_AUTHORITY=FACTORY_AUTONOMY_SUPERVISOR' in legacy
+    assert 'NO_RETUNE=true' in legacy
+    assert 'NO_BACKFILL=true' in legacy
