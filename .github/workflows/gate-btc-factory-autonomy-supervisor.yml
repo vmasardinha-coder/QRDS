@@ -1,0 +1,167 @@
+name: GATE BTC Factory Autonomy Supervisor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
+      - '.github/workflows/gate-btc-b3-nextgen-progression.yml'
+      - 'tools/gate_btc_factory/state_master_refresh.py'
+      - 'tools/gate_btc_factory/universal_watchdog.py'
+      - 'tools/gate_btc_factory/survivor_health.py'
+      - 'tools/gate_btc_factory/self_audit.py'
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+concurrency:
+  group: gate-btc-factory-autonomy-supervisor
+  cancel-in-progress: false
+
+jobs:
+  autonomy-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable research boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+
+      - name: Refresh state master operational fields locally
+        run: python tools/gate_btc_factory/state_master_refresh.py
+
+      - name: Validate factory contracts
+        run: python tools/gate_btc_factory/validate_factory_contracts.py
+
+      - name: Build fresh canonical runtime status
+        run: python tools/gate_btc_factory/run_factory_ci.py
+
+      - name: Restore persisted prospective registry if present
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gate-btc-runtime:refs/remotes/origin/gate-btc-runtime || true
+          if git show origin/gate-btc-runtime:runtime/factory_autonomy/PROSPECTIVE_ACTIVATIONS.json > /tmp/prospective.json 2>/dev/null; then
+            cp /tmp/prospective.json tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json
+          fi
+
+      - name: Plan factory progression and approved survivor activation
+        run: python tools/gate_btc_factory/plan_factory_transitions.py
+
+      - name: Apply idempotent progression and survivor activation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/gate_btc_factory/apply_factory_transitions.py
+
+      - name: Diagnose universal operational stalls
+        run: python tools/gate_btc_factory/universal_watchdog.py
+
+      - name: Dispatch bounded operational repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/repairs.tsv
+          import json
+          d=json.load(open('tools/gate_btc_factory/WATCHDOG_RUNTIME.json',encoding='utf-8'))
+          mapping={
+            'B3_H1':'gate-btc-b3-h1-daily.yml',
+            'B3_H31':'gate-btc-b3-h31-prospective.yml',
+            'B3_H40_PLUS':'gate-btc-b3-factory-continuation.yml',
+            'MOMENTUM_M1_M2':'gate-btc-momentum-shadow.yml',
+            'D50_DATA_QUALIFICATION':'gate-btc-d50-mirror-reconcile.yml',
+            'GATE_BTC_2_CORE':'gate-btc-2-dataset-seal-readiness.yml',
+          }
+          for a in d.get('actions',[]):
+              w=mapping.get(a.get('track'))
+              if w: print(a['track']+'\t'+w)
+          PY
+          while IFS=$'\t' read -r track workflow; do
+            [ -n "$workflow" ] || continue
+            active=$(gh run list --repo "${{ github.repository }}" --workflow "$workflow" --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
+            if [ "$active" = 0 ]; then
+              gh workflow run "$workflow" --repo "${{ github.repository }}" --ref main
+              echo "AUTO_REPAIR_DISPATCHED=$track:$workflow"
+            else
+              echo "AUTO_REPAIR_SINGLE_FLIGHT=$track:$workflow"
+            fi
+          done < /tmp/repairs.tsv
+
+      - name: Audit survivor health
+        run: python tools/gate_btc_factory/survivor_health.py
+
+      - name: Run anti-stall self audit
+        run: python tools/gate_btc_factory/self_audit.py
+
+      - name: Assert supervisor safety outputs
+        run: |
+          python - <<'PY'
+          import json
+          for p in ['WATCHDOG_RUNTIME.json','SURVIVOR_HEALTH_RUNTIME.json','SELF_AUDIT_RUNTIME.json']:
+              d=json.load(open('tools/gate_btc_factory/'+p,encoding='utf-8'))
+              s=d['safety']
+              assert s.get('orders')==0 and s.get('real_capital')==0 and s.get('engine_feed') is False
+              assert s.get('scientific_change_allowed') is False
+          print('FACTORY_AUTONOMY_SAFETY=PASS')
+          PY
+
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Persist autonomy state append-only branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy
+          cp tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json runtime_repo/runtime/factory_autonomy/PROSPECTIVE_ACTIVATIONS.json
+          cp tools/gate_btc_factory/WATCHDOG_RUNTIME.json runtime_repo/runtime/factory_autonomy/WATCHDOG_RUNTIME.json
+          cp tools/gate_btc_factory/SURVIVOR_HEALTH_RUNTIME.json runtime_repo/runtime/factory_autonomy/SURVIVOR_HEALTH_RUNTIME.json
+          cp tools/gate_btc_factory/SELF_AUDIT_RUNTIME.json runtime_repo/runtime/factory_autonomy/SELF_AUDIT_RUNTIME.json
+          cp tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json runtime_repo/runtime/factory_autonomy/FACTORY_TRANSITIONS_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Factory autonomy state ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-factory-autonomy-${{ github.run_id }}
+          path: |
+            tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json
+            tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json
+            tools/gate_btc_factory/WATCHDOG_RUNTIME.json
+            tools/gate_btc_factory/SURVIVOR_HEALTH_RUNTIME.json
+            tools/gate_btc_factory/SELF_AUDIT_RUNTIME.json
+            tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json
+          if-no-files-found: error
+          retention-days: 30
