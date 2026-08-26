@@ -1,0 +1,50 @@
+{
+  "actions": [
+    {
+      "backfill_allowed": false,
+      "blocker": "collection-delivery anomaly remains open; exact failing delivery/source step must be proven from current evidence",
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0,
+      "repair_mode": "RETRY_ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
+      "scientific_change_allowed": false,
+      "track": "MOMENTUM_M1_M2"
+    },
+    {
+      "backfill_allowed": false,
+      "blocker": "qualification chain remains 0/7 with synchronized failure and stale source evidence; exact source/symbol/time/schema boundary unresolved",
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0,
+      "repair_mode": "RETRY_QUALIFICATION_PLUMBING_ONLY",
+      "scientific_change_allowed": false,
+      "track": "D50_DATA_QUALIFICATION"
+    },
+    {
+      "backfill_allowed": false,
+      "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0,
+      "repair_mode": "RETRY_DATA_READINESS_PLUMBING_ONLY",
+      "scientific_change_allowed": false,
+      "track": "GATE_BTC_2_CORE"
+    }
+  ],
+  "generated_at_utc": "2026-08-26T21:00:46.929436Z",
+  "safety": {
+    "backfill_allowed": false,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "scientific_change_allowed": false,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.watchdog.v1",
+  "stalled_tracks": [
+    "MOMENTUM_M1_M2",
+    "D50_DATA_QUALIFICATION",
+    "GATE_BTC_2_CORE"
+  ]
+}
