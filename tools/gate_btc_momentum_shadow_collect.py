@@ -100,6 +100,7 @@ def compute_m2(prices_csv: Path, cutoff: str, diagnostic_output: Path | None = N
 
     union_dates = sorted(d for d in union_dates if d <= cutoff)
     btc_dates = sorted(d for d in by_asset.get("BTC", {}) if d <= cutoff)
+    btc_set = set(btc_dates)
     diagnostic = {
         "schema": "gate_btc.momentum_m2.coverage_diagnostic.v1",
         "classification": "ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
@@ -110,7 +111,7 @@ def compute_m2(prices_csv: Path, cutoff: str, diagnostic_output: Path | None = N
         "btc_first_date": btc_dates[0] if btc_dates else None,
         "btc_last_date": btc_dates[-1] if btc_dates else None,
         "union_last_31": union_dates[-31:],
-        "union_last_31_missing_from_btc": [d for d in union_dates[-31:] if d not in set(btc_dates)],
+        "union_last_31_missing_from_btc": [d for d in union_dates[-31:] if d not in btc_set],
         "repair_scope": "COVERAGE_ACCOUNTING_AND_REFERENCE_CALENDAR_BINDING_ONLY",
         "scientific_changes": 0,
         "synthetic_backfill": False,
@@ -139,8 +140,8 @@ def compute_m2(prices_csv: Path, cutoff: str, diagnostic_output: Path | None = N
     # completed UTC daily-bar calendar. Requiring BTC to match the union of all
     # asset dates can create a false coverage failure when another asset carries
     # a source-specific extra date. No prices are filled or synthesized here.
-    window = btc_dates[idx-30:idx + 1]
-    d14, d30 = btc_dates[idx-14], btc_dates[idx-30]
+    window = btc_dates[idx - 30:idx + 1]
+    d14, d30 = btc_dates[idx - 14], btc_dates[idx - 30]
     diagnostic["btc_reference_window"] = window
     diagnostic["btc_reference_window_count"] = len(window)
     diagnostic["btc_reference_d14"] = d14
@@ -233,9 +234,10 @@ def main() -> int:
         raise SystemExit("pre-freeze cutoff forbidden for prospective ledger")
 
     work = args.output.parent / "momentum_prices.csv"
+    diagnostic_output = args.m2_diagnostic_output or (args.output.parent / "M2_COVERAGE_DIAGNOSTIC.json")
     source = extract_prices(args.v2a_zip, args.cutoff, work)
     m1_rows, m1_summary = compute_m1(work, args.cutoff)
-    m2_rows, m2_summary = compute_m2(work, args.cutoff, args.m2_diagnostic_output)
+    m2_rows, m2_summary = compute_m2(work, args.cutoff, diagnostic_output)
 
     args.ledger_dir.mkdir(parents=True, exist_ok=True)
     prior_files = sorted(p for p in args.ledger_dir.glob("*.json") if p.name != "STATUS.json")
