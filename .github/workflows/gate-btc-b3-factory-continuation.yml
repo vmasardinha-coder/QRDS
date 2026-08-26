@@ -6,14 +6,15 @@ on:
     - cron: '20 */6 * * *'
 
 permissions:
-  contents: write
+  actions: write
+  contents: read
   issues: write
 
 env:
   GATE_BTC_RESEARCH_ONLY: 'true'
   GATE_BTC_SHADOW_ONLY: 'true'
   GATE_BTC_NOT_APPROVED: 'true'
-  PYTHONDONTWRITEBYTECODE: '1'
+  GH_TOKEN: ${{ github.token }}
 
 concurrency:
   group: gate-btc-b3-factory-continuation
@@ -22,87 +23,53 @@ concurrency:
 jobs:
   continue-factory:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Detect canonical frontier and allowed next batch
-        id: frontier
+      - name: Detect canonical frontier
+        id: guard
+        continue-on-error: true
+        run: python tools/gate_btc_factory/continuation_guard.py
+
+      - name: Refuse duplicate scientific materialization
+        if: steps.guard.outcome == 'failure'
+        run: |
+          echo 'FACTORY_CONTINUATION=FAIL_CLOSED_NO_CLONE_NO_RENAME'
+          echo 'H140-H149 will not be mechanically copied into H150-H159.'
+
+      - name: Check for active NextGen Stage0 run
+        id: active
+        if: steps.guard.outcome == 'failure'
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import glob, os, re
-          blocks=[]
-          for p in glob.glob('.github/workflows/gate-btc-b3-h*-h*-*.yml') + glob.glob('.github/workflows/gate-btc-b3-h*-h*.yml'):
-              m=re.search(r'h(\d+)-h(\d+)', os.path.basename(p))
-              if m:
-                  blocks.append((int(m.group(1)), int(m.group(2)), p))
-          if not blocks:
-              raise SystemExit('No canonical B3 generation blocks found')
-          frontier=max(b[1] for b in blocks)
-          next_start=frontier+1
-          next_end=next_start+9
-          print(f'frontier={frontier} next={next_start}-{next_end}')
-          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
-              f.write(f'frontier={frontier}\n')
-              f.write(f'next_start={next_start}\n')
-              f.write(f'next_end={next_end}\n')
-          PY
+          n=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-b3-h-nextgen-stage0.yml --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
+          echo "count=$n" >> "$GITHUB_OUTPUT"
 
-      - name: Fail closed unless frontier is exactly H149
-        if: steps.frontier.outputs.frontier != '149'
+      - name: Reactivate approved scientific discovery pipeline
+        if: steps.guard.outcome == 'failure' && steps.active.outputs.count == '0'
         run: |
-          echo "FACTORY_CONTINUATION=NOOP_FRONTIER_${{ steps.frontier.outputs.frontier }}"
-          exit 0
+          gh workflow run gate-btc-b3-h-nextgen-stage0.yml --repo "${{ github.repository }}" --ref main
+          echo 'FACTORY_CONTINUATION=DISPATCHED_NEXTGEN_STAGE0'
 
-      - name: Materialize H150-H159 continuation contract
-        if: steps.frontier.outputs.frontier == '149'
-        shell: bash
-        run: |
-          set -euo pipefail
-          test ! -e tools/gate_btc_b3_h150_h159_prereg.md
-          test ! -e .github/workflows/gate-btc-b3-h150-h159-source-qa.yml
-          cp tools/gate_btc_b3_h140_h149_prereg.md /tmp/h150.md
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('/tmp/h150.md')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('H140-H149','H150-H159').replace('H140–H149','H150–H159').replace('h140_h149','h150_h159')
-          s=s.replace('H140','H150').replace('H141','H151').replace('H142','H152').replace('H143','H153').replace('H144','H154').replace('H145','H155').replace('H146','H156').replace('H147','H157').replace('H148','H158').replace('H149','H159')
-          s += '\n\n## Factory continuation provenance\nGenerated mechanically from the immediately preceding frozen H140-H149 preregistration boundary. No methodology, thresholds, costs, cutoff semantics, promotion rules, economics, or historical evidence were changed by this continuation step. This file only allocates the next canonical family identifiers for research-only execution.\n'
-          Path('tools/gate_btc_b3_h150_h159_prereg.md').write_text(s,encoding='utf-8')
-          PY
+      - name: Keep single-flight if NextGen already active
+        if: steps.guard.outcome == 'failure' && steps.active.outputs.count != '0'
+        run: echo 'FACTORY_CONTINUATION=NEXTGEN_ALREADY_ACTIVE'
 
-          cp .github/workflows/gate-btc-b3-h140-h149-source-qa.yml /tmp/h150.yml
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('/tmp/h150.yml')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('H140-H149','H150-H159').replace('h140_h149','h150_h159')
-          s=s.replace('gate-btc-b3-h140-h149','gate-btc-b3-h150-h159')
-          Path('.github/workflows/gate-btc-b3-h150-h159-source-qa.yml').write_text(s,encoding='utf-8')
-          PY
-
-          git config user.name gate-btc-research-bot
-          git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add tools/gate_btc_b3_h150_h159_prereg.md .github/workflows/gate-btc-b3-h150-h159-source-qa.yml
-          git commit -m 'B3 Factory: materialize H150-H159 continuation contract'
-          git push origin HEAD:gate-btc-runtime-factory-continuation
-
-      - name: Report continuation boundary
+      - name: Report safety boundary
         if: always()
         run: |
-          echo "RESEARCH_ONLY=true"
-          echo "SHADOW_ONLY=true"
-          echo "NOT_APPROVED=true"
-          echo "ORDERS=0"
-          echo "REAL_CAPITAL=0"
-          echo "NO_RETUNE=true"
+          echo 'RESEARCH_ONLY=true'
+          echo 'SHADOW_ONLY=true'
+          echo 'NOT_APPROVED=true'
+          echo 'ORDERS=0'
+          echo 'REAL_CAPITAL=0'
+          echo 'NO_RETUNE=true'
+          echo 'NO_BACKFILL=true'
