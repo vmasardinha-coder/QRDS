@@ -1,66 +1,29 @@
 name: GATE BTC B3 NextGen Progression Controller
 
+# Legacy diagnostic entrypoint only. Automatic progression authority lives in
+# GATE BTC Factory Autonomy Supervisor via reconcile_nextgen_progression.py.
 on:
-  workflow_run:
-    workflows:
-      - GATE BTC B3 H NextGen Stage0
-      - GATE BTC B3 H Stage1 Adapter
-      - GATE BTC B3 H Stage2 Falsification
-      - GATE BTC B3 H Stage2B Replication
-    types: [completed]
+  workflow_dispatch:
 
 permissions:
-  actions: write
   contents: read
-  issues: write
 
 env:
-  GH_TOKEN: ${{ github.token }}
   GATE_BTC_RESEARCH_ONLY: 'true'
   GATE_BTC_SHADOW_ONLY: 'true'
   GATE_BTC_NOT_APPROVED: 'true'
 
-concurrency:
-  group: gate-btc-b3-nextgen-progression
-  cancel-in-progress: false
-
 jobs:
-  advance:
-    if: github.event.workflow_run.conclusion == 'success'
+  legacy-diagnostic:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Resolve next frozen stage
-        id: next
-        shell: bash
+      - name: Report authority migration
         run: |
-          set -euo pipefail
-          case "${{ github.event.workflow_run.name }}" in
-            'GATE BTC B3 H NextGen Stage0') next='gate-btc-b3-h-stage1-adapter.yml' ;;
-            'GATE BTC B3 H Stage1 Adapter') next='gate-btc-b3-h-stage2-falsification.yml' ;;
-            'GATE BTC B3 H Stage2 Falsification') next='gate-btc-b3-h-stage2b-replication.yml' ;;
-            'GATE BTC B3 H Stage2B Replication') next='gate-btc-b3-h-nextgen-final.yml' ;;
-            *) echo 'Unknown scientific stage; fail closed'; exit 1 ;;
-          esac
-          echo "workflow=$next" >> "$GITHUB_OUTPUT"
-      - name: Enforce single-flight
-        id: active
-        run: |
-          n=$(gh run list --repo "${{ github.repository }}" --workflow "${{ steps.next.outputs.workflow }}" --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
-          echo "count=$n" >> "$GITHUB_OUTPUT"
-      - name: Dispatch next authorized stage
-        if: steps.active.outputs.count == '0'
-        run: gh workflow run "${{ steps.next.outputs.workflow }}" --repo "${{ github.repository }}" --ref main
-      - name: Preserve fail-closed boundary
-        run: |
+          echo 'NEXTGEN_PROGRESSION_AUTHORITY=FACTORY_AUTONOMY_SUPERVISOR'
+          echo 'WORKFLOW_RUN_CHAINING=false'
           echo 'NO_RETUNE=true'
           echo 'NO_BACKFILL=true'
           echo 'ORDERS=0'
           echo 'REAL_CAPITAL=0'
           echo 'ENGINE_FEED=false'
-
-  stop-on-failure:
-    if: github.event.workflow_run.conclusion != 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo 'SCIENTIFIC_PIPELINE=FAIL_CLOSED_NO_AUTOMATIC_ADVANCE'
