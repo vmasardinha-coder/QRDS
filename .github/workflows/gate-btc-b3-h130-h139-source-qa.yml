@@ -1,0 +1,56 @@
+name: GATE BTC B3 H130-H139 Source QA
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_b3_h130_h139_prereg.md'
+      - 'tools/gate_btc_b3_h130_h139_source_probe.py'
+      - '.github/workflows/gate-btc-b3-h130-h139-source-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gate-btc-b3-h130-h139-source-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas requests
+      - name: Run official Tesouro source QA
+        run: python tools/gate_btc_b3_h130_h139_source_probe.py
+      - name: Assert frozen source, causality and safety contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h130_h139/B3_H130_H139_SOURCE_QA.json'))
+          assert p['schema']=='qrds.b3.h130_h139.source_qa.v1'
+          assert p['package_name']=='taxas-dos-titulos-ofertados-pelo-tesouro-direto'
+          assert p['resource_id']=='796d2059-14e9-44e3-80c9-2d9e30b405c1'
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['duplicate_title_maturity_base_keys']==0
+          assert set(p['required_exact_title_classes'])=={'Tesouro Prefixado','Tesouro IPCA+'}
+          assert p['node_selection']['coupon_bearing_substitution'] is False
+          assert p['economics_run'] is False
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0
+          assert p['engine_feed'] is False and p['not_approved'] is True
+          if p['status']=='SOURCE_QA_READY_STRATIFIED':
+              assert min(p['node_coverage_on_source_dates'].values()) >= 0.90
+          elif p['status']=='SOURCE_QA_NODE_COVERAGE_GAP':
+              assert min(p['node_coverage_on_source_dates'].values()) < 0.90
+          else:
+              raise AssertionError(p['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h130-h139-source-qa-${{ github.run_id }}
+          path: |
+            artifacts/b3_h130_h139/B3_H130_H139_SOURCE_QA.json
+            artifacts/b3_h130_h139/B3_H130_H139_CURVE_NODES.csv
+          retention-days: 30
+          if-no-files-found: error
