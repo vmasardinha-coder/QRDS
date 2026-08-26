@@ -1,0 +1,123 @@
+{
+  "schema": "gate_btc.b3.h1.failure_audit.v1",
+  "target_date": "2026-08-25",
+  "failure_class": "D",
+  "failure_label": "INGESTION/DISCOVERY_FAILURE",
+  "root_cause": "Official B3 tickercsv returned HTTP 200 plus a valid ZIP before publication had finalized. The captured immutable snapshot contained only partial WINV26 coverage and zero WDO rows. Frozen structural QA correctly failed closed at M1_WDO_MISSING; the operational gap was absence of later same-session publication-finalization retry windows.",
+  "secondary_operational_factor": "G_SCHEDULER_WORKFLOW_NO_LATE_PUBLICATION_RETRY",
+  "source": {
+    "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2026-08-25",
+    "run_id": 32921641712,
+    "artifact_id": 9590032255,
+    "artifact_digest_sha256": "2ad0defff02f8118800ba29ec67ca32aea2e3a5a15b0c3ca274ce5059e7a62c9",
+    "captured_at_utc": "2026-08-26T02:09:22Z",
+    "http_status": 200,
+    "zip_bytes": 29760138,
+    "raw_sha256": "63404a7aa5a3d6328feb9aa947b961364ed57beb597195065976f655f035e95a",
+    "member": "25-08-2026_NEGOCIOSAVISTA.txt",
+    "member_uncompressed_bytes": 300605216,
+    "source_rows": 4229972,
+    "represented_date": "2026-08-25",
+    "WIN_present": true,
+    "WDO_present": false,
+    "wrong_session_detected": false
+  },
+  "contracts": {
+    "timezone": "America/Sao_Paulo",
+    "freeze_status": "FROZEN_BEFORE_H1",
+    "expected_WIN": "WINV26",
+    "observed_WIN": "WINV26",
+    "expected_WDO": "WDOV26",
+    "observed_WDO": null,
+    "other_WDO_contract_present": false,
+    "wrong_contract_or_roll_proven": false
+  },
+  "raw_and_m1_m5": {
+    "WIN": {
+      "m1_count": 431,
+      "first_timestamp": "2026-08-25T10:19:00-03:00",
+      "last_timestamp": "2026-08-25T17:29:00-03:00",
+      "duplicate_keys": 0,
+      "ohlc_integrity": "PASS_AVAILABLE_ROWS",
+      "tick_grid": "PASS_AVAILABLE_ROWS",
+      "m5_count": 87,
+      "required_m5": 102,
+      "m5_gate": "FAIL",
+      "missing_m5": ["09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10"]
+    },
+    "WDO": {
+      "m1_count": 0,
+      "m5_count": 0,
+      "required_m5": 102,
+      "m5_gate": "FAIL",
+      "missing_m5": "ALL_102_EXPECTED_BUCKETS"
+    },
+    "expected_lattice": {
+      "first": "2026-08-25T09:00:00-03:00",
+      "last": "2026-08-25T17:25:00-03:00"
+    },
+    "terminal_error": "RuntimeError('M1_WDO_MISSING')",
+    "structural_qa": "FAIL"
+  },
+  "freeze_and_causality": {
+    "blind_lock_sha256": "ceb5ed9b48f2c4f616eee82a78942f39deceb41272369be02ad207b49425cbf1",
+    "full_frozen_schedule_sha256": "5fd7314f55fb1c6394628d94227fdc0ed375016a57453a07f05828ffd5a9282f",
+    "h1_schedule_prefix_sha256": "c9ff28b4d1b6c8e2aceb3281da51bc41858780493c99a0eeac148f2bdd0bc4f6",
+    "upstream_engine_sha256": "1e313614e4f8dd318488e3abdde1d56848c076f9e57bb47a4fd5ce4f9c06410c",
+    "present_before_target_session": true,
+    "future_information_used": false,
+    "retune": false,
+    "synthetic_reconstruction": false,
+    "H1_ECONOMICS_READ": false
+  },
+  "pipeline": {
+    "source_discovery": "HTTP_200_VALID_ZIP_ACCEPTED_BEFORE_FINALIZATION",
+    "download": "PASS",
+    "parser": "PASS_FAIL_CLOSED",
+    "structural_QA": "FAIL_M1_WDO_MISSING_AND_WIN_87_OF_102",
+    "deterministic_recomputation": "NOT_QUALIFIED_FULL_TWO_ROOT_LATTICE_MISSING",
+    "qualification": "FAIL_CLOSED",
+    "append": "NOT_RUN",
+    "publish_gate_btc_runtime": "NOT_RUN",
+    "reporting": "NO_INCREMENT"
+  },
+  "safe_recovery": {
+    "scientifically_eligible_if_later_official_same_date_bytes_pass_all_frozen_gates": true,
+    "recovery_rerun_requested": true,
+    "recovery_run_id": 32921641712,
+    "recovery_rerun_status_at_audit_write": "QUEUED",
+    "RECOVERY_ALLOWED": false,
+    "RECOVERY_EXECUTED": false,
+    "reason": "Later finalized official bytes have not yet completed unchanged frozen structural QA; preserve fail-closed 6/20 until proof exists.",
+    "arbitrary_backfill_authorized": false
+  },
+  "regression_fix": {
+    "description": "Add 09:30 and 12:30 UTC Tue-Sat late-publication retry windows. All scheduled executions still target only the immediately preceding UTC Mon-Fri session and pass through the unchanged frozen collector and gates.",
+    "test": "tests/test_gate_btc_b3_h1_late_publication_recovery.py"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "ENGINE_FEED": false,
+    "H1_ECONOMICS_READ": false
+  },
+  "final": {
+    "TARGET_DATE": "2026-08-25",
+    "ROOT_CAUSE": "Official B3 HTTP-200 ZIP was captured before publication finalized; snapshot had partial WIN and zero WDO, and plumbing had no later same-session publication-finalization retry window.",
+    "FAILURE_CLASS": "D",
+    "SOURCE_VALID": false,
+    "STRUCTURAL_QA": "FAIL",
+    "RECOVERY_ALLOWED": false,
+    "RECOVERY_EXECUTED": false,
+    "REGRESSION_FIX": "Bounded late-publication retry windows for the immediately prior frozen session only",
+    "PRE_COUNT": "6/20",
+    "POST_COUNT": "6/20",
+    "LATEST_VALID_DATE": "2026-08-21",
+    "H1_ECONOMICS_READ": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0
+  }
+}
