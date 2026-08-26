@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import io
 import sys
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -32,9 +34,14 @@ class FakeSession:
         return outcome
 
 
+class FakeResponse:
+    def raise_for_status(self):
+        return None
+
+
 class H120H129SourceProbeRetryTests(unittest.TestCase):
     def test_retries_truncated_response_and_returns_later_success(self):
-        response = object()
+        response = FakeResponse()
         session = FakeSession(
             [
                 requests.exceptions.ChunkedEncodingError("truncated-1"),
@@ -78,21 +85,59 @@ class H120H129SourceProbeRetryTests(unittest.TestCase):
         sleep.assert_not_called()
 
     def test_schema_scan_distinguishes_exact_futures_from_options(self):
-        xml = b"""<root>
-          <TckrSymb>WINQ26</TckrSymb>
-          <TckrSymb>WDOQ26</TckrSymb>
-          <TckrSymb>WDOQ26C005500</TckrSymb>
-          <TradQty>1</TradQty><RglrTraddCtrcts>1</RglrTraddCtrcts>
-          <FinInstrmQty>1</FinInstrmQty><OpnIntrst>1</OpnIntrst>
-          <FrstPric>1</FrstPric><MinPric>1</MinPric>
-          <MaxPric>1</MaxPric><LastPric>1</LastPric>
-        </root>"""
+        def row(ticker):
+            return f"""<BizGrp><Document><PricRpt>
+              <SctyId><TckrSymb>{ticker}</TckrSymb></SctyId>
+              <TradDtls><TradQty>1</TradQty></TradDtls>
+              <FinInstrmAttrbts><RglrTraddCtrcts>1</RglrTraddCtrcts>
+              <FinInstrmQty>1</FinInstrmQty><OpnIntrst>1</OpnIntrst>
+              <FrstPric>1</FrstPric><MinPric>1</MinPric>
+              <MaxPric>1</MaxPric><LastPric>1</LastPric></FinInstrmAttrbts>
+            </PricRpt></Document></BizGrp>"""
+        xml = ("<root>" + row("WINQ26") + row("WDOQ26") + row("WDOQ26C005500") + "</root>").encode()
 
-        _, prefix_counts, future_counts, samples = probe.scan(xml)
+        _, prefix_counts, future_counts, complete, samples = probe.scan(xml)
 
         self.assertEqual(prefix_counts, {"WIN": 1, "WDO": 2})
         self.assertEqual(future_counts, {"WIN": 1, "WDO": 1})
+        self.assertEqual(complete, {"WIN": 1, "WDO": 1})
         self.assertEqual(samples, ["WINQ26", "WDOQ26"])
+
+    def test_latest_xml_member_is_selected_deterministically(self):
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, "w", zipfile.ZIP_DEFLATED) as inner:
+            early = zipfile.ZipInfo("early.xml", date_time=(2026, 8, 7, 17, 0, 0))
+            late = zipfile.ZipInfo("late.xml", date_time=(2026, 8, 7, 19, 0, 0))
+            inner.writestr(early, b"<root><value>early</value></root>")
+            inner.writestr(late, b"<root><value>late</value></root>")
+        outer = io.BytesIO()
+        with zipfile.ZipFile(outer, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("PR260807.zip", nested.getvalue())
+
+        name, raw, nested_name, nested_hash, member_count, rejected, _ = probe.xml_from(outer.getvalue())
+
+        self.assertEqual(name, "late.xml")
+        self.assertIn(b"late", raw)
+        self.assertEqual(nested_name, "PR260807.zip")
+        self.assertEqual(len(nested_hash), 64)
+        self.assertEqual(member_count, 2)
+        self.assertEqual(rejected, [])
+
+    def test_malformed_latest_xml_falls_back_and_is_recorded(self):
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, "w", zipfile.ZIP_DEFLATED) as inner:
+            early = zipfile.ZipInfo("valid.xml", date_time=(2021, 1, 4, 17, 0, 0))
+            late = zipfile.ZipInfo("malformed.xml", date_time=(2021, 1, 4, 19, 0, 0))
+            inner.writestr(early, b"<root />")
+            inner.writestr(late, b"<root><broken></root>")
+        outer = io.BytesIO()
+        with zipfile.ZipFile(outer, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("PR210104.zip", nested.getvalue())
+
+        name, _, _, _, _, rejected, _ = probe.xml_from(outer.getvalue())
+
+        self.assertEqual(name, "valid.xml")
+        self.assertEqual([item["xml_name"] for item in rejected], ["malformed.xml"])
 
 
 if __name__ == "__main__":

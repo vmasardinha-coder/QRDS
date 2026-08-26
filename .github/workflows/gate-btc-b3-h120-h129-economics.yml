@@ -11,16 +11,19 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: gate-btc-b3-h120-h129-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
-  historical-validation:
+  preflight:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install pandas numpy requests
-      - name: Test fail-closed source delivery retries
+      - name: Test source, causality, coverage, and sharded-ingestion contracts
         run: |
           python -m unittest -v \
             tests/test_gate_btc_b3_h120_h129_source_probe.py \
@@ -29,16 +32,96 @@ jobs:
         run: |
           python tools/gate_btc_b3_h120_h129_source_probe.py
           python - <<'PY'
-          import json
+          import json,re
           p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json'))
           assert p['status']=='SOURCE_QA_READY_STRATIFIED'
           assert p['older_replication_dates_passed']==p['older_replication_dates_total']
+          identity=re.compile(p['contract_identity_regex'])
+          assert p['xml_member_selection']=='latest well-formed XML by ZipInfo.date_time, then lexical filename'
+          assert all(all(row['future_contract_counts'][asset]>0 for asset in ('WIN','WDO')) for row in p['rows'])
+          assert all(all(row['complete_future_rows'][asset]>0 for asset in ('WIN','WDO')) for row in p['rows'])
+          assert all(identity.fullmatch(ticker) for row in p['rows'] for ticker in row['sample_tickers'])
           assert p['economics_run'] is False and p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
           assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
           PY
-      - name: Run preregistered H120-H129 validation with exact previous-session joins
+      - name: Seal deterministic request plan
         run: |
-          python tools/gate_btc_b3_h120_h129_guarded.py \
+          python tools/gate_btc_b3_h120_h129_guarded.py plan \
+            --out artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json'))
+          assert p['schema']=='qrds.b3.h120_h129.request_plan.v1'
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert p['requested_days']==sorted(set(p['discovery_sessions'])|set(p['replication_sessions']))
+          assert p['economics_run'] is False and p['orders']==0 and p['real_capital']==0
+          assert p['engine_feed'] is False and p['not_approved'] is True
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h120-h129-preflight-${{ github.run_id }}
+          path: |
+            artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json
+            artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json
+          retention-days: 30
+          if-no-files-found: error
+
+  fetch-daily:
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - uses: actions/download-artifact@v4
+        with:
+          name: b3-h120-h129-preflight-${{ github.run_id }}
+          path: artifacts/b3_h120_h129
+      - name: Fetch and seal official BVBG.086 shard
+        run: |
+          python tools/gate_btc_b3_h120_h129_guarded.py fetch \
+            --plan artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 8 \
+            --workers 4 \
+            --out artifacts/b3_h120_h129/daily_chunks/B3_H120_H129_DAILY_CHUNK_${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-h120-h129-daily-${{ github.run_id }}-${{ matrix.shard }}
+          path: artifacts/b3_h120_h129/daily_chunks/B3_H120_H129_DAILY_CHUNK_${{ matrix.shard }}.json
+          retention-days: 30
+          if-no-files-found: error
+
+  historical-validation:
+    needs: fetch-daily
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
+      - uses: actions/download-artifact@v4
+        with:
+          name: b3-h120-h129-preflight-${{ github.run_id }}
+          path: artifacts/b3_h120_h129
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: b3-h120-h129-daily-${{ github.run_id }}-*
+          path: artifacts/b3_h120_h129/daily_chunks
+          merge-multiple: true
+      - name: Reproduce plan and run preregistered exact-session validation
+        run: |
+          python tools/gate_btc_b3_h120_h129_guarded.py evaluate \
+            --plan artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json \
+            --chunks-dir artifacts/b3_h120_h129/daily_chunks \
             --out artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json \
             --ledger artifacts/b3_h120_h129/H120_H129_RESULT_LEDGER.jsonl \
             --cells artifacts/b3_h120_h129/H120_H129_CELLS.csv \
@@ -48,24 +131,36 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json'))
+          m=json.load(open('artifacts/b3_h120_h129/H120_H129_DAILY_MANIFEST.json'))
+          plan=json.load(open('artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json'))
           assert p['cutoff_exclusive']=='2026-08-10'
           assert set(p['states'])=={f'H{i}' for i in range(120,130)}
           assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
           assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False and p['not_approved'] is True
           assert len(p['survivors'])<=2
-          if p['status'].startswith('DATA_GAP_'):
-              assert p['discovery_coverage']<0.90 or p['replication_coverage']<0.90
-          else:
-              assert p['discovery_coverage']>=0.90 and p['replication_coverage']>=0.90
+          assert set(p['family_coverage'])==set(p['states'])
+          assert m['requested_days']==len(plan['requested_days'])
+          assert m['ingestion']['mode']=='sharded_official_bvbg086'
+          assert m['ingestion']['request_plan_sha256']==plan['plan_sha256']
+          assert m['ingestion']['chunk_count']==8
+          for family,state in p['states'].items():
+              coverage=p['family_coverage'][family]
+              failed=coverage['discovery']['coverage']<0.90 or coverage['replication']['coverage']<0.90
+              assert (state=='DATA_GAP_COVERAGE') == failed
+          assert p['data_gap_families']==[f for f in p['states'] if p['states'][f]=='DATA_GAP_COVERAGE']
+          if p['status']=='DATA_GAP_H120_H129_COVERAGE': assert len(p['data_gap_families'])==10
+          if p['status']=='PARTIAL_DATA_GAP_H120_H129': assert 0<len(p['data_gap_families'])<10 and not p['survivors']
           PY
       - uses: actions/upload-artifact@v4
         with:
           name: b3-h120-h129-economics-${{ github.run_id }}
           path: |
             artifacts/b3_h120_h129/B3_H120_H129_SOURCE_QA.json
+            artifacts/b3_h120_h129/B3_H120_H129_REQUEST_PLAN.json
             artifacts/b3_h120_h129/B3_H120_H129_ECONOMICS.json
             artifacts/b3_h120_h129/H120_H129_RESULT_LEDGER.jsonl
             artifacts/b3_h120_h129/H120_H129_CELLS.csv
             artifacts/b3_h120_h129/H120_H129_DAILY_MANIFEST.json
+            artifacts/b3_h120_h129/daily_chunks/*.json
           retention-days: 30
           if-no-files-found: error
