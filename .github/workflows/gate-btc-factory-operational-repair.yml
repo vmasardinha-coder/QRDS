@@ -1,0 +1,95 @@
+name: GATE BTC Factory Operational Repair
+
+on:
+  workflow_run:
+    workflows:
+      - GATE BTC Momentum M1 M2 Shadow Collection
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  diagnose-repair:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download failed-run diagnostic artifact
+        id: download
+        continue-on-error: true
+        run: |
+          mkdir -p failed_artifact
+          gh run download "${{ github.event.workflow_run.id }}" \
+            --repo "${{ github.repository }}" \
+            --name "gate-btc-momentum-m1m2-${{ github.event.workflow_run.id }}" \
+            --dir failed_artifact
+
+      - name: Classify bounded mechanical repair
+        id: classify
+        if: steps.download.outcome == 'success'
+        run: |
+          STATUS=$(find failed_artifact -type f -path '*/momentum/STATUS.json' -o -path '*/STATUS.json' | head -n1)
+          DIAG=$(find failed_artifact -type f -name 'M2_COVERAGE_DIAGNOSTIC.json' | head -n1 || true)
+          if [ -z "$STATUS" ]; then
+            echo 'No runtime STATUS in failed artifact; fail closed.'
+            exit 1
+          fi
+          args=(--status "$STATUS" --run-attempt "${{ github.event.workflow_run.run_attempt }}" --output repair_decision.json)
+          if [ -n "$DIAG" ]; then args+=(--diagnostic "$DIAG"); fi
+          python tools/gate_btc_factory/operational_repair_loop.py "${args[@]}"
+          python - <<'PY'
+          import json, os
+          d=json.load(open('repair_decision.json',encoding='utf-8'))
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              f.write('decision='+d['decision']+'\n')
+              f.write('safe_retry='+str(bool(d.get('safe_retry'))).lower()+'\n')
+              f.write('escalate='+str(bool(d.get('escalate_human'))).lower()+'\n')
+          PY
+
+      - name: Open or update idempotent repair issue
+        if: always()
+        run: |
+          TITLE="[AUTO-REPAIR:MOMENTUM_M1_M2:${{ github.event.workflow_run.id }}] operational failure"
+          DECISION="NO_DIAGNOSTIC_ARTIFACT"
+          if [ -f repair_decision.json ]; then DECISION=$(python -c "import json;print(json.load(open('repair_decision.json'))['decision'])"); fi
+          BODY=$(cat <<EOF
+          Automatic factory diagnosis for failed Momentum M1/M2 run ${{ github.event.workflow_run.id }} (attempt ${{ github.event.workflow_run.run_attempt }}).
+
+          Decision: $DECISION
+          Repair class: ORCHESTRATION_AND_DATA_DELIVERY_ONLY unless the artifact proves otherwise.
+
+          Guardrails: no methodology/parameter/threshold/universe/cost changes; no synthetic backfill; RESEARCH_ONLY=true; SHADOW_ONLY=true; NOT_APPROVED=true; ENGINE_FEED=false; ORDERS=0; REAL_CAPITAL=0.
+
+          The loop performs at most one safe mechanical rerun. DATA_GAP or repeated failure stays fail-closed and requires human review only when a methodology/source decision is unavoidable.
+          EOF
+          )
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "${{ github.repository }}" --body "$BODY"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: Bounded safe rerun
+        if: steps.classify.outputs.safe_retry == 'true'
+        run: |
+          gh api --method POST \
+            "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/rerun"
+          echo 'FACTORY_REPAIR=SAFE_MECHANICAL_RERUN_REQUESTED'
+
+      - name: Fail closed when no safe repair applies
+        if: steps.classify.outputs.safe_retry != 'true'
+        run: |
+          echo 'FACTORY_REPAIR=FAIL_CLOSED_NO_AUTOMATIC_METHOD_CHANGE'
+          test "${{ steps.classify.outputs.decision }}" = 'FAIL_CLOSED_DATA_GAP' || \
+          test "${{ steps.classify.outputs.decision }}" = 'FAIL_CLOSED_HUMAN_ESCALATION' || \
+          test "${{ steps.classify.outputs.decision }}" = 'NO_AUTOREPAIR_OUTSIDE_ALLOWLIST' || true
