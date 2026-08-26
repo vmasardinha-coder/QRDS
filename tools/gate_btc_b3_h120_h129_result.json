@@ -1,0 +1,89 @@
+{
+  "schema": "gate_btc.b3.h120_h129.close.v1",
+  "generation": "H120_H129_V1",
+  "status": "CLOSED_NO_H120_H129_SURVIVOR",
+  "recorded_at_utc": "2026-08-26T01:19:26Z",
+  "cutoff_exclusive": "2026-08-10",
+  "evidence": {
+    "preregistration_issue": 205,
+    "preregistration_pr": 206,
+    "execution_pr": 207,
+    "execution_head_commit": "1ed5254dae6cb8fec2456d181cee418f60bf296c",
+    "merge_commit": "efa69653dc14ec6577fde0fae4a7c8222c82f544",
+    "workflow_run_id": 32916684473,
+    "artifact_id": 9588840057,
+    "artifact_zip_sha256": "c425e4a10ceb48f28c694f8430915de9def769ff0214a16260d3be456ab01b14",
+    "files_sha256": {
+      "economics": "5d7f3c71357586cb2730ae5637b86c53d26fd12da45aa674c508fd7207335fd7",
+      "source_qa": "95c394901245384e9f0003aabd0494632eb9541005a54495a0b816979e698964",
+      "request_plan": "0947b277b97621417320c26a9b1919cd6b2c66fd8dca169431060415cdaf40a2",
+      "daily_manifest": "388c78e208bcd95f17aa3daea0d589a131a0c778a77b5da7ac3891b93bf7073f",
+      "cells": "cab7c3e7bab6c33ba19572b53c5ff36a1ba6e05042e3f3e54c753a0ac3cefb69",
+      "result_ledger": "5b13f3851a2604b7da33020963bdb923a3e84f9240a270fc014a21f57ce17fa9"
+    }
+  },
+  "source_qa": {
+    "provider": "B3",
+    "source": "BVBG.086.01 full PriceReport PR{YYMMDD}.zip",
+    "passed": 9,
+    "total": 9,
+    "contract_identity_regex": "^(WIN|WDO)[FGHJKMNQUVXZ][0-9]{2}$"
+  },
+  "ingestion": {
+    "request_plan_sha256": "004d0d287f688e8e0e11654a0e40094c8e4866bef2849b9b35171f90dc44cc53",
+    "requested_days": 1154,
+    "pass_days": 1152,
+    "chunk_count": 8,
+    "data_gaps": [
+      {
+        "date": "2021-06-10",
+        "status": "DATA_GAP_DELIVERY_OR_SCHEMA",
+        "reason": "NO_XML"
+      },
+      {
+        "date": "2023-04-27",
+        "status": "DATA_GAP_DELIVERY_OR_SCHEMA",
+        "reason": "READ_TIMEOUT_AFTER_THREE_ATTEMPTS"
+      }
+    ]
+  },
+  "coverage": {
+    "discovery_sync_sessions": 374,
+    "replication_sync_sessions": 780,
+    "discovery": 1.0,
+    "replication": 0.9974358974358974,
+    "minimum_family_discovery": 1.0,
+    "minimum_family_replication": 0.9922779922779923
+  },
+  "qualified_cells": {
+    "discovery": 11,
+    "replication": 1
+  },
+  "discovery_survivor_families": [
+    "H121",
+    "H122",
+    "H123",
+    "H127"
+  ],
+  "replication_survivor_families": [],
+  "states": {
+    "H120": "REJECTED_DISCOVERY",
+    "H121": "REJECTED_FAILED_REPLICATION",
+    "H122": "REJECTED_FAILED_REPLICATION",
+    "H123": "REJECTED_FAILED_REPLICATION",
+    "H124": "REJECTED_DISCOVERY",
+    "H125": "REJECTED_DISCOVERY",
+    "H126": "REJECTED_DISCOVERY",
+    "H127": "REJECTED_FAILED_REPLICATION",
+    "H128": "REJECTED_DISCOVERY",
+    "H129": "REJECTED_DISCOVERY"
+  },
+  "survivors": [],
+  "data_gap_families": [],
+  "h1_economics_read": false,
+  "survivor_partial_economics_read": false,
+  "orders": 0,
+  "capital": 0,
+  "engine_feed": false,
+  "not_approved": true
+}
