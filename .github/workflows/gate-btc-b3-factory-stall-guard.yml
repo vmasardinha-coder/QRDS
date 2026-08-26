@@ -1,0 +1,48 @@
+name: GATE BTC B3 Factory Stall Guard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '5 */3 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+concurrency:
+  group: gate-btc-b3-factory-stall-guard
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Detect stalled family frontier
+        id: guard
+        continue-on-error: true
+        run: python tools/gate_btc_factory/continuation_guard.py
+      - name: Escalate H149 stall without scientific fabrication
+        if: steps.guard.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title='[FACTORY_STALLED] B3 canonical family frontier requires continuation'
+          body='The B3 Factory reached its current canonical family frontier and no next scientific batch contract is present. This guard intentionally refuses to clone/rename the previous family batch because that would create scientifically duplicate candidates. Operational auto-repair remains enabled only for plumbing/schedules. Research-only; no economics read, no tuning, no backfill, no orders, no real capital.'
+          existing=$(gh issue list --repo "${{ github.repository }}" --state open --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "${{ github.repository }}" --body "$body"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body"
+          fi
+          exit 1

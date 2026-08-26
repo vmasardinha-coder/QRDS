@@ -1,0 +1,75 @@
+name: GATE BTC B3 Factory Continuation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 */6 * * *'
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GH_TOKEN: ${{ github.token }}
+
+concurrency:
+  group: gate-btc-b3-factory-continuation
+  cancel-in-progress: false
+
+jobs:
+  continue-factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Detect canonical frontier
+        id: guard
+        continue-on-error: true
+        run: python tools/gate_btc_factory/continuation_guard.py
+
+      - name: Refuse duplicate scientific materialization
+        if: steps.guard.outcome == 'failure'
+        run: |
+          echo 'FACTORY_CONTINUATION=FAIL_CLOSED_NO_CLONE_NO_RENAME'
+          echo 'H140-H149 will not be mechanically copied into H150-H159.'
+
+      - name: Check for active NextGen Stage0 run
+        id: active
+        if: steps.guard.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          n=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-b3-h-nextgen-stage0.yml --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
+          echo "count=$n" >> "$GITHUB_OUTPUT"
+
+      - name: Reactivate approved scientific discovery pipeline
+        if: steps.guard.outcome == 'failure' && steps.active.outputs.count == '0'
+        run: |
+          gh workflow run gate-btc-b3-h-nextgen-stage0.yml --repo "${{ github.repository }}" --ref main
+          echo 'FACTORY_CONTINUATION=DISPATCHED_NEXTGEN_STAGE0'
+
+      - name: Keep single-flight if NextGen already active
+        if: steps.guard.outcome == 'failure' && steps.active.outputs.count != '0'
+        run: echo 'FACTORY_CONTINUATION=NEXTGEN_ALREADY_ACTIVE'
+
+      - name: Report safety boundary
+        if: always()
+        run: |
+          echo 'RESEARCH_ONLY=true'
+          echo 'SHADOW_ONLY=true'
+          echo 'NOT_APPROVED=true'
+          echo 'ORDERS=0'
+          echo 'REAL_CAPITAL=0'
+          echo 'NO_RETUNE=true'
+          echo 'NO_BACKFILL=true'
