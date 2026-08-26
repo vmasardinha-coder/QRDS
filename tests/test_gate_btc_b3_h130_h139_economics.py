@@ -1,7 +1,12 @@
+import sys
 import unittest
+from pathlib import Path
+
 import pandas as pd
 
-from tools import gate_btc_b3_h130_h139_economics as e
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import gate_btc_b3_h130_h139_economics as e
 
 
 class H130H139EconomicsContractTests(unittest.TestCase):
