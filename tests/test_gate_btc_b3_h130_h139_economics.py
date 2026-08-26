@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -34,6 +35,24 @@ class H130H139EconomicsContractTests(unittest.TestCase):
         self.assertEqual(e._sgn(2), 1)
         self.assertEqual(e._sgn(-2), -1)
         self.assertEqual(e._sgn(0), 0)
+
+    def test_persisted_audited_null_result_is_safe(self):
+        p = json.loads((ROOT / "tools/gate_btc_b3_h130_h139_result.json").read_text(encoding="utf-8"))
+        rows = [json.loads(x) for x in (ROOT / "tools/gate_btc_b3_h130_h139_result_ledger.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        self.assertEqual(p["status"], "CLOSED_NO_H130_H139_SURVIVOR")
+        self.assertEqual(p["survivors"], [])
+        self.assertEqual(set(p["states"]), set(e.FAMS))
+        self.assertEqual(len(rows), 10)
+        self.assertEqual({r["family"]: r["state"] for r in rows}, p["states"])
+        self.assertEqual(p["evidence"]["workflow_run_id"], 32953710795)
+        self.assertEqual(p["evidence"]["artifact_id"], 9601188791)
+        self.assertEqual(p["source"]["derived_node_csv_sha256"], e.EXPECTED_NODE_SHA256)
+        self.assertFalse(p["h1_economics_read"])
+        self.assertFalse(p["survivor_partial_economics_read"])
+        self.assertEqual(p["orders"], 0)
+        self.assertEqual(p["capital"], 0)
+        self.assertFalse(p["engine_feed"])
+        self.assertTrue(p["not_approved"])
 
 
 if __name__ == "__main__":
