@@ -3,7 +3,10 @@ name: GATE BTC Momentum M1 M2 Shadow Collection
 on:
   workflow_dispatch:
   schedule:
-    - cron: '10 3 * * *'
+    # Primary midnight Sao Paulo attempt plus bounded same-day recovery windows.
+    # Recovery only admits an actually available completed BTC UTC close; it never
+    # fabricates a missing date or mutates a frozen snapshot.
+    - cron: '10 3,9,12 * * *'
 
 permissions:
   actions: read
@@ -54,19 +57,37 @@ jobs:
       - name: Install canonical V2A dependencies
         run: pip install -r migration/canonical/v2a/requirements.txt
 
-      - name: Resolve latest completed UTC close
+      - name: Resolve requested prior UTC close
+        id: requested
         run: |
           python - <<'PY'
           import os
           from datetime import datetime, timedelta, timezone
           cutoff=(datetime.now(timezone.utc).date()-timedelta(days=1)).isoformat()
           with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f'MOMENTUM_REQUESTED_CUTOFF={cutoff}\n')
               f.write(f'MOMENTUM_CUTOFF={cutoff}\n')
-          print(cutoff)
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              f.write(f'cutoff={cutoff}\n')
+          print(f'MOMENTUM_REQUESTED_CUTOFF={cutoff}')
           PY
+
+      - name: Skip exact requested snapshot when already immutable
+        id: preflight
+        run: |
+          set -euo pipefail
+          target="runtime_repo/runtime/ledgers/momentum_m1_m2/${MOMENTUM_REQUESTED_CUTOFF}.json"
+          if [ -s "$target" ]; then
+            echo 'requested_present=true' >> "$GITHUB_OUTPUT"
+            echo 'MOMENTUM_PREFLIGHT=REQUESTED_SNAPSHOT_ALREADY_PRESENT'
+          else
+            echo 'requested_present=false' >> "$GITHUB_OUTPUT"
+            echo 'MOMENTUM_PREFLIGHT=NEW_DELIVERY_REQUIRED'
+          fi
 
       - name: Collect canonical public V2A input with bounded retry
         id: v2a
+        if: steps.preflight.outputs.requested_present != 'true'
         shell: bash
         run: |
           set -uo pipefail
@@ -86,13 +107,58 @@ jobs:
             echo 'V2A_SOURCE=PASS'
           else
             echo 'source_ok=false' >> "$GITHUB_OUTPUT"
-            printf '{"status":"BLOCKED_V2A_SOURCE_AFTER_RETRIES","cutoff":"%s","attempts":3,"research_only":true,"shadow_only":true,"not_approved":true,"engine_feed":false,"orders":0,"real_capital":0}\n' "$MOMENTUM_CUTOFF" > artifacts/momentum_diagnostics/STATUS.json
+            printf '{"status":"BLOCKED_V2A_SOURCE_AFTER_RETRIES","requested_cutoff":"%s","attempts":3,"research_only":true,"shadow_only":true,"not_approved":true,"engine_feed":false,"orders":0,"real_capital":0}\n' "$MOMENTUM_REQUESTED_CUTOFF" > artifacts/momentum_diagnostics/STATUS.json
             echo 'V2A_SOURCE=AMBER_FAIL_CLOSED'
           fi
 
-      - name: Freeze V2A evidence to the target cutoff
-        id: freeze
+      - name: Bind effective cutoff to latest completed BTC close actually available
+        id: target
         if: steps.v2a.outputs.source_ok == 'true'
+        run: |
+          python - <<'PY'
+          import csv, io, os, zipfile
+          from pathlib import Path
+          requested=os.environ['MOMENTUM_REQUESTED_CUTOFF']
+          zpath=Path('artifacts/momentum_qos/qos_v2a_public_collection.zip')
+          candidates=[]
+          with zipfile.ZipFile(zpath) as z:
+              for name in z.namelist():
+                  if not name.lower().endswith('.csv'):
+                      continue
+                  raw=z.read(name)
+                  try:
+                      r=csv.DictReader(io.StringIO(raw.decode('utf-8-sig')))
+                      fields={str(x).strip().lower() for x in (r.fieldnames or [])}
+                  except Exception:
+                      continue
+                  if {'date','symbol','close_usd'}.issubset(fields):
+                      rows=list(r)
+                      candidates.append((name, rows))
+          masters=[x for x in candidates if 'master' in x[0].lower()]
+          pool=masters or candidates
+          assert len(pool)==1, 'ambiguous canonical V2A master price CSV'
+          _,rows=pool[0]
+          btc=sorted({str(row.get('date',''))[:10] for row in rows
+                      if str(row.get('symbol','')).strip().upper()=='BTC'
+                      and str(row.get('date',''))[:10] <= requested
+                      and str(row.get('date',''))[:10]})
+          assert btc, f'no completed BTC close available through requested cutoff {requested}'
+          effective=btc[-1]
+          freeze='2026-08-21'
+          assert effective >= freeze, f'effective BTC close {effective} predates prospective freeze {freeze}'
+          existing=Path(f'runtime_repo/runtime/ledgers/momentum_m1_m2/{effective}.json').is_file()
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f'MOMENTUM_CUTOFF={effective}\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              f.write(f'effective_cutoff={effective}\n')
+              f.write(f'already_present={str(existing).lower()}\n')
+              f.write(f'source_lag={str(effective != requested).lower()}\n')
+          print(f'MOMENTUM_SOURCE_CLOCK requested={requested} effective={effective} already_present={existing}')
+          PY
+
+      - name: Freeze V2A evidence to effective completed BTC cutoff
+        id: freeze
+        if: steps.v2a.outputs.source_ok == 'true' && steps.target.outputs.already_present != 'true'
         continue-on-error: true
         run: >-
           python tools/v2a_frozen_replay.py
@@ -103,7 +169,7 @@ jobs:
 
       - name: Collect M1 and M2 append-only shadow snapshot
         id: collect_snapshot
-        if: steps.v2a.outputs.source_ok == 'true' && steps.freeze.outcome == 'success'
+        if: steps.v2a.outputs.source_ok == 'true' && steps.target.outputs.already_present != 'true' && steps.freeze.outcome == 'success'
         continue-on-error: true
         run: >-
           python tools/gate_btc_momentum_shadow_collect.py
@@ -112,13 +178,16 @@ jobs:
           --ledger-dir runtime_repo/runtime/ledgers/momentum_m1_m2
           --output artifacts/momentum/GATE_BTC_MOMENTUM_M1M2_${MOMENTUM_CUTOFF}.json
 
-      - name: Build canonical Momentum status
+      - name: Build canonical Momentum status from admitted immutable snapshots
         id: build_status
-        if: steps.v2a.outputs.source_ok == 'true' && steps.freeze.outcome == 'success' && steps.collect_snapshot.outcome == 'success'
+        if: >-
+          steps.preflight.outputs.requested_present == 'true' ||
+          steps.target.outputs.already_present == 'true' ||
+          steps.collect_snapshot.outcome == 'success'
         continue-on-error: true
         run: |
           python - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
           snaps=sorted(p for p in root.glob('*.json') if p.name != 'STATUS.json')
@@ -127,83 +196,101 @@ jobs:
           safety=latest['safety']
           assert safety['research_only'] is True and safety['shadow_only'] is True and safety['not_approved'] is True
           assert safety['engine_feed'] is False and safety['orders'] == 0 and safety['real_capital'] == 0
+          requested=os.environ['MOMENTUM_REQUESTED_CUTOFF']
+          effective=latest['cutoff']
+          if Path(root/f'{requested}.json').is_file():
+              run_state='REQUESTED_SNAPSHOT_ADMITTED_OR_ALREADY_PRESENT'
+          elif effective < requested:
+              run_state='SOURCE_LAG_ACTIVE_ON_LAST_COMPLETED_BTC_CLOSE'
+          else:
+              run_state='ACTIVE_PROSPECTIVE_SHADOW'
           status={
             'schema':'gate_btc.momentum_m1_m2.status.v1',
             'status':'ACTIVE_PROSPECTIVE_SHADOW',
             'data_as_of':latest['cutoff'],
+            'requested_cutoff':requested,
+            'last_run_state':run_state,
             'observed_snapshots':len(snaps),
             'latest_snapshot_sha256':latest['snapshot_sha256'],
             'm1_summary':latest['m1']['summary'],
             'm2_summary':latest['m2']['summary'],
             'research_only':True,'shadow_only':True,'not_approved':True,
             'engine_feed':False,'orders_generated':0,'real_capital_used':0,
-            'promotion_allowed':False,
+            'promotion_allowed':False,'automatic_tuning':False,'backfill_allowed':False,
           }
           (root/'STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('artifacts/momentum').mkdir(parents=True,exist_ok=True)
           Path('artifacts/momentum/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print(json.dumps({'status':status['status'],'data_as_of':status['data_as_of'],'observed_snapshots':status['observed_snapshots']},sort_keys=True))
+          print(json.dumps({'status':status['status'],'data_as_of':status['data_as_of'],'requested_cutoff':requested,'observed_snapshots':status['observed_snapshots']},sort_keys=True))
           PY
 
-      - name: Build AMBER runtime status when public source is unavailable
-        if: steps.v2a.outputs.source_ok != 'true'
+      - name: Record AMBER delivery attempt without downgrading admitted snapshot health
+        if: steps.preflight.outputs.requested_present != 'true' && steps.v2a.outputs.source_ok != 'true'
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
           root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
           root.mkdir(parents=True, exist_ok=True)
-          p=root/'STATUS.json'
-          existing={}
-          if p.exists():
-              try: existing=json.loads(p.read_text(encoding='utf-8'))
-              except Exception: existing={}
-          status={
-            'schema':'gate_btc.momentum_m1_m2.status.v1',
-            'status':'BLOCKED_SOURCE_RETRY_EXHAUSTED',
-            'data_as_of':os.environ['MOMENTUM_CUTOFF'],
-            'prospective_freeze_date':existing.get('prospective_freeze_date','2026-08-21'),
-            'observed_snapshots':existing.get('observed_snapshots',0),
-            'last_run_state':'NO_NEW_SNAPSHOT_PUBLIC_SOURCE_UNAVAILABLE',
+          diagnostics=root/'diagnostics'
+          diagnostics.mkdir(parents=True,exist_ok=True)
+          attempt={
+            'schema':'gate_btc.momentum_m1_m2.delivery_attempt.v1',
+            'status':'AMBER_SOURCE_RETRY_EXHAUSTED',
+            'requested_cutoff':os.environ['MOMENTUM_REQUESTED_CUTOFF'],
+            'run_id':os.environ['GITHUB_RUN_ID'],
             'methodology_failure':False,
             'repair_scope':'ORCHESTRATION_AND_DATA_DELIVERY_ONLY',
             'research_only':True,'shadow_only':True,'not_approved':True,
-            'engine_feed':False,'allocation_weight':0,'orders_generated':0,'real_capital_used':0,
-            'promotion_allowed':False,'automatic_tuning':False,'backfill_allowed':False,
+            'engine_feed':False,'orders_generated':0,'real_capital_used':0,
+            'automatic_tuning':False,'backfill_allowed':False,
           }
-          p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          Path('artifacts/momentum/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print('MOMENTUM_DELIVERY=AMBER_FAIL_CLOSED')
+          (diagnostics/f"{os.environ['GITHUB_RUN_ID']}.json").write_text(json.dumps(attempt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          snaps=sorted(p for p in root.glob('*.json') if p.name != 'STATUS.json')
+          if not snaps:
+              (root/'STATUS.json').write_text(json.dumps({**attempt,'schema':'gate_btc.momentum_m1_m2.status.v1','status':'BLOCKED_SOURCE_RETRY_EXHAUSTED','observed_snapshots':0},indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('artifacts/momentum').mkdir(parents=True,exist_ok=True)
+          Path('artifacts/momentum/DELIVERY_ATTEMPT.json').write_text(json.dumps(attempt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('MOMENTUM_DELIVERY=AMBER_SOURCE_RETRY_EXHAUSTED_CANONICAL_HEALTH_PRESERVED')
           PY
 
-      - name: Build RED diagnostic status on true processing failure
-        if: steps.v2a.outputs.source_ok == 'true' && (steps.freeze.outcome != 'success' || steps.collect_snapshot.outcome != 'success' || steps.build_status.outcome != 'success')
+      - name: Record RED processing diagnostic without erasing a prior admitted snapshot
+        id: red
+        if: >-
+          steps.preflight.outputs.requested_present != 'true' &&
+          steps.v2a.outputs.source_ok == 'true' &&
+          (
+            steps.target.outcome != 'success' ||
+            (steps.target.outputs.already_present != 'true' && (steps.freeze.outcome != 'success' || steps.collect_snapshot.outcome != 'success')) ||
+            steps.build_status.outcome != 'success'
+          )
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
           root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
           root.mkdir(parents=True, exist_ok=True)
-          p=root/'STATUS.json'
-          existing={}
-          if p.exists():
-              try: existing=json.loads(p.read_text(encoding='utf-8'))
-              except Exception: existing={}
-          status={
-            'schema':'gate_btc.momentum_m1_m2.status.v1',
+          diagnostics=root/'diagnostics'
+          diagnostics.mkdir(parents=True,exist_ok=True)
+          attempt={
+            'schema':'gate_btc.momentum_m1_m2.delivery_attempt.v1',
             'status':'RED_TRUE_PROCESSING_FAILURE',
-            'data_as_of':os.environ['MOMENTUM_CUTOFF'],
-            'prospective_freeze_date':existing.get('prospective_freeze_date','2026-08-21'),
-            'observed_snapshots':existing.get('observed_snapshots',0),
-            'last_run_state':'SOURCE_AVAILABLE_BUT_FREEZE_COLLECT_OR_STATUS_FAILED',
+            'requested_cutoff':os.environ['MOMENTUM_REQUESTED_CUTOFF'],
+            'effective_cutoff':os.environ.get('MOMENTUM_CUTOFF'),
+            'run_id':os.environ['GITHUB_RUN_ID'],
             'methodology_failure':False,
             'repair_scope':'ORCHESTRATION_AND_DATA_DELIVERY_ONLY',
             'research_only':True,'shadow_only':True,'not_approved':True,
-            'engine_feed':False,'allocation_weight':0,'orders_generated':0,'real_capital_used':0,
-            'promotion_allowed':False,'automatic_tuning':False,'backfill_allowed':False,
+            'engine_feed':False,'orders_generated':0,'real_capital_used':0,
+            'automatic_tuning':False,'backfill_allowed':False,
           }
-          p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          Path('artifacts/momentum/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print('MOMENTUM_DELIVERY=RED_TRUE_PROCESSING_FAILURE')
+          (diagnostics/f"{os.environ['GITHUB_RUN_ID']}.json").write_text(json.dumps(attempt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          snaps=sorted(p for p in root.glob('*.json') if p.name != 'STATUS.json')
+          if not snaps:
+              (root/'STATUS.json').write_text(json.dumps({**attempt,'schema':'gate_btc.momentum_m1_m2.status.v1','observed_snapshots':0},indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('artifacts/momentum').mkdir(parents=True,exist_ok=True)
+          Path('artifacts/momentum/DELIVERY_ATTEMPT.json').write_text(json.dumps(attempt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('MOMENTUM_DELIVERY=RED_TRUE_PROCESSING_FAILURE_CANONICAL_HEALTH_PRESERVED')
           PY
 
       - name: Upload shadow evidence and diagnostics
@@ -218,7 +305,7 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
-      - name: Publish append-only runtime status or snapshot
+      - name: Publish append-only runtime status, snapshot, and delivery diagnostics
         if: always()
         run: |
           set -euo pipefail
@@ -229,7 +316,7 @@ jobs:
             echo 'Momentum runtime already current'
             exit 0
           fi
-          git -C runtime_repo commit -m "Update Momentum M1/M2 shadow status ${MOMENTUM_CUTOFF}"
+          git -C runtime_repo commit -m "Update Momentum M1/M2 shadow runtime ${MOMENTUM_REQUESTED_CUTOFF}"
           for attempt in 1 2 3 4 5; do
             git -C runtime_repo fetch origin gate-btc-runtime
             if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
@@ -246,15 +333,18 @@ jobs:
       - name: Enforce true processing failures only
         if: always()
         run: |
-          if [ "${{ steps.v2a.outputs.source_ok }}" = "true" ] && \
-             { [ "${{ steps.freeze.outcome }}" != "success" ] || [ "${{ steps.collect_snapshot.outcome }}" != "success" ] || [ "${{ steps.build_status.outcome }}" != "success" ]; }; then
+          if [ "${{ steps.preflight.outputs.requested_present }}" = "true" ]; then
+            echo 'MOMENTUM_COLLECTION=GREEN_REQUESTED_SNAPSHOT_ALREADY_PRESENT'
+          elif [ "${{ steps.v2a.outputs.source_ok }}" != "true" ]; then
+            echo 'MOMENTUM_COLLECTION=AMBER_SOURCE_BLOCKED_FAIL_CLOSED'
+          elif [ "${{ steps.red.outcome }}" = "success" ]; then
             echo 'MOMENTUM_COLLECTION=RED_TRUE_PROCESSING_FAILURE'
             exit 1
-          fi
-          if [ "${{ steps.v2a.outputs.source_ok }}" = "true" ]; then
+          elif [ "${{ steps.build_status.outcome }}" = "success" ]; then
             echo 'MOMENTUM_COLLECTION=GREEN'
           else
-            echo 'MOMENTUM_COLLECTION=AMBER_SOURCE_BLOCKED_FAIL_CLOSED'
+            echo 'MOMENTUM_COLLECTION=RED_UNCLASSIFIED_PROCESSING_FAILURE'
+            exit 1
           fi
           echo 'RESEARCH_ONLY=true'
           echo 'ORDERS=0'
