@@ -67,7 +67,7 @@ def build_generation(start: int) -> dict:
     return {
         "schema": "gate_btc.b3.autonomous_family_contract.v1",
         "generation": f"H{start}-H{start+9}",
-        "protocol": "research/b3_autonomous_science_protocol_v1.md",
+        "protocol": "research/b3_h_autonomous_science_protocol_v1.md",
         "frozen_before_economics": True,
         "discovery": "2022-01-01/2024-12-31",
         "replication": "2020-01-01/2021-12-31",
