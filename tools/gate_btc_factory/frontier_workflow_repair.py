@@ -87,6 +87,51 @@ def apply_retry(repo: str, run_id: int) -> None:
     )
 
 
+def incident_marker(row: dict) -> str:
+    workflow = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(row.get("workflow", "unknown")))
+    branch = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(row.get("head_branch", "unknown")))
+    return f"FACTORY-FRONTIER-BLOCKER:{workflow}:{branch}"
+
+
+def ensure_incident(repo: str, row: dict) -> int | None:
+    marker = incident_marker(row)
+    search = subprocess.run(
+        ["gh", "issue", "list", "--repo", repo, "--state", "open", "--search", marker, "--json", "number,body", "--limit", "100"],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    for issue in json.loads(search.stdout or "[]"):
+        if marker in str(issue.get("body", "")):
+            return int(issue["number"])
+    run_id = int(row["run_id"])
+    title = f"Factory frontier blocker: {row.get('workflow')}"
+    body = "\n".join(
+        [
+            f"<!-- {marker} -->",
+            "Persistent Factory frontier blocker detected after bounded operational autorepair.",
+            "",
+            f"- workflow: `{row.get('workflow')}`",
+            f"- branch: `{row.get('head_branch')}`",
+            f"- run: `{run_id}`",
+            f"- attempt: `{row.get('run_attempt')}`",
+            f"- action: `{row.get('action')}`",
+            f"- reason: `{row.get('reason')}`",
+            f"- failed_steps: `{json.dumps(row.get('failed_steps', []), ensure_ascii=False)}`",
+            "",
+            "Safety boundary: operational diagnosis only. NO_RETUNE, NO_BACKFILL, ORDERS=0, REAL_CAPITAL=0, ENGINE_FEED=false. If scientific authority is required, fail closed.",
+        ]
+    )
+    created = subprocess.run(
+        ["gh", "issue", "create", "--repo", repo, "--title", title, "--body", body],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    m = re.search(r"/(\d+)\s*$", created.stdout.strip())
+    return int(m.group(1)) if m else None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
@@ -97,6 +142,7 @@ def main() -> int:
 
     rows = []
     dispatched = []
+    incidents = []
     for run in latest_candidate_runs(repo):
         run_id = int(run["id"])
         steps = failed_steps(repo, run_id) if run.get("conclusion") == "failure" else []
@@ -121,13 +167,19 @@ def main() -> int:
             apply_retry(repo, run_id)
             row["action"] = "RETRY_DISPATCHED"
             dispatched.append(run_id)
+        elif args.apply and action in {"PERSISTENT_BLOCKER", "FAIL_CLOSED_SCIENCE"}:
+            issue_number = ensure_incident(repo, row)
+            row["incident_issue"] = issue_number
+            if issue_number is not None:
+                incidents.append(issue_number)
         rows.append(row)
 
     report = {
-        "schema": "qrds.factory.frontier-workflow-repair.v1",
+        "schema": "qrds.factory.frontier-workflow-repair.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "runs": rows,
         "dispatched_run_ids": dispatched,
+        "incident_issue_numbers": sorted(set(incidents)),
         "persistent_blockers": [r for r in rows if r["action"] in {"PERSISTENT_BLOCKER", "FAIL_CLOSED_SCIENCE"}],
         "safety": {
             "research_only": True,
@@ -140,7 +192,7 @@ def main() -> int:
         },
     }
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"dispatched": dispatched, "persistent_blockers": len(report["persistent_blockers"])}, sort_keys=True))
+    print(json.dumps({"dispatched": dispatched, "incidents": sorted(set(incidents)), "persistent_blockers": len(report["persistent_blockers"])}, sort_keys=True))
     return 0
 
 
