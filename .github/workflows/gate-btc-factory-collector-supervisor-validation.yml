@@ -1,0 +1,62 @@
+name: GATE BTC Factory Collector Supervisor Validation
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_factory/FACTORY_COLLECTOR_REGISTRY.v1.json
+      - tools/gate_btc_factory/collector_supervisor.py
+      - tests/test_gate_btc_factory_collector_supervisor.py
+      - .github/workflows/gate-btc-factory-collector-supervisor.yml
+      - .github/workflows/gate-btc-factory-collector-supervisor-validation.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ENGINE_FEED: 'false'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  audit-only-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Registry and boundary tests
+        run: |
+          python -m unittest tests.test_gate_btc_factory_collector_supervisor -v
+          python -m py_compile tools/gate_btc_factory/collector_supervisor.py
+      - name: Run supervisor in audit-only mode
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tools/gate_btc_factory/collector_supervisor.py \
+            --repo "${{ github.repository }}" \
+            --out-dir validation/factory_collector_health
+      - name: Prove no repair executed during PR validation
+        run: |
+          python - <<'PY'
+          import json
+          p='validation/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['summary']['AUTO_REPAIRED']==0
+          assert all(x['repair_attempted'] is False for x in d['collectors'])
+          assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0 and d['safety']['ENGINE_FEED'] is False
+          print('AUDIT_ONLY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-collector-supervisor-validation-${{ github.run_id }}
+          path: validation/factory_collector_health
+          retention-days: 30
