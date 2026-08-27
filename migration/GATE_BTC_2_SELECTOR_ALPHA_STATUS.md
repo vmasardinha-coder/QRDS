@@ -1,50 +1,38 @@
-# GATE BTC 2.0 — Selector Alpha Status
+# GATE BTC 2.0 — Selector Alpha Final Status
 
-CURRENT_PHASE=PHASE_1_SOURCE_DISCOVERY_AND_GAP_INVENTORY
-CURRENT_GATE=GAP_INVENTORY_PASS__SOURCE_ADMISSION_PENDING
-PIT_EXPECTED=150
-PIT_RECOVERED=95
-PIT_COVERAGE=63.333333%
+CURRENT_PHASE=PROGRAM_CLOSED_AFTER_PHASE_3_SURVIVORSHIP_SENSITIVITY
+CURRENT_GATE=FAIL_CLOSED_SELECTOR_ALPHA_REFUTED_NO_RETUNE
+PIT_EXPECTED=10254
+PIT_RECOVERED=9819
+PIT_COVERAGE=95.757753%
 NEW_ASSETS_RECOVERED=0
-UNRESOLVED=55
+UNRESOLVED=435
 NEW_SOURCES_DISCOVERED=0
-SOURCES_ADMITTED=0
+EXISTING_BOUNDED_PIT_SOURCE_INSTANCES_ADMITTED=4
+NEW_V2A_SOURCES_ADMITTED=0
 SOURCES_REJECTED=0
 DELISTED_RECOVERED=0
-MIGRATIONS_RESOLVED=0
-SURVIVORSHIP_SENSITIVITY=NOT_STARTED_BLOCKED_BY_PHASE_1_AND_PHASE_2
-ABLATION_STATUS=NOT_STARTED_IN_NEW_PROGRAM__PRIOR_HISTORICAL_COMPARISON_IS_REFERENCE_ONLY
-INDEPENDENT_REPLICATION=NOT_STARTED
-PROSPECTIVE_TRACK=EXISTING_QOS_THREE_TRACK_REMAINS_SEPARATE__NEW_SELECTOR_PROGRAM_NOT_ACTIVATED
-SELECTOR_ALPHA_STATUS=SELECTOR_NOT_PROVEN
-NEXT_AUTOMATIC_ACTION=PHASE_1B_PRIMARY_IDENTITY_INTERVAL_AND_FREE_SOURCE_DISCOVERY_FOR_PRIORITIZED_GAPS
+MIGRATIONS_RESOLVED=2
+SURVIVORSHIP_SENSITIVITY=FAIL_SELECTOR_ALPHA_ABSENT_AND_NOT_ROBUST
+ABLATION_STATUS=NOT_EXECUTED_STOPPED_BY_PHASE_3
+INDEPENDENT_REPLICATION=NOT_EXECUTED_STOPPED_BY_PHASE_3
+PROSPECTIVE_TRACK=NEW_SELECTOR_TRACK_NOT_ACTIVATED__EXISTING_QOS_THREE_TRACK_REMAINS_SEPARATE
+SELECTOR_ALPHA_STATUS=SELECTOR_ALPHA_REFUTED_CURRENT_FROZEN_SELECTOR
+NEXT_AUTOMATIC_ACTION=NONE_HYPOTHESIS_CLOSED_EVIDENCE_MAINTENANCE_ONLY
 HUMAN_ACTION_REQUIRED=false
 
-## Conclusão do checkpoint
+## Scientific close
 
-O inventário nominal está completo: os 55 gaps do snapshot físico de 2026-08-25 foram identificados e vinculados à evidência hashada. Nenhum ativo foi recuperado para o dataset oficial e nenhuma fonte foi admitida.
+The sealed PIT reconstruction covers 9819/10254 eligible asset-snapshot memberships (95.76%). Sixty-three of 74 snapshots reach 95%; 11 early snapshots remain below the gate.
 
-Há 4 leads físicos ainda não admitidos (FF, JASMY, NEXO, SYRUP). O Binance confirmou 4 casos com pelo menos 200 dias; o Bybit confirmou presença de arquivo para 2 gaps. Isso é disponibilidade, não equivalência nem admissão.
+Observed direct incremental alpha is -0.2530%/week for Moderada and -0.1594%/week for Ultra. Both are negative. Neutral/adversarial sensitivity does not support the selector, so the hypothesis closes at Phase 3.
 
-## Leitura científica correta
+Four current V2A gaps (FF, JASMY, NEXO, SYRUP) were cross-evidenced in the already-sealed PIT artifact. No source was silently inserted into the frozen current V2A cascade; its 95/150 diagnostic remains separate.
 
-A referência 95/150 (63,33%) mede a capacidade do V2A de carregar séries físicas para uma composição atual. Ela não mede, sozinha, a completude do universo histórico point-in-time e não autoriza inferência econômica.
+## Promotion state
 
-O estudo histórico PIT anterior permanece evidência separada: run 31276127634, cobertura média 95.8095%, 63/74 sinais em ou acima de 95% e conclusão SELECTOR_NOT_PROVEN. Ele não foi retunado nem reexecutado neste checkpoint.
+- DATA_SCIENCE_PROMOTION=G2_DATA_UNPROVEN
+- SELECTOR_ALPHA_PROMOTION=SELECTOR_NOT_PROVEN
+- OPERATIONAL_PROMOTION=NOT_APPROVED
 
-## Promoções separadas
-
-DATA_SCIENCE_PROMOTION=G2_DATA_UNPROVEN
-SELECTOR_ALPHA_PROMOTION=SELECTOR_NOT_PROVEN
-OPERATIONAL_PROMOTION=NOT_APPROVED
-
-## Boundary
-
-RESEARCH_ONLY=true
-SHADOW_ONLY=true
-NOT_APPROVED=true
-ENGINE_FEED=false
-ORDERS=0
-REAL_CAPITAL=R$0
-
-Não houve coleta nova, retune, backfill, cálculo econômico, mutação de incumbente, alimentação de engine, ordens ou uso de capital.
+RESEARCH_ONLY=true; SHADOW_ONLY=true; NOT_APPROVED=true; ENGINE_FEED=false; ORDERS=0; REAL_CAPITAL=R$0.

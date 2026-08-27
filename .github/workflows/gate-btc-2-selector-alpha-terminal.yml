@@ -1,0 +1,130 @@
+name: GATE BTC 2 Selector Alpha Terminal Proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-selector-alpha-terminal.yml
+      - .github/workflows/gate-btc-2-selector-alpha-phase1.yml
+      - tools/gate_btc_2_selector_alpha_terminal.py
+      - tools/gate_btc_survivorship_alpha_audit.py
+      - tests/test_gate_btc_2_selector_alpha_terminal.py
+      - tests/test_gate_btc_2_selector_alpha_phase1.py
+      - migration/GATE_BTC_2_SELECTOR_ALPHA_*
+      - migration/canonical/v2a/scripts/00_run_all_v2a.py
+      - migration/canonical/v2a/config_v2a.json
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-2-selector-alpha-terminal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIT_ARTIFACT_ID: "9027220602"
+  PIT_ARTIFACT_SHA256: "e3b484f8797685547b7e59aa86f19e9080daaac551b1488b6ea0fac9f8fd5f81"
+
+jobs:
+  terminal-offline-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+
+      - name: Inventory protected scheduled activity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          active=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?event=schedule&status=in_progress&per_page=1" --jq '.total_count')
+          queued=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?event=schedule&status=queued&per_page=1" --jq '.total_count')
+          echo "PROTECTED_SCHEDULED_ACTIVE=${active}"
+          echo "PROTECTED_SCHEDULED_QUEUED=${queued}"
+          echo "THIS_JOB_MARKET_COLLECTION=false"
+
+      - name: Install offline proof dependencies
+        run: pip install 'pandas==2.2.3' 'numpy==2.3.5'
+
+      - name: Compile terminal proof runner
+        run: python -m py_compile tools/gate_btc_2_selector_alpha_terminal.py
+
+      - name: Download immutable existing PIT artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${PIT_ARTIFACT_ID}/zip" > evidence.zip
+          echo "${PIT_ARTIFACT_SHA256}  evidence.zip" | sha256sum -c -
+          unzip -q evidence.zip -d evidence
+
+      - name: Reproduce terminal proof offline
+        run: >-
+          python tools/gate_btc_2_selector_alpha_terminal.py
+          --evidence-dir evidence
+          --evidence-zip evidence.zip
+          --output-dir generated
+
+      - name: Compare committed terminal artifacts byte for byte
+        run: |
+          for name in \
+            GATE_BTC_2_SELECTOR_ALPHA_SOURCE_ADMISSION_LEDGER.json \
+            GATE_BTC_2_SELECTOR_ALPHA_PIT_RECONSTRUCTION_SEAL.json \
+            GATE_BTC_2_SELECTOR_ALPHA_SURVIVORSHIP_SENSITIVITY_REPORT.json \
+            GATE_BTC_2_SELECTOR_ALPHA_SURVIVORSHIP_SENSITIVITY_REPORT.md \
+            GATE_BTC_2_SELECTOR_ALPHA_STATUS.json \
+            GATE_BTC_2_SELECTOR_ALPHA_STATUS.md \
+            GATE_BTC_2_SELECTOR_ALPHA_TERMINAL_MANIFEST.json
+          do
+            diff -u "migration/${name}" "generated/${name}"
+          done
+
+      - name: Run fail-closed Selector Alpha tests
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_2_selector_alpha_phase1.py
+          tests/test_gate_btc_2_selector_alpha_terminal.py
+
+      - name: Assert terminal safety and stop gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          status=json.loads(Path('migration/GATE_BTC_2_SELECTOR_ALPHA_STATUS.json').read_text())
+          report=json.loads(Path('migration/GATE_BTC_2_SELECTOR_ALPHA_SURVIVORSHIP_SENSITIVITY_REPORT.json').read_text())
+          assert status['CURRENT_GATE'] == 'FAIL_CLOSED_SELECTOR_ALPHA_REFUTED_NO_RETUNE'
+          assert status['phase_status']['PHASE_4_SELECTOR_ABLATION'] == 'NOT_EXECUTED_STOP_GATE'
+          assert report['stop_gate']['triggered'] is True
+          assert report['stop_gate']['phase_4_authorized'] is False
+          assert report['synthetic_values_entered_official_dataset'] is False
+          assert status['boundary'] == {
+              'RESEARCH_ONLY': True,
+              'SHADOW_ONLY': True,
+              'NOT_APPROVED': True,
+              'ENGINE_FEED': False,
+              'ORDERS': 0,
+              'REAL_CAPITAL_BRL': 0,
+          }
+          print('SELECTOR_ALPHA_TERMINAL=FAIL_CLOSED_HYPOTHESIS_REFUTED')
+          print('PHASE_4_AUTHORIZED=false RETUNE=false ENGINE_FEED=false ORDERS=0 CAPITAL=0')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-selector-alpha-terminal-${{ github.run_id }}
+          path: generated/
+          retention-days: 30
+          if-no-files-found: error

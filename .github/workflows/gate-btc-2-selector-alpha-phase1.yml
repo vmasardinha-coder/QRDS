@@ -62,14 +62,18 @@ jobs:
           assert matrix['gap_count'] == len(matrix['rows']) == 55
           assert matrix['source_probe_summary']['formal_source_admissions'] == 0
           assert matrix['source_probe_summary']['new_assets_recovered_into_official_dataset'] == 0
-          assert status['CURRENT_GATE'] == 'GAP_INVENTORY_PASS__SOURCE_ADMISSION_PENDING'
-          assert status['PIT_EXPECTED'] == 150
-          assert status['PIT_RECOVERED'] == 95
-          assert status['UNRESOLVED'] == 55
-          assert status['PIT_SCOPE'].endswith('NOT_HISTORICAL_PIT_COMPLETENESS')
-          assert status['SOURCES_ADMITTED'] == 0
-          assert status['SELECTOR_ALPHA_STATUS'] == 'SELECTOR_NOT_PROVEN'
-          assert status['financial_metrics'] == []
+          assert status['CURRENT_GATE'] == 'FAIL_CLOSED_SELECTOR_ALPHA_REFUTED_NO_RETUNE'
+          assert status['PIT_EXPECTED'] == 10254
+          assert status['PIT_RECOVERED'] == 9819
+          assert status['UNRESOLVED'] == 435
+          assert status['current_v2a_reference']['attempted'] == 150
+          assert status['current_v2a_reference']['loaded'] == 95
+          assert status['current_v2a_reference']['mutated_by_program'] is False
+          assert status['SOURCES_ADMITTED'] == 4
+          assert status['source_admission']['new_v2a_sources'] == 0
+          assert status['SELECTOR_ALPHA_STATUS'] == 'SELECTOR_ALPHA_REFUTED_CURRENT_FROZEN_SELECTOR'
+          assert len(status['financial_metrics']) == 24
+          assert status['phase_status']['PHASE_4_SELECTOR_ABLATION'] == 'NOT_EXECUTED_STOP_GATE'
           assert status['promotion_ladders'] == {
               'DATA_SCIENCE_PROMOTION': 'G2_DATA_UNPROVEN',
               'SELECTOR_ALPHA_PROMOTION': 'SELECTOR_NOT_PROVEN',
@@ -83,6 +87,6 @@ jobs:
               'ORDERS': 0,
               'REAL_CAPITAL_BRL': 0,
           }
-          print('SELECTOR_ALPHA_PHASE1=PASS_GAP_INVENTORY_SOURCE_ADMISSION_PENDING')
-          print('ECONOMICS_EXECUTED=0 ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
+          print('SELECTOR_ALPHA_PROGRAM=CLOSED_PHASE3_HYPOTHESIS_REFUTED')
+          print('PHASE4_AUTHORIZED=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
           PY

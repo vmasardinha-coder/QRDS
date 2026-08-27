@@ -6,7 +6,6 @@ from pathlib import Path
 from tools.gate_btc_2_selector_alpha_phase1 import (
     MATRIX_SCHEMA,
     SAFETY,
-    STATUS_SCHEMA,
     build_matrix,
     canonical_hash,
     parse_historical_conclusion,
@@ -268,7 +267,7 @@ class SelectorAlphaPhase1Tests(unittest.TestCase):
         claimed_status_hash = unsigned_status.pop("status_sha256")
         self.assertEqual(claimed_status_hash, canonical_hash(unsigned_status))
         self.assertEqual(matrix["schema"], MATRIX_SCHEMA)
-        self.assertEqual(status["schema"], STATUS_SCHEMA)
+        self.assertEqual(status["schema"], "gate_btc.2_0.selector_alpha_status.v2")
         self.assertEqual(matrix["gap_count"], 55)
         self.assertEqual(len(matrix["rows"]), 55)
         self.assertEqual(len({row["current_symbol"] for row in matrix["rows"]}), 55)
@@ -293,19 +292,21 @@ class SelectorAlphaPhase1Tests(unittest.TestCase):
             matrix["source_probe"]["artifact_sha256"],
             "c74a2f01b6d4160d2a2a032b4be0ac2c5f7d0051031bab40c95d28aa939c4ac8",
         )
-        self.assertEqual(status["PIT_EXPECTED"], 150)
-        self.assertEqual(status["PIT_RECOVERED"], 95)
-        self.assertEqual(status["UNRESOLVED"], 55)
-        self.assertEqual(status["SOURCE_DATA_AS_OF"], "2026-08-25")
-        self.assertEqual(status["SNAPSHOT_ID"], "2026-08-25-run-32920908476")
-        self.assertEqual(status["RUNTIME_COMMIT"], "403fb93930ee40bd55e7a7beeea8d816a7c7a439")
+        self.assertEqual(status["PIT_EXPECTED"], 10254)
+        self.assertEqual(status["PIT_RECOVERED"], 9819)
+        self.assertEqual(status["UNRESOLVED"], 435)
+        self.assertEqual(status["assessment_date"], "2026-08-26")
         self.assertEqual(status["NEW_ASSETS_RECOVERED"], 0)
-        self.assertEqual(status["SOURCES_ADMITTED"], 0)
-        self.assertEqual(status["SELECTOR_ALPHA_STATUS"], "SELECTOR_NOT_PROVEN")
+        self.assertEqual(status["SOURCES_ADMITTED"], 4)
+        self.assertEqual(status["source_admission"]["new_v2a_sources"], 0)
+        self.assertEqual(status["SELECTOR_ALPHA_STATUS"], "SELECTOR_ALPHA_REFUTED_CURRENT_FROZEN_SELECTOR")
         self.assertFalse(status["HUMAN_ACTION_REQUIRED"])
-        self.assertEqual(status["financial_metrics"], [])
+        self.assertEqual(len(status["financial_metrics"]), 24)
         self.assertEqual(status["promotion_ladders"]["OPERATIONAL_PROMOTION"], "NOT_APPROVED")
-        self.assertEqual(status["source_recovery"]["matrix_sha256"], matrix["matrix_sha256"])
+        self.assertEqual(status["current_v2a_reference"]["attempted"], 150)
+        self.assertEqual(status["current_v2a_reference"]["loaded"], 95)
+        self.assertFalse(status["current_v2a_reference"]["mutated_by_program"])
+        self.assertEqual(status["phase_status"]["PHASE_4_SELECTOR_ABLATION"], "NOT_EXECUTED_STOP_GATE")
         self.assertEqual(status["boundary"]["ORDERS"], 0)
         self.assertEqual(status["boundary"]["REAL_CAPITAL_BRL"], 0)
 
