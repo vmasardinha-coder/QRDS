@@ -37,9 +37,9 @@ jobs:
       - run: pip install 'requests>=2.31,<3' pandas numpy
       - name: Assert frozen join contract and no-forward-fill boundary
         run: |
-          grep -q 'Require >=90% eligible-session causal join coverage' research/b3_h150_h159_focus_prereg.md
-          grep -q 'one full B3-session lag' research/b3_h150_h159_focus_prereg.md
-          grep -q 'No interpolation, forward-fill' research/b3_h150_h159_focus_prereg.md
+          grep -q 'Per-input causal join coverage >=90%' research/b3_h150_h159_focus_prereg.md
+          grep -q 'one complete B3-session lag' research/b3_h150_h159_focus_prereg.md
+          grep -q 'No interpolation, forward fill' research/b3_h150_h159_focus_prereg.md
           grep -q 'NO_ECONOMICS' research/b3_h150_h159_focus_prereg.md
       - name: Run exact prior-session Focus/B3 join QA
         run: python tools/gate_btc_b3_h150_h159_focus_join_qa.py
