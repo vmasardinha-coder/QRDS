@@ -4,7 +4,7 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
-from urllib.parse import urlencode, urljoin
+from urllib.parse import quote, urlencode, urljoin
 
 import requests
 
@@ -17,9 +17,10 @@ PAGE_SIZE = 10000
 
 
 def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
-    # Keep the remote query deliberately simple. The BCB/Olinda service has
-    # rejected date-literal filters with HTTP 400; date admission is therefore
-    # enforced locally against the frozen preregistered cutoff, not relaxed.
+    # Keep the remote query deliberately simple. The BCB/Olinda service is
+    # strict about OData URL encoding: spaces in expressions must be percent
+    # escaped rather than emitted as '+'. Date admission remains enforced
+    # locally against the frozen preregistered cutoff.
     params = {
         "$format": "json",
         "$filter": f"Indicador eq '{indicator}'",
@@ -27,14 +28,14 @@ def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
         "$orderby": "Data asc,DataReferencia asc",
         "$top": str(PAGE_SIZE),
     }
-    first_url = BASE + "?" + urlencode(params, safe="$',")
+    first_url = BASE + "?" + urlencode(params, safe="$',", quote_via=quote)
     url = first_url
     all_rows: list[dict] = []
     raw_parts: list[bytes] = []
     request_urls: list[str] = []
 
     while url:
-        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.1"})
+        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.2"})
         r.raise_for_status()
         raw_parts.append(r.content)
         request_urls.append(url)
