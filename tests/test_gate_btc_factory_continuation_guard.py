@@ -84,6 +84,15 @@ class ContinuationGuardTests(unittest.TestCase):
         self.assertEqual(state, 'LEGACY_H149_BOOTSTRAP_REQUIRED')
         self.assertTrue(dispatch)
 
+    def test_malformed_legacy_filename_does_not_poison_frontier(self):
+        self._with_temp_repo()
+        Path('.github/workflows').mkdir(parents=True, exist_ok=True)
+        Path('.github/workflows/gate-btc-b3-h95-h10-economics.yml').write_text('legacy', encoding='utf-8')
+        Path('.github/workflows/gate-btc-b3-h150-h159-focus.yml').write_text('canonical', encoding='utf-8')
+        start, end, path = c.canonical_frontier_block()
+        self.assertEqual((start, end), (150, 159))
+        self.assertTrue(path.endswith('h150-h159-focus.yml'))
+
     def test_main_emits_frontier_key_and_target(self):
         self._with_temp_repo()
         self._write_result(150, 159, 'CLOSED_NO_H150_H159_SURVIVOR')
