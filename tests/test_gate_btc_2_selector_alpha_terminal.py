@@ -5,23 +5,27 @@ import unittest
 import zipfile
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
-from tools.gate_btc_2_selector_alpha_terminal import (
-    BOUNDARY,
-    EXPECTED_CONTRACT_SHA256,
-    STATUS_SCHEMA,
-    TERMINAL_MANIFEST_SCHEMA,
-    apply_period_factors,
-    canonical_hash,
-    file_sha256,
-    fixed_rule,
-    mix_return,
-    random_rule,
-    return_metrics,
-    verify_outer_only_file_binding,
-)
+try:
+    import numpy as np
+    import pandas as pd
+except ModuleNotFoundError:
+    NUMERICAL_DEPENDENCIES_AVAILABLE = False
+else:
+    NUMERICAL_DEPENDENCIES_AVAILABLE = True
+    from tools.gate_btc_2_selector_alpha_terminal import (
+        BOUNDARY,
+        EXPECTED_CONTRACT_SHA256,
+        STATUS_SCHEMA,
+        TERMINAL_MANIFEST_SCHEMA,
+        apply_period_factors,
+        canonical_hash,
+        file_sha256,
+        fixed_rule,
+        mix_return,
+        random_rule,
+        return_metrics,
+        verify_outer_only_file_binding,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +36,10 @@ def read_json(name: str):
     return json.loads((MIGRATION / name).read_text(encoding="utf-8"))
 
 
+@unittest.skipUnless(
+    NUMERICAL_DEPENDENCIES_AVAILABLE,
+    "terminal proof is validated by its dependency-pinned dedicated workflow",
+)
 class SelectorAlphaTerminalTests(unittest.TestCase):
     def test_shared_baseline_shock_is_applied_exactly_once(self):
         week = pd.Timestamp("2026-01-30")
