@@ -1,0 +1,59 @@
+name: GATE BTC B3 H160-H169 NYFed Source QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'research/b3_h160_h169_nyfed_funding_prereg.md'
+      - 'tools/gate_btc_b3_h160_h169_nyfed_source_qa.py'
+      - 'tests/test_gate_btc_b3_h160_h169_nyfed_source_qa.py'
+      - '.github/workflows/gate-btc-b3-h160-h169-nyfed-source-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-b3-h160-h169-nyfed-source-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3'
+      - name: Contract tests before source access
+        run: python -m unittest -v tests/test_gate_btc_b3_h160_h169_nyfed_source_qa.py
+      - name: Probe official NY Fed reference-rate history
+        run: python tools/gate_btc_b3_h160_h169_nyfed_source_qa.py
+      - name: Assert no economics and safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h160_h169_nyfed_source_qa.json',encoding='utf-8'))
+          assert p['status']=='SOURCE_QA_PASS_ECONOMICS_STILL_BLOCKED'
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert set(p['series'])=={'SOFR','BGCR','TGCR','EFFR','OBFR'}
+          assert p['economics_executed'] is False
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          print('H160_H169_SOURCE_QA=PASS_RESEARCH_ONLY_NO_ECONOMICS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-b3-h160-h169-nyfed-source-qa-${{ github.run_id }}
+          path: artifacts/b3_h160_h169_nyfed_source_qa.json
+          if-no-files-found: warn
+          retention-days: 90
