@@ -2,9 +2,13 @@ name: GATE BTC B3 H1 Daily Structural
 
 on:
   schedule:
-    # 21:30, 22:30 and 23:30 America/Sao_Paulo on local Mon-Fri.
-    # GitHub cron is UTC, so those are Tue-Sat at 00:30, 01:30 and 02:30 UTC.
+    # Primary publication windows: 21:30, 22:30 and 23:30 America/Sao_Paulo
+    # on local Mon-Fri (Tue-Sat 00:30, 01:30 and 02:30 UTC).
     - cron: "30 0,1,2 * * 2-6"
+    # Late-publication recovery windows for the same immediately preceding
+    # frozen B3 session. These never move the scientific session date, never
+    # backfill older dates, and still fail closed through the exact H1 gates.
+    - cron: "30 9,12 * * 2-6"
   workflow_dispatch:
     inputs:
       date:
@@ -50,10 +54,9 @@ jobs:
             TARGET_DATE="$MANUAL_DATE"
             SOURCE="MANUAL_EXPLICIT_DATE"
           else
-            # The cron is intentionally just after 00:00 UTC on Tue-Sat and is
-            # collecting the immediately preceding Mon-Fri B3 session.  Binding
-            # to yesterday in UTC avoids the previous America/Sao_Paulo
-            # wall-clock rollover bug if the runner starts after local midnight.
+            # Every scheduled window, including the late-publication recovery
+            # windows, is restricted to the immediately preceding UTC session.
+            # This is operational retry plumbing, not historical backfill.
             TARGET_DATE=$(date -u -d 'yesterday' +%F)
             SOURCE="SCHEDULE_PRIOR_UTC_DATE"
           fi
