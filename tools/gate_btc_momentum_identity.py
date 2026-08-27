@@ -41,8 +41,6 @@ def _normalize(value: Any, path: tuple[str, ...] = ()) -> Any:
         return out
     if isinstance(value, list):
         rows = [_normalize(x, path + ("[]",)) for x in value]
-        # Row order is representational. Scientific rank remains explicit in
-        # rank_m1/rank_m2 and therefore remains identity-bearing.
         if path in (("m1", "rows"), ("m2", "rows")):
             return sorted(rows, key=lambda x: (str(x.get("asset", "")), json.dumps(x, sort_keys=True, separators=(",", ":"))))
         return rows
@@ -115,11 +113,24 @@ def compare_scientific_identity(existing: dict, candidate: dict) -> tuple[bool, 
     return False, {"status": "SCIENTIFIC_IDENTITY_MISMATCH", "differences": diffs}
 
 
+def snapshot_cutoffs(ledger_dir: Path) -> list[str]:
+    out = []
+    for p in sorted(ledger_dir.glob("*.json")):
+        if p.name == "STATUS.json":
+            continue
+        d = json.loads(p.read_text(encoding="utf-8"))
+        c = str(d.get("cutoff", ""))
+        if not c:
+            raise MomentumIdentityConflict(f"ledger snapshot without cutoff: {p.name}")
+        out.append(c)
+    return sorted(out)
+
+
 def load_strict_predecessor(ledger_dir: Path, cutoff: str) -> dict | None:
     """Load greatest snapshot cutoff strictly less than cutoff.
 
-    The target cutoff itself is never its own predecessor. Any future snapshot
-    makes reconstruction non-monotonic and fails closed.
+    Existing target and later snapshots are ignored for predecessor selection,
+    preventing any post-cutoff ledger state from entering historical identity.
     """
     predecessors: list[tuple[str, dict]] = []
     for p in sorted(ledger_dir.glob("*.json")):
@@ -129,20 +140,18 @@ def load_strict_predecessor(ledger_dir: Path, cutoff: str) -> dict | None:
         c = str(d.get("cutoff", ""))
         if not c:
             raise MomentumIdentityConflict(f"ledger snapshot without cutoff: {p.name}")
-        if c > cutoff:
-            raise MomentumIdentityConflict("non-monotonic cutoff forbidden")
         if c < cutoff:
             predecessors.append((c, d))
     return max(predecessors, key=lambda x: x[0])[1] if predecessors else None
 
 
-def resolve_existing_snapshot(existing: dict, candidate: dict) -> dict:
-    """Resolve a duplicate cutoff without mutating the append-only anchor.
+def assert_new_cutoff_monotonic(ledger_dir: Path, cutoff: str) -> None:
+    later = [c for c in snapshot_cutoffs(ledger_dir) if c >= cutoff]
+    if later:
+        raise MomentumIdentityConflict("non-monotonic cutoff forbidden")
 
-    Equal cutoff-causal scientific content is an idempotent no-op and retains
-    the original persisted snapshot hash. Any scientific difference is a hard
-    conflict, irrespective of raw archive provenance.
-    """
+
+def resolve_existing_snapshot(existing: dict, candidate: dict) -> dict:
     if existing.get("cutoff") != candidate.get("cutoff"):
         raise MomentumIdentityConflict("duplicate resolver cutoff mismatch")
     same, detail = compare_scientific_identity(existing, candidate)
