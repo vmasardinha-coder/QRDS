@@ -1,0 +1,136 @@
+name: GATE BTC B3 H1 Recovery Supervisor
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC B3 H1 Daily Structural"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Optional failed H1 run id for recovery audit"
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+concurrency:
+  group: gate-btc-b3-h1-recovery-supervisor
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  recover-or-escalate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+
+      - name: Resolve failed source run and immutable target date
+        id: source
+        env:
+          MANUAL_SOURCE_RUN: ${{ inputs.source_run_id || '' }}
+          EVENT_SOURCE_RUN: ${{ github.event.workflow_run.id || '' }}
+          EVENT_SOURCE_EVENT: ${{ github.event.workflow_run.event || '' }}
+          EVENT_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt || '1' }}
+        run: |
+          set -euo pipefail
+          run_id="${MANUAL_SOURCE_RUN:-${EVENT_SOURCE_RUN:-}}"
+          test -n "$run_id"
+          source_event="${EVENT_SOURCE_EVENT:-workflow_dispatch}"
+          run_attempt="${EVENT_RUN_ATTEMPT:-1}"
+          target_date=$(gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --log 2>/dev/null \
+            | sed -n 's/.*B3_H1_TARGET_DATE=\([0-9][0-9-]*\).*/\1/p' \
+            | tail -n 1 || true)
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "source_event=$source_event" >> "$GITHUB_OUTPUT"
+          echo "run_attempt=$run_attempt" >> "$GITHUB_OUTPUT"
+          echo "target_date=$target_date" >> "$GITHUB_OUTPUT"
+          echo "H1_RECOVERY_SOURCE_RUN=$run_id event=$source_event attempt=$run_attempt target_date=${target_date:-UNRESOLVED}"
+
+      - name: Apply bounded recovery policy
+        id: policy
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_factory/h1_recovery_policy.py \
+            --event "${{ steps.source.outputs.source_event }}" \
+            --run-attempt "${{ steps.source.outputs.run_attempt }}" \
+            --target-date "${{ steps.source.outputs.target_date }}" > /tmp/policy.json
+          cat /tmp/policy.json
+          echo "action=$(python -c 'import json;print(json.load(open("/tmp/policy.json"))["action"])')" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch exactly one explicit-date operational retry
+        if: steps.policy.outputs.action == 'DISPATCH_EXPLICIT_DATE_RETRY_ONCE'
+        run: |
+          set -euo pipefail
+          active=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow gate-btc-b3-h1-daily.yml --limit 20 \
+            --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
+          if [ "$active" != 0 ]; then
+            echo "H1_RECOVERY_SINGLE_FLIGHT active=$active"
+            exit 0
+          fi
+          gh workflow run gate-btc-b3-h1-daily.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f date="${{ steps.source.outputs.target_date }}"
+          echo "H1_RECOVERY_RETRY_DISPATCHED date=${{ steps.source.outputs.target_date }} source_run=${{ steps.source.outputs.run_id }}"
+
+      - name: Open or reuse persistent H1 fail-closed incident
+        if: steps.policy.outputs.action != 'DISPATCH_EXPLICIT_DATE_RETRY_ONCE'
+        env:
+          TARGET_DATE: ${{ steps.source.outputs.target_date }}
+          SOURCE_RUN: ${{ steps.source.outputs.run_id }}
+          ACTION: ${{ steps.policy.outputs.action }}
+        run: |
+          set -euo pipefail
+          date_key="${TARGET_DATE:-UNRESOLVED}"
+          marker="H1-FAIL-CLOSED:${date_key}"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$marker" --limit 100 --json number,body \
+            --jq '.[] | select(.body | contains("'"$marker"'")) | .number' | head -n 1 || true)
+          if [ -n "$existing" ]; then
+            echo "H1_RECOVERY_INCIDENT_REUSED=#$existing"
+            exit 0
+          fi
+          body=$(cat <<EOF
+          <!-- $marker -->
+          Persistent B3 H1 structural fail-closed condition after bounded operational recovery.
+
+          - target_date: \`$date_key\`
+          - failed_source_run: \`$SOURCE_RUN\`
+          - recovery_action: \`$ACTION\`
+          - automatic_retry_budget: exhausted or not safely classifiable
+          - production_blocking: false
+
+          Safety boundary: preserve the frozen H1 contract. No contract substitution, no retune, no synthetic backfill, no late reconstruction, no partial economics, orders=0, real_capital=0, engine_feed=false. Other Factory production lines continue independently.
+          EOF
+          )
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "B3 H1 fail-closed gap — $date_key" --body "$body"
+
+      - name: Report non-blocking production boundary
+        if: always()
+        run: |
+          echo "H1_RECOVERY_PRODUCTION_BLOCKING=false"
+          echo "H1_RECOVERY_SCIENTIFIC_CHANGE_ALLOWED=false"
+          echo "H1_RECOVERY_BACKFILL_ALLOWED=false"
+          echo "ORDERS=0 REAL_CAPITAL=0 ENGINE_FEED=false"
