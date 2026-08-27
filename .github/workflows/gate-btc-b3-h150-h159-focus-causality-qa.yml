@@ -1,0 +1,61 @@
+name: GATE BTC B3 H150-H159 Focus Causality QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h150_h159_focus_causality_qa.py'
+      - 'tools/gate_btc_b3_h150_h159_focus_source_qa.py'
+      - 'research/b3_h150_h159_focus_prereg.md'
+      - '.github/workflows/gate-btc-b3-h150-h159-focus-causality-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  causality-horizon-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3'
+      - name: Assert frozen preregistration and no-economics boundary
+        run: |
+          grep -q 'Causality: only observations provably available before the B3 signal decision' research/b3_h150_h159_focus_prereg.md
+          grep -q 'one complete B3-session lag' research/b3_h150_h159_focus_prereg.md
+          grep -q 'Historical cutoff: exclusive 2026-08-10' research/b3_h150_h159_focus_prereg.md
+          grep -q 'NO_ECONOMICS' research/b3_h150_h159_focus_prereg.md
+      - name: Validate official Focus base, fixed horizon and causal fallback
+        run: python tools/gate_btc_b3_h150_h159_focus_causality_qa.py
+      - name: Assert fail-closed boundary remains before adapter join
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/b3_h150_h159_focus_causality_qa.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status'] == 'CAUSALITY_HORIZON_QA_PASS_ADAPTER_JOIN_PENDING'
+          assert d['primary_base_calculo'] == 0
+          assert d['causal_policy'] == 'ONE_FULL_COMPLETED_B3_SESSION_LAG'
+          assert d['economics_executed'] is False
+          assert d['h1_economics_read'] is False
+          assert d['orders'] == 0 and d['real_capital'] == 0 and d['engine_feed'] is False
+          for x in d['indicators'].values():
+              assert x['publication_time_same_session_admitted'] is False
+              assert x['causal_admission'].endswith('B3_JOIN_COVERAGE_PENDING')
+          print('H150_H159_CAUSALITY_HORIZON_BOUNDARY=PASS_NO_ECONOMICS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h150-h159-focus-causality-qa-${{ github.run_id }}
+          path: artifacts/b3_h150_h159_focus_causality_qa.json
+          if-no-files-found: error
+          retention-days: 90
