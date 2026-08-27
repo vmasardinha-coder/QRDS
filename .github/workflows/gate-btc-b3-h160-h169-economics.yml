@@ -1,0 +1,99 @@
+name: GATE BTC B3 H160-H169 Economics
+
+on:
+  push:
+    branches: [research/b3-h160-h169-economics]
+    paths:
+      - 'tools/gate_btc_b3_h160_h169_economics.py'
+      - 'tests/test_gate_btc_b3_h160_h169_economics.py'
+      - 'research/b3_h160_h169_nyfed_economics_contract.md'
+      - '.github/workflows/gate-btc-b3-h160-h169-economics.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h160_h169_economics.py'
+      - 'tests/test_gate_btc_b3_h160_h169_economics.py'
+      - 'research/b3_h160_h169_nyfed_economics_contract.md'
+      - '.github/workflows/gate-btc-b3-h160-h169-economics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+concurrency:
+  group: gate-btc-b3-h160-h169-economics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  historical-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3' pandas numpy
+      - name: Contract tests before economics
+        run: python -m unittest -v tests/test_gate_btc_b3_h160_h169_economics.py
+      - name: Reproduce admitted NY Fed source QA
+        run: |
+          python tools/gate_btc_b3_h160_h169_nyfed_source_qa.py
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h160_h169_nyfed_source_qa.json',encoding='utf-8'))
+          assert p['status']=='SOURCE_QA_PASS_ECONOMICS_STILL_BLOCKED'
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          PY
+      - name: Run frozen H160-H169 historical validation
+        run: |
+          mkdir -p artifacts/b3_h160_h169
+          python tools/gate_btc_b3_h160_h169_economics.py \
+            --out artifacts/b3_h160_h169/B3_H160_H169_ECONOMICS.json \
+            --ledger artifacts/b3_h160_h169/H160_H169_RESULT_LEDGER.jsonl \
+            --cells artifacts/b3_h160_h169/H160_H169_CELLS.csv \
+            --manifest artifacts/b3_h160_h169/H160_H169_MANIFEST.json
+      - name: Assert frozen result and safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h160_h169/B3_H160_H169_ECONOMICS.json',encoding='utf-8'))
+          assert p['cutoff_exclusive']=='2026-08-10'
+          assert set(p['states'])=={f'H{i}' for i in range(160,170)}
+          assert len(p['survivors'])<=2
+          assert set(p['survivors']).issubset(set(p['independently_replicated']))
+          assert all(v['coverage']>=0.90 for v in p['discovery_causal_coverage'].values())
+          assert all(v['coverage']>=0.90 for v in p['replication_causal_coverage'].values())
+          assert p['h1_economics_read'] is False and p['survivor_partial_economics_read'] is False
+          assert p['orders_generated']==0 and p['real_capital_used']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          print('H160_H169_HISTORICAL_VALIDATION=PASS_RESEARCH_ONLY')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-b3-h160-h169-economics-${{ github.run_id }}
+          path: |
+            artifacts/b3_h160_h169_nyfed_source_qa.json
+            artifacts/b3_h160_h169/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Publish canonical branch result after frozen push run
+        if: github.event_name == 'push' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp artifacts/b3_h160_h169/B3_H160_H169_ECONOMICS.json tools/gate_btc_b3_h160_h169_result.json
+          cp artifacts/b3_h160_h169/H160_H169_RESULT_LEDGER.jsonl research/b3_h160_h169_result_ledger.jsonl
+          cp artifacts/b3_h160_h169/H160_H169_CELLS.csv research/b3_h160_h169_cells.csv
+          cp artifacts/b3_h160_h169/H160_H169_MANIFEST.json research/b3_h160_h169_manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/gate_btc_b3_h160_h169_result.json research/b3_h160_h169_result_ledger.jsonl research/b3_h160_h169_cells.csv research/b3_h160_h169_manifest.json
+          git commit -m 'B3 H160-H169: publish frozen historical result'
+          git push origin HEAD:research/b3-h160-h169-economics
