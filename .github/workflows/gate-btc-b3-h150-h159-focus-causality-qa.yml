@@ -30,7 +30,7 @@ jobs:
       - run: pip install 'requests>=2.31,<3'
       - name: Assert frozen preregistration and no-economics boundary
         run: |
-          grep -q 'Causal availability is strict' research/b3_h150_h159_focus_prereg.md
+          grep -q 'Causality: only observations provably available before the B3 signal decision' research/b3_h150_h159_focus_prereg.md
           grep -q 'one complete B3-session lag' research/b3_h150_h159_focus_prereg.md
           grep -q 'Historical cutoff: exclusive 2026-08-10' research/b3_h150_h159_focus_prereg.md
           grep -q 'NO_ECONOMICS' research/b3_h150_h159_focus_prereg.md
