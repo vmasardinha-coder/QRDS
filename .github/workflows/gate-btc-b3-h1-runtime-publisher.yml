@@ -69,7 +69,30 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Classify publication payload
+        id: payload
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          matches=list(Path('b3_evidence').rglob('H1_STRUCTURAL_STATUS.json'))
+          assert len(matches)==1, matches
+          s=json.load(open(matches[0],encoding='utf-8'))
+          print('date='+str(s['date']))
+          if s.get('status')=='STRUCTURAL_PASS' and s.get('qualified') is True:
+              print('mode=qualified')
+          else:
+              gaps=list(Path('b3_evidence').rglob('H1_OPERATIONAL_GAP.json'))
+              assert len(gaps)==1, 'unqualified H1 run lacks classified operational gap'
+              g=json.load(open(gaps[0],encoding='utf-8'))
+              assert g['classification']=='ORDINARY_SOURCE_GAP'
+              assert g['scientifically_qualified'] is False
+              print('mode=gap')
+          PY
+
       - name: Append qualified observation idempotently
+        if: steps.payload.outputs.mode == 'qualified'
         run: >-
           python main_repo/tools/gate_btc_b3_h1_runtime_ledger.py
           --artifact-root b3_evidence
@@ -77,33 +100,50 @@ jobs:
           --output runtime_repo/runtime/ledgers/b3_h1/STATUS.json
           --run-id "${{ steps.source.outputs.run_id }}"
 
+      - name: Persist ordinary gap without incrementing H1
+        if: steps.payload.outputs.mode == 'gap'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/ledgers/b3_h1/gaps
+          GAP=$(find b3_evidence -name H1_OPERATIONAL_GAP.json -print -quit)
+          test -n "$GAP"
+          cp "$GAP" "runtime_repo/runtime/ledgers/b3_h1/gaps/${{ steps.payload.outputs.date }}.json"
+
       - name: Validate safety and no synthetic backfill
         run: |
           python - <<'PY'
           import json
-          p='runtime_repo/runtime/ledgers/b3_h1/STATUS.json'
-          s=json.load(open(p,encoding='utf-8'))
-          assert s['research_only'] is True
-          assert s['shadow_only'] is True
-          assert s['not_approved'] is True
-          assert s['orders_generated'] == 0
-          assert s['real_capital_used'] == 0
-          assert s['economics_locked'] is True
-          assert s['backfill_automatically_created'] is False
-          dates=[x['date'] for x in s['entries']]
-          assert len(dates)==len(set(dates))
+          from pathlib import Path
+          status=Path('runtime_repo/runtime/ledgers/b3_h1/STATUS.json')
+          if status.exists():
+              s=json.load(open(status,encoding='utf-8'))
+              assert s['research_only'] is True
+              assert s['shadow_only'] is True
+              assert s['not_approved'] is True
+              assert s['orders_generated'] == 0
+              assert s['real_capital_used'] == 0
+              assert s['economics_locked'] is True
+              assert s['backfill_automatically_created'] is False
+              dates=[x['date'] for x in s['entries']]
+              assert len(dates)==len(set(dates))
+          for p in Path('runtime_repo/runtime/ledgers/b3_h1/gaps').glob('*.json') if Path('runtime_repo/runtime/ledgers/b3_h1/gaps').exists() else []:
+              g=json.load(open(p,encoding='utf-8'))
+              assert g['scientifically_qualified'] is False
+              assert g['eligible_observation_increment'] == 0
+              assert g['synthetic_backfill'] is False
+              assert g['orders'] == 0 and g['real_capital'] == 0 and g['engine_feed'] is False
           print('B3_H1_RUNTIME_SAFETY=PASS')
           PY
 
-      - name: Publish runtime ledger
+      - name: Publish runtime H1 evidence
         working-directory: runtime_repo
         run: |
           set -euo pipefail
           git config user.name gate-btc-actions
           git config user.email gate-btc-actions@users.noreply.github.com
-          git add runtime/ledgers/b3_h1/STATUS.json
+          git add runtime/ledgers/b3_h1
           git diff --cached --quiet && exit 0
-          git commit -m "Append qualified B3 H1 structural observation"
+          git commit -m "Publish B3 H1 structural runtime evidence"
           for attempt in 1 2 3 4 5; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then
