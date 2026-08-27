@@ -1,0 +1,56 @@
+name: GATE BTC B3 H150-H159 Focus Source QA
+# Operational replay after Factory frontier autorepair and Scope Guard coverage update.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'research/b3_h150_h159_focus_prereg.md'
+      - 'tools/gate_btc_b3_h150_h159_focus_source_qa.py'
+      - '.github/workflows/gate-btc-b3-h150-h159-focus-source-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3'
+      - name: Assert preregistration and safety boundary
+        run: |
+          grep -q 'H150 Selic' research/b3_h150_h159_focus_prereg.md
+          grep -q 'Historical cutoff: exclusive 2026-08-10' research/b3_h150_h159_focus_prereg.md
+          grep -q 'NO_ECONOMICS' research/b3_h150_h159_focus_prereg.md
+      - name: Probe official BCB Focus OData source
+        run: python tools/gate_btc_b3_h150_h159_focus_source_qa.py
+      - name: Assert no economics and fail-closed causal admission
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/b3_h150_h159_focus_source_qa.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['economics_executed'] is False
+          assert d['h1_economics_read'] is False
+          assert d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          for x in d['indicators'].values():
+              assert x['causal_admission'].startswith('NOT_YET_ADMITTED')
+          print('H150_H159_SOURCE_BOUNDARY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-h150-h159-focus-source-qa-${{ github.run_id }}
+          path: artifacts/b3_h150_h159_focus_source_qa.json
+          if-no-files-found: error
+          retention-days: 90
