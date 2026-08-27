@@ -6,14 +6,14 @@ import json
 from datetime import date
 from pathlib import Path
 
-from tools.gate_btc_momentum_identity import (
+from gate_btc_momentum_identity import (
     MomentumIdentityConflict,
     assert_new_cutoff_monotonic,
     load_strict_predecessor,
     resolve_existing_snapshot,
     scientific_sha256,
 )
-from tools.gate_btc_momentum_shadow_collect import FREEZE, compute_m1, compute_m2, extract_prices, sha256_file
+from gate_btc_momentum_shadow_collect import FREEZE, compute_m1, compute_m2, extract_prices, sha256_file
 
 
 def build_candidate(v2a_zip: Path, cutoff: str, ledger_dir: Path, output: Path, diagnostic_output: Path) -> dict:
