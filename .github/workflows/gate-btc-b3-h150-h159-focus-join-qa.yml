@@ -1,0 +1,67 @@
+name: GATE BTC B3 H150-H159 Focus Join QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h150_h159_focus_join_qa.py'
+      - 'tools/gate_btc_b3_h150_h159_focus_source_qa.py'
+      - 'tools/gate_btc_b3_h150_h159_focus_causality_qa.py'
+      - 'tools/gate_btc_b3_h140_h149_source_probe.py'
+      - 'tools/gate_btc_b3_h30_h39_cross_asset.py'
+      - 'research/b3_h150_h159_focus_prereg.md'
+      - '.github/workflows/gate-btc-b3-h150-h159-focus-join-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-b3-h150-h159-focus-join-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  exact-prior-session-join-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'requests>=2.31,<3' pandas numpy
+      - name: Assert frozen join contract and no-forward-fill boundary
+        run: |
+          grep -q 'Per-input causal join coverage >=90%' research/b3_h150_h159_focus_prereg.md
+          grep -q 'one complete B3-session lag' research/b3_h150_h159_focus_prereg.md
+          grep -q 'No interpolation, forward fill' research/b3_h150_h159_focus_prereg.md
+          grep -q 'NO_ECONOMICS' research/b3_h150_h159_focus_prereg.md
+      - name: Run exact prior-session Focus/B3 join QA
+        run: python tools/gate_btc_b3_h150_h159_focus_join_qa.py
+      - name: Assert safety boundary if coverage passes
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/b3_h150_h159_focus_join_qa.json',encoding='utf-8'))
+          assert p['status']=='JOIN_QA_PASS_ECONOMICS_STILL_NOT_RUN'
+          assert p['discovery']['all_families_pass'] is True
+          assert p['replication']['all_families_pass'] is True
+          assert p['economics_executed'] is False
+          assert p['h1_economics_read'] is False
+          assert p['survivor_partial_economics_read'] is False
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          print('H150_H159_JOIN_QA=PASS_NO_ECONOMICS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-b3-h150-h159-focus-join-qa-${{ github.run_id }}
+          path: artifacts/b3_h150_h159_focus_join_qa.json
+          if-no-files-found: warn
+          retention-days: 90
