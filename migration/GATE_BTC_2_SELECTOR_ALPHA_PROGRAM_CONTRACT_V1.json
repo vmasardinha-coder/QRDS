@@ -1,0 +1,165 @@
+{
+  "schema": "gate_btc.2_0.selector_alpha_program_contract.v1",
+  "program": "SELECTOR_ALPHA_PIT_SURVIVORSHIP_PROOF",
+  "contract_date": "2026-08-26",
+  "prompt_sha256": "6cf9b79efcf6d16dd2028f0b332bdef7be1a7804d7ed555b5752a020b2cd7cca",
+  "objective": "Determine reproducibly and fail-closed whether frozen QOS selector alpha survives survivorship, PIT leakage, universe bias and selection bias.",
+  "frozen_inputs": {
+    "definitive_pit_run_id": 31276127634,
+    "definitive_pit_artifact_id": 9027220602,
+    "definitive_pit_artifact_name": "gate-btc-survivorship-definitive-31276127634",
+    "definitive_pit_artifact_sha256": "e3b484f8797685547b7e59aa86f19e9080daaac551b1488b6ea0fac9f8fd5f81",
+    "canonical_v2a_version": "QOS_V2A_INTEGRITY_0.4",
+    "canonical_v2a_script_sha256": "6eea7a1b8caef7ff19188ab32f32f2e1a26eef1a06027764b720b3d351e9e804",
+    "canonical_config_sha256": "4686cd4d5eee1f10c301b650758fe5265ef2c1f3b2766614ec104eb5d18c4ceb",
+    "alpha_audit_script_sha256": "bdb4a6cd3c7d759963a8228808dff82402b4a843754ba44a8e5afc9e777c244e",
+    "phase_1_matrix_path": "migration/GATE_BTC_2_SELECTOR_ALPHA_SOURCE_RECOVERY_MATRIX.json",
+    "phase_1_matrix_sha256": "6c2f39fe23369915bdb45bbec4d2326748e8ef684368d42d8bdcfaa153d13d5b"
+  },
+  "numerical_runtime": {
+    "python": "3.12.13",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "random_generator": "numpy.random.default_rng_PCG64"
+  },
+  "phase_order": [
+    "SOURCE_DISCOVERY",
+    "PIT_UNIVERSE_RECONSTRUCTION",
+    "SURVIVORSHIP_SENSITIVITY",
+    "SELECTOR_ABLATION",
+    "TIME_REGIME_ROBUSTNESS",
+    "INDEPENDENT_REPLICATION",
+    "PROSPECTIVE_SELECTOR_TRACK"
+  ],
+  "phase_1b": {
+    "priority_gap_symbols": [
+      "FF",
+      "JASMY",
+      "NEXO",
+      "SYRUP"
+    ],
+    "rule": "Cross-reconcile only hash-sealed historical evidence. Do not mutate or silently substitute into the frozen current V2A source cascade.",
+    "new_v2a_source_admission_authorized": false
+  },
+  "phase_2": {
+    "universe": "CoinMarketCap historical month-end top 150 from 2020-06-30 through 2026-07-31",
+    "membership_unit": "eligible directional asset-snapshot membership",
+    "aspirational_coverage": 0.95,
+    "minimum_snapshot_rule": "Report every snapshot; never relabel mean coverage as complete per-snapshot coverage.",
+    "dataset_seal_requires": [
+      "outer_artifact_sha256",
+      "all_internal_sha256s",
+      "canonical_script_sha256",
+      "canonical_config_sha256",
+      "strict_next_bar",
+      "current_composition_applied_to_past_false"
+    ]
+  },
+  "phase_3_preregistration": {
+    "comparison_calendar": "exact 201 week_end values in canonical WEEKLY_BASKETS_STRICT.csv",
+    "rebalance_period": "canonical monthly signal interval",
+    "missing_asset_observations_are_synthetic": true,
+    "synthetic_values_may_enter_official_dataset": false,
+    "terminal_return_application": "Flat inside each signal interval and apply the assigned terminal return on the final included observation; preserve all other canonical daily returns.",
+    "baseline_terminal_weighting": "missing structural membership count divided by canonical terminal available covered count plus missing structural membership count",
+    "empirical_reference_pool": "Only physically covered assets with non-missing daily returns on every canonical included date in the signal interval.",
+    "random_seeds": [
+      104729,
+      130363,
+      155921,
+      196613,
+      262147
+    ],
+    "draws_per_seed": 200,
+    "scenarios": [
+      {
+        "id": "OBSERVED_COVERED_ONLY",
+        "missing_return_rule": "No synthetic insertion; reproduce canonical economics byte-for-number.",
+        "selector_exposure": "canonical"
+      },
+      {
+        "id": "TERMINAL_MINUS_50_SELECTOR_EXEMPT",
+        "missing_return_rule": -0.5,
+        "selector_exposure": "zero",
+        "interpretation": "Selector-favourable upper bound: every missing asset loses 50% and is never selected."
+      },
+      {
+        "id": "TERMINAL_MINUS_80_SELECTOR_EXEMPT",
+        "missing_return_rule": -0.8,
+        "selector_exposure": "zero",
+        "interpretation": "Selector-favourable upper bound: every missing asset loses 80% and is never selected."
+      },
+      {
+        "id": "TERMINAL_TOTAL_LOSS_SELECTOR_EXEMPT",
+        "missing_return_rule": -1.0,
+        "selector_exposure": "zero",
+        "interpretation": "Conceptual delisting/terminal-loss bound, not an observed delisting ledger."
+      },
+      {
+        "id": "WORST_RANK_ASSIGNMENT",
+        "missing_return_rule": "minimum contemporaneous covered asset terminal return",
+        "selector_exposure": "zero",
+        "interpretation": "All missing assets rank below the selector cutoff; selection-favourable bound."
+      },
+      {
+        "id": "RANDOM_MISSINGNESS",
+        "missing_return_rule": "seeded empirical contemporaneous terminal-return bootstrap",
+        "selector_exposure": "seeded hypergeometric same-N exposure",
+        "interpretation": "Neutral missingness control; report median, 5th/95th percentiles and probability of positive direct alpha."
+      },
+      {
+        "id": "ADVERSARIAL_MISSINGNESS",
+        "missing_return_rule": "best contemporaneous covered return enters the baseline and worst enters every feasible selector slot",
+        "selector_exposure": "min(1, missing_count / frozen_pick_count)",
+        "interpretation": "Selector-unfavourable deterministic bound."
+      },
+      {
+        "id": "CONCENTRATED_HIGH_CONTRIBUTION",
+        "missing_return_rule": "best contemporaneous covered return enters the shared baseline only in canonical periods where either frozen selector has positive selector-minus-baseline contribution",
+        "selector_exposure": "zero",
+        "interpretation": "Tests whether omitted winners in apparent contribution periods erase the selector result."
+      }
+    ],
+    "loss_grid": {
+      "start": 0.0,
+      "stop": -1.0,
+      "step": -0.01,
+      "purpose": "Locate any selector-favourable baseline-only sign-change threshold; do not tune or promote from it."
+    },
+    "required_answers": [
+      "fraction_of_historical_result_explainable_by_gaps",
+      "loss_intensity_that_eliminates_alpha",
+      "ranking_survival_under_plausible_adversarial_bounds",
+      "selector_superiority_to_baseline_under_bounds",
+      "sign_change_interval"
+    ]
+  },
+  "terminal_stop_rule": "If observed incremental alpha is non-positive, any plausible sensitivity removes it, coverage is materially insufficient, leakage is detected, or ablation/replication fails, close the hypothesis without retune and do not execute later phases.",
+  "promotion_ladders": {
+    "data": [
+      "G2_DATA_UNPROVEN",
+      "G2_SOURCE_ADMISSION_PASS",
+      "G2_PIT_UNIVERSE_PASS",
+      "G2_DATASET_SEALED"
+    ],
+    "selector": [
+      "SELECTOR_NOT_PROVEN",
+      "SELECTOR_HISTORICAL_ROBUSTNESS_PASS",
+      "SELECTOR_INDEPENDENT_REPLICATION_PASS",
+      "SELECTOR_PROSPECTIVE_EVIDENCE",
+      "SELECTOR_ALPHA_SUPPORTED"
+    ],
+    "operation": "NOT_APPROVED"
+  },
+  "boundary": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "RETUNE": false,
+    "BACKFILL": false,
+    "RULE_CHANGE_AFTER_RESULTS": false
+  }
+}
