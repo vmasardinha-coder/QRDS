@@ -45,6 +45,7 @@ def test_state_master_refresh_preserves_scientific_state(tmp_path, monkeypatch):
     monkeypatch.setattr(m, 'SOURCE', source)
     monkeypatch.setattr(m, 'FACTORY_LATEST', latest)
     monkeypatch.setattr(m, 'OUT', out)
+    monkeypatch.setattr(m, 'ROOT', tmp_path)
     assert m.main() == 0
     d = json.loads(out.read_text(encoding='utf-8'))
     row = d['tracks']['B3_H31']
@@ -53,6 +54,60 @@ def test_state_master_refresh_preserves_scientific_state(tmp_path, monkeypatch):
     assert row['blocker'] is None
     assert row['prospective_count'] == 2
     assert d['auto_refresh']['scientific_state_mutation_allowed'] is False
+
+
+def test_state_master_syncs_only_canonical_no_survivor_frontier(tmp_path):
+    m = load_module('state_master_frontier_test', 'tools/gate_btc_factory/state_master_refresh.py')
+    (tmp_path / 'tools').mkdir()
+    (tmp_path / 'research').mkdir()
+    result = {
+        'status': 'CLOSED_NO_H150_H159_SURVIVOR',
+        'survivors': [],
+        'h1_economics_read': False,
+        'survivor_partial_economics_read': False,
+        'engine_feed': False,
+        'orders_generated': 0,
+        'real_capital_used': 0,
+    }
+    (tmp_path / 'tools/gate_btc_b3_h150_h159_result.json').write_text(json.dumps(result), encoding='utf-8')
+    (tmp_path / 'research/b3_h160_h169_nyfed_funding_prereg.md').write_text('# frozen prereg\n', encoding='utf-8')
+    src = {'tracks': {'B3_H40_PLUS': {
+        'classification': 'OPEN_DISCOVERY',
+        'status': 'H130_H139_STALE',
+        'open_issue': 210,
+        'open_pr': 211,
+    }}}
+    out = m.sync_b3_frontier(src, tmp_path)
+    row = out['tracks']['B3_H40_PLUS']
+    assert row['status'] == 'CLOSED_NO_H150_H159_SURVIVOR__H160_H169_PREREGISTERED_SOURCE_QA_READY'
+    assert row['open_issue'] is None
+    assert row['open_pr'] is None
+    assert row['canonical_active_generation'] == 'H160-H169'
+    assert row['classification'] == 'OPEN_DISCOVERY'
+
+
+def test_state_master_does_not_advance_from_non_null_terminal(tmp_path):
+    m = load_module('state_master_frontier_block_test', 'tools/gate_btc_factory/state_master_refresh.py')
+    (tmp_path / 'tools').mkdir()
+    result = {
+        'status': 'CLOSED_WITH_SURVIVOR',
+        'survivors': ['H157'],
+        'h1_economics_read': False,
+        'survivor_partial_economics_read': False,
+        'engine_feed': False,
+        'orders_generated': 0,
+        'real_capital_used': 0,
+    }
+    (tmp_path / 'tools/gate_btc_b3_h150_h159_result.json').write_text(json.dumps(result), encoding='utf-8')
+    src = {'tracks': {'B3_H40_PLUS': {
+        'classification': 'OPEN_DISCOVERY',
+        'status': 'KEEP_ME',
+        'open_issue': 210,
+        'open_pr': None,
+    }}}
+    out = m.sync_b3_frontier(src, tmp_path)
+    assert out['tracks']['B3_H40_PLUS']['status'] == 'KEEP_ME'
+    assert out['tracks']['B3_H40_PLUS']['open_issue'] == 210
 
 
 def test_universal_watchdog_is_allowlisted_and_safe(tmp_path, monkeypatch):
