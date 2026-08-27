@@ -1,0 +1,177 @@
+name: GATE BTC B3 Autonomous Science Loop
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7,37 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_b3_h*_h*_result.json'
+      - 'research/b3_h_autonomous_science_protocol_v1.md'
+      - 'tools/gate_btc_factory/autonomous_family_generator.py'
+      - 'tools/gate_btc_factory/autonomous_family_evaluator.py'
+      - '.github/workflows/gate-btc-b3-autonomous-science-loop.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+concurrency:
+  group: gate-btc-b3-autonomous-science-loop
+  cancel-in-progress: false
+
+jobs:
+  produce-one-generation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+      - name: Install research-only dependencies
+        run: pip install pandas numpy requests
+      - name: Validate loop implementation
+        run: |
+          python -m py_compile tools/gate_btc_factory/autonomous_family_generator.py
+          python -m py_compile tools/gate_btc_factory/autonomous_family_evaluator.py
+          python tools/gate_btc_factory/autonomous_family_generator.py --start 170 --out /tmp/h170.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/h170.json'))
+          assert d['generation']=='H170-H179' and len(d['families'])==10
+          assert d['families'][0]['family_id']=='H170' and d['families'][-1]['family_id']=='H179'
+          assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          assert len({(x['feature'],x['direction'],x['decision_window_minutes'],x['abs_z_threshold']) for x in d['families']})==10
+          print('AUTONOMOUS_SCIENCE_GRAMMAR=PASS')
+          PY
+      - name: Plan next deterministic generation
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python tools/gate_btc_factory/autonomous_family_generator.py --out /tmp/next_contract.json 2>/tmp/generator.err; then
+            if grep -q 'AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED' /tmp/generator.err; then
+              echo 'action=grammar_exhausted' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            cat /tmp/generator.err >&2
+            exit 1
+          fi
+          gen=$(python -c "import json; print(json.load(open('/tmp/next_contract.json'))['generation'])")
+          lo=${gen%%-*}; hi=${gen##*-}; lo=${lo#H}; hi=${hi#H}
+          contract="research/b3_h${lo}_h${hi}_autogen_prereg.json"
+          result="tools/gate_btc_b3_h${lo}_h${hi}_result.json"
+          echo "generation=$gen" >> "$GITHUB_OUTPUT"
+          echo "contract=$contract" >> "$GITHUB_OUTPUT"
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          if [ -f "$result" ]; then echo 'action=already_closed' >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -f "$contract" ]; then echo 'action=evaluate' >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo 'action=materialize_and_evaluate' >> "$GITHUB_OUTPUT"
+      - name: Materialize frozen prereg through bot PR
+        if: steps.plan.outputs.action == 'materialize_and_evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          gen='${{ steps.plan.outputs.generation }}'
+          branch="factory/autogen-${gen,,}-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          cp /tmp/next_contract.json '${{ steps.plan.outputs.contract }}'
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add '${{ steps.plan.outputs.contract }}'
+          git commit -m "B3 ${gen}: freeze autonomous family contracts"
+          git push origin HEAD
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: freeze autonomous family contracts" --body "Deterministic materialization from research/b3_h_autonomous_science_protocol_v1.md. Frozen before economics. No H1 economics read, no retune, no orders/capital/engine feed.")
+          pr=${pr_url##*/}
+          gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
+          git checkout main
+          git pull --ff-only origin main
+      - name: Re-read canonical contract after materialization
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        run: |
+          test -f '${{ steps.plan.outputs.contract }}'
+          python - <<'PY'
+          import json
+          p='${{ steps.plan.outputs.contract }}'
+          d=json.load(open(p))
+          assert d['frozen_before_economics'] is True
+          assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          assert len(d['families'])==10
+          print('CANONICAL_AUTOGEN_PREREG=PASS')
+          PY
+      - name: Build guarded pre-H1 source
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+      - name: Revalidate Stage1 anti-contamination boundary
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        run: |
+          python tools/gate_btc_b3_h_stage1_adapter.py \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --out artifacts/b3_h_nextgen/AUTONOMOUS_STAGE1_ATTESTATION.json
+      - name: Execute frozen generation
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        run: |
+          python tools/gate_btc_factory/autonomous_family_evaluator.py \
+            --contract '${{ steps.plan.outputs.contract }}' \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --out /tmp/generation_result.json
+      - name: Assert terminal safety
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/generation_result.json'))
+          assert len(d['survivors']) <= 2
+          assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          assert d['research_only'] is True and d['shadow_only'] is True and d['not_approved'] is True
+          print('AUTONOMOUS_GENERATION_TERMINAL=PASS')
+          PY
+      - name: Publish canonical terminal through bot PR
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        shell: bash
+        run: |
+          set -euo pipefail
+          gen='${{ steps.plan.outputs.generation }}'
+          branch="factory/result-${gen,,}-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          cp /tmp/generation_result.json '${{ steps.plan.outputs.result }}'
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add '${{ steps.plan.outputs.result }}'
+          git commit -m "B3 ${gen}: publish autonomous terminal"
+          git push origin HEAD
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: publish autonomous terminal" --body "Canonical terminal from the preregistered autonomous science grammar. Research/shadow only; max two survivors; zero orders/capital/engine feed.")
+          pr=${pr_url##*/}
+          gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
+      - name: Continue loop immediately
+        if: steps.plan.outputs.action != 'grammar_exhausted'
+        shell: bash
+        run: |
+          active=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow gate-btc-b3-autonomous-science-loop.yml --limit 20 --json databaseId,status --jq '[.[] | select(.databaseId != '${{ github.run_id }}' and (.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending"))] | length')
+          if [ "$active" = 0 ]; then
+            gh workflow run gate-btc-b3-autonomous-science-loop.yml --repo "$GITHUB_REPOSITORY" --ref main
+            echo 'AUTONOMOUS_SCIENCE_NEXT_CYCLE=DISPATCHED'
+          else
+            echo 'AUTONOMOUS_SCIENCE_NEXT_CYCLE=SINGLE_FLIGHT'
+          fi
+      - name: Report grammar exhaustion
+        if: steps.plan.outputs.action == 'grammar_exhausted'
+        run: echo 'AUTONOMOUS_SCIENCE=FAIL_CLOSED_GRAMMAR_EXHAUSTED'
