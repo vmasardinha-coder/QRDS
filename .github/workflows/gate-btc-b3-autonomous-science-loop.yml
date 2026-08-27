@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'research/b3_h_autonomous_science_protocol_v1.md'
+      - 'research/b3_h_autonomous_science_protocol_v2.md'
       - 'tools/gate_btc_factory/autonomous_family_generator.py'
       - 'tools/gate_btc_factory/autonomous_family_evaluator.py'
       - '.github/workflows/gate-btc-b3-autonomous-science-loop.yml'
@@ -55,13 +56,27 @@ jobs:
           python -m py_compile tools/gate_btc_factory/autonomous_family_generator.py
           python -m py_compile tools/gate_btc_factory/autonomous_family_evaluator.py
           python tools/gate_btc_factory/autonomous_family_generator.py --start 170 --out /tmp/h170.json
+          python tools/gate_btc_factory/autonomous_family_generator.py --start 420 --out /tmp/h420.json
+          python tools/gate_btc_factory/autonomous_family_generator.py --start 430 --out /tmp/h430.json
           python - <<'PY'
           import json
-          d=json.load(open('/tmp/h170.json'))
-          assert d['generation']=='H170-H179' and len(d['families'])==10
-          assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
-          assert len({(x['feature'],x['direction'],x['decision_window_minutes'],x['abs_z_threshold']) for x in d['families']})==10
-          print('AUTONOMOUS_SCIENCE_GRAMMAR=PASS')
+          h170=json.load(open('/tmp/h170.json'))
+          h420=json.load(open('/tmp/h420.json'))
+          h430=json.load(open('/tmp/h430.json'))
+          assert h170['generation']=='H170-H179' and len(h170['families'])==10
+          assert h170['protocol'].endswith('protocol_v1.md')
+          assert all(x['standardization_lookback_sessions']==20 for x in h170['families'])
+          assert h420['generation']=='H420-H429' and len(h420['families'])==10
+          assert h420['protocol'].endswith('protocol_v2.md')
+          assert [x['standardization_lookback_sessions'] for x in h420['families']]==[20]*6+[10]*4
+          assert h430['generation']=='H430-H439' and len(h430['families'])==10
+          assert all(x['standardization_lookback_sessions']==10 for x in h430['families'])
+          rows=h420['families']+h430['families']
+          identities={(x['feature'],x['direction'],x['decision_window_minutes'],x['abs_z_threshold'],x['standardization_lookback_sessions']) for x in rows}
+          assert len(identities)==20
+          for d in (h170,h420,h430):
+              assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          print('AUTONOMOUS_SCIENCE_GRAMMAR_V2_ROLLOVER=PASS')
           PY
       - name: Plan next generation from append-only runtime state
         id: plan
@@ -69,21 +84,41 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p runtime_repo/runtime/autonomous_science/contracts runtime_repo/runtime/autonomous_science/results
-          start=$(python - <<'PY'
+          python - <<'PY' > /tmp/frontier.env
           import json,re
           from pathlib import Path
           rx=re.compile(r'gate_btc_b3_h(\d+)_h(\d+)_result\.json$')
-          ends=[]
+          rows=[]
           for p in Path('runtime_repo/runtime/autonomous_science/results').glob('gate_btc_b3_h*_h*_result.json'):
               m=rx.match(p.name)
               if not m: continue
               try: d=json.load(open(p,encoding='utf-8'))
               except Exception: continue
-              if str(d.get('status','')).startswith(('CLOSED_','SURVIVORS_')):
-                  ends.append(int(m.group(2)))
-          print(170 if not ends else ((max(ends)//10)+1)*10)
+              status=str(d.get('status',''))
+              if status.startswith(('CLOSED_','SURVIVORS_')):
+                  rows.append((int(m.group(2)),d))
+          if not rows:
+              print('START=170')
+              print('STOP_SURVIVOR=false')
+          else:
+              end,d=max(rows,key=lambda x:x[0])
+              survivors=d.get('survivors',[])
+              if survivors:
+                  print(f'START={((end//10)+1)*10}')
+                  print('STOP_SURVIVOR=true')
+              else:
+                  if str(d.get('status','')).startswith('SURVIVORS_'):
+                      raise SystemExit('INCONSISTENT_SURVIVOR_TERMINAL')
+                  print(f'START={((end//10)+1)*10}')
+                  print('STOP_SURVIVOR=false')
           PY
-          )
+          source /tmp/frontier.env
+          if [ "$STOP_SURVIVOR" = true ]; then
+            echo 'action=survivor_terminal' >> "$GITHUB_OUTPUT"
+            echo "generation_start=$START" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          start="$START"
           if ! python tools/gate_btc_factory/autonomous_family_generator.py --start "$start" --out /tmp/next_contract.json 2>/tmp/generator.err; then
             if grep -q 'AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED' /tmp/generator.err; then
               echo 'action=grammar_exhausted' >> "$GITHUB_OUTPUT"
@@ -119,34 +154,36 @@ jobs:
           done
           exit 1
       - name: Assert persisted prereg boundary
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: |
           python - <<'PY'
           import json
           d=json.load(open('${{ steps.plan.outputs.contract }}'))
           assert d['frozen_before_economics'] is True and len(d['families'])==10
           assert d['h1_economics_read'] is False and d['orders']==0 and d['real_capital']==0 and d['engine_feed'] is False
+          identities={(x['feature'],x['direction'],x['decision_window_minutes'],x['abs_z_threshold'],x.get('standardization_lookback_sessions',20)) for x in d['families']}
+          assert len(identities)==10
           print('AUTONOMOUS_PREREG=PASS')
           PY
       - name: Build guarded pre-H1 source
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: python tools/gate_btc_b3_h_free_github_ingest.py
       - name: Revalidate Stage1 anti-contamination boundary
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: |
           python tools/gate_btc_b3_h_stage1_adapter.py \
             --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
             --metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
             --out artifacts/b3_h_nextgen/AUTONOMOUS_STAGE1_ATTESTATION.json
       - name: Execute frozen generation
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: |
           python tools/gate_btc_factory/autonomous_family_evaluator.py \
             --contract '${{ steps.plan.outputs.contract }}' \
             --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
             --out /tmp/generation_result.json
       - name: Assert terminal safety
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: |
           python - <<'PY'
           import json
@@ -157,7 +194,7 @@ jobs:
           print('AUTONOMOUS_GENERATION_TERMINAL=PASS')
           PY
       - name: Persist canonical runtime terminal and pointer
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         shell: bash
         run: |
           set -euo pipefail
@@ -186,10 +223,19 @@ jobs:
           done
           exit 1
       - name: Dispatch next generation immediately
-        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed'
+        if: steps.plan.outputs.action != 'grammar_exhausted' && steps.plan.outputs.action != 'already_closed' && steps.plan.outputs.action != 'survivor_terminal'
         run: |
-          gh workflow run gate-btc-b3-autonomous-science-loop.yml --repo "$GITHUB_REPOSITORY" --ref main
-          echo 'AUTONOMOUS_SCIENCE_NEXT_CYCLE=DISPATCHED'
+          if python - <<'PY'
+          import json,sys
+          d=json.load(open('/tmp/generation_result.json'))
+          sys.exit(0 if not d.get('survivors') else 1)
+          PY
+          then
+            gh workflow run gate-btc-b3-autonomous-science-loop.yml --repo "$GITHUB_REPOSITORY" --ref main
+            echo 'AUTONOMOUS_SCIENCE_NEXT_CYCLE=DISPATCHED'
+          else
+            echo 'AUTONOMOUS_SCIENCE_SURVIVOR_TERMINAL=STOP_SCIENTIFIC_CONTINUATION'
+          fi
       - name: Report terminal loop state
-        if: steps.plan.outputs.action == 'grammar_exhausted' || steps.plan.outputs.action == 'already_closed'
+        if: steps.plan.outputs.action == 'grammar_exhausted' || steps.plan.outputs.action == 'already_closed' || steps.plan.outputs.action == 'survivor_terminal'
         run: echo "AUTONOMOUS_SCIENCE=${{ steps.plan.outputs.action }}"

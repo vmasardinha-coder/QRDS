@@ -72,9 +72,11 @@ def raw_feature(name: str, g: pd.DataFrame, window: int, prior_close: float | No
     raise RuntimeError(f"UNKNOWN_FEATURE:{name}")
 
 
-def causal_z(values: list[float], x: float) -> float | None:
-    hist = np.asarray([v for v in values[-20:] if math.isfinite(v)], dtype=float)
-    if len(hist) < 20 or not math.isfinite(x):
+def causal_z(values: list[float], x: float, lookback: int = 20) -> float | None:
+    if lookback <= 0:
+        raise RuntimeError(f"INVALID_STANDARDIZATION_LOOKBACK:{lookback}")
+    hist = np.asarray([v for v in values[-lookback:] if math.isfinite(v)], dtype=float)
+    if len(hist) < lookback or not math.isfinite(x):
         return None
     med = float(np.median(hist))
     mad = float(np.median(np.abs(hist - med)))
@@ -96,10 +98,15 @@ def build_trades(sessions: dict[str, pd.DataFrame], fam: dict) -> pd.DataFrame:
     signal_idx = window // 5 - 1
     direction = 1 if fam["direction"] == "CONTINUATION" else -1
     threshold = float(fam["abs_z_threshold"])
+    lookback = int(fam.get("standardization_lookback_sessions", 20))
+    expected_label = f"ROLLING_{lookback}_PRIOR_SESSIONS_MEDIAN_MAD"
+    label = fam.get("causal_standardization", expected_label)
+    if label != expected_label:
+        raise RuntimeError(f"STANDARDIZATION_CONTRACT_MISMATCH:{label}:{expected_label}")
     for s in sorted(sessions):
         g = sessions[s]
         x = raw_feature(fam["feature"], g, window, prior_close)
-        z = causal_z(history, x)
+        z = causal_z(history, x, lookback)
         if math.isfinite(x):
             history.append(x)
         prior_close = float(g.iloc[-1]["close"])
