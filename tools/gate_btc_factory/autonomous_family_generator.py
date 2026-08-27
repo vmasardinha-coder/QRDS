@@ -15,13 +15,30 @@ DIRECTIONS = ("CONTINUATION", "REVERSION")
 WINDOWS = (15, 30, 60, 90)
 THRESHOLDS = (0.75, 1.00, 1.25, 1.50)
 HORIZONS = (30, 60, 120)
+V1_LOOKBACK = 20
+V2_EXTENSION_LOOKBACKS = (10, 30, 40, 60, 80, 120, 160, 200, 252)
 START_FAMILY = 170
 GEN_SIZE = 10
 RESULT_RE = re.compile(r"gate_btc_b3_h(\d+)_h(\d+)_result\.json$")
 
 
 def universe() -> list[tuple[str, str, int, float]]:
+    """Immutable v1 universe kept for compatibility and auditability."""
     return list(itertools.product(FEATURES, DIRECTIONS, WINDOWS, THRESHOLDS))
+
+
+def expanded_universe() -> list[tuple[str, str, int, float, int]]:
+    """V1 followed by the pre-frozen v2 lookback extension."""
+    base = universe()
+    rows = [(f, d, w, t, V1_LOOKBACK) for f, d, w, t in base]
+    for lookback in V2_EXTENSION_LOOKBACKS:
+        rows.extend((f, d, w, t, lookback) for f, d, w, t in base)
+    if len(rows) % GEN_SIZE:
+        raise RuntimeError("AUTONOMOUS_SCIENCE_NONDECADE_UNIVERSE")
+    identities = {(f, d, w, t, lb) for f, d, w, t, lb in rows}
+    if len(identities) != len(rows):
+        raise RuntimeError("AUTONOMOUS_SCIENCE_DUPLICATE_CONTRACT")
+    return rows
 
 
 def latest_closed_frontier(root: Path) -> tuple[int, int] | None:
@@ -47,14 +64,15 @@ def latest_closed_frontier(root: Path) -> tuple[int, int] | None:
 def build_generation(start: int) -> dict:
     if start < START_FAMILY or start % 10:
         raise RuntimeError(f"NONCANONICAL_START:{start}")
-    u = universe()
+    u = expanded_universe()
     offset = start - START_FAMILY
     if offset + GEN_SIZE > len(u):
         raise RuntimeError("AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED")
+
     fams = []
     for i in range(GEN_SIZE):
         fid = start + i
-        feature, direction, window, threshold = u[offset + i]
+        feature, direction, window, threshold, lookback = u[offset + i]
         fams.append({
             "family_id": f"H{fid}",
             "feature": feature,
@@ -62,12 +80,20 @@ def build_generation(start: int) -> dict:
             "decision_window_minutes": window,
             "abs_z_threshold": threshold,
             "holding_horizons_minutes": list(HORIZONS),
-            "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD",
+            "standardization_lookback_sessions": lookback,
+            "causal_standardization": f"ROLLING_{lookback}_PRIOR_SESSIONS_MEDIAN_MAD",
         })
+
+    v1_size = len(universe())
+    protocol = (
+        "research/b3_h_autonomous_science_protocol_v1.md"
+        if offset + GEN_SIZE <= v1_size
+        else "research/b3_h_autonomous_science_protocol_v2.md"
+    )
     return {
-        "schema": "gate_btc.b3.autonomous_family_contract.v1",
+        "schema": "gate_btc.b3.autonomous_family_contract.v2" if protocol.endswith("v2.md") else "gate_btc.b3.autonomous_family_contract.v1",
         "generation": f"H{start}-H{start+9}",
-        "protocol": "research/b3_h_autonomous_science_protocol_v1.md",
+        "protocol": protocol,
         "frozen_before_economics": True,
         "discovery": "2022-01-01/2024-12-31",
         "replication": "2020-01-01/2021-12-31",
