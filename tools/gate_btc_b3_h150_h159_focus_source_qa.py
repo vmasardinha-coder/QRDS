@@ -20,7 +20,7 @@ MAX_PAGES = 100
 def request_url(indicator: str, skip: int) -> str:
     params = {
         "$format": "json",
-        "$filter": f"Indicador eq '{indicator}'",
+        "$filter": f"Indicador eq '{indicator}' and Data ge '{START}' and Data lt '{CUTOFF}'",
         "$select": "Indicador,Data,DataReferencia,Mediana,DesvioPadrao,Minimo,Maximo,numeroRespondentes,baseCalculo",
         "$orderby": "Data asc,DataReferencia asc,baseCalculo asc",
         "$top": str(PAGE_SIZE),
@@ -31,8 +31,8 @@ def request_url(indicator: str, skip: int) -> str:
 
 def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
     # BCB/Olinda is strict about OData URL encoding and may return a full page
-    # without @odata.nextLink. Use explicit deterministic $skip pagination and
-    # stop only on a short page. Date admission remains local and frozen.
+    # without @odata.nextLink. Use deterministic $skip pagination. The exact
+    # frozen historical window is enforced remotely and re-validated locally.
     all_rows: list[dict] = []
     raw_parts: list[bytes] = []
     request_urls: list[str] = []
@@ -40,7 +40,7 @@ def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
     for page_no in range(MAX_PAGES):
         skip = page_no * PAGE_SIZE
         url = request_url(indicator, skip)
-        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.3"})
+        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.4"})
         r.raise_for_status()
         raw_parts.append(r.content)
         request_urls.append(url)
@@ -63,6 +63,9 @@ def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
         else:
             rejected_outside_window += 1
 
+    if rejected_outside_window:
+        raise RuntimeError(f"remote frozen-window filter leaked rows={rejected_outside_window}")
+
     raw = b"\n--QRDS-PAGE--\n".join(raw_parts)
     return raw, {
         "url": request_urls[0],
@@ -83,7 +86,7 @@ def main() -> int:
         "license": "ODbL (BCB Open Data catalog)",
         "historical_start_inclusive": START,
         "historical_cutoff_exclusive": CUTOFF,
-        "remote_date_filter_used": False,
+        "remote_date_filter_used": True,
         "local_frozen_window_enforced": True,
         "pagination": "explicit_skip_until_short_page",
         "page_size": PAGE_SIZE,
