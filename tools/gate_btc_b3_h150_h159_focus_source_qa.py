@@ -4,7 +4,7 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
-from urllib.parse import quote, urlencode, urljoin
+from urllib.parse import quote, urlencode
 
 import requests
 
@@ -13,29 +13,34 @@ START = "2020-01-01"
 CUTOFF = "2026-08-10"
 INDICATORS = ("Selic", "IPCA", "Câmbio", "PIB Total")
 OUT = Path("artifacts/b3_h150_h159_focus_source_qa.json")
-PAGE_SIZE = 10000
+PAGE_SIZE = 5000
+MAX_PAGES = 100
 
 
-def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
-    # Keep the remote query deliberately simple. The BCB/Olinda service is
-    # strict about OData URL encoding: spaces in expressions must be percent
-    # escaped rather than emitted as '+'. Date admission remains enforced
-    # locally against the frozen preregistered cutoff.
+def request_url(indicator: str, skip: int) -> str:
     params = {
         "$format": "json",
         "$filter": f"Indicador eq '{indicator}'",
         "$select": "Indicador,Data,DataReferencia,Mediana,DesvioPadrao,Minimo,Maximo,numeroRespondentes,baseCalculo",
-        "$orderby": "Data asc,DataReferencia asc",
+        "$orderby": "Data asc,DataReferencia asc,baseCalculo asc",
         "$top": str(PAGE_SIZE),
+        "$skip": str(skip),
     }
-    first_url = BASE + "?" + urlencode(params, safe="$',", quote_via=quote)
-    url = first_url
+    return BASE + "?" + urlencode(params, safe="$',", quote_via=quote)
+
+
+def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
+    # BCB/Olinda is strict about OData URL encoding and may return a full page
+    # without @odata.nextLink. Use explicit deterministic $skip pagination and
+    # stop only on a short page. Date admission remains local and frozen.
     all_rows: list[dict] = []
     raw_parts: list[bytes] = []
     request_urls: list[str] = []
 
-    while url:
-        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.2"})
+    for page_no in range(MAX_PAGES):
+        skip = page_no * PAGE_SIZE
+        url = request_url(indicator, skip)
+        r = requests.get(url, timeout=60, headers={"User-Agent": "QRDS-B3-H150-source-qa/1.3"})
         r.raise_for_status()
         raw_parts.append(r.content)
         request_urls.append(url)
@@ -44,13 +49,10 @@ def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
             raise RuntimeError(f"Unexpected OData payload for {indicator}")
         page = payload["value"]
         all_rows.extend(page)
-        next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
-        if next_link:
-            url = urljoin(BASE, str(next_link))
-        else:
-            if len(page) >= PAGE_SIZE:
-                raise RuntimeError("possible source truncation: full page without nextLink")
-            url = ""
+        if len(page) < PAGE_SIZE:
+            break
+    else:
+        raise RuntimeError(f"pagination exceeded MAX_PAGES={MAX_PAGES}")
 
     admitted = []
     rejected_outside_window = 0
@@ -63,7 +65,7 @@ def fetch_indicator(indicator: str) -> tuple[bytes, dict]:
 
     raw = b"\n--QRDS-PAGE--\n".join(raw_parts)
     return raw, {
-        "url": first_url,
+        "url": request_urls[0],
         "request_urls": request_urls,
         "source_rows": len(all_rows),
         "rows_rejected_outside_frozen_window": rejected_outside_window,
@@ -83,6 +85,8 @@ def main() -> int:
         "historical_cutoff_exclusive": CUTOFF,
         "remote_date_filter_used": False,
         "local_frozen_window_enforced": True,
+        "pagination": "explicit_skip_until_short_page",
+        "page_size": PAGE_SIZE,
         "economics_executed": False,
         "h1_economics_read": False,
         "orders": 0,
