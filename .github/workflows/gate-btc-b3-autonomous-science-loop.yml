@@ -8,7 +8,7 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_b3_h*_h*_result.json'
-      - 'research/b3_autonomous_science_protocol_v1.md'
+      - 'research/b3_h_autonomous_science_protocol_v1.md'
       - 'tools/gate_btc_factory/autonomous_family_generator.py'
       - 'tools/gate_btc_factory/autonomous_family_evaluator.py'
       - '.github/workflows/gate-btc-b3-autonomous-science-loop.yml'
@@ -98,7 +98,7 @@ jobs:
           git add '${{ steps.plan.outputs.contract }}'
           git commit -m "B3 ${gen}: freeze autonomous family contracts"
           git push origin HEAD
-          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: freeze autonomous family contracts" --body "Deterministic materialization from research/b3_autonomous_science_protocol_v1.md. Frozen before economics. No H1 economics read, no retune, no orders/capital/engine feed.")
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: freeze autonomous family contracts" --body "Deterministic materialization from research/b3_h_autonomous_science_protocol_v1.md. Frozen before economics. No H1 economics read, no retune, no orders/capital/engine feed.")
           pr=${pr_url##*/}
           gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
           git checkout main
