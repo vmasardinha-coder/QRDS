@@ -98,7 +98,8 @@ jobs:
           git add '${{ steps.plan.outputs.contract }}'
           git commit -m "B3 ${gen}: freeze autonomous family contracts"
           git push origin HEAD
-          pr=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: freeze autonomous family contracts" --body "Deterministic materialization from research/b3_autonomous_science_protocol_v1.md. Frozen before economics. No H1 economics read, no retune, no orders/capital/engine feed." --json number --jq .number)
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: freeze autonomous family contracts" --body "Deterministic materialization from research/b3_autonomous_science_protocol_v1.md. Frozen before economics. No H1 economics read, no retune, no orders/capital/engine feed.")
+          pr=${pr_url##*/}
           gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
           git checkout main
           git pull --ff-only origin main
@@ -157,7 +158,8 @@ jobs:
           git add '${{ steps.plan.outputs.result }}'
           git commit -m "B3 ${gen}: publish autonomous terminal"
           git push origin HEAD
-          pr=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: publish autonomous terminal" --body "Canonical terminal from the preregistered autonomous science grammar. Research/shadow only; max two survivors; zero orders/capital/engine feed." --json number --jq .number)
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "B3 ${gen}: publish autonomous terminal" --body "Canonical terminal from the preregistered autonomous science grammar. Research/shadow only; max two survivors; zero orders/capital/engine feed.")
+          pr=${pr_url##*/}
           gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
       - name: Continue loop immediately
         if: steps.plan.outputs.action != 'grammar_exhausted'
