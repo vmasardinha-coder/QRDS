@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from datetime import date
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
 from gate_btc_b3_h150_h159_focus_source_qa import CUTOFF, INDICATORS, START, fetch_indicator
@@ -19,6 +20,7 @@ ANCHORS = {
     "Câmbio": {0: {"Mediana": 5.77, "numeroRespondentes": 125}, 1: {"Mediana": 5.75, "numeroRespondentes": 84}},
     "Selic": {0: {"Mediana": 14.75, "numeroRespondentes": 146}, 1: {"Mediana": 14.75, "numeroRespondentes": 102}},
 }
+PUBLISHED_QUANTUM = Decimal("0.01")
 
 
 def as_year(value: object) -> int | None:
@@ -28,11 +30,15 @@ def as_year(value: object) -> int | None:
     return None
 
 
-def close(a: object, b: float, tol: float = 1e-9) -> bool:
+def published_2dp(value: object) -> Decimal | None:
     try:
-        return abs(float(a) - b) <= tol
-    except (TypeError, ValueError):
-        return False
+        return Decimal(str(value)).quantize(PUBLISHED_QUANTUM, rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+
+
+def published_match(observed: object, expected: float) -> bool:
+    return published_2dp(observed) == published_2dp(expected)
 
 
 def main() -> int:
@@ -44,8 +50,9 @@ def main() -> int:
         "official_focus_anchor": ANCHOR_SOURCE,
         "anchor_date": ANCHOR_DATE,
         "anchor_reference_year": ANCHOR_REF,
+        "anchor_published_precision_decimals": 2,
         "primary_base_calculo": PRIMARY_BASE_CALCULO,
-        "base_calculo_rule": "baseCalculo=0 must match official Focus 30-day aggregate; baseCalculo=1 must match official 5-business-day aggregate",
+        "base_calculo_rule": "baseCalculo=0 must match official Focus 30-day aggregate; baseCalculo=1 must match official 5-business-day aggregate at the report's published two-decimal precision, with respondent counts exact",
         "fixed_horizon_rule": "for each source Data, choose the minimum annual DataReferencia year >= calendar year(Data), using only baseCalculo=0",
         "causal_policy": CAUSAL_POLICY,
         "causal_policy_reason": "API historical rows have dates but no release timestamp adequate for same-session admission; preregistered conservative fallback is one full completed B3-session lag",
@@ -75,10 +82,13 @@ def main() -> int:
             anchor_check = {}
             for base, expected in ANCHORS[indicator].items():
                 row = anchor_rows[base]
-                ok = close(row.get("Mediana"), expected["Mediana"]) and int(row.get("numeroRespondentes")) == expected["numeroRespondentes"]
+                observed_rounded = published_2dp(row.get("Mediana"))
+                expected_rounded = published_2dp(expected["Mediana"])
+                ok = published_match(row.get("Mediana"), expected["Mediana"]) and int(row.get("numeroRespondentes")) == expected["numeroRespondentes"]
                 anchor_check[str(base)] = {
-                    "observed_mediana": row.get("Mediana"),
-                    "expected_mediana": expected["Mediana"],
+                    "observed_mediana_raw": row.get("Mediana"),
+                    "observed_mediana_published_2dp": str(observed_rounded) if observed_rounded is not None else None,
+                    "expected_mediana_published_2dp": str(expected_rounded) if expected_rounded is not None else None,
                     "observed_numero_respondentes": row.get("numeroRespondentes"),
                     "expected_numero_respondentes": expected["numeroRespondentes"],
                     "match": ok,
