@@ -1,13 +1,15 @@
 name: GATE BTC B3 Factory Continuation
 
-# Operational replay kick 2026-08-26 after autonomous progression controller merge; no scientific or methodological change.
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - '.github/workflows/gate-btc-b3-factory-continuation.yml'
+      - '.github/workflows/gate-btc-b3-h-nextgen-stage0.yml'
       - 'tools/gate_btc_factory/continuation_guard.py'
+      - 'tools/gate_btc_b3_h*_h*_result.json'
+      - 'research/b3_h*_h*_*.md'
   schedule:
     - cron: '20 */6 * * *'
 
@@ -39,35 +41,63 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Detect canonical frontier
+      - name: Evaluate canonical generation close
         id: guard
-        continue-on-error: true
         run: python tools/gate_btc_factory/continuation_guard.py
 
-      - name: Refuse duplicate scientific materialization
-        if: steps.guard.outcome == 'failure'
+      - name: Report non-dispatch frontier state
+        if: steps.guard.outputs.should_dispatch != 'true'
         run: |
-          echo 'FACTORY_CONTINUATION=FAIL_CLOSED_NO_CLONE_NO_RENAME'
-          echo 'H140-H149 will not be mechanically copied into H150-H159.'
+          echo "FACTORY_CONTINUATION=${{ steps.guard.outputs.frontier_state }}"
+          echo "FRONTIER=H${{ steps.guard.outputs.frontier_start }}-H${{ steps.guard.outputs.frontier_end }}"
+          echo 'No autonomous scientific batch is created without a canonical terminal no-survivor close.'
 
-      - name: Check for active NextGen Stage0 run
-        id: active
-        if: steps.guard.outcome == 'failure'
+      - name: Inspect idempotency and bounded retry state
+        id: flight
+        if: steps.guard.outputs.should_dispatch == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          n=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-b3-h-nextgen-stage0.yml --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
-          echo "count=$n" >> "$GITHUB_OUTPUT"
+          key="${{ steps.guard.outputs.frontier_key }}"
+          runs=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-b3-h-nextgen-stage0.yml --limit 50 --json status,conclusion,displayTitle)
+          active=$(jq --arg key "$key" '[.[] | select((.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending"))] | length' <<<"$runs")
+          successful=$(jq --arg key "$key" '[.[] | select(.displayTitle==("B3 NextGen " + $key) and .status=="completed" and .conclusion=="success")] | length' <<<"$runs")
+          attempts=$(jq --arg key "$key" '[.[] | select(.displayTitle==("B3 NextGen " + $key) and .status=="completed")] | length' <<<"$runs")
+          echo "active=$active" >> "$GITHUB_OUTPUT"
+          echo "successful=$successful" >> "$GITHUB_OUTPUT"
+          echo "attempts=$attempts" >> "$GITHUB_OUTPUT"
+          echo "FRONTIER_KEY=$key ACTIVE=$active SUCCESSFUL=$successful COMPLETED_ATTEMPTS=$attempts"
 
-      - name: Reactivate approved scientific discovery pipeline
-        if: steps.guard.outcome == 'failure' && steps.active.outputs.count == '0'
+      - name: Dispatch next scientific discovery contract once
+        if: steps.guard.outputs.should_dispatch == 'true' && steps.flight.outputs.active == '0' && steps.flight.outputs.successful == '0' && steps.flight.outputs.attempts < '2'
         run: |
-          gh workflow run gate-btc-b3-h-nextgen-stage0.yml --repo "${{ github.repository }}" --ref main
-          echo 'FACTORY_CONTINUATION=DISPATCHED_NEXTGEN_STAGE0'
+          gh workflow run gate-btc-b3-h-nextgen-stage0.yml \
+            --repo "${{ github.repository }}" \
+            --ref main \
+            -f frontier_key="${{ steps.guard.outputs.frontier_key }}" \
+            -f next_generation="H${{ steps.guard.outputs.next_start }}-H${{ steps.guard.outputs.next_end }}"
+          echo "FACTORY_CONTINUATION=DISPATCHED_${{ steps.guard.outputs.frontier_key }}"
 
-      - name: Keep single-flight if NextGen already active
-        if: steps.guard.outcome == 'failure' && steps.active.outputs.count != '0'
-        run: echo 'FACTORY_CONTINUATION=NEXTGEN_ALREADY_ACTIVE'
+      - name: Keep single-flight while NextGen is active
+        if: steps.guard.outputs.should_dispatch == 'true' && steps.flight.outputs.active != '0'
+        run: echo 'FACTORY_CONTINUATION=NEXTGEN_SINGLE_FLIGHT_ACTIVE'
+
+      - name: Preserve idempotency after successful dispatch
+        if: steps.guard.outputs.should_dispatch == 'true' && steps.flight.outputs.successful != '0'
+        run: echo 'FACTORY_CONTINUATION=FRONTIER_ALREADY_DISPATCHED_SUCCESSFULLY'
+
+      - name: Escalate exhausted continuation retry without looping
+        if: steps.guard.outputs.should_dispatch == 'true' && steps.flight.outputs.active == '0' && steps.flight.outputs.successful == '0' && steps.flight.outputs.attempts >= '2'
+        shell: bash
+        run: |
+          set -euo pipefail
+          key="${{ steps.guard.outputs.frontier_key }}"
+          title="[Factory Blocker] B3 continuation ${key}"
+          existing=$(gh issue list --repo "${{ github.repository }}" --state open --search "$title in:title" --json number --jq 'length')
+          if [ "$existing" = "0" ]; then
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body "Autonomous B3 continuation exhausted its bounded Stage0 retries for **${key}**. No scientific parameters, methodology, cutoff, costs, history, or rejected families were changed. Factory remains fail-closed for this frontier. Required action: diagnose operational/source-contract blocker only; do not clone/rename the prior generation. Safety: RESEARCH_ONLY=true, SHADOW_ONLY=true, orders=0, real_capital=0, engine_feed=false."
+          fi
+          echo 'FACTORY_CONTINUATION=FAIL_CLOSED_RETRY_EXHAUSTED_INCIDENT_ESCALATED'
 
       - name: Report safety boundary
         if: always()
@@ -77,5 +107,7 @@ jobs:
           echo 'NOT_APPROVED=true'
           echo 'ORDERS=0'
           echo 'REAL_CAPITAL=0'
+          echo 'ENGINE_FEED=false'
           echo 'NO_RETUNE=true'
           echo 'NO_BACKFILL=true'
+          echo 'NO_CLONE_NO_RENAME=true'

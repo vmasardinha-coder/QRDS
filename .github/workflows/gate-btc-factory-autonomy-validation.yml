@@ -8,10 +8,14 @@ on:
       - 'tools/gate_btc_factory/universal_watchdog.py'
       - 'tools/gate_btc_factory/survivor_health.py'
       - 'tools/gate_btc_factory/self_audit.py'
+      - 'tools/gate_btc_factory/continuation_guard.py'
       - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
       - '.github/workflows/gate-btc-b3-nextgen-progression.yml'
+      - '.github/workflows/gate-btc-b3-factory-continuation.yml'
+      - '.github/workflows/gate-btc-b3-h-nextgen-stage0.yml'
       - '.github/workflows/gate-btc-factory-autonomy-validation.yml'
       - 'tests/test_gate_btc_factory_autonomy.py'
+      - 'tests/test_gate_btc_factory_continuation_guard.py'
   workflow_dispatch:
 
 permissions:
@@ -33,12 +37,15 @@ jobs:
           python-version: '3.12'
       - run: pip install pytest
       - name: Compile autonomy modules
-        run: python -m py_compile tools/gate_btc_factory/state_master_refresh.py tools/gate_btc_factory/universal_watchdog.py tools/gate_btc_factory/survivor_health.py tools/gate_btc_factory/self_audit.py
+        run: python -m py_compile tools/gate_btc_factory/state_master_refresh.py tools/gate_btc_factory/universal_watchdog.py tools/gate_btc_factory/survivor_health.py tools/gate_btc_factory/self_audit.py tools/gate_btc_factory/continuation_guard.py
       - name: Run autonomy regression tests
-        run: pytest -q tests/test_gate_btc_factory_autonomy.py
-      - name: Assert safety markers in supervisor
+        run: pytest -q tests/test_gate_btc_factory_autonomy.py tests/test_gate_btc_factory_continuation_guard.py
+      - name: Assert safety markers in supervisor and continuation
         run: |
           grep -q "NO_RETUNE" .github/workflows/gate-btc-b3-nextgen-progression.yml
           grep -q "scientific_change_allowed" .github/workflows/gate-btc-factory-autonomy-supervisor.yml
           grep -q "backfill_allowed" tools/gate_btc_factory/universal_watchdog.py
+          grep -q "NO_CLONE_NO_RENAME" .github/workflows/gate-btc-b3-factory-continuation.yml
+          grep -q "should_dispatch" tools/gate_btc_factory/continuation_guard.py
+          grep -q "frontier_key" .github/workflows/gate-btc-b3-h-nextgen-stage0.yml
           echo 'FACTORY_AUTONOMY_VALIDATION=PASS'
