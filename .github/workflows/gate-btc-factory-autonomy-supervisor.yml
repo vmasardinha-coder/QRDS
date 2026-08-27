@@ -11,6 +11,7 @@ on:
       - '.github/workflows/gate-btc-b3-nextgen-progression.yml'
       - 'tools/gate_btc_factory/state_master_refresh.py'
       - 'tools/gate_btc_factory/reconcile_nextgen_progression.py'
+      - 'tools/gate_btc_factory/frontier_workflow_repair.py'
       - 'tools/gate_btc_factory/universal_watchdog.py'
       - 'tools/gate_btc_factory/survivor_health.py'
       - 'tools/gate_btc_factory/self_audit.py'
@@ -81,6 +82,23 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python tools/gate_btc_factory/reconcile_nextgen_progression.py
 
+      - name: Repair operational failures at scientific frontier
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/gate_btc_factory/frontier_workflow_repair.py --apply
+
+      - name: Surface persistent frontier blockers
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          p='tools/gate_btc_factory/FRONTIER_REPAIR_RUNTIME.json'
+          d=json.load(open(p,encoding='utf-8'))
+          for row in d.get('persistent_blockers',[]):
+              print(f"::warning title=Factory frontier blocker::{row.get('workflow')} run={row.get('run_id')} action={row.get('action')} reason={row.get('reason')}")
+          PY
+
       - name: Diagnose universal operational stalls
         run: python tools/gate_btc_factory/universal_watchdog.py
 
@@ -124,7 +142,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          for p in ['WATCHDOG_RUNTIME.json','SURVIVOR_HEALTH_RUNTIME.json','SELF_AUDIT_RUNTIME.json']:
+          for p in ['FRONTIER_REPAIR_RUNTIME.json','WATCHDOG_RUNTIME.json','SURVIVOR_HEALTH_RUNTIME.json','SELF_AUDIT_RUNTIME.json']:
               d=json.load(open('tools/gate_btc_factory/'+p,encoding='utf-8'))
               s=d['safety']
               assert s.get('orders')==0 and s.get('real_capital')==0 and s.get('engine_feed') is False
@@ -144,6 +162,7 @@ jobs:
           set -euo pipefail
           mkdir -p runtime_repo/runtime/factory_autonomy
           cp tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json runtime_repo/runtime/factory_autonomy/PROSPECTIVE_ACTIVATIONS.json
+          cp tools/gate_btc_factory/FRONTIER_REPAIR_RUNTIME.json runtime_repo/runtime/factory_autonomy/FRONTIER_REPAIR_RUNTIME.json
           cp tools/gate_btc_factory/WATCHDOG_RUNTIME.json runtime_repo/runtime/factory_autonomy/WATCHDOG_RUNTIME.json
           cp tools/gate_btc_factory/SURVIVOR_HEALTH_RUNTIME.json runtime_repo/runtime/factory_autonomy/SURVIVOR_HEALTH_RUNTIME.json
           cp tools/gate_btc_factory/SELF_AUDIT_RUNTIME.json runtime_repo/runtime/factory_autonomy/SELF_AUDIT_RUNTIME.json
@@ -166,6 +185,7 @@ jobs:
           path: |
             tools/gate_btc_factory/FACTORY_STATUS_RUNTIME.json
             tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json
+            tools/gate_btc_factory/FRONTIER_REPAIR_RUNTIME.json
             tools/gate_btc_factory/WATCHDOG_RUNTIME.json
             tools/gate_btc_factory/SURVIVOR_HEALTH_RUNTIME.json
             tools/gate_btc_factory/SELF_AUDIT_RUNTIME.json
