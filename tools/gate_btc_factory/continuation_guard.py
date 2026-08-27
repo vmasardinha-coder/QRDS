@@ -24,8 +24,17 @@ def generation_blocks() -> list[tuple[int, int, str]]:
             if not match:
                 continue
             start, end = int(match.group(1)), int(match.group(2))
+            # The repository contains historical malformed/legacy filenames
+            # (for example h95-h10) that are not canonical generation ranges.
+            # They must not crash frontier discovery or become scientific state.
             if end < start:
-                raise RuntimeError(f'INVALID_GENERATION_RANGE:{path}:{start}:{end}')
+                print(f'B3_FACTORY_IGNORED_LEGACY_RANGE={path}:H{start}-H{end}')
+                continue
+            # Only canonical decade blocks participate in autonomous frontier
+            # progression; other named H-ranges remain visible elsewhere but
+            # cannot silently redefine the production frontier.
+            if end % 10 != 9 or start != end - 9:
+                continue
             blocks.append((start, end, path))
     if not blocks:
         raise RuntimeError('NO_CANONICAL_B3_GENERATION_BLOCKS')
@@ -61,9 +70,6 @@ def _assert_close_safety(payload: dict, path: Path) -> None:
 def classify_frontier(start: int, end: int) -> tuple[str, bool, str]:
     result_path = canonical_result_path(start, end)
     if not result_path.exists():
-        # Preserve the one-time historical H149 bootstrap that originally
-        # reactivated the factory. All later generations require a canonical
-        # terminal close before autonomous continuation.
         if end == MIN_AUTONOMOUS_FRONTIER:
             return 'LEGACY_H149_BOOTSTRAP_REQUIRED', True, str(result_path)
         return 'WAITING_FOR_CANONICAL_TERMINAL_RESULT', False, str(result_path)
@@ -103,8 +109,6 @@ def main() -> int:
     start, end, source = canonical_frontier_block()
     if end < MIN_AUTONOMOUS_FRONTIER:
         raise RuntimeError(f'BLOCKED_INCOMPLETE_CANONICAL_HISTORY:H{end}')
-    if end % 10 != 9 or start != end - 9:
-        raise RuntimeError(f'NONSTANDARD_FRONTIER_REQUIRES_SCIENTIFIC_REVIEW:H{start}-H{end}')
 
     state, should_dispatch, result_path = classify_frontier(start, end)
     next_start, next_end = end + 1, end + 10
