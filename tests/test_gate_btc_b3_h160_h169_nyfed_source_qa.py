@@ -15,12 +15,20 @@ class H160H169NYFedSourceQAContract(unittest.TestCase):
         for field in ('effectiveDate','percentRate','volumeInBillions','percentPercentile1','percentPercentile25','percentPercentile75','percentPercentile99'):
             self.assertIn(field, h.REQUIRED)
 
-    def test_exact_official_host(self):
+    def test_exact_official_host_and_dual_views(self):
         for _name,(group,slug) in h.SERIES.items():
-            u=h.url_for(group,slug)
-            self.assertTrue(u.startswith('https://markets.newyorkfed.org/api/rates/'))
-            self.assertIn('startDate=2020-01-01',u)
-            self.assertIn('endDate=2026-08-09',u)
+            rate=h.url_for(group,slug,'rate')
+            volume=h.url_for(group,slug,'volume')
+            for u in (rate, volume):
+                self.assertTrue(u.startswith('https://markets.newyorkfed.org/api/rates/'))
+                self.assertIn('startDate=2020-01-01',u)
+                self.assertIn('endDate=2026-08-09',u)
+            self.assertIn('type=rate', rate)
+            self.assertIn('type=volume', volume)
+
+    def test_unknown_view_fails_closed(self):
+        with self.assertRaises(ValueError):
+            h.url_for('secured','sofr','other')
 
 
 if __name__ == '__main__':
