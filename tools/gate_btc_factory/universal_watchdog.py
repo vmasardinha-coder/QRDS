@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,9 +22,9 @@ ALLOWLIST = {
 
 BLOCKED_CLASSES = {"DATA_BLOCKED"}
 RUNTIME_TRACK_FILES = {
-    "B3_H1": "b3_h1_status.json",
-    "B3_H31": "b3_h31_status.json",
-    "MOMENTUM_M1_M2": "momentum_m1_m2_status.json",
+    "B3_H1": "runtime/ledgers/b3_h1/STATUS.json",
+    "B3_H31": "runtime/ledgers/b3_h31_prospective/STATUS.json",
+    "MOMENTUM_M1_M2": "runtime/ledgers/momentum_m1_m2/STATUS.json",
 }
 ACTIVE_RUNTIME_STATES = {
     "ACTIVE_STRUCTURAL_COLLECTION",
@@ -44,6 +45,29 @@ def load_json(path: Path) -> dict | None:
     return obj
 
 
+def load_runtime(path: str) -> dict | None:
+    local=RUNTIME_ROOT / Path(path).name
+    obj=load_json(local)
+    if obj is not None:
+        return obj
+    try:
+        raw=subprocess.check_output(
+            ["git", "show", f"origin/gate-btc-runtime:{path}"],
+            cwd=ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    try:
+        obj=json.loads(raw)
+    except Exception as exc:
+        raise SystemExit(f"FAIL watchdog malformed runtime authority {path}: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise SystemExit(f"FAIL watchdog expected runtime object at {path}")
+    return obj
+
+
 def load() -> dict:
     obj=load_json(SOURCE)
     if obj is None:
@@ -52,14 +76,12 @@ def load() -> dict:
 
 
 def runtime_track_state(name: str) -> dict | None:
-    fn=RUNTIME_TRACK_FILES.get(name)
-    if not fn:
-        return None
-    return load_json(RUNTIME_ROOT / fn)
+    path=RUNTIME_TRACK_FILES.get(name)
+    return load_runtime(path) if path else None
 
 
 def runtime_frontier() -> dict | None:
-    return load_json(RUNTIME_ROOT / "autonomous_science_current.json")
+    return load_runtime("runtime/autonomous_science/CURRENT.json")
 
 
 def is_runtime_healthy(row: dict | None) -> bool:
@@ -68,10 +90,14 @@ def is_runtime_healthy(row: dict | None) -> bool:
     status=str(row.get("status", ""))
     if status not in ACTIVE_RUNTIME_STATES:
         return False
-    # Runtime authority is allowed to say the stream is alive even when the last
-    # delivery was an ordinary/amber source gap.  Scientific eligibility remains
-    # governed by the individual ledger and is never inferred here.
-    return row.get("engine_feed") is False and int(row.get("orders_generated", row.get("orders", 0)) or 0) == 0 and int(row.get("real_capital_used", row.get("real_capital", 0)) or 0) == 0
+    # Runtime authority may remain alive through an ordinary source gap. The
+    # individual ledger still controls scientific eligibility; the watchdog does
+    # not infer or promote an incomplete observation.
+    return (
+        row.get("engine_feed") is False
+        and int(row.get("orders_generated", row.get("orders", 0)) or 0) == 0
+        and int(row.get("real_capital_used", row.get("real_capital", 0)) or 0) == 0
+    )
 
 
 def main() -> int:
@@ -92,8 +118,7 @@ def main() -> int:
                 "eligible_observations": runtime_row.get("eligible_observations", runtime_row.get("valid_observations", runtime_row.get("observed_snapshots"))),
                 "authority": "gate-btc-runtime",
             }
-        # A healthy persisted runtime ledger is authoritative over a stale main
-        # diagnostic. It prevents pointless repair loops and status downgrades.
+        # Healthy persisted runtime state overrides stale diagnostics from main.
         if is_runtime_healthy(runtime_row):
             continue
         status=str(row.get("status", ""))
