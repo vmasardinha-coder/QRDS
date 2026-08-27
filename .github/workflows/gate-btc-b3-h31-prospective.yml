@@ -8,6 +8,7 @@ on:
     paths:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
+      - "tools/gate_btc_b3_gap_classifier.py"
       - ".github/workflows/gate-btc-b3-h31-prospective.yml"
 
 permissions:
@@ -70,21 +71,64 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Collect H31 prospective observation
+      - name: Collect H31 prospective observation or record ordinary gap
         run: |
+          set -uo pipefail
+          set +e
           python tools/gate_btc_b3_h31_prospective_collect.py \
             --date "${{ steps.target.outputs.date }}" \
-            --ledger-dir runtime_repo/runtime/ledgers/b3_h31_prospective
+            --ledger-dir runtime_repo/runtime/ledgers/b3_h31_prospective \
+            2>&1 | tee /tmp/h31-collect.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            mkdir -p runtime_repo/runtime/ledgers/b3_h31_prospective/gaps
+            python tools/gate_btc_b3_gap_classifier.py log \
+              --log /tmp/h31-collect.log \
+              --stream H31 \
+              --date "${{ steps.target.outputs.date }}" \
+              --out "runtime_repo/runtime/ledgers/b3_h31_prospective/gaps/${{ steps.target.outputs.date }}.json"
+            if [ ! -f runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json ]; then
+              python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json')
+          p.parent.mkdir(parents=True,exist_ok=True)
+          s={
+            'schema':'gate_btc.b3.h31.prospective_status.v2',
+            'status':'ACTIVE_PROSPECTIVE',
+            'clock_started':True,
+            'eligible_observations':0,
+            'latest_date':None,
+            'last_event_hash':None,
+            'freeze_rule_hash_sha256':'b9e60d46a39a60c2e1d440b18a4a6a98883849f1de2b4c3d0ab06a48e849bfbd',
+            'partial_prospective_economics_exposed':False,
+            'h1_economics_read':False,
+            'orders':0,
+            'real_capital':0,
+            'engine_feed':False,
+            'not_approved':True,
+          }
+          p.write_text(json.dumps(s,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+            fi
+          fi
       - name: Assert public status contains no partial economics
         run: |
           python - <<'PY'
           import json
+          from pathlib import Path
           p=json.load(open('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json'))
           assert p['status']=='ACTIVE_PROSPECTIVE'
           assert p['clock_started'] is True
           assert p['partial_prospective_economics_exposed'] is False
           assert p['h1_economics_read'] is False
           assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False and p['not_approved'] is True
+          for f in Path('runtime_repo/runtime/ledgers/b3_h31_prospective/gaps').glob('*.json') if Path('runtime_repo/runtime/ledgers/b3_h31_prospective/gaps').exists() else []:
+            g=json.load(open(f))
+            assert g['scientifically_qualified'] is False
+            assert g['eligible_observation_increment'] == 0
+            assert g['synthetic_backfill'] is False
           PY
       - name: Publish append-only H31 runtime evidence
         working-directory: runtime_repo

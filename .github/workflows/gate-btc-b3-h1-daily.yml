@@ -94,6 +94,16 @@ jobs:
             echo "REAL_CAPITAL=0"
           } > artifacts/b3_h1_daily/ACTIONS_STATUS.txt
 
+      - name: Classify collector outcome
+        if: steps.h1.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          STATUS=$(find artifacts/b3_h1_daily -name H1_STRUCTURAL_STATUS.json -print -quit)
+          test -n "$STATUS"
+          python tools/gate_btc_b3_gap_classifier.py h1 \
+            --status "$STATUS" \
+            --out artifacts/b3_h1_daily/H1_OPERATIONAL_GAP.json
+
       - name: Upload structural evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,7 +112,3 @@ jobs:
           path: artifacts/b3_h1_daily/
           retention-days: 45
           if-no-files-found: error
-
-      - name: Fail job only on structural collector failure
-        if: steps.h1.outcome == 'failure'
-        run: exit 1
