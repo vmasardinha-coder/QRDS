@@ -1,0 +1,47 @@
+name: GATE BTC B3 H1 Recovery Validation
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/h1_recovery_policy.py'
+      - 'tests/test_gate_btc_factory_h1_recovery_policy.py'
+      - '.github/workflows/gate-btc-b3-h1-recovery.yml'
+      - '.github/workflows/gate-btc-b3-h1-recovery-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test recovery policy
+        run: |
+          python -m unittest -v tests/test_gate_btc_factory_h1_recovery_policy.py
+          python -m py_compile tools/gate_btc_factory/h1_recovery_policy.py
+      - name: Prove bounded non-blocking boundary
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_factory.h1_recovery_policy import decide
+          first=decide('schedule',1,'2026-08-26')
+          second=decide('workflow_dispatch',1,'2026-08-26')
+          assert first.retry_allowed is True
+          assert second.retry_allowed is False
+          for d in (first,second):
+              assert d.scientific_change_allowed is False
+              assert d.backfill_allowed is False
+              assert d.production_blocking is False
+              assert d.orders==0 and d.real_capital==0 and d.engine_feed is False
+          print('H1_RECOVERY_BOUNDARY=PASS')
+          PY
