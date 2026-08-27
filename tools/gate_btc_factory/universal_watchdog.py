@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "tools/gate_btc_research_factory_status.json"
+RUNTIME_ROOT = ROOT / "tools/gate_btc_factory/runtime_authority"
 OUT = ROOT / "tools/gate_btc_factory/WATCHDOG_RUNTIME.json"
 
 ALLOWLIST = {
@@ -19,16 +21,83 @@ ALLOWLIST = {
 }
 
 BLOCKED_CLASSES = {"DATA_BLOCKED"}
+RUNTIME_TRACK_FILES = {
+    "B3_H1": "runtime/ledgers/b3_h1/STATUS.json",
+    "B3_H31": "runtime/ledgers/b3_h31_prospective/STATUS.json",
+    "MOMENTUM_M1_M2": "runtime/ledgers/momentum_m1_m2/STATUS.json",
+}
+ACTIVE_RUNTIME_STATES = {
+    "ACTIVE_STRUCTURAL_COLLECTION",
+    "ACTIVE_PROSPECTIVE",
+    "ACTIVE_PROSPECTIVE_SHADOW",
+}
+
+
+def load_json(path: Path) -> dict | None:
+    try:
+        obj=json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except Exception as exc:
+        raise SystemExit(f"FAIL watchdog cannot read {path}: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise SystemExit(f"FAIL watchdog expected object at {path}")
+    return obj
+
+
+def load_runtime(path: str) -> dict | None:
+    local=RUNTIME_ROOT / Path(path).name
+    obj=load_json(local)
+    if obj is not None:
+        return obj
+    try:
+        raw=subprocess.check_output(
+            ["git", "show", f"origin/gate-btc-runtime:{path}"],
+            cwd=ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    try:
+        obj=json.loads(raw)
+    except Exception as exc:
+        raise SystemExit(f"FAIL watchdog malformed runtime authority {path}: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise SystemExit(f"FAIL watchdog expected runtime object at {path}")
+    return obj
 
 
 def load() -> dict:
-    try:
-        obj=json.loads(SOURCE.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise SystemExit(f"FAIL watchdog cannot read canonical source: {exc}") from exc
-    if not isinstance(obj, dict):
-        raise SystemExit("FAIL watchdog expected object")
+    obj=load_json(SOURCE)
+    if obj is None:
+        raise SystemExit("FAIL watchdog canonical source missing")
     return obj
+
+
+def runtime_track_state(name: str) -> dict | None:
+    path=RUNTIME_TRACK_FILES.get(name)
+    return load_runtime(path) if path else None
+
+
+def runtime_frontier() -> dict | None:
+    return load_runtime("runtime/autonomous_science/CURRENT.json")
+
+
+def is_runtime_healthy(row: dict | None) -> bool:
+    if not row:
+        return False
+    status=str(row.get("status", ""))
+    if status not in ACTIVE_RUNTIME_STATES:
+        return False
+    # Runtime authority may remain alive through an ordinary source gap. The
+    # individual ledger still controls scientific eligibility; the watchdog does
+    # not infer or promote an incomplete observation.
+    return (
+        row.get("engine_feed") is False
+        and int(row.get("orders_generated", row.get("orders", 0)) or 0) == 0
+        and int(row.get("real_capital_used", row.get("real_capital", 0)) or 0) == 0
+    )
 
 
 def main() -> int:
@@ -36,9 +105,21 @@ def main() -> int:
     tracks=src.get("tracks", {})
     actions=[]
     stalled=[]
+    runtime_states={}
     for name, mode in ALLOWLIST.items():
         row=tracks.get(name, {})
         if not isinstance(row, dict):
+            continue
+        runtime_row=runtime_track_state(name)
+        if runtime_row is not None:
+            runtime_states[name]={
+                "status": runtime_row.get("status"),
+                "data_as_of": runtime_row.get("data_as_of", runtime_row.get("latest_valid_date", runtime_row.get("latest_date"))),
+                "eligible_observations": runtime_row.get("eligible_observations", runtime_row.get("valid_observations", runtime_row.get("observed_snapshots"))),
+                "authority": "gate-btc-runtime",
+            }
+        # Healthy persisted runtime state overrides stale diagnostics from main.
+        if is_runtime_healthy(runtime_row):
             continue
         status=str(row.get("status", ""))
         blocker=row.get("blocker")
@@ -55,9 +136,21 @@ def main() -> int:
                 "real_capital": 0,
                 "engine_feed": False,
             })
+    frontier=runtime_frontier()
+    frontier_view=None
+    if frontier:
+        frontier_view={
+            "generation": frontier.get("generation"),
+            "status": frontier.get("status"),
+            "survivors": frontier.get("survivors", []),
+            "next_generation_start": frontier.get("next_generation_start"),
+            "authority": "gate-btc-runtime",
+        }
     report={
-        "schema":"qrds.factory.watchdog.v1",
+        "schema":"qrds.factory.watchdog.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
+        "runtime_frontier": frontier_view,
+        "runtime_track_states": runtime_states,
         "stalled_tracks": stalled,
         "actions": actions,
         "safety": {
@@ -71,7 +164,7 @@ def main() -> int:
         },
     }
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True)+"\n",encoding="utf-8")
-    print(json.dumps({"stalled":stalled,"actions":len(actions)},sort_keys=True))
+    print(json.dumps({"frontier":frontier_view,"stalled":stalled,"actions":len(actions)},sort_keys=True))
     return 0
 
 if __name__ == "__main__":
