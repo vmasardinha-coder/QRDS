@@ -60,19 +60,22 @@ jobs:
           print('ANCHOR_BLOB_SHA256='+hashlib.sha256(p.read_bytes()).hexdigest())
           print('EXISTING_SNAPSHOT_SHA256='+d['snapshot_sha256'])
           PY
-      - name: Build two independent public V2A packages
+      - name: Build one admissible public V2A package
         run: |
-          mkdir -p artifacts/A artifacts/B
-          python migration/canonical/v2a/scripts/00_run_all_v2a.py --output-zip artifacts/A/public.zip
-          python migration/canonical/v2a/scripts/00_run_all_v2a.py --output-zip artifacts/B/public.zip
-      - name: Freeze both packages to exact historical cutoff
-        run: |
-          python tools/v2a_frozen_replay.py artifacts/A/public.zip --data-cutoff "$TEST_CUTOFF" --output-zip artifacts/A/frozen.zip --evidence-dir artifacts/A/evidence
-          python tools/v2a_frozen_replay.py artifacts/B/public.zip --data-cutoff "$TEST_CUTOFF" --output-zip artifacts/B/frozen.zip --evidence-dir artifacts/B/evidence
-      - name: Reproduce cutoff A and B against isolated copies of append-only ledger
+          mkdir -p artifacts/input artifacts/A artifacts/B
+          python migration/canonical/v2a/scripts/00_run_all_v2a.py --output-zip artifacts/input/public.zip
+      - name: Freeze exact input bytes to historical cutoff
+        run: >-
+          python tools/v2a_frozen_replay.py artifacts/input/public.zip
+          --data-cutoff "$TEST_CUTOFF"
+          --output-zip artifacts/input/frozen.zip
+          --evidence-dir artifacts/input/evidence
+      - name: Reproduce cutoff A and B from identical frozen bytes
         run: |
           cp -a runtime_anchor/runtime/ledgers/momentum_m1_m2 artifacts/ledger_A
           cp -a runtime_anchor/runtime/ledgers/momentum_m1_m2 artifacts/ledger_B
+          cp artifacts/input/frozen.zip artifacts/A/frozen.zip
+          cp artifacts/input/frozen.zip artifacts/B/frozen.zip
           python tools/gate_btc_momentum_shadow_collect_deterministic.py --v2a-zip artifacts/A/frozen.zip --cutoff "$TEST_CUTOFF" --ledger-dir artifacts/ledger_A --output artifacts/A/snapshot.json --identity-diagnostic-output artifacts/A/identity.json | tee artifacts/A/stdout.txt
           python tools/gate_btc_momentum_shadow_collect_deterministic.py --v2a-zip artifacts/B/frozen.zip --cutoff "$TEST_CUTOFF" --ledger-dir artifacts/ledger_B --output artifacts/B/snapshot.json --identity-diagnostic-output artifacts/B/identity.json | tee artifacts/B/stdout.txt
       - name: Prove same canonical result and unchanged ledgers
@@ -81,9 +84,11 @@ jobs:
           import hashlib,json,os
           from pathlib import Path
           expected=os.environ['EXISTING_HASH']
-          vals=[]
+          vals=[]; scientific=[]
           anchor=Path('runtime_anchor/runtime/ledgers/momentum_m1_m2/2026-08-26.json').read_bytes()
+          frozen=Path('artifacts/input/frozen.zip').read_bytes()
           for label in ('A','B'):
+              assert Path(f'artifacts/{label}/frozen.zip').read_bytes()==frozen
               out=json.loads(Path(f'artifacts/{label}/snapshot.json').read_text(encoding='utf-8'))
               diag=json.loads(Path(f'artifacts/{label}/identity.json').read_text(encoding='utf-8'))
               led=Path(f'artifacts/ledger_{label}/2026-08-26.json').read_bytes()
@@ -91,9 +96,12 @@ jobs:
               assert out['snapshot_sha256']==expected, (label,out['snapshot_sha256'],expected)
               assert diag['status']=='ALREADY_RECORDED' and diag['result']=='IDEMPOTENT_SUCCESS'
               assert diag['ledger_mutated'] is False
-              vals.append(out['snapshot_sha256'])
+              vals.append(out['snapshot_sha256']); scientific.append(diag['scientific_identity_sha256'])
           assert vals[0]==vals[1]==expected
+          assert scientific[0]==scientific[1]
           print('RUN_A='+vals[0]); print('RUN_B='+vals[1]); print('EXISTING_LEDGER='+expected); print('MATCH=true')
+          print('SCIENTIFIC_A='+scientific[0]); print('SCIENTIFIC_B='+scientific[1])
+          print('FROZEN_INPUT_SHA256='+hashlib.sha256(frozen).hexdigest())
           print('LEDGER_MUTATED=false')
           PY
       - name: Assert immutable safety boundary
