@@ -1,8 +1,8 @@
 {
   "dispatched_run_ids": [
-    33030503141
+    33058896619
   ],
-  "generated_at_utc": "2026-08-27T01:36:44.749537Z",
+  "generated_at_utc": "2026-08-27T11:10:31.633009Z",
   "incident_issue_numbers": [],
   "persistent_blockers": [],
   "runs": [
@@ -17,10 +17,10 @@
       "real_capital": 0,
       "reason": "single-flight",
       "run_attempt": 1,
-      "run_id": 33030643581,
+      "run_id": 33066210396,
       "scientific_change_allowed": false,
       "status": "queued",
-      "workflow": "GATE BTC B3 H NextGen Final"
+      "workflow": "GATE BTC B3 H Stage1 Adapter"
     },
     {
       "action": "RETRY_DISPATCHED",
@@ -28,33 +28,17 @@
       "conclusion": "failure",
       "engine_feed": false,
       "failed_steps": [
-        "Probe official BCB Focus OData source"
+        "Probe official NY Fed reference-rate history"
       ],
-      "head_branch": "research/b3-h150-h159-focus",
+      "head_branch": "research/b3-h160-h169-nyfed-funding",
       "orders": 0,
       "real_capital": 0,
       "reason": "operational/source/plumbing failure",
       "run_attempt": 1,
-      "run_id": 33030503141,
+      "run_id": 33058896619,
       "scientific_change_allowed": false,
       "status": "completed",
-      "workflow": "GATE BTC B3 H150-H159 Focus Source QA"
-    },
-    {
-      "action": "HEALTHY",
-      "backfill_allowed": false,
-      "conclusion": "success",
-      "engine_feed": false,
-      "failed_steps": [],
-      "head_branch": "main",
-      "orders": 0,
-      "real_capital": 0,
-      "reason": "latest run successful",
-      "run_attempt": 1,
-      "run_id": 33028850015,
-      "scientific_change_allowed": false,
-      "status": "completed",
-      "workflow": "GATE BTC B3 H Stage2 Falsification"
+      "workflow": "GATE BTC B3 H160-H169 NYFed Source QA"
     }
   ],
   "safety": {
