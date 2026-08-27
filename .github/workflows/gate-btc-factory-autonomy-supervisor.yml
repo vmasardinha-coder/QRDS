@@ -2,6 +2,14 @@ name: GATE BTC Factory Autonomy Supervisor
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - GATE BTC B3 Factory Continuation
+      - GATE BTC B3 H NextGen Stage0
+      - GATE BTC B3 H1 Daily Structural
+      - GATE BTC B3 H1 Recovery Supervisor
+      - GATE BTC B3 H160-H169 Economics
+    types: [completed]
   schedule:
     - cron: '*/15 * * * *'
   push:
