@@ -1,0 +1,73 @@
+name: GATE BTC Factory Collector Supervisor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '10 12 * * *'
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: gate-btc-factory-collector-supervisor
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+  GATE_BTC_ENGINE_FEED: 'false'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  audit-and-safe-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Mechanical regression guards
+        run: |
+          python -m unittest tests.test_gate_btc_factory_collector_supervisor -v
+          python -m py_compile tools/gate_btc_factory/collector_supervisor.py
+      - name: Audit all registered collectors and apply bounded authorized repairs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tools/gate_btc_factory/collector_supervisor.py \
+            --repo "${{ github.repository }}" \
+            --apply-safe-repairs \
+            --out-dir artifacts/factory_collector_health
+      - name: Prove immutable safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['safety']=={
+              'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,
+              'ORDERS':0,'REAL_CAPITAL':0,'ENGINE_FEED':False,
+          }
+          assert all(x['ORDERS']==0 and x['REAL_CAPITAL']==0 and x['ENGINE_FEED'] is False for x in d['collectors'])
+          print('SCIENTIFIC_BOUNDARY=PASS')
+          PY
+      - name: Upload canonical health outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-collector-health-${{ github.run_id }}
+          path: |
+            artifacts/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.json
+            artifacts/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.md
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish exception summary to job summary
+        if: always()
+        run: |
+          if [ -f artifacts/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.md ]; then
+            cat artifacts/factory_collector_health/FACTORY_COLLECTOR_HEALTH_LATEST.md >> "$GITHUB_STEP_SUMMARY"
+          fi
