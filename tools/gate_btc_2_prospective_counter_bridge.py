@@ -19,10 +19,10 @@ SCHEMA_COUNTER = "gate_btc.2_0.prospective_counter.v1"
 HEALTH_SCHEMA = "qrds.factory.collector_health.v1"
 STAGE9_COLLECTOR_ID = "GATE_BTC_2_STAGE9_MICROSTRUCTURE"
 STAGE9_RAW_ROLES = (
-    "funding_rate",
-    "open_interest",
-    "perp_volume",
-    "spot_volume",
+    "FUNDING",
+    "OPEN_INTEREST",
+    "PERP_VOLUME",
+    "SPOT_VOLUME",
 )
 SUPERVISOR_SAFETY = {
     "RESEARCH_ONLY": True,
