@@ -1,0 +1,93 @@
+name: GATE BTC 2 Evidence Factory MVP
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-evidence-factory.yml
+      - tools/gate_btc_2_evidence_factory.py
+      - tools/gate_btc_2_evidence_factory_contract_v1.json
+      - tests/test_gate_btc_2_evidence_factory.py
+      - migration/GATE_BTC_2_EVIDENCE_FACTORY_MVP.md
+      - tools/gate_btc_2_selector_alpha_terminal.py
+      - tools/gate_btc_2_source_admission.py
+      - tools/gate_btc_factory/collector_supervisor.py
+      - tools/gate_btc_factory/FACTORY_COLLECTOR_REGISTRY.v1.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-evidence-factory-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  evidence-factory-a0-a5:
+    name: evidence-factory-a0-a5
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+
+      - name: Install test-only dependency
+        run: pip install 'pytest==8.3.5'
+
+      - name: Compile Evidence Factory
+        run: python -m py_compile tools/gate_btc_2_evidence_factory.py tests/test_gate_btc_2_evidence_factory.py
+
+      - name: Validate frozen contract safety
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('tools/gate_btc_2_evidence_factory_contract_v1.json').read_text())
+          assert p['schema']=='gate_btc.2_0.evidence_factory_contract.v1'
+          assert p['status']=='FROZEN_RESEARCH_ORCHESTRATION_ONLY'
+          assert p['shared_collector_owner']=='QRDS_FACTORY_COLLECTOR_SUPERVISOR_ISSUE_221_PR_232'
+          assert p['prospective_rule']=='NO_PROSPECTIVE_PASS_WITHOUT_FORWARD_ONLY_AUTHORIZED_EVIDENCE'
+          assert p['human_boundary']=='FULL_RESEARCH_PASS_ENDS_AT_HUMAN_PROMOTION_REVIEW'
+          assert p['safety']=={
+            'RESEARCH_ONLY': True,
+            'SHADOW_ONLY': True,
+            'NOT_APPROVED': True,
+            'ENGINE_FEED': False,
+            'ORDERS': 0,
+            'REAL_CAPITAL_BRL': 0,
+            'NO_RETUNE': True,
+            'NO_BACKFILL': True,
+            'NO_SILENT_SOURCE_SUBSTITUTION': True,
+            'NO_AUTOMATIC_REAL_CAPITAL_PROMOTION': True,
+          }
+          print('EVIDENCE_FACTORY_CONTRACT=PASS')
+          PY
+
+      - name: Run Evidence Factory A0-A5 regression suite
+        run: python -m pytest -q tests/test_gate_btc_2_evidence_factory.py
+
+      - name: Assert no runtime or capital wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('tools/gate_btc_2_evidence_factory.py').read_text()
+          for required in ('NO_RETUNE','NO_BACKFILL','NO_SILENT_SOURCE_SUBSTITUTION','HUMAN_PROMOTION_REVIEW'):
+              assert required in text
+          print('RESEARCH_ONLY=true SHADOW_ONLY=true NOT_APPROVED=true')
+          print('ENGINE_FEED=false ORDERS=0 REAL_CAPITAL_BRL=0')
+          print('EF_A6_ACTIVATED=false')
+          PY
