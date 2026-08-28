@@ -50,7 +50,6 @@ def workflow_score(collector: dict, wf: dict):
     hay = f"{wf.get('name','')} {wf.get('path','')}".lower()
     if not expected:
         return -1
-    # Exact path/name wins.
     if expected in hay:
         return 100
     tokens = [t for t in re.split(r"[^a-z0-9]+", collector["collector_id"].lower()) if len(t) > 2]
@@ -84,6 +83,8 @@ def anomaly_for(collector, wf, run, artifacts):
     if wf.get("state") not in ("active", None):
         return "SCHEDULE_DISABLED", f"workflow state={wf.get('state')}"
     if run is None:
+        if collector.get("schedule_expected") == "MANUAL_AUTHORIZATION_ONLY":
+            return "WAIT_CALENDAR", "manual forward-only capture awaits explicit authorization; no run is expected automatically"
         return "WORKFLOW_NOT_STARTED", "no workflow run found"
     status, conclusion = run.get("status"), run.get("conclusion")
     if status != "completed":
