@@ -72,7 +72,8 @@ jobs:
         run: |
           set -euo pipefail
           today=$(date -u +%Y-%m-%d)
-          attempts=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 50 --json createdAt,conclusion --jq --arg d "$today" '[.[] | select(.createdAt|startswith($d)) | select(.conclusion=="failure")] | length')
+          attempts=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 50 --json createdAt,conclusion --jq ".[] | select(.createdAt|startswith(\"$today\")) | select(.conclusion==\"failure\")" | wc -l)
+          attempts=$(echo "$attempts" | tr -d ' ')
           echo "attempts=$attempts" >> "$GITHUB_OUTPUT"
           if [ "$attempts" -ge 6 ]; then
             echo 'allowed=false' >> "$GITHUB_OUTPUT"
