@@ -1,0 +1,44 @@
+name: GATE BTC 2 Master Plan Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-master-plan.yml
+      - tools/gate_btc_2_master_plan_16_systems.md
+      - tests/test_gate_btc_2_master_plan_16_systems.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-master-plan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+
+jobs:
+  master-plan-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile master plan contract test
+        run: python -m py_compile tests/test_gate_btc_2_master_plan_16_systems.py
+      - name: Validate canonical 16-system roadmap
+        run: python -m unittest -v tests.test_gate_btc_2_master_plan_16_systems
+      - name: Assert research-only boundary
+        run: |
+          echo "RESEARCH_ONLY=true SHADOW_ONLY=true NOT_APPROVED=true"
+          echo "ENGINE_FEED=false ORDERS=0 REAL_CAPITAL_BRL=0"
+          echo "MASTER_PLAN_SYSTEMS=16 FACTORY_PHASE_17=false"
