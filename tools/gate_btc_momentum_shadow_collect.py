@@ -89,6 +89,62 @@ def _write_diagnostic(path: Path | None, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _preserve_existing_cutoff(target: Path, output: Path, cutoff: str, diagnostic_output: Path) -> bool:
+    """Return True when an immutable prospective snapshot already owns cutoff.
+
+    A repeated scheduled run must never recompute an already-persisted cutoff
+    from newly revised public bytes. The persisted snapshot is the causal
+    authority. This is an operational idempotency guard, not a scientific
+    acceptance of revised history.
+    """
+    if not target.exists():
+        return False
+    existing = json.loads(target.read_text(encoding="utf-8"))
+    if existing.get("cutoff") != cutoff:
+        raise SystemExit("existing target cutoff identity mismatch")
+    if existing.get("snapshot_sha256") != canonical_sha(existing):
+        raise SystemExit("existing prospective snapshot canonical hash mismatch")
+    safety = existing.get("safety", {})
+    if not (
+        safety.get("research_only") is True
+        and safety.get("shadow_only") is True
+        and safety.get("not_approved") is True
+        and safety.get("engine_feed") is False
+        and int(safety.get("orders", 0) or 0) == 0
+        and int(safety.get("real_capital", 0) or 0) == 0
+    ):
+        raise SystemExit("existing prospective snapshot safety invariant mismatch")
+    rendered = json.dumps(existing, indent=2, sort_keys=True) + "\n"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(rendered, encoding="utf-8")
+    _write_diagnostic(diagnostic_output, {
+        "schema": "gate_btc.momentum_existing_cutoff_guard.v1",
+        "status": "PASS_EXISTING_CANONICAL_SNAPSHOT_PRESERVED",
+        "cutoff": cutoff,
+        "snapshot_sha256": existing["snapshot_sha256"],
+        "recomputed": False,
+        "historical_bytes_replaced": False,
+        "backfill_allowed": False,
+        "scientific_change_allowed": False,
+        "repair_scope": "ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
+        "research_only": True,
+        "shadow_only": True,
+        "not_approved": True,
+        "engine_feed": False,
+        "orders": 0,
+        "real_capital": 0,
+    })
+    print(json.dumps({
+        "cutoff": cutoff,
+        "status": "PASS_EXISTING_CANONICAL_SNAPSHOT_PRESERVED",
+        "snapshot_sha256": existing["snapshot_sha256"],
+        "recomputed": False,
+        "orders": 0,
+        "real_capital": 0,
+    }, sort_keys=True))
+    return True
+
+
 def compute_m2(prices_csv: Path, cutoff: str, diagnostic_output: Path | None = None):
     by_asset = {}
     union_dates = set()
@@ -136,10 +192,6 @@ def compute_m2(prices_csv: Path, cutoff: str, diagnostic_output: Path | None = N
         _write_diagnostic(diagnostic_output, diagnostic)
         raise SystemExit("BTC lacks complete M2 history: fewer than 31 completed UTC daily bars")
 
-    # M2 is BTC-relative. Bind the frozen 14/30-bar calculations to BTC's
-    # completed UTC daily-bar calendar. Requiring BTC to match the union of all
-    # asset dates can create a false coverage failure when another asset carries
-    # a source-specific extra date. No prices are filled or synthesized here.
     window = btc_dates[idx - 30:idx + 1]
     d14, d30 = btc_dates[idx - 14], btc_dates[idx - 30]
     diagnostic["btc_reference_window"] = window
@@ -233,13 +285,18 @@ def main() -> int:
     if cutoff_day < FREEZE:
         raise SystemExit("pre-freeze cutoff forbidden for prospective ledger")
 
+    args.ledger_dir.mkdir(parents=True, exist_ok=True)
+    target = args.ledger_dir / f"{args.cutoff}.json"
+    guard_diagnostic = args.output.parent / "EXISTING_CUTOFF_GUARD.json"
+    if _preserve_existing_cutoff(target, args.output, args.cutoff, guard_diagnostic):
+        return 0
+
     work = args.output.parent / "momentum_prices.csv"
     diagnostic_output = args.m2_diagnostic_output or (args.output.parent / "M2_COVERAGE_DIAGNOSTIC.json")
     source = extract_prices(args.v2a_zip, args.cutoff, work)
     m1_rows, m1_summary = compute_m1(work, args.cutoff)
     m2_rows, m2_summary = compute_m2(work, args.cutoff, diagnostic_output)
 
-    args.ledger_dir.mkdir(parents=True, exist_ok=True)
     prior_files = sorted(p for p in args.ledger_dir.glob("*.json") if p.name != "STATUS.json")
     if prior_files:
         prior = json.loads(prior_files[-1].read_text(encoding="utf-8"))
@@ -264,7 +321,6 @@ def main() -> int:
                    "automatic_tuning": False},
     }
     payload["snapshot_sha256"] = canonical_sha(payload)
-    target = args.ledger_dir / f"{args.cutoff}.json"
     rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if target.exists():
         existing = json.loads(target.read_text(encoding="utf-8"))
