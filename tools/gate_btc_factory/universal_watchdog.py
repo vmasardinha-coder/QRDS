@@ -25,6 +25,7 @@ RUNTIME_TRACK_FILES = {
     "B3_H1": "runtime/ledgers/b3_h1/STATUS.json",
     "B3_H31": "runtime/ledgers/b3_h31_prospective/STATUS.json",
     "MOMENTUM_M1_M2": "runtime/ledgers/momentum_m1_m2/STATUS.json",
+    "D50_DATA_QUALIFICATION": "runtime/ledgers/d50/STATUS.json",
 }
 ACTIVE_RUNTIME_STATES = {
     "ACTIVE_STRUCTURAL_COLLECTION",
@@ -84,9 +85,21 @@ def runtime_frontier() -> dict | None:
     return load_runtime("runtime/autonomous_science/CURRENT.json")
 
 
-def is_runtime_healthy(row: dict | None) -> bool:
+def is_runtime_healthy(row: dict | None, track: str | None = None) -> bool:
     if not row:
         return False
+    if track == "D50_DATA_QUALIFICATION":
+        dq=row.get("data_qualification", {})
+        mirror=row.get("mirror_alignment", {})
+        return (
+            isinstance(dq, dict)
+            and dq.get("qualified") is True
+            and int(dq.get("current", 0) or 0) >= int(dq.get("target", 7) or 7)
+            and isinstance(mirror, dict)
+            and str(mirror.get("status", "")).startswith("PASS_")
+            and int(row.get("orders_generated", 0) or 0) == 0
+            and int(row.get("real_capital_used", 0) or 0) == 0
+        )
     status=str(row.get("status", ""))
     if status not in ACTIVE_RUNTIME_STATES:
         return False
@@ -98,6 +111,25 @@ def is_runtime_healthy(row: dict | None) -> bool:
         and int(row.get("orders_generated", row.get("orders", 0)) or 0) == 0
         and int(row.get("real_capital_used", row.get("real_capital", 0)) or 0) == 0
     )
+
+
+def runtime_state_view(name: str, runtime_row: dict) -> dict:
+    if name == "D50_DATA_QUALIFICATION":
+        dq=runtime_row.get("data_qualification", {})
+        return {
+            "status": dq.get("status"),
+            "data_as_of": runtime_row.get("data_as_of"),
+            "eligible_observations": dq.get("current"),
+            "target": dq.get("target"),
+            "qualified": dq.get("qualified"),
+            "authority": "gate-btc-runtime",
+        }
+    return {
+        "status": runtime_row.get("status"),
+        "data_as_of": runtime_row.get("data_as_of", runtime_row.get("latest_valid_date", runtime_row.get("latest_date"))),
+        "eligible_observations": runtime_row.get("eligible_observations", runtime_row.get("valid_observation_count", runtime_row.get("observed_snapshots"))),
+        "authority": "gate-btc-runtime",
+    }
 
 
 def main() -> int:
@@ -112,14 +144,9 @@ def main() -> int:
             continue
         runtime_row=runtime_track_state(name)
         if runtime_row is not None:
-            runtime_states[name]={
-                "status": runtime_row.get("status"),
-                "data_as_of": runtime_row.get("data_as_of", runtime_row.get("latest_valid_date", runtime_row.get("latest_date"))),
-                "eligible_observations": runtime_row.get("eligible_observations", runtime_row.get("valid_observations", runtime_row.get("observed_snapshots"))),
-                "authority": "gate-btc-runtime",
-            }
+            runtime_states[name]=runtime_state_view(name, runtime_row)
         # Healthy persisted runtime state overrides stale diagnostics from main.
-        if is_runtime_healthy(runtime_row):
+        if is_runtime_healthy(runtime_row, name):
             continue
         status=str(row.get("status", ""))
         blocker=row.get("blocker")
