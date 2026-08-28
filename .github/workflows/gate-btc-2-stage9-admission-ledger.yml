@@ -1,0 +1,60 @@
+name: GATE BTC 2 Stage 9 Admission Ledger
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-stage9-admission-ledger.yml
+      - tools/gate_btc_2_stage9_admission_ledger.py
+      - tools/gate_btc_2_prospective_counter_bridge.py
+      - tests/test_gate_btc_2_stage9_admission_ledger.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-stage9-admission-ledger-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  stage9-admission-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile ledger chain
+        run: >-
+          python -m py_compile
+          tools/gate_btc_2_stage9_admission_ledger.py
+          tools/gate_btc_2_prospective_counter_bridge.py
+          tests/test_gate_btc_2_stage9_admission_ledger.py
+      - name: Run append-only ledger regression suite
+        run: python -m unittest -v tests.test_gate_btc_2_stage9_admission_ledger
+      - name: Assert zero-credit empty baseline
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_stage9_admission_ledger import counter_from_ledger, validate_ledger
+          rows=[]
+          validate_ledger(rows)
+          counter=counter_from_ledger(rows)
+          assert counter['canonical_counter']==0
+          assert counter['prospective_credit_from_backfill']==0
+          print('STAGE9_ADMISSION_LEDGER=VALID_EMPTY_BASELINE')
+          print('STAGE9_PROSPECTIVE_CREDIT=0')
+          print('EF_A6=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
+          PY
