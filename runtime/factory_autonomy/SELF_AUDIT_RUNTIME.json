@@ -1,8 +1,11 @@
 {
   "active_generation_open_issue": null,
   "active_generation_open_pr": null,
-  "frontier_status": "CLOSED_NO_H160_H169_SURVIVOR",
-  "generated_at_utc": "2026-08-28T17:32:10.128105Z",
+  "frontier_authority": "gate-btc-runtime",
+  "frontier_generation": "H2720-H2729",
+  "frontier_next_generation_start": 2730,
+  "frontier_status": "CLOSED_NO_H2720_H2729_SURVIVOR",
+  "generated_at_utc": "2026-08-28T18:05:42.518901Z",
   "next_expected_action": "ACTIVATE_APPROVED_PROSPECTIVE_SHADOW",
   "planned_actions": [
     {
@@ -16,6 +19,34 @@
       "track": "B3_H31"
     }
   ],
+  "runtime_authority": {
+    "B3_H1": {
+      "latest_date": "2026-08-27",
+      "observations": 2,
+      "status": "ACTIVE_STRUCTURAL_COLLECTION"
+    },
+    "B3_H31": {
+      "latest_date": null,
+      "observations": 0,
+      "status": "ACTIVE_PROSPECTIVE"
+    },
+    "D50_DATA_QUALIFICATION": {
+      "observations": 7,
+      "qualified": true,
+      "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_7_OF_7",
+      "target": 7
+    },
+    "MOMENTUM_M1_M2": {
+      "latest_date": "2026-08-27",
+      "observations": 3,
+      "status": "RED_TRUE_PROCESSING_FAILURE"
+    },
+    "V16B": {
+      "latest_date": "2026-08-23",
+      "observations": 0,
+      "status": "WAITING_NEXT_CANONICAL_WINDOW"
+    }
+  },
   "safety": {
     "backfill_allowed": false,
     "engine_feed": false,
@@ -25,12 +56,8 @@
     "scientific_change_allowed": false,
     "shadow_only": true
   },
-  "schema": "qrds.factory.self_audit.v1",
+  "schema": "qrds.factory.self_audit.v2",
   "scientific_blockers": [
-    {
-      "blocker": "qualification chain remains 0/7 with synchronized failure and stale source evidence; exact source/symbol/time/schema boundary unresolved",
-      "track": "D50_DATA_QUALIFICATION"
-    },
     {
       "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
       "track": "GATE_BTC_2_CORE"
@@ -47,7 +74,6 @@
   "source_freshness": "FRESH",
   "stalled_tracks": [
     "MOMENTUM_M1_M2",
-    "D50_DATA_QUALIFICATION",
     "GATE_BTC_2_CORE"
   ],
   "survivor_health_count": 3,
