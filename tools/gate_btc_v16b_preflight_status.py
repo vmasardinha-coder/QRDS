@@ -7,7 +7,10 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable
 
-from tools.gate_btc_v16b_calendar import window_from_signal
+try:
+    from tools.gate_btc_v16b_calendar import window_from_signal
+except ModuleNotFoundError:  # direct script execution from tools/
+    from gate_btc_v16b_calendar import window_from_signal
 
 RESEARCH_ONLY = True
 SHADOW_ONLY = True
