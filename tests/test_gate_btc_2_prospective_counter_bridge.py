@@ -42,6 +42,7 @@ def admission(run_id: int = 101, captured: str = "2026-08-28T12:00:00Z") -> dict
         "run_id": run_id,
         "captured_at_utc": captured,
         "capture_manifest_sha256": h(f"manifest-{run_id}"),
+        "review_sha256": h(f"review-{run_id}"),
         "safety": BRIDGE.SUPERVISOR_SAFETY,
     }
     row["admission_artifact_sha256"] = BRIDGE.admission_content_hash(row)
@@ -93,6 +94,13 @@ class ProspectiveCounterBridgeTests(unittest.TestCase):
     def test_admission_self_hash_tamper_is_rejected(self):
         row = admission()
         row["captured_at_utc"] = "2026-08-28T12:01:00Z"
+        with self.assertRaises(RuntimeError):
+            BRIDGE.build_counter([row])
+
+    def test_missing_reviewer_hash_is_rejected(self):
+        row = admission()
+        row.pop("review_sha256")
+        row["admission_artifact_sha256"] = BRIDGE.admission_content_hash(row)
         with self.assertRaises(RuntimeError):
             BRIDGE.build_counter([row])
 
