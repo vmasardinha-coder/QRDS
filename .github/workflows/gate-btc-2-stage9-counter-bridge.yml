@@ -6,10 +6,12 @@ on:
     paths:
       - .github/workflows/gate-btc-2-stage9-counter-bridge.yml
       - tools/gate_btc_2_prospective_counter_bridge.py
+      - tools/gate_btc_2_microstructure_shadow_manifest.py
       - tools/gate_btc_factory/collector_supervisor.py
       - tools/gate_btc_factory/FACTORY_COLLECTOR_REGISTRY.v1.json
       - tools/gate_btc_2_evidence_factory.py
       - tests/test_gate_btc_2_prospective_counter_bridge.py
+      - tests/test_gate_btc_2_stage9_role_binding.py
   workflow_dispatch:
 
 permissions:
@@ -45,15 +47,21 @@ jobs:
           tools/gate_btc_2_prospective_counter_bridge.py
           tools/gate_btc_factory/collector_supervisor.py
           tests/test_gate_btc_2_prospective_counter_bridge.py
+          tests/test_gate_btc_2_stage9_role_binding.py
       - name: Run Stage 9 A4 bridge regression suite
-        run: python -m unittest -v tests.test_gate_btc_2_prospective_counter_bridge
+        run: >-
+          python -m unittest -v
+          tests.test_gate_btc_2_prospective_counter_bridge
+          tests.test_gate_btc_2_stage9_role_binding
       - name: Assert zero-credit baseline and safety
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          from tools.gate_btc_2_prospective_counter_bridge import build_counter, STAGE9_COLLECTOR_ID
+          from tools.gate_btc_2_microstructure_shadow_manifest import SPECS
+          from tools.gate_btc_2_prospective_counter_bridge import build_counter, STAGE9_COLLECTOR_ID, STAGE9_RAW_ROLES
           c=build_counter([])
+          assert tuple(SPECS.keys())==STAGE9_RAW_ROLES
           assert c['collector_id']==STAGE9_COLLECTOR_ID
           assert c['canonical_counter']==0
           assert c['prospective_credit_from_backfill']==0
