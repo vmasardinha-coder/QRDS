@@ -2,6 +2,12 @@ name: GATE BTC Scientific Mortality Audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/scientific_mortality_audit.py'
+      - 'tests/test_gate_btc_scientific_mortality_audit.py'
+      - '.github/workflows/gate-btc-scientific-mortality-audit.yml'
   schedule:
     - cron: '7 * * * *'
   push:
@@ -25,7 +31,7 @@ env:
   NO_COUNTER_RESET: 'true'
 
 concurrency:
-  group: gate-btc-scientific-mortality-audit
+  group: gate-btc-scientific-mortality-audit-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +41,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           path: source_repo
       - uses: actions/checkout@v4
         with:
@@ -59,8 +64,12 @@ jobs:
           test "$NO_BACKFILL" = true
           test "$NO_COUNTER_RESET" = true
 
-      - name: Compile audit only
-        run: python -m py_compile source_repo/tools/gate_btc_factory/scientific_mortality_audit.py
+      - name: Compile and regression-test audit only
+        run: |
+          python -m py_compile source_repo/tools/gate_btc_factory/scientific_mortality_audit.py
+          python -m pip install -q pytest
+          cd source_repo
+          pytest -q tests/test_gate_btc_scientific_mortality_audit.py
 
       - name: Audit complete autonomous science mortality
         run: >-
@@ -85,6 +94,7 @@ jobs:
           PY
 
       - name: Publish reporting-only runtime artifact
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
