@@ -70,6 +70,7 @@ def validate_admission(record: dict[str, Any], collector_id: str = STAGE9_COLLEC
     require(isinstance(record.get("run_id"), int) and record["run_id"] > 0, "run_id invalid")
     require(isinstance(record.get("captured_at_utc"), str) and record["captured_at_utc"].endswith("Z"), "captured_at_utc invalid")
     require(valid_sha256(record.get("capture_manifest_sha256")), "capture manifest hash invalid")
+    require(valid_sha256(record.get("review_sha256")), "review hash invalid")
     require(valid_sha256(record.get("admission_artifact_sha256")), "admission artifact hash invalid")
     require(record["admission_artifact_sha256"] == admission_content_hash(record), "admission artifact self-hash mismatch")
     require(record.get("safety") == SUPERVISOR_SAFETY, "admission safety drift")
@@ -94,6 +95,7 @@ def build_counter(records: list[dict[str, Any]], collector_id: str = STAGE9_COLL
             "run_id": run_id,
             "captured_at_utc": captured,
             "capture_manifest_sha256": record["capture_manifest_sha256"],
+            "review_sha256": record["review_sha256"],
             "admission_artifact_sha256": record["admission_artifact_sha256"],
             "record_sha256": canonical_hash(record),
         })
@@ -134,7 +136,7 @@ def validate_counter(counter: dict[str, Any], collector_id: str = STAGE9_COLLECT
         if previous is not None:
             require(captured > previous, "counter observations not chronological")
         previous = captured
-        for key in ("capture_manifest_sha256", "admission_artifact_sha256", "record_sha256"):
+        for key in ("capture_manifest_sha256", "review_sha256", "admission_artifact_sha256", "record_sha256"):
             require(valid_sha256(row.get(key)), f"counter {key} invalid")
 
 
