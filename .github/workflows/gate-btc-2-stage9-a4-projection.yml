@@ -1,0 +1,43 @@
+name: GATE BTC 2 Stage 9 A4 Projection
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_stage9_a4_projection.py'
+      - 'tools/gate_btc_2_stage9_admission_ledger.py'
+      - 'tools/gate_btc_2_prospective_counter_bridge.py'
+      - 'tools/gate_btc_2_evidence_factory.py'
+      - 'tests/test_gate_btc_2_stage9_a4_projection.py'
+      - '.github/workflows/gate-btc-2-stage9-a4-projection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage9-a4-projection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile projection chain
+        run: python -m py_compile tools/gate_btc_2_stage9_a4_projection.py tools/gate_btc_2_stage9_admission_ledger.py tools/gate_btc_2_prospective_counter_bridge.py tools/gate_btc_2_evidence_factory.py
+      - name: Run Stage 9 A4 projection regression suite
+        run: python -m unittest tests.test_gate_btc_2_stage9_a4_projection -v
+      - name: Preserve safety boundary
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_stage9_a4_projection import project
+          from tests.test_gate_btc_2_stage9_a4_projection import candidate
+          out = project(candidate(), [], 1, '2099-01-01')
+          assert out['decision'] == 'COLLECT_MORE'
+          assert out['current_N'] == 0
+          assert out['prospective_credit_from_backfill'] == 0
+          assert out['stage_9_complete'] is False
+          assert out['economics_allowed'] is False
+          assert out['engine_feed'] is False
+          assert out['orders'] == 0
+          assert out['real_capital_brl'] == 0
+          PY
