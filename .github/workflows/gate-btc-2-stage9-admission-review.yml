@@ -1,0 +1,69 @@
+name: GATE BTC 2 Stage 9 Admission Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-stage9-admission-review.yml
+      - tools/gate_btc_2_stage9_admission_review.py
+      - tools/gate_btc_2_microstructure_shadow_capture.py
+      - tools/gate_btc_2_microstructure_shadow_manifest.py
+      - tools/gate_btc_2_microstructure_shadow_contract.py
+      - tools/gate_btc_2_microstructure_shadow_contract_v1.json
+      - tools/gate_btc_2_prospective_counter_bridge.py
+      - tests/test_gate_btc_2_stage9_admission_review.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-stage9-admission-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  admission-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile admission reviewer
+        run: >-
+          python -m py_compile
+          tools/gate_btc_2_stage9_admission_review.py
+          tests/test_gate_btc_2_stage9_admission_review.py
+      - name: Run Stage 9 admission review regression suite
+        run: python -m unittest -v tests.test_gate_btc_2_stage9_admission_review
+      - name: Assert reviewer cannot promote Stage 9
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('tools/gate_btc_2_stage9_admission_review.py').read_text()
+          for required in (
+              'ADMITTED_FORWARD_ONLY_CAPTURE',
+              'stage_9_complete',
+              'economics_allowed',
+              'engine_feed',
+              'orders_generated',
+              'real_capital_used',
+              'build_manifest',
+          ):
+              assert required in text
+          assert 'urllib.request' not in text
+          print('REVIEWER_NETWORK_REQUESTS=0')
+          print('STAGE9_COMPLETE=false ECONOMICS_ALLOWED=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
+          PY
