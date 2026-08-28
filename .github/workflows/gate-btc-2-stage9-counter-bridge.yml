@@ -1,0 +1,74 @@
+name: GATE BTC 2 Stage 9 Counter Bridge
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-stage9-counter-bridge.yml
+      - tools/gate_btc_2_prospective_counter_bridge.py
+      - tools/gate_btc_2_microstructure_shadow_manifest.py
+      - tools/gate_btc_factory/collector_supervisor.py
+      - tools/gate_btc_factory/FACTORY_COLLECTOR_REGISTRY.v1.json
+      - tools/gate_btc_2_evidence_factory.py
+      - tests/test_gate_btc_2_prospective_counter_bridge.py
+      - tests/test_gate_btc_2_stage9_role_binding.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-stage9-counter-bridge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  stage9-counter-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile bridge and supervisor
+        run: >-
+          python -m py_compile
+          tools/gate_btc_2_prospective_counter_bridge.py
+          tools/gate_btc_factory/collector_supervisor.py
+          tests/test_gate_btc_2_prospective_counter_bridge.py
+          tests/test_gate_btc_2_stage9_role_binding.py
+      - name: Run Stage 9 A4 bridge regression suite
+        run: >-
+          python -m unittest -v
+          tests.test_gate_btc_2_prospective_counter_bridge
+          tests.test_gate_btc_2_stage9_role_binding
+      - name: Assert zero-credit baseline and safety
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from tools.gate_btc_2_microstructure_shadow_manifest import SPECS
+          from tools.gate_btc_2_prospective_counter_bridge import build_counter, STAGE9_COLLECTOR_ID, STAGE9_RAW_ROLES
+          c=build_counter([])
+          assert tuple(SPECS.keys())==STAGE9_RAW_ROLES
+          assert c['collector_id']==STAGE9_COLLECTOR_ID
+          assert c['canonical_counter']==0
+          assert c['prospective_credit_from_backfill']==0
+          reg=json.loads(Path('tools/gate_btc_factory/FACTORY_COLLECTOR_REGISTRY.v1.json').read_text())
+          r=next(x for x in reg['collectors'] if x['collector_id']==STAGE9_COLLECTOR_ID)
+          assert r['schedule_expected']=='MANUAL_AUTHORIZATION_ONLY'
+          assert r['approved_auto_repair_actions']==[]
+          print('STAGE9_FORWARD_CAPTURE_CREDIT=0')
+          print('EF_A6=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0')
+          PY
