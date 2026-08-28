@@ -49,6 +49,12 @@ def valid_sha256(value: Any) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
 
 
+def admission_content_hash(record: dict[str, Any]) -> str:
+    payload = dict(record)
+    payload.pop("admission_artifact_sha256", None)
+    return canonical_hash(payload)
+
+
 def validate_admission(record: dict[str, Any], collector_id: str = STAGE9_COLLECTOR_ID) -> None:
     require(record.get("schema") == SCHEMA_ADMISSION, "admission schema invalid")
     require(record.get("collector_id") == collector_id, "collector binding mismatch")
@@ -65,6 +71,7 @@ def validate_admission(record: dict[str, Any], collector_id: str = STAGE9_COLLEC
     require(isinstance(record.get("captured_at_utc"), str) and record["captured_at_utc"].endswith("Z"), "captured_at_utc invalid")
     require(valid_sha256(record.get("capture_manifest_sha256")), "capture manifest hash invalid")
     require(valid_sha256(record.get("admission_artifact_sha256")), "admission artifact hash invalid")
+    require(record["admission_artifact_sha256"] == admission_content_hash(record), "admission artifact self-hash mismatch")
     require(record.get("safety") == SUPERVISOR_SAFETY, "admission safety drift")
 
 
