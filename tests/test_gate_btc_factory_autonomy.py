@@ -158,6 +158,70 @@ def test_universal_watchdog_is_allowlisted_and_safe(tmp_path, monkeypatch):
     assert d['safety']['engine_feed'] is False
 
 
+def test_watchdog_d50_runtime_qualification_overrides_stale_static_blocker(tmp_path, monkeypatch):
+    m = load_module('universal_watchdog_d50_test', 'tools/gate_btc_factory/universal_watchdog.py')
+    source = tmp_path / 'source.json'
+    out = tmp_path / 'watch.json'
+    source.write_text(json.dumps({'tracks': {
+        'D50_DATA_QUALIFICATION': {
+            'classification': 'DATA_BLOCKED',
+            'status': 'ACTIVE_SYNCHRONIZED_FAILURE_CHAIN_RESET_0_OF_7',
+            'blocker': 'stale static blocker',
+        }
+    }}), encoding='utf-8')
+    runtime = {
+        'data_as_of': '2026-08-22',
+        'data_qualification': {'qualified': True, 'current': 7, 'target': 7, 'status': 'ACTIVE_CONSECUTIVE_PASS_CHAIN_7_OF_7'},
+        'mirror_alignment': {'status': 'PASS_D50_CURRENT_EVIDENCE_ALIGNED'},
+        'orders_generated': 0,
+        'real_capital_used': 0,
+    }
+    monkeypatch.setattr(m, 'SOURCE', source)
+    monkeypatch.setattr(m, 'OUT', out)
+    monkeypatch.setattr(m, 'load_runtime', lambda path: runtime if path.endswith('d50/STATUS.json') else None)
+    assert m.main() == 0
+    d = json.loads(out.read_text(encoding='utf-8'))
+    assert 'D50_DATA_QUALIFICATION' not in d['stalled_tracks']
+    assert d['runtime_track_states']['D50_DATA_QUALIFICATION']['qualified'] is True
+    assert d['runtime_track_states']['D50_DATA_QUALIFICATION']['eligible_observations'] == 7
+
+
+def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_path, monkeypatch):
+    m = load_module('self_audit_runtime_authority_test', 'tools/gate_btc_factory/self_audit.py')
+    source = tmp_path / 'source.json'
+    plan = tmp_path / 'plan.json'
+    watch = tmp_path / 'watch.json'
+    surv = tmp_path / 'surv.json'
+    out = tmp_path / 'audit.json'
+    source.write_text(json.dumps({'tracks': {
+        'B3_H40_PLUS': {'status': 'CLOSED_NO_H160_H169_SURVIVOR'},
+        'D50_DATA_QUALIFICATION': {'blocker': 'stale 0/7 blocker'},
+    }}), encoding='utf-8')
+    plan.write_text(json.dumps({'actions': [], 'transitions_allowed': True}), encoding='utf-8')
+    watch.write_text(json.dumps({'stalled_tracks': []}), encoding='utf-8')
+    surv.write_text(json.dumps({'survivors': []}), encoding='utf-8')
+    runtime = {
+        'runtime/autonomous_science/CURRENT.json': {'generation': 'H2720-H2729', 'status': 'CLOSED_NO_H2720_H2729_SURVIVOR', 'next_generation_start': 2730},
+        'runtime/ledgers/d50/STATUS.json': {
+            'data_qualification': {'qualified': True, 'current': 7, 'target': 7, 'status': 'ACTIVE_CONSECUTIVE_PASS_CHAIN_7_OF_7'},
+            'mirror_alignment': {'status': 'PASS_D50_CURRENT_EVIDENCE_ALIGNED'},
+        },
+    }
+    monkeypatch.setattr(m, 'SOURCE', source)
+    monkeypatch.setattr(m, 'PLAN', plan)
+    monkeypatch.setattr(m, 'WATCH', watch)
+    monkeypatch.setattr(m, 'SURV', surv)
+    monkeypatch.setattr(m, 'OUT', out)
+    monkeypatch.setattr(m, 'load_runtime', lambda path: runtime.get(path))
+    assert m.main() == 0
+    d = json.loads(out.read_text(encoding='utf-8'))
+    assert d['frontier_generation'] == 'H2720-H2729'
+    assert d['frontier_status'] == 'CLOSED_NO_H2720_H2729_SURVIVOR'
+    assert d['frontier_authority'] == 'gate-btc-runtime'
+    assert all(x['track'] != 'D50_DATA_QUALIFICATION' for x in d['scientific_blockers'])
+    assert d['runtime_authority']['D50_DATA_QUALIFICATION']['observations'] == 7
+
+
 def test_survivor_health_never_grants_scientific_change(tmp_path, monkeypatch):
     m = load_module('survivor_health_test', 'tools/gate_btc_factory/survivor_health.py')
     source = tmp_path / 'source.json'
