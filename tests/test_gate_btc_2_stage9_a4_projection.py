@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import unittest
 
-from tools.gate_btc_2_evidence_factory import SAFETY
+from tools.gate_btc_2_evidence_factory import SAFETY, SCHEMA_CANDIDATE
 from tools.gate_btc_2_prospective_counter_bridge import STAGE9_RAW_ROLES, SUPERVISOR_SAFETY, admission_content_hash
 from tools.gate_btc_2_stage9_a4_projection import project
 from tools.gate_btc_2_stage9_admission_ledger import make_record
@@ -15,7 +15,7 @@ def h(value: str) -> str:
 
 def candidate() -> dict:
     return {
-        "schema": "gate_btc.2_0.evidence_factory_candidate.v1",
+        "schema": SCHEMA_CANDIDATE,
         "candidate_id": "H-STAGE9-PROJECTION-TEST",
         "candidate_version": 1,
         "hypothesis_sha256": h("hypothesis"),
