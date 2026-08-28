@@ -1,0 +1,41 @@
+name: GATE BTC 2 System 10 Event Envelope
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_system10_event_envelope.py'
+      - 'tests/test_gate_btc_2_system10_event_envelope.py'
+      - '.github/workflows/gate-btc-2-system10-event-envelope.yml'
+      - 'tools/gate_btc_2_stage9_admission_ledger.py'
+      - 'tools/gate_btc_2_prospective_counter_bridge.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  system10-event-envelope:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile event-parity chain
+        run: python -m py_compile tools/gate_btc_2_system10_event_envelope.py tools/gate_btc_2_stage9_admission_ledger.py tools/gate_btc_2_prospective_counter_bridge.py
+      - name: Run event envelope regression suite
+        run: python -m unittest tests.test_gate_btc_2_system10_event_envelope -v
+      - name: Assert zero-credit zero-engine baseline
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_system10_event_envelope import build_event_envelope, verify_event_envelope
+          e = build_event_envelope([])
+          verify_event_envelope(e)
+          assert e['event_count'] == 0
+          assert e['stage_9_complete'] is False
+          assert e['system_10_complete'] is False
+          assert e['economics_allowed'] is False
+          assert e['engine_feed'] is False
+          assert e['orders'] == 0
+          assert e['real_capital_brl'] == 0
+          PY
