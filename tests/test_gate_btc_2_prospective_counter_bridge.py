@@ -27,7 +27,7 @@ def h(value: str) -> str:
 
 
 def admission(run_id: int = 101, captured: str = "2026-08-28T12:00:00Z") -> dict:
-    return {
+    row = {
         "schema": BRIDGE.SCHEMA_ADMISSION,
         "collector_id": BRIDGE.STAGE9_COLLECTOR_ID,
         "decision": "ADMITTED_FORWARD_ONLY",
@@ -42,9 +42,10 @@ def admission(run_id: int = 101, captured: str = "2026-08-28T12:00:00Z") -> dict
         "run_id": run_id,
         "captured_at_utc": captured,
         "capture_manifest_sha256": h(f"manifest-{run_id}"),
-        "admission_artifact_sha256": h(f"admission-{run_id}"),
         "safety": BRIDGE.SUPERVISOR_SAFETY,
     }
+    row["admission_artifact_sha256"] = BRIDGE.admission_content_hash(row)
+    return row
 
 
 def health(anomaly=None) -> dict:
@@ -89,6 +90,12 @@ class ProspectiveCounterBridgeTests(unittest.TestCase):
         self.assertEqual(len(counter["admitted_observations"]), 1)
         BRIDGE.validate_counter(counter)
 
+    def test_admission_self_hash_tamper_is_rejected(self):
+        row = admission()
+        row["captured_at_utc"] = "2026-08-28T12:01:00Z"
+        with self.assertRaises(RuntimeError):
+            BRIDGE.build_counter([row])
+
     def test_duplicate_run_cannot_double_count(self):
         with self.assertRaises(RuntimeError):
             BRIDGE.build_counter([admission(), admission()])
@@ -106,7 +113,7 @@ class ProspectiveCounterBridgeTests(unittest.TestCase):
     def test_wrong_instrument_roles_or_source_substitution_is_rejected(self):
         for key, value in (
             ("instrument", "ETHUSDT"),
-            ("raw_roles", ["funding_rate"]),
+            ("raw_roles", ["FUNDING"]),
             ("silent_source_substitution", True),
         ):
             row = admission()
