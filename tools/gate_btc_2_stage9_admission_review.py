@@ -28,6 +28,7 @@ from tools.gate_btc_2_prospective_counter_bridge import (
     STAGE9_COLLECTOR_ID,
     STAGE9_RAW_ROLES,
     SUPERVISOR_SAFETY,
+    admission_content_hash,
     validate_admission,
 )
 
@@ -178,7 +179,7 @@ def review_capture(capture_dir: Path, contract_path: Path = DEFAULT_CONTRACT) ->
         "run_id": decision["current_run_id"],
         "captured_at_utc": manifest["created_at_utc"],
         "capture_manifest_sha256": review["capture_manifest_sha256"],
-        "admission_artifact_sha256": review["review_sha256"],
+        "review_sha256": review["review_sha256"],
         "stage_9_complete": False,
         "economics_allowed": False,
         "engine_feed": False,
@@ -187,6 +188,7 @@ def review_capture(capture_dir: Path, contract_path: Path = DEFAULT_CONTRACT) ->
         "promotion_allowed": False,
         "safety": SUPERVISOR_SAFETY,
     }
+    admission["admission_artifact_sha256"] = admission_content_hash(admission)
     validate_admission(admission)
     return review, admission
 
