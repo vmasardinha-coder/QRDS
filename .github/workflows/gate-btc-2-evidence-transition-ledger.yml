@@ -1,0 +1,60 @@
+name: GATE BTC 2 Evidence Transition Ledger
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-evidence-transition-ledger.yml
+      - tools/gate_btc_2_evidence_transition_ledger.py
+      - tools/gate_btc_2_evidence_factory.py
+      - tests/test_gate_btc_2_evidence_transition_ledger.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-2-evidence-transition-ledger-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  evidence-transition-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile A3 ledger
+        run: python -m py_compile tools/gate_btc_2_evidence_transition_ledger.py tests/test_gate_btc_2_evidence_transition_ledger.py
+      - name: Run A3 ledger regression suite
+        run: python -m unittest -v tests.test_gate_btc_2_evidence_transition_ledger
+      - name: Assert immutable research-only boundary
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, 'tools')
+          import gate_btc_2_evidence_transition_ledger as ledger
+          s=ledger.SAFETY
+          assert s['RESEARCH_ONLY'] is True
+          assert s['SHADOW_ONLY'] is True
+          assert s['NOT_APPROVED'] is True
+          assert s['ENGINE_FEED'] is False
+          assert s['ORDERS'] == 0
+          assert s['REAL_CAPITAL_BRL'] == 0
+          print('A3_APPEND_ONLY_LEDGER=PASS')
+          print('EF_A6_ACTIVATED=false')
+          print('ENGINE_FEED=false ORDERS=0 REAL_CAPITAL_BRL=0')
+          PY
