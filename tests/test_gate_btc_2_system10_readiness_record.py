@@ -1,13 +1,12 @@
 import unittest
 
-from tools.gate_btc_2_stage9_admission_ledger import empty_ledger
 from tools.gate_btc_2_system10_event_envelope import build_event_envelope
 from tools.gate_btc_2_system10_readiness_record import build_readiness_record, verify_readiness_record
 
 
 class System10ReadinessRecordTests(unittest.TestCase):
     def test_zero_event_baseline_is_plumbing_only(self):
-        envelope = build_event_envelope(empty_ledger())
+        envelope = build_event_envelope([])
         record = build_readiness_record(envelope)
         verify_readiness_record(record)
         self.assertEqual(record["event_count"], 0)
@@ -25,7 +24,7 @@ class System10ReadinessRecordTests(unittest.TestCase):
         self.assertEqual(record["real_capital_brl"], 0)
 
     def test_tamper_fails_closed(self):
-        envelope = build_event_envelope(empty_ledger())
+        envelope = build_event_envelope([])
         record = build_readiness_record(envelope)
         record["engine_parity_proven"] = True
         with self.assertRaises(RuntimeError):
