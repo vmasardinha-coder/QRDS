@@ -5,7 +5,10 @@ import json
 import os
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+PLAN = ROOT / "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json"
 ACTIVE = {"in_progress", "queued", "waiting", "requested", "pending"}
 
 
@@ -30,19 +33,98 @@ def run_json(args: list[str]) -> object:
     return json.loads(text) if text else None
 
 
-def latest(repo: str, stage: Stage) -> dict | None:
+def load_runtime_frontier() -> dict | None:
+    try:
+        raw = subprocess.check_output(
+            ["git", "show", "origin/gate-btc-runtime:runtime/autonomous_science/CURRENT.json"],
+            cwd=ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    try:
+        value = json.loads(raw)
+    except Exception as exc:
+        raise SystemExit(f"FAIL_CLOSED malformed canonical runtime frontier: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit("FAIL_CLOSED canonical runtime frontier is not an object")
+    return value
+
+
+def load_plan() -> dict:
+    try:
+        value = json.loads(PLAN.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SystemExit(f"FAIL_CLOSED cannot read transition plan: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit("FAIL_CLOSED transition plan is not an object")
+    return value
+
+
+def target_from_authorities() -> tuple[str, str] | None:
+    frontier = load_runtime_frontier()
+    if not frontier:
+        print("NEXTGEN_PROGRESS=FAIL_CLOSED_NO_RUNTIME_FRONTIER")
+        return None
+
+    generation = str(frontier.get("generation") or "")
+    status = str(frontier.get("status") or "")
+    survivors = frontier.get("survivors") or []
+    try:
+        next_start = int(frontier.get("next_generation_start"))
+    except (TypeError, ValueError):
+        print("NEXTGEN_PROGRESS=FAIL_CLOSED_BAD_NEXT_GENERATION_START")
+        return None
+
+    if not generation or "CLOSED" not in status or "NO_" not in status or "SURVIVOR" not in status:
+        print(f"NEXTGEN_PROGRESS=NO_CLOSED_NULL_FRONTIER:{generation}:{status}")
+        return None
+    if survivors:
+        print(f"NEXTGEN_PROGRESS=FAIL_CLOSED_SURVIVOR_PRESENT:{generation}")
+        return None
+    if next_start <= 0:
+        print("NEXTGEN_PROGRESS=FAIL_CLOSED_NONPOSITIVE_NEXT_GENERATION_START")
+        return None
+
+    next_generation = f"H{next_start}-H{next_start + 9}"
+    marker = f"B3 {next_generation}"
+    plan = load_plan()
+    actions = plan.get("actions", [])
+    authorized = any(
+        isinstance(action, dict)
+        and action.get("action") == "CREATE_NEXT_GENERATION_ISSUE"
+        and action.get("marker") == marker
+        for action in actions
+    )
+    if plan.get("source_freshness") != "FRESH" or plan.get("transitions_allowed") is not True or not authorized:
+        print(f"NEXTGEN_PROGRESS=FAIL_CLOSED_TARGET_NOT_AUTHORIZED:{marker}")
+        return None
+
+    frontier_key = f"{generation}__NEXT_{next_generation}"
+    return frontier_key, next_generation
+
+
+def latest(repo: str, stage: Stage, *, frontier_key: str | None = None) -> dict | None:
+    fields = "databaseId,status,conclusion,createdAt,headSha,displayTitle"
     rows = run_json([
         "gh", "run", "list",
         "--repo", repo,
         "--workflow", stage.workflow,
         "--branch", "main",
-        "--limit", "1",
-        "--json", "databaseId,status,conclusion,createdAt,headSha",
+        "--limit", "20" if frontier_key else "1",
+        "--json", fields,
     ])
     if not isinstance(rows, list) or not rows:
         return None
-    row = rows[0]
-    return row if isinstance(row, dict) else None
+    if frontier_key is None:
+        row = rows[0]
+        return row if isinstance(row, dict) else None
+    expected = f"B3 NextGen {frontier_key}"
+    for row in rows:
+        if isinstance(row, dict) and row.get("displayTitle") == expected:
+            return row
+    return None
 
 
 def active_count(repo: str, stage: Stage) -> int:
@@ -68,9 +150,24 @@ def main() -> int:
     if not repo:
         raise SystemExit("FAIL_CLOSED missing GITHUB_REPOSITORY/GH_REPO")
 
-    anchor = latest(repo, STAGES[0])
+    target = target_from_authorities()
+    if target is None:
+        return 0
+    frontier_key, next_generation = target
+
+    anchor = latest(repo, STAGES[0], frontier_key=frontier_key)
     if anchor is None:
-        print("NEXTGEN_PROGRESS=NO_STAGE0_ANCHOR")
+        if active_count(repo, STAGES[0]):
+            print(f"NEXTGEN_PROGRESS=SINGLE_FLIGHT:{STAGES[0].name}")
+            return 0
+        subprocess.run([
+            "gh", "workflow", "run", STAGES[0].workflow,
+            "--repo", repo,
+            "--ref", "main",
+            "-f", f"frontier_key={frontier_key}",
+            "-f", f"next_generation={next_generation}",
+        ], check=True)
+        print(f"NEXTGEN_PROGRESS=DISPATCHED_FRONTIER_STAGE0:{frontier_key}")
         return 0
     if anchor.get("status") in ACTIVE:
         print(f"NEXTGEN_PROGRESS=WAIT_ACTIVE:{STAGES[0].name}:{anchor.get('databaseId')}")
@@ -121,7 +218,7 @@ def main() -> int:
         predecessor = current
         predecessor_stage = stage
 
-    print(f"NEXTGEN_PROGRESS=CHAIN_COMPLETE:final_run={predecessor.get('databaseId')}")
+    print(f"NEXTGEN_PROGRESS=CHAIN_COMPLETE:{frontier_key}:final_run={predecessor.get('databaseId')}")
     return 0
 
 
