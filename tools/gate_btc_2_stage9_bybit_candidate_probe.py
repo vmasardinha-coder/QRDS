@@ -19,8 +19,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from tools.gate_btc_bybit_redundancy_probe import BASE_URLS
-
+BASE_URLS = (
+    "https://api.bybit.com",
+    "https://api.bybit.nl",
+    "https://api.bybit.tr",
+    "https://api.bybit.kz",
+    "https://api.bybit.ae",
+    "https://api.bybit.eu",
+    "https://api.bybit.id",
+)
 PATH = "/v5/market/tickers"
 SYMBOL = "BTCUSDT"
 REQUIRED_ROLES = ("FUNDING", "OPEN_INTEREST", "PERP_VOLUME", "SPOT_VOLUME")
