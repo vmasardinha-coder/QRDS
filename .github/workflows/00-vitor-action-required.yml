@@ -1,0 +1,59 @@
+name: "00 VITOR — ACTION REQUIRED"
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Authorized human operation"
+        required: true
+        type: choice
+        options:
+          - SHOW_CURRENT_ACTIONS
+          - STAGE9_MICROSTRUCTURE_CAPTURE
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  console:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show canonical action queue
+        if: ${{ inputs.operation == 'SHOW_CURRENT_ACTIONS' }}
+        run: |
+          echo '=== VITOR ACTION QUEUE ==='
+          python - <<'PY'
+          import json
+          with open('ops/workflow_operations_registry.json', encoding='utf-8') as f:
+              d=json.load(f)
+          for a in d['current_manual_actions']:
+              print(f"{a['status']}: {a['instruction']}")
+          print('All other historical red/yellow runs are not manual actions unless added to this registry.')
+          PY
+
+      - name: Guard Stage 9 authorization
+        if: ${{ inputs.operation == 'STAGE9_MICROSTRUCTURE_CAPTURE' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pr=$(gh api repos/${GITHUB_REPOSITORY}/pulls/301)
+          state=$(jq -r '.state' <<<"$pr")
+          merged=$(jq -r '.merged' <<<"$pr")
+          if [[ "$state" != "closed" || "$merged" != "true" ]]; then
+            echo 'BLOCKED: PR #301 must be merged before Stage 9 capture.'
+            exit 1
+          fi
+          echo 'PR #301 merged; dispatching the single authorized Stage 9 capture on main.'
+          gh workflow run gate-btc-2-microstructure-shadow-manual-capture.yml --ref main
+
+      - name: Boundaries
+        run: |
+          echo 'RESEARCH_ONLY=true'
+          echo 'ORDERS=0'
+          echo 'REAL_CAPITAL=0'
+          echo 'ENGINE_FEED=false'
+          echo 'No H1 partial economics are opened by this console.'
