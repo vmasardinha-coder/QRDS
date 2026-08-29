@@ -1,0 +1,45 @@
+name: GATE BTC 2 System 10 Shadow Adapter Fixture
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_system10_event_envelope.py'
+      - 'tools/gate_btc_2_system10_adapter_contract.py'
+      - 'tools/gate_btc_2_system10_parity_receipt.py'
+      - 'tools/gate_btc_2_system10_shadow_adapter_fixture.py'
+      - 'tests/test_gate_btc_2_system10_shadow_adapter_fixture.py'
+      - '.github/workflows/gate-btc-2-system10-shadow-adapter-fixture.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  shadow-adapter-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile read-only System 10 path
+        run: python -m py_compile tools/gate_btc_2_system10_event_envelope.py tools/gate_btc_2_system10_adapter_contract.py tools/gate_btc_2_system10_parity_receipt.py tools/gate_btc_2_system10_shadow_adapter_fixture.py
+      - name: Run no-execution fixture tests
+        run: python -m unittest tests.test_gate_btc_2_system10_shadow_adapter_fixture -v
+      - name: Prove zero-event Nautilus shadow identity cannot execute
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_system10_event_envelope import build_event_envelope
+          from tools.gate_btc_2_system10_shadow_adapter_fixture import run_shadow_adapter_fixture
+          result = run_shadow_adapter_fixture(build_event_envelope([]))
+          assert result['status'] == 'PASS_READ_ONLY_PARITY_FIXTURE'
+          assert result['event_count'] == 0
+          assert result['engine_instantiated'] is False
+          assert result['engine_execution'] is False
+          assert result['nautilus_execution_enabled'] is False
+          assert result['stage_9_complete'] is False
+          assert result['system_10_complete'] is False
+          assert result['economics_allowed'] is False
+          assert result['engine_feed'] is False
+          assert result['orders'] == 0
+          assert result['real_capital_brl'] == 0
+          PY
