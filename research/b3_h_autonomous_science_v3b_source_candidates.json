@@ -1,0 +1,72 @@
+{
+  "schema": "qrds.b3_autonomous_science.v3b.source_candidates.v1",
+  "status": "SOURCE_QUALIFICATION_ONLY_NO_ECONOMICS",
+  "issue": 293,
+  "protocol": "research/b3_h_autonomous_science_protocol_v3b.md",
+  "candidate_order": [
+    "BCB_PTAX_FX",
+    "BCB_INTEREST_MONETARY",
+    "TESOURO_SOVEREIGN_CURVE",
+    "B3_PUBLIC_OI_SETTLEMENT_ROLL",
+    "OTHER_OFFICIAL_PUBLIC_CROSS_MARKET"
+  ],
+  "candidates": {
+    "BCB_PTAX_FX": {
+      "provider": "Banco Central do Brasil",
+      "access_class": "OFFICIAL_PUBLIC_FREE",
+      "exact_identifier": null,
+      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "required_observed_fields": ["observation_date", "published_value"],
+      "required_proofs": ["official_endpoint", "exact_series_or_query_contract", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "timezone", "revision_policy"]
+    },
+    "BCB_INTEREST_MONETARY": {
+      "provider": "Banco Central do Brasil",
+      "access_class": "OFFICIAL_PUBLIC_FREE",
+      "exact_identifier": null,
+      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "required_observed_fields": ["observation_date", "published_value"],
+      "required_proofs": ["official_endpoint", "exact_series_identifier", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "revision_policy"]
+    },
+    "TESOURO_SOVEREIGN_CURVE": {
+      "provider": "Tesouro Nacional",
+      "access_class": "OFFICIAL_PUBLIC_FREE",
+      "exact_identifier": null,
+      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "required_observed_fields": ["reference_date", "maturity_or_tenor", "published_rate"],
+      "required_proofs": ["official_endpoint_or_file", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "revision_policy"]
+    },
+    "B3_PUBLIC_OI_SETTLEMENT_ROLL": {
+      "provider": "B3",
+      "access_class": "OFFICIAL_PUBLIC_FREE_IF_PROVEN",
+      "exact_identifier": null,
+      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "required_observed_fields": ["reference_date", "instrument_or_contract_id", "observed_value"],
+      "required_proofs": ["official_historical_file_contract", "contract_identity", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "roll_semantics"]
+    },
+    "OTHER_OFFICIAL_PUBLIC_CROSS_MARKET": {
+      "provider": null,
+      "access_class": "OFFICIAL_PUBLIC_FREE_ONLY",
+      "exact_identifier": null,
+      "qualification_status": "NOT_YET_SELECTED",
+      "required_observed_fields": [],
+      "required_proofs": ["materially_distinct_mechanism", "official_source", "exact_identifier", "publication_timing", "historical_coverage", "raw_hash", "schema"]
+    }
+  },
+  "economics_authorized": false,
+  "family_ids_authorized": false,
+  "h2890_plus_authorized": false,
+  "mt5_role": "INDEPENDENT_SECONDARY_SOURCE_CROSS_VALIDATION_ONLY",
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false
+  }
+}
