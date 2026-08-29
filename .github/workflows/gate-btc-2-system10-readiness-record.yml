@@ -1,0 +1,50 @@
+name: GATE BTC 2 System 10 Readiness Record
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_system10_event_envelope.py'
+      - 'tools/gate_btc_2_system10_adapter_contract.py'
+      - 'tools/gate_btc_2_system10_parity_receipt.py'
+      - 'tools/gate_btc_2_system10_shadow_adapter_fixture.py'
+      - 'tools/gate_btc_2_system10_readiness_record.py'
+      - 'tests/test_gate_btc_2_system10_readiness_record.py'
+      - '.github/workflows/gate-btc-2-system10-readiness-record.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness-record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile bounded System 10 readiness path
+        run: python -m py_compile tools/gate_btc_2_system10_event_envelope.py tools/gate_btc_2_system10_adapter_contract.py tools/gate_btc_2_system10_parity_receipt.py tools/gate_btc_2_system10_shadow_adapter_fixture.py tools/gate_btc_2_system10_readiness_record.py
+      - name: Run readiness record unit tests
+        run: python -m unittest tests.test_gate_btc_2_system10_readiness_record
+      - name: Prove zero-credit no-engine baseline
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_stage9_admission_ledger import empty_ledger
+          from tools.gate_btc_2_system10_event_envelope import build_event_envelope
+          from tools.gate_btc_2_system10_readiness_record import build_readiness_record, verify_readiness_record
+          r = build_readiness_record(build_event_envelope(empty_ledger()))
+          verify_readiness_record(r)
+          assert r['event_count'] == 0
+          assert r['readiness_scope'] == 'PLUMBING_ONLY_NO_ENGINE_PROOF'
+          assert r['engine_parity_proven'] is False
+          assert r['engine_instantiated'] is False
+          assert r['engine_execution'] is False
+          assert r['nautilus_execution_enabled'] is False
+          assert r['stage_9_complete'] is False
+          assert r['system_10_complete'] is False
+          assert r['prospective_credit_allowed'] is False
+          assert r['economics_allowed'] is False
+          assert r['engine_feed'] is False
+          assert r['orders'] == 0
+          assert r['real_capital_brl'] == 0
+          PY
