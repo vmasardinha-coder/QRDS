@@ -1,0 +1,79 @@
+{
+  "schema": "qrds.factory.data_gap_revisitable.v1",
+  "generated_at_utc": "2026-08-29T09:20:00Z",
+  "purpose": "Central operational backlog for scientifically frozen families or tracks that were blocked by missing/unqualified data and may be re-evaluated only if an admissible official/free/auditable source becomes available. This file does not authorize retuning, backfill, threshold changes, family mutation, economics, promotion, or clock changes.",
+  "authority_boundary": {
+    "production_line_map": "tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json",
+    "runtime_authority": "gate-btc-runtime",
+    "revisitable_only_if": [
+      "original scientific contract remains frozen",
+      "new source is official/free/auditable or otherwise explicitly authorized",
+      "PIT/publication timing and causal availability pass",
+      "no silent proxy substitution",
+      "no synthetic or prospective backfill"
+    ]
+  },
+  "mortality_classes": {
+    "SCIENTIFIC_REJECTION": "PERMANENT_NOT_REVISITABLE",
+    "LEGITIMATE_NO_TRADES": "PERMANENT_UNDER_FROZEN_CONTRACT",
+    "DATA_GAP": "REVISITABLE_ON_NEW_ADMISSIBLE_DATA",
+    "SOURCE_QA_FAIL": "REVISITABLE_ON_SOURCE_OR_PROVENANCE_REPAIR",
+    "OPERATIONAL_FAILURE": "MECHANICAL_REPAIR_ONLY"
+  },
+  "queue": [
+    {
+      "id": "B3_H2730_H2889_TICK_MICROSTRUCTURE",
+      "status": "DATA_GAP_REVISITABLE",
+      "blocking_reason": "Official free auditable historical per-trade/tick event history with frozen required fields and 2020-2024 coverage was not available through audited public B3 routes.",
+      "revisit_trigger": "Exact official historical raw event source becomes legally accessible and auditable without changing the frozen protocol.",
+      "references": ["#289", "#291", "#293"]
+    },
+    {
+      "id": "B3_H107_H109_WEEKLY_PRICE_DEPENDENCIES",
+      "status": "DATA_GAP_REVISITABLE",
+      "blocking_reason": "Exact causal weekly price/join contracts require qualified free/official/open historical series and publication semantics before economics.",
+      "revisit_trigger": "Required weekly source identities, coverage, roll construction and PIT timing become provable.",
+      "references": ["#198"]
+    },
+    {
+      "id": "B3_H90_H92_H97_H99_EXTERNAL_MACRO_DEPENDENCIES",
+      "status": "DATA_GAP_REVISITABLE",
+      "blocking_reason": "Families remained data/license/dependency blocked while data-ready siblings continued separately.",
+      "revisit_trigger": "Exact original dependency becomes available through admissible auditable history with frozen identity and causal timing.",
+      "references": ["#184", "#186", "#188"]
+    },
+    {
+      "id": "B3_H140_H149_PTAX_SUBFAMILIES",
+      "status": "CONDITIONAL_DATA_GAP_REVISITABLE",
+      "blocking_reason": "Any subfamily whose exact bulletin-level or timestamp semantics fail remains DATA_GAP while daily-close-ready subfamilies may continue.",
+      "revisit_trigger": "Exact BCB PTAX bulletin history/timestamp semantics and coverage pass the frozen causal contract.",
+      "references": ["#215"]
+    },
+    {
+      "id": "B3_H180_H189_TREASURY_REAL_YIELD_DEPENDENCIES",
+      "status": "CONDITIONAL_DATA_GAP_REVISITABLE",
+      "blocking_reason": "Dependent real-yield families remain DATA_GAP if exact official coverage is insufficient; admissible nominal families continue independently.",
+      "revisit_trigger": "Exact official real-yield coverage and causal publication semantics pass the preregistered contract.",
+      "references": ["#265"]
+    },
+    {
+      "id": "GATE_BTC_2_OFFICIAL_DATASET_SEAL",
+      "status": "DATA_BLOCKED_REVISITABLE",
+      "blocking_reason": "Official dataset seal/readiness and full causal evidence remain incomplete; challenger economics stay blocked.",
+      "revisit_trigger": "Missing datasets and temporal-causality requirements are satisfied with auditable official/free/open sources or an explicit user decision for unavoidable licensed data.",
+      "references": ["#111", "#264"]
+    }
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
