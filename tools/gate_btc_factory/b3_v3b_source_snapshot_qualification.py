@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "tools/gate_btc_factory/B3_V3B_SOURCE_QUALIFICATION_RUNTIME.json"
 START = "2020-01-01"
 END = "2024-12-31"
+START_DT = datetime.strptime(START, "%Y-%m-%d").date()
+END_DT = datetime.strptime(END, "%Y-%m-%d").date()
 
 SOURCES = {
     "BCB_PTAX_FX": {
@@ -48,19 +50,54 @@ def fetch(url: str) -> bytes:
         return r.read()
 
 
+def parse_date(value: str):
+    value = (value or "").strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
+    if len(value) >= 10:
+        try:
+            return datetime.strptime(value[:10], "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    return None
+
+
+def coverage_summary(dates: list) -> dict:
+    parsed = sorted(d for d in dates if d is not None)
+    if not parsed:
+        return {
+            "first_date": None,
+            "last_date": None,
+            "rows_in_required_window": 0,
+            "coverage_2020_2024": "FAIL_CLOSED_NO_PARSEABLE_DATES",
+        }
+    in_window = [d for d in parsed if START_DT <= d <= END_DT]
+    years = {d.year for d in in_window}
+    coverage_ok = 2020 in years and 2024 in years
+    return {
+        "first_date": parsed[0].isoformat(),
+        "last_date": parsed[-1].isoformat(),
+        "rows_in_required_window": len(in_window),
+        "coverage_2020_2024": "PASS" if coverage_ok else "FAIL_CLOSED_INCOMPLETE_WINDOW",
+    }
+
+
 def summarize_ptax(raw: bytes) -> dict:
     obj = json.loads(raw.decode("utf-8"))
     rows = obj.get("value", [])
-    dates = [str(r.get("dataHoraCotacao", ""))[:10] for r in rows if r.get("dataHoraCotacao")]
+    dates = [parse_date(str(r.get("dataHoraCotacao", ""))) for r in rows if r.get("dataHoraCotacao")]
     fields = sorted({k for r in rows for k in r.keys()})
-    return {"rows": len(rows), "first_date": min(dates) if dates else None, "last_date": max(dates) if dates else None, "fields": fields}
+    return {"rows": len(rows), "fields": fields, **coverage_summary(dates)}
 
 
 def summarize_sgs(raw: bytes) -> dict:
     rows = json.loads(raw.decode("utf-8"))
-    dates = [r.get("data") for r in rows if r.get("data")]
+    dates = [parse_date(str(r.get("data", ""))) for r in rows if r.get("data")]
     fields = sorted({k for r in rows for k in r.keys()})
-    return {"rows": len(rows), "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None, "fields": fields}
+    return {"rows": len(rows), "fields": fields, **coverage_summary(dates)}
 
 
 def summarize_tesouro(raw: bytes) -> dict:
@@ -68,14 +105,14 @@ def summarize_tesouro(raw: bytes) -> dict:
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
     rows = list(reader)
     fields = reader.fieldnames or []
-    date_field = next((f for f in fields if "Data Base" in f or "Data" == f), None)
-    dates = [r.get(date_field) for r in rows if date_field and r.get(date_field)]
-    return {"rows": len(rows), "first_date": min(dates) if dates else None, "last_date": max(dates) if dates else None, "fields": fields}
+    date_field = next((f for f in fields if "Data Base" in f or f == "Data"), None)
+    dates = [parse_date(str(r.get(date_field, ""))) for r in rows if date_field and r.get(date_field)]
+    return {"rows": len(rows), "fields": fields, "date_field": date_field, **coverage_summary(dates)}
 
 
 def main() -> int:
     report = {
-        "schema": "qrds.b3_autonomous_science.v3b.source_snapshot_qualification.v1",
+        "schema": "qrds.b3_autonomous_science.v3b.source_snapshot_qualification.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "window": {"start": START, "end": END},
         "stage": "SOURCE_QUALIFICATION_ONLY_NO_ECONOMICS",
@@ -113,7 +150,11 @@ def main() -> int:
             else:
                 row["snapshot"] = summarize_tesouro(raw)
             row["fetch_status"] = "PASS"
-            row["identity_history_status"] = "QUALIFIED_SNAPSHOT_IDENTITY_AND_COVERAGE"
+            if row["snapshot"].get("coverage_2020_2024") == "PASS":
+                row["identity_history_status"] = "QUALIFIED_SNAPSHOT_IDENTITY_AND_COVERAGE"
+            else:
+                row["identity_history_status"] = "FAIL_CLOSED_COVERAGE"
+                hard_fail = True
         except Exception as exc:
             row["fetch_status"] = "FAIL_CLOSED"
             row["identity_history_status"] = "UNQUALIFIED"
@@ -121,10 +162,11 @@ def main() -> int:
             hard_fail = True
         report["sources"][name] = row
 
-    # Stage B stays fail-closed until every selected source has causal publication/revision semantics proven.
     report["unresolved_gates"] = [
         name for name, row in report["sources"].items()
-        if row.get("fetch_status") != "PASS" or row.get("publication_timing_status") == "UNRESOLVED"
+        if row.get("fetch_status") != "PASS"
+        or row.get("identity_history_status") != "QUALIFIED_SNAPSHOT_IDENTITY_AND_COVERAGE"
+        or row.get("publication_timing_status") == "UNRESOLVED"
     ]
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"hard_fail": hard_fail, "unresolved_gates": report["unresolved_gates"]}, sort_keys=True))
