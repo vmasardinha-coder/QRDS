@@ -8,6 +8,7 @@ on:
       - 'tools/gate_btc_factory/universal_watchdog.py'
       - 'tools/gate_btc_factory/survivor_health.py'
       - 'tools/gate_btc_factory/self_audit.py'
+      - 'tools/gate_btc_factory/plan_factory_transitions.py'
       - 'tools/gate_btc_factory/continuation_guard.py'
       - 'tools/gate_btc_factory/autonomous_family_generator.py'
       - 'tools/gate_btc_factory/autonomous_family_evaluator.py'
@@ -19,6 +20,7 @@ on:
       - '.github/workflows/gate-btc-b3-autonomous-science-loop.yml'
       - '.github/workflows/gate-btc-factory-autonomy-validation.yml'
       - 'tests/test_gate_btc_factory_autonomy.py'
+      - 'tests/test_factory_runtime_frontier_progression.py'
       - 'tests/test_gate_btc_factory_continuation_guard.py'
       - 'tests/test_gate_btc_b3_autonomous_science_v2.py'
   workflow_dispatch:
@@ -42,9 +44,9 @@ jobs:
           python-version: '3.12'
       - run: pip install pytest
       - name: Compile autonomy modules
-        run: python -m py_compile tools/gate_btc_factory/state_master_refresh.py tools/gate_btc_factory/universal_watchdog.py tools/gate_btc_factory/survivor_health.py tools/gate_btc_factory/self_audit.py tools/gate_btc_factory/continuation_guard.py tools/gate_btc_factory/autonomous_family_generator.py
+        run: python -m py_compile tools/gate_btc_factory/state_master_refresh.py tools/gate_btc_factory/universal_watchdog.py tools/gate_btc_factory/survivor_health.py tools/gate_btc_factory/self_audit.py tools/gate_btc_factory/plan_factory_transitions.py tools/gate_btc_factory/continuation_guard.py tools/gate_btc_factory/autonomous_family_generator.py
       - name: Run autonomy regression tests
-        run: pytest -q tests/test_gate_btc_factory_autonomy.py tests/test_gate_btc_factory_continuation_guard.py tests/test_gate_btc_b3_autonomous_science_v2.py
+        run: pytest -q tests/test_gate_btc_factory_autonomy.py tests/test_factory_runtime_frontier_progression.py tests/test_gate_btc_factory_continuation_guard.py tests/test_gate_btc_b3_autonomous_science_v2.py
       - name: Assert safety markers in supervisor and continuation
         run: |
           grep -q "NO_RETUNE" .github/workflows/gate-btc-b3-nextgen-progression.yml
