@@ -56,17 +56,16 @@ jobs:
           assert d['h2890_plus_authorized'] is False
           assert d['mt5_role']=='INDEPENDENT_SECONDARY_SOURCE_CROSS_VALIDATION_ONLY'
           unresolved=d.get('unresolved_gates', [])
-          hard_fail=bool(d.get('hard_fail'))
-          assert hard_fail == bool(unresolved), (hard_fail, unresolved)
+          scientific_blocked=bool(unresolved)
           s=d['safety']
           assert s['research_only'] and s['shadow_only'] and s['not_approved']
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
           assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
           assert s['h1_economics_read'] is False
           print('B3_V3B_SOURCE_QUALIFICATION_SAFETY=PASS')
-          print('B3_V3B_SCIENTIFIC_GATE=' + ('BLOCKED_FAIL_CLOSED' if hard_fail else 'SOURCE_GATE_PASS'))
+          print('B3_V3B_SCIENTIFIC_GATE=' + ('BLOCKED_FAIL_CLOSED' if scientific_blocked else 'SOURCE_GATE_PASS'))
           PY
-      - name: Assert qualifier process semantics match source gate
+      - name: Assert qualifier process semantics match execution status
         env:
           QUALIFIER_OUTCOME: ${{ steps.qualify_sources.outcome }}
         run: |
