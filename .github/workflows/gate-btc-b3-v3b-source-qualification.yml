@@ -1,0 +1,68 @@
+name: GATE BTC B3 v3b Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/b3_v3b_source_snapshot_qualification.py'
+      - 'research/b3_h_autonomous_science_v3b_source_candidates.json'
+      - '.github/workflows/gate-btc-b3-v3b-source-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable safety boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_factory/b3_v3b_source_snapshot_qualification.py
+      - name: Fetch and hash official snapshots fail-closed
+        run: python tools/gate_btc_factory/b3_v3b_source_snapshot_qualification.py
+      - name: Assert Stage B remains unauthorized
+        run: |
+          python - <<'PY'
+          import json
+          p='tools/gate_btc_factory/B3_V3B_SOURCE_QUALIFICATION_RUNTIME.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['stage']=='SOURCE_QUALIFICATION_ONLY_NO_ECONOMICS'
+          assert d['stage_b_authorized'] is False
+          assert d['economics_authorized'] is False
+          assert d['family_ids_authorized'] is False
+          assert d['h2890_plus_authorized'] is False
+          assert d['mt5_role']=='INDEPENDENT_SECONDARY_SOURCE_CROSS_VALIDATION_ONLY'
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          assert s['h1_economics_read'] is False
+          print('B3_V3B_SOURCE_QUALIFICATION_SAFETY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-b3-v3b-source-qualification-${{ github.run_id }}
+          path: tools/gate_btc_factory/B3_V3B_SOURCE_QUALIFICATION_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
