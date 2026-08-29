@@ -29,10 +29,9 @@ jobs:
       - name: Prove zero-credit no-engine baseline
         run: |
           python - <<'PY'
-          from tools.gate_btc_2_stage9_admission_ledger import empty_ledger
           from tools.gate_btc_2_system10_event_envelope import build_event_envelope
           from tools.gate_btc_2_system10_readiness_record import build_readiness_record, verify_readiness_record
-          r = build_readiness_record(build_event_envelope(empty_ledger()))
+          r = build_readiness_record(build_event_envelope([]))
           verify_readiness_record(r)
           assert r['event_count'] == 0
           assert r['readiness_scope'] == 'PLUMBING_ONLY_NO_ENGINE_PROOF'
