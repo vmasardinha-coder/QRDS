@@ -1,0 +1,43 @@
+name: GATE BTC 2 System 10 Adapter Contract
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_system10_event_envelope.py'
+      - 'tools/gate_btc_2_system10_adapter_contract.py'
+      - 'tests/test_gate_btc_2_system10_adapter_contract.py'
+      - '.github/workflows/gate-btc-2-system10-adapter-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile tools/gate_btc_2_system10_event_envelope.py tools/gate_btc_2_system10_adapter_contract.py
+      - name: Run fail-closed adapter contract tests
+        run: python -m unittest tests.test_gate_btc_2_system10_adapter_contract -v
+      - name: Prove Nautilus shadow identity does not execute engine
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_system10_event_envelope import build_event_envelope
+          from tools.gate_btc_2_system10_adapter_contract import project_adapter_events, verify_adapter_contract
+          envelope = build_event_envelope([])
+          contract = project_adapter_events(envelope, 'NAUTILUS_SHADOW_ADAPTER')
+          verify_adapter_contract(contract)
+          assert contract['event_count'] == 0
+          assert contract['engine_execution'] is False
+          assert contract['nautilus_execution_enabled'] is False
+          assert contract['stage_9_complete'] is False
+          assert contract['system_10_complete'] is False
+          assert contract['economics_allowed'] is False
+          assert contract['engine_feed'] is False
+          assert contract['orders'] == 0
+          assert contract['real_capital_brl'] == 0
+          PY
