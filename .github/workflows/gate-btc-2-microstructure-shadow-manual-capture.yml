@@ -42,7 +42,7 @@ jobs:
           tests/test_gate_btc_2_microstructure_shadow_capture.py
       - name: Capture one forward-only public snapshot or defer safely
         run: >-
-          python tools/gate_btc_2_microstructure_shadow_capture.py
+          python -m tools.gate_btc_2_microstructure_shadow_capture
           --repository "${GITHUB_REPOSITORY}"
           --run-id "${GITHUB_RUN_ID}"
           --output-dir artifacts/gate_btc_2/microstructure_shadow/${GITHUB_RUN_ID}
