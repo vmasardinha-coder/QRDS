@@ -1,0 +1,197 @@
+{
+  "schema": "qrds.factory.mt5_mortality_audit.v1",
+  "generated_at_utc": "2026-08-29T14:52:00Z",
+  "scope": "Operational/source mortality audit only. No scientific contract, family, threshold, direction, cost, hold, cutoff, D0, PIT rule, ledger, economics, prospective counter or clock is changed.",
+  "authorities": {
+    "production_line_map": "tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json",
+    "runtime_branch": "gate-btc-runtime",
+    "data_gap_backlog": "tools/gate_btc_factory/DATA_GAP_REVISITABLE.v1.json",
+    "audit_issue": "#304"
+  },
+  "mt5_evidence": {
+    "repository": "vmasardinha-coder/QRDS-MT5-Bridge",
+    "workflow_run": 33258114011,
+    "artifact_id": 9716458768,
+    "artifact_digest": "sha256:b9609c278b757a734d199acd717e554434886d4f206ce86d4fe061d173f6e01c",
+    "taxonomy_pr": 7,
+    "taxonomy_pr_state_at_audit": "OPEN_NOT_MERGED",
+    "runner_result": "SUCCESS",
+    "connection": "PASS",
+    "history_identity_probe": {
+      "semantic_btc_count": 11,
+      "semantic_eth_count": 11,
+      "btcusd_m1_h1_recent_probe": "AVAILABLE",
+      "ethusd_m1_h1_recent_probe": "AVAILABLE"
+    },
+    "inventory": {
+      "terminal_symbol_count": 538,
+      "crypto_related": 54,
+      "equities": 355,
+      "fx": 87,
+      "indices": 17,
+      "etf": 14,
+      "us500_present": true,
+      "usindex_present": true,
+      "usdbrl_present": true,
+      "win_present": false,
+      "wdo_present": false,
+      "di1_present": false,
+      "exact_wti_futures_present": false,
+      "exact_treasury_futures_or_yield_series_present": false
+    },
+    "stages_3_6": {
+      "quality_A": 24,
+      "quality_B": 497,
+      "quality_C": 17,
+      "usable_symbol_count": 538,
+      "research_feed_record_count": 500,
+      "stage6_readiness": "READY_SHADOW_DATA_ONLY"
+    },
+    "legacy_qualification_conflict": {
+      "fitness": "FAIL",
+      "secondary_source_eligible": false,
+      "reason": "The older source-qualification selector reports BTC/ETH NOT_AVAILABLE even though the newer identity probe finds semantic BTC/ETH instruments and recent M1/H1 history. Treat the new taxonomy/stage pipeline as shadow diagnostic evidence only until the taxonomy PR is merged and qualification semantics are reconciled."
+    },
+    "allowed_use_now": [
+      "SHADOW_DATA_DIAGNOSTICS",
+      "INSTRUMENT_IDENTITY_DIAGNOSTICS",
+      "TIMESTAMP_CALENDAR_QA",
+      "RECENT_HISTORY_GAP_DIAGNOSTICS",
+      "OHLC_SANITY_CROSSCHECK",
+      "PRIMARY_SOURCE_SEARCH_SUPPORT"
+    ],
+    "not_authorized_now": [
+      "PRIMARY_TRUTH",
+      "REPLACE_PREREGISTERED_OFFICIAL_SOURCE",
+      "HISTORICAL_BACKFILL_AS_PROSPECTIVE",
+      "COUNTER_REWRITE",
+      "SCIENTIFIC_REJECTION_REVERSAL",
+      "RETUNE"
+    ]
+  },
+  "m1_m2_audit": {
+    "runtime_state": "ACTIVE_PROSPECTIVE_SHADOW",
+    "runtime_data_as_of": "2026-08-28",
+    "observed_snapshots": 4,
+    "current_collection_health": "HEALTHY_CURRENT_FORWARD_COLLECTION",
+    "pr_262": "DRAFT_DO_NOT_MERGE_AS_IS",
+    "historical_2026_08_26_classification": [
+      "OPERATIONAL_IDENTITY_DEFECT_PROVEN",
+      "HISTORICAL_SOURCE_REVISION_DRIFT_PROVEN",
+      "HISTORICAL_INPUT_MISMATCH_FAIL_CLOSED"
+    ],
+    "evidence": {
+      "persisted_universe_n": 93,
+      "reconstructed_universe_n": 92,
+      "persisted_only_example": "RUNE",
+      "revised_history_example": "2Z r14/r30",
+      "ledger_rewrite_allowed": false
+    },
+    "mt5_contribution": "Can cross-check mapped instrument timestamps/history and distinguish local plumbing from external-source drift, but cannot reproduce the exact original V2A universe/source bytes and cannot repair the 2026-08-26 anchor.",
+    "decision": "KEEP_PR_262_FAILED_DRAFT_EVIDENCE; KEEP_CURRENT_FORWARD_COLLECTOR_RUNNING; any reusable determinism fix must be isolated in a clean mechanical PR and applied forward-only."
+  },
+  "mortality_table": [
+    {
+      "candidate": "B3_H60_H69_PRESERVED_DATA_GAPS",
+      "original_state": "H61/H65/H67/H68/H69_DATA_GAP",
+      "mt5_evidence": "US500 exists as broker index/CFD reference, but the frozen H61 recovery contract requires an auditable public S&P 500 cash-index source; H67 requires official ex-ante calendars. MT5 does not satisfy either primary-source contract.",
+      "primary_source_status": "REQUIRED_SOURCE_NOT_SATISFIED_BY_MT5",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#147", "#151", "#157", "#159", "#161"]
+    },
+    {
+      "candidate": "B3_H80_H89_FUTURES_STRUCTURE",
+      "original_state": "DATA_GAP_2020_2021_B3_FUTURES_STRUCTURE_HISTORY",
+      "mt5_evidence": "Validated BTG/MT5 inventory contains no WIN, WDO or DI1 symbols, so it does not provide even secondary identity evidence for the frozen B3 futures-structure replication dependency.",
+      "primary_source_status": "OFFICIAL_B3_2020_2021_HISTORY_STILL_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#167", "#172", "#176", "#179"]
+    },
+    {
+      "candidate": "B3_H90_H92_H97_H99_CREDIT_DEPENDENCIES",
+      "original_state": "DATA_GAP_LICENSE_HISTORY_AND_DEPENDENCY_BLOCKED",
+      "mt5_evidence": "Broker market instruments cannot substitute ICE BofA HY/IG OAS historical series. DXY/USIndex-like instruments are different economic variables from the frozen credit-spread inputs.",
+      "primary_source_status": "EXACT_ICE_BOFA_HISTORY_STILL_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#180", "#182", "#184", "#188"]
+    },
+    {
+      "candidate": "B3_H107_H109_WEEKLY_PRICE_DEPENDENCIES",
+      "original_state": "H107_DATA_GAP_WEEKLY_PRICE_CAUSAL_JOIN; H109_DATA_GAP_ROLL_IDENTITY",
+      "mt5_evidence": "US500 and USIndex references exist, but the exact CFTC-market futures histories are not proven and WIN is absent. Cash/CFD proxies would change the frozen contract; H109 roll-safe WIN construction remains unresolved.",
+      "primary_source_status": "EXACT_FUTURES_PRICE_HISTORY_AND_WIN_ROLL_IDENTITY_STILL_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#191", "#198"]
+    },
+    {
+      "candidate": "B3_H140_H149_PTAX_SUBFAMILIES",
+      "original_state": "CONDITIONAL_DATA_GAP_WHERE_BULLETIN_OR_TIMESTAMP_SEMANTICS_FAIL",
+      "mt5_evidence": "USDBRL is present and can be used for independent FX timestamp/OHLC sanity diagnostics. It is not PTAX and cannot substitute BCB bulletin data or publication semantics.",
+      "primary_source_status": "BCB_PTAX_PRIMARY_SOURCE_REMAINS_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED_FOR_AFFECTED_SUBFAMILIES",
+      "resume_under_original_contract": false,
+      "references": ["#215"]
+    },
+    {
+      "candidate": "B3_H180_H189_TREASURY_REAL_YIELD_DEPENDENCIES",
+      "original_state": "CONDITIONAL_DATA_GAP_IF_OFFICIAL_REAL_YIELD_COVERAGE_OR_CAUSAL_PUBLICATION_FAILS",
+      "mt5_evidence": "No exact Treasury yield series or required official nominal/real curve dataset exists in the MT5 inventory. Tradable rate proxies would be a methodology substitution.",
+      "primary_source_status": "US_TREASURY_OFFICIAL_YIELD_DATA_REMAINS_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED_FOR_AFFECTED_SUBFAMILIES",
+      "resume_under_original_contract": false,
+      "references": ["#265"]
+    },
+    {
+      "candidate": "B3_H2730_H2889_TICK_MICROSTRUCTURE",
+      "original_state": "SOURCE_DATA_GAP_NOT_AVAILABLE",
+      "mt5_evidence": "The frozen family requires official B3 historical per-trade event history across 2020-2024. MT5 is broker-secondary and the current inventory contains no WIN/WDO/DI1 B3 futures symbols; it cannot satisfy or proxy the contract.",
+      "primary_source_status": "OFFICIAL_B3_RAW_EVENT_HISTORY_STILL_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#289", "#291", "#293"]
+    },
+    {
+      "candidate": "GATE_BTC_2_OFFICIAL_DATASET_SEAL",
+      "original_state": "FACTORY_DATA_BLOCKED",
+      "mt5_evidence": "MT5 can support read-only diagnostics for overlapping market fields, but the Stage 9/source identities and official dataset seal are frozen. MT5 cannot silently replace a missing Stage 9 source role.",
+      "primary_source_status": "FROZEN_DATASET_SEAL_AND_SOURCE_ROLES_STILL_REQUIRED",
+      "current_classification": "DATA_GAP_STILL_BLOCKED_PRIMARY_SOURCE_REQUIRED",
+      "resume_under_original_contract": false,
+      "references": ["#111", "#264", "#303"]
+    }
+  ],
+  "scientific_rejection_audit": {
+    "reopen_scientific_rejections": false,
+    "reopen_legitimate_no_trades": false,
+    "finding": "No scientifically rejected family or legitimate NO_TRADES family is reclassified by the MT5 evidence. The audit only changes confidence in source/operational diagnosis."
+  },
+  "material_findings": [
+    "Current M1/M2 forward collection is healthy; the failed draft PR is historical-replay evidence and should remain fail-closed rather than be forced green.",
+    "MT5 taxonomy/inventory is materially useful for diagnostics and future shadow research: 538 usable symbols and READY_SHADOW_DATA_ONLY.",
+    "No currently blocked frozen family can legitimately resume economics solely because of MT5. Every audited DATA_GAP still requires its original exact primary source or an explicitly preregistered materially distinct new family.",
+    "The canonical DATA_GAP backlog omitted preserved H60-H69 and H80-H89 mortality blocks; they should be added so they are not forgotten.",
+    "The MT5 bridge has an internal qualification inconsistency: the legacy qualifier says secondary_source_eligible=false while the newer taxonomy/history probe demonstrates valid instruments/history and Stage 6 shadow readiness. Reconcile this mechanically before calling MT5 a canonical secondary source."
+  ],
+  "next_actions": [
+    "Keep native M1/M2 recovery/collection workflows running; do not rerun or merge PR #262 merely to clear failure state.",
+    "Merge/reconcile MT5 taxonomy PR only through its own validated read-only bridge process; then publish a sanitized canonical bridge receipt into QRDS if authorized by existing bridge design.",
+    "Search for exact official/free/auditable sources for the still-blocked primary dependencies; MT5 is used only to guide identity/timestamp/gap diagnostics.",
+    "Maintain DATA_GAP versus rejection/NO_TRADES separation and auto-resume economics only after the original source contract passes without retune/backfill."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
