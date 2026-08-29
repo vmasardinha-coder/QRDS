@@ -14,24 +14,30 @@
     "BCB_PTAX_FX": {
       "provider": "Banco Central do Brasil",
       "access_class": "OFFICIAL_PUBLIC_FREE",
-      "exact_identifier": null,
-      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "exact_identifier": "PTAX-v1:CotacaoDolarPeriodo",
+      "official_endpoint": "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)",
+      "qualification_status": "EXACT_ID_FROZEN_SNAPSHOT_QA_PENDING",
+      "causal_policy": "REFERENCE_DATE_VALUE_USABLE_FROM_NEXT_B3_SESSION_ONLY",
       "required_observed_fields": ["observation_date", "published_value"],
       "required_proofs": ["official_endpoint", "exact_series_or_query_contract", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "timezone", "revision_policy"]
     },
     "BCB_INTEREST_MONETARY": {
       "provider": "Banco Central do Brasil",
       "access_class": "OFFICIAL_PUBLIC_FREE",
-      "exact_identifier": null,
-      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "exact_identifier": "SGS:1178",
+      "official_endpoint": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.1178/dados",
+      "qualification_status": "EXACT_ID_FROZEN_PUBLICATION_TIMING_PENDING",
+      "causal_policy": "NOT_AUTHORIZED_UNTIL_PUBLICATION_TIMING_PROVEN",
       "required_observed_fields": ["observation_date", "published_value"],
       "required_proofs": ["official_endpoint", "exact_series_identifier", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "revision_policy"]
     },
     "TESOURO_SOVEREIGN_CURVE": {
       "provider": "Tesouro Nacional",
       "access_class": "OFFICIAL_PUBLIC_FREE",
-      "exact_identifier": null,
-      "qualification_status": "SOURCE_UNQUALIFIED_EXACT_ID",
+      "exact_identifier": "CKAN:796d2059-14e9-44e3-80c9-2d9e30b405c1",
+      "official_endpoint": "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv",
+      "qualification_status": "EXACT_ID_FROZEN_PUBLICATION_REVISION_TIMING_PENDING",
+      "causal_policy": "NOT_AUTHORIZED_UNTIL_PUBLICATION_AND_REVISION_TIMING_PROVEN",
       "required_observed_fields": ["reference_date", "maturity_or_tenor", "published_rate"],
       "required_proofs": ["official_endpoint_or_file", "publication_timing", "2020_2024_coverage", "raw_hash", "schema", "revision_policy"]
     },
@@ -52,6 +58,7 @@
       "required_proofs": ["materially_distinct_mechanism", "official_source", "exact_identifier", "publication_timing", "historical_coverage", "raw_hash", "schema"]
     }
   },
+  "stage_b_authorized": false,
   "economics_authorized": false,
   "family_ids_authorized": false,
   "h2890_plus_authorized": false,
