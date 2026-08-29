@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -153,11 +155,29 @@ def run_capture(
 
     raw_dir = output_dir / "raw"
     receipt_sources = []
+    request_attempts = 0
     for role in contract["required_source_roles"]:
         spec = SPECS[role]
-        raw = fetcher(spec["url"], {"User-Agent": "GATE-BTC-2-stage9-forward-capture/1.0"})
-        if not raw or len(raw) > MAX_RESPONSE_BYTES:
-            raise RuntimeError(f"{role} response size outside admission boundary")
+        request_attempts += 1
+        try:
+            raw = fetcher(spec["url"], {"User-Agent": "GATE-BTC-2-stage9-forward-capture/1.0"})
+            if not raw or len(raw) > MAX_RESPONSE_BYTES:
+                raise RuntimeError(f"{role} response size outside admission boundary")
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError, RuntimeError) as exc:
+            if raw_dir.exists():
+                shutil.rmtree(raw_dir)
+            decision.update({
+                "status": "BLOCKED_SOURCE",
+                "market_network_requests": request_attempts,
+                "failed_source_role": role,
+                "failed_request_url": spec["url"],
+                "source_error_type": type(exc).__name__,
+                "source_error": str(exc),
+                "required_source_roles_captured": [],
+                "partial_raw_discarded": True,
+            })
+            atomic_write(decision_path, (json.dumps(decision, indent=2, sort_keys=True) + "\n").encode())
+            return decision
         captured = now()
         if captured.tzinfo is None:
             raise ValueError("capture clock must be timezone-aware")
