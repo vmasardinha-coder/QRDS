@@ -116,7 +116,12 @@ def main() -> int:
     # Reuse this already-scheduled redundancy workflow to assess Stage 9 source
     # eligibility. The nested result is advisory only: it cannot admit or
     # substitute a source and always carries zero prospective credit.
-    from tools.gate_btc_2_stage9_bybit_candidate_probe import run_probe as run_stage9_candidate_probe
+    try:
+        from tools.gate_btc_2_stage9_bybit_candidate_probe import run_probe as run_stage9_candidate_probe
+    except ModuleNotFoundError as exc:
+        if exc.name != "tools":
+            raise
+        from gate_btc_2_stage9_bybit_candidate_probe import run_probe as run_stage9_candidate_probe
 
     payload["stage9_candidate_qualification"] = run_stage9_candidate_probe()
     atomic_json(args.output, payload)
