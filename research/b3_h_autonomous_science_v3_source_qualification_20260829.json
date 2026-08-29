@@ -1,0 +1,85 @@
+{
+  "schema": "gate_btc.b3.autonomous_science_v3_source_qualification.v1",
+  "generated_at_utc": "2026-08-29T05:18:00Z",
+  "issue": 289,
+  "followup_issue": 293,
+  "protocol": "research/b3_h_autonomous_science_protocol_v3.md",
+  "source_contract": "research/b3_h_autonomous_science_v3_source_contract.json",
+  "classification": "NOT_AVAILABLE",
+  "economics_allowed": false,
+  "frontier": "H2730-H2889",
+  "reason": "SOURCE_DATA_GAP",
+  "required_primary_data": {
+    "provider": "B3",
+    "role": "PRIMARY_SCIENTIFIC_SOURCE",
+    "data_class": "OFFICIAL_TRADE_TICK_RAW",
+    "coverage_required": ["2020-01-01/2021-12-31", "2022-01-01/2024-12-31"],
+    "required_fields": ["instrument_or_contract_id", "event_timestamp", "trade_price", "trade_quantity"]
+  },
+  "audited_official_routes": [
+    {
+      "provider": "B3",
+      "resource": "Search by trading session / daily bulletins",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/boletins-diarios/pesquisa-por-pregao/pesquisa-por-pregao/",
+      "observed_capability": "Historical daily bulletins and files including PriceReport / simplified reports / instruments files",
+      "fit_for_v3_tick_contract": false,
+      "reason": "Daily/consolidated reports do not expose the required per-trade event history with event timestamp, price and quantity for the frozen 2020-2024 windows."
+    },
+    {
+      "provider": "B3",
+      "resource": "Historical quotations",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/cotacoes-historicas/",
+      "observed_capability": "Historical OHLC/summary quotation files",
+      "fit_for_v3_tick_contract": false,
+      "reason": "OHLC/summary history is not raw per-trade tick evidence and cannot define the frozen microstructure features."
+    },
+    {
+      "provider": "B3",
+      "resource": "UP2DATA FAQ / historical products",
+      "url": "https://www.b3.com.br/en_us/market-data-and-indices/data-services/up2data/helpdesk/",
+      "observed_capability": "Commercial standardized market/reference data; B3 states historical products not available on the public website are obtained through authorized distributors",
+      "fit_for_v3_tick_contract": false,
+      "reason": "The exact required historical raw event product is not established as a free public source."
+    },
+    {
+      "provider": "B3",
+      "resource": "UP2DATA",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/",
+      "observed_capability": "Contracted data service",
+      "fit_for_v3_tick_contract": false,
+      "reason": "Contracted/commercial access is outside the free-source autonomous path."
+    }
+  ],
+  "public_consolidated_trade_information_note": {
+    "status": "INSUFFICIENT_FOR_TICK_PROTOCOL",
+    "detail": "Public TradeInformationConsolidated-style products are daily consolidated trade summaries (prices/volume/contracts), not the per-event raw trade tape required by protocol v3."
+  },
+  "secondary_source": {
+    "provider": "MetaTrader5",
+    "role": "INDEPENDENT_SECONDARY_SOURCE",
+    "use": "CROSS_VALIDATION_ONLY",
+    "eligible_to_replace_primary": false,
+    "eligible_to_reconstruct_history": false,
+    "eligible_to_change_counters": false
+  },
+  "decision": {
+    "h2730_h2889_status": "FAIL_CLOSED_SOURCE_DATA_GAP",
+    "threshold_change_allowed": false,
+    "proxy_substitution_allowed": false,
+    "late_reconstruction_allowed": false,
+    "next_action": "PREREGISTER_MATERIALLY_DISTINCT_FREE_OFFICIAL_CROSS_MARKET_FRONTIER_UNDER_ISSUE_293"
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false
+  }
+}
