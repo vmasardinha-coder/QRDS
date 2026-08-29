@@ -17,6 +17,7 @@ on:
       - tools/gate_btc_bybit_redundancy_probe.py
       - tools/gate_btc_bybit_public_archive_probe.py
       - tools/gate_btc_2_stage9_hyperliquid_candidate_probe.py
+      - tools/gate_btc_2_stage9_bitget_candidate_probe.py
       - tools/gate_btc_binance_spot_recovery_probe.py
       - tools/gate_btc_binance_spot_history_probe.py
       - tools/gate_btc_binance_spot_equivalence_probe.py
@@ -25,6 +26,7 @@ on:
       - tests/test_gate_btc_bybit_redundancy_probe.py
       - tests/test_gate_btc_bybit_public_archive_probe.py
       - tests/test_gate_btc_2_stage9_hyperliquid_candidate_probe.py
+      - tests/test_gate_btc_2_stage9_bitget_candidate_probe.py
       - tests/test_gate_btc_binance_spot_recovery_probe.py
       - tests/test_gate_btc_binance_spot_history_probe.py
       - tests/test_gate_btc_binance_spot_equivalence_probe.py
@@ -60,6 +62,7 @@ jobs:
           tests/test_gate_btc_bybit_redundancy_probe.py
           tests/test_gate_btc_bybit_public_archive_probe.py
           tests/test_gate_btc_2_stage9_hyperliquid_candidate_probe.py
+          tests/test_gate_btc_2_stage9_bitget_candidate_probe.py
           tests/test_gate_btc_binance_spot_recovery_probe.py
           tests/test_gate_btc_binance_spot_history_probe.py
           tests/test_gate_btc_binance_spot_equivalence_probe.py
@@ -103,6 +106,11 @@ jobs:
         run: >-
           python tools/gate_btc_2_stage9_hyperliquid_candidate_probe.py
           --output artifacts/source_probes/hyperliquid_stage9_candidate.json
+
+      - name: Qualify Bitget public V2 for Stage 9 exact BTCUSDT roles
+        run: >-
+          python tools/gate_btc_2_stage9_bitget_candidate_probe.py
+          --output artifacts/source_probes/bitget_stage9_candidate.json
 
       - name: Resolve latest successful Daily Research artifact for this branch
         env:
@@ -185,6 +193,7 @@ jobs:
               Path("artifacts/source_probes/bybit_v5_linear_tickers.json"),
               Path("artifacts/source_probes/bybit_public_spot_archives.json"),
               Path("artifacts/source_probes/hyperliquid_stage9_candidate.json"),
+              Path("artifacts/source_probes/bitget_stage9_candidate.json"),
               Path("artifacts/source_probes/binance_spot_vs_cdd_equivalence.json"),
               Path("artifacts/source_probes/binance_spot_v2a_recovery_candidates.json"),
               Path("artifacts/source_probes/binance_spot_v2a_history_depth.json"),
