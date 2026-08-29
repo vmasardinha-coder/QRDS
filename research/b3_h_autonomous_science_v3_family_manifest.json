@@ -1,0 +1,86 @@
+{
+  "schema": "gate_btc.b3.autonomous_science_v3_family_manifest.v1",
+  "status": "PREREGISTERED_BEFORE_ANY_V3_ECONOMICS",
+  "issue": 289,
+  "protocol": "v3",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "first_family_number": 2730,
+  "last_family_number": 2889,
+  "family_count": 160,
+  "generation_size": 10,
+  "generation_count": 16,
+  "ordering": [
+    "feature",
+    "direction",
+    "decision_window_minutes",
+    "abs_z_threshold"
+  ],
+  "features": [
+    "EARLY_TRADE_COUNT_RATE",
+    "EARLY_MEDIAN_TRADE_SIZE",
+    "LARGE_TRADE_VOLUME_SHARE",
+    "INTERTRADE_DURATION_CV",
+    "PRICE_CHANGE_SIGN_IMBALANCE"
+  ],
+  "directions": [
+    "CONTINUATION",
+    "REVERSION"
+  ],
+  "decision_windows_minutes": [
+    15,
+    30,
+    60,
+    90
+  ],
+  "abs_z_thresholds": [
+    0.75,
+    1.0,
+    1.25,
+    1.5
+  ],
+  "standardization_lookback_sessions": 20,
+  "holding_horizons_minutes": [
+    30,
+    60,
+    120
+  ],
+  "identity_definition": "H = 2730 + cartesian_index(features,directions,decision_windows_minutes,abs_z_thresholds); identity=(protocol=v3,data_dimension=TICK_MICROSTRUCTURE,feature,direction,decision_window_minutes,abs_z_threshold,standardization_lookback_sessions=20)",
+  "first_identity": {
+    "family_id": "H2730",
+    "feature": "EARLY_TRADE_COUNT_RATE",
+    "direction": "CONTINUATION",
+    "decision_window_minutes": 15,
+    "abs_z_threshold": 0.75,
+    "standardization_lookback_sessions": 20
+  },
+  "last_identity": {
+    "family_id": "H2889",
+    "feature": "PRICE_CHANGE_SIGN_IMBALANCE",
+    "direction": "REVERSION",
+    "decision_window_minutes": 90,
+    "abs_z_threshold": 1.5,
+    "standardization_lookback_sessions": 20
+  },
+  "economics_start_allowed": false,
+  "economics_start_requires": [
+    "SOURCE_QUALIFICATION_PASS",
+    "SCHEMA_TIMEZONE_IDENTITY_PASS",
+    "FULL_160_IDENTITY_MATERIALIZATION_TEST_PASS",
+    "NO_DUPLICATE_V1_V2_IDENTITY_TEST_PASS",
+    "CAUSALITY_TEST_PASS",
+    "SAFETY_TEST_PASS"
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false
+  }
+}
