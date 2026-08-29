@@ -38,8 +38,11 @@ SOURCES = {
         "identifier": "CKAN:796d2059-14e9-44e3-80c9-2d9e30b405c1",
         "url": "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv",
         "format": "csv_tesouro",
-        "causal_policy": "NOT_AUTHORIZED_UNTIL_PUBLICATION_AND_REVISION_TIMING_PROVEN",
-        "publication_timing_status": "UNRESOLVED",
+        "causal_policy": "REFERENCE_DATE_VALUE_USABLE_FROM_SECOND_B3_SESSION_ONLY_UNTIL_REVISION_SEMANTICS_PROVEN",
+        "publication_timing_status": "OFFICIAL_NEXT_BUSINESS_DAY_DISCLOSURE_CONSERVATIVE_FULL_SESSION_LAG_FROZEN",
+        "revision_timing_status": "UNRESOLVED_CURRENT_SNAPSHOT_MAY_BE_REVISED",
+        "publication_evidence": "Tesouro Transparente metadata: periodicidade diaria; tempestividade = divulgacao no primeiro dia util apos o fechamento do mercado secundario",
+        "publication_evidence_url": "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/1a8eb2e3-4902-4a38-a1eb-6410f23d90de/download/Taxa.pdf",
     },
 }
 
@@ -112,7 +115,7 @@ def summarize_tesouro(raw: bytes) -> dict:
 
 def main() -> int:
     report = {
-        "schema": "qrds.b3_autonomous_science.v3b.source_snapshot_qualification.v2",
+        "schema": "qrds.b3_autonomous_science.v3b.source_snapshot_qualification.v3",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "window": {"start": START, "end": END},
         "stage": "SOURCE_QUALIFICATION_ONLY_NO_ECONOMICS",
@@ -167,6 +170,7 @@ def main() -> int:
         if row.get("fetch_status") != "PASS"
         or row.get("identity_history_status") != "QUALIFIED_SNAPSHOT_IDENTITY_AND_COVERAGE"
         or row.get("publication_timing_status") == "UNRESOLVED"
+        or str(row.get("revision_timing_status", "")).startswith("UNRESOLVED")
     ]
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"hard_fail": hard_fail, "unresolved_gates": report["unresolved_gates"]}, sort_keys=True))
