@@ -1,0 +1,24 @@
+name: "01 OPS — Workflow Surface Audit"
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'ops/workflow_operations_registry.json'
+      - 'tools/gate_btc_workflow_surface_audit.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit manual workflow surfaces
+        run: python tools/gate_btc_workflow_surface_audit.py
+      - name: Policy note
+        run: |
+          echo 'Human operators should use 00 VITOR — ACTION REQUIRED only.'
+          echo 'Historical red/yellow runs are evidence, not an instruction to rerun.'
