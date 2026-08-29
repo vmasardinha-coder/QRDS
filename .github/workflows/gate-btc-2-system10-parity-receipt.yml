@@ -1,0 +1,42 @@
+name: GATE BTC 2 System 10 Parity Receipt
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_system10_event_envelope.py'
+      - 'tools/gate_btc_2_system10_parity_receipt.py'
+      - 'tests/test_gate_btc_2_system10_parity_receipt.py'
+      - '.github/workflows/gate-btc-2-system10-parity-receipt.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  parity-receipt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile tools/gate_btc_2_system10_event_envelope.py tools/gate_btc_2_system10_parity_receipt.py
+      - name: Run fail-closed parity receipt tests
+        run: python -m unittest tests.test_gate_btc_2_system10_parity_receipt -v
+      - name: Prove zero-event baseline grants no execution or capital
+        run: |
+          python - <<'PY'
+          from tools.gate_btc_2_system10_event_envelope import build_event_envelope
+          from tools.gate_btc_2_system10_parity_receipt import build_parity_receipt, verify_parity_receipt
+          envelope = build_event_envelope([])
+          receipt = build_parity_receipt(envelope, 'REFERENCE', [])
+          verify_parity_receipt(receipt)
+          assert receipt['event_count'] == 0
+          assert receipt['nautilus_execution_enabled'] is False
+          assert receipt['stage_9_complete'] is False
+          assert receipt['system_10_complete'] is False
+          assert receipt['economics_allowed'] is False
+          assert receipt['engine_feed'] is False
+          assert receipt['orders'] == 0
+          assert receipt['real_capital_brl'] == 0
+          PY
