@@ -32,18 +32,12 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-29-grafico
 | MU | 4.99847 | $932.86 | $4,662.87 | 9.8% |
 | KLAC | 26.5226 | $175.54 | $4,655.77 | 9.8% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| LLY | VENDA | 3.79779 | $1,174.02 | $4,458.69 | rebalanceio |
-| PANW | VENDA | 1.13846 | $371.40 | $422.83 | rebalanceio |
-| GOOGL | COMPRA | 13.7166 | $346.76 | $4,756.42 | rebalanceio |
-| KLAC | COMPRA | 0.712278 | $175.63 | $125.10 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em GOOGL: 0.0% vs alvo 10.0%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (SPY):** momentum de +14.7% — so entram ativos acima disto
 - **Candidatos elegiveis:** 50
 - **Fontes usadas:** nasdaq: 101
@@ -66,21 +60,21 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-08-29-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $58,314.51 |
-| Retorno do dia | -1.44% |
-| Retorno desde inicio (2026-08-06) | +16.63% |
-| Benchmark BTC | +20.58% |
-| **Alfa vs BTC** | **-3.95%** |
+| NAV | $58,427.60 |
+| Retorno do dia | -1.24% |
+| Retorno desde inicio (2026-08-06) | +16.86% |
+| Benchmark BTC | +21.40% |
+| **Alfa vs BTC** | **-4.54%** |
 | Caixa | $2,930.57 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.373424 | $77,675.57 | $29,005.94 | 49.7% |
-| ENA | 57806.2 | $0.16 | $9,390.04 | 16.1% |
-| ZEC | 10.6877 | $807.99 | $8,635.59 | 14.8% |
-| SYN | 80373.1 | $0.10 | $8,352.37 | 14.3% |
+| BTC | 0.373424 | $78,201.01 | $29,202.15 | 50.0% |
+| ENA | 57806.2 | $0.16 | $9,265.18 | 15.9% |
+| ZEC | 10.6877 | $839.72 | $8,974.71 | 15.4% |
+| SYN | 80373.1 | $0.10 | $8,054.99 | 13.8% |
 
 _Sem movimentacoes hoje._
 
@@ -88,8 +82,8 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +12.8% — so entram ativos acima disto
-- **Candidatos elegiveis:** 11
+- **Obstaculo (BTC):** momentum de +13.6% — so entram ativos acima disto
+- **Candidatos elegiveis:** 10
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -97,14 +91,14 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (+2.2% <= +12.8%) |
+| ADA | nao bate o benchmark (+2.0% <= +13.6%) |
 | ALGO | liquidez baixa (0.9M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.0M < 1M) |
 | APE | liquidez baixa (0.1M < 1M) |
 | API3 | liquidez baixa (0.0M < 1M) |
-| _(+121 outros)_ | |
+| _(+122 outros)_ | |
 
 </details>
 
@@ -115,7 +109,7 @@ _Sem movimentacoes hoje._
 | NAV | R$ 49,958.86 |
 | Retorno do dia | +0.26% |
 | Retorno desde inicio (2026-08-06) | -0.08% |
-| Benchmark IBOV | -0.23% |
+| Benchmark IBOV | +0.07% |
 | Benchmark CDI | +0.78% |
 | **Alfa vs o maior (CDI)** | **-0.86%** |
 | Caixa | R$ 49.61 |
@@ -133,18 +127,12 @@ _Sem movimentacoes hoje._
 | UGPA3 | 181.058 | R$ 33.63 | R$ 6,088.99 | 12.2% |
 | VBBR3 | 177.936 | R$ 33.38 | R$ 5,939.52 | 11.9% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| ABEV3 | VENDA | 409.229 | R$ 15.17 | R$ 6,209.97 | rebalanceio |
-| VALE3 | VENDA | 4.60463 | R$ 78.50 | R$ 361.47 | rebalanceio |
-| BPAC11 | COMPRA | 116.583 | R$ 53.63 | R$ 6,252.74 | rebalanceio |
-| PRIO3 | COMPRA | 4.4405 | R$ 60.60 | R$ 269.10 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em BPAC11: 0.0% vs alvo 12.5%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.3% — so entram ativos acima disto
 - **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 49, nasdaq: 101
@@ -171,7 +159,7 @@ _Sem movimentacoes hoje._
 | NAV | R$ 50,794.68 |
 | Retorno do dia | +0.24% |
 | Retorno desde inicio (2026-08-06) | +1.59% |
-| Benchmark IBOV | -0.23% |
+| Benchmark IBOV | +0.07% |
 | Benchmark CDI | +0.78% |
 | **Alfa vs o maior (CDI)** | **+0.81%** |
 | Caixa | R$ 682.16 |
