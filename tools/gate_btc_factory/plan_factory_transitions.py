@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,8 +35,6 @@ def generation_matches(status: str) -> list[tuple[int, int, int]]:
 def build_next_generation(track: dict) -> dict | None:
     if track.get("classification") != "OPEN_DISCOVERY":
         return None
-    # The contract requires both fields to be explicitly cleared.  A CLOSED
-    # token alone is not enough while a specialist issue or PR is still open.
     if track.get("open_issue") is not None or track.get("open_pr") is not None:
         return None
     status = str(track.get("status", ""))
@@ -46,11 +45,14 @@ def build_next_generation(track: dict) -> dict | None:
     if end < 40:
         return None
     tail = status[pos:]
-    # The latest generation itself must be closed. Older CLOSED tokens cannot advance an open/preregistered generation.
     if "CLOSED" not in tail:
         return None
     if any(token in tail for token in ("PREREGISTERED", "OPEN_DISCOVERY", "DATA_QA", "IN_PROGRESS")):
         return None
+    return next_generation_action(start0, end)
+
+
+def next_generation_action(start0: int, end: int) -> dict:
     start = end + 1
     finish = start + 9
     marker = f"B3 H{start}-H{finish}"
@@ -71,12 +73,37 @@ def build_next_generation(track: dict) -> dict | None:
     }
 
 
-def approved_activations(tracks: dict) -> list[dict]:
+def build_next_generation_from_runtime(frontier: dict | None) -> dict | None:
+    if not frontier:
+        return None
+    status = str(frontier.get("status", ""))
+    survivors = frontier.get("survivors", [])
+    if survivors:
+        return None
+    if not status.startswith("CLOSED_NO_") or not status.endswith("_SURVIVOR"):
+        return None
+    generation = str(frontier.get("generation", ""))
+    match = re.fullmatch(r"H(\d+)-H(\d+)", generation)
+    if not match:
+        return None
+    start0, end = int(match.group(1)), int(match.group(2))
+    expected = end + 1
+    if frontier.get("next_generation_start") != expected:
+        return None
+    return next_generation_action(start0, end)
+
+
+def approved_activations(tracks: dict, activations: dict | None = None) -> list[dict]:
+    active = (activations or {}).get("activations", {})
     actions = []
     for name, track in sorted(tracks.items()):
         status = str(track.get("status", ""))
         if not status.startswith(APPROVAL_PREFIXES):
             continue
+        if isinstance(active, dict) and name in active:
+            state = active.get(name, {}).get("state") if isinstance(active.get(name), dict) else None
+            if state == "ACTIVE_PROSPECTIVE_SHADOW":
+                continue
         actions.append({
             "action": "ACTIVATE_APPROVED_PROSPECTIVE_SHADOW",
             "track": name,
@@ -99,6 +126,25 @@ def load_json(path: Path) -> dict:
         raise SystemExit(f"FAIL invalid JSON {path.relative_to(ROOT)}: {exc}") from exc
     if not isinstance(value, dict):
         raise SystemExit(f"FAIL expected JSON object: {path.relative_to(ROOT)}")
+    return value
+
+
+def load_runtime_json(path: str) -> dict | None:
+    try:
+        raw = subprocess.check_output(
+            ["git", "show", f"origin/gate-btc-runtime:{path}"],
+            cwd=ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    try:
+        value = json.loads(raw)
+    except Exception as exc:
+        raise SystemExit(f"FAIL invalid runtime authority {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit(f"FAIL expected runtime object: {path}")
     return value
 
 
@@ -130,20 +176,13 @@ def parse_utc(value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def validate_runtime_binding(
-    src: dict,
-    runtime: dict,
-    source_hash: str | None = None,
-    *,
-    now: datetime | None = None,
-) -> str:
+def validate_runtime_binding(src: dict, runtime: dict, source_hash: str | None = None, *, now: datetime | None = None) -> str:
     if runtime.get("global_safety") != EXPECTED_RUNTIME_SAFETY:
         raise SystemExit("FAIL factory runtime safety mismatch")
     if runtime.get("source_generated_at") != src.get("generated_at_utc"):
         raise SystemExit("FAIL factory runtime is not bound to the current canonical source timestamp")
     if source_hash is not None and runtime.get("source_hash") != source_hash:
         raise SystemExit("FAIL factory runtime is not bound to the current canonical source hash")
-
     freshness_block = runtime.get("source_freshness", {})
     if freshness_block.get("freshness_limit_minutes") != FRESH_MINUTES:
         raise SystemExit("FAIL factory runtime freshness limit mismatch")
@@ -160,54 +199,37 @@ def validate_runtime_binding(
     age_minutes = max(0.0, age_minutes)
     expected = "FRESH" if age_minutes <= FRESH_MINUTES else "STALE_READ_ONLY"
     if freshness != expected:
-        raise SystemExit(
-            f"FAIL factory runtime freshness does not match canonical source age: runtime={freshness} expected={expected}"
-        )
+        raise SystemExit(f"FAIL factory runtime freshness does not match canonical source age: runtime={freshness} expected={expected}")
     return freshness
 
 
-def build_plan(
-    src: dict,
-    runtime: dict,
-    *,
-    source_hash: str | None = None,
-    now: datetime | None = None,
-) -> dict:
+def build_plan(src: dict, runtime: dict, *, source_hash: str | None = None, now: datetime | None = None, frontier: dict | None = None, activations: dict | None = None) -> dict:
     validate_source_safety(src)
     freshness = validate_runtime_binding(src, runtime, source_hash, now=now)
     transitions_allowed = freshness == "FRESH"
-
     tracks = src.get("tracks", {})
     actions: list[dict] = []
     if transitions_allowed:
-        nxt = build_next_generation(tracks.get("B3_H40_PLUS", {}))
+        nxt = build_next_generation_from_runtime(frontier)
+        if nxt is None:
+            nxt = build_next_generation(tracks.get("B3_H40_PLUS", {}))
         if nxt:
             actions.append(nxt)
-        actions.extend(approved_activations(tracks))
-
-    blocked_eligible = [
-        name for name, track in tracks.items()
-        if str(track.get("status", "")).startswith("ELIGIBLE_")
-    ]
-
+        actions.extend(approved_activations(tracks, activations))
+    blocked_eligible = [name for name, track in tracks.items() if str(track.get("status", "")).startswith("ELIGIBLE_")]
     return {
-        "schema": "qrds.factory.transitions.v1",
+        "schema": "qrds.factory.transitions.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "source_generated_at_utc": src.get("generated_at_utc"),
         "source_hash": runtime.get("source_hash"),
         "source_freshness": freshness,
+        "runtime_frontier_authority": frontier is not None,
+        "prospective_registry_authority": activations is not None,
         "transitions_allowed": transitions_allowed,
         "blocked_reason": None if transitions_allowed else "STALE_SOURCE_READ_ONLY_NO_TRANSITIONS",
         "actions": actions,
         "eligible_not_activated": sorted(blocked_eligible),
-        "safety": {
-            "RESEARCH_ONLY": True,
-            "SHADOW_ONLY": True,
-            "ORDERS": 0,
-            "REAL_CAPITAL": 0,
-            "ENGINE_FEED": False,
-            "production_activation_allowed": False,
-        },
+        "safety": {"RESEARCH_ONLY": True, "SHADOW_ONLY": True, "ORDERS": 0, "REAL_CAPITAL": 0, "ENGINE_FEED": False, "production_activation_allowed": False},
     }
 
 
@@ -215,14 +237,11 @@ def main() -> int:
     src = load_json(SOURCE)
     runtime = load_json(RUNTIME_STATUS)
     source_hash = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
-    report = build_plan(src, runtime, source_hash=source_hash)
+    frontier = load_runtime_json("runtime/autonomous_science/CURRENT.json")
+    activations = load_runtime_json("runtime/factory_autonomy/PROSPECTIVE_ACTIVATIONS.json")
+    report = build_plan(src, runtime, source_hash=source_hash, frontier=frontier, activations=activations)
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({
-        "actions": len(report["actions"]),
-        "eligible_not_activated": report["eligible_not_activated"],
-        "source_freshness": report["source_freshness"],
-        "transitions_allowed": report["transitions_allowed"],
-    }, sort_keys=True))
+    print(json.dumps({"actions": len(report["actions"]), "eligible_not_activated": report["eligible_not_activated"], "source_freshness": report["source_freshness"], "transitions_allowed": report["transitions_allowed"]}, sort_keys=True))
     return 0
 
 
