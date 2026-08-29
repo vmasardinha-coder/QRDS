@@ -175,6 +175,7 @@ def main() -> int:
         or not row.get("revision_timing_status")
         or str(row.get("revision_timing_status", "")).startswith("UNRESOLVED")
     ]
+    report["hard_fail"] = hard_fail
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"hard_fail": hard_fail, "unresolved_gates": report["unresolved_gates"]}, sort_keys=True))
     return 1 if hard_fail else 0
