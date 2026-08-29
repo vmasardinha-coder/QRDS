@@ -113,6 +113,12 @@ def main() -> int:
     if os.environ.get("GATE_BTC_RESEARCH_ONLY", "true").strip().lower() not in {"1", "true", "yes", "on"}:
         raise RuntimeError("GATE_BTC_RESEARCH_ONLY must remain true")
     payload = run_probe()
+    # Reuse this already-scheduled redundancy workflow to assess Stage 9 source
+    # eligibility. The nested result is advisory only: it cannot admit or
+    # substitute a source and always carries zero prospective credit.
+    from tools.gate_btc_2_stage9_bybit_candidate_probe import run_probe as run_stage9_candidate_probe
+
+    payload["stage9_candidate_qualification"] = run_stage9_candidate_probe()
     atomic_json(args.output, payload)
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
