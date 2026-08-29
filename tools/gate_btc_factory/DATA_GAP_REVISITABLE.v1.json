@@ -1,10 +1,11 @@
 {
   "schema": "qrds.factory.data_gap_revisitable.v1",
-  "generated_at_utc": "2026-08-29T09:20:00Z",
+  "generated_at_utc": "2026-08-29T14:52:00Z",
   "purpose": "Central operational backlog for scientifically frozen families or tracks that were blocked by missing/unqualified data and may be re-evaluated only if an admissible official/free/auditable source becomes available. This file does not authorize retuning, backfill, threshold changes, family mutation, economics, promotion, or clock changes.",
   "authority_boundary": {
     "production_line_map": "tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json",
     "runtime_authority": "gate-btc-runtime",
+    "latest_mortality_audit": "tools/gate_btc_factory/MT5_MORTALITY_AUDIT_20260829.v1.json",
     "revisitable_only_if": [
       "original scientific contract remains frozen",
       "new source is official/free/auditable or otherwise explicitly authorized",
@@ -21,6 +22,20 @@
     "OPERATIONAL_FAILURE": "MECHANICAL_REPAIR_ONLY"
   },
   "queue": [
+    {
+      "id": "B3_H60_H69_PRESERVED_CROSS_MARKET_DATA_GAPS",
+      "status": "DATA_GAP_REVISITABLE",
+      "blocking_reason": "H61/H65/H68/H69 depend on an auditable US-equity source under the frozen contract; H67 requires reproducible official ex-ante calendar coverage. The generation closed without reinterpreting those gaps as rejection.",
+      "revisit_trigger": "Exact original source/calendar dependency becomes reproducibly available with provenance, causal timing and frozen identity semantics.",
+      "references": ["#147", "#151", "#157", "#159", "#161"]
+    },
+    {
+      "id": "B3_H80_H89_B3_FUTURES_STRUCTURE",
+      "status": "DATA_GAP_REVISITABLE",
+      "blocking_reason": "Official free auditable B3 futures-structure history required for the frozen 2020-2021 independent replication block was unavailable on validated public routes.",
+      "revisit_trigger": "Exact official/open auditable 2020-2021 B3 settlement/spread/OI/volume/contract history required by the affected frozen families becomes available.",
+      "references": ["#167", "#172", "#176", "#179"]
+    },
     {
       "id": "B3_H2730_H2889_TICK_MICROSTRUCTURE",
       "status": "DATA_GAP_REVISITABLE",
