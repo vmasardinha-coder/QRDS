@@ -1,0 +1,91 @@
+{
+  "schema": "gate_btc.b3.autonomous_science_v3_source_contract.v1",
+  "status": "PREREGISTERED_SOURCE_QUALIFICATION_REQUIRED",
+  "issue": 289,
+  "primary_source": {
+    "provider": "B3",
+    "role": "PRIMARY_SCIENTIFIC_SOURCE",
+    "data_class": "OFFICIAL_TRADE_TICK_RAW",
+    "required_fields": [
+      "instrument_or_contract_id",
+      "event_timestamp",
+      "trade_price",
+      "trade_quantity"
+    ],
+    "immutable_raw_id_required": true,
+    "sha256_required": true,
+    "schema_version_required": true,
+    "timezone_semantics_required": true,
+    "publication_availability_required": true,
+    "coverage_audit_required": true,
+    "missingness_audit_required": true,
+    "dedupe_audit_required": true,
+    "contract_identity_audit_required": true,
+    "causal_availability_audit_required": true,
+    "allowed_silent_proxy": false
+  },
+  "secondary_sources": [
+    {
+      "provider": "MetaTrader5",
+      "role": "INDEPENDENT_SECONDARY_SOURCE",
+      "use": "CROSS_VALIDATION_ONLY",
+      "primary_source": false,
+      "ledger_authority": false,
+      "prospective_clock_reconstruction": false,
+      "counter_authority": false
+    }
+  ],
+  "parser_contract": {
+    "event_order": "NONDECREASING_AFTER_DETERMINISTIC_DEDUPE",
+    "timestamp_normalization": "PRESERVE_RAW_AND_NORMALIZE_TO_UTC_WITH_DECLARED_SOURCE_TIMEZONE",
+    "price_domain": "FINITE_POSITIVE",
+    "quantity_domain": "FINITE_POSITIVE",
+    "duplicate_policy": "DETERMINISTIC_EXACT_EVENT_DEDUPE_ONLY_IF_OFFICIAL_SCHEMA_SUPPORTS_EVENT_IDENTITY; OTHERWISE FAIL_CLOSED_ON_AMBIGUITY",
+    "session_mapping": "B3_OFFICIAL_TRADING_CALENDAR_AND_FROZEN_FRONT_CONTRACT_MAPPING",
+    "forward_fill": false,
+    "interpolation": false,
+    "synthetic_backfill": false
+  },
+  "qualification_output_required": {
+    "provider": true,
+    "source_product_or_file": true,
+    "raw_id": true,
+    "raw_sha256": true,
+    "schema": true,
+    "timezone": true,
+    "coverage_start": true,
+    "coverage_end": true,
+    "missingness": true,
+    "duplicate_count": true,
+    "instrument_identity": true,
+    "causal_availability": true,
+    "classification": [
+      "PASS",
+      "CONDITIONAL",
+      "FAIL",
+      "NOT_AVAILABLE"
+    ]
+  },
+  "economics_allowed_before_qualification_pass": false,
+  "fail_closed_reasons": [
+    "SOURCE_DATA_GAP",
+    "SCHEMA_QA_FAIL",
+    "CONTRACT_IDENTITY_FAIL",
+    "TIMEZONE_SEMANTICS_FAIL",
+    "CAUSAL_AVAILABILITY_FAIL",
+    "COVERAGE_INSUFFICIENT"
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false
+  }
+}
