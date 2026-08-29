@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,6 +34,14 @@ class FakeFetch:
             rows = [row for row in self.runs if row["status"] == status]
             return json.dumps({"total_count": len(rows), "workflow_runs": rows}).encode()
         return (json.dumps(market_payload(url), separators=(",", ":")) + "\n").encode()
+
+
+class SourceBlockedFetch(FakeFetch):
+    def __call__(self, url, headers):
+        if "api.github.com" in url:
+            return super().__call__(url, headers)
+        self.urls.append(url)
+        raise urllib.error.HTTPError(url, 451, "Unavailable For Legal Reasons", {}, None)
 
 
 class MicrostructureShadowCaptureTests(unittest.TestCase):
@@ -68,6 +77,17 @@ class MicrostructureShadowCaptureTests(unittest.TestCase):
         self.assertEqual(decision["status"], "DEFER_NETWORK_CAPTURE_ACTIVE_SCHEDULE_OR_PROTECTED_WORKFLOW")
         self.assertEqual(decision["market_network_requests"], 0)
 
+    def test_source_http_error_is_recorded_fail_closed(self):
+        fetcher = SourceBlockedFetch()
+        decision, files = self.execute_capture(fetcher)
+        self.assertEqual(decision["status"], "BLOCKED_SOURCE")
+        self.assertEqual(decision["failed_source_role"], "FUNDING")
+        self.assertEqual(decision["market_network_requests"], 1)
+        self.assertEqual(decision["required_source_roles_captured"], [])
+        self.assertTrue(decision["partial_raw_discarded"])
+        self.assertFalse(decision["stage_9_complete"])
+        self.assertEqual(set(files), {"capture_decision.json"})
+
     def test_free_schedule_captures_exactly_four_frozen_sources(self):
         fetcher = FakeFetch()
         decision, files = self.execute_capture(fetcher)
@@ -95,7 +115,8 @@ class MicrostructureShadowCaptureTests(unittest.TestCase):
     def test_safety_boundary_is_exact_in_success_and_defer(self):
         success, _ = self.execute_capture(FakeFetch())
         deferred, _ = self.execute_capture(FakeFetch([{"id": 3, "name": "OTHER", "event": "schedule", "status": "queued"}]))
-        for row in (success, deferred):
+        blocked, _ = self.execute_capture(SourceBlockedFetch())
+        for row in (success, deferred, blocked):
             self.assertTrue(row["research_only"])
             self.assertTrue(row["shadow_only"])
             self.assertTrue(row["not_approved"])
