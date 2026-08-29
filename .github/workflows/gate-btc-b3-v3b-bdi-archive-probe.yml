@@ -1,0 +1,48 @@
+name: Gate BTC B3 v3b BDI Archive Probe
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/b3_v3b_bdi_archive_probe.py'
+      - '.github/workflows/gate-btc-b3-v3b-bdi-archive-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bdi-archive-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile probe
+        run: python -m py_compile tools/gate_btc_factory/b3_v3b_bdi_archive_probe.py
+      - name: Probe official B3 archive sentinels fail-closed
+        run: python tools/gate_btc_factory/b3_v3b_bdi_archive_probe.py
+      - name: Assert scientific boundary remains closed
+        run: |
+          python - <<'PY'
+          import json
+          p='tools/gate_btc_factory/B3_V3B_BDI_ARCHIVE_PROBE_RUNTIME.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['source_qualified'] is False
+          assert d['scientific_gate']=='BLOCKED_FAIL_CLOSED'
+          assert d['stage_b_authorized'] is False
+          assert d['economics_authorized'] is False
+          assert d['family_ids_authorized'] is False
+          assert d['h2890_plus_authorized'] is False
+          assert d['mt5_role']=='INDEPENDENT_SECONDARY_SOURCE_CROSS_VALIDATION_ONLY'
+          assert d['unresolved_gates']
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          assert s['h1_economics_read'] is False
+          print('B3_V3B_BDI_ARCHIVE_PROBE_SAFETY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-b3-v3b-bdi-archive-probe-${{ github.run_id }}
+          path: tools/gate_btc_factory/B3_V3B_BDI_ARCHIVE_PROBE_RUNTIME.json
