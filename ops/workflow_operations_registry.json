@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-29",
+  "policy": {
+    "default_class": "AUTOMATIC_ONLY",
+    "manual_dispatch_allowed_only_if_listed": true,
+    "historical_runs_are_not_actions": true,
+    "do_not_rerun_fail_closed_scientific_or_immutable_history_failures": true
+  },
+  "current_manual_actions": [
+    {
+      "id": "stage9_microstructure_capture",
+      "status": "ACTION_REQUIRED_AFTER_PR_301_GREEN_AND_MERGED",
+      "workflow": ".github/workflows/gate-btc-2-microstructure-shadow-manual-capture.yml",
+      "instruction": "Run exactly once after PR #301 is fully green and merged to main.",
+      "owner": "human",
+      "safe_to_repeat": false
+    }
+  ],
+  "protected_no_manual_action": [
+    {
+      "target": "PR #53 gate-btc-runtime",
+      "class": "RUNTIME_EVIDENCE_DRAFT",
+      "instruction": "Do not merge and do not manually dispatch from this PR merely because checks are yellow/red."
+    },
+    {
+      "target": "PR #262 Momentum deterministic mismatch",
+      "class": "FAIL_CLOSED_HISTORICAL_INPUT_MISMATCH",
+      "instruction": "Do not rerun to force green; do not rewrite ledger; merge remains blocked unless exact historical input is independently recovered."
+    },
+    {
+      "target": "PR #266 H180-H189 Treasury",
+      "class": "SUPERSEDED_BY_AUTONOMOUS_FRONTIER",
+      "instruction": "No manual dispatch; preserve historical preregistration evidence only."
+    },
+    {
+      "target": "PR #280 Factory mortality audit",
+      "class": "REPORTING_ONLY_NON_BLOCKING",
+      "instruction": "No manual dispatch required for scientific continuity."
+    },
+    {
+      "target": "PR #258 Momentum source clock",
+      "class": "SUPERSEDED_OPERATIONAL_REPAIR",
+      "instruction": "No manual dispatch."
+    }
+  ],
+  "manual_allowlist": [
+    ".github/workflows/gate-btc-2-microstructure-shadow-manual-capture.yml",
+    ".github/workflows/00-vitor-action-required.yml"
+  ],
+  "hard_boundaries": {
+    "research_only": true,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false,
+    "no_h1_partial_economics": true,
+    "no_prospective_partial_feedback": true
+  }
+}
