@@ -24,6 +24,7 @@ SOURCES = {
         "format": "json_ptax",
         "causal_policy": "REFERENCE_DATE_VALUE_USABLE_FROM_NEXT_B3_SESSION_ONLY",
         "publication_timing_status": "CONSERVATIVE_LAG_FROZEN",
+        "revision_timing_status": "UNRESOLVED_CURRENT_SNAPSHOT_MAY_BE_REVISED",
     },
     "BCB_SELIC_1178": {
         "provider": "Banco Central do Brasil",
@@ -32,6 +33,7 @@ SOURCES = {
         "format": "json_sgs",
         "causal_policy": "NOT_AUTHORIZED_UNTIL_PUBLICATION_TIMING_PROVEN",
         "publication_timing_status": "UNRESOLVED",
+        "revision_timing_status": "UNRESOLVED_CURRENT_SNAPSHOT_MAY_BE_REVISED",
     },
     "TESOURO_DIRETO_RATES": {
         "provider": "Tesouro Nacional",
@@ -170,6 +172,7 @@ def main() -> int:
         if row.get("fetch_status") != "PASS"
         or row.get("identity_history_status") != "QUALIFIED_SNAPSHOT_IDENTITY_AND_COVERAGE"
         or row.get("publication_timing_status") == "UNRESOLVED"
+        or not row.get("revision_timing_status")
         or str(row.get("revision_timing_status", "")).startswith("UNRESOLVED")
     ]
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
