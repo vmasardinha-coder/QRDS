@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import itertools
 import sys
 from pathlib import Path
 
@@ -67,3 +69,35 @@ def test_safety_boundary_unchanged() -> None:
         assert d["orders"] == 0
         assert d["real_capital"] == 0
         assert d["engine_feed"] is False
+
+
+def test_v3_preregistration_is_finite_distinct_and_not_executable_yet() -> None:
+    manifest = json.loads((ROOT / "research" / "b3_h_autonomous_science_v3_family_manifest.json").read_text(encoding="utf-8"))
+    source = json.loads((ROOT / "research" / "b3_h_autonomous_science_v3_source_contract.json").read_text(encoding="utf-8"))
+
+    rows = list(itertools.product(
+        manifest["features"],
+        manifest["directions"],
+        manifest["decision_windows_minutes"],
+        manifest["abs_z_thresholds"],
+    ))
+    assert len(rows) == 160
+    assert len(set(rows)) == 160
+    assert manifest["first_family_number"] == 2730
+    assert manifest["last_family_number"] == 2889
+    assert manifest["generation_count"] == 16
+    assert manifest["data_dimension"] == "TICK_MICROSTRUCTURE"
+    assert manifest["economics_start_allowed"] is False
+    assert source["primary_source"]["provider"] == "B3"
+    assert source["primary_source"]["role"] == "PRIMARY_SCIENTIFIC_SOURCE"
+    assert source["economics_allowed_before_qualification_pass"] is False
+    assert source["secondary_sources"][0]["provider"] == "MetaTrader5"
+    assert source["secondary_sources"][0]["use"] == "CROSS_VALIDATION_ONLY"
+    assert source["secondary_sources"][0]["primary_source"] is False
+
+    v2_features = {row[0] for row in expanded_universe()}
+    assert not (set(manifest["features"]) & v2_features)
+
+    # Preregistration alone must never authorize the current evaluator to run H2730.
+    with pytest.raises(RuntimeError, match="AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED"):
+        build_generation(2730)
