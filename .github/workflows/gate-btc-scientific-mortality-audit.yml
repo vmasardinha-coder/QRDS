@@ -1,0 +1,120 @@
+name: GATE BTC Scientific Mortality Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/scientific_mortality_audit.py'
+      - 'tests/test_gate_btc_scientific_mortality_audit.py'
+      - '.github/workflows/gate-btc-scientific-mortality-audit.yml'
+  schedule:
+    - cron: '7 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/scientific_mortality_audit.py'
+      - '.github/workflows/gate-btc-scientific-mortality-audit.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+
+concurrency:
+  group: gate-btc-scientific-mortality-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable research boundary
+        shell: bash
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+
+      - name: Compile and regression-test audit only
+        run: |
+          python -m py_compile source_repo/tools/gate_btc_factory/scientific_mortality_audit.py
+          python -m pip install -q pytest
+          cd source_repo
+          pytest -q tests/test_gate_btc_scientific_mortality_audit.py
+
+      - name: Audit complete autonomous science mortality
+        run: >-
+          python source_repo/tools/gate_btc_factory/scientific_mortality_audit.py
+          --results-dir runtime_repo/runtime/autonomous_science/results
+          --output SCIENTIFIC_MORTALITY_RUNTIME.json
+
+      - name: Assert audit cannot mutate science
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('SCIENTIFIC_MORTALITY_RUNTIME.json',encoding='utf-8'))
+          s=d['safety']
+          assert s['scientific_change_allowed'] is False
+          assert s['backfill_allowed'] is False
+          assert s['retune_allowed'] is False
+          assert s['counter_reset_allowed'] is False
+          assert s['engine_feed'] is False
+          assert s['orders'] == 0
+          assert s['real_capital'] == 0
+          print('SCIENTIFIC_MORTALITY_AUDIT_SAFETY=PASS')
+          PY
+
+      - name: Publish reporting-only runtime artifact
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy
+          cp SCIENTIFIC_MORTALITY_RUNTIME.json runtime_repo/runtime/factory_autonomy/SCIENTIFIC_MORTALITY_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/SCIENTIFIC_MORTALITY_RUNTIME.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Factory scientific mortality audit ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-scientific-mortality-${{ github.run_id }}
+          path: SCIENTIFIC_MORTALITY_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
