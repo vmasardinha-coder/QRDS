@@ -48,11 +48,25 @@
     "SEPARATE_PROSPECTIVE_IF_VALID_SURVIVOR",
     "REPORT"
   ],
+  "prospective_binding": {
+    "auto_bind_if_valid_survivor": true,
+    "mode": "SEPARATE_FORWARD_ONLY_SHADOW_LEDGER",
+    "pattern": "H31_STYLE_SEPARATE_PROSPECTIVE",
+    "backfill": false,
+    "historical_observations_credited": 0,
+    "start_clock": "FIRST_ELIGIBLE_OBSERVATION_AFTER_VALID_FREEZE",
+    "h1_dependency": "NONE_FOR_BINDING",
+    "h1_economics_read": false,
+    "h1_may_block_scientific_use": true,
+    "h1_may_not_block_shadow_observation_collection": true,
+    "promotion_from_prospective": "FORBIDDEN_WITHOUT_SEPARATE_VALID_GATE"
+  },
   "automation": {
     "source_repair_and_qualification": "AUTONOMOUS_WHEN_MECHANICAL_AND_ALREADY_AUTHORIZED",
     "scientific_rerun": "AUTONOMOUS_ONLY_AFTER_SOURCE_GATE_GREEN",
     "same_historical_window_rerun": "FORBIDDEN",
     "historical_family_mutation": "FORBIDDEN",
-    "survivor_promotion_by_repair": "FORBIDDEN"
+    "survivor_promotion_by_repair": "FORBIDDEN",
+    "valid_survivor_prospective_start": "AUTONOMOUS_FORWARD_ONLY"
   }
 }
