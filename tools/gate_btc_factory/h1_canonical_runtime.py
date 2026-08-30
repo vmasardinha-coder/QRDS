@@ -28,7 +28,6 @@ def build(anchor: dict, existing: dict|None, date: str, mode: str, reason: str, 
     anchor_date=str(a["last_candidate_date"])
     prior=existing or {}
     q=max(base_q,int(prior.get("qualified",base_q)))
-    if q < base_q: raise RuntimeError("canonical counter regression")
     events=list(prior.get("post_anchor_events",[]))
     by_date={str(e["date"]):e for e in events}
     counted=False
@@ -64,7 +63,8 @@ def build(anchor: dict, existing: dict|None, date: str, mode: str, reason: str, 
         "anchor_qualified":base_q,
         "anchor_last_qualified_session":anchor_date,
         "last_qualified_session":max([anchor_date]+[e["date"] for e in events if e.get("counted")]),
-        "economics_locked":q<20,
+        "economics_locked":True,
+        "economics_unlock_requires_integrity_green":True,
         "collector_should_continue":q<20,
         "checkpoint_trigger_reached":q==20,
         "post_anchor_events":events,
@@ -88,7 +88,8 @@ def main():
     ap.add_argument("--date",required=True)
     ap.add_argument("--run-id",required=True)
     ap.add_argument("--output",type=Path,required=True)
-    a=load(ap.parse_args().anchor); args=ap.parse_args()
+    args=ap.parse_args()
+    a=load(args.anchor)
     existing=load(args.existing) if args.existing and args.existing.exists() else None
     if args.mode=="qualified": reason="STRUCTURAL_PASS"
     else:
@@ -99,6 +100,6 @@ def main():
     args.output.write_text(json.dumps(out,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(f"H1_CANONICAL_COUNTER={out['qualified']}/20")
     print(f"H1_REMAINING={out['remaining']}")
-    print(f"ECONOMICS_LOCKED={str(out['economics_locked']).lower()}")
+    print("ECONOMICS_LOCKED=true")
 
 if __name__=="__main__": main()
