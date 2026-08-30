@@ -35,6 +35,11 @@ def load(path: Path) -> dict:
     return obj
 
 
+def _all_no_trades(row: dict) -> bool:
+    counts = row.get('class_counts') or {}
+    return bool(counts.get('NO_TRADES', 0) > 0 and set(counts) == {'NO_TRADES'})
+
+
 def audit(results_dir: Path) -> dict:
     files = sorted(results_dir.glob('gate_btc_b3_h*_h*_result.json'), key=lambda p: generation_start(p.name) or -1)
     reasons = Counter()
@@ -119,6 +124,15 @@ def audit(results_dir: Path) -> dict:
     infra = classes['INFRASTRUCTURE_OR_DATA']
     no_trades = classes['NO_TRADES']
     scientific = classes['SCIENTIFIC_REJECTION']
+    latest_20 = generation_rows[-20:]
+    recent_no_trades_streak = []
+    for row in reversed(generation_rows):
+        if not _all_no_trades(row):
+            break
+        recent_no_trades_streak.append(row['generation'])
+    recent_no_trades_streak.reverse()
+    latest_20_all_no_trades = bool(len(latest_20) == 20 and all(_all_no_trades(row) for row in latest_20))
+
     return {
         'schema': 'qrds.factory.scientific_mortality.v1',
         'generated_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
@@ -146,10 +160,15 @@ def audit(results_dir: Path) -> dict:
             'features': dict(features.most_common()),
             'directions': dict(directions.most_common()),
         },
-        'latest_20_generations': generation_rows[-20:],
+        'latest_20_generations': latest_20,
+        'recent_all_no_trades_streak': {
+            'generation_count': len(recent_no_trades_streak),
+            'generations': recent_no_trades_streak,
+        },
         'interpretation': {
             'infrastructure_bottleneck_flag': bool(judged and infra / judged >= 0.20),
             'no_trades_concentration_flag': bool(judged and no_trades / judged >= 0.50),
+            'latest_20_all_no_trades_flag': latest_20_all_no_trades,
             'post_h31_survivor_found': bool(post_h31),
         },
         'safety': {
