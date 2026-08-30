@@ -32,10 +32,11 @@ def test_existing_below_anchor_cannot_regress():
     assert o["qualified"]==8
 
 
-def test_20_freezes_collection_and_unlock_gate_only():
+def test_20_freezes_collection_but_keeps_economics_locked_until_integrity_green():
     existing={"qualified":19,"post_anchor_events":[]}
     o=h1.build(ANCHOR,existing,"2026-09-01","qualified","STRUCTURAL_PASS","4")
     assert o["qualified"]==20
-    assert o["economics_locked"] is False
+    assert o["economics_locked"] is True
+    assert o["economics_unlock_requires_integrity_green"] is True
     assert o["collector_should_continue"] is False
     assert o["checkpoint_trigger_reached"] is True
