@@ -154,6 +154,10 @@ def audit(results_dir: Path, root_cause: dict | None = None) -> dict:
         recent_no_trades_streak.append(row['generation'])
     recent_no_trades_streak.reverse()
     latest_20_all_no_trades = bool(len(latest_20) == 20 and all(_all_no_trades(row) for row in latest_20))
+    no_trades_concentration = bool(judged and no_trades / judged >= 0.50)
+    anomaly_detected = bool(latest_20_all_no_trades or no_trades_concentration)
+    override_applied = bool(overridden_cells)
+    root_cause_work_required = bool(anomaly_detected and not override_applied)
 
     return {
         'schema': 'qrds.factory.scientific_mortality.v2',
@@ -170,6 +174,10 @@ def audit(results_dir: Path, root_cause: dict | None = None) -> dict:
         'post_h31_survivors': sorted(set(post_h31)),
         'near_gate_families': near_gate[-100:],
         'near_gate_family_count': len(near_gate),
+        'anomaly_detected': anomaly_detected,
+        'root_cause_unresolved': root_cause_work_required,
+        'root_cause_work_required': root_cause_work_required,
+        'root_cause_rule': 'ANOMALY_DETECTED && ROOT_CAUSE_UNRESOLVED => ROOT_CAUSE_WORK_REQUIRED',
         'root_cause_override': {
             'classification': override_class,
             'affected_family_count': len(override_ids),
@@ -195,10 +203,10 @@ def audit(results_dir: Path, root_cause: dict | None = None) -> dict:
         },
         'interpretation': {
             'infrastructure_bottleneck_flag': bool(judged and infra / judged >= 0.20),
-            'no_trades_concentration_flag': bool(judged and no_trades / judged >= 0.50),
+            'no_trades_concentration_flag': no_trades_concentration,
             'latest_20_all_no_trades_flag': latest_20_all_no_trades,
             'post_h31_survivor_found': bool(post_h31),
-            'root_cause_override_applied': bool(overridden_cells),
+            'root_cause_override_applied': override_applied,
         },
         'safety': {
             'research_only': True,
@@ -230,6 +238,7 @@ def main() -> int:
         'survivors': report['survivors'],
         'post_h31_survivors': report['post_h31_survivors'],
         'mortality': report['mortality']['class_counts'],
+        'root_cause_work_required': report['root_cause_work_required'],
         'root_cause_override': report['root_cause_override'],
     }, sort_keys=True))
     return 0
