@@ -55,14 +55,26 @@ def _ordered_families(results_dir: Path) -> list[dict]:
 
 
 def locate_boundary(families: list[dict]) -> tuple[dict | None, dict | None]:
-    last_working = None
-    for fam in families:
-        if _family_trades(fam) > 0:
-            last_working = fam
-            continue
-        if last_working is not None and _all_no_trades(fam):
-            return last_working, fam
-    return last_working, None
+    """Locate the start of the terminal continuous NO_TRADES regime.
+
+    Earlier isolated NO_TRADES families are not a structural boundary if later
+    families materialize trades again. The relevant boundary is therefore the
+    last family with materialized trades followed by the terminal all-NO_TRADES
+    suffix. This keeps historical diagnosis aligned with the anomaly the
+    mortality auditor surfaced instead of latching onto an intermittent rarity.
+    """
+    if not families:
+        return None, None
+    working_indexes = [i for i, fam in enumerate(families) if _family_trades(fam) > 0]
+    if not working_indexes:
+        return None, families[0] if _all_no_trades(families[0]) else None
+    last_working_i = max(working_indexes)
+    working = families[last_working_i]
+    if last_working_i + 1 >= len(families):
+        return working, None
+    suffix = families[last_working_i + 1:]
+    failure = suffix[0] if suffix and all(_all_no_trades(fam) for fam in suffix) else None
+    return working, failure
 
 
 def _source_evidence(meta: dict | None, source_dates: list[str], discovery_count: int) -> dict:

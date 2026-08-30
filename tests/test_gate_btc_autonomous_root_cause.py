@@ -132,3 +132,32 @@ def test_source_gap_requires_audit_grade_identity(tmp_path):
     assert r['root_cause_classification'] == 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
     assert r['evidence']['fail_closed_reason'] == 'SOURCE_COVERAGE_IDENTITY_OR_RAW_HASH_NOT_PROVEN'
     assert r['root_cause_work_required'] is True
+
+
+def test_isolated_earlier_no_trades_does_not_steal_terminal_regime_boundary(tmp_path):
+    results = tmp_path / 'results'
+    results.mkdir()
+    _write_result(
+        results / 'gate_btc_b3_h1350_h1359_result.json',
+        'H1350-H1359',
+        [
+            _family('H1356', 60, 5, 'CLOSE_LOCATION'),
+            _family('H1357', 60, 0, 'CLOSE_LOCATION'),
+            _family('H1358', 60, 7, 'BODY_RANGE'),
+        ],
+    )
+    _write_result(
+        results / 'gate_btc_b3_h1960_h1969_result.json',
+        'H1960-H1969',
+        [_family('H1961', 120, 3, 'GAP_FROM_PRIOR_CLOSE')] +
+        [_family(f'H{i}', 160, 0) for i in range(1962, 1970)],
+    )
+    csv = tmp_path / 'source.csv'
+    _write_sessions(csv, count=130)
+
+    r = audit(results, csv, source_metadata=_source_meta())
+
+    assert r['boundary_last_known_working'] == 'H1961'
+    assert r['boundary_first_known_failure'] == 'H1962'
+    assert r['root_cause_classification'] == 'SOURCE_DATA_GAP'
+    assert r['root_cause_unresolved'] is False
