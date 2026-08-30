@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = ROOT / "tools/gate_btc_factory/FACTORY_TRANSITIONS_RUNTIME.json"
 ACTIVE = {"in_progress", "queued", "waiting", "requested", "pending"}
+GENERATION_RE = re.compile(r"^H(?P<start>\d+)-H(?P<end>\d+)$")
 
 
 @dataclass(frozen=True)
@@ -62,32 +64,103 @@ def load_plan() -> dict:
     return value
 
 
+def _parse_generation(value: object, *, field: str) -> tuple[str, int, int]:
+    text = str(value or "")
+    match = GENERATION_RE.fullmatch(text)
+    if not match:
+        raise ValueError(f"BAD_{field.upper()}:{text}")
+    start = int(match.group("start"))
+    end = int(match.group("end"))
+    if start <= 0 or end != start + 9:
+        raise ValueError(f"BAD_{field.upper()}_RANGE:{text}")
+    return text, start, end
+
+
+def parse_closed_null_frontier(frontier: dict) -> tuple[str, str]:
+    """Resolve the canonical append-only runtime schema without relaxing any gate.
+
+    The current runtime pointer uses generation_status/stage2_survivor_count/
+    next_generation. Legacy aliases remain read-only fallbacks so older sealed
+    pointers can still fail closed rather than being silently reinterpreted.
+    """
+    generation, _generation_start, generation_end = _parse_generation(
+        frontier.get("generation"), field="generation"
+    )
+
+    status = str(
+        frontier.get("generation_status")
+        or frontier.get("stage2_status")
+        or frontier.get("status")
+        or ""
+    )
+    closed_null = "CLOSED" in status and (
+        "SURVIVOR_NONE" in status or "NO_SURVIVOR" in status
+    )
+    if not closed_null:
+        raise ValueError(f"NO_CLOSED_NULL_FRONTIER:{generation}:{status}")
+
+    if "stage2_survivor_count" in frontier:
+        try:
+            survivor_count = int(frontier.get("stage2_survivor_count"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("BAD_STAGE2_SURVIVOR_COUNT") from exc
+        if survivor_count != 0:
+            raise ValueError(f"SURVIVOR_PRESENT:{generation}:{survivor_count}")
+    else:
+        survivors = frontier.get("survivors") or []
+        if not isinstance(survivors, list):
+            raise ValueError("BAD_LEGACY_SURVIVORS")
+        if survivors:
+            raise ValueError(f"SURVIVOR_PRESENT:{generation}:{len(survivors)}")
+
+    next_value = frontier.get("next_generation")
+    if next_value:
+        next_generation, next_start, _next_end = _parse_generation(
+            next_value, field="next_generation"
+        )
+    else:
+        try:
+            next_start = int(frontier.get("next_generation_start"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("BAD_NEXT_GENERATION_START") from exc
+        next_generation, next_start, _next_end = _parse_generation(
+            f"H{next_start}-H{next_start + 9}", field="next_generation"
+        )
+
+    if next_start != generation_end + 1:
+        raise ValueError(
+            f"NONCONTIGUOUS_FRONTIER:{generation}->{next_generation}"
+        )
+
+    if "next_generation_index" in frontier:
+        try:
+            next_index = int(frontier.get("next_generation_index"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("BAD_NEXT_GENERATION_INDEX") from exc
+        if next_index * 10 != next_start:
+            raise ValueError(
+                f"NEXT_GENERATION_INDEX_MISMATCH:{next_index}:{next_generation}"
+            )
+
+    next_status = str(frontier.get("next_generation_status") or "")
+    if next_status and next_status != "NEXT_FRONTIER_READY":
+        raise ValueError(f"NEXT_FRONTIER_NOT_READY:{next_status}")
+
+    return generation, next_generation
+
+
 def target_from_authorities() -> tuple[str, str] | None:
     frontier = load_runtime_frontier()
     if not frontier:
         print("NEXTGEN_PROGRESS=FAIL_CLOSED_NO_RUNTIME_FRONTIER")
         return None
 
-    generation = str(frontier.get("generation") or "")
-    status = str(frontier.get("status") or "")
-    survivors = frontier.get("survivors") or []
     try:
-        next_start = int(frontier.get("next_generation_start"))
-    except (TypeError, ValueError):
-        print("NEXTGEN_PROGRESS=FAIL_CLOSED_BAD_NEXT_GENERATION_START")
+        generation, next_generation = parse_closed_null_frontier(frontier)
+    except ValueError as exc:
+        print(f"NEXTGEN_PROGRESS=FAIL_CLOSED_RUNTIME_SCHEMA:{exc}")
         return None
 
-    if not generation or "CLOSED" not in status or "NO_" not in status or "SURVIVOR" not in status:
-        print(f"NEXTGEN_PROGRESS=NO_CLOSED_NULL_FRONTIER:{generation}:{status}")
-        return None
-    if survivors:
-        print(f"NEXTGEN_PROGRESS=FAIL_CLOSED_SURVIVOR_PRESENT:{generation}")
-        return None
-    if next_start <= 0:
-        print("NEXTGEN_PROGRESS=FAIL_CLOSED_NONPOSITIVE_NEXT_GENERATION_START")
-        return None
-
-    next_generation = f"H{next_start}-H{next_start + 9}"
     marker = f"B3 {next_generation}"
     plan = load_plan()
     actions = plan.get("actions", [])
