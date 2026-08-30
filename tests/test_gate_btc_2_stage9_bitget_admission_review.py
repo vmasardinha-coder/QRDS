@@ -24,7 +24,8 @@ class BitgetAdmissionReviewTests(unittest.TestCase):
             "research_only":True,"shadow_only":True,"not_approved":True,
             "engine_feed":False,"orders_generated":0,"real_capital_used":0,
             "no_retune":True,"no_backfill":True,"fail_closed":True,
-            "stage_9_complete":False,"economics_allowed":False,"promotion_allowed":False,
+            "stage_9_complete":False,"promotion_allowed":False,
+            "methodology_changes":0,"clock_changes":0,"economics_changes":0,
         }
         (root / "capture_decision.json").write_text(json.dumps(decision))
 
@@ -37,6 +38,7 @@ class BitgetAdmissionReviewTests(unittest.TestCase):
             self.assertTrue(admission["source_admitted_for_shadow_collection"])
             self.assertEqual(admission["prospective_observations_admitted"], 1)
             self.assertFalse(admission["stage_9_complete"])
+            self.assertFalse(admission["economics_allowed"])
             self.assertFalse(admission["engine_feed"])
             self.assertEqual(admission["orders_generated"], 0)
             self.assertEqual(admission["real_capital_used"], 0)
@@ -53,6 +55,15 @@ class BitgetAdmissionReviewTests(unittest.TestCase):
             p=Path(td); self._fixture(p)
             d=json.loads((p / "capture_decision.json").read_text())
             d["captured_at_utc"]="2026-08-30T01:00:00Z"
+            (p / "capture_decision.json").write_text(json.dumps(d))
+            with self.assertRaises(RuntimeError):
+                review_capture(p)
+
+    def test_economics_change_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td); self._fixture(p)
+            d=json.loads((p / "capture_decision.json").read_text())
+            d["economics_changes"]=1
             (p / "capture_decision.json").write_text(json.dumps(d))
             with self.assertRaises(RuntimeError):
                 review_capture(p)
