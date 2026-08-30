@@ -45,35 +45,56 @@ def _all_no_trades(fam: dict) -> bool:
 def _ordered_families(results_dir: Path) -> list[dict]:
     rows: list[dict] = []
     for path in results_dir.glob('gate_btc_b3_h*_h*_result.json'):
-        if not RESULT_RE.match(path.name):
+        match = RESULT_RE.match(path.name)
+        if not match:
             continue
         d = json.loads(path.read_text(encoding='utf-8'))
+        generation = str(d.get('generation') or f'H{match.group(1)}-H{match.group(2)}')
         for fam in d.get('families') or []:
             if isinstance(fam, dict) and str(fam.get('family_id', '')).startswith('H'):
-                rows.append(fam)
+                row = dict(fam)
+                row['_generation'] = generation
+                rows.append(row)
     return sorted(rows, key=lambda x: int(str(x['family_id'])[1:]))
 
 
 def locate_boundary(families: list[dict]) -> tuple[dict | None, dict | None]:
-    """Locate the start of the terminal continuous NO_TRADES regime.
+    """Locate the boundary of the sustained terminal all-NO_TRADES regime.
 
-    Earlier isolated NO_TRADES families are not a structural boundary if later
-    families materialize trades again. The relevant boundary is therefore the
-    last family with materialized trades followed by the terminal all-NO_TRADES
-    suffix. This keeps historical diagnosis aligned with the anomaly the
-    mortality auditor surfaced instead of latching onto an intermittent rarity.
+    The mortality anomaly is generation-level. An isolated NO_TRADES family inside an
+    otherwise trading generation must not hijack root-cause localization. We therefore
+    find the last generation containing any materialized trade and require every later
+    generation/family to be all-NO_TRADES before selecting the first family of that
+    terminal suffix as the failure boundary.
     """
-    if not families:
+    generations: list[tuple[str, list[dict]]] = []
+    for fam in families:
+        generation = str(fam.get('_generation') or '')
+        if not generations or generations[-1][0] != generation:
+            generations.append((generation, []))
+        generations[-1][1].append(fam)
+
+    last_trading_generation_idx = None
+    for idx, (_, fams) in enumerate(generations):
+        if any(_family_trades(fam) > 0 for fam in fams):
+            last_trading_generation_idx = idx
+
+    if last_trading_generation_idx is None:
         return None, None
-    working_indexes = [i for i, fam in enumerate(families) if _family_trades(fam) > 0]
-    if not working_indexes:
-        return None, families[0] if _all_no_trades(families[0]) else None
-    last_working_i = max(working_indexes)
-    working = families[last_working_i]
-    if last_working_i + 1 >= len(families):
+
+    working_generation = generations[last_trading_generation_idx][1]
+    working = next(
+        (fam for fam in reversed(working_generation) if _family_trades(fam) > 0),
+        None,
+    )
+
+    suffix = generations[last_trading_generation_idx + 1:]
+    if not suffix:
         return working, None
-    suffix = families[last_working_i + 1:]
-    failure = suffix[0] if suffix and all(_all_no_trades(fam) for fam in suffix) else None
+    if not all(fams and all(_all_no_trades(fam) for fam in fams) for _, fams in suffix):
+        return working, None
+
+    failure = suffix[0][1][0]
     return working, failure
 
 
@@ -117,6 +138,7 @@ def audit(results_dir: Path, csv_path: Path, source_metadata: dict | None = None
         'discovery_first_session': source_dates[0] if source_dates else None,
         'discovery_last_session': source_dates[-1] if source_dates else None,
         'source_evidence': source_evidence,
+        'boundary_policy': 'SUSTAINED_TERMINAL_ALL_NO_TRADES_GENERATION_SUFFIX',
     }
     affected: list[str] = []
     accounting_defect = False
@@ -126,6 +148,8 @@ def audit(results_dir: Path, csv_path: Path, source_metadata: dict | None = None
         lookback = int(contract.get('standardization_lookback_sessions', 20))
         required = lookback + 1
         evidence.update({
+            'last_working_generation': working.get('_generation') if working else None,
+            'first_failure_generation': failure.get('_generation'),
             'first_failure_family': failure.get('family_id'),
             'first_failure_feature': contract.get('feature'),
             'first_failure_lookback_sessions': lookback,

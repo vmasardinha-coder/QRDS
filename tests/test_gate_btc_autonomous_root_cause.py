@@ -83,7 +83,7 @@ def _source_meta():
     }
 
 
-def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
+def test_mass_no_trades_boundary_ignores_isolated_families_inside_last_trading_generation(tmp_path):
     results = tmp_path / 'results'
     results.mkdir()
     _write_result(
@@ -97,13 +97,21 @@ def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
         'H1970-H1979',
         [_family(f'H{i}', 160, 0) for i in range(1970, 1980)],
     )
+    _write_result(
+        results / 'gate_btc_b3_h1980_h1989_result.json',
+        'H1980-H1989',
+        [_family(f'H{i}', 160, 0) for i in range(1980, 1990)],
+    )
     csv = tmp_path / 'source.csv'
     _write_sessions(csv, count=130)
 
     r = audit(results, csv, source_metadata=_source_meta())
 
     assert r['boundary_last_known_working'] == 'H1961'
-    assert r['boundary_first_known_failure'] == 'H1962'
+    assert r['boundary_first_known_failure'] == 'H1970'
+    assert r['evidence']['last_working_generation'] == 'H1960-H1969'
+    assert r['evidence']['first_failure_generation'] == 'H1970-H1979'
+    assert r['evidence']['boundary_policy'] == 'SUSTAINED_TERMINAL_ALL_NO_TRADES_GENERATION_SUFFIX'
     assert r['first_divergent_layer'] == 'SOURCE_AVAILABILITY'
     assert r['root_cause_classification'] == 'SOURCE_DATA_GAP'
     assert r['evidence']['discovery_sessions_available'] == 130
@@ -117,21 +125,53 @@ def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
     assert r['safety']['h1_economics_read'] is False
 
 
-def test_source_gap_requires_audit_grade_identity(tmp_path):
+def test_source_gap_requires_audit_grade_identity_at_mass_boundary(tmp_path):
     results = tmp_path / 'results'
     results.mkdir()
     _write_result(
         results / 'gate_btc_b3_h1960_h1969_result.json',
         'H1960-H1969',
-        [_family('H1961', 120, 3), _family('H1962', 160, 0)],
+        [_family('H1961', 120, 3)] + [_family(f'H{i}', 160, 0) for i in range(1962, 1970)],
+    )
+    _write_result(
+        results / 'gate_btc_b3_h1970_h1979_result.json',
+        'H1970-H1979',
+        [_family(f'H{i}', 160, 0) for i in range(1970, 1980)],
     )
     csv = tmp_path / 'source.csv'
     _write_sessions(csv, count=130)
 
     r = audit(results, csv, source_metadata={})
+    assert r['boundary_first_known_failure'] == 'H1970'
     assert r['root_cause_classification'] == 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
     assert r['evidence']['fail_closed_reason'] == 'SOURCE_COVERAGE_IDENTITY_OR_RAW_HASH_NOT_PROVEN'
     assert r['root_cause_work_required'] is True
+
+
+def test_nonterminal_all_no_trades_generation_does_not_override_later_trading_generation(tmp_path):
+    results = tmp_path / 'results'
+    results.mkdir()
+    _write_result(
+        results / 'gate_btc_b3_h1950_h1959_result.json',
+        'H1950-H1959',
+        [_family(f'H{i}', 120, 0) for i in range(1950, 1960)],
+    )
+    _write_result(
+        results / 'gate_btc_b3_h1960_h1969_result.json',
+        'H1960-H1969',
+        [_family('H1960', 120, 4)] + [_family(f'H{i}', 120, 0) for i in range(1961, 1970)],
+    )
+    _write_result(
+        results / 'gate_btc_b3_h1970_h1979_result.json',
+        'H1970-H1979',
+        [_family(f'H{i}', 160, 0) for i in range(1970, 1980)],
+    )
+    csv = tmp_path / 'source.csv'
+    _write_sessions(csv, count=130)
+
+    r = audit(results, csv, source_metadata=_source_meta())
+    assert r['boundary_last_known_working'] == 'H1960'
+    assert r['boundary_first_known_failure'] == 'H1970'
 
 
 def test_isolated_earlier_no_trades_does_not_steal_terminal_regime_boundary(tmp_path):
@@ -152,12 +192,17 @@ def test_isolated_earlier_no_trades_does_not_steal_terminal_regime_boundary(tmp_
         [_family('H1961', 120, 3, 'GAP_FROM_PRIOR_CLOSE')] +
         [_family(f'H{i}', 160, 0) for i in range(1962, 1970)],
     )
+    _write_result(
+        results / 'gate_btc_b3_h1970_h1979_result.json',
+        'H1970-H1979',
+        [_family(f'H{i}', 160, 0) for i in range(1970, 1980)],
+    )
     csv = tmp_path / 'source.csv'
     _write_sessions(csv, count=130)
 
     r = audit(results, csv, source_metadata=_source_meta())
 
     assert r['boundary_last_known_working'] == 'H1961'
-    assert r['boundary_first_known_failure'] == 'H1962'
+    assert r['boundary_first_known_failure'] == 'H1970'
     assert r['root_cause_classification'] == 'SOURCE_DATA_GAP'
     assert r['root_cause_unresolved'] is False
