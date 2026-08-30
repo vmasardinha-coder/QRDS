@@ -54,3 +54,44 @@ jobs:
           assert s['stage_9_complete'] is False and s['promotion_allowed'] is False
           print('STAGE9_BITGET_FORWARD_ADAPTER_SAFETY=PASS')
           PY
+
+  first-forward-capture:
+    needs: adapter-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Execute bounded post-preregistration Bitget capture
+        run: |
+          mkdir -p runtime_capture
+          set -o pipefail
+          python -m tools.gate_btc_2_stage9_bitget_forward_capture --output-dir runtime_capture | tee runtime_capture/console_result.json
+      - name: Require captured-but-not-admitted boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('runtime_capture/capture_decision.json')
+          assert p.exists(), 'capture_decision.json missing; live source did not reach captured boundary'
+          d=json.loads(p.read_text())
+          assert d['status']=='CAPTURED_AWAITING_ADMISSION_REVIEW'
+          assert d['forward_only'] is True and d['historical_rows_backfilled']==0
+          assert d['source_admitted'] is False and d['prospective_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved']
+          assert d['engine_feed'] is False and d['orders_generated']==0 and d['real_capital_used']==0
+          assert d['no_retune'] and d['no_backfill'] and d['fail_closed']
+          assert d['stage_9_complete'] is False and d['promotion_allowed'] is False
+          assert set(d['roles'])=={'FUNDING','OPEN_INTEREST','PERP_VOLUME','SPOT_VOLUME'}
+          print('STAGE9_BITGET_FIRST_FORWARD_CAPTURE=PASS')
+          PY
+      - name: Preserve forward-capture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-stage9-bitget-first-forward-${{ github.run_id }}
+          path: runtime_capture/
+          if-no-files-found: error
+          retention-days: 30
