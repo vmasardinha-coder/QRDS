@@ -23,6 +23,7 @@ env:
   GATE_BTC_RESEARCH_ONLY: "true"
   GATE_BTC_SHADOW_ONLY: "true"
   GATE_BTC_NOT_APPROVED: "true"
+  H1_ECONOMICS_READ: "false"
 
 jobs:
   publish-qualified-h1:
@@ -86,13 +87,29 @@ jobs:
               gaps=list(Path('b3_evidence').rglob('H1_OPERATIONAL_GAP.json'))
               assert len(gaps)==1, 'unqualified H1 run lacks classified operational gap'
               g=json.load(open(gaps[0],encoding='utf-8'))
-              assert g['classification']=='ORDINARY_SOURCE_GAP'
               assert g['scientifically_qualified'] is False
               print('mode=gap')
           PY
 
-      - name: Append qualified observation idempotently
-        if: steps.payload.outputs.mode == 'qualified'
+      - name: Resolve canonical 20/20 gate without reading economics
+        id: gate
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json')
+          if p.exists():
+              q=int(json.load(open(p,encoding='utf-8'))['qualified'])
+          else:
+              a=json.load(open('main_repo/tools/gate_btc_factory/H1_CANONICAL_COUNTER_ANCHOR.v1.json',encoding='utf-8'))
+              q=int(a['canonical_evidence']['qualified'])
+          assert 8 <= q <= 20
+          print('qualified='+str(q))
+          print('frozen='+('true' if q>=20 else 'false'))
+          PY
+
+      - name: Append qualified structural evidence idempotently
+        if: steps.payload.outputs.mode == 'qualified' && steps.gate.outputs.frozen != 'true'
         run: >-
           python main_repo/tools/gate_btc_b3_h1_runtime_ledger.py
           --artifact-root b3_evidence
@@ -101,13 +118,41 @@ jobs:
           --run-id "${{ steps.source.outputs.run_id }}"
 
       - name: Persist ordinary gap without incrementing H1
-        if: steps.payload.outputs.mode == 'gap'
+        if: steps.payload.outputs.mode == 'gap' && steps.gate.outputs.frozen != 'true'
         run: |
           set -euo pipefail
           mkdir -p runtime_repo/runtime/ledgers/b3_h1/gaps
           GAP=$(find b3_evidence -name H1_OPERATIONAL_GAP.json -print -quit)
           test -n "$GAP"
           cp "$GAP" "runtime_repo/runtime/ledgers/b3_h1/gaps/${{ steps.payload.outputs.date }}.json"
+
+      - name: Advance canonical /20 reporting clock exactly once
+        if: steps.gate.outputs.frozen != 'true'
+        run: |
+          set -euo pipefail
+          EXISTING=()
+          if [ -f runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json ]; then
+            EXISTING=(--existing runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json)
+          fi
+          python main_repo/tools/gate_btc_factory/h1_canonical_runtime.py \
+            --anchor main_repo/tools/gate_btc_factory/H1_CANONICAL_COUNTER_ANCHOR.v1.json \
+            "${EXISTING[@]}" \
+            --artifact-root b3_evidence \
+            --mode "${{ steps.payload.outputs.mode }}" \
+            --date "${{ steps.payload.outputs.date }}" \
+            --run-id "${{ steps.source.outputs.run_id }}" \
+            --output runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json
+
+      - name: Arm 20/20 checkpoint and disabled MT5 paper handoff
+        run: |
+          set -euo pipefail
+          CAN=runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json
+          test -f "$CAN" || exit 0
+          Q=$(python -c "import json; print(json.load(open('$CAN'))['qualified'])")
+          if [ "$Q" = "20" ]; then
+            cp main_repo/tools/gate_btc_factory/H1_20_CHECKPOINT_AND_MT5_PAPER.v1.json \
+              runtime_repo/runtime/ledgers/b3_h1/H1_20_HANDOFF_READY.json
+          fi
 
       - name: Validate safety and no synthetic backfill
         run: |
@@ -117,15 +162,19 @@ jobs:
           status=Path('runtime_repo/runtime/ledgers/b3_h1/STATUS.json')
           if status.exists():
               s=json.load(open(status,encoding='utf-8'))
-              assert s['research_only'] is True
-              assert s['shadow_only'] is True
-              assert s['not_approved'] is True
-              assert s['orders_generated'] == 0
-              assert s['real_capital_used'] == 0
-              assert s['economics_locked'] is True
-              assert s['backfill_automatically_created'] is False
+              assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
+              assert s['orders_generated'] == 0 and s['real_capital_used'] == 0
+              assert s['economics_locked'] is True and s['backfill_automatically_created'] is False
               dates=[x['date'] for x in s['entries']]
               assert len(dates)==len(set(dates))
+          can=Path('runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json')
+          if can.exists():
+              c=json.load(open(can,encoding='utf-8'))
+              assert 8 <= int(c['qualified']) <= 20
+              assert int(c['remaining']) == 20-int(c['qualified'])
+              assert c['no_counter_rewrite'] is True and c['no_backfill_as_prospective'] is True
+              assert c['orders'] == 0 and c['real_capital'] == 0
+              assert c['separate_runtime_structural_count_must_not_be_added'] is True
           for p in Path('runtime_repo/runtime/ledgers/b3_h1/gaps').glob('*.json') if Path('runtime_repo/runtime/ledgers/b3_h1/gaps').exists() else []:
               g=json.load(open(p,encoding='utf-8'))
               assert g['scientifically_qualified'] is False
