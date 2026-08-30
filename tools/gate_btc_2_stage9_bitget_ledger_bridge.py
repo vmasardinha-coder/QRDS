@@ -26,7 +26,6 @@ EXPECTED_PROVIDER = "BITGET_PUBLIC_V2"
 EXPECTED_VENUE = "BITGET"
 EXPECTED_INSTRUMENT = "BTCUSDT"
 EXPECTED_DECISION = "ADMITTED_FORWARD_ONLY"
-EXPECTED_CAPTURE_RUN_ID = 33287403941
 
 
 def require(ok: bool, message: str) -> None:
@@ -42,7 +41,8 @@ def canonical_hash(payload: Any) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-def build_canonical_admission(capture_dir: Path, admission_dir: Path) -> dict[str, Any]:
+def build_canonical_admission(capture_dir: Path, admission_dir: Path, run_id: int) -> dict[str, Any]:
+    require(isinstance(run_id, int) and not isinstance(run_id, bool) and run_id > 0, "capture run_id invalid")
     capture_path = capture_dir / "capture_decision.json"
     raw_perp = capture_dir / "bitget_perp.json"
     raw_spot = capture_dir / "bitget_spot.json"
@@ -101,7 +101,7 @@ def build_canonical_admission(capture_dir: Path, admission_dir: Path) -> dict[st
         "timestamp_repair": False,
         "instrument": EXPECTED_INSTRUMENT,
         "raw_roles": list(STAGE9_RAW_ROLES),
-        "run_id": EXPECTED_CAPTURE_RUN_ID,
+        "run_id": run_id,
         "captured_at_utc": capture["captured_at_utc"],
         "capture_manifest_sha256": canonical_hash(manifest_binding),
         "review_sha256": provider_admission["review_sha256"],
@@ -122,22 +122,25 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--capture-dir", type=Path, required=True)
     p.add_argument("--admission-dir", type=Path, required=True)
+    p.add_argument("--run-id", type=int, required=True)
     p.add_argument("--ledger", type=Path, required=True)
     p.add_argument("--canonical-admission-out", type=Path, required=True)
     p.add_argument("--counter-out", type=Path, required=True)
     args = p.parse_args()
-    admission = build_canonical_admission(args.capture_dir, args.admission_dir)
+    before = parse_ledger(args.ledger)
+    admission = build_canonical_admission(args.capture_dir, args.admission_dir, args.run_id)
     args.canonical_admission_out.parent.mkdir(parents=True, exist_ok=True)
     args.canonical_admission_out.write_text(json.dumps(admission, indent=2, sort_keys=True) + "\n")
     record = append_admission(args.ledger, admission)
     counter = counter_from_ledger(parse_ledger(args.ledger))
     args.counter_out.parent.mkdir(parents=True, exist_ok=True)
     args.counter_out.write_text(json.dumps(counter, indent=2, sort_keys=True) + "\n")
-    require(record["sequence"] == 1, "first Bitget admission must be ledger sequence 1")
-    require(counter["canonical_counter"] == 1, "canonical counter must be exactly 1")
+    require(record["sequence"] == len(before) + 1, "ledger sequence did not append exactly once")
+    require(counter["canonical_counter"] == len(before) + 1, "canonical counter did not advance exactly once")
     require(counter["prospective_credit_from_backfill"] == 0, "backfill credit must remain zero")
     print("BITGET_STAGE9_LEDGER_APPEND=PASS")
-    print("STAGE9_CANONICAL_COUNTER=1")
+    print(f"STAGE9_CAPTURE_RUN_ID={args.run_id}")
+    print(f"STAGE9_CANONICAL_COUNTER={counter['canonical_counter']}")
     print("STAGE9_COMPLETE=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0")
     return 0
 
