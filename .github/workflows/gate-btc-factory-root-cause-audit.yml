@@ -1,0 +1,174 @@
+name: GATE BTC Factory Root Cause Audit
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - GATE BTC Scientific Mortality Audit
+    types: [completed]
+  schedule:
+    - cron: '17 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/autonomous_root_cause_audit.py'
+      - 'tools/gate_btc_factory/scientific_mortality_audit.py'
+      - 'tools/gate_btc_b3_h_free_github_ingest.py'
+      - 'tests/test_gate_btc_autonomous_root_cause.py'
+      - 'tests/test_gate_btc_scientific_mortality_audit.py'
+      - '.github/workflows/gate-btc-factory-root-cause-audit.yml'
+      - '.github/workflows/gate-btc-scientific-mortality-audit.yml'
+      - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+concurrency:
+  group: gate-btc-factory-root-cause-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  root-cause:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable scientific boundary
+        shell: bash
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+
+      - name: Compile and regression-test deterministic diagnostics
+        run: |
+          python -m pip install -q pandas numpy requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/autonomous_root_cause_audit.py
+          python -m py_compile tools/gate_btc_b3_h_free_github_ingest.py
+          pytest -q tests/test_gate_btc_autonomous_root_cause.py tests/test_gate_btc_scientific_mortality_audit.py
+
+      - name: Determine unresolved root-cause work
+        id: work
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          mortality=Path('runtime_repo/runtime/factory_autonomy/SCIENTIFIC_MORTALITY_RUNTIME.json')
+          required=True
+          if mortality.exists():
+              m=json.load(open(mortality,encoding='utf-8'))
+              if 'root_cause_work_required' in m:
+                  required=bool(m['root_cause_work_required'])
+              else:
+                  required=bool((m.get('interpretation') or {}).get('latest_20_all_no_trades_flag'))
+          print(f"required={'true' if required else 'false'}")
+          PY
+
+      - name: Build diagnostic-only guarded source snapshot
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        working-directory: source_repo
+        run: python tools/gate_btc_b3_h_free_github_ingest.py
+
+      - name: Execute deterministic historical boundary audit
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        working-directory: source_repo
+        run: |
+          python -m tools.gate_btc_factory.autonomous_root_cause_audit \
+            --results-dir ../runtime_repo/runtime/autonomous_science/results \
+            --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --source-metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
+            --output ROOT_CAUSE_RUNTIME.json
+
+      - name: Assert root-cause completion contract
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        working-directory: source_repo
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('ROOT_CAUSE_RUNTIME.json',encoding='utf-8'))
+          required={
+            'boundary_last_known_working','boundary_first_known_failure','first_divergent_layer',
+            'root_cause_classification','evidence','affected_scope','historical_integrity_status',
+            'remediation_required','remediation_type','regression_test','scientific_contract_changed'
+          }
+          assert required <= set(d)
+          assert d['scientific_contract_changed'] is False
+          if d['root_cause_classification'] == 'SOURCE_DATA_GAP':
+              se=d['evidence']['source_evidence']
+              for k in ('provider','exact_url','final_url','resource_identifier','retrieval_timestamp','raw_sha256','schema','timezone','coverage','missingness','publication_timing','revision_semantics','instrument_identity','roll_identity'):
+                  assert k in se and se[k] is not None
+          s=d['safety']
+          assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] is True and s['no_backfill'] is True and s['no_counter_reset'] is True
+          assert s['fail_closed'] is True and s['h1_economics_read'] is False
+          print('ROOT_CAUSE_COMPLETION_CONTRACT=PASS')
+          PY
+
+      - name: Persist append-only audit and latest pointer
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy/root_cause_audits
+          cp source_repo/ROOT_CAUSE_RUNTIME.json "runtime_repo/runtime/factory_autonomy/root_cause_audits/${{ github.run_id }}.json"
+          cp source_repo/ROOT_CAUSE_RUNTIME.json runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/root_cause_audits runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
+          git commit -m "Factory root-cause audit ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+
+      - name: Re-audit mortality after resolved diagnosis
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        run: gh workflow run gate-btc-scientific-mortality-audit.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        with:
+          name: gate-btc-root-cause-${{ github.run_id }}
+          path: source_repo/ROOT_CAUSE_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30

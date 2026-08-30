@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
 
@@ -72,13 +73,17 @@ def _drop_noncontiguous_sessions(x: pd.DataFrame) -> tuple[pd.DataFrame, list[st
 
 def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     s = requests.Session()
-    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.2'})
+    s.headers.update({'User-Agent': 'QRDS-B3-H-Free-GitHub-Ingest/3.3'})
     items = list_source_items(s)
     item = next((x for x in items if x.get('name') == CONTINUOUS_NAME), None)
     if item is None or not item.get('download_url'):
         raise RuntimeError('WINFUT_M5_SOURCE_NOT_FOUND')
-    r = s.get(item['download_url'], timeout=180)
+    exact_url = str(item['download_url'])
+    retrieval_timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    r = s.get(exact_url, timeout=180)
     r.raise_for_status()
+    raw_source = r.content
+    raw_source_sha256 = hashlib.sha256(raw_source).hexdigest()
     x = parse_profit_csv(r.text)
     x = x[x['source_symbol'].eq('WINFUT')].copy()
     d = x['timestamp'].dt.date
@@ -104,24 +109,38 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
     x['timestamp'] = x['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     x[['timestamp', 'symbol', 'open', 'high', 'low', 'close', 'volume']].to_csv(out_csv, index=False)
-    raw = out_csv.read_bytes()
+    normalized = out_csv.read_bytes()
     meta = {
         'source_type': 'COMMUNITY_GITHUB_NELOGICA_PROFIT_WINFUT_EXPORT',
+        'provider': 'GitHub/wesleyzilva/tradetech',
         'source_repository': SRC_REPO,
         'source_branch': SRC_BRANCH,
         'source_directory': SRC_DIR,
         'source_file': CONTINUOUS_NAME,
         'source_file_sha': item.get('sha'),
+        'resource_identifier': item.get('sha'),
+        'exact_url': exact_url,
+        'final_url': str(r.url),
+        'retrieval_timestamp': retrieval_timestamp,
+        'raw_sha256': raw_source_sha256,
+        'normalized_dataset_sha256': hashlib.sha256(normalized).hexdigest(),
         'source_documentation': 'CandlesHistoryDatas/DadosCandlesBacktest.md',
+        'source_schema': ['Ativo','Data','Hora','Abertura','Máximo','Mínimo','Fechamento','Volume','Quantidade'],
+        'normalized_schema': ['timestamp','symbol','open','high','low','close','volume'],
         'adjustment_mode': 'CONTINUOUS_INTRADAY_TRANSLATION_INVARIANT_ONLY',
         'research_scope': 'INTRADAY_TRANSLATION_INVARIANT_FAMILIES_ONLY',
         'absolute_level_research_allowed': False,
         'fixed_point_economics_allowed': False,
         'off_tick_rows_by_price_column': off_grid,
         'dropped_noncontiguous_sessions': dropped_sessions,
+        'missingness': 'PARSE_REQUIRES_REQUIRED_FIELDS;_NONCONTIGUOUS_SESSIONS_DROPPED',
+        'publication_timing': 'UNPROVEN_FAIL_CLOSED',
+        'revision_semantics': 'UNPROVEN_FAIL_CLOSED',
+        'instrument_identity': 'WINFUT_CONTINUOUS_EXPORT_MAPPED_TO_WIN_FRONT_BY_SESSION',
         'bar_minutes': 5,
         'timezone': TZ,
         'roll_policy': 'PROFIT_CONTINUOUS_INTRADAY_ONLY',
+        'roll_identity': 'PROFIT_CONTINUOUS_INTRADAY_ONLY',
         'research_only': True,
         'shadow_only': True,
         'not_approved': True,
@@ -129,7 +148,7 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'h1_economics_read': False,
         'orders': 0,
         'real_capital': 0,
-        'sha256': hashlib.sha256(raw).hexdigest(),
+        'sha256': hashlib.sha256(normalized).hexdigest(),
     }
     out_meta.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     report = {
@@ -144,6 +163,8 @@ def build(out_csv: Path, out_meta: Path, out_report: Path) -> dict:
         'fixed_point_economics_allowed': False,
         'off_tick_rows_by_price_column': off_grid,
         'dropped_noncontiguous_sessions': dropped_sessions,
+        'raw_sha256': raw_source_sha256,
+        'resource_identifier': item.get('sha'),
         'research_only': True,
         'h1_economics_read': False,
         'orders': 0,

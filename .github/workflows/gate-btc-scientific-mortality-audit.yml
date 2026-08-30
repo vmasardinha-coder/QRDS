@@ -72,10 +72,16 @@ jobs:
           pytest -q tests/test_gate_btc_scientific_mortality_audit.py
 
       - name: Audit complete autonomous science mortality
-        run: >-
-          python source_repo/tools/gate_btc_factory/scientific_mortality_audit.py
-          --results-dir runtime_repo/runtime/autonomous_science/results
-          --output SCIENTIFIC_MORTALITY_RUNTIME.json
+        shell: bash
+        run: |
+          args=(
+            --results-dir runtime_repo/runtime/autonomous_science/results
+            --output SCIENTIFIC_MORTALITY_RUNTIME.json
+          )
+          if [ -f runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json ]; then
+            args+=(--root-cause runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json)
+          fi
+          python source_repo/tools/gate_btc_factory/scientific_mortality_audit.py "${args[@]}"
 
       - name: Assert audit cannot mutate science
         run: |
