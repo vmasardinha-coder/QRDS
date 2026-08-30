@@ -1,0 +1,77 @@
+name: GATE BTC 2 Stage 9 Bitget Ledger Bridge
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-stage9-bitget-ledger-bridge.yml
+      - tools/gate_btc_2_stage9_bitget_ledger_bridge.py
+      - tools/gate_btc_2_stage9_admission_ledger.py
+      - tools/gate_btc_2_prospective_counter_bridge.py
+      - tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+  GATE_BTC_NO_RETUNE: "true"
+  GATE_BTC_NO_BACKFILL: "true"
+  GATE_BTC_FAIL_CLOSED: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  bitget-ledger-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Compile bridge and tests
+        run: python -m py_compile tools/gate_btc_2_stage9_bitget_ledger_bridge.py tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py
+      - name: Run fail-closed bridge regressions
+        run: python -m unittest -v tests.test_gate_btc_2_stage9_bitget_ledger_bridge
+      - name: Download exact admitted evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p captured admitted
+          gh run download 33287403941 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-first-forward-33287403941 --dir captured
+          gh run download 33291944221 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-admission-33291944221 --dir admitted
+      - name: Append first canonical prospective observation
+        run: |
+          python -m tools.gate_btc_2_stage9_bitget_ledger_bridge \
+            --capture-dir captured \
+            --admission-dir admitted \
+            --ledger evidence/stage9_admission_ledger.jsonl \
+            --canonical-admission-out evidence/bitget_canonical_admission.json \
+            --counter-out evidence/stage9_counter.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('evidence/stage9_counter.json').read_text())
+          assert c['canonical_counter']==1
+          assert c['prospective_credit_from_backfill']==0
+          assert c['safety']['RESEARCH_ONLY'] is True
+          assert c['safety']['SHADOW_ONLY'] is True
+          assert c['safety']['NOT_APPROVED'] is True
+          assert c['safety']['ENGINE_FEED'] is False
+          assert c['safety']['ORDERS']==0 and c['safety']['REAL_CAPITAL']==0
+          print('BITGET_STAGE9_CANONICAL_LEDGER=PASS')
+          PY
+      - name: Preserve canonical ledger evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-stage9-bitget-ledger-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
