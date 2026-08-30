@@ -58,19 +58,23 @@ jobs:
             --stage2b artifacts/b3_h_nextgen/STAGE2B_H4_REPLICATION.json \
             --source artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.report.json \
             --out artifacts/b3_h_nextgen/B3_H_NEXTGEN_STATUS.json
-      - name: Assert final null-result semantics
+      - name: Assert final null-result semantics and frontier isolation
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.loads(Path('artifacts/b3_h_nextgen/B3_H_NEXTGEN_STATUS.json').read_text())
           assert p['status']=='CLOSED_NO_NEXTGEN_SURVIVOR'
+          assert p['evaluated_scope']=='LEGACY_H2_H3_H4_H5_ONLY'
+          assert p['frontier_bound'] is False
+          assert p['scientific_frontier_close_allowed'] is False
+          assert p['canonical_runtime_mutation_allowed'] is False
           assert p['h1_economics_read'] is False and p['h1_contaminated'] is False
           assert p['activated_candidates']==[]
           assert p['orders_generated']==0 and p['real_capital_used']==0
           assert p['promotion_allowed'] is False and p['engine_feed'] is False
           assert p['candidate_states']['H4']=='REJECTED_FAILED_INDEPENDENT_REPLICATION'
-          print('B3_H_NEXTGEN_FINAL=PASS_CLOSED_NO_SURVIVOR')
+          print('B3_H_NEXTGEN_FINAL=PASS_LEGACY_NULL_FRONTIER_ISOLATED')
           PY
       - uses: actions/upload-artifact@v4
         with:
