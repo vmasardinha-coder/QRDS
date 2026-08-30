@@ -13,6 +13,7 @@ on:
     paths:
       - 'tools/gate_btc_factory/autonomous_root_cause_audit.py'
       - 'tools/gate_btc_factory/scientific_mortality_audit.py'
+      - 'tools/gate_btc_b3_h_free_github_ingest.py'
       - 'tests/test_gate_btc_autonomous_root_cause.py'
       - 'tests/test_gate_btc_scientific_mortality_audit.py'
       - '.github/workflows/gate-btc-factory-root-cause-audit.yml'
@@ -78,6 +79,7 @@ jobs:
           python -m pip install -q pandas numpy requests pytest
           cd source_repo
           python -m py_compile tools/gate_btc_factory/autonomous_root_cause_audit.py
+          python -m py_compile tools/gate_btc_b3_h_free_github_ingest.py
           pytest -q tests/test_gate_btc_autonomous_root_cause.py tests/test_gate_btc_scientific_mortality_audit.py
 
       - name: Determine unresolved root-cause work
@@ -89,23 +91,14 @@ jobs:
           import json
           from pathlib import Path
           mortality=Path('runtime_repo/runtime/factory_autonomy/SCIENTIFIC_MORTALITY_RUNTIME.json')
-          root=Path('runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json')
-          anomaly=True
+          required=True
           if mortality.exists():
               m=json.load(open(mortality,encoding='utf-8'))
-              anomaly=bool((m.get('interpretation') or {}).get('latest_20_all_no_trades_flag'))
-          resolved=False
-          if root.exists():
-              r=json.load(open(root,encoding='utf-8'))
-              resolved=(
-                  r.get('root_cause_unresolved') is False and
-                  r.get('boundary_first_known_failure') == 'H1962' and
-                  r.get('root_cause_classification') != 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
-              )
-          required=anomaly and not resolved
+              if 'root_cause_work_required' in m:
+                  required=bool(m['root_cause_work_required'])
+              else:
+                  required=bool((m.get('interpretation') or {}).get('latest_20_all_no_trades_flag'))
           print(f"required={'true' if required else 'false'}")
-          print(f"anomaly={'true' if anomaly else 'false'}")
-          print(f"resolved={'true' if resolved else 'false'}")
           PY
 
       - name: Build diagnostic-only guarded source snapshot
@@ -120,6 +113,7 @@ jobs:
           python -m tools.gate_btc_factory.autonomous_root_cause_audit \
             --results-dir ../runtime_repo/runtime/autonomous_science/results \
             --csv artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.csv \
+            --source-metadata artifacts/b3_h_nextgen/WIN_M5_PRE_H1_GITHUB.metadata.json \
             --output ROOT_CAUSE_RUNTIME.json
 
       - name: Assert root-cause completion contract
@@ -136,6 +130,10 @@ jobs:
           }
           assert required <= set(d)
           assert d['scientific_contract_changed'] is False
+          if d['root_cause_classification'] == 'SOURCE_DATA_GAP':
+              se=d['evidence']['source_evidence']
+              for k in ('provider','exact_url','final_url','resource_identifier','retrieval_timestamp','raw_sha256','schema','timezone','coverage','missingness','publication_timing','revision_semantics','instrument_identity','roll_identity'):
+                  assert k in se and se[k] is not None
           s=d['safety']
           assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
