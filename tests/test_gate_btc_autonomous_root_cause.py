@@ -65,6 +65,24 @@ def _write_sessions(path, count=130):
     pd.DataFrame(rows).to_csv(path, index=False)
 
 
+def _source_meta():
+    return {
+        'provider': 'GitHub/example/repo',
+        'exact_url': 'https://raw.githubusercontent.com/example/repo/main/source.csv',
+        'final_url': 'https://raw.githubusercontent.com/example/repo/main/source.csv',
+        'resource_identifier': 'git-blob-sha',
+        'retrieval_timestamp': '2026-08-30T14:00:00Z',
+        'raw_sha256': 'a' * 64,
+        'normalized_schema': ['timestamp','symbol','open','high','low','close','volume'],
+        'timezone': 'America/Sao_Paulo',
+        'missingness': 'REQUIRED_FIELDS_PARSE_GUARDED',
+        'publication_timing': 'UNPROVEN_FAIL_CLOSED',
+        'revision_semantics': 'UNPROVEN_FAIL_CLOSED',
+        'instrument_identity': 'WINFUT_CONTINUOUS_EXPORT_MAPPED_TO_WIN_FRONT_BY_SESSION',
+        'roll_identity': 'PROFIT_CONTINUOUS_INTRADAY_ONLY',
+    }
+
+
 def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
     results = tmp_path / 'results'
     results.mkdir()
@@ -82,7 +100,7 @@ def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
     csv = tmp_path / 'source.csv'
     _write_sessions(csv, count=130)
 
-    r = audit(results, csv)
+    r = audit(results, csv, source_metadata=_source_meta())
 
     assert r['boundary_last_known_working'] == 'H1961'
     assert r['boundary_first_known_failure'] == 'H1962'
@@ -90,8 +108,27 @@ def test_h1962_boundary_is_source_gap_not_legitimate_no_trades(tmp_path):
     assert r['root_cause_classification'] == 'SOURCE_DATA_GAP'
     assert r['evidence']['discovery_sessions_available'] == 130
     assert r['evidence']['minimum_sessions_required_for_first_causal_z'] == 161
+    assert r['evidence']['source_evidence']['raw_sha256'] == 'a' * 64
+    assert r['evidence']['source_evidence']['publication_timing'] == 'UNPROVEN_FAIL_CLOSED'
     assert r['historical_integrity_status'] == 'HISTORICAL_RESULT_INVALIDATED_BY_MECHANICAL_DEFECT'
     assert r['scientific_contract_changed'] is False
     assert r['affected_scope']['historical_results_mutated'] is False
     assert r['safety']['no_backfill'] is True
     assert r['safety']['h1_economics_read'] is False
+
+
+def test_source_gap_requires_audit_grade_identity(tmp_path):
+    results = tmp_path / 'results'
+    results.mkdir()
+    _write_result(
+        results / 'gate_btc_b3_h1960_h1969_result.json',
+        'H1960-H1969',
+        [_family('H1961', 120, 3), _family('H1962', 160, 0)],
+    )
+    csv = tmp_path / 'source.csv'
+    _write_sessions(csv, count=130)
+
+    r = audit(results, csv, source_metadata={})
+    assert r['root_cause_classification'] == 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
+    assert r['evidence']['fail_closed_reason'] == 'SOURCE_COVERAGE_IDENTITY_OR_RAW_HASH_NOT_PROVEN'
+    assert r['root_cause_work_required'] is True
