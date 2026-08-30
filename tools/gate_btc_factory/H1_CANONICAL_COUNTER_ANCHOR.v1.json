@@ -1,0 +1,33 @@
+{
+  "schema": "qrds.h1.canonical_counter_anchor.v1",
+  "purpose": "Reporting-precedence anchor only. This file does not mutate, reconstruct, or credit the historical/prospective ledger.",
+  "canonical_evidence": {
+    "status": "H1_8_OF_20_CANONICAL",
+    "qualified": 8,
+    "remaining": 12,
+    "last_candidate_date": "2026-08-28",
+    "last_candidate_status": "STRUCTURAL_PASS",
+    "appended_now": true,
+    "economics_locked": true,
+    "evidence_artifact": "GATE_BTC_B3_H1_STATUS_LATEST.txt",
+    "evidence_published_date": "2026-08-29"
+  },
+  "precedence": {
+    "counter_is_monotonic": true,
+    "older_or_lower_reporting_cannot_regress_counter": true,
+    "runtime_structural_observation_count_is_separate": true,
+    "never_sum_runtime_structural_count_into_canonical_counter": true,
+    "post_anchor_increment_requires_unique_later_session_and_structural_pass": true
+  },
+  "safety": {
+    "read_only_historical_ledger": true,
+    "no_counter_rewrite": true,
+    "no_backfill_as_prospective": true,
+    "no_retune": true,
+    "no_threshold_change": true,
+    "no_family_change": true,
+    "economics_locked_before_20": true,
+    "orders": 0,
+    "real_capital": 0
+  }
+}
