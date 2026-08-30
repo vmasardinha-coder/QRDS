@@ -1,0 +1,50 @@
+{
+  "schema": "qrds.h1.checkpoint20_mt5_paper.v1",
+  "checkpoint_gate": {
+    "required_canonical_counter": 20,
+    "freeze_final_h1_ledger": true,
+    "integrity_reconciliation_required": true,
+    "economics_unlock_only_after_integrity_green": true,
+    "required_metrics": [
+      "capital_base_equivalent",
+      "pnl",
+      "return",
+      "volatility",
+      "sharpe",
+      "max_drawdown",
+      "win_rate",
+      "expectancy",
+      "number_of_trades",
+      "costs"
+    ],
+    "output": "H1_CHECKPOINT_20_OF_20",
+    "benchmark": "PREREGISTERED_BENCHMARK_ONLY",
+    "decision_enum": ["PASS", "FAIL", "INCONCLUSIVE"]
+  },
+  "mt5_paper_handoff": {
+    "exists": true,
+    "mode": "PAPER_SHADOW_OBSERVATION_ONLY",
+    "source": "H1_CHECKPOINT_20_OF_20",
+    "requires_counter_20": true,
+    "requires_checkpoint_complete": true,
+    "requires_review": true,
+    "enabled_before_review": false,
+    "paper_enabled": false,
+    "real_orders_enabled": false,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false,
+    "no_historical_backfill": true,
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE_AND_PAPER_OBSERVATION_ONLY"
+  },
+  "safety": {
+    "read_only_historical_ledger": true,
+    "no_counter_rewrite": true,
+    "no_backfill_as_prospective": true,
+    "no_retune": true,
+    "no_threshold_change": true,
+    "no_family_change": true,
+    "orders": 0,
+    "real_capital": 0
+  }
+}
