@@ -1,0 +1,58 @@
+{
+  "schema": "qrds.factory.invalidated_family_requalification.v1",
+  "mode": "AUTONOMOUS_FAIL_CLOSED",
+  "trigger": {
+    "root_cause_classification": "SOURCE_DATA_GAP",
+    "root_cause_unresolved": false,
+    "historical_result_status": "HISTORICAL_RESULT_INVALIDATED_BY_MECHANICAL_DEFECT"
+  },
+  "policy": {
+    "historical_records": "APPEND_ONLY_IMMUTABLE",
+    "reuse_original_family_identity": false,
+    "new_namespace_required": true,
+    "grammar_contract": "EXACT_FROZEN_ORIGINAL",
+    "threshold": "UNCHANGED",
+    "direction": "UNCHANGED",
+    "cost": "UNCHANGED",
+    "hold": "UNCHANGED",
+    "cutoff": "UNCHANGED",
+    "d0": "UNCHANGED",
+    "pit": "UNCHANGED",
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_partial_economics_feedback": true,
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "fail_closed": true
+  },
+  "source_gate": {
+    "before_definitive_gap": "EXHAUST_FREE_OR_OFFICIAL_AUDITABLE_SOURCES",
+    "qualification_required": true,
+    "publication_and_revision_semantics_required": true,
+    "identity_and_schema_qa_required": true,
+    "point_in_time_validity_required": true,
+    "independence_from_invalidated_evidence_required": true
+  },
+  "pipeline_after_source_qualification": [
+    "NEW_NAMESPACE_PREREGISTER",
+    "DISCOVERY_ON_ELIGIBLE_NEW_OR_INDEPENDENT_DATA",
+    "BIAS_CAUSALITY_QA",
+    "ROBUSTNESS",
+    "INDEPENDENT_REPLICATION",
+    "REJECT_OR_FREEZE",
+    "SEPARATE_PROSPECTIVE_IF_VALID_SURVIVOR",
+    "REPORT"
+  ],
+  "automation": {
+    "source_repair_and_qualification": "AUTONOMOUS_WHEN_MECHANICAL_AND_ALREADY_AUTHORIZED",
+    "scientific_rerun": "AUTONOMOUS_ONLY_AFTER_SOURCE_GATE_GREEN",
+    "same_historical_window_rerun": "FORBIDDEN",
+    "historical_family_mutation": "FORBIDDEN",
+    "survivor_promotion_by_repair": "FORBIDDEN"
+  }
+}
