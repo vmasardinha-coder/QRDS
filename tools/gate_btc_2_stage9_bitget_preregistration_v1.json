@@ -1,0 +1,75 @@
+{
+  "schema": "gate_btc.2_0.stage9_source_preregistration.v1",
+  "stage_id": 9,
+  "status": "PREREGISTERED_NOT_ADMITTED_CAPTURE_NOT_STARTED",
+  "candidate_provider": "BITGET_PUBLIC_V2",
+  "venue": "BITGET",
+  "instrument": "BTCUSDT",
+  "market_bindings": {
+    "perp": {
+      "market_type": "USDT_FUTURES",
+      "endpoint": "/api/v2/mix/market/ticker",
+      "params": {
+        "productType": "usdt-futures",
+        "symbol": "BTCUSDT"
+      },
+      "role_field_map": {
+        "FUNDING": "fundingRate",
+        "OPEN_INTEREST": "holdingAmount",
+        "PERP_VOLUME": "baseVolume"
+      }
+    },
+    "spot": {
+      "market_type": "SPOT",
+      "endpoint": "/api/v2/spot/market/tickers",
+      "params": {
+        "symbol": "BTCUSDT"
+      },
+      "role_field_map": {
+        "SPOT_VOLUME": "baseVolume"
+      }
+    }
+  },
+  "required_source_roles": [
+    "FUNDING",
+    "OPEN_INTEREST",
+    "PERP_VOLUME",
+    "SPOT_VOLUME"
+  ],
+  "frozen_contract_sha256": "002de032163275b3ddcd4c72b75ce5beb0812906b308bf91ed583e31929df8b5",
+  "qualification_evidence": {
+    "pr": 316,
+    "head_sha": "b7f7a3714f09d30a8d3719cedd1aecc0f50bb8be",
+    "workflow_run_id": 33275212672,
+    "candidate_probe_path": "tools/gate_btc_2_stage9_bitget_candidate_probe.py",
+    "candidate_probe_git_blob_sha": "589e1a1498520b78ac37c64ef5cd3fd1c6ce6698",
+    "qualification_status": "CANDIDATE_READY_FOR_PREREGISTRATION"
+  },
+  "capture_boundary": {
+    "forward_only": true,
+    "historical_rows_backfilled": 0,
+    "qualification_rows_receive_prospective_credit": false,
+    "first_credit_must_postdate_preregistration_merge": true,
+    "source_admitted": false,
+    "capture_started": false
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "fail_closed": true,
+    "promotion_allowed": false,
+    "economics_allowed": false,
+    "stage_9_complete": false
+  },
+  "methodology_changes": 0,
+  "clock_changes": 0,
+  "economics_changes": 0,
+  "next_action": "IMPLEMENT_EXPLICIT_BITGET_FORWARD_CAPTURE_ADAPTER_BOUND_TO_THIS_PREREGISTRATION_THEN_CAPTURE_ONLY_POST_MERGE",
+  "preregistration_sha256": "82fcebffd57e66dd75a25f3c850ef345e9492c033a50db2ed0ac685d36f594ef"
+}
