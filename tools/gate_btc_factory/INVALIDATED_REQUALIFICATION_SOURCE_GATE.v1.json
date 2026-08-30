@@ -1,0 +1,47 @@
+{
+  "schema": "qrds.factory.invalidated_requalification_source_gate.v1",
+  "purpose": "Template/contract only. Runtime SOURCE_GATE.json must be populated by an authorized source qualifier before any economics run.",
+  "required": {
+    "qualified": true,
+    "free_or_official_auditable": true,
+    "publication_semantics_proven": true,
+    "revision_semantics_proven": true,
+    "identity_qa_pass": true,
+    "schema_qa_pass": true,
+    "point_in_time_valid": true,
+    "independent_unseen_evaluation_data": true,
+    "no_historical_backfill_credit": true,
+    "economics_pre_read": false,
+    "evaluation_namespace": "NONEMPTY_NEW_NAMESPACE",
+    "dataset_sha256": "EXACT_RUNTIME_DATASET_HASH",
+    "dataset_relative_path": "runtime/factory_autonomy/invalidated_requalification/source_qualified/EVALUATION_DATA.csv",
+    "windows": {
+      "discovery": {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"},
+      "replication": {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}
+    }
+  },
+  "forbidden": {
+    "same_historical_window_rerun": true,
+    "historical_family_identity_reuse": true,
+    "backfill_as_prospective": true,
+    "threshold_change": true,
+    "direction_change": true,
+    "cost_change": true,
+    "hold_change": true,
+    "cutoff_change": true,
+    "d0_change": true,
+    "pit_change": true,
+    "retune": true,
+    "partial_economics_feedback": true
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "h1_economics_read": false,
+    "fail_closed": true
+  }
+}
