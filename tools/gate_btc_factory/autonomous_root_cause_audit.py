@@ -65,12 +65,38 @@ def locate_boundary(families: list[dict]) -> tuple[dict | None, dict | None]:
     return last_working, None
 
 
-def audit(results_dir: Path, csv_path: Path) -> dict:
+def _source_evidence(meta: dict | None, source_dates: list[str], discovery_count: int) -> dict:
+    m = meta or {}
+    return {
+        'provider': m.get('provider') or m.get('source_repository'),
+        'exact_url': m.get('exact_url'),
+        'final_url': m.get('final_url'),
+        'resource_identifier': m.get('resource_identifier') or m.get('source_file_sha'),
+        'retrieval_timestamp': m.get('retrieval_timestamp'),
+        'raw_sha256': m.get('raw_sha256'),
+        'schema': m.get('normalized_schema') or m.get('source_schema'),
+        'timezone': m.get('timezone'),
+        'coverage': {
+            'discovery_sessions_available': discovery_count,
+            'discovery_first_session': source_dates[0] if source_dates else None,
+            'discovery_last_session': source_dates[-1] if source_dates else None,
+        },
+        'missingness': m.get('missingness', 'UNPROVEN_FAIL_CLOSED'),
+        'publication_timing': m.get('publication_timing', 'UNPROVEN_FAIL_CLOSED'),
+        'revision_semantics': m.get('revision_semantics', 'UNPROVEN_FAIL_CLOSED'),
+        'instrument_identity': m.get('instrument_identity', 'UNPROVEN_FAIL_CLOSED'),
+        'roll_identity': m.get('roll_identity') or m.get('roll_policy') or 'UNPROVEN_FAIL_CLOSED',
+        'primary_source_role': 'DIAGNOSTIC_EXISTING_FACTORY_SOURCE_ONLY',
+    }
+
+
+def audit(results_dir: Path, csv_path: Path, source_metadata: dict | None = None) -> dict:
     families = _ordered_families(results_dir)
     working, failure = locate_boundary(families)
     sessions = load_data(csv_path)
     discovery = subset(sessions, 2022, 2024)
     source_dates = sorted(discovery)
+    source_evidence = _source_evidence(source_metadata, source_dates, len(discovery))
 
     classification = 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
     first_layer = 'SOURCE_AVAILABILITY'
@@ -78,6 +104,7 @@ def audit(results_dir: Path, csv_path: Path) -> dict:
         'discovery_sessions_available': len(discovery),
         'discovery_first_session': source_dates[0] if source_dates else None,
         'discovery_last_session': source_dates[-1] if source_dates else None,
+        'source_evidence': source_evidence,
     }
     affected: list[str] = []
     accounting_defect = False
@@ -93,7 +120,13 @@ def audit(results_dir: Path, csv_path: Path) -> dict:
             'minimum_sessions_required_for_first_causal_z': required,
             'first_failure_recorded_reason': 'NO_TRADES' if _all_no_trades(failure) else None,
         })
-        if len(discovery) < required:
+        coverage_proven = bool(
+            source_dates and
+            source_evidence.get('resource_identifier') and
+            source_evidence.get('raw_sha256') and
+            source_evidence.get('retrieval_timestamp')
+        )
+        if len(discovery) < required and coverage_proven:
             classification = 'SOURCE_DATA_GAP'
             first_layer = 'SOURCE_AVAILABILITY'
             accounting_defect = _all_no_trades(failure)
@@ -105,6 +138,10 @@ def audit(results_dir: Path, csv_path: Path) -> dict:
                 lb = int(c.get('standardization_lookback_sessions', 20))
                 if len(discovery) < lb + 1 and _all_no_trades(fam):
                     affected.append(str(fam.get('family_id')))
+        elif len(discovery) < required:
+            classification = 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
+            first_layer = 'SOURCE_AVAILABILITY'
+            evidence['fail_closed_reason'] = 'SOURCE_COVERAGE_IDENTITY_OR_RAW_HASH_NOT_PROVEN'
         else:
             classification = 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
             first_layer = 'FEATURE_MATERIALIZATION'
@@ -121,7 +158,7 @@ def audit(results_dir: Path, csv_path: Path) -> dict:
         if accounting_defect else 'DIAGNOSTIC_ONLY_FAIL_CLOSED'
     )
     return {
-        'schema': 'qrds.factory.root_cause_audit.v1',
+        'schema': 'qrds.factory.root_cause_audit.v2',
         'generated_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'boundary_last_known_working': working.get('family_id') if working else None,
         'boundary_first_known_failure': failure.get('family_id') if failure else None,
@@ -161,9 +198,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--results-dir', type=Path, required=True)
     ap.add_argument('--csv', type=Path, required=True)
+    ap.add_argument('--source-metadata', type=Path)
     ap.add_argument('--output', type=Path, required=True)
     ns = ap.parse_args()
-    report = audit(ns.results_dir, ns.csv)
+    source_metadata = None
+    if ns.source_metadata:
+        source_metadata = json.loads(ns.source_metadata.read_text(encoding='utf-8'))
+    report = audit(ns.results_dir, ns.csv, source_metadata=source_metadata)
     ns.output.parent.mkdir(parents=True, exist_ok=True)
     ns.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps({
