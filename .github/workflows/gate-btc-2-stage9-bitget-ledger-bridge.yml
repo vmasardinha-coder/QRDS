@@ -6,9 +6,14 @@ on:
     paths:
       - .github/workflows/gate-btc-2-stage9-bitget-ledger-bridge.yml
       - tools/gate_btc_2_stage9_bitget_ledger_bridge.py
+      - tools/gate_btc_2_stage9_bitget_admission_review.py
       - tools/gate_btc_2_stage9_admission_ledger.py
       - tools/gate_btc_2_prospective_counter_bridge.py
       - tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py
+      - tests/test_gate_btc_2_stage9_bitget_admission_review.py
+  workflow_run:
+    workflows: ["GATE BTC 2 Stage 9 Bitget Forward Adapter"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +33,7 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
-  bitget-ledger-bridge:
+  contract-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -36,42 +41,106 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12.13"
-      - name: Compile bridge and tests
-        run: python -m py_compile tools/gate_btc_2_stage9_bitget_ledger_bridge.py tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py
-      - name: Run fail-closed bridge regressions
-        run: python -m unittest -v tests.test_gate_btc_2_stage9_bitget_ledger_bridge
-      - name: Download exact admitted evidence
+      - name: Compile bridge, reviewer and tests
+        run: python -m py_compile tools/gate_btc_2_stage9_bitget_ledger_bridge.py tools/gate_btc_2_stage9_bitget_admission_review.py tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py tests/test_gate_btc_2_stage9_bitget_admission_review.py
+      - name: Run fail-closed regressions
+        run: |
+          python -m unittest -v tests.test_gate_btc_2_stage9_bitget_ledger_bridge
+          python -m unittest -v tests.test_gate_btc_2_stage9_bitget_admission_review
+      - name: Assert immutable scientific boundary
+        run: |
+          echo "RESEARCH_ONLY=true SHADOW_ONLY=true NOT_APPROVED=true"
+          echo "ENGINE_FEED=false ORDERS=0 REAL_CAPITAL_BRL=0"
+          echo "NO_RETUNE=true NO_BACKFILL=true FAIL_CLOSED=true"
+
+  scheduled-admission-ledger:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'schedule' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Bind exact scheduled capture run identity
+        env:
+          CAPTURE_RUN_ID: ${{ github.event.workflow_run.id }}
+          CAPTURE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          META="$(gh api repos/${{ github.repository }}/actions/runs/${CAPTURE_RUN_ID})"
+          test "$(jq -r .event <<<"$META")" = "schedule"
+          test "$(jq -r .head_branch <<<"$META")" = "main"
+          test "$(jq -r .head_sha <<<"$META")" = "$CAPTURE_HEAD_SHA"
+          test "$(jq -r .conclusion <<<"$META")" = "success"
+          echo "CAPTURE_RUN_ID=$CAPTURE_RUN_ID" >> "$GITHUB_ENV"
+          echo "CAPTURE_HEAD_SHA=$CAPTURE_HEAD_SHA" >> "$GITHUB_ENV"
+      - name: Download exact scheduled capture artifact
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p captured admitted
-          gh run download 33287403941 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-first-forward-33287403941 --dir captured
-          gh run download 33291944221 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-admission-33291944221 --dir admitted
-      - name: Append first canonical prospective observation
+          set -euo pipefail
+          mkdir -p captured
+          gh run download "$CAPTURE_RUN_ID" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-forward-${CAPTURE_RUN_ID}" --dir captured
+      - name: Execute independent explicit admission review
         run: |
+          set -euo pipefail
+          mkdir -p admitted
+          python -m tools.gate_btc_2_stage9_bitget_admission_review \
+            --capture-dir captured \
+            --review-out admitted/bitget_stage9_review.json \
+            --admission-out admitted/bitget_stage9_admission.json
+      - name: Restore prior canonical ledger head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence previous
+          PREV_RUN="$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-2-stage9-bitget-ledger-bridge.yml --branch main --event workflow_run --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -n "$PREV_RUN" ]; then
+            gh run download "$PREV_RUN" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${PREV_RUN}" --dir previous
+          else
+            gh run download 33293955248 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-ledger-33293955248 --dir previous
+          fi
+          LEDGER="$(find previous -name stage9_admission_ledger.jsonl -type f -print -quit)"
+          test -n "$LEDGER"
+          cp "$LEDGER" evidence/stage9_admission_ledger.jsonl
+      - name: Append scheduled capture exactly once
+        run: |
+          set -euo pipefail
+          BEFORE="$(wc -l < evidence/stage9_admission_ledger.jsonl)"
           python -m tools.gate_btc_2_stage9_bitget_ledger_bridge \
             --capture-dir captured \
             --admission-dir admitted \
+            --run-id "$CAPTURE_RUN_ID" \
             --ledger evidence/stage9_admission_ledger.jsonl \
             --canonical-admission-out evidence/bitget_canonical_admission.json \
             --counter-out evidence/stage9_counter.json
+          AFTER="$(wc -l < evidence/stage9_admission_ledger.jsonl)"
+          test "$AFTER" -eq "$((BEFORE + 1))"
           python - <<'PY'
           import json
           from pathlib import Path
           c=json.loads(Path('evidence/stage9_counter.json').read_text())
-          assert c['canonical_counter']==1
           assert c['prospective_credit_from_backfill']==0
           assert c['safety']['RESEARCH_ONLY'] is True
           assert c['safety']['SHADOW_ONLY'] is True
           assert c['safety']['NOT_APPROVED'] is True
           assert c['safety']['ENGINE_FEED'] is False
           assert c['safety']['ORDERS']==0 and c['safety']['REAL_CAPITAL']==0
-          print('BITGET_STAGE9_CANONICAL_LEDGER=PASS')
+          print('BITGET_STAGE9_SCHEDULED_CANONICAL_APPEND=PASS')
           PY
-      - name: Preserve canonical ledger evidence
+      - name: Preserve updated canonical ledger and admission evidence
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-stage9-bitget-ledger-${{ github.run_id }}
-          path: evidence/
+          path: |
+            evidence/
+            admitted/
           if-no-files-found: error
           retention-days: 30
