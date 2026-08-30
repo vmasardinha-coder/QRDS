@@ -40,8 +40,26 @@ def _all_no_trades(row: dict) -> bool:
     return bool(counts.get('NO_TRADES', 0) > 0 and set(counts) == {'NO_TRADES'})
 
 
-def audit(results_dir: Path) -> dict:
+def _root_cause_override(root_cause: dict | None) -> tuple[set[str], str | None]:
+    if not root_cause:
+        return set(), None
+    if root_cause.get('scientific_contract_changed') is not False:
+        return set(), None
+    if root_cause.get('historical_integrity_status') != 'HISTORICAL_RESULT_INVALIDATED_BY_MECHANICAL_DEFECT':
+        return set(), None
+    cls = str(root_cause.get('root_cause_classification') or '')
+    if cls != 'SOURCE_DATA_GAP':
+        return set(), None
+    ids = {
+        str(x) for x in ((root_cause.get('affected_scope') or {}).get('family_ids') or [])
+        if str(x).startswith('H')
+    }
+    return ids, cls
+
+
+def audit(results_dir: Path, root_cause: dict | None = None) -> dict:
     files = sorted(results_dir.glob('gate_btc_b3_h*_h*_result.json'), key=lambda p: generation_start(p.name) or -1)
+    override_ids, override_class = _root_cause_override(root_cause)
     reasons = Counter()
     classes = Counter()
     features = Counter()
@@ -53,6 +71,7 @@ def audit(results_dir: Path) -> dict:
     cells_total = 0
     discovery_qualified_families = 0
     replication_attempted_families = 0
+    overridden_cells = 0
 
     for path in files:
         obj = load(path)
@@ -95,9 +114,12 @@ def audit(results_dir: Path) -> dict:
                         continue
                     cells_total += 1
                     metrics = cell.get('metrics') or {}
-                    cell_reasons = metrics.get('reasons') or []
+                    cell_reasons = list(metrics.get('reasons') or [])
                     if not cell_reasons and cell.get('qualified') is False:
                         cell_reasons = ['UNSPECIFIED_REJECTION']
+                    if fid in override_ids and set(cell_reasons) == {'NO_TRADES'}:
+                        cell_reasons = ['SOURCE_DATA_GAP']
+                        overridden_cells += 1
                     for raw in cell_reasons:
                         reason = str(raw)
                         cls = reason_class(reason)
@@ -134,7 +156,7 @@ def audit(results_dir: Path) -> dict:
     latest_20_all_no_trades = bool(len(latest_20) == 20 and all(_all_no_trades(row) for row in latest_20))
 
     return {
-        'schema': 'qrds.factory.scientific_mortality.v1',
+        'schema': 'qrds.factory.scientific_mortality.v2',
         'generated_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
         'results_authority': 'gate-btc-runtime/runtime/autonomous_science/results',
         'generations_scanned': len(files),
@@ -148,6 +170,12 @@ def audit(results_dir: Path) -> dict:
         'post_h31_survivors': sorted(set(post_h31)),
         'near_gate_families': near_gate[-100:],
         'near_gate_family_count': len(near_gate),
+        'root_cause_override': {
+            'classification': override_class,
+            'affected_family_count': len(override_ids),
+            'overridden_no_trade_cells': overridden_cells,
+            'historical_results_mutated': False,
+        },
         'mortality': {
             'reason_counts': dict(reasons.most_common()),
             'class_counts': dict(classes),
@@ -170,6 +198,7 @@ def audit(results_dir: Path) -> dict:
             'no_trades_concentration_flag': bool(judged and no_trades / judged >= 0.50),
             'latest_20_all_no_trades_flag': latest_20_all_no_trades,
             'post_h31_survivor_found': bool(post_h31),
+            'root_cause_override_applied': bool(overridden_cells),
         },
         'safety': {
             'research_only': True,
@@ -188,9 +217,11 @@ def audit(results_dir: Path) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--results-dir', type=Path, required=True)
+    ap.add_argument('--root-cause', type=Path)
     ap.add_argument('--output', type=Path, required=True)
     ns = ap.parse_args()
-    report = audit(ns.results_dir)
+    root_cause = load(ns.root_cause) if ns.root_cause and ns.root_cause.exists() else None
+    report = audit(ns.results_dir, root_cause=root_cause)
     ns.output.parent.mkdir(parents=True, exist_ok=True)
     ns.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps({
@@ -199,6 +230,7 @@ def main() -> int:
         'survivors': report['survivors'],
         'post_h31_survivors': report['post_h31_survivors'],
         'mortality': report['mortality']['class_counts'],
+        'root_cause_override': report['root_cause_override'],
     }, sort_keys=True))
     return 0
 
