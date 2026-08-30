@@ -34,7 +34,8 @@ def require(ok: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def _safe_boundary() -> dict[str, Any]:
+def _capture_safe_boundary() -> dict[str, Any]:
+    """Fields emitted by the frozen forward-capture adapter."""
     return {
         "research_only": True,
         "shadow_only": True,
@@ -46,8 +47,15 @@ def _safe_boundary() -> dict[str, Any]:
         "no_backfill": True,
         "fail_closed": True,
         "stage_9_complete": False,
-        "economics_allowed": False,
         "promotion_allowed": False,
+    }
+
+
+def _review_safe_boundary() -> dict[str, Any]:
+    """Safety fields asserted on admission-review evidence."""
+    return {
+        **_capture_safe_boundary(),
+        "economics_allowed": False,
     }
 
 
@@ -74,7 +82,10 @@ def review_capture(capture_dir: Path, prereg_path: Path = DEFAULT_PREREG, contra
     require(tuple(decision.get("roles", {}).keys()) == EXPECTED_ROLES, "capture roles mismatch")
     require(decision.get("forward_only") is True and decision.get("historical_rows_backfilled") == 0, "capture not forward-only")
     require(decision.get("source_admitted") is False and decision.get("prospective_credit") == 0, "capture already credited/admitted")
-    for k, v in _safe_boundary().items():
+    require(decision.get("methodology_changes") == 0, "capture methodology changed")
+    require(decision.get("clock_changes") == 0, "capture clock changed")
+    require(decision.get("economics_changes") == 0, "capture economics changed")
+    for k, v in _capture_safe_boundary().items():
         require(decision.get(k) == v, f"unsafe capture field: {k}")
 
     captured = parse_utc(decision.get("captured_at_utc"))
@@ -101,7 +112,7 @@ def review_capture(capture_dir: Path, prereg_path: Path = DEFAULT_PREREG, contra
         "synthetic_rows": False,
         "timestamp_repair": False,
         "prospective_observations_admitted": 1,
-        **_safe_boundary(),
+        **_review_safe_boundary(),
     }
     review["review_sha256"] = canonical_hash(review)
 
@@ -120,7 +131,7 @@ def review_capture(capture_dir: Path, prereg_path: Path = DEFAULT_PREREG, contra
         "historical_recovery": False,
         "backfill": False,
         "silent_source_substitution": False,
-        **_safe_boundary(),
+        **_review_safe_boundary(),
     }
     admission["admission_sha256"] = canonical_hash(admission)
     return review, admission
