@@ -1,0 +1,41 @@
+{
+  "schema": "gate_btc.2_0.stage9_bitget_collection_clock.v1",
+  "stage_id": 9,
+  "provider": "BITGET_PUBLIC_V2",
+  "venue": "BITGET",
+  "instrument": "BTCUSDT",
+  "status": "AUTHORIZED_NOT_ACTIVE_UNTIL_MERGE",
+  "authorization": {
+    "human_authorized": true,
+    "authorized_date_utc": "2026-08-30",
+    "scope": "PROSPECTIVE_STAGE9_BITGET_COLLECTION_CLOCK_ONLY"
+  },
+  "clock": {
+    "cadence_minutes": 60,
+    "cron_utc": "0 * * * *",
+    "first_scheduled_capture_must_postdate_clock_merge": true,
+    "missed_runs_backfilled": false,
+    "schedule_delay_does_not_trigger_timestamp_repair": true,
+    "capture_timestamp_remains_observed_runtime_timestamp": true
+  },
+  "scientific_boundary": {
+    "required_n_changed": false,
+    "statistical_independence_claimed": false,
+    "methodology_changed_beyond_authorized_collection_clock": false,
+    "qualification_or_prior_capture_receives_new_credit": false
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders_generated": 0,
+    "real_capital_brl": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "fail_closed": true,
+    "promotion_allowed": false,
+    "economics_allowed": false,
+    "stage_9_complete": false
+  }
+}
