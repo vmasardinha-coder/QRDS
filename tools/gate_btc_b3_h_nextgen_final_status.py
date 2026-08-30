@@ -45,6 +45,14 @@ def build(stage2_path: Path, stage2b_path: Path, source_path: Path, out_path: Pa
         'generated_at_utc': datetime.now(timezone.utc).isoformat(),
         'status': 'CLOSED_NO_NEXTGEN_SURVIVOR',
         'reporting_label': 'B3_H_NEXTGEN_CLOSED_NO_SURVIVOR',
+        # Scientific scope guard: this legacy H2/H3/H4(+H5 eligibility) close is
+        # intentionally NOT a close of the canonical append-only Hxxx frontier.
+        # A frontier may advance only after a preregistered evaluator materially
+        # bound to that exact frontier emits its own terminal result.
+        'evaluated_scope': 'LEGACY_H2_H3_H4_H5_ONLY',
+        'frontier_bound': False,
+        'scientific_frontier_close_allowed': False,
+        'canonical_runtime_mutation_allowed': False,
         'h1_status': 'UNCHANGED_PROSPECTIVE_HOLDOUT',
         'h1_cutoff_exclusive': '2026-08-10',
         'h1_economics_read': False,
@@ -90,7 +98,7 @@ def build(stage2_path: Path, stage2b_path: Path, source_path: Path, out_path: Pa
             'fixed_point_economics_allowed': src.get('fixed_point_economics_allowed'),
         },
         'next_action': 'CONTINUE_H1_UNCHANGED_AND_OPEN_ONLY_NEW_INDEPENDENT_RESEARCH_FAMILIES',
-        'reporting_note': 'H2-H5 next-generation generation is closed with a valid null result; no candidate was activated and H1 prospective economics were never read.',
+        'reporting_note': 'Legacy H2-H5 research scope is closed with a valid null result; this artifact is not bound to, and must not close or advance, the canonical append-only Hxxx frontier. No candidate was activated and H1 prospective economics were never read.',
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
