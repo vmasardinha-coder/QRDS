@@ -40,7 +40,7 @@ jobs:
       - name: Run preregistration regression suite
         run: python -m unittest -v tests.test_gate_btc_2_stage9_source_preregistration
       - name: Validate canonical Bitget preregistration
-        run: python tools/gate_btc_2_stage9_source_preregistration.py
+        run: python -m tools.gate_btc_2_stage9_source_preregistration
       - name: Assert safety boundary remains closed
         run: |
           python - <<'PY'
