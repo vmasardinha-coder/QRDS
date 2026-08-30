@@ -97,3 +97,26 @@ def test_recent_all_no_trades_regime_is_visible_even_when_aggregate_is_low(tmp_p
     assert r['recent_all_no_trades_streak']['generation_count'] == 20
     assert r['recent_all_no_trades_streak']['generations'][0] == 'H1800-H1809'
     assert r['recent_all_no_trades_streak']['generations'][-1] == 'H1990-H1999'
+
+
+def test_root_cause_override_reclassifies_without_mutating_historical_result(tmp_path):
+    _write(
+        tmp_path / 'gate_btc_b3_h1960_h1969_result.json',
+        'H1960-H1969',
+        [_family('H1962', ['NO_TRADES', 'NO_TRADES', 'NO_TRADES'])],
+    )
+    root = {
+        'root_cause_classification': 'SOURCE_DATA_GAP',
+        'historical_integrity_status': 'HISTORICAL_RESULT_INVALIDATED_BY_MECHANICAL_DEFECT',
+        'scientific_contract_changed': False,
+        'affected_scope': {'family_ids': ['H1962']},
+    }
+    before = (tmp_path / 'gate_btc_b3_h1960_h1969_result.json').read_text(encoding='utf-8')
+    r = audit(tmp_path, root_cause=root)
+    after = (tmp_path / 'gate_btc_b3_h1960_h1969_result.json').read_text(encoding='utf-8')
+
+    assert before == after
+    assert r['mortality']['class_counts']['NO_TRADES'] == 0
+    assert r['mortality']['class_counts']['INFRASTRUCTURE_OR_DATA'] == 3
+    assert r['root_cause_override']['overridden_no_trade_cells'] == 3
+    assert r['root_cause_override']['historical_results_mutated'] is False
