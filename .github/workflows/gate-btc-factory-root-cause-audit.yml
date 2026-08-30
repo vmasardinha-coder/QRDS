@@ -24,6 +24,7 @@ permissions:
   actions: write
 
 env:
+  GH_TOKEN: ${{ github.token }}
   RESEARCH_ONLY: 'true'
   SHADOW_ONLY: 'true'
   NOT_APPROVED: 'true'
@@ -79,13 +80,41 @@ jobs:
           python -m py_compile tools/gate_btc_factory/autonomous_root_cause_audit.py
           pytest -q tests/test_gate_btc_autonomous_root_cause.py tests/test_gate_btc_scientific_mortality_audit.py
 
-      - name: Build diagnostic-only guarded source snapshot
+      - name: Determine unresolved root-cause work
+        id: work
         if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          mortality=Path('runtime_repo/runtime/factory_autonomy/SCIENTIFIC_MORTALITY_RUNTIME.json')
+          root=Path('runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json')
+          anomaly=True
+          if mortality.exists():
+              m=json.load(open(mortality,encoding='utf-8'))
+              anomaly=bool((m.get('interpretation') or {}).get('latest_20_all_no_trades_flag'))
+          resolved=False
+          if root.exists():
+              r=json.load(open(root,encoding='utf-8'))
+              resolved=(
+                  r.get('root_cause_unresolved') is False and
+                  r.get('boundary_first_known_failure') == 'H1962' and
+                  r.get('root_cause_classification') != 'INSUFFICIENT_EVIDENCE_FAIL_CLOSED'
+              )
+          required=anomaly and not resolved
+          print(f"required={'true' if required else 'false'}")
+          print(f"anomaly={'true' if anomaly else 'false'}")
+          print(f"resolved={'true' if resolved else 'false'}")
+          PY
+
+      - name: Build diagnostic-only guarded source snapshot
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
         working-directory: source_repo
         run: python tools/gate_btc_b3_h_free_github_ingest.py
 
       - name: Execute deterministic historical boundary audit
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
         working-directory: source_repo
         run: |
           python -m tools.gate_btc_factory.autonomous_root_cause_audit \
@@ -94,7 +123,7 @@ jobs:
             --output ROOT_CAUSE_RUNTIME.json
 
       - name: Assert root-cause completion contract
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
         working-directory: source_repo
         run: |
           python - <<'PY'
@@ -116,7 +145,7 @@ jobs:
           PY
 
       - name: Persist append-only audit and latest pointer
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -127,7 +156,6 @@ jobs:
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/factory_autonomy/root_cause_audits runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
-          if git diff --cached --quiet; then exit 0; fi
           git commit -m "Factory root-cause audit ${{ github.run_id }}"
           for i in 1 2 3 4 5; do
             git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
@@ -135,8 +163,12 @@ jobs:
           done
           exit 1
 
+      - name: Re-audit mortality after resolved diagnosis
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
+        run: gh workflow run gate-btc-scientific-mortality-audit.yml --repo "$GITHUB_REPOSITORY" --ref main
+
       - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.work.outputs.required == 'true'
         with:
           name: gate-btc-root-cause-${{ github.run_id }}
           path: source_repo/ROOT_CAUSE_RUNTIME.json
