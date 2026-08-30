@@ -116,7 +116,7 @@ def test_root_cause_override_reclassifies_without_mutating_historical_result(tmp
     after = (tmp_path / 'gate_btc_b3_h1960_h1969_result.json').read_text(encoding='utf-8')
 
     assert before == after
-    assert r['mortality']['class_counts']['NO_TRADES'] == 0
+    assert r['mortality']['class_counts'].get('NO_TRADES', 0) == 0
     assert r['mortality']['class_counts']['INFRASTRUCTURE_OR_DATA'] == 3
     assert r['root_cause_override']['overridden_no_trade_cells'] == 3
     assert r['root_cause_override']['historical_results_mutated'] is False
