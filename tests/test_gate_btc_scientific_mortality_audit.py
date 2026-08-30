@@ -78,3 +78,22 @@ def test_no_trades_concentration_flag(tmp_path):
     r = audit(tmp_path)
     assert r['interpretation']['no_trades_concentration_flag'] is True
     assert r['interpretation']['infrastructure_bottleneck_flag'] is False
+
+
+def test_recent_all_no_trades_regime_is_visible_even_when_aggregate_is_low(tmp_path):
+    for i in range(100):
+        start = 1000 + i * 10
+        reasons = ['NEGATIVE_EDGE'] if i < 80 else ['NO_TRADES']
+        _write(
+            tmp_path / f'gate_btc_b3_h{start}_h{start + 9}_result.json',
+            f'H{start}-H{start + 9}',
+            [_family(f'H{start}', reasons)],
+        )
+
+    r = audit(tmp_path)
+    assert r['mortality']['no_trades_fraction'] == 0.20
+    assert r['interpretation']['no_trades_concentration_flag'] is False
+    assert r['interpretation']['latest_20_all_no_trades_flag'] is True
+    assert r['recent_all_no_trades_streak']['generation_count'] == 20
+    assert r['recent_all_no_trades_streak']['generations'][0] == 'H1800-H1809'
+    assert r['recent_all_no_trades_streak']['generations'][-1] == 'H1990-H1999'
