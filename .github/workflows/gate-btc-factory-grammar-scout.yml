@@ -1,0 +1,127 @@
+name: GATE BTC Factory Grammar Scout
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 11 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/autonomous_grammar_scout.py'
+      - 'tests/test_gate_btc_autonomous_grammar_scout.py'
+      - '.github/workflows/gate-btc-factory-grammar-scout.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+concurrency:
+  group: gate-btc-factory-grammar-scout-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+
+      - name: Regression-test grammar scout
+        run: |
+          python -m pip install -q requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/autonomous_grammar_scout.py
+          pytest -q tests/test_gate_btc_autonomous_grammar_scout.py
+
+      - name: Research new grammar channels without economics
+        if: github.event_name != 'pull_request'
+        run: |
+          python source_repo/tools/gate_btc_factory/autonomous_grammar_scout.py \
+            --results-dir runtime_repo/runtime/autonomous_science/results \
+            --existing-dir runtime_repo/runtime/factory_autonomy/grammar_scout_audits \
+            --output GRAMMAR_SCOUT_RUNTIME.json
+
+      - name: Assert ideation-only completion contract
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('GRAMMAR_SCOUT_RUNTIME.json',encoding='utf-8'))
+          assert d['mode']=='IDEATION_ONLY_NO_ECONOMICS'
+          assert d['history_used_for_selection'] is False
+          assert d['b3_adr_scope_required'] is True
+          assert d['evaluation_data_policy'].startswith('FORWARD_OR_INDEPENDENT_UNSEEN_ONLY')
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          assert s['h1_economics_read'] is False
+          for p in d['proposals']:
+              assert p['economics_read'] is False
+              assert p['may_allocate_family_id'] is False
+              assert p['may_change_existing_grammar'] is False
+              assert p['may_test_threshold_grid'] is False
+          print('GRAMMAR_SCOUT_COMPLETION_CONTRACT=PASS')
+          PY
+
+      - name: Persist append-only scout ledger and latest pointer
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy/grammar_scout_audits
+          cp GRAMMAR_SCOUT_RUNTIME.json "runtime_repo/runtime/factory_autonomy/grammar_scout_audits/${{ github.run_id }}.json"
+          cp GRAMMAR_SCOUT_RUNTIME.json runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/grammar_scout_audits runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json
+          git commit -m "Factory grammar scout ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-grammar-scout-${{ github.run_id }}
+          path: GRAMMAR_SCOUT_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
