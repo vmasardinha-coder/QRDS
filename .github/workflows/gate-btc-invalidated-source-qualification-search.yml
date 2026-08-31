@@ -3,7 +3,7 @@ name: GATE BTC Invalidated Source Qualification Search
 on:
   workflow_dispatch:
   schedule:
-    - cron: '7 */6 * * *'
+    - cron: '7 */2 * * *'
   workflow_run:
     workflows: ["GATE BTC Factory Root Cause Audit"]
     types: [completed]
@@ -65,7 +65,7 @@ jobs:
       (github.event_name != 'workflow_run' ||
        (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -120,7 +120,8 @@ jobs:
           import json
           d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
           assert d['status'] in {'ACTIVE_SEARCHING_QUALIFICATION','SOURCE_GATE_GREEN'}
-          assert d['cadence_hours']==6
+          assert d['cadence_hours']==2
+          assert d['search']['github_query_count'] >= 10
           assert d['qualification_policy']['no_candidate_promoted_by_reachability_alone'] is True
           s=d['safety']
           assert s['research_only'] and s['shadow_only'] and s['not_approved']
@@ -159,8 +160,10 @@ jobs:
           print(f"- Affected families: **{d['affected_family_count']}**")
           print(f"- Strict source gate: **{d['source_gate']['reason']}**")
           print(f"- Reachable official B3 probes: **{d['search']['reachable_official_probe_count']}**")
+          print(f"- GitHub queries: **{d['search']['github_query_count']}**")
+          print(f"- GitHub candidates inspected: **{d['search']['github_candidate_count']}**")
           print(f"- Independent schema/identity candidates: **{d['search']['schema_identity_candidate_count']}**")
-          print('- Cadence: **every 6 hours**')
+          print('- Cadence: **every 2 hours**')
           PY
 
       - name: Hand off latest source state to requalification queue
