@@ -22,7 +22,7 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 - Selector Alpha/QOS incremental-alpha hypothesis is closed/refuted under its frozen program. This removes scientific privilege from that selector; it does not invalidate Gate BTC 2.0 infrastructure.
 - Terminal PIT reconstruction recovered 9819/10254 expected observations (~95.76%); unresolved PIT/survivorship gaps remain evidence, not permission to weaken gates.
 - Official Gate BTC 2.0 dataset seal/readiness remains blocked until its independent readiness contract passes.
-- Stage 9 implementation/builder/workflow existence is not prospective evidence. Only authorized forward-only observations can earn prospective credit. Authorized forward-only captures have now earned prospective credit, but evidence remains insufficient for Stage 9 completion and the state is `COLLECT_MORE` until the frozen evidence target is satisfied.
+- Stage 9 implementation/builder/workflow existence is not prospective evidence. Only authorized forward-only observations can earn prospective credit. If evidence is valid but insufficient, remain `COLLECT_MORE`. Authorized forward-only captures have now earned prospective credit, but evidence remains insufficient for Stage 9 completion and the state is `COLLECT_MORE` until the frozen evidence target is satisfied.
 - Strategy Factory discovery continues independently from Evidence Factory adjudication.
 
 ## Canonical 16 systems
