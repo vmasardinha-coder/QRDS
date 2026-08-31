@@ -7,6 +7,15 @@ on:
   workflow_run:
     workflows: ["GATE BTC Factory Root Cause Audit"]
     types: [completed]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/invalidated_source_qualification_search.py'
+      - 'tools/gate_btc_factory/factory_activity_status.py'
+      - 'tests/test_gate_btc_invalidated_source_qualification_search.py'
+      - 'tests/test_gate_btc_factory_activity_status.py'
+      - '.github/workflows/gate-btc-invalidated-source-qualification-search.yml'
+      - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
   push:
     branches: [main]
     paths:
