@@ -99,9 +99,32 @@ def _openalex_search(query: str, per_page: int = 5) -> list[dict]:
     return rows
 
 
-def scout(results_dir: Path, existing_dir: Path | None = None, fetcher=_openalex_search) -> dict:
+def _mt5_status(path: Path | None) -> dict:
+    if not path or not path.exists():
+        return {"readiness": "MT5_UNAVAILABLE", "available": False, "packet_sha256": None, "record_count": 0}
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"readiness": "MT5_UNAVAILABLE", "available": False, "packet_sha256": None, "record_count": 0}
+    safe = d.get("safety") or {}
+    boundary_ok = (
+        safe.get("MT5_READ_ONLY") is True and safe.get("NO_ORDER_SEND") is True and
+        safe.get("ORDERS") == 0 and safe.get("REAL_CAPITAL") == 0 and safe.get("ENGINE_FEED") is False and
+        d.get("primary_scientific_truth") is False and d.get("factory_economics_feedback_allowed") is False
+    )
+    available = boundary_ok and d.get("readiness") == "READY_SHADOW_DATA_ONLY" and bool(d.get("factory_family_research_available"))
+    return {
+        "readiness": d.get("readiness") if boundary_ok else "MT5_BOUNDARY_FAIL_CLOSED",
+        "available": available,
+        "packet_sha256": d.get("packet_sha256") if boundary_ok else None,
+        "record_count": int(d.get("record_count", 0) or 0) if boundary_ok else 0,
+    }
+
+
+def scout(results_dir: Path, existing_dir: Path | None = None, fetcher=_openalex_search, mt5_source_status: Path | None = None) -> dict:
     historical = _historical_tokens(results_dir)
     existing = _existing_channel_ids(existing_dir)
+    mt5 = _mt5_status(mt5_source_status)
     proposals = []
     for ch in CHANNELS:
         evidence = []
@@ -135,6 +158,10 @@ def scout(results_dir: Path, existing_dir: Path | None = None, fetcher=_openalex
             "mechanism": ch["mechanism"],
             "required_new_data": ch["required_new_data"],
             "official_free_source_candidates": ch["official_free_source_candidates"],
+            "auxiliary_mt5_source_available": mt5["available"],
+            "auxiliary_mt5_packet_sha256": mt5["packet_sha256"],
+            "auxiliary_mt5_record_count": mt5["record_count"],
+            "mt5_is_primary_truth": False,
             "literature_evidence": unique[:12],
             "research_errors": errors,
             "historical_token_overlap": overlap,
@@ -154,6 +181,8 @@ def scout(results_dir: Path, existing_dir: Path | None = None, fetcher=_openalex
         "b3_adr_scope_required": True,
         "evaluation_data_policy": "FORWARD_OR_INDEPENDENT_UNSEEN_ONLY_AFTER_SEPARATE_PREREGISTRATION",
         "root_cause_audit_dependency": "NONE_CAN_RUN_IN_PARALLEL",
+        "mt5_auxiliary_source": mt5,
+        "mt5_unavailable_blocks_scout": False,
         "proposals": proposals,
         "safety": {
             "research_only": True,
@@ -175,9 +204,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results-dir", required=True)
     ap.add_argument("--existing-dir")
+    ap.add_argument("--mt5-source-status")
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
-    out = scout(Path(args.results_dir), Path(args.existing_dir) if args.existing_dir else None)
+    out = scout(
+        Path(args.results_dir),
+        Path(args.existing_dir) if args.existing_dir else None,
+        mt5_source_status=Path(args.mt5_source_status) if args.mt5_source_status else None,
+    )
     Path(args.output).write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return 0
 
