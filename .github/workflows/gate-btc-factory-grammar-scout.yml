@@ -8,8 +8,11 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/autonomous_grammar_scout.py'
+      - 'tools/gate_btc_factory/mt5_shared_family_source.py'
       - 'tests/test_gate_btc_autonomous_grammar_scout.py'
+      - 'tests/test_gate_btc_mt5_shared_family_source.py'
       - '.github/workflows/gate-btc-factory-grammar-scout.yml'
+      - '.github/workflows/gate-btc-mt5-shared-family-source.yml'
 
 permissions:
   contents: write
@@ -66,15 +69,20 @@ jobs:
         run: |
           python -m pip install -q requests pytest
           cd source_repo
-          python -m py_compile tools/gate_btc_factory/autonomous_grammar_scout.py
-          pytest -q tests/test_gate_btc_autonomous_grammar_scout.py
+          python -m py_compile tools/gate_btc_factory/autonomous_grammar_scout.py tools/gate_btc_factory/mt5_shared_family_source.py
+          pytest -q tests/test_gate_btc_autonomous_grammar_scout.py tests/test_gate_btc_mt5_shared_family_source.py
 
       - name: Research new grammar channels without economics
         if: github.event_name != 'pull_request'
         run: |
+          MT5_ARG=""
+          if [ -f runtime_repo/runtime/factory_sources/mt5/SOURCE_PACKET.json ]; then
+            MT5_ARG="--mt5-source-status runtime_repo/runtime/factory_sources/mt5/SOURCE_PACKET.json"
+          fi
           python source_repo/tools/gate_btc_factory/autonomous_grammar_scout.py \
             --results-dir runtime_repo/runtime/autonomous_science/results \
             --existing-dir runtime_repo/runtime/factory_autonomy/grammar_scout_audits \
+            $MT5_ARG \
             --output GRAMMAR_SCOUT_RUNTIME.json
 
       - name: Assert ideation-only completion contract
@@ -87,6 +95,7 @@ jobs:
           assert d['history_used_for_selection'] is False
           assert d['b3_adr_scope_required'] is True
           assert d['evaluation_data_policy'].startswith('FORWARD_OR_INDEPENDENT_UNSEEN_ONLY')
+          assert d['mt5_unavailable_blocks_scout'] is False
           s=d['safety']
           assert s['research_only'] and s['shadow_only'] and s['not_approved']
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
@@ -97,6 +106,7 @@ jobs:
               assert p['may_allocate_family_id'] is False
               assert p['may_change_existing_grammar'] is False
               assert p['may_test_threshold_grid'] is False
+              assert p['mt5_is_primary_truth'] is False
           print('GRAMMAR_SCOUT_COMPLETION_CONTRACT=PASS')
           PY
 
