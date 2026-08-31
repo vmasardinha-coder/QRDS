@@ -1,7 +1,7 @@
 {
   "schema": "qrds.factory.activity_status.v1",
-  "generated_at_utc": "2026-08-31T01:35:33.573764Z",
-  "overall_status": "DEGRADED_WARMUP_OR_STALE",
+  "generated_at_utc": "2026-08-31T01:35:59.291396Z",
+  "overall_status": "ACTIVE",
   "monitor_cadence_minutes": 15,
   "cadence_policy": {
     "grammar_scout_hours": 24,
@@ -19,16 +19,17 @@
     },
     "source_qualification_search": {
       "name": "source_qualification_search",
-      "active": false,
-      "freshness": "MISSING",
-      "status": "WAITING_FIRST_RUNTIME",
+      "active": true,
+      "freshness": "FRESH",
+      "age_hours": 0.01,
+      "status": "ACTIVE_SEARCHING_QUALIFICATION",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json"
     },
     "invalidated_family_requalification": {
       "name": "invalidated_family_requalification",
       "active": true,
       "freshness": "FRESH",
-      "age_hours": 0.23,
+      "age_hours": 0.24,
       "status": "SOURCE_GATE_NOT_GREEN:qualified",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json",
       "affected_family_count": 768,
