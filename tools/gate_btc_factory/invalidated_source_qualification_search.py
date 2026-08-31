@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,35 @@ def utcnow() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _win_identity_hint(sample: str, path: str | None = None) -> bool:
+    """Conservative market-identity hint only; never a qualification gate by itself."""
+    text = f"{path or ''}\n{sample}".upper()
+    strong = (
+        r"\bWINFUT\b",
+        r"\bWIN\$N\b",
+        r"\bWIN[FGHJKMNQUVXZ]\d{2}\b",
+        r"MINI[-_ ]?INDICE",
+        r"MINI[-_ ]?ÍNDICE",
+        r"INDICE FUTURO",
+        r"ÍNDICE FUTURO",
+        r"B3.{0,80}\bWIN\b",
+        r"BM&F.{0,80}\bWIN\b",
+    )
+    return any(re.search(pattern, text) for pattern in strong)
+
+
+def _intraday_schema_hint(sample: str) -> bool:
+    """Require time plus price/OHLC evidence; generic prose words must not pass."""
+    text = sample.upper()
+    has_time = any(token in text for token in ("TIMESTAMP", "DATETIME", "DATE,TIME", "DATA,HORA", "DATA;HORA"))
+    has_ohlc = all(token in text for token in ("OPEN", "HIGH", "LOW", "CLOSE")) or all(
+        token in text for token in ("ABERTURA", "MAXIMA", "MINIMA", "FECHAMENTO")
+    ) or all(token in text for token in ("ABERTURA", "MÁXIMA", "MÍNIMA", "FECHAMENTO"))
+    has_trade_price = any(token in text for token in ("PRICE", "PRECO", "PREÇO"))
+    delimited = "," in text or ";" in text or "\t" in text
+    return has_time and (has_ohlc or has_trade_price) and delimited
+
+
 def _sample_response(session: requests.Session, url: str) -> dict[str, Any]:
     try:
         with session.get(
@@ -57,7 +87,6 @@ def _sample_response(session: requests.Session, url: str) -> dict[str, Any]:
                     if len(sample) >= 65536:
                         break
             text = sample[:65536].decode("latin-1", errors="ignore")
-            upper = text.upper()
             return {
                 "url": url,
                 "final_url": str(r.url),
@@ -67,8 +96,8 @@ def _sample_response(session: requests.Session, url: str) -> dict[str, Any]:
                 "content_length": r.headers.get("content-length"),
                 "sample_bytes": len(sample),
                 "sample_sha256": hashlib.sha256(sample).hexdigest() if sample else None,
-                "win_identity_hint": "WIN" in upper,
-                "csv_schema_hint": any(x in upper for x in ("TICKER", "ATIVO", "DATA", "HORA", "PRECO", "PRICE")),
+                "win_identity_hint": _win_identity_hint(text, str(r.url)),
+                "csv_schema_hint": _intraday_schema_hint(text),
             }
     except Exception as exc:
         return {
@@ -107,10 +136,11 @@ def _github_candidates(session: requests.Session, token: str | None) -> list[dic
                 if not key or key in seen:
                     continue
                 seen.add(key)
+                path = str(item.get("path") or "")
                 row: dict[str, Any] = {
                     "query": query,
                     "repository": repo,
-                    "path": item.get("path"),
+                    "path": path,
                     "html_url": item.get("html_url"),
                     "independent_of_invalidated_source": True,
                     "free_auditable_candidate": True,
@@ -128,10 +158,10 @@ def _github_candidates(session: requests.Session, token: str | None) -> list[dic
                         fr.raise_for_status()
                         obj = fr.json()
                         raw = base64.b64decode(obj.get("content", "")) if obj.get("encoding") == "base64" else b""
-                        sample = raw[:65536].decode("latin-1", errors="ignore").upper()
+                        sample = raw[:65536].decode("latin-1", errors="ignore")
                         row["resource_sha"] = obj.get("sha")
-                        row["identity_qa_pass"] = "WIN" in sample
-                        row["schema_qa_pass"] = any(x in sample for x in ("DATA", "DATE", "HORA", "TIME")) and any(x in sample for x in ("OPEN", "ABERTURA", "PRICE", "PRECO"))
+                        row["identity_qa_pass"] = _win_identity_hint(sample, path)
+                        row["schema_qa_pass"] = _intraday_schema_hint(sample)
                         if row["identity_qa_pass"] and row["schema_qa_pass"]:
                             row["status"] = "SCHEMA_IDENTITY_CANDIDATE_STILL_PIT_UNQUALIFIED"
                     except Exception as exc:
