@@ -63,3 +63,15 @@ def test_search_stays_fail_closed_without_strict_gate(tmp_path: Path, monkeypatc
     assert s["research_only"] and s["shadow_only"] and s["not_approved"]
     assert s["engine_feed"] is False and s["orders"] == 0 and s["real_capital"] == 0
     assert s["no_retune"] and s["no_backfill"] and s["no_counter_reset"] and s["fail_closed"]
+
+
+def test_identity_hint_rejects_generic_win_words():
+    prose = "How to win at localization. date time open price are configuration labels."
+    assert mod._win_identity_hint(prose, "web/src/locales/en.ts") is False
+    assert mod._intraday_schema_hint(prose) is False
+
+
+def test_identity_and_schema_hints_accept_explicit_win_market_data():
+    sample = "timestamp,open,high,low,close,volume\n2026-08-28T10:00:00-03:00,1,2,0,1,10\n"
+    assert mod._win_identity_hint(sample, "data/WINFUT_5min.csv") is True
+    assert mod._intraday_schema_hint(sample) is True
