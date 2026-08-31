@@ -1,0 +1,85 @@
+name: GATE BTC 2 V2A Source Qualification Batch 1
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_source_qualification_batch1_v1.json
+      - tools/gate_btc_2_v2a_source_qualification_batch1_runner.py
+      - tests/test_gate_btc_2_v2a_source_qualification_batch1_runner.py
+      - .github/workflows/gate-btc-2-v2a-source-qualification-batch1.yml
+  workflow_dispatch:
+    inputs:
+      discovery_start:
+        description: Discovery horizon only; never a scientific cutoff
+        required: true
+        default: '2017-01-01'
+      discovery_end:
+        description: Inclusive UTC discovery end date
+        required: true
+        default: '2026-08-30'
+
+permissions:
+  contents: read
+
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      NOT_APPROVED: 'true'
+      ENGINE_FEED: 'false'
+      ORDERS: '0'
+      REAL_CAPITAL_BRL: '0'
+      NO_RETUNE: 'true'
+      NO_BACKFILL: 'true'
+      NO_SILENT_SOURCE_SUBSTITUTION: 'true'
+      FAIL_CLOSED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Verify preregistration and runner tests
+        run: |
+          python -m py_compile tools/gate_btc_2_v2a_source_qualification_batch1_runner.py
+          python -m pytest -q tests/test_gate_btc_2_v2a_source_qualification_batch1_runner.py
+          python - <<'PY'
+          import json
+          p=json.load(open('tools/gate_btc_2_v2a_source_qualification_batch1_v1.json'))
+          assert p['status']=='PREREGISTERED_QUALIFICATION_ONLY'
+          assert p['scientific_credit'] is False
+          assert p['dataset_sealed'] is False
+          assert p['promotion_allowed'] is False
+          assert p['engine_feed'] is False and p['orders']==0 and p['real_capital_brl']==0
+          assert p['no_retune'] and p['no_backfill'] and p['no_silent_source_substitution'] and p['fail_closed']
+          PY
+      - name: Capture and QA official public source candidates
+        env:
+          DISCOVERY_START: ${{ inputs.discovery_start || '2017-01-01' }}
+          DISCOVERY_END: ${{ inputs.discovery_end || '2026-08-30' }}
+        run: |
+          python tools/gate_btc_2_v2a_source_qualification_batch1_runner.py \
+            --start "$DISCOVERY_START" \
+            --end "$DISCOVERY_END" \
+            --output artifacts/gate_btc_2/v2a_source_qualification_batch1
+      - name: Assert output remains qualification-only
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/gate_btc_2/v2a_source_qualification_batch1/SUMMARY.json'))
+          assert p['status']=='QUALIFICATION_CAPTURE_COMPLETE_WITHOUT_ADMISSION'
+          assert p['dataset_sealed'] is False
+          assert p['engine_feed'] is False and p['orders']==0 and p['real_capital_brl']==0
+          assert p['no_retune'] and p['no_backfill_credit'] and p['no_silent_source_substitution']
+          PY
+      - name: Upload immutable qualification evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-source-qualification-batch1-${{ github.run_id }}
+          path: artifacts/gate_btc_2/v2a_source_qualification_batch1
+          if-no-files-found: error
+          retention-days: 30
