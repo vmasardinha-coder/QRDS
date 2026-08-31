@@ -1,0 +1,83 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_QUALIFICATION_BATCH1_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "issue": 111,
+  "purpose": "Bounded qualification of free/public exact-identity source redundancy for current MULTIASSET_V2A SOURCE_RECOVERY_CANDIDATE gaps.",
+  "scientific_credit": false,
+  "dataset_sealed": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "batch_scope": [
+    {
+      "coin_id": "kucoin-shares",
+      "symbol": "KCS",
+      "current_failure": "OKX returned no candles",
+      "candidate_source": {
+        "provider": "KuCoin",
+        "market": "SPOT",
+        "pair": "KCS-USDT",
+        "public_api": true,
+        "official_docs": "https://www.kucoin.com/docs-new/rest/spot-trading/market-data/get-klines",
+        "endpoint_family": "GET /api/v1/market/candles"
+      }
+    },
+    {
+      "coin_id": "bitget-token",
+      "symbol": "BGB",
+      "current_failure": "OKX returned no candles",
+      "candidate_source": {
+        "provider": "Bitget",
+        "market": "SPOT",
+        "pair": "BGBUSDT",
+        "public_api": true,
+        "official_docs": "https://www.bitget.com/api-doc/uta/public/Get-History-Candle-Data",
+        "endpoint_family": "public historical candlestick endpoint"
+      }
+    },
+    {
+      "coin_id": "gatechain-token",
+      "symbol": "GT",
+      "current_failure": "OKX returned no candles",
+      "candidate_source": {
+        "provider": "Gate",
+        "market": "SPOT",
+        "pair": "GT_USDT",
+        "public_api": true,
+        "official_docs": "https://www.gate.com/gate-api",
+        "endpoint_family": "public spot historical candlesticks"
+      }
+    }
+  ],
+  "qualification_requirements": [
+    "Source must be official, free/public, auditable and legally accessible without private credentials.",
+    "Exact asset identity must match the frozen V2A coin_id/symbol; ticker equality alone is insufficient.",
+    "Trading pair existence and requested historical window must be proven from the source itself; this preregistration does not assert availability.",
+    "Raw response bytes or immutable downloadable object must be preserved and SHA-256 hashed before normalization.",
+    "Manifest must record provider, endpoint, pair, request parameters, retrieval timestamp, raw hash and parser version.",
+    "Schema mapping and candle timestamp semantics/timezone must be explicit and deterministic.",
+    "Duplicate, missing-row, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed.",
+    "Coverage must satisfy the already-frozen V2A historical requirement; no threshold, cutoff, denominator or history-length rule may be changed by this batch.",
+    "No historical reconstruction from another token, renamed asset, derivative, wrapped representation or synthetic cross-rate is allowed.",
+    "Qualification data cannot count as prospective evidence and cannot seal the dataset by itself.",
+    "Any failed candidate remains a documented DATA_GAP and the next free/public candidate may be tested only under a new explicit qualification record or versioned extension."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ]
+}
