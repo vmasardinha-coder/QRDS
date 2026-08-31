@@ -7,13 +7,16 @@ on:
       - tools/gate_btc_2_challenger_foundation.py
       - tools/gate_btc_2_dataset_seal_readiness.py
       - tools/gate_btc_2_item2_checkpoint4_decision_v1.json
+      - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_health_dimensions.py
       - tests/test_gate_btc_2_challenger_foundation.py
       - tests/test_gate_btc_2_dataset_seal_readiness.py
       - tests/test_gate_btc_2_item2_checkpoint4_decision.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
   schedule:
     # Daily collection starts at 00:15 UTC and has historically published its
-    # runtime pointer around 02:00 UTC.  This read-only assessment follows it.
+    # runtime pointer around 02:00 UTC. This read-only assessment follows it.
     - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
@@ -59,6 +62,8 @@ jobs:
           python -m py_compile
           tools/gate_btc_2_challenger_foundation.py
           tools/gate_btc_2_dataset_seal_readiness.py
+          tools/gate_btc_reporting_current_state.py
+          tools/gate_btc_reporting_operational_overlay.py
 
       - name: Run false-green and track-isolation tests
         run: >-
@@ -85,6 +90,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Build coherent read-only reporting snapshot from same runtime checkout
+        run: |
+          mkdir -p artifacts/gate_btc_2/dataset_seal
+          python tools/gate_btc_reporting_current_state.py \
+            --runtime-root runtime_repo/runtime \
+            --output artifacts/gate_btc_2/dataset_seal/reporting_current_state.json
+          python tools/gate_btc_reporting_operational_overlay.py \
+            --runtime-root runtime_repo/runtime \
+            --state artifacts/gate_btc_2/dataset_seal/reporting_current_state.json
+
       - name: Assess runtime evidence without sealing
         env:
           EXPECTED_CUTOFF: ${{ inputs.expected_cutoff }}
@@ -93,7 +108,7 @@ jobs:
           args=(
             --pointer runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
             --measurement runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
-            --reporting runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+            --reporting artifacts/gate_btc_2/dataset_seal/reporting_current_state.json
             --v2a runtime_repo/runtime/data_quality/v2a/STATUS.json
             --lock runtime_repo/runtime/ledgers/lock25_50/STATUS.json
             --gateway runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json
