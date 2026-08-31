@@ -9,6 +9,9 @@ on:
       - GATE BTC B3 H1 Daily Structural
       - GATE BTC B3 H1 Recovery Supervisor
       - GATE BTC B3 H160-H169 Economics
+      - GATE BTC Factory Grammar Scout
+      - GATE BTC Invalidated Source Qualification Search
+      - GATE BTC Invalidated Family Requalification
     types: [completed]
   schedule:
     - cron: '*/15 * * * *'
@@ -17,12 +20,17 @@ on:
     paths:
       - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
       - '.github/workflows/gate-btc-b3-nextgen-progression.yml'
+      - '.github/workflows/gate-btc-invalidated-source-qualification-search.yml'
       - 'tools/gate_btc_factory/state_master_refresh.py'
       - 'tools/gate_btc_factory/reconcile_nextgen_progression.py'
       - 'tools/gate_btc_factory/frontier_workflow_repair.py'
       - 'tools/gate_btc_factory/universal_watchdog.py'
       - 'tools/gate_btc_factory/survivor_health.py'
       - 'tools/gate_btc_factory/self_audit.py'
+      - 'tools/gate_btc_factory/factory_activity_status.py'
+      - 'tools/gate_btc_factory/invalidated_source_qualification_search.py'
+      - 'tests/test_gate_btc_factory_activity_status.py'
+      - 'tests/test_gate_btc_invalidated_source_qualification_search.py'
 
 permissions:
   actions: write
@@ -164,6 +172,22 @@ jobs:
           path: runtime_repo
           fetch-depth: 0
 
+      - name: Build and present consolidated autonomous activity status
+        run: |
+          python tools/gate_btc_factory/factory_activity_status.py \
+            --runtime-root runtime_repo/runtime \
+            --output runtime_repo/runtime/factory_autonomy/FACTORY_ACTIVITY_STATUS.json \
+            --markdown-output /tmp/factory_activity.md
+          cat /tmp/factory_activity.md >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PY'
+          import json
+          d=json.load(open('runtime_repo/runtime/factory_autonomy/FACTORY_ACTIVITY_STATUS.json',encoding='utf-8'))
+          s=d['safety']
+          assert s['orders']==0 and s['real_capital']==0 and s['engine_feed'] is False
+          assert s['scientific_change_allowed'] is False
+          print('FACTORY_ACTIVITY_STATUS=' + d['overall_status'])
+          PY
+
       - name: Persist autonomy state append-only branch
         shell: bash
         run: |
@@ -198,5 +222,6 @@ jobs:
             tools/gate_btc_factory/SURVIVOR_HEALTH_RUNTIME.json
             tools/gate_btc_factory/SELF_AUDIT_RUNTIME.json
             tools/gate_btc_factory/PROSPECTIVE_ACTIVATIONS.json
+            runtime_repo/runtime/factory_autonomy/FACTORY_ACTIVITY_STATUS.json
           if-no-files-found: error
           retention-days: 30
