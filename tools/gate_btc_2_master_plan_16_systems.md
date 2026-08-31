@@ -1,6 +1,6 @@
 # Gate BTC 2.0 — Canonical 16-System Master Plan
 
-Status: `RECOVERED_AND_RECONCILED_2026_08_28`
+Status: `RECOVERED_AND_RECONCILED_2026_08_31`
 
 This document restores the original Gate BTC 2.0 technology roadmap without restarting or redesigning the program. The 16 numbered systems remain the canonical roadmap. The Research/Strategy Factory, Evidence Factory and Collector Supervisor are permanent cross-cutting layers; they are not a phase 17 and do not replace any numbered system.
 
@@ -22,7 +22,7 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 - Selector Alpha/QOS incremental-alpha hypothesis is closed/refuted under its frozen program. This removes scientific privilege from that selector; it does not invalidate Gate BTC 2.0 infrastructure.
 - Terminal PIT reconstruction recovered 9819/10254 expected observations (~95.76%); unresolved PIT/survivorship gaps remain evidence, not permission to weaken gates.
 - Official Gate BTC 2.0 dataset seal/readiness remains blocked until its independent readiness contract passes.
-- Stage 9 implementation/builder/workflow existence is not prospective evidence. Only authorized forward-only observations can earn prospective credit.
+- Stage 9 implementation/builder/workflow existence is not prospective evidence. Authorized forward-only captures have now earned prospective credit, but evidence remains insufficient for Stage 9 completion and the state is `COLLECT_MORE` until the frozen evidence target is satisfied.
 - Strategy Factory discovery continues independently from Evidence Factory adjudication.
 
 ## Canonical 16 systems
@@ -37,7 +37,7 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 | 6 | PyBroker | Walk-forward/model/portfolio research reference | walk-forward, selection/replay and frozen research contracts | Automated hypothesis generation/elimination on top | FUNCTIONAL_PARTIAL | Stronger independent runner adapters | Frozen candidate reproducible by independent authority |
 | 7 | Freqtrade | Crypto backtest/paper/strategy lifecycle reference | shadow/paper semantics, costs, collectors, engine blocked | Survivors can receive prospective clocks without auto-trading | ADVANCED | Complete prospective evidence for active lines | Survivor advances only with valid collector and real forward clock |
 | 8 | Cryptofeed | Streaming/multiexchange market-data reference | multifonte source contracts, provenance/source identity | Factory/Collector Supervisor declare and monitor required sources | PARTIAL | Mature streaming/microstructure forward path | Authorized feeds prove provenance, freshness and gap visibility |
-| 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path | Evidence Factory refuses credit until physical forward evidence exists | READY_FOR_FORWARD_EVIDENCE | First authorized Stage 9 capture, then sufficient N | Physical forward capture passes hash/provenance/admission and frozen evidence target |
+| 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled forward capture/admission/append-only ledger | Evidence Factory credits only admitted physical forward evidence | COLLECT_MORE_FORWARD_EVIDENCE | Accumulate sufficient admitted forward N under the frozen Stage 9 evidence contract | Physical forward captures pass hash/provenance/admission and the frozen evidence target is satisfied |
 | 10 | NautilusTrader | Institutional event-driven engine/reference | event/shadow/state boundaries partly internalized | Receives frozen candidates only; no execution authority | PARTIAL | Deeper event/cross-engine replication | Independent event replay/state parity demonstrated |
 | 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation for microstructure evidence | Can be emitted as required evidence; never synthesized | IN_BUILD | Admissible forward LOB data and replay criteria | Causal book dataset + execution stress/replay passes frozen contract |
 | 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | STRUCTURALLY_ADVANCED_OPERATIONALLY_PARTIAL | Broader bound independent replication | Survivor requires hash-bound independent replication |
@@ -78,7 +78,7 @@ System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be pau
 
 ### Immediate bounded checkpoint
 
-The next scientific dependency is System 9 Stage 9 forward-only evidence. The guarded capture path already exists; implementation existence earns zero evidence. The next admissible action is the first authorized forward-only capture and read-only admission review. If evidence is valid but insufficient, remain `COLLECT_MORE`. No schedule/cron, economics, engine feed, orders or capital are unlocked by a successful first capture.
+System 9 has completed the first authorized forward-only capture/admission checkpoint and now remains in `COLLECT_MORE`. The next admissible System 9 action is continued scheduled forward collection and admission until the already-frozen evidence target is met; implementation existence, scheduler existence, or historical recovery earn zero prospective credit. In parallel, the broader Gate BTC 2.0 dataset seal/readiness blocker remains authoritative and is not resolved by Stage 9 alone. No economics, engine feed, orders or capital are unlocked by the current Stage 9 state.
 
 ## Governance rule
 
