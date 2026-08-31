@@ -44,7 +44,7 @@ def _win_identity_hint(sample: str, path: str | None = None) -> bool:
     """Conservative market-identity hint only; never a qualification gate by itself."""
     text = f"{path or ''}\n{sample}".upper()
     strong = (
-        r"\bWINFUT\b",
+        r"\bWINFUT(?:\b|_)",
         r"\bWIN\$N\b",
         r"\bWIN[FGHJKMNQUVXZ]\d{2}\b",
         r"MINI[-_ ]?INDICE",
