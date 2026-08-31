@@ -131,7 +131,7 @@ jobs:
           [ -f "$SOURCE_GATE" ] && SG=(--source-gate "$SOURCE_GATE")
           DS=()
           [ -n "${DATASET:-}" ] && [ -f "$DATASET" ] && DS=(--dataset "$DATASET")
-          python tools/gate_btc_factory/invalidated_family_requalification_runner.py \
+          python -m tools.gate_btc_factory.invalidated_family_requalification_runner \
             --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
             --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json \
             --results-dir ../runtime_repo/runtime/autonomous_science/results \
