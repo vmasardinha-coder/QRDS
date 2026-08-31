@@ -47,6 +47,7 @@ def test_search_stays_fail_closed_without_strict_gate(tmp_path: Path, monkeypatc
     })
     monkeypatch.setattr(mod, "_github_candidates", lambda session, token: [{
         "status": "SCHEMA_IDENTITY_CANDIDATE_STILL_PIT_UNQUALIFIED",
+        "repository": "example/win-data",
         "independent_of_invalidated_source": True,
     }])
     root = {
@@ -56,6 +57,8 @@ def test_search_stays_fail_closed_without_strict_gate(tmp_path: Path, monkeypatc
     gate = tmp_path / "SOURCE_GATE.json"
     out = mod.search(root, gate, tmp_path, token="x")
     assert out["status"] == "ACTIVE_SEARCHING_QUALIFICATION"
+    assert out["cadence_hours"] == 2
+    assert out["search"]["github_query_count"] >= 10
     assert out["source_gate"]["valid"] is False
     assert out["definitive_data_gap_allowed"] is False
     assert out["qualification_policy"]["no_candidate_promoted_by_reachability_alone"] is True
@@ -75,3 +78,16 @@ def test_identity_and_schema_hints_accept_explicit_win_market_data():
     sample = "timestamp,open,high,low,close,volume\n2026-08-28T10:00:00-03:00,1,2,0,1,10\n"
     assert mod._win_identity_hint(sample, "data/WINFUT_5min.csv") is True
     assert mod._intraday_schema_hint(sample) is True
+
+
+def test_candidate_priority_prefers_explicit_intraday_win_dataset():
+    strong = mod._candidate_priority("data/WINFUT_5min.csv", "market/b3-data")
+    weak = mod._candidate_priority("README.md", "generic/project")
+    assert strong > weak
+
+
+def test_search_surface_is_materially_broader_than_v1():
+    assert mod.CADENCE_HOURS == 2
+    assert mod.GITHUB_PER_QUERY >= 30
+    assert len(mod.GITHUB_QUERIES) >= 10
+    assert len(mod.SAMPLE_DATES) >= 5
