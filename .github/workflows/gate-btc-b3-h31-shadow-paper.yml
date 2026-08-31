@@ -1,0 +1,141 @@
+name: GATE BTC B3 H31 Shadow Paper Measurement
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["GATE BTC B3 H31 Prospective"]
+    types: [completed]
+  push:
+    branches:
+      - main
+      - "factory/h31-shadow-paper-measurement-*"
+    paths:
+      - "tools/gate_btc_b3_h31_shadow_paper.py"
+      - "tests/test_gate_btc_h31_shadow_paper.py"
+      - ".github/workflows/gate-btc-b3-h31-shadow-paper.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/gate_btc_b3_h31_shadow_paper.py"
+      - "tests/test_gate_btc_h31_shadow_paper.py"
+      - ".github/workflows/gate-btc-b3-h31-shadow-paper.yml"
+
+env:
+  RESEARCH_ONLY: "true"
+  SHADOW_ONLY: "true"
+  NOT_APPROVED: "true"
+  MT5_READ_ONLY: "true"
+  NO_ORDER_SEND: "true"
+  ORDERS: "0"
+  REAL_CAPITAL: "0"
+  ENGINE_FEED: "false"
+  NO_BACKFILL: "true"
+  NO_RETUNE: "true"
+  H1_ECONOMICS_READ: "false"
+
+concurrency:
+  group: gate-btc-b3-h31-shadow-paper
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Assert immutable safety boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$MT5_READ_ONLY" = true
+          test "$NO_ORDER_SEND" = true
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$ENGINE_FEED" = false
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$H1_ECONOMICS_READ" = false
+      - run: python -m pip install -q pytest
+      - run: python -m py_compile tools/gate_btc_b3_h31_shadow_paper.py
+      - run: pytest -q tests/test_gate_btc_h31_shadow_paper.py
+
+  materialize:
+    needs: validate
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - name: Check out append-only runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Materialize auxiliary ledger only from existing H31 canonical events
+        working-directory: main_repo
+        run: |
+          python tools/gate_btc_b3_h31_shadow_paper.py \
+            --canonical-dir ../runtime_repo/runtime/ledgers/b3_h31_prospective \
+            --shadow-dir ../runtime_repo/runtime/ledgers/b3_h31_shadow_paper
+      - name: Assert canonical H31 is untouched and shadow has zero scientific credit
+        run: |
+          python - <<'PY'
+          import json
+          s=json.load(open('runtime_repo/runtime/ledgers/b3_h31_shadow_paper/STATUS.json'))
+          assert s['H31_SHADOW_PAPER_STATUS']=='ACTIVE'
+          assert s['CANONICAL_COUNTER_CHANGED'] is False
+          assert s['SHADOW_CREDIT_TO_CANONICAL']==0
+          assert s['CANONICAL_PROSPECTIVE_CREDIT']==0
+          assert s['SCIENTIFIC_PROMOTION_CREDIT']==0
+          assert s['NO_BACKFILL'] is True and s['NO_RETUNE'] is True
+          assert s['H1_ECONOMICS_READ'] is False
+          assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['ENGINE_FEED'] is False
+          print('H31_SHADOW_PAPER_SEPARATION=PASS')
+          PY
+      - name: Build auditable status artifact
+        run: |
+          mkdir -p artifact
+          cp runtime_repo/runtime/ledgers/b3_h31_shadow_paper/STATUS.json artifact/H31_SHADOW_PAPER_STATUS.json
+          sha256sum artifact/H31_SHADOW_PAPER_STATUS.json | tee artifact/H31_SHADOW_PAPER_STATUS.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: h31-shadow-paper-status-${{ github.run_id }}
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish separate append-only shadow/paper runtime
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/b3_h31_shadow_paper
+          git diff --cached --quiet && exit 0
+          git commit -m "Append H31 auxiliary shadow/paper measurements"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
