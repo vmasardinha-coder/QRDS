@@ -1,0 +1,165 @@
+name: GATE BTC Invalidated Source Qualification Search
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 */6 * * *'
+  workflow_run:
+    workflows: ["GATE BTC Factory Root Cause Audit"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/invalidated_source_qualification_search.py'
+      - 'tests/test_gate_btc_invalidated_source_qualification_search.py'
+      - '.github/workflows/gate-btc-invalidated-source-qualification-search.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: gate-btc-invalidated-source-qualification-search
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+jobs:
+  validate-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests pytest
+      - run: python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py
+      - run: pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py
+
+  search-and-qualify:
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+
+      - name: Regression-test source search contract
+        run: |
+          python -m pip install -q requests pytest
+          cd main_repo
+          python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py
+          pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py
+
+      - name: Search free and official sources and evaluate strict gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
+          mkdir -p runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_search_audits
+          python main_repo/tools/gate_btc_factory/invalidated_source_qualification_search.py \
+            --root-cause runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
+            --gate runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_GATE.json \
+            --runtime-root runtime_repo/runtime \
+            --output SOURCE_SEARCH_RUNTIME.json
+
+      - name: Assert fail-closed search safety
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
+          assert d['status'] in {'ACTIVE_SEARCHING_QUALIFICATION','SOURCE_GATE_GREEN'}
+          assert d['cadence_hours']==6
+          assert d['qualification_policy']['no_candidate_promoted_by_reachability_alone'] is True
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          assert s['scientific_change_allowed'] is False
+          print('INVALIDATED_SOURCE_SEARCH_SAFETY=PASS')
+          PY
+
+      - name: Persist source-search runtime append-only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/factory_autonomy/invalidated_requalification/source_search_audits
+          cp ../SOURCE_SEARCH_RUNTIME.json runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json
+          cp ../SOURCE_SEARCH_RUNTIME.json "runtime/factory_autonomy/invalidated_requalification/source_search_audits/${{ github.run_id }}.json"
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/invalidated_requalification
+          if ! git diff --cached --quiet; then
+            git commit -m "Factory invalidated source search ${{ github.run_id }}"
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && break
+              [ "$i" = 5 ] && exit 1
+              sleep $((i*2))
+            done
+          fi
+
+      - name: Present consolidated source-search status
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
+          print('## Factory source qualification')
+          print(f"- Status: **{d['status']}**")
+          print(f"- Affected families: **{d['affected_family_count']}**")
+          print(f"- Strict source gate: **{d['source_gate']['reason']}**")
+          print(f"- Reachable official B3 probes: **{d['search']['reachable_official_probe_count']}**")
+          print(f"- Independent schema/identity candidates: **{d['search']['schema_identity_candidate_count']}**")
+          print('- Cadence: **every 6 hours**')
+          PY
+
+      - name: Hand off latest source state to requalification queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run gate-btc-invalidated-family-requalification.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-invalidated-source-search-${{ github.run_id }}
+          path: SOURCE_SEARCH_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
