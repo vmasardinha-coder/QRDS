@@ -40,6 +40,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
       - name: Verify preregistration and runner tests
         run: |
           python -m py_compile tools/gate_btc_2_v2a_source_qualification_batch1_runner.py
