@@ -1,57 +1,54 @@
-import json
+import gzip
 
-from tools.gate_btc_2_v2a_kcs_bybit_qualification_runner import parse_rows, qa
+from tools.gate_btc_2_v2a_kcs_bybit_qualification_runner import parse_day
 
 
-def test_parse_bybit_schema_and_qa_pass():
-    raw = json.dumps({
-        "retCode": 0,
-        "retMsg": "OK",
-        "result": {
-            "category": "spot",
-            "symbol": "KCSUSDT",
-            "list": [
-                ["1704153600000", "2.2", "3.2", "2", "2.5", "12", "30"],
-                ["1704067200000", "1.5", "3", "1", "2", "10", "20"],
-            ],
-        },
-    }).encode()
-    rows = parse_rows(raw)
-    result = qa(rows)
-    assert result["rows"] == 2
-    assert result["duplicates"] == 0
-    assert result["internal_missing_days"] == 0
-    assert result["bad_utc_day_alignment"] == 0
-    assert result["bad_ohlc"] == 0
-    assert result["bad_volume_or_turnover"] == 0
+def test_parse_archive_schema_and_qa_pass():
+    raw = gzip.compress(
+        b"id,timestamp,price,volume,side\n"
+        b"1,1704067200000,1.5,10,Buy\n"
+        b"2,1704067201000,2.0,12,Sell\n"
+    )
+    result = parse_day("KCSUSDT_2024-01-01.csv.gz", "2024-01-01", raw)
+    assert result["trade_rows"] == 2
+    assert result["trade_order_monotonic"] is True
+    assert result["open"] == 1.5
+    assert result["close"] == 2.0
+    assert result["base_volume"] == 22.0
+    assert result["schema_variant"] == "BYBIT_SPOT_TRADES_V1"
     assert result["qa_pass"] is True
 
 
-def test_api_error_fails_closed():
-    raw = json.dumps({"retCode": 10001, "retMsg": "bad request", "result": {"list": []}}).encode()
-    try:
-        parse_rows(raw)
-    except ValueError as exc:
-        assert "API error" in str(exc)
-    else:
-        raise AssertionError("API error must fail closed")
+def test_explicit_rpi_variant_is_allowed_but_not_used_for_ohlcv():
+    raw = gzip.compress(
+        b"id,timestamp,price,volume,side,rpi\n"
+        b"1,1704067200000,1.5,10,Buy,true\n"
+        b"2,1704067201000,2.0,12,Sell,false\n"
+    )
+    result = parse_day("KCSUSDT_2024-01-01.csv.gz", "2024-01-01", raw)
+    assert result["schema_variant"] == "BYBIT_SPOT_TRADES_V2_RPI"
+    assert result["base_volume"] == 22.0
 
 
 def test_unknown_schema_fails_closed():
-    raw = json.dumps({"retCode": 0, "retMsg": "OK", "result": {"list": [["1", "2"]]}}).encode()
+    raw = gzip.compress(b"id,timestamp,price,volume,side,unknown\n1,1704067200000,1.5,10,Buy,x\n")
     try:
-        parse_rows(raw)
+        parse_day("KCSUSDT_2024-01-01.csv.gz", "2024-01-01", raw)
     except ValueError as exc:
-        assert "unexpected kline schema" in str(exc)
+        assert "schema mismatch" in str(exc)
     else:
         raise AssertionError("unexpected schema must fail closed")
 
 
-def test_missing_day_fails_qa():
-    rows = [
-        {"t": 1704067200000, "o": 1, "h": 2, "l": 0.5, "c": 1.5, "v": 10, "turnover": 15},
-        {"t": 1704240000000, "o": 1, "h": 2, "l": 0.5, "c": 1.5, "v": 10, "turnover": 15},
-    ]
-    result = qa(rows)
-    assert result["internal_missing_days"] == 1
-    assert result["qa_pass"] is False
+def test_day_spill_fails_closed():
+    raw = gzip.compress(
+        b"id,timestamp,price,volume,side\n"
+        b"1,1704067200000,1.5,10,Buy\n"
+        b"2,1704153600000,2.0,12,Sell\n"
+    )
+    try:
+        parse_day("KCSUSDT_2024-01-01.csv.gz", "2024-01-01", raw)
+    except ValueError as exc:
+        assert "day spill" in str(exc)
+    else:
+        raise AssertionError("UTC day spill must fail closed")
