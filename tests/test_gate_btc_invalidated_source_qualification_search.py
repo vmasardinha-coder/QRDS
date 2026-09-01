@@ -53,6 +53,7 @@ def test_search_stays_fail_closed_without_strict_gate(tmp_path: Path, monkeypatc
     root = {
         "root_cause_classification": "SOURCE_DATA_GAP",
         "affected_scope": {"family_count": 768, "family_ids": ["H1962"]},
+        "source_requirements": {"minimum_sessions_required": 262},
     }
     gate = tmp_path / "SOURCE_GATE.json"
     out = mod.search(root, gate, tmp_path, token="x")
@@ -62,6 +63,10 @@ def test_search_stays_fail_closed_without_strict_gate(tmp_path: Path, monkeypatc
     assert out["source_gate"]["valid"] is False
     assert out["definitive_data_gap_allowed"] is False
     assert out["qualification_policy"]["no_candidate_promoted_by_reachability_alone"] is True
+    assert out["qualification_policy"]["mt5_identity_discovery_does_not_self_admit"] is True
+    assert out["search_strategy"]["mode"] == "PROVENANCE_FIRST_NOT_GENERIC_CSV_HUNT"
+    assert out["frozen_source_contract"]["minimum_sessions_required"] == 262
+    assert "POINT_IN_TIME_VALIDITY" in out["blocking_requirements"]
     s = out["safety"]
     assert s["research_only"] and s["shadow_only"] and s["not_approved"]
     assert s["engine_feed"] is False and s["orders"] == 0 and s["real_capital"] == 0
@@ -91,3 +96,35 @@ def test_search_surface_is_materially_broader_than_v1():
     assert mod.GITHUB_PER_QUERY >= 30
     assert len(mod.GITHUB_QUERIES) >= 10
     assert len(mod.SAMPLE_DATES) >= 5
+
+
+def test_mt5_packet_is_identity_evidence_only_not_source_admission(tmp_path: Path):
+    packet = {
+        "packet_sha256": "abc",
+        "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
+        "records": [{
+            "symbol": "WINV26",
+            "description": "Mini Indice Futuro",
+            "path": "B3\\Futuros",
+            "latest_observation_utc": "2026-09-01T12:00:00Z",
+            "bars": [{"timestamp_utc": "2026-09-01T12:00:00Z"}] * 96,
+        }],
+    }
+    p = tmp_path / "SOURCE_PACKET.json"
+    p.write_text(json.dumps(packet), encoding="utf-8")
+    out = mod._mt5_source_evidence(p)
+    assert out["status"] == "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED"
+    assert out["matching_record_count"] == 1
+    assert out["matching_records"][0]["captured_bar_count"] == 96
+    assert out["source_admission_pass"] is False
+    assert out["prospective_credit"] == 0
+    assert out["historical_backfill_credit"] == 0
+
+
+def test_generic_candidate_deficiencies_are_explicit():
+    missing = mod._deficiencies(False, False)
+    assert "IDENTITY_NOT_PROVEN" in missing
+    assert "INTRADAY_SCHEMA_NOT_PROVEN" in missing
+    assert "PUBLICATION_SEMANTICS_NOT_PROVEN" in missing
+    assert "REVISION_SEMANTICS_NOT_PROVEN" in missing
+    assert "PIT_NOT_PROVEN" in missing
