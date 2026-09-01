@@ -1,0 +1,72 @@
+name: GATE BTC 2 V2A KAS Bybit Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      end_date:
+        description: Inclusive UTC end date (YYYY-MM-DD)
+        required: true
+        default: '2026-09-01'
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_kas_bybit_qualification_runner.py'
+      - 'tests/test_gate_btc_2_v2a_kas_bybit_qualification_runner.py'
+      - '.github/workflows/gate-btc-2-v2a-kas-bybit-qualification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Unit tests
+        run: python -m pytest -q tests/test_gate_btc_2_v2a_kas_bybit_qualification_runner.py
+      - name: Physical qualification capture
+        env:
+          END_DATE: ${{ github.event.inputs.end_date || '2026-09-01' }}
+        run: |
+          python tools/gate_btc_2_v2a_kas_bybit_qualification_runner.py \
+            --end "$END_DATE" \
+            --workers 6 \
+            --output artifacts/gate_btc_2/v2a_kas_bybit_qualification
+      - name: Safety assertions
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/gate_btc_2/v2a_kas_bybit_qualification/SUMMARY.json')
+          if p.exists():
+              d = json.loads(p.read_text())
+              assert d['research_only'] is True
+              assert d['shadow_only'] is True
+              assert d['not_approved'] is True
+              assert d['engine_feed'] is False
+              assert d['orders'] == 0
+              assert d['real_capital_brl'] == 0
+              assert d['no_retune'] is True
+              assert d['no_backfill'] is True
+              assert d['no_counter_reset'] is True
+              assert d['no_silent_source_substitution'] is True
+              assert d['fail_closed'] is True
+              assert d['scientific_credit'] is False
+              assert d['prospective_credit'] is False
+              assert d['dataset_sealed'] is False
+              assert d['promotion_allowed'] is False
+              assert d['admission_scope'] == 'NONE'
+              assert d['retroactive_v2a_repair_allowed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-v2a-kas-bybit-qualification
+          path: artifacts/gate_btc_2/v2a_kas_bybit_qualification
+          if-no-files-found: warn
