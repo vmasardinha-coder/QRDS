@@ -25,6 +25,8 @@ SAFETY = {
     "h1_economics_read": False,
 }
 
+TERMINAL = {"SCIENTIFIC_REJECTION", "VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE"}
+
 
 def load(path: Path) -> dict[str, Any]:
     obj = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -116,6 +118,60 @@ def validate_source_gate(gate: dict[str, Any], dataset: Path | None) -> tuple[bo
     return True, "SOURCE_GATE_GREEN"
 
 
+def load_scoped_sources(source_gates_dir: Path | None, runtime_dir: Path) -> list[tuple[dict[str, Any], Path | None]]:
+    """Load independently qualified source gates without requiring every affected family to share one gate.
+
+    Each scoped gate must explicitly list ``family_ids``. The dataset path remains repository-relative,
+    preserving the same hash/PIT/source checks as the legacy global gate. A malformed or red scoped gate
+    is isolated to its declared families and can never green another family.
+    """
+    if source_gates_dir is None or not source_gates_dir.is_dir():
+        return []
+    repo_root = runtime_dir.parents[2]
+    out: list[tuple[dict[str, Any], Path | None]] = []
+    seen_scope: set[tuple[str, str]] = set()
+    for path in sorted(source_gates_dir.glob("*.json")):
+        gate = load(path)
+        ids = gate.get("family_ids")
+        if not isinstance(ids, list) or not ids or any(not isinstance(x, str) or not x.startswith("H") for x in ids):
+            continue
+        gate_id = str(gate.get("source_gate_id") or path.stem)
+        for fid in ids:
+            key = (gate_id, fid)
+            if key in seen_scope:
+                raise RuntimeError(f"DUPLICATE_SCOPED_SOURCE_GATE_IDENTITY:{gate_id}:{fid}")
+            seen_scope.add(key)
+        rel = str(gate.get("dataset_relative_path") or "")
+        dataset = repo_root / rel if rel else None
+        out.append((gate, dataset))
+    return out
+
+
+def select_source_for_family(
+    fid: str,
+    global_gate: dict[str, Any] | None,
+    global_dataset: Path | None,
+    scoped_sources: list[tuple[dict[str, Any], Path | None]],
+) -> tuple[dict[str, Any] | None, Path | None, str]:
+    reasons: list[str] = []
+    for gate, dataset in scoped_sources:
+        ids = gate.get("family_ids") or []
+        if fid not in ids:
+            continue
+        green, reason = validate_source_gate(gate, dataset)
+        if green:
+            return gate, dataset, "SOURCE_GATE_GREEN_SCOPED"
+        reasons.append(f"{gate.get('source_gate_id') or 'SCOPED'}:{reason}")
+    if global_gate is not None:
+        green, reason = validate_source_gate(global_gate, global_dataset)
+        if green:
+            return global_gate, global_dataset, "SOURCE_GATE_GREEN_GLOBAL"
+        reasons.append(f"GLOBAL:{reason}")
+    if reasons:
+        return None, None, "SOURCE_GATE_NOT_GREEN_FOR_FAMILY:" + "|".join(reasons)
+    return None, None, "SOURCE_GATE_ABSENT_FOR_FAMILY"
+
+
 def subset_date(sessions: dict[str, Any], start: str, end: str) -> dict[str, Any]:
     return {k: v for k, v in sessions.items() if start <= k <= end}
 
@@ -200,10 +256,12 @@ def build_queue(root: dict[str, Any], policy: dict[str, Any], results_dir: Path,
             "attempts": int(old.get("attempts", 0)),
             "result_path": old.get("result_path"),
             "prospective_candidate_path": old.get("prospective_candidate_path"),
+            "source_gate_id": old.get("source_gate_id"),
+            "source_gate_status": old.get("source_gate_status"),
         })
     return {
         "schema": "qrds.factory.invalidated_family_requalification_queue.v1",
-        "mode": "ALL_AFFECTED_FAMILIES_AUTONOMOUS",
+        "mode": "AFFECTED_FAMILIES_INDEPENDENT_SOURCE_GATES",
         "affected_family_count": len(ids),
         "queued_family_count": len(families),
         "families": families,
@@ -213,21 +271,30 @@ def build_queue(root: dict[str, Any], policy: dict[str, Any], results_dir: Path,
 
 
 def run_all(root: dict[str, Any], policy: dict[str, Any], results_dir: Path, gate: dict[str, Any] | None,
-            dataset: Path | None, runtime_dir: Path, existing: dict[str, Any] | None = None) -> dict[str, Any]:
+            dataset: Path | None, runtime_dir: Path, existing: dict[str, Any] | None = None,
+            scoped_sources: list[tuple[dict[str, Any], Path | None]] | None = None) -> dict[str, Any]:
     queue = build_queue(root, policy, results_dir, existing)
-    green, gate_reason = validate_source_gate(gate or {}, dataset)
-    queue["source_gate_status"] = gate_reason
-    queue["source_gate_green"] = green
-    if not green:
-        return queue
-
-    sessions = load_data(dataset)  # still enforces the standing H1 cutoff/no-forward-contamination rule
+    scoped_sources = scoped_sources or []
     contracts = family_contracts(results_dir)
+    session_cache: dict[str, dict[str, Any]] = {}
+
     for row in queue["families"]:
-        if row.get("status") in {"SCIENTIFIC_REJECTION", "VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE"}:
+        if row.get("status") in TERMINAL:
             continue
         fid = row["original_family_id"]
-        prereg = prereg_for(fid, contracts[fid], gate or {})
+        selected_gate, selected_dataset, gate_reason = select_source_for_family(
+            fid, gate, dataset, scoped_sources
+        )
+        row["source_gate_status"] = gate_reason
+        if selected_gate is None or selected_dataset is None:
+            row["status"] = "WAITING_SOURCE_QUALIFICATION"
+            continue
+        row["source_gate_id"] = selected_gate.get("source_gate_id")
+        cache_key = str(selected_dataset.resolve()) + ":" + str(selected_gate.get("dataset_sha256"))
+        if cache_key not in session_cache:
+            session_cache[cache_key] = load_data(selected_dataset)
+        sessions = session_cache[cache_key]
+        prereg = prereg_for(fid, contracts[fid], selected_gate)
         ns = prereg["namespace"].replace("::", "__")
         pdir = runtime_dir / "preregistrations"
         rdir = runtime_dir / "results"
@@ -260,11 +327,15 @@ def run_all(root: dict[str, Any], policy: dict[str, Any], results_dir: Path, gat
             dump(cpath, candidate)
             row["prospective_candidate_path"] = str(cpath)
 
-    queue["completed_family_count"] = sum(
-        1 for x in queue["families"] if x["status"] in {"SCIENTIFIC_REJECTION", "VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE"}
-    )
+    queue["completed_family_count"] = sum(1 for x in queue["families"] if x["status"] in TERMINAL)
     queue["survivor_count"] = sum(1 for x in queue["families"] if x["status"] == "VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE")
     queue["inconclusive_count"] = sum(1 for x in queue["families"] if str(x["status"]).startswith("INCONCLUSIVE"))
+    queue["waiting_source_count"] = sum(1 for x in queue["families"] if x["status"] == "WAITING_SOURCE_QUALIFICATION")
+    queue["green_source_family_count"] = sum(1 for x in queue["families"] if str(x.get("source_gate_status", "")).startswith("SOURCE_GATE_GREEN"))
+    queue["scoped_source_gate_count"] = len(scoped_sources)
+    global_green, global_reason = validate_source_gate(gate or {}, dataset)
+    queue["source_gate_status"] = global_reason
+    queue["source_gate_green"] = global_green
     queue["updated_at_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return queue
 
@@ -275,6 +346,7 @@ def main() -> int:
     ap.add_argument("--policy", type=Path, required=True)
     ap.add_argument("--results-dir", type=Path, required=True)
     ap.add_argument("--source-gate", type=Path)
+    ap.add_argument("--source-gates-dir", type=Path)
     ap.add_argument("--dataset", type=Path)
     ap.add_argument("--existing", type=Path)
     ap.add_argument("--runtime-dir", type=Path, required=True)
@@ -284,10 +356,13 @@ def main() -> int:
     policy = load(ns.policy)
     gate = load(ns.source_gate) if ns.source_gate and ns.source_gate.is_file() else None
     existing = load(ns.existing) if ns.existing and ns.existing.is_file() else None
-    out = run_all(root, policy, ns.results_dir, gate, ns.dataset, ns.runtime_dir, existing)
+    scoped_sources = load_scoped_sources(ns.source_gates_dir, ns.runtime_dir)
+    out = run_all(root, policy, ns.results_dir, gate, ns.dataset, ns.runtime_dir, existing, scoped_sources)
     dump(ns.output, out)
     print(f"AFFECTED_FAMILIES={out['affected_family_count']}")
     print(f"SOURCE_GATE={out['source_gate_status']}")
+    print(f"GREEN_SOURCE_FAMILIES={out.get('green_source_family_count', 0)}")
+    print(f"WAITING_SOURCE={out.get('waiting_source_count', 0)}")
     print(f"COMPLETED={out.get('completed_family_count', 0)}")
     print(f"SURVIVORS={out.get('survivor_count', 0)}")
     print("ORDERS=0")
