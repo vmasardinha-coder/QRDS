@@ -112,6 +112,7 @@ jobs:
             --root-cause runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
             --gate runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_GATE.json \
             --runtime-root runtime_repo/runtime \
+            --mt5-packet runtime_repo/runtime/factory_sources/mt5/SOURCE_PACKET.json \
             --output SOURCE_SEARCH_RUNTIME.json
 
       - name: Assert fail-closed search safety
@@ -122,7 +123,11 @@ jobs:
           assert d['status'] in {'ACTIVE_SEARCHING_QUALIFICATION','SOURCE_GATE_GREEN'}
           assert d['cadence_hours']==2
           assert d['search']['github_query_count'] >= 10
+          assert d['search_strategy']['mode']=='PROVENANCE_FIRST_NOT_GENERIC_CSV_HUNT'
+          assert d['search_strategy']['generic_search_hit_may_green_gate'] is False
           assert d['qualification_policy']['no_candidate_promoted_by_reachability_alone'] is True
+          assert d['qualification_policy']['mt5_identity_discovery_does_not_self_admit'] is True
+          assert d['search']['mt5_read_only_source_evidence']['source_admission_pass'] is False
           s=d['safety']
           assert s['research_only'] and s['shadow_only'] and s['not_approved']
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
@@ -155,13 +160,18 @@ jobs:
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
           d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
+          mt5=d['search']['mt5_read_only_source_evidence']
           print('## Factory source qualification')
           print(f"- Status: **{d['status']}**")
           print(f"- Affected families: **{d['affected_family_count']}**")
           print(f"- Strict source gate: **{d['source_gate']['reason']}**")
+          print(f"- Search mode: **{d['search_strategy']['mode']}**")
+          print(f"- Blocking requirements: **{', '.join(d['blocking_requirements']) or 'NONE'}**")
           print(f"- Reachable official B3 probes: **{d['search']['reachable_official_probe_count']}**")
+          print(f"- MT5 provenance evidence: **{mt5['status']}**")
           print(f"- GitHub queries: **{d['search']['github_query_count']}**")
           print(f"- GitHub candidates inspected: **{d['search']['github_candidate_count']}**")
+          print(f"- Irrelevant identity hits: **{d['search']['irrelevant_identity_candidate_count']}**")
           print(f"- Independent schema/identity candidates: **{d['search']['schema_identity_candidate_count']}**")
           print('- Cadence: **every 2 hours**')
           PY
