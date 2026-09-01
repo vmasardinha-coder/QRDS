@@ -1,0 +1,78 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_QUALIFICATION_BATCH2_ADJUDICATION_V2",
+  "issue": 111,
+  "prior_pr": 352,
+  "assessment_kind": "SOURCE_QUALIFICATION_COVERAGE_CONTINUITY_ADJUDICATION_ONLY",
+  "dataset_sealed": false,
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "v2a_temporal_contract": {
+    "future_point_in_time_only": true,
+    "retrospective_backfill_allowed": false,
+    "historical_qualification_capture_may_repair_prior_point_in_time_universe": false,
+    "historical_qualification_capture_counts_as_prospective_evidence": false
+  },
+  "adjudication": {
+    "coin_id": "mantle",
+    "symbol": "MNT",
+    "provider": "Bybit",
+    "market": "SPOT",
+    "pair": "MNTUSDT",
+    "exact_identity_status": "VERIFIED_FOR_SOURCE_QUALIFICATION",
+    "schema_time_status": "DETERMINISTIC_NORMALIZATION_AVAILABLE_FOR_QUALIFICATION_ONLY",
+    "archive_listing": {
+      "earliest_daily": "2023-07-17",
+      "latest_daily": "2026-08-30",
+      "daily_object_count": 1141,
+      "inclusive_calendar_day_span": 1141,
+      "listing_cardinality_matches_inclusive_span": true,
+      "raw_listing_sha256": "775682bdc124c1f63b06914b583b1b427fe6641930df41cab756592fcc72a158"
+    },
+    "coverage_rule_reconciliation": {
+      "requested_discovery_window_start": "2017-01-01",
+      "archive_first_observed_day": "2023-07-17",
+      "late_vs_discovery_start_is_not_standalone_rejection": true,
+      "canonical_precedent": "PR349 qualified exact GT/Gate prospectively with captured history beginning 2019-04-21 while preserving no retrospective V2A repair.",
+      "result": "ARCHIVE_LISTING_CONTINUITY_CONSISTENT_WITH_COMPLETE_DAILY_SURFACE"
+    },
+    "physical_corpus_qa": {
+      "status": "PENDING_FULL_CORPUS_RAW_OBJECT_QA",
+      "reason": "Listing cardinality equals the inclusive calendar-day span, but the frozen source-qualification contract requires physical/raw corpus QA before admission. Directory continuity alone is not elevated to byte-level completeness, valid trades, monotonic timestamps, OHLC validity or nonnegative-volume proof.",
+      "required_before_admission": [
+        "preserve/hash the exact archive objects used for qualification or immutable object references under the existing contract",
+        "parse all qualification days deterministically using the already-adjudicated trade-level schema and UTC daily boundary",
+        "verify no duplicate qualification days",
+        "verify no missing qualification days after first observed source day through the qualification cutoff",
+        "verify monotonic trade ordering within deterministic normalization",
+        "verify derived daily OHLC invariants",
+        "verify nonnegative derived base volume",
+        "record fail-closed object-level/parser failures without substitution"
+      ]
+    },
+    "source_qualification_outcome": "PENDING_FULL_CORPUS_QA",
+    "admission_scope": "NONE",
+    "retroactive_v2a_repair_allowed": false,
+    "dataset_seal_credit": false,
+    "scientific_credit": false,
+    "next_action": "RUN_BOUNDED_FULL_CORPUS_RAW_OBJECT_QA_ON_PREREGISTERED_BYBIT_MNTUSDT_ARCHIVE; IF_AND_ONLY_IF_ALL_FROZEN_QA_PASSES, ADJUDICATE_PROSPECTIVE_COLLECTION_ONLY"
+  },
+  "master_effect": {
+    "system_8_data_path": "MNT_BYBIT_LISTING_CONTINUITY_RECONCILED_FULL_CORPUS_QA_PENDING",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
