@@ -93,7 +93,7 @@ jobs:
           print('AFFECTED_FAMILY_COUNT='+str(a['family_count']))
           PY
 
-      - name: Resolve source gate and independent dataset
+      - name: Resolve legacy global source gate and independent dataset
         id: source
         run: |
           set -euo pipefail
@@ -117,11 +117,12 @@ jobs:
           fi
           echo 'source_gate_present=true' >> "$GITHUB_OUTPUT"
 
-      - name: Build or advance all-family autonomous queue
+      - name: Build or advance independently source-gated family queue
         working-directory: main_repo
         env:
           SOURCE_GATE: ../${{ steps.source.outputs.gate }}
           DATASET: ../${{ steps.source.outputs.dataset }}
+          SCOPED_SOURCE_GATES: ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates
         run: |
           set -euo pipefail
           OUT='../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
@@ -129,6 +130,8 @@ jobs:
           [ -f "$OUT" ] && EXISTING=(--existing "$OUT")
           SG=()
           [ -f "$SOURCE_GATE" ] && SG=(--source-gate "$SOURCE_GATE")
+          SGS=()
+          [ -d "$SCOPED_SOURCE_GATES" ] && SGS=(--source-gates-dir "$SCOPED_SOURCE_GATES")
           DS=()
           [ -n "${DATASET:-}" ] && [ -f "$DATASET" ] && DS=(--dataset "$DATASET")
           python -m tools.gate_btc_factory.invalidated_family_requalification_runner \
@@ -136,6 +139,7 @@ jobs:
             --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json \
             --results-dir ../runtime_repo/runtime/autonomous_science/results \
             "${SG[@]}" \
+            "${SGS[@]}" \
             "${DS[@]}" \
             "${EXISTING[@]}" \
             --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
