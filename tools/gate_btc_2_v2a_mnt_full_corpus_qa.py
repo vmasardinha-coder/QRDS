@@ -4,6 +4,7 @@ Qualification/readiness only: never backfill PIT, grant scientific/prospective c
 """
 from __future__ import annotations
 import argparse,csv,gzip,hashlib,json,re,time,urllib.request
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
@@ -11,7 +12,11 @@ from pathlib import Path
 BASE="https://public.bybit.com/spot/MNTUSDT/"
 PAIR="MNTUSDT"
 DAY_RE=re.compile(r'href=["\'](MNTUSDT_(\d{4}-\d{2}-\d{2})\.csv\.gz)["\']')
-EXPECTED_HEADER=["id","timestamp","price","volume","side"]
+BASE_HEADER=("id","timestamp","price","volume","side")
+KNOWN_HEADERS={
+    BASE_HEADER:"BYBIT_SPOT_TRADES_V1",
+    BASE_HEADER+("rpi",):"BYBIT_SPOT_TRADES_V2_RPI",
+}
 
 
 def request_bytes(url,retries=3):
@@ -29,7 +34,9 @@ def parse_day(name,day_text,raw):
     digest=hashlib.sha256(raw).hexdigest()
     text=gzip.decompress(raw).decode("utf-8-sig")
     reader=csv.DictReader(text.splitlines())
-    if reader.fieldnames!=EXPECTED_HEADER: raise ValueError(f"schema mismatch {reader.fieldnames}")
+    header=tuple(reader.fieldnames or ())
+    schema_variant=KNOWN_HEADERS.get(header)
+    if schema_variant is None: raise ValueError(f"schema mismatch {list(header)}")
     rows=0; first_key=None; last_key=None; prev_key=None; monotonic=True; prices=[]; volume=0.0
     for row in reader:
         k=(int(float(row["timestamp"])),int(row["id"]))
@@ -44,7 +51,7 @@ def parse_day(name,day_text,raw):
     if observed!=day_text or last_observed!=day_text: raise ValueError(f"trade UTC day spill {observed}..{last_observed}")
     o=prices[0]; c=prices[-1]; h=max(prices); l=min(prices)
     if not (l<=min(o,c)<=max(o,c)<=h): raise ValueError("derived OHLC invariant failed")
-    return {"object":name,"day":day_text,"sha256":digest,"compressed_bytes":len(raw),"trade_rows":rows,"trade_order_monotonic":monotonic,"open":o,"high":h,"low":l,"close":c,"base_volume":volume,"qa_pass":monotonic}
+    return {"object":name,"day":day_text,"sha256":digest,"compressed_bytes":len(raw),"trade_rows":rows,"trade_order_monotonic":monotonic,"schema_variant":schema_variant,"schema_fields":list(header),"open":o,"high":h,"low":l,"close":c,"base_volume":volume,"qa_pass":monotonic}
 
 
 def main():
@@ -68,8 +75,9 @@ def main():
             except Exception as exc: failures.append({"day":e[0],"object":e[1],"error":str(exc)})
     results.sort(key=lambda x:x["day"]); failures.sort(key=lambda x:x["day"])
     bad_order=sum(not r["trade_order_monotonic"] for r in results)
+    schema_variant_counts=dict(sorted(Counter(r["schema_variant"] for r in results).items()))
     qa_pass=(not missing and duplicate_listing==0 and not failures and len(results)==len(expected) and bad_order==0)
-    manifest={"schema_version":"GATE_BTC_2_V2A_MNT_FULL_CORPUS_QA_V1","issue":111,"provider":"Bybit","market":"SPOT","pair":PAIR,"coin_id":"mantle","symbol":"MNT","qualification_only":True,"research_only":True,"shadow_only":True,"not_approved":True,"dataset_sealed":False,"scientific_credit":False,"prospective_credit":False,"promotion_allowed":False,"engine_feed":False,"orders":0,"real_capital_brl":0,"no_retune":True,"no_backfill":True,"no_silent_source_substitution":True,"fail_closed":True,"listing_sha256":listing_sha,"earliest_day":entries[0][0],"latest_day":entries[-1][0],"listed_objects":len(entries),"expected_calendar_days":len(expected),"missing_listing_days":missing,"duplicate_listing_days":duplicate_listing,"physical_objects_ok":len(results),"physical_object_failures":failures,"bad_trade_order_objects":bad_order,"qa_pass":qa_pass,"source_qualification_outcome":"ELIGIBLE_FOR_SEPARATE_PROSPECTIVE_ONLY_ADJUDICATION" if qa_pass else "FAIL_CLOSED_FULL_CORPUS_QA","admission_scope":"NONE","retroactive_v2a_repair_allowed":False,"object_results_file":"OBJECT_RESULTS.jsonl"}
+    manifest={"schema_version":"GATE_BTC_2_V2A_MNT_FULL_CORPUS_QA_V2","issue":111,"provider":"Bybit","market":"SPOT","pair":PAIR,"coin_id":"mantle","symbol":"MNT","qualification_only":True,"research_only":True,"shadow_only":True,"not_approved":True,"dataset_sealed":False,"scientific_credit":False,"prospective_credit":False,"promotion_allowed":False,"engine_feed":False,"orders":0,"real_capital_brl":0,"no_retune":True,"no_backfill":True,"no_silent_source_substitution":True,"fail_closed":True,"schema_policy":"EXPLICIT_KNOWN_VARIANTS_ONLY","schema_variants_allowed":{v:list(k) for k,v in KNOWN_HEADERS.items()},"schema_variant_counts":schema_variant_counts,"rpi_field_used_for_ohlcv":False,"listing_sha256":listing_sha,"earliest_day":entries[0][0],"latest_day":entries[-1][0],"listed_objects":len(entries),"expected_calendar_days":len(expected),"missing_listing_days":missing,"duplicate_listing_days":duplicate_listing,"physical_objects_ok":len(results),"physical_object_failures":failures,"bad_trade_order_objects":bad_order,"qa_pass":qa_pass,"source_qualification_outcome":"ELIGIBLE_FOR_SEPARATE_PROSPECTIVE_ONLY_ADJUDICATION" if qa_pass else "FAIL_CLOSED_FULL_CORPUS_QA","admission_scope":"NONE","retroactive_v2a_repair_allowed":False,"object_results_file":"OBJECT_RESULTS.jsonl"}
     (out/"OBJECT_RESULTS.jsonl").write_text("".join(json.dumps(r,sort_keys=True)+"\n" for r in results),encoding="utf-8")
     (out/"SUMMARY.json").write_text(json.dumps(manifest,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(json.dumps(manifest,indent=2,sort_keys=True)); return 0
