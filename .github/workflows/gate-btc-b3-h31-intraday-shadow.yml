@@ -6,14 +6,14 @@ on:
     branches: [main]
     paths:
       - "tools/gate_btc_b3_h31_intraday_shadow.py"
-      - "windows_local_verifier/Invoke-GateBtcH31IntradayShadow.ps1"
+      - "tools/gate_btc_b3_h31_intraday_shadow_agent.ps1"
       - ".github/workflows/gate-btc-b3-h31-intraday-shadow.yml"
   push:
     branches:
       - "factory/h31-intraday-shadow-*"
     paths:
       - "tools/gate_btc_b3_h31_intraday_shadow.py"
-      - "windows_local_verifier/Invoke-GateBtcH31IntradayShadow.ps1"
+      - "tools/gate_btc_b3_h31_intraday_shadow_agent.ps1"
       - ".github/workflows/gate-btc-b3-h31-intraday-shadow.yml"
 
 env:
@@ -52,7 +52,7 @@ jobs:
         shell: powershell
         run: |
           $tokens=$null; $errors=$null
-          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'windows_local_verifier/Invoke-GateBtcH31IntradayShadow.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tools/gate_btc_b3_h31_intraday_shadow_agent.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if (@($errors).Count -ne 0) { $errors | Format-List * | Out-String | Write-Error }
       - name: Assert no order API in runner
         shell: powershell
