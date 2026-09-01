@@ -7,8 +7,10 @@ prospective, dataset-seal, engine, order, or capital credit.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -24,8 +26,11 @@ SOURCE = {
     "pair": "MNTUSDT",
     "base": "https://api.bybit.com/v5/market/kline",
     "instrument_base": "https://api.bybit.com/v5/market/instruments-info",
+    "archive_base": "https://public.bybit.com/spot/MNTUSDT/",
     "chunk_days": 900,
 }
+MONTHLY_RE = re.compile(r'href=["\'](MNTUSDT-(\d{4}-\d{2})\.csv\.gz)["\']')
+DAILY_RE = re.compile(r'href=["\'](MNTUSDT_(\d{4}-\d{2}-\d{2})\.csv\.gz)["\']')
 
 
 def ts(date_text: str) -> int:
@@ -36,7 +41,7 @@ def request_bytes(url: str, retries: int = 3) -> bytes:
     last = None
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "QRDS-GateBTC2-ResearchOnly/1"})
+            req = urllib.request.Request(url, headers={"Accept": "*/*", "User-Agent": "QRDS-GateBTC2-ResearchOnly/1"})
             with urllib.request.urlopen(req, timeout=30) as response:
                 return response.read()
         except Exception as exc:
@@ -117,15 +122,12 @@ def qa(rows: list[dict]) -> dict:
     }
 
 
-def capture(start: int, end: int, out: Path) -> dict:
-    out.mkdir(parents=True, exist_ok=True)
+def capture_api_surface(start: int, end: int, out: Path) -> dict:
     rows, pages = [], []
-
     instrument_raw = request_bytes(instrument_url())
     instrument_hash = hashlib.sha256(instrument_raw).hexdigest()
     (out / "instrument_info_raw.json").write_bytes(instrument_raw)
     instrument = parse_instrument(instrument_raw)
-
     cursor = start
     chunk = SOURCE["chunk_days"] * DAY
     index = 0
@@ -134,20 +136,110 @@ def capture(start: int, end: int, out: Path) -> dict:
         url = page_url(cursor, stop)
         raw = request_bytes(url)
         digest = hashlib.sha256(raw).hexdigest()
-        raw_path = out / f"raw_{index:04d}.json"
+        raw_path = out / f"api_raw_{index:04d}.json"
         raw_path.write_bytes(raw)
         parsed = parse_rows(raw)
         rows.extend(parsed)
         pages.append({"request_url": url, "raw_file": raw_path.name, "sha256": digest, "parsed_rows": len(parsed)})
         cursor = stop + DAY
         index += 1
-
     identity_surface_pass = (
         instrument.get("symbol") == SOURCE["pair"]
         and instrument.get("baseCoin") == SOURCE["symbol"]
         and instrument.get("quoteCoin") == "USDT"
     )
+    return {
+        "status": "API_SURFACE_CAPTURED",
+        "instrument_identity_surface": {
+            "request_url": instrument_url(),
+            "raw_file": "instrument_info_raw.json",
+            "sha256": instrument_hash,
+            "parsed": instrument,
+            "surface_pass": identity_surface_pass,
+            "note": "Ticker/pair identity surface only; coin_id Mantle admission requires separate adjudication.",
+        },
+        "pages": pages,
+        "qa": qa(rows),
+    }
+
+
+def capture_archive_surface(out: Path) -> dict:
+    listing_url = SOURCE["archive_base"]
+    listing_raw = request_bytes(listing_url)
+    listing_hash = hashlib.sha256(listing_raw).hexdigest()
+    (out / "archive_listing.html").write_bytes(listing_raw)
+    listing_text = listing_raw.decode("utf-8", errors="replace")
+    monthly = sorted({m.group(1): m.group(2) for m in MONTHLY_RE.finditer(listing_text)}.items(), key=lambda x: x[1])
+    daily = sorted({m.group(1): m.group(2) for m in DAILY_RE.finditer(listing_text)}.items(), key=lambda x: x[1])
+    if not monthly and not daily:
+        raise ValueError("Bybit archive listing contained no exact MNTUSDT monthly/daily objects")
+
+    candidates = monthly or daily
+    sample_name, sample_period = candidates[0]
+    sample_url = listing_url + sample_name
+    sample_raw = request_bytes(sample_url)
+    sample_hash = hashlib.sha256(sample_raw).hexdigest()
+    sample_path = out / sample_name
+    sample_path.write_bytes(sample_raw)
+
+    decompressed = gzip.decompress(sample_raw)
+    first_lines = decompressed.decode("utf-8-sig", errors="replace").splitlines()[:2]
+    if not first_lines:
+        raise ValueError("Bybit archive sample decompressed to empty content")
+    header = [field.strip() for field in first_lines[0].split(",")]
+    first_row_field_count = len(first_lines[1].split(",")) if len(first_lines) > 1 else 0
+
+    return {
+        "status": "ARCHIVE_SURFACE_CAPTURED_SCHEMA_PENDING",
+        "listing": {
+            "url": listing_url,
+            "raw_file": "archive_listing.html",
+            "sha256": listing_hash,
+            "monthly_object_count": len(monthly),
+            "daily_object_count": len(daily),
+            "earliest_monthly": monthly[0][1] if monthly else None,
+            "latest_monthly": monthly[-1][1] if monthly else None,
+            "earliest_daily": daily[0][1] if daily else None,
+            "latest_daily": daily[-1][1] if daily else None,
+        },
+        "sample_object": {
+            "url": sample_url,
+            "raw_file": sample_name,
+            "sha256": sample_hash,
+            "period": sample_period,
+            "compressed_bytes": len(sample_raw),
+            "decompressed_bytes": len(decompressed),
+            "header": header,
+            "first_row_field_count": first_row_field_count,
+        },
+        "note": "Archive accessibility/schema discovery only. No V2A coverage sufficiency, exact coin_id identity, or scientific admission is asserted.",
+    }
+
+
+def capture(start: int, end: int, out: Path) -> dict:
+    out.mkdir(parents=True, exist_ok=True)
+    api_surface = None
+    api_error = None
+    archive_surface = None
+    archive_error = None
+    try:
+        api_surface = capture_api_surface(start, end, out)
+    except Exception as exc:
+        api_error = str(exc)
+    try:
+        archive_surface = capture_archive_surface(out)
+    except Exception as exc:
+        archive_error = str(exc)
+
+    if archive_surface is not None:
+        status = "ARCHIVE_SURFACE_CAPTURED_SCHEMA_PENDING"
+    elif api_surface is not None:
+        status = "API_SURFACE_CAPTURED_ARCHIVE_UNAVAILABLE"
+    else:
+        status = "FAIL_CLOSED_ALL_PREREGISTERED_SURFACES_UNAVAILABLE"
+
     result = {
+        "status": status,
         "symbol": SOURCE["symbol"],
         "coin_id": SOURCE["coin_id"],
         "provider": SOURCE["provider"],
@@ -165,20 +257,14 @@ def capture(start: int, end: int, out: Path) -> dict:
         "no_backfill_credit": True,
         "no_silent_source_substitution": True,
         "exact_asset_identity_admitted": False,
-        "instrument_identity_surface": {
-            "request_url": instrument_url(),
-            "raw_file": "instrument_info_raw.json",
-            "sha256": instrument_hash,
-            "parsed": instrument,
-            "surface_pass": identity_surface_pass,
-            "note": "Ticker/pair identity surface only; coin_id Mantle admission requires separate adjudication.",
-        },
         "requested_discovery_window": {
             "start": datetime.fromtimestamp(start, timezone.utc).date().isoformat(),
             "end": datetime.fromtimestamp(end, timezone.utc).date().isoformat(),
         },
-        "pages": pages,
-        "qa": qa(rows),
+        "api_surface": api_surface,
+        "api_error": api_error,
+        "archive_surface": archive_surface,
+        "archive_error": archive_error,
     }
     (out / "qualification.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
@@ -194,20 +280,7 @@ def main() -> int:
     if end < start:
         raise SystemExit("end before start")
     out = Path(args.output)
-    try:
-        result = capture(start, end, out)
-    except Exception as exc:
-        out.mkdir(parents=True, exist_ok=True)
-        result = {
-            "symbol": SOURCE["symbol"],
-            "coin_id": SOURCE["coin_id"],
-            "provider": SOURCE["provider"],
-            "pair": SOURCE["pair"],
-            "qualification_only": True,
-            "scientific_credit": False,
-            "status": "FAIL_CLOSED_SOURCE_OR_PARSE_ERROR",
-            "error": str(exc),
-        }
+    result = capture(start, end, out)
     summary = {
         "schema_version": "GATE_BTC_2_V2A_SOURCE_QUALIFICATION_BATCH2_CAPTURE_V1",
         "status": "QUALIFICATION_CAPTURE_COMPLETE_WITHOUT_ADMISSION",
