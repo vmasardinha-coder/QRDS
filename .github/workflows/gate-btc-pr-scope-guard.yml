@@ -33,6 +33,9 @@ jobs:
           files=[line.strip() for line in Path('changed_files.txt').read_text(encoding='utf-8').splitlines() if line.strip()]
           head_ref=os.environ.get('HEAD_REF', '')
           exact={
+              '.github/workflows/00-victor-action-required.yml',
+              'ops/workflow_operations_registry.json',
+              'tools/victor_action_supervisor.py',
               'config/lock25_50_shadow_contract_v1.json',
               'crypto_decision_lab/docs/ARCHITECTURE.md',
               'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_REGISTRY.md',
