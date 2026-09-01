@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
       - name: Unit tests
         run: python -m pytest -q tests/test_gate_btc_2_v2a_nexo_gate_qualification_runner.py
       - name: Physical qualification capture
