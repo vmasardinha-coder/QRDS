@@ -64,7 +64,7 @@ def build(runtime_root: Path, now: datetime | None = None) -> dict[str, Any]:
         "source_qualification_search",
         fa / "invalidated_requalification/SOURCE_SEARCH_RUNTIME.json",
         ("generated_at_utc",),
-        12.0,
+        4.0,
         t,
     )
     queue = component(
@@ -93,7 +93,7 @@ def build(runtime_root: Path, now: datetime | None = None) -> dict[str, Any]:
         "monitor_cadence_minutes": 15,
         "cadence_policy": {
             "grammar_scout_hours": 24,
-            "source_qualification_search_hours": 6,
+            "source_qualification_search_hours": 2,
             "requalification_hours": 6,
             "factory_status_monitor_minutes": 15,
         },
@@ -118,7 +118,7 @@ def markdown(d: dict[str, Any]) -> str:
     rows = ["## Factory autonomous activity", f"Overall: **{d['overall_status']}**", "", "| Component | Active | Freshness | Status |", "|---|---:|---|---|"]
     for c in d["components"].values():
         rows.append(f"| {c['name']} | {'yes' if c['active'] else 'no'} | {c['freshness']} | {c['status']} |")
-    rows += ["", "Cadence: Grammar Scout 24h · source qualification 6h · requalification 6h · supervisor/status 15min."]
+    rows += ["", "Cadence: Grammar Scout 24h · source qualification 2h · requalification 6h · supervisor/status 15min."]
     return "\n".join(rows) + "\n"
 
 
