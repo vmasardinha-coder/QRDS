@@ -1,0 +1,60 @@
+name: GATE BTC 2 V2A MNT Full Corpus QA
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_mnt_full_corpus_qa.py
+      - tests/test_gate_btc_2_v2a_mnt_full_corpus_qa.py
+      - .github/workflows/gate-btc-2-v2a-mnt-full-corpus-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      NOT_APPROVED: 'true'
+      ENGINE_FEED: 'false'
+      ORDERS: '0'
+      REAL_CAPITAL_BRL: '0'
+      NO_RETUNE: 'true'
+      NO_BACKFILL: 'true'
+      NO_SILENT_SOURCE_SUBSTITUTION: 'true'
+      FAIL_CLOSED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pytest
+      - name: Contract tests
+        run: |
+          python -m py_compile tools/gate_btc_2_v2a_mnt_full_corpus_qa.py
+          python -m pytest -q tests/test_gate_btc_2_v2a_mnt_full_corpus_qa.py
+      - name: Full physical public archive QA
+        run: python tools/gate_btc_2_v2a_mnt_full_corpus_qa.py --workers 6 --output artifacts/gate_btc_2/v2a_mnt_full_corpus_qa
+      - name: Assert no admission or scientific credit
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path('artifacts/gate_btc_2/v2a_mnt_full_corpus_qa/SUMMARY.json')
+          if p.exists():
+              x=json.load(open(p))
+              assert x['dataset_sealed'] is False and x['scientific_credit'] is False and x['prospective_credit'] is False
+              assert x['engine_feed'] is False and x['orders']==0 and x['real_capital_brl']==0
+              assert x['admission_scope']=='NONE' and x['retroactive_v2a_repair_allowed'] is False
+          PY
+      - name: Upload immutable QA packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-mnt-full-corpus-qa-${{ github.run_id }}
+          path: artifacts/gate_btc_2/v2a_mnt_full_corpus_qa
+          if-no-files-found: warn
+          retention-days: 30
