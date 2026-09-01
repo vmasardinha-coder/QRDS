@@ -1,22 +1,22 @@
 {
-  "version": 1,
-  "updated_at": "2026-08-29",
+  "version": 2,
+  "updated_at": "2026-09-01",
   "policy": {
     "default_class": "AUTOMATIC_ONLY",
     "manual_dispatch_allowed_only_if_listed": true,
     "historical_runs_are_not_actions": true,
-    "do_not_rerun_fail_closed_scientific_or_immutable_history_failures": true
+    "do_not_rerun_fail_closed_scientific_or_immutable_history_failures": true,
+    "live_human_action_scan": true,
+    "human_action_signals": [
+      "workflow run status=waiting",
+      "workflow run conclusion=action_required",
+      "explicit registry manual action",
+      "open PR requesting the repository owner as reviewer",
+      "open issue or PR labeled human-action-required"
+    ],
+    "ordinary_failure_is_factory_owned": true
   },
-  "current_manual_actions": [
-    {
-      "id": "stage9_microstructure_capture",
-      "status": "ACTION_REQUIRED_AFTER_PR_301_GREEN_AND_MERGED",
-      "workflow": ".github/workflows/gate-btc-2-microstructure-shadow-manual-capture.yml",
-      "instruction": "Run exactly once after PR #301 is fully green and merged to main.",
-      "owner": "human",
-      "safe_to_repeat": false
-    }
-  ],
+  "current_manual_actions": [],
   "protected_no_manual_action": [
     {
       "target": "PR #53 gate-btc-runtime",
@@ -44,9 +44,15 @@
       "instruction": "No manual dispatch."
     }
   ],
+  "ignore_pr_numbers_for_action_required": [53, 258, 262, 266, 280],
+  "ignore_workflow_names_for_human_queue": [
+    "GATE BTC PR Scope Guard",
+    "GATE BTC Universal Integrity",
+    "GATE BTC Migration Parallel Validation"
+  ],
   "manual_allowlist": [
     ".github/workflows/gate-btc-2-microstructure-shadow-manual-capture.yml",
-    ".github/workflows/00-vitor-action-required.yml"
+    ".github/workflows/00-victor-action-required.yml"
   ],
   "hard_boundaries": {
     "research_only": true,
