@@ -3,27 +3,27 @@
   "currency": "USD",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 2873.4807472363154,
+  "cash": 2844.004492106662,
   "positions": {
     "BTC": {
-      "qty": 0.3675405891787119,
-      "avg_cost": 67574.32905954923,
+      "qty": 0.372719700649612,
+      "avg_cost": 67709.88890549866,
       "high_water": 79674.23
     },
-    "SYN": {
-      "qty": 91363.98951977894,
-      "avg_cost": 0.10327613075038686,
-      "high_water": 0.11179
-    },
-    "ZEC": {
-      "qty": 10.162371621175414,
-      "avg_cost": 829.10828,
-      "high_water": 854.0
-    },
     "UNI": {
-      "qty": 1646.86807174538,
+      "qty": 1482.272083297755,
       "avg_cost": 5.275069799999999,
-      "high_water": 5.2750698
+      "high_water": 5.8276
+    },
+    "CRV": {
+      "qty": 23530.615071168617,
+      "avg_cost": 0.3674671,
+      "high_water": 0.36746709999999994
+    },
+    "ENA": {
+      "qty": 54921.724266442005,
+      "avg_cost": 0.15743728,
+      "high_water": 0.15743727999999999
     }
   },
   "benchmark": {
@@ -155,8 +155,8 @@
     },
     {
       "date": "2026-09-01",
-      "nav": 57838.36,
-      "benchmark_nav": 61092.89
+      "nav": 57551.9,
+      "benchmark_nav": 59962.31
     }
   ],
   "trades": [
@@ -687,6 +687,54 @@
       "qty": 1646.86807175,
       "price": 5.27507,
       "value": 8687.34
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "SYN",
+      "side": "sell",
+      "qty": 91363.98951978,
+      "price": 0.091079,
+      "value": 8321.33
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "UNI",
+      "side": "sell",
+      "qty": 164.59598845,
+      "price": 5.821772,
+      "value": 958.24
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "ZEC",
+      "side": "sell",
+      "qty": 10.16237162,
+      "price": 825.09408,
+      "value": 8384.91
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "BTC",
+      "side": "buy",
+      "qty": 0.00517911,
+      "price": 77330.02277,
+      "value": 400.5
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "CRV",
+      "side": "buy",
+      "qty": 23530.61507117,
+      "price": 0.367467,
+      "value": 8646.73
+    },
+    {
+      "date": "2026-09-01",
+      "symbol": "ENA",
+      "side": "buy",
+      "qty": 54921.72426644,
+      "price": 0.157437,
+      "value": 8646.73
     }
   ],
   "cooldown": {},
@@ -12084,9 +12132,9 @@
       "date": "2026-09-01",
       "regime": "risk_on",
       "hurdle": "BTC",
-      "hurdle_score": 0.2343,
-      "rebalance_trigger": "desvio de peso em UNI: 0.0% vs alvo 15.0%",
-      "eligible_count": 8,
+      "hurdle_score": 0.2115,
+      "rebalance_trigger": "desvio de peso em CRV: 0.0% vs alvo 15.0%",
+      "eligible_count": 9,
       "selected": [
         {
           "symbol": "BTC",
@@ -12094,18 +12142,18 @@
           "weight": 0.5
         },
         {
+          "symbol": "CRV",
+          "score": 0.8057,
+          "weight": 0.15
+        },
+        {
           "symbol": "UNI",
-          "score": 0.5745,
+          "score": 0.7412,
           "weight": 0.15
         },
         {
-          "symbol": "ZEC",
-          "score": 0.5522,
-          "weight": 0.15
-        },
-        {
-          "symbol": "SYN",
-          "score": 0.5448,
+          "symbol": "ENA",
+          "score": 0.5844,
           "weight": 0.15
         }
       ],
@@ -12116,7 +12164,7 @@
         },
         {
           "symbol": "ADA",
-          "reason": "nao bate o benchmark (+2.5% <= +23.4%)"
+          "reason": "nao bate o benchmark (+0.5% <= +21.1%)"
         },
         {
           "symbol": "ALGO",
@@ -12168,7 +12216,7 @@
         },
         {
           "symbol": "AVAX",
-          "reason": "nao bate o benchmark (+0.6% <= +23.4%)"
+          "reason": "nao bate o benchmark (-0.4% <= +21.1%)"
         },
         {
           "symbol": "AXS",
@@ -12188,7 +12236,7 @@
         },
         {
           "symbol": "BCH",
-          "reason": "nao bate o benchmark (+9.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (+8.0% <= +21.1%)"
         },
         {
           "symbol": "BLUR",
@@ -12196,7 +12244,7 @@
         },
         {
           "symbol": "BONK",
-          "reason": "nao bate o benchmark (-17.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (-19.5% <= +21.1%)"
         },
         {
           "symbol": "CAKE",
@@ -12223,10 +12271,6 @@
           "reason": "liquidez baixa (0.3M < 1M)"
         },
         {
-          "symbol": "CRV",
-          "reason": "liquidez baixa (1.0M < 1M)"
-        },
-        {
           "symbol": "CTSI",
           "reason": "liquidez baixa (0.0M < 1M)"
         },
@@ -12244,11 +12288,11 @@
         },
         {
           "symbol": "DOGE",
-          "reason": "nao bate o benchmark (+4.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (+2.1% <= +21.1%)"
         },
         {
           "symbol": "DOT",
-          "reason": "nao bate o benchmark (-8.8% <= +23.4%)"
+          "reason": "nao bate o benchmark (-6.7% <= +21.1%)"
         },
         {
           "symbol": "DYDX",
@@ -12280,7 +12324,7 @@
         },
         {
           "symbol": "FET",
-          "reason": "nao bate o benchmark (-13.4% <= +23.4%)"
+          "reason": "nao bate o benchmark (-15.6% <= +21.1%)"
         },
         {
           "symbol": "FIL",
@@ -12320,7 +12364,7 @@
         },
         {
           "symbol": "HBAR",
-          "reason": "nao bate o benchmark (-3.9% <= +23.4%)"
+          "reason": "nao bate o benchmark (-3.9% <= +21.1%)"
         },
         {
           "symbol": "HIGH",
@@ -12328,7 +12372,7 @@
         },
         {
           "symbol": "ICP",
-          "reason": "nao bate o benchmark (-3.0% <= +23.4%)"
+          "reason": "nao bate o benchmark (-1.3% <= +21.1%)"
         },
         {
           "symbol": "ICX",
@@ -12340,7 +12384,7 @@
         },
         {
           "symbol": "INJ",
-          "reason": "nao bate o benchmark (-13.3% <= +23.4%)"
+          "reason": "nao bate o benchmark (-16.0% <= +21.1%)"
         },
         {
           "symbol": "IOTA",
@@ -12356,7 +12400,7 @@
         },
         {
           "symbol": "JUP",
-          "reason": "nao bate o benchmark (+14.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (+7.5% <= +21.1%)"
         },
         {
           "symbol": "KAVA",
@@ -12384,7 +12428,7 @@
         },
         {
           "symbol": "LTC",
-          "reason": "nao bate o benchmark (+6.4% <= +23.4%)"
+          "reason": "nao bate o benchmark (+7.9% <= +21.1%)"
         },
         {
           "symbol": "MAGIC",
@@ -12412,7 +12456,7 @@
         },
         {
           "symbol": "NEAR",
-          "reason": "nao bate o benchmark (-8.8% <= +23.4%)"
+          "reason": "nao bate o benchmark (-11.6% <= +21.1%)"
         },
         {
           "symbol": "NEO",
@@ -12436,7 +12480,7 @@
         },
         {
           "symbol": "ONDO",
-          "reason": "nao bate o benchmark (-12.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (-14.3% <= +21.1%)"
         },
         {
           "symbol": "ONE",
@@ -12512,7 +12556,7 @@
         },
         {
           "symbol": "RUNE",
-          "reason": "nao bate o benchmark (+15.3% <= +23.4%)"
+          "reason": "nao bate o benchmark (+12.0% <= +21.1%)"
         },
         {
           "symbol": "RVN",
@@ -12556,7 +12600,7 @@
         },
         {
           "symbol": "SUI",
-          "reason": "nao bate o benchmark (-2.7% <= +23.4%)"
+          "reason": "nao bate o benchmark (-4.4% <= +21.1%)"
         },
         {
           "symbol": "SUSHI",
@@ -12572,7 +12616,7 @@
         },
         {
           "symbol": "TLM",
-          "reason": "nao bate o benchmark (-4.6% <= +23.4%)"
+          "reason": "nao bate o benchmark (-3.6% <= +21.1%)"
         },
         {
           "symbol": "TON",
@@ -12588,7 +12632,7 @@
         },
         {
           "symbol": "TRX",
-          "reason": "nao bate o benchmark (+0.6% <= +23.4%)"
+          "reason": "nao bate o benchmark (-2.3% <= +21.1%)"
         },
         {
           "symbol": "UMA",
@@ -12608,11 +12652,11 @@
         },
         {
           "symbol": "XLM",
-          "reason": "nao bate o benchmark (-6.1% <= +23.4%)"
+          "reason": "nao bate o benchmark (-7.9% <= +21.1%)"
         },
         {
           "symbol": "XRP",
-          "reason": "nao bate o benchmark (+21.5% <= +23.4%)"
+          "reason": "nao bate o benchmark (+18.1% <= +21.1%)"
         },
         {
           "symbol": "XTZ",
