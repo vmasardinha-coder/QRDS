@@ -1,0 +1,77 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_KCS_BYBIT_SOURCE_PREREG_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "issue": 111,
+  "purpose": "Bounded free/public source-redundancy qualification for the existing KCS SOURCE_RECOVERY_CANDIDATE after KuCoin KCS-USDT failed continuity QA with 80 internal missing days.",
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "dataset_sealed": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "candidate": {
+    "coin_id": "kucoin-shares",
+    "symbol": "KCS",
+    "current_failure_class": "SOURCE_RECOVERY_CANDIDATE",
+    "prior_candidate": {
+      "provider": "KuCoin",
+      "pair": "KCS-USDT",
+      "rows": 3153,
+      "earliest_day": "2017-10-23",
+      "internal_missing_days": 80,
+      "qa_pass": false
+    },
+    "candidate_source": {
+      "provider": "Bybit",
+      "market": "SPOT",
+      "pair": "KCSUSDT",
+      "public_api": true,
+      "official_pair_surface": "https://www.bybit.com/en/trade/spot/KCS/USDT",
+      "endpoint_family": "Bybit V5 market kline / public archive if available"
+    },
+    "pre_registration_evidence": {
+      "source_recovery_candidate_recorded_in_issue_111": true,
+      "current_public_spot_pair_surface_observed": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "exact_asset_identity_asserted": false,
+      "pair_history_asserted": false,
+      "archive_availability_asserted": false
+    }
+  },
+  "qualification_requirements": [
+    "Source must be official, free/public, auditable and legally accessible without private credentials.",
+    "Exact asset identity must match the frozen V2A coin_id/symbol; ticker equality or a trading-page label alone is insufficient.",
+    "Raw bytes or immutable source objects must be preserved and SHA-256 hashed before normalization.",
+    "Provider, endpoint/pair, request parameters, retrieval timestamp, raw hash and parser/schema version must be recorded.",
+    "Timestamp semantics/timezone and deterministic schema mapping must be explicit.",
+    "Duplicate, missing-day, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed.",
+    "Historical continuity must be evaluated without filling the 80 KuCoin gaps from another source or treating cross-source stitching as original history.",
+    "A clean Bybit candidate may only be adjudicated prospectively under the already-frozen V2A temporal contract; it cannot repair prior PIT snapshots.",
+    "No methodology, denominator, threshold, cutoff, clocks or economics may change as part of source recovery.",
+    "Any source/API/archive failure remains evidence and must not trigger silent substitution."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ],
+  "master_effect_if_merged": {
+    "system_8_data_path": "KCS_BYBIT_SOURCE_REDUNDANCY_PREREGISTERED_ONLY",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
