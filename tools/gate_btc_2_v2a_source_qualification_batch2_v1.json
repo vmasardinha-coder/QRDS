@@ -1,0 +1,70 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_QUALIFICATION_BATCH2_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "issue": 111,
+  "purpose": "Bounded qualification of the next free/public exact-identity source candidate for a current MULTIASSET_V2A SOURCE_RECOVERY_CANDIDATE gap after batch 1 adjudication.",
+  "scientific_credit": false,
+  "dataset_sealed": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "batch_scope": [
+    {
+      "coin_id": "mantle",
+      "symbol": "MNT",
+      "current_failure_class": "SOURCE_RECOVERY_CANDIDATE",
+      "candidate_source": {
+        "provider": "Bybit",
+        "market": "SPOT",
+        "pair": "MNTUSDT",
+        "public_api": true,
+        "official_docs": "https://bybit-exchange.github.io/docs/v5/market/kline",
+        "endpoint_family": "GET /v5/market/kline",
+        "public_archive": "https://public.bybit.com/spot/MNTUSDT/"
+      },
+      "pre_registration_evidence": {
+        "pair_archive_observed": true,
+        "archive_first_observed_month": "2023-07",
+        "historical_coverage_sufficiency_asserted": false,
+        "exact_asset_identity_asserted": false
+      }
+    }
+  ],
+  "qualification_requirements": [
+    "Source must be official, free/public, auditable and legally accessible without private credentials.",
+    "Exact asset identity must match the frozen V2A coin_id/symbol; ticker equality alone is insufficient.",
+    "Pair existence and requested historical window must be proven from source bytes; preregistration does not assert V2A sufficiency.",
+    "Raw response/archive bytes or immutable objects must be preserved and SHA-256 hashed before normalization.",
+    "Manifest must record provider, endpoint/archive object, pair, request parameters, retrieval timestamp, raw hash and parser version.",
+    "Schema mapping and timestamp semantics/timezone must be explicit and deterministic.",
+    "Duplicate, missing-row, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed.",
+    "Coverage must satisfy the already-frozen V2A requirement; no threshold, cutoff, denominator or history-length rule may change.",
+    "No historical reconstruction from another token, renamed asset, derivative, wrapped representation or synthetic cross-rate is allowed.",
+    "Qualification data cannot count as prospective evidence and cannot repair prior point-in-time universe snapshots.",
+    "Any failed candidate remains a documented DATA_GAP; subsequent candidates require a new explicit qualification record or versioned extension."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ],
+  "master_effect_if_merged": {
+    "system_8_data_path": "UNCHANGED_UNTIL_QUALIFICATION_EXECUTES",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
