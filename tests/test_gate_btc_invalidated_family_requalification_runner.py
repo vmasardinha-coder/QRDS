@@ -45,6 +45,31 @@ def write_results(d: Path, ids):
     (d / f"gate_btc_b3_h{ids[0][1:]}_h{ids[-1][1:]}_result.json").write_text(json.dumps(payload), encoding="utf-8")
 
 
+def green_gate(data: Path, namespace="RQ1", gate_id="sg1", family_ids=None):
+    g = {
+        "qualified": True,
+        "free_or_official_auditable": True,
+        "publication_semantics_proven": True,
+        "revision_semantics_proven": True,
+        "identity_qa_pass": True,
+        "schema_qa_pass": True,
+        "point_in_time_valid": True,
+        "independent_unseen_evaluation_data": True,
+        "no_historical_backfill_credit": True,
+        "economics_pre_read": False,
+        "evaluation_namespace": namespace,
+        "source_gate_id": gate_id,
+        "windows": {
+            "discovery": {"start": "2025-01-01", "end": "2025-06-30"},
+            "replication": {"start": "2025-07-01", "end": "2025-12-31"},
+        },
+        "dataset_sha256": rq.sha256(data),
+    }
+    if family_ids is not None:
+        g["family_ids"] = family_ids
+    return g
+
+
 def test_all_affected_families_are_queued(tmp_path):
     ids = ["H1962", "H1963", "H1964"]
     results = tmp_path / "results"
@@ -73,29 +98,40 @@ def test_missing_frozen_contract_fails_closed(tmp_path):
 def test_source_gate_requires_unseen_pit_auditable_and_hash(tmp_path):
     data = tmp_path / "x.csv"
     data.write_text("timestamp,open,high,low,close,volume\n", encoding="utf-8")
-    gate = {
-        "qualified": True,
-        "free_or_official_auditable": True,
-        "publication_semantics_proven": True,
-        "revision_semantics_proven": True,
-        "identity_qa_pass": True,
-        "schema_qa_pass": True,
-        "point_in_time_valid": True,
-        "independent_unseen_evaluation_data": True,
-        "no_historical_backfill_credit": True,
-        "economics_pre_read": False,
-        "evaluation_namespace": "RQ1",
-        "windows": {
-            "discovery": {"start": "2025-01-01", "end": "2025-06-30"},
-            "replication": {"start": "2025-07-01", "end": "2025-12-31"},
-        },
-        "dataset_sha256": rq.sha256(data),
-    }
+    gate = green_gate(data)
     ok, reason = rq.validate_source_gate(gate, data)
     assert ok is True and reason == "SOURCE_GATE_GREEN"
     gate["independent_unseen_evaluation_data"] = False
     ok, reason = rq.validate_source_gate(gate, data)
     assert ok is False and "independent_unseen" in reason
+
+
+def test_scoped_gate_releases_only_declared_family(tmp_path):
+    data = tmp_path / "x.csv"
+    data.write_text("timestamp,open,high,low,close,volume\n", encoding="utf-8")
+    scoped = green_gate(data, namespace="BLOCK_A", gate_id="block-a", family_ids=["H1962"])
+    gate, dataset, reason = rq.select_source_for_family("H1962", None, None, [(scoped, data)])
+    assert gate is scoped
+    assert dataset == data
+    assert reason == "SOURCE_GATE_GREEN_SCOPED"
+
+    gate, dataset, reason = rq.select_source_for_family("H1963", None, None, [(scoped, data)])
+    assert gate is None and dataset is None
+    assert reason == "SOURCE_GATE_ABSENT_FOR_FAMILY"
+
+
+def test_red_scoped_gate_does_not_block_green_sibling_gate(tmp_path):
+    a = tmp_path / "a.csv"
+    b = tmp_path / "b.csv"
+    a.write_text("timestamp,open,high,low,close,volume\n", encoding="utf-8")
+    b.write_text("timestamp,open,high,low,close,volume\n", encoding="utf-8")
+    red = green_gate(a, namespace="RED", gate_id="red", family_ids=["H1962"])
+    red["revision_semantics_proven"] = False
+    green = green_gate(b, namespace="GREEN", gate_id="green", family_ids=["H1963"])
+
+    gate, dataset, reason = rq.select_source_for_family("H1963", None, None, [(red, a), (green, b)])
+    assert gate is green and dataset == b
+    assert reason == "SOURCE_GATE_GREEN_SCOPED"
 
 
 def test_prereg_keeps_exact_original_grammar_and_new_identity():
