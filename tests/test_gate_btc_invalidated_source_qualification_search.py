@@ -121,6 +121,31 @@ def test_mt5_packet_is_identity_evidence_only_not_source_admission(tmp_path: Pat
     assert out["historical_backfill_credit"] == 0
 
 
+def test_deep_mt5_win_history_remains_source_evidence_not_backfill(tmp_path: Path):
+    packet = {
+        "packet_sha256": "deep-win",
+        "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
+        "records": [{
+            "symbol": "WINV26",
+            "description": "IBOVESPA MINI",
+            "path": "BVMF-Derivatives\\WINV26",
+            "earliest_observation_utc": "2026-07-01T12:00:00Z",
+            "latest_observation_utc": "2026-09-01T12:00:00Z",
+            "captured_bar_count": 4096,
+            "bars": [{"timestamp_utc": "2026-09-01T12:00:00Z"}] * 4096,
+        }],
+    }
+    p = tmp_path / "SOURCE_PACKET.json"
+    p.write_text(json.dumps(packet), encoding="utf-8")
+    out = mod._mt5_source_evidence(p)
+    assert out["status"] == "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED"
+    assert out["matching_record_count"] == 1
+    assert out["matching_records"][0]["captured_bar_count"] == 4096
+    assert out["source_admission_pass"] is False
+    assert out["prospective_credit"] == 0
+    assert out["historical_backfill_credit"] == 0
+
+
 def test_generic_candidate_deficiencies_are_explicit():
     missing = mod._deficiencies(False, False)
     assert "IDENTITY_NOT_PROVEN" in missing
