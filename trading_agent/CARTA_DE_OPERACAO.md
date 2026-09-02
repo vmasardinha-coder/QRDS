@@ -95,7 +95,8 @@ vieram de cada fonte (`log["sources"]`):
 |---|---|
 | Ações EUA | Nasdaq → Stooq → Yahoo (query1, query2) |
 | Crypto | Coinbase → Binance → CoinGecko |
-| Ações B3 e benchmarks | brapi.dev → Yahoo |
+| Ações B3 | COTAHIST (arquivo oficial da B3) → brapi.dev → Yahoo |
+| Índices B3 (Ibovespa) | brapi.dev → Yahoo — o COTAHIST não cobre índices |
 | CDI | SGS do Banco Central (4 formas) → cópia local |
 
 A ordem de cada cascata vem de medição feita no próprio runner
@@ -108,6 +109,133 @@ Uma falha da fonte (bloqueio, 5xx) é distinta de o ativo não existir nela: só
 a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).
 Sem essa distinção, três tickers desconhecidos na Stooq mandavam as 100 ações
 para o Yahoo e esgotavam o seu limite de pedidos.
+
+### Manutencao de ticker nao e mudanca de universo
+
+Trocar `CPLE6` por `CPLE3` (Copel unificada numa classe) ou `BRFS3` por
+`MBRF3` (BRF fundida na Marfrig) **nao** altera a composicao do universo: e a
+mesma empresa sob outro simbolo. O que a seccao 3 protege e a escolha de que
+empresas entram, e essa continua a exigir decisao do mandante.
+
+A distincao importa porque a omissao tem o efeito contrario ao pretendido:
+manter um simbolo extinto encolhe o universo de 50 para 48 nomes sem que
+ninguem tenha decidido isso, e o relatorio mostra-o apenas como mais uma
+linha de "sem dado". Um teste (`TestUniverseHygiene`) fixa os dois casos ja
+medidos para nao regredirem.
+
+A confirmacao veio de `/api/available` da brapi, que lista os simbolos que a
+fonte tem — perguntar a fonte, em vez de testar candidatos um a um.
+
+Para os casos seguintes o metodo melhorou: o proprio arquivo da B3 diz quem
+sucedeu a quem (`tools/probe_data_sources.py b3sucessores`). Um papel que
+para de negociar e outro que comeca no pregao seguinte, com o mesmo nome de
+empresa (`NOMRES`) ou o mesmo emissor no `ISIN`, e uma sucessao — e isso e
+evidencia, ao contrario de adivinhar o nome novo.
+
+| Antigo | Novo | Parou → comecou | O que confirma |
+|---|---|---|---|
+| CPLE6 | CPLE3 | — | `/api/available` |
+| BRFS3 | MBRF3 | — | `/api/available` |
+| ELET3 | AXIA3 | 07/11 → 10/11/2025 | Eletrobras passou a Axia Energia |
+| EMBR3 | EMBJ3 | 31/10 → 03/11/2025 | mesmo `NOMRES` 'EMBRAER' |
+| NTCO3 | NATU3 | 01/07 → 02/07/2025 | 'GRUPO NATURA' passou a 'NATURA' |
+| JBSS3 | *(saiu)* | 06/06 → 09/06/2025 | so restou `JBSS32`, um **BDR** |
+
+**As series nao sao coladas.** A antiga fica para tras e a nova acumula do
+zero, mesmo custando meses ate chegar aos 260 pregoes do momentum 12-1. Uma
+mudanca de simbolo costuma vir acompanhada de reorganizacao societaria, e
+concatenar as duas pontas sem saber a relacao de troca inventaria um retorno
+que nunca existiu — exactamente o tipo de dado estimado que a seccao 7 proibe.
+
+**Porque a JBS saiu em vez de ser trocada.** A empresa passou a negociar em
+Nova Iorque e o que restou na B3 e `JBSS32`, um BDR — recibo de acoes
+estrangeiras, com exposicao cambial. Trocar o simbolo da mesma empresa e
+manutencao; trocar uma acao brasileira por um recibo de acao estrangeira
+muda a natureza do ativo, e isso e composicao de universo. Decidido pelo
+mandante a 2026-08-15: universo passa a 49 nomes.
+
+### Limite conhecido: historico da B3 no plano gratuito
+
+Medido em 2026-08-13 no runner: a brapi so devolve serie longa para uma
+minoria dos tickers. `PETR4` e `VALE3` dao 499 pregoes com `range=2y`;
+`CPLE3` e `MBRF3` recusam 2y, 1y e 6mo com `INVALID_RANGE` e so entregam 63
+pregoes em `3mo`. Nao e quota — os controlos passam depois das recusas na
+mesma corrida — e sim uma restricao por ticker.
+
+Consequencia directa: o momentum 12-1 precisa de ~273 pregoes, por isso 45
+dos 48 nomes restantes sao rejeitados por "historico insuficiente", so 3
+ficam elegiveis, e o piso de diversificacao (4) manda a carteira de acoes B3
+para 100% caixa desde 2026-08-12.
+
+Isto e o fail-closed a funcionar — a carteira recusa-se a operar com menos
+diversificacao do que a Carta exige, em vez de afrouxar o criterio.
+
+**Resolvido a 2026-08-14, por decisao do mandante:** a fonte primaria da B3
+passou a ser o arquivo oficial COTAHIST. A escolha entre as duas candidatas
+nao foi indiferente:
+
+| Candidata | Entrega | Efeito na Carta |
+|---|---|---|
+| COTAHIST (B3) | serie diaria completa | nenhum — o sinal fica igual, muda so a origem do preco |
+| Scanner do TradingView | `Perf.Y`, `Perf.1M`, `SMA200` ja calculados | mudaria como o momentum e apurado → secao 6 |
+
+Adotou-se a primeira precisamente por nao mexer no criterio: substituir a
+serie propria por campos pre-calculados de terceiros seria alterar o sinal
+com a aparencia de uma troca de fonte. O scanner fica medido e documentado
+(`tools/probe_data_sources.py b3fonte`), sem estar em uso.
+
+### O indice tem de ser acumulado, porque nenhuma fonte o da longo
+
+O ^BVSP era o unico dado da carteira B3 com so duas fontes — o COTAHIST cobre
+acoes, nao indices. A 2026-08-17 as duas cederam no mesmo ciclo e a carteira
+parou. A procura de uma terceira fonte, medida no runner
+(`tools/probe_data_sources.py b3indice`), nao encontrou nenhuma:
+
+| Candidata | Resposta no runner |
+|---|---|
+| Stooq `^bvsp`/`bvsp`, `.com` e `.pl` | HTTP 200 com pagina anti-robo — bloqueia os IPs do Actions |
+| BCB SGS 7832 | HTTP 404 — a serie nao existe |
+| Yahoo `^BVSP` | HTTP 429 |
+| brapi `^BVSP` 2y / 1y / 6mo | HTTP 400 |
+| brapi `^BVSP` 3mo | **HTTP 200 — 64 pregoes** |
+
+64 pregoes, quando a SMA 200 do filtro de regime precisa de 200 e o momentum
+12-1 precisa de 260. Isto revelou um problema maior que a falta de fonte:
+`equity_regime` devolvia `risk_on` tanto quando a SMA aprovava como quando nao
+havia historico para a calcular, e o relatorio escrevia "risco ligado" nos dois
+casos. **Fail-open num sistema que e fail-closed em tudo o resto** — e nao
+determinista, porque nos dias em que o Yahoo respondia vinha 1 ano e o filtro
+corria a serio. A mesma falta derrubava o obstaculo do IBOV para CDI sozinho,
+sem o dizer.
+
+Decisao (mandante, 2026-08-17): **acumular a serie do indice em disco**
+(`state/indice_cache.json`), juntando o que cada ciclo consegue obter.
+
+Isto nao viola a seccao 7 porque **nao estima nada**: guarda fechos reais que
+ja aconteceram. O fecho de hoje continua a ter de vir da fonte — sem fonte, o
+ciclo falha como falhava, e o cache nao serve de muleta para um dia sem dados.
+Antes de juntar, os pregoes em comum entre o guardado e o vivo tem de bater a
+menos de 1%; se nao batem, e outra escala ou outro indice, e colar fabricaria
+um salto de retorno inexistente — recomeca-se do vivo, pelo mesmo motivo que
+nao se emendam series de tickers sucedidos.
+
+Enquanto o cache nao chegar aos 200 pregoes, o relatorio declara
+`filtro NAO avaliado`, em vez de deixar passar por aprovacao. **Fica em aberto**
+para decisao do mandante que exposicao usar nesse intervalo: hoje mantem-se a
+de risco ligado, que e o comportamento anterior.
+
+### Segredos
+
+As mensagens de falha são publicadas no relatório, que é versionado num
+repositório público. Por isso: credenciais **nunca** viajam em query strings
+(o token da brapi vai no cabeçalho `Authorization`), e qualquer URL que entre
+numa mensagem de erro passa por `data_sources.redact()`, que substitui
+`token`, `apikey`, `api_key` e `key` por `***`.
+
+Isto foi acrescentado depois de o token da brapi ter aparecido no relatório
+de 12/08 e no estado da carteira B3 — a falha ocorreu porque o token estava
+na URL e a URL entrava na mensagem de erro. Um teste verifica que nenhum
+ficheiro publicado contém `token=` seguido de valor real.
 
 ## 8. Transparência e log
 

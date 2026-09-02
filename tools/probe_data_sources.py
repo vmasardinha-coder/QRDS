@@ -10,6 +10,7 @@ Uso: python -m tools.probe_data_sources
 
 from __future__ import annotations
 
+import io
 import json
 import sys
 import urllib.error
@@ -185,27 +186,538 @@ def probe_stooq(ticker: str = "spy.us") -> str:
     return f"HTTP {status} · inicio {head!r} (controlo)"
 
 
-def probe_brapi(ticker: str = "PETR4") -> str:
+def _csv_serie(body: bytes) -> list[tuple[str, float]]:
+    """(data, fecho) de um CSV estilo Stooq. Vazio se nao for CSV."""
+    import csv as _csv
+    texto = body.decode("utf-8", "replace")
+    if texto.lstrip()[:1] == "<":
+        return []
+    linhas = []
+    for row in _csv.DictReader(io.StringIO(texto)):
+        try:
+            fecho = float(row["Close"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if fecho > 0:
+            linhas.append((row["Date"], fecho))
+    linhas.sort()
+    return linhas
+
+
+def _retrato(linhas: list[tuple[str, float]]) -> str:
+    """Resumo comparavel entre fontes: quanto historico e que valores."""
+    if not linhas:
+        return "sem serie utilizavel"
+    caudas = " ".join(f"{d}={v:,.0f}" for d, v in linhas[-3:])
+    return (f"{len(linhas)} pregoes · {linhas[0][0]} -> {linhas[-1][0]}\n"
+            f"        ultimos: {caudas}")
+
+
+def probe_indice_b3() -> str:
+    """Terceira fonte para o Ibovespa.
+
+    O indice e o unico dado da carteira B3 com so duas fontes: o COTAHIST
+    cobre acoes, nao indices, e quando a brapi e o Yahoo cedem ao mesmo tempo
+    a carteira inteira para (aconteceu a 2026-08-17). Aqui pergunta-se a cada
+    candidata o mesmo: quantos pregoes da, e que valores.
+
+    Os ultimos fechos de cada uma sao impressos lado a lado de proposito: uma
+    fonte que responda 200 mas com outra escala, outro indice ou uma serie
+    parada e pior que fonte nenhuma, porque entra silenciosamente no filtro de
+    regime e na forca relativa. So entra a que bater com as outras.
+    """
+    linhas: list[str] = []
+    for host in ("https://stooq.com", "https://stooq.pl"):
+        for simbolo in ("^bvsp", "bvsp"):
+            try:
+                status, body = _get(f"{host}/q/d/l/?s={simbolo}&i=d")
+                serie = _csv_serie(body)
+                cabeca = " ".join(body[:70].decode("utf-8", "replace").split())
+                linhas.append(f"\n    stooq {host.split('//')[1]} {simbolo!r}: "
+                              f"HTTP {status} · {_retrato(serie)}"
+                              + ("" if serie else f"\n        corpo: {cabeca!r}"))
+            except Exception as err:  # noqa: BLE001
+                linhas.append(f"\n    stooq {host.split('//')[1]} {simbolo!r}: "
+                              f"{type(err).__name__}: {str(err)[:70]}")
+
+    # Controlos: as duas fontes actuais, para comparar escala e ultimo fecho.
+    try:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+
+    # O Yahoo ja e fonte configurada do indice e pede range=2y — cerca de 500
+    # pregoes, que encheria a SMA 200 de uma vez. Mas a cascata devolve na
+    # primeira fonte que responde, e a brapi responde sempre (com 3mo), por
+    # isso o Yahoo nunca chega a ser consultado para o ^BVSP: todos os
+    # relatorios desde 18/08 dizem 'brapi: 1' e nenhum diz 'yahoo'.
+    #
+    # A pergunta que isto responde nao e "ha outra fonte" — e "a fonte que ja
+    # temos consegue dar o historico longo, se lhe perguntarmos?".
+    for host in ("https://query1.finance.yahoo.com",
+                 "https://query2.finance.yahoo.com"):
+        for rng in ("2y", "5y"):
+            try:
+                status, body = _get(f"{host}/v8/finance/chart/"
+                                    f"%5EBVSP?range={rng}&interval=1d")
+                d = json.loads(body)["chart"]["result"][0]
+                fechos = d["indicators"]["quote"][0]["close"]
+                datas = [datetime.fromtimestamp(t, tz=timezone.utc)
+                         .strftime("%Y-%m-%d") for t in d["timestamp"]]
+                serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
+                edge = host.split("//")[1].split(".")[0]
+                linhas.append(f"\n    yahoo {edge} ^BVSP range={rng}: "
+                              f"HTTP {status} · {_retrato(serie)}")
+            except Exception as err:  # noqa: BLE001
+                edge = host.split("//")[1].split(".")[0]
+                linhas.append(f"\n    yahoo {edge} ^BVSP range={rng}: "
+                              f"{type(err).__name__}: {str(err)[:70]}")
+
+    # Todos os ranges que o agente tenta, pela mesma ordem: e a resposta a
+    # "quanto historico a brapi consegue dar para o indice", que decide se a
+    # SMA 200 do filtro de regime chega sequer a ser calculavel.
+    for rng in ("2y", "1y", "6mo", "3mo"):
+        try:
+            status, data = _brapi("%5EBVSP", rng)
+            pontos = (data.get("results") or [{}])[0].get(
+                "historicalDataPrice") or []
+            serie = [(datetime.fromtimestamp(p["date"],
+                                             tz=timezone.utc).strftime("%Y-%m-%d"),
+                      float(p["close"]))
+                     for p in pontos if p.get("close") and p.get("date")]
+            serie.sort()
+            linhas.append(f"\n    brapi ^BVSP range={rng} (fonte actual): "
+                          f"HTTP {status} · {_retrato(serie)}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    brapi ^BVSP range={rng} (fonte actual): "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    # SGS do Banco Central: ja e fonte do CDI, logo host conhecido e estavel.
+    # 7832 e o Ibovespa; a duvida e a periodicidade — mensal nao serve para a
+    # SMA 200 diaria, e e isso que esta linha responde.
+    try:
+        fim = datetime.now(timezone.utc)
+        ini = fim - timedelta(days=400)
+        status, body = _get(
+            "https://api.bcb.gov.br/dados/serie/bcdata.sgs.7832/dados"
+            f"?formato=json&dataInicial={ini.strftime('%d/%m/%Y')}"
+            f"&dataFinal={fim.strftime('%d/%m/%Y')}")
+        pontos = json.loads(body)
+        serie = [(p["data"], float(p["valor"])) for p in pontos]
+        linhas.append(f"\n    bcb sgs 7832 (Ibovespa): HTTP {status} · "
+                      f"{len(serie)} pontos em 400 dias "
+                      f"({'diaria' if len(serie) > 200 else 'NAO diaria'})"
+                      f"\n        ultimos: "
+                      + " ".join(f"{d}={v:,.0f}" for d, v in serie[-3:]))
+    except Exception as err:  # noqa: BLE001
+        linhas.append(f"\n    bcb sgs 7832 (Ibovespa): "
+                      f"{type(err).__name__}: {str(err)[:70]}")
+
+    return "".join(linhas)
+
+
+def _conferir_com_cache(serie: list[tuple[str, float]]) -> str:
+    """Confronta uma candidata com os pregoes que ja sabemos serem reais.
+
+    Isto e o que torna semear defensavel. O cache tem 74 fechos vindos da
+    brapi ao longo de semanas; uma fonte que diga o mesmo nessas 74 datas nao
+    e uma fonte de proveniencia duvidosa, e uma fonte corroborada por dado que
+    ja confiamos. Uma que discorde e recusada, por muito longa que seja.
+    """
+    from trading_agent import data_sources
+    guardado = {d: c for d, c, _ in data_sources._load_index_cache("^BVSP")}
+    if not guardado:
+        return "sem cache para conferir"
+    candidata = dict(serie)
+    comuns = sorted(set(guardado) & set(candidata))
+    if not comuns:
+        return "ZERO datas em comum — nao da para corroborar"
+    difs = [abs(candidata[d] / guardado[d] - 1.0)
+            for d in comuns if guardado[d] > 0]
+    pior = max(difs)
+    exemplo = max(comuns, key=lambda d: abs(candidata[d] / guardado[d] - 1.0))
+    return (f"{len(comuns)} datas em comum · pior desvio {pior*100:.3f}% "
+            f"(em {exemplo}: cache {guardado[exemplo]:.1f} vs "
+            f"candidata {candidata[exemplo]:.1f})")
+
+
+def probe_semear_indice() -> str:
+    """Procura uma serie longa do Ibovespa que se possa conferir.
+
+    Semear o cache so e aceitavel com fechos reais de origem verificavel. A
+    verificacao aqui nao e a reputacao da fonte: e a sobreposicao com os
+    pregoes que o agente ja recolheu. Comprimento sem concordancia nao serve.
+    """
+    linhas: list[str] = []
+
+    # Primeiro perguntar a fonte que simbolos de indice tem, em vez de
+    # adivinhar nomes — foi assim que se resolveram os tickers sucedidos.
+    for termo in ("IBOV", "BVSP", "IND"):
+        try:
+            status, body = _get(f"https://brapi.dev/api/available?search={termo}")
+            achados = json.loads(body).get("indexes") or json.loads(body).get("stocks") or []
+            linhas.append(f"\n    brapi /available?search={termo}: HTTP {status} · "
+                          f"{achados[:12]}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    brapi /available?search={termo}: "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    for simbolo in ("%5EBVSP", "IBOV", "BVSP"):
+        for rng in ("max", "10y", "5y"):
+            try:
+                status, data = _brapi(simbolo, rng)
+                pontos = (data.get("results") or [{}])[0].get(
+                    "historicalDataPrice") or []
+                serie = [(datetime.fromtimestamp(p["date"], tz=timezone.utc)
+                          .strftime("%Y-%m-%d"), float(p["close"]))
+                         for p in pontos if p.get("close") and p.get("date")]
+                serie.sort()
+                if not serie:
+                    linhas.append(f"\n    brapi {simbolo} range={rng}: "
+                                  f"HTTP {status} · sem serie")
+                    continue
+                linhas.append(f"\n    brapi {simbolo} range={rng}: HTTP {status} · "
+                              f"{_retrato(serie)}"
+                              f"\n        confere: {_conferir_com_cache(serie)}")
+            except Exception as err:  # noqa: BLE001
+                linhas.append(f"\n    brapi {simbolo} range={rng}: "
+                              f"{type(err).__name__}: {str(err)[:60]}")
+
+    for host in ("https://query1.finance.yahoo.com",
+                 "https://query2.finance.yahoo.com"):
+        edge = host.split("//")[1].split(".")[0]
+        try:
+            status, body = _get(f"{host}/v8/finance/chart/"
+                                f"%5EBVSP?range=max&interval=1d")
+            d = json.loads(body)["chart"]["result"][0]
+            fechos = d["indicators"]["quote"][0]["close"]
+            datas = [datetime.fromtimestamp(t, tz=timezone.utc)
+                     .strftime("%Y-%m-%d") for t in d["timestamp"]]
+            serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
+            linhas.append(f"\n    yahoo {edge} range=max: HTTP {status} · "
+                          f"{_retrato(serie)}"
+                          f"\n        confere: {_conferir_com_cache(serie)}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    yahoo {edge} range=max: "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    return "".join(linhas)
+
+
+def _brapi(ticker: str, rng: str = "2y"):
+    """O token vai no cabecalho, nunca na query string — os logs do Actions
+    sao publicos neste repositorio, tal como os relatorios.
+    """
     import os
     token = os.environ.get("BRAPI_TOKEN", "").strip()
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     url = (f"https://brapi.dev/api/quote/{ticker}"
-           f"?range=2y&interval=1d&fundamental=false")
-    if token:
-        url += f"&token={token}"
-    status, body = _get(url)
-    data = json.loads(body.decode("utf-8"))
+           f"?range={rng}&interval=1d&fundamental=false")
+    status, body = _get(url, headers=headers)
+    return status, json.loads(body.decode("utf-8"))
+
+
+def probe_brapi(ticker: str = "PETR4") -> str:
+    import os
+    status, data = _brapi(ticker)
     hist = ((data.get("results") or [{}])[0].get("historicalDataPrice")) or []
+    token = os.environ.get("BRAPI_TOKEN", "").strip()
     return (f"HTTP {status} · token {'presente' if token else 'AUSENTE'} · "
             f"{len(hist)} pregoes")
 
 
-def main() -> int:
+# Candidatos a substituir tickers que sairam da B3 por evento societario,
+# com os antigos e dois controlos vivos na mesma corrida. O nome da empresa
+# e o que confirma a identidade: um simbolo que responde nao prova ser o
+# sucessor certo.
+B3_CANDIDATOS = ["CPLE3", "CPLE5", "CPLE6", "MBRF3", "BRFS3", "PETR4", "VALE3"]
+
+
+def probe_b3_tickers(tickers: list[str] | None = None) -> str:
+    out = []
+    for tk in tickers or B3_CANDIDATOS:
+        try:
+            status, data = _brapi(tk)
+        except urllib.error.HTTPError as err:
+            # O corpo do erro e que distingue "simbolo nao existe" de "o teu
+            # plano nao da acesso a este simbolo" — sem ele, um 400 nao diz
+            # se a correcao e trocar o ticker ou mudar de fonte.
+            corpo = ""
+            try:
+                corpo = err.read().decode("utf-8", "replace")[:200]
+            except Exception:  # noqa: BLE001
+                pass
+            out.append(f"    {tk:8s} HTTP {err.code} {err.reason} · corpo={corpo!r}")
+            continue
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    {tk:8s} FALHOU {type(err).__name__}")
+            continue
+        res = (data.get("results") or [{}])[0]
+        hist = res.get("historicalDataPrice") or []
+        ultimo = "-"
+        if hist:
+            ts = hist[-1].get("date")
+            if isinstance(ts, (int, float)):
+                ultimo = datetime.fromtimestamp(ts, timezone.utc).date().isoformat()
+        flag = "OK" if len(hist) >= 260 else ("curto" if hist else "VAZIO")
+        out.append(f"    {flag:5s} {tk:8s} HTTP {status} · {len(hist):>4} pregoes"
+                   f" · ate {ultimo} · nome={res.get('longName') or res.get('shortName')!r}"
+                   f" · preco={res.get('regularMarketPrice')}")
+    return "\n" + "\n".join(out)
+
+
+def probe_brapi_disponiveis(buscas: list[str] | None = None) -> str:
+    """Pergunta a fonte que simbolos ela tem, em vez de adivinhar candidatos.
+
+    Adivinhar o sucessor de um ticker extinto e como escolher fonte as cegas:
+    testa-se uma hipotese de cada vez e nunca se sabe o espaco todo.
+    """
+    import os
+    token = os.environ.get("BRAPI_TOKEN", "").strip()
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    out = []
+    for termo in buscas or ["CPLE", "COPEL", "MBRF", "BRF", "MRFG"]:
+        url = f"https://brapi.dev/api/available?search={termo}"
+        try:
+            _, body = _get(url, headers=headers)
+            achados = (json.loads(body.decode("utf-8")).get("stocks")) or []
+        except urllib.error.HTTPError as err:
+            out.append(f"    {termo:8s} HTTP {err.code} {err.reason}")
+            continue
+        except Exception as err:  # noqa: BLE001
+            out.append(f"    {termo:8s} FALHOU {type(err).__name__}")
+            continue
+        out.append(f"    {termo:8s} {len(achados):>3} simbolos: {achados[:25]}")
+    return "\n" + "\n".join(out)
+
+
+def probe_brapi_ranges(tickers: list[str] | None = None) -> str:
+    """Quanto historico a fonte da, por ticker e por range.
+
+    CPLE3 e MBRF3 existem na brapi mas recusam range=2y com INVALID_RANGE,
+    enquanto PETR4 aceita — logo a restricao e por ticker, nao do plano
+    inteiro. O momentum 12-1 precisa de ~260 pregoes: se o maior range
+    aceite nao chegar la, trocar o ticker nao resolve nada.
+    """
+    out = []
+    for tk in tickers or ["CPLE3", "MBRF3", "PETR4"]:
+        linha = [f"    {tk:8s}"]
+        for rng in ("2y", "1y", "6mo", "3mo", "1mo"):
+            try:
+                _, data = _brapi(tk, rng)
+                hist = ((data.get("results") or [{}])[0]
+                        .get("historicalDataPrice")) or []
+                linha.append(f"{rng}={len(hist)}")
+            except urllib.error.HTTPError as err:
+                linha.append(f"{rng}=HTTP{err.code}")
+            except Exception as err:  # noqa: BLE001
+                linha.append(f"{rng}={type(err).__name__}")
+        out.append(" ".join(linha))
+    return "\n" + "\n".join(out)
+
+
+def probe_cotahist() -> str:
+    """Serie historica oficial da B3 (COTAHIST): um ficheiro anual com todos
+    os pregoes de todos os papeis.
+
+    Interessa porque devolve serie diaria, e nao um retrato pre-calculado:
+    com ela a estrategia fica identica e a troca e so de fonte. O ficheiro do
+    ano passado nunca muda, por isso pode ser guardado em cache como o CDI.
+
+    So le os primeiros bytes — nao vale a pena trazer 25 MB para saber se a
+    porta esta aberta.
+    """
+    ano = datetime.now(timezone.utc).year
+    bases = [
+        "https://bvmf.bmfbovespa.com.br/InstDados/SerHist",
+        "https://www.b3.com.br/InstDados/SerHist",
+    ]
+    out = []
+    for base in bases:
+        for nome in (f"COTAHIST_A{ano}.ZIP", f"COTAHIST_A{ano - 1}.ZIP"):
+            url = f"{base}/{nome}"
+            try:
+                req = urllib.request.Request(
+                    url, headers={"User-Agent": UA, "Range": "bytes=0-1023"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    trecho = resp.read(1024)
+                    tamanho = resp.headers.get("Content-Range") or \
+                        resp.headers.get("Content-Length")
+                    zip_ok = trecho[:2] == b"PK"
+                    out.append(f"    HTTP {resp.status} · {nome} · "
+                               f"tamanho={tamanho} · zip={zip_ok} "
+                               f"[{base.split('/')[2]}]")
+            except urllib.error.HTTPError as err:
+                out.append(f"    HTTP {err.code} {err.reason} · {nome} "
+                           f"[{base.split('/')[2]}]")
+            except Exception as err:  # noqa: BLE001
+                out.append(f"    FALHOU {type(err).__name__} · {nome} "
+                           f"[{base.split('/')[2]}]")
+    return "\n" + "\n".join(out)
+
+
+def probe_tradingview_b3() -> str:
+    """O plano B: retrato do scanner para a B3.
+
+    Da os campos que a estrategia precisa ja calculados, mas nao da serie —
+    adota-lo mudaria como o sinal e calculado, o que cai na seccao 6 da Carta.
+    """
+    return probe_tradingview("brazil", ["PETR4", "VALE3", "CPLE3", "MBRF3",
+                                        "BOVA11", "ITUB4"])
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = argv if argv is not None else sys.argv[1:]
     print(f"Sonda de fontes — {datetime.now(timezone.utc).isoformat()}")
+
+    if argv and argv[0] == "b3sucessores":
+        # Quem sucedeu a um ticker que parou de negociar.
+        #
+        # Nao se descobre adivinhando nomes: o proprio arquivo diz. Um papel
+        # que morre num dia e outro que nasce por essa altura sem historia
+        # anterior e a assinatura de uma sucessao, e o nome da empresa
+        # (NOMRES) e o ISIN confirmam ou desmentem.
+        from trading_agent import cotahist
+
+        SUSPEITOS = ["ELET3", "EMBR3", "JBSS3", "NTCO3", "MBRF3", "CPLE3"]
+
+        def indexar(blob):
+            """ticker -> (nome, isin, primeiro, ultimo, n) para o mercado todo."""
+            import zipfile
+            idx = {}
+            zf = zipfile.ZipFile(io.BytesIO(blob))
+            with zf.open(zf.namelist()[0]) as stream:
+                for raw in stream:
+                    if raw[:2] != b"01" or raw[24:27] != b"010":
+                        continue
+                    code = raw[12:24].rstrip().decode("latin-1")
+                    dia = raw[2:10].decode("latin-1")
+                    dia = f"{dia[:4]}-{dia[4:6]}-{dia[6:8]}"
+                    reg = idx.get(code)
+                    if reg is None:
+                        idx[code] = [raw[27:39].strip().decode("latin-1"),
+                                     raw[230:242].strip().decode("latin-1"),
+                                     dia, dia, 1]
+                    else:
+                        reg[2] = min(reg[2], dia)
+                        reg[3] = max(reg[3], dia)
+                        reg[4] += 1
+            return idx
+
+        def investigar() -> str:
+            idx = {}
+            ano = datetime.now(timezone.utc).year
+            for a in (ano - 1, ano):
+                for code, reg in indexar(cotahist._download(a)).items():
+                    if code in idx:
+                        idx[code][2] = min(idx[code][2], reg[2])
+                        idx[code][3] = max(idx[code][3], reg[3])
+                        idx[code][4] += reg[4]
+                    else:
+                        idx[code] = reg
+            fim_global = max(r[3] for r in idx.values())
+            out = [f"    universo do arquivo: {len(idx)} papeis a vista · "
+                   f"ultimo pregao {fim_global}"]
+            for tk in SUSPEITOS:
+                reg = idx.get(tk)
+                if not reg:
+                    out.append(f"\n    {tk}: ausente do arquivo")
+                    continue
+                nome, isin, ini, fim, n = reg
+                vivo = "VIVO" if fim >= fim_global else "PAROU"
+                out.append(f"\n    {tk} [{vivo}] {nome!r} isin={isin} "
+                           f"{ini} -> {fim} ({n} pregoes)")
+                if fim >= fim_global:
+                    continue
+                # candidatos: papeis que nasceram depois de este parar
+                nascidos = [(c, r) for c, r in idx.items()
+                            if c != tk and r[2] >= fim and r[3] >= fim_global]
+                nascidos.sort(key=lambda cr: cr[1][2])
+                emissor = isin[2:6] if len(isin) >= 6 else ""
+                for c, r in nascidos[:6]:
+                    marca = ""
+                    if emissor and len(r[1]) >= 6 and r[1][2:6] == emissor:
+                        marca = "  <== mesmo emissor no ISIN"
+                    elif nome[:5] and r[0].startswith(nome[:5]):
+                        marca = "  <== mesmo nome"
+                    out.append(f"        candidato {c:8s} {r[0]!r} "
+                               f"isin={r[1]} desde {r[2]} ({r[4]} pregoes){marca}")
+            return "\n" + "\n".join(out)
+
+        report("COTAHIST — quem sucedeu a quem", investigar)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3arquivo":
+        # Ler o arquivo a serio, com o universo a serio. Os testes usam
+        # registos montados a mao: provam o formato que eu assumi, nao o que
+        # a B3 emite. So isto separa as duas coisas.
+        from trading_agent import config, cotahist
+
+        def ler() -> str:
+            alvo = config.B3_UNIVERSE + [config.B3S_UNDERLYING]
+            inicio = datetime.now(timezone.utc)
+            series = cotahist.load(alvo)
+            segundos = (datetime.now(timezone.utc) - inicio).total_seconds()
+            curtos = sorted(t for t in alvo
+                            if len(series.get(t, [])) < config.EQUITY_MIN_HISTORY_DAYS)
+            ausentes = sorted(t for t in alvo if t not in series)
+            exemplo = series.get("PETR4") or []
+            return (
+                f"{len(series)} de {len(alvo)} tickers em {segundos:.1f}s\n"
+                f"    pregoes: min={min((len(v) for v in series.values()), default=0)}"
+                f" max={max((len(v) for v in series.values()), default=0)}\n"
+                f"    PETR4 ultimo: {exemplo[-1] if exemplo else '-'}\n"
+                f"    PETR4 primeiro: {exemplo[0] if exemplo else '-'}\n"
+                f"    ausentes ({len(ausentes)}): {ausentes}\n"
+                f"    abaixo de {config.EQUITY_MIN_HISTORY_DAYS} pregoes "
+                f"({len(curtos)}): {curtos}")
+
+        report("COTAHIST — leitura real do universo da B3", ler)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3fonte":
+        # Procurar substituto para a brapi na B3. A ordem reflecte a
+        # preferencia: primeiro a que preserva a estrategia.
+        report("B3 COTAHIST — serie oficial (preserva a estrategia)",
+               probe_cotahist)
+        report("TradingView scanner — B3 (retrato, muda a metodologia)",
+               probe_tradingview_b3)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3semear":
+        # Ha serie longa do Ibovespa que se possa conferir contra os pregoes
+        # que ja temos? Ver 'probe_semear_indice'.
+        report("Ibovespa — serie longa que se possa corroborar",
+               probe_semear_indice)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3indice":
+        # Terceira fonte para o Ibovespa: ver 'probe_indice_b3'.
+        report("Ibovespa — candidatas a terceira fonte", probe_indice_b3)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3tickers":
+        # Modo dirigido: so os simbolos da B3, sem gastar pedidos nas outras
+        # fontes. Usado quando um evento societario muda um ticker.
+        report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
+        report("brapi.dev — historico por ticker e range", probe_brapi_ranges)
+        report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
+        print("\nFim da sonda.")
+        return 0
+
     report("TradingView scanner — EUA (lote de 5)",
            lambda: probe_tradingview("america",
                                      ["AAPL", "MSFT", "NVDA", "JPM", "SPY"]))
     report("Nasdaq API — profundidade, SPY e rajada", probe_nasdaq_deep)
     report("brapi.dev — historico B3", probe_brapi)
+    report("brapi.dev — que simbolos a fonte tem", probe_brapi_disponiveis)
+    report("brapi.dev — historico por ticker e range", probe_brapi_ranges)
+    report("brapi.dev — identidade de tickers B3", probe_b3_tickers)
     report("Yahoo (controlo — esperado bloqueio)", probe_yahoo)
     report("Stooq (controlo — esperado bloqueio)", probe_stooq)
     print("\nFim da sonda.")
