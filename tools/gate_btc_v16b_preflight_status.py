@@ -19,30 +19,28 @@ ENGINE_FEED = False
 ORDERS = 0
 REAL_CAPITAL = 0
 
-# D-2/D-1 preflight must not demand evidence that can only exist causally at
-# SIGNAL or ENTRY.  It proves those producers are armed; the downstream seal
-# builders still require the exact contemporaneous immutable artifacts.
+# CMC_TOP150 is created causally at SIGNAL. During D-2/D-1 preflight, require
+# the existing immutable producer to be armed; the exact contemporaneous CMC
+# artifact is still mandatory at SIGNAL. EXECUTABILITY remains fail-closed here
+# until a working official/auditable causal producer is available.
 PRODUCER_REQUIREMENTS = {
     'CMC_TOP150': (
         '.github/workflows/gate-btc-v16b-cmc-snapshot.yml',
         'tools/gate_btc_v16b_cmc_snapshot.py',
-    ),
-    'EXECUTABILITY': (
-        '.github/workflows/gate-btc-v16b-executability-snapshot.yml',
-        'tools/gate_btc_v16b_executability_snapshot.py',
     ),
 }
 
 DISCOVERABLE_REQUIREMENTS = {
     'PROVENANCE_MANIFEST': ('manifest', 'sha'),
     'SHORTABILITY': ('shortability',),
+    'EXECUTABILITY': ('executability',),
     'FUNDING': ('funding',),
     'PRICES': ('price',),
 }
 
 STAGE_SEMANTICS = {
     'CMC_TOP150': 'PRODUCER_READY_AT_PREFLIGHT__EXACT_IMMUTABLE_SNAPSHOT_REQUIRED_AT_SIGNAL',
-    'EXECUTABILITY': 'PRODUCER_READY_AT_PREFLIGHT__POST_SIGNAL_PRE_ENTRY_BINANCE_EVIDENCE_REQUIRED_AT_ENTRY',
+    'EXECUTABILITY': 'EXACT_CAUSAL_EVIDENCE_REQUIRED__FAIL_CLOSED_UNTIL_AVAILABLE',
 }
 
 
@@ -104,7 +102,7 @@ def evaluate(roots: list[Path], source_root: Path, signal_date: str = '2026-08-2
         'complete_exit_date': window.complete_exit_date.isoformat(),
         'canonical_cycle_count': 0,
         'calendar_authority': 'FROZEN_WEEKLY_V16B_CLOCK',
-        'preflight_scope': 'PRODUCER_READINESS_ONLY_FOR_FUTURE_CAUSAL_STAGE_INPUTS',
+        'preflight_scope': 'CMC_PRODUCER_READINESS_PLUS_FAIL_CLOSED_DISCOVERY_FOR_OTHER_INPUTS',
         'stage_semantics': STAGE_SEMANTICS,
         'roots': [str(r) for r in roots],
         'checks': [asdict(c) for c in checks],
