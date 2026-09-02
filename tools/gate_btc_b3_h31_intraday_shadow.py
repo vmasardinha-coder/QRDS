@@ -66,25 +66,51 @@ def allowed_scale(contract: dict, canonical_dir: Path, session: str) -> tuple[fl
 def resolve_symbol(mt5, expected: str) -> str:
     info = mt5.symbol_info(expected)
     if info is not None:
-        mt5.symbol_select(expected, True)
+        if not mt5.symbol_select(expected, True):
+            raise RuntimeError(f"MT5_SYMBOL_SELECT_FAILED symbol={expected} error={mt5.last_error()}")
         return expected
     candidates = list(mt5.symbols_get(group=f"*{expected}*") or [])
     names = sorted(s.name for s in candidates if s.name.startswith(expected))
     if len(names) != 1:
         raise RuntimeError(f"MT5_SYMBOL_NOT_UNIQUE expected={expected} candidates={names}")
-    mt5.symbol_select(names[0], True)
+    if not mt5.symbol_select(names[0], True):
+        raise RuntimeError(f"MT5_SYMBOL_SELECT_FAILED symbol={names[0]} error={mt5.last_error()}")
     return names[0]
 
 
+def _normalize_rates(rows, start: datetime, end: datetime) -> list[dict]:
+    out = []
+    for r in rows or []:
+        ts = datetime.fromtimestamp(int(r["time"]), tz=timezone.utc).astimezone(TZ)
+        if start <= ts <= end:
+            out.append({
+                "timestamp": ts.isoformat(),
+                "open": float(r["open"]),
+                "high": float(r["high"]),
+                "low": float(r["low"]),
+                "close": float(r["close"]),
+            })
+    out.sort(key=lambda x: x["timestamp"])
+    return out
+
+
 def mt5_bars(mt5, symbol: str, start: datetime, end: datetime) -> list[dict]:
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M5, start.astimezone(timezone.utc), end.astimezone(timezone.utc))
+    rates = mt5.copy_rates_range(
+        symbol,
+        mt5.TIMEFRAME_M5,
+        start.astimezone(timezone.utc),
+        end.astimezone(timezone.utc),
+    )
     if rates is None:
         raise RuntimeError(f"MT5_COPY_RATES_FAILED symbol={symbol} error={mt5.last_error()}")
-    out = []
-    for r in rates:
-        ts = datetime.fromtimestamp(int(r["time"]), tz=timezone.utc).astimezone(TZ)
-        out.append({"timestamp": ts.isoformat(), "open": float(r["open"]), "high": float(r["high"]), "low": float(r["low"]), "close": float(r["close"])})
-    return out
+    out = _normalize_rates(rates, start, end)
+    if out:
+        return out
+
+    recent = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
+    if recent is None:
+        raise RuntimeError(f"MT5_COPY_RATES_FALLBACK_FAILED symbol={symbol} error={mt5.last_error()}")
+    return _normalize_rates(recent, start, end)
 
 
 def session_bars(rows: list[dict], start: datetime) -> list[dict]:
