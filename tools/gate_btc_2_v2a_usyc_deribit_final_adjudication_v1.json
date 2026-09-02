@@ -1,0 +1,83 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_USYC_DERIBIT_FINAL_ADJUDICATION_V1",
+  "issue": 111,
+  "preregister_pr": 392,
+  "capture_pr": 393,
+  "evidence_workflow_run": 33609899745,
+  "evidence_artifact_sha256": "6c49e186866557f7099d0ce40d71c31e5f3090b1fd598d04b5487d4db6c8fd96",
+  "assessment_kind": "SOURCE_QUALIFICATION_FINAL_ADJUDICATION_ONLY",
+  "dataset_sealed": false,
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "v2a_temporal_contract": {
+    "future_point_in_time_only": true,
+    "retrospective_backfill_allowed": false,
+    "historical_qualification_capture_may_repair_prior_point_in_time_universe": false,
+    "historical_qualification_capture_counts_as_prospective_evidence": false,
+    "cross_source_stitching_allowed": false
+  },
+  "adjudication": {
+    "coin_id": "hashnote-usyc",
+    "symbol": "USYC",
+    "provider": "DERIBIT",
+    "market": "SPOT",
+    "pair": "USYC_USDC",
+    "official_identity_evidence": {
+      "provider_listing_surface": "https://support.deribit.com/hc/en-us/articles/31424939199261-Yield-reward-bearing-coins",
+      "provider_api_surface": "https://docs.deribit.com/api-reference/market-data/public-get-tradingview-chart_data",
+      "identity_statement": "Deribit's official support identifies USYC as a yield-earning cryptocurrency, explicitly links it to Hashnote, and states that users can acquire it through the USYC/USDC spot pair. This evidence binds source identity only and grants no historical PIT credit.",
+      "exact_identity_status": "VERIFIED_FOR_SOURCE_QUALIFICATION"
+    },
+    "physical_capture_qa": {
+      "status": "PASS",
+      "source_surface": "https://www.deribit.com/api/v2/public/get_tradingview_chart_data",
+      "workflow_conclusion": "success",
+      "physical_rows_ok": 694,
+      "earliest_day": "2024-10-09",
+      "latest_day": "2026-09-02",
+      "missing_days_within_returned_interval": 0,
+      "duplicate_rows": 0,
+      "monotonic": true,
+      "raw_response_sha256_preserved": true,
+      "utc_daily_semantics_enforced": true,
+      "ohlc_invariants_enforced": true,
+      "nonnegative_volume_enforced": true,
+      "qa_pass": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "evidence_detail_authority": "gate-btc-2-v2a-usyc-deribit-qualification artifact bound by evidence_artifact_sha256"
+    },
+    "coverage_rule_reconciliation": {
+      "later_source_history_does_not_repair_prior_pit_snapshots": true,
+      "historical_qualification_capture_is_readiness_evidence_only": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "result": "PROSPECTIVE_ONLY_SOURCE_QUALIFICATION_ALLOWED"
+    },
+    "source_qualification_outcome": "QUALIFIED_EXACT_SOURCE",
+    "admission_scope": "PROSPECTIVE_COLLECTION_ONLY",
+    "historical_use": "QUALIFICATION_AND_READINESS_EVIDENCE_ONLY",
+    "retroactive_v2a_repair_allowed": false,
+    "dataset_seal_credit": false,
+    "scientific_credit": false,
+    "next_action": "COLLECT_PROSPECTIVELY_UNDER_FROZEN_V2A_PIT_CONTRACT"
+  },
+  "master_effect": {
+    "system_8_data_path": "USYC_DERIBIT_EXACT_SOURCE_QUALIFIED_FOR_PROSPECTIVE_COLLECTION_ONLY",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
