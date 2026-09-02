@@ -1,0 +1,83 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_BTW_BITGET_FINAL_ADJUDICATION_V1",
+  "issue": 111,
+  "preregister_pr": 382,
+  "capture_pr": 383,
+  "evidence_workflow_run": 33578668330,
+  "evidence_artifact_sha256": "7b2d5f630aacf7678e624c3f86d29ab2630591d570fbcee1903ce85ed5f4bb10",
+  "assessment_kind": "SOURCE_QUALIFICATION_FINAL_ADJUDICATION_ONLY",
+  "dataset_sealed": false,
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "v2a_temporal_contract": {
+    "future_point_in_time_only": true,
+    "retrospective_backfill_allowed": false,
+    "historical_qualification_capture_may_repair_prior_point_in_time_universe": false,
+    "historical_qualification_capture_counts_as_prospective_evidence": false,
+    "cross_source_stitching_allowed": false
+  },
+  "adjudication": {
+    "coin_id": "bitway",
+    "symbol": "BTW",
+    "provider": "Bitget",
+    "market": "SPOT",
+    "pair": "BTWUSDT",
+    "official_identity_evidence": {
+      "provider_listing_surface": "https://www.bitget.com/support/articles/12560603859567",
+      "provider_pair_surface": "https://www.bitget.com/spot/BTWUSDT",
+      "provider_listing_contract_address": "BEP20:0x444045B0EE1ee319A660a5E3d604CA0ffA35ACaA",
+      "identity_statement": "Bitget's official listing identifies Bitway (BTW), records its BEP20 contract address, and exposes the BTW/USDT Spot market.",
+      "exact_identity_status": "VERIFIED_FOR_SOURCE_QUALIFICATION"
+    },
+    "physical_capture_qa": {
+      "status": "PASS",
+      "source_surface": "https://api.bitget.com/api/v2/spot/market/history-candles",
+      "workflow_conclusion": "success",
+      "physical_rows_ok": 183,
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-08-31",
+      "missing_days_within_returned_interval": 0,
+      "duplicate_rows": 0,
+      "monotonic": true,
+      "raw_response_sha256_preserved": true,
+      "utc_daily_semantics_enforced": true,
+      "ohlc_invariants_enforced": true,
+      "nonnegative_volume_enforced": true,
+      "qa_pass": true,
+      "evidence_detail_authority": "gate-btc-2-v2a-btw-bitget-qualification artifact bound by evidence_artifact_sha256"
+    },
+    "coverage_rule_reconciliation": {
+      "later_source_history_does_not_repair_prior_pit_snapshots": true,
+      "historical_qualification_capture_is_readiness_evidence_only": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "result": "PROSPECTIVE_ONLY_SOURCE_QUALIFICATION_ALLOWED"
+    },
+    "source_qualification_outcome": "QUALIFIED_EXACT_SOURCE",
+    "admission_scope": "PROSPECTIVE_COLLECTION_ONLY",
+    "historical_use": "QUALIFICATION_AND_READINESS_EVIDENCE_ONLY",
+    "retroactive_v2a_repair_allowed": false,
+    "dataset_seal_credit": false,
+    "scientific_credit": false,
+    "next_action": "COLLECT_PROSPECTIVELY_UNDER_FROZEN_V2A_PIT_CONTRACT"
+  },
+  "master_effect": {
+    "system_8_data_path": "BTW_BITGET_EXACT_SOURCE_QUALIFIED_FOR_PROSPECTIVE_COLLECTION_ONLY",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
