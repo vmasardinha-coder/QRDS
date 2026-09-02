@@ -1,0 +1,70 @@
+{
+  "schema": "gate_btc.factory.september_activation.v1",
+  "effective_date": "2026-09-02",
+  "authority": "USER_AUTHORIZED_PROSPECTIVE_ACTIVATION_ONLY",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  },
+  "h31": {
+    "intraday_shadow": "ACTIVE_MT5_READ_ONLY",
+    "canonical_clock": "ALREADY_STARTED",
+    "canonical_credit_rule": "ONLY_OFFICIAL_B3_STRUCTURALLY_QUALIFIED_APPEND_ONLY_EVENT_COUNTS",
+    "intraday_shadow_credit": 0,
+    "repair_policy": "SOURCE_DELIVERY_ONLY_NO_RULE_CHANGE"
+  },
+  "h1": {
+    "mode": "COLLECT_ONLY_FROZEN",
+    "repair_policy": "RETRY_SOURCE_DELIVERY_ONLY_NO_STRUCTURAL_RELAXATION",
+    "failed_sessions_remain_zero_credit": true
+  },
+  "momentum_m1_m2": {
+    "historical_track": "PRESERVE_DATA_GAP",
+    "prospective_track": "START_FROM_2026-09-02_FORWARD_ONLY",
+    "source_policy": "QUALIFY_FREE_OR_OFFICIAL_OR_MT5_READ_ONLY_SOURCE_BEFORE_SCIENTIFIC_CREDIT",
+    "historical_backfill_credit": 0
+  },
+  "v16b": {
+    "old_window": "INVALIDATED_NO_BACKFILL_NO_LATE_SEAL",
+    "new_prospective_activation_date": "2026-09-02",
+    "policy": "START_NEW_FORWARD_ONLY_CYCLE_USING_EXISTING_FROZEN_CANDIDATE_AND_EXISTING_METHOD; DO_NOT RECREATE 2026-08-27 OR 2026-08-28",
+    "scientific_credit_before_valid_new_seal": 0
+  },
+  "d100": {
+    "status": "PREREGISTERED_ACTIVATION_GATE",
+    "activation_requested_date": "2026-09-02",
+    "purpose": "UNIVERSE_EXPANSION_ONLY",
+    "d50_method_change": false,
+    "prerequisites": [
+      "D50_DATA_QUALIFICATION_7_OF_7_PASS",
+      "D50_FROZEN_HISTORY_PRESERVED",
+      "D100_UNIVERSE_MEMBERSHIP_SEALED_BEFORE_FIRST_SCORED_OBSERVATION",
+      "D100_SOURCE_BINDING_SEALED_BEFORE_FIRST_SCORED_OBSERVATION",
+      "D100_LIQUIDITY_AND_DATA_COVERAGE_QA_PASS",
+      "D100_COST_AND_FUNDING_FIELDS_DEFINED_OR_EXPLICITLY_NOT_APPLICABLE",
+      "D100_POSITION_LIMITS_AND_MISSING_DATA_POLICY_FROZEN",
+      "D50_VS_D100_COMPARISON_PROTOCOL_FROZEN",
+      "NO_BACKFILL_NO_RETUNE_NO_COUNTER_RESET"
+    ],
+    "gate_evaluation": {
+      "D50_DATA_QUALIFICATION_7_OF_7_PASS": true,
+      "D50_FROZEN_HISTORY_PRESERVED": true,
+      "D100_UNIVERSE_MEMBERSHIP_SEALED_BEFORE_FIRST_SCORED_OBSERVATION": false,
+      "D100_SOURCE_BINDING_SEALED_BEFORE_FIRST_SCORED_OBSERVATION": false,
+      "D100_LIQUIDITY_AND_DATA_COVERAGE_QA_PASS": false,
+      "D100_COST_AND_FUNDING_FIELDS_DEFINED_OR_EXPLICITLY_NOT_APPLICABLE": false,
+      "D100_POSITION_LIMITS_AND_MISSING_DATA_POLICY_FROZEN": false,
+      "D50_VS_D100_COMPARISON_PROTOCOL_FROZEN": false,
+      "NO_BACKFILL_NO_RETUNE_NO_COUNTER_RESET": true
+    },
+    "activation_rule": "ACTIVATE_AUTOMATICALLY_WHEN_ALL_PREREQUISITES_ARE_TRUE; NEVER INFER MISSING SCIENTIFIC SPECIFICATION"
+  }
+}
