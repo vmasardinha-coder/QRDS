@@ -316,6 +316,94 @@ def probe_indice_b3() -> str:
     return "".join(linhas)
 
 
+def _conferir_com_cache(serie: list[tuple[str, float]]) -> str:
+    """Confronta uma candidata com os pregoes que ja sabemos serem reais.
+
+    Isto e o que torna semear defensavel. O cache tem 74 fechos vindos da
+    brapi ao longo de semanas; uma fonte que diga o mesmo nessas 74 datas nao
+    e uma fonte de proveniencia duvidosa, e uma fonte corroborada por dado que
+    ja confiamos. Uma que discorde e recusada, por muito longa que seja.
+    """
+    from trading_agent import data_sources
+    guardado = {d: c for d, c, _ in data_sources._load_index_cache("^BVSP")}
+    if not guardado:
+        return "sem cache para conferir"
+    candidata = dict(serie)
+    comuns = sorted(set(guardado) & set(candidata))
+    if not comuns:
+        return "ZERO datas em comum — nao da para corroborar"
+    difs = [abs(candidata[d] / guardado[d] - 1.0)
+            for d in comuns if guardado[d] > 0]
+    pior = max(difs)
+    exemplo = max(comuns, key=lambda d: abs(candidata[d] / guardado[d] - 1.0))
+    return (f"{len(comuns)} datas em comum · pior desvio {pior*100:.3f}% "
+            f"(em {exemplo}: cache {guardado[exemplo]:.1f} vs "
+            f"candidata {candidata[exemplo]:.1f})")
+
+
+def probe_semear_indice() -> str:
+    """Procura uma serie longa do Ibovespa que se possa conferir.
+
+    Semear o cache so e aceitavel com fechos reais de origem verificavel. A
+    verificacao aqui nao e a reputacao da fonte: e a sobreposicao com os
+    pregoes que o agente ja recolheu. Comprimento sem concordancia nao serve.
+    """
+    linhas: list[str] = []
+
+    # Primeiro perguntar a fonte que simbolos de indice tem, em vez de
+    # adivinhar nomes — foi assim que se resolveram os tickers sucedidos.
+    for termo in ("IBOV", "BVSP", "IND"):
+        try:
+            status, body = _get(f"https://brapi.dev/api/available?search={termo}")
+            achados = json.loads(body).get("indexes") or json.loads(body).get("stocks") or []
+            linhas.append(f"\n    brapi /available?search={termo}: HTTP {status} · "
+                          f"{achados[:12]}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    brapi /available?search={termo}: "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    for simbolo in ("%5EBVSP", "IBOV", "BVSP"):
+        for rng in ("max", "10y", "5y"):
+            try:
+                status, data = _brapi(simbolo, rng)
+                pontos = (data.get("results") or [{}])[0].get(
+                    "historicalDataPrice") or []
+                serie = [(datetime.fromtimestamp(p["date"], tz=timezone.utc)
+                          .strftime("%Y-%m-%d"), float(p["close"]))
+                         for p in pontos if p.get("close") and p.get("date")]
+                serie.sort()
+                if not serie:
+                    linhas.append(f"\n    brapi {simbolo} range={rng}: "
+                                  f"HTTP {status} · sem serie")
+                    continue
+                linhas.append(f"\n    brapi {simbolo} range={rng}: HTTP {status} · "
+                              f"{_retrato(serie)}"
+                              f"\n        confere: {_conferir_com_cache(serie)}")
+            except Exception as err:  # noqa: BLE001
+                linhas.append(f"\n    brapi {simbolo} range={rng}: "
+                              f"{type(err).__name__}: {str(err)[:60]}")
+
+    for host in ("https://query1.finance.yahoo.com",
+                 "https://query2.finance.yahoo.com"):
+        edge = host.split("//")[1].split(".")[0]
+        try:
+            status, body = _get(f"{host}/v8/finance/chart/"
+                                f"%5EBVSP?range=max&interval=1d")
+            d = json.loads(body)["chart"]["result"][0]
+            fechos = d["indicators"]["quote"][0]["close"]
+            datas = [datetime.fromtimestamp(t, tz=timezone.utc)
+                     .strftime("%Y-%m-%d") for t in d["timestamp"]]
+            serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
+            linhas.append(f"\n    yahoo {edge} range=max: HTTP {status} · "
+                          f"{_retrato(serie)}"
+                          f"\n        confere: {_conferir_com_cache(serie)}")
+        except Exception as err:  # noqa: BLE001
+            linhas.append(f"\n    yahoo {edge} range=max: "
+                          f"{type(err).__name__}: {str(err)[:70]}")
+
+    return "".join(linhas)
+
+
 def _brapi(ticker: str, rng: str = "2y"):
     """O token vai no cabecalho, nunca na query string — os logs do Actions
     sao publicos neste repositorio, tal como os relatorios.
@@ -596,6 +684,14 @@ def main(argv: list[str] | None = None) -> int:
                probe_cotahist)
         report("TradingView scanner — B3 (retrato, muda a metodologia)",
                probe_tradingview_b3)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3semear":
+        # Ha serie longa do Ibovespa que se possa conferir contra os pregoes
+        # que ja temos? Ver 'probe_semear_indice'.
+        report("Ibovespa — serie longa que se possa corroborar",
+               probe_semear_indice)
         print("\nFim da sonda.")
         return 0
 
