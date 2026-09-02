@@ -105,6 +105,7 @@ def main() -> int:
     status = "QUALIFICATION_CAPTURE_COMPLETE_WITHOUT_ADMISSION"
     error = None
     duplicate_rows = 0
+    boundary_rows_excluded = 0
     gaps: list[str] = []
     monotonic = False
     qa_pass = False
@@ -133,13 +134,27 @@ def main() -> int:
             raw = request_bytes(f"/products/{PAIR}/candles", params)
             digest = hashlib.sha256(raw).hexdigest()
             (out / f"RAW_CANDLES_{idx:03d}.json").write_bytes(raw)
-            parsed = parse_candles(raw)
+            parsed_raw = parse_candles(raw)
+
+            # Coinbase can include a boundary candle outside the requested logical
+            # daily page. Raw bytes stay immutable; normalization admits only rows
+            # inside the explicitly requested UTC day window so adjacent pages do
+            # not overlap silently.
+            parsed = [
+                r
+                for r in parsed_raw
+                if cursor_start <= date.fromisoformat(r["day"]) <= cursor_end
+            ]
+            excluded_here = len(parsed_raw) - len(parsed)
+            boundary_rows_excluded += excluded_here
             pages.append(
                 {
                     "page": idx,
                     "request": params,
                     "sha256": digest,
-                    "rows": len(parsed),
+                    "rows_raw": len(parsed_raw),
+                    "rows_admitted_to_page": len(parsed),
+                    "boundary_rows_excluded": excluded_here,
                 }
             )
             if not parsed:
@@ -228,6 +243,7 @@ def main() -> int:
         "earliest_day": rows[0]["day"] if rows else None,
         "latest_day": rows[-1]["day"] if rows else None,
         "duplicate_rows": duplicate_rows,
+        "boundary_rows_excluded": boundary_rows_excluded,
         "missing_days_within_returned_interval": gaps,
         "monotonic": monotonic,
         "qa_pass": qa_pass,
