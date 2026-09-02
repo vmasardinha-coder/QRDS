@@ -12,28 +12,54 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 
-SPOT_INFO = "https://api.binance.com/api/v3/exchangeInfo"
-SPOT_TIME = "https://api.binance.com/api/v3/time"
-USDM_INFO = "https://fapi.binance.com/fapi/v1/exchangeInfo"
-USDM_TIME = "https://fapi.binance.com/fapi/v1/time"
+# GitHub-hosted runners can receive Binance HTTP 451 from some public hosts.
+# Keep a bounded list of Binance-owned public market-data/API surfaces and record
+# the exact successful URL in the evidence manifest. No third-party substitution.
+SPOT_INFO_URLS = (
+    "https://data-api.binance.vision/api/v3/exchangeInfo",
+    "https://api.binance.com/api/v3/exchangeInfo",
+)
+SPOT_TIME_URLS = (
+    "https://data-api.binance.vision/api/v3/time",
+    "https://api.binance.com/api/v3/time",
+)
+USDM_INFO_URLS = (
+    "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "https://fapi1.binance.com/fapi/v1/exchangeInfo",
+    "https://fapi2.binance.com/fapi/v1/exchangeInfo",
+)
+USDM_TIME_URLS = (
+    "https://fapi.binance.com/fapi/v1/time",
+    "https://fapi1.binance.com/fapi/v1/time",
+    "https://fapi2.binance.com/fapi/v1/time",
+)
 
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _json_response(session: requests.Session, url: str) -> tuple[bytes, dict[str, Any]]:
-    r = session.get(url, timeout=45)
-    r.raise_for_status()
-    raw = r.content
-    obj = r.json()
-    if not isinstance(obj, dict):
-        raise RuntimeError(f"expected JSON object from {url}")
-    return raw, obj
+def _json_response(session: requests.Session, urls: Iterable[str]) -> tuple[bytes, dict[str, Any], str]:
+    errors: list[str] = []
+    for url in urls:
+        try:
+            r = session.get(url, timeout=45)
+            if r.status_code != 200:
+                errors.append(f"{url}:HTTP_{r.status_code}")
+                continue
+            raw = r.content
+            obj = r.json()
+            if not isinstance(obj, dict):
+                errors.append(f"{url}:NON_OBJECT_JSON")
+                continue
+            return raw, obj, r.url
+        except Exception as exc:
+            errors.append(f"{url}:{type(exc).__name__}")
+    raise RuntimeError("all Binance public endpoint candidates failed: " + ";".join(errors))
 
 
 def merge_exchange_info(exchange_info: dict[str, Any], time_payload: dict[str, Any]) -> dict[str, Any]:
@@ -54,10 +80,10 @@ def capture(out_dir: Path, now: datetime | None = None) -> dict[str, Any]:
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 GATE-BTC-Research-Only/1.0"})
 
-    spot_info_raw, spot_info = _json_response(session, SPOT_INFO)
-    spot_time_raw, spot_time = _json_response(session, SPOT_TIME)
-    usdm_info_raw, usdm_info = _json_response(session, USDM_INFO)
-    usdm_time_raw, usdm_time = _json_response(session, USDM_TIME)
+    spot_info_raw, spot_info, spot_info_url = _json_response(session, SPOT_INFO_URLS)
+    spot_time_raw, spot_time, spot_time_url = _json_response(session, SPOT_TIME_URLS)
+    usdm_info_raw, usdm_info, usdm_info_url = _json_response(session, USDM_INFO_URLS)
+    usdm_time_raw, usdm_time, usdm_time_url = _json_response(session, USDM_TIME_URLS)
 
     spot_merged = merge_exchange_info(spot_info, spot_time)
     usdm_merged = merge_exchange_info(usdm_info, usdm_time)
@@ -91,8 +117,15 @@ def capture(out_dir: Path, now: datetime | None = None) -> dict[str, Any]:
         "usdm_server_time": int(usdm_merged["serverTime"]),
         "spot_symbols": len(spot_merged["symbols"]),
         "usdm_symbols": len(usdm_merged["symbols"]),
+        "source_urls": {
+            "spot_exchange_info": spot_info_url,
+            "spot_time": spot_time_url,
+            "usdm_exchange_info": usdm_info_url,
+            "usdm_time": usdm_time_url,
+        },
         "raw_sha256": hashes,
         "raw_preserved": True,
+        "source_policy": "BINANCE_OWNED_PUBLIC_SURFACES_ONLY_NO_THIRD_PARTY_SUBSTITUTION",
         "derived_payload_semantics": "EXCHANGEINFO_PLUS_ADJACENT_PUBLIC_SERVER_TIME_ONLY",
         "research_only": True,
         "shadow_only": True,
@@ -118,6 +151,7 @@ def main() -> int:
         "captured_at_utc": result["captured_at_utc"],
         "spot_symbols": result["spot_symbols"],
         "usdm_symbols": result["usdm_symbols"],
+        "source_urls": result["source_urls"],
         "ORDERS": 0,
         "REAL_CAPITAL": 0,
     }, sort_keys=True))
