@@ -1,0 +1,74 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_BGB_MEXC_SOURCE_PREREG_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "issue": 111,
+  "purpose": "Bounded free/public source-redundancy qualification for the existing BGB SOURCE_RECOVERY_CANDIDATE after the Bitget full-corpus QA gap.",
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "dataset_sealed": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "candidate": {
+    "coin_id": "bitget-token",
+    "symbol": "BGB",
+    "current_failure_class": "SOURCE_RECOVERY_CANDIDATE",
+    "candidate_source": {
+      "provider": "MEXC",
+      "market": "SPOT",
+      "pair": "BGBUSDT",
+      "public_source_candidate": true,
+      "official_listing_surface": "https://www.mexc.com/announcements/article/mexc-will-list-bitget-token-bgb-in-innovation-zone-17827791509716",
+      "official_market_surface": "https://www.mexc.com/how-to-buy/BGB",
+      "listing_opened_utc": "2023-07-31T10:00:00Z",
+      "endpoint_family": "MEXC public spot market/kline interface; exact endpoint and historical limits must be proven during physical qualification"
+    },
+    "pre_registration_evidence": {
+      "source_recovery_candidate_recorded_in_runtime_v2a_diagnostics": true,
+      "bitget_full_corpus_source_failed_missing_day_qa": true,
+      "provider_surface_identifies_bitget_token_bgb": true,
+      "provider_surface_exposes_bgb_usdt_spot": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "exact_asset_identity_asserted": false,
+      "pair_history_asserted_beyond_official_listing_time": false,
+      "api_or_archive_continuity_asserted": false
+    }
+  },
+  "qualification_requirements": [
+    "Source must be official, free/public, auditable and legally accessible without private credentials.",
+    "Exact asset identity must match the frozen V2A coin_id/symbol; ticker equality or listing-page text alone is insufficient.",
+    "Physical qualification must verify the exact MEXC public spot endpoint, request limits and historical pagination before any admission.",
+    "Raw response bytes or immutable source objects must be preserved and SHA-256 hashed before normalization.",
+    "Provider, pair, request parameters, retrieval timestamp, raw hash and parser/schema version must be recorded.",
+    "Timestamp semantics/timezone and deterministic schema mapping must be explicit.",
+    "Duplicate, missing-day, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed.",
+    "Historical coverage and asset-lifetime sufficiency must be adjudicated under the frozen V2A rule without changing denominator, cutoff or methodology.",
+    "Any clean MEXC candidate may only be admitted under a separate adjudication; historical qualification data cannot repair prior PIT snapshots or count as prospective evidence.",
+    "Any API, schema, identity, continuity or coverage failure remains evidence and must not trigger silent substitution."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ],
+  "master_effect_if_merged": {
+    "system_8_data_path": "BGB_MEXC_SOURCE_REDUNDANCY_PREREGISTERED_ONLY",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
