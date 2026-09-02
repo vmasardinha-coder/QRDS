@@ -27,6 +27,101 @@ env:
   GATE_BTC_NOT_APPROVED: 'true'
 
 jobs:
+  persist-ordinary-gap:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: qrds-main
+
+      - name: Download exact completed H1 structural evidence
+        env:
+          SOURCE_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          mkdir -p source-evidence
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "gate-btc-b3-h1-structural-$SOURCE_RUN" \
+            --dir source-evidence
+          find source-evidence -maxdepth 2 -type f -print
+
+      - name: Detect ordinary source gap only
+        id: gap
+        env:
+          SOURCE_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          gap=$(find source-evidence -name H1_OPERATIONAL_GAP.json -print -quit || true)
+          if [ -z "$gap" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "H1_RUNTIME_GAP_DELIVERY=NO_ORDINARY_GAP source_run=$SOURCE_RUN"
+            exit 0
+          fi
+          python - "$gap" "$SOURCE_RUN" <<'PY'
+          import json, pathlib, sys
+          p=pathlib.Path(sys.argv[1])
+          run_id=sys.argv[2]
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert x.get('schema') == 'gate_btc.b3.operational_gap.v1'
+          assert x.get('stream') == 'H1'
+          assert x.get('classification') == 'ORDINARY_SOURCE_GAP'
+          assert x.get('scientifically_qualified') is False
+          assert int(x.get('eligible_observation_increment', -1)) == 0
+          assert x.get('synthetic_backfill') is False
+          assert x.get('research_only') is True
+          assert x.get('shadow_only') is True
+          assert int(x.get('orders', -1)) == 0
+          assert int(x.get('real_capital', -1)) == 0
+          assert x.get('engine_feed') is False
+          src=x.setdefault('source', {})
+          src['workflow_run_id']=str(run_id)
+          p.write_text(json.dumps(x, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          print(x['date'])
+          PY
+          date=$(python -c 'import json; print(json.load(open("'"$gap"'"))["date"])')
+          echo "present=true" >> "$GITHUB_OUTPUT"
+          echo "path=$gap" >> "$GITHUB_OUTPUT"
+          echo "date=$date" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gap.outputs.present == 'true'
+        with:
+          ref: gate-btc-runtime
+          path: runtime-tree
+          fetch-depth: 0
+
+      - name: Persist append-only ordinary gap to canonical runtime
+        if: steps.gap.outputs.present == 'true'
+        env:
+          GAP_PATH: ${{ steps.gap.outputs.path }}
+          GAP_DATE: ${{ steps.gap.outputs.date }}
+          SOURCE_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          dest="runtime-tree/runtime/ledgers/b3_h1/gaps/$GAP_DATE.json"
+          if [ -e "$dest" ]; then
+            echo "H1_RUNTIME_GAP_APPEND_ONLY_EXISTS date=$GAP_DATE source_run=$SOURCE_RUN"
+            exit 0
+          fi
+          mkdir -p "$(dirname "$dest")"
+          cp "$GAP_PATH" "$dest"
+          cd runtime-tree
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "runtime/ledgers/b3_h1/gaps/$GAP_DATE.json"
+          git commit -m "runtime: persist H1 ordinary source gap $GAP_DATE"
+          git push origin HEAD:gate-btc-runtime
+          echo "H1_RUNTIME_GAP_PERSISTED date=$GAP_DATE source_run=$SOURCE_RUN"
+          echo "H1_INCREMENT=0 SCIENTIFIC_CREDIT=0 SYNTHETIC_BACKFILL=false"
+
   recover-or-escalate:
     if: >-
       github.event_name == 'workflow_dispatch' ||
