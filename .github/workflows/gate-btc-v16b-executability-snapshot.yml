@@ -1,0 +1,71 @@
+name: GATE BTC V16B Executability Snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Friday-only causal captures after Thursday SIGNAL and before UTC entry close.
+    # Multiple independent times reduce dependence on a single scheduled run.
+    - cron: "15 0,12,21 * * 5"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v16b-executability-snapshot.yml
+      - tools/gate_btc_v16b_executability_snapshot.py
+      - tests/test_gate_btc_v16b_executability_snapshot.py
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  capture-executability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install capture dependency
+        run: pip install 'requests>=2.31,<3'
+
+      - name: Test fail-closed merge contract
+        run: python -m unittest -v tests/test_gate_btc_v16b_executability_snapshot.py
+
+      - name: Capture raw Binance Spot/USD-M executability evidence
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_v16b_executability_snapshot.py \
+            --out-dir artifacts/gate_btc/v16b/executability
+
+      - name: Verify immutable research-only boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifests=list(Path('artifacts/gate_btc/v16b/executability').glob('V16B_EXECUTABILITY_MANIFEST_*.json'))
+          assert len(manifests)==1
+          m=json.loads(manifests[0].read_text(encoding='utf-8'))
+          assert m['status']=='PASS_CAPTURED'
+          assert m['raw_preserved'] is True
+          assert m['spot_symbols'] > 100 and m['usdm_symbols'] > 100
+          assert m['spot_server_time'] > 0 and m['usdm_server_time'] > 0
+          assert m['research_only'] is True and m['shadow_only'] is True and m['not_approved'] is True
+          assert m['engine_feed'] is False and m['orders'] == 0 and m['real_capital'] == 0
+          assert m['no_backfill'] is True and m['no_counter_reset'] is True
+          print('V16B_EXECUTABILITY_CAPTURE=PASS')
+          PY
+
+      - name: Upload immutable executability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v16b-executability-${{ github.run_id }}
+          path: artifacts/gate_btc/v16b/executability/
+          retention-days: 30
+          if-no-files-found: error
