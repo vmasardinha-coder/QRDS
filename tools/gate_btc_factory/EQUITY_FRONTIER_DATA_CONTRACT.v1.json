@@ -1,0 +1,88 @@
+{
+  "schema": "qrds.factory.equity_frontier_data_contract.v1",
+  "stage": "DATA_ONLY",
+  "economics_read_allowed": false,
+  "family_creation_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "fail_closed": true,
+  "frontiers": {
+    "B3_BLUECHIPS_UNIVARIATE": {
+      "objective": "Study liquid B3 equities independently using own-market-only causal inputs.",
+      "universe_policy": "CURRENT_PROSPECTIVE_UNIVERSE_OR_PIT_HISTORICAL_MEMBERSHIP_ONLY",
+      "target_scope": "approximately 20-30 highly liquid B3 equities",
+      "signal_isolation": "OWN_MARKET_ONLY",
+      "source_priority": [
+        "OFFICIAL_B3_AUDITABLE",
+        "AUDITABLE_FREE_MARKET_SOURCE",
+        "MT5_READ_ONLY_EXACT_SYMBOL_IDENTITY"
+      ],
+      "required_data_gate": [
+        "symbol_identity",
+        "timezone_and_session",
+        "corporate_action_semantics",
+        "publication_and_revision_semantics",
+        "point_in_time_universe_or_fixed_prospective_universe",
+        "coverage",
+        "missingness_and_dedupe",
+        "immutable_hash_manifest"
+      ]
+    },
+    "ADR_CROSS_LIST": {
+      "objective": "Study preregistered cross-listed B3/ADR pairs as isolated cross-market relative-value hypotheses.",
+      "universe_policy": "EXACT_LEGAL_ECONOMIC_PAIR_MAPPING_REQUIRED",
+      "signal_isolation": "PAIR_ONLY",
+      "source_priority": [
+        "OFFICIAL_EXCHANGE_OR_ISSUER_MAPPING",
+        "AUDITABLE_FREE_B3_SOURCE",
+        "AUDITABLE_FREE_US_SOURCE"
+      ],
+      "required_data_gate": [
+        "exact_pair_identity",
+        "adr_ratio_and_currency_semantics",
+        "timezone_overlap",
+        "corporate_action_alignment",
+        "publication_and_revision_semantics",
+        "coverage",
+        "missingness_and_dedupe",
+        "immutable_hash_manifest"
+      ]
+    },
+    "US_MEGA_TECH_UNIVARIATE": {
+      "objective": "Study highly liquid large-cap US technology equities independently using own-market-only causal inputs.",
+      "universe_policy": "CURRENT_PROSPECTIVE_UNIVERSE_OR_PIT_INDEX_MEMBERSHIP_ONLY",
+      "target_scope": "largest liquid technology names from major US indices",
+      "signal_isolation": "OWN_MARKET_ONLY",
+      "source_priority": [
+        "OFFICIAL_EXCHANGE_OR_INDEX_MEMBERSHIP",
+        "AUDITABLE_FREE_US_MARKET_SOURCE"
+      ],
+      "required_data_gate": [
+        "symbol_identity",
+        "timezone_and_session",
+        "corporate_action_semantics",
+        "publication_and_revision_semantics",
+        "point_in_time_universe_or_fixed_prospective_universe",
+        "coverage",
+        "missingness_and_dedupe",
+        "immutable_hash_manifest"
+      ]
+    }
+  },
+  "anti_bias": {
+    "no_present_day_constituents_backfilled_into_history": true,
+    "no_survivorship_biased_historical_universe": true,
+    "no_future_known_corporate_actions": true,
+    "no_cross_frontier_feature_leakage": true,
+    "preseal_history_scientific_credit": 0,
+    "preseal_history_economic_credit": 0
+  },
+  "next_action": "QUALIFY_DATA_SOURCES_INDEPENDENTLY_BEFORE_PREREGISTRATION"
+}
