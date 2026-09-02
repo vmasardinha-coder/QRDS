@@ -80,7 +80,9 @@ def resolve_symbol(mt5, expected: str) -> str:
 
 def _normalize_rates(rows, start: datetime, end: datetime) -> list[dict]:
     out = []
-    for r in rows or []:
+    if rows is None:
+        return out
+    for r in rows:
         ts = datetime.fromtimestamp(int(r["time"]), tz=timezone.utc).astimezone(TZ)
         if start <= ts <= end:
             out.append({
