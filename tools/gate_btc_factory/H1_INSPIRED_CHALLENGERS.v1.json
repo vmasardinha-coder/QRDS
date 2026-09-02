@@ -1,0 +1,70 @@
+{
+  "schema": "qrds.h1_inspired_challengers.v1",
+  "preregistered_at": "2026-09-02T16:22:00-03:00",
+  "activation_not_before": "2026-09-03T09:00:00-03:00",
+  "purpose": "Independent prospective paper/shadow challengers inspired only by the H1 cadence and B3 intraday structure. They do not read, copy, alter, score, or receive credit from canonical H1 evidence or economics.",
+  "source": {
+    "provider": "MT5_READ_ONLY_LOCAL",
+    "instrument_root": "WIN",
+    "instrument_identity": "current active BVMF-Derivatives IBOVESPA MINI contract resolved deterministically from broker metadata",
+    "bar_interval": "M5",
+    "timezone": "America/Sao_Paulo"
+  },
+  "causal_window": {
+    "session_start": "09:00:00",
+    "signal_window_end": "10:00:00",
+    "required_signal_bars": 12,
+    "decision_deadline_exclusive": "10:05:00",
+    "entry": "10:00 M5 bar open, observed only during the causal decision window",
+    "exit": "11:00 M5 bar open",
+    "hold_minutes": 60,
+    "missed_window_policy": "MISSED_CAUSAL_WINDOW_NO_BACKFILL"
+  },
+  "signal": {
+    "name": "WIN_FIRST_HOUR_RETURN_SIGN",
+    "definition": "sign((09:55 M5 close / 09:00 M5 open) - 1)",
+    "zero_policy": "NO_TRADE"
+  },
+  "challengers": [
+    {
+      "id": "H1C_TREND_60",
+      "mechanism": "first-hour continuation",
+      "side_rule": "same sign as signal"
+    },
+    {
+      "id": "H1C_REVERSION_60",
+      "mechanism": "first-hour mean reversion",
+      "side_rule": "opposite sign to signal"
+    }
+  ],
+  "paper_measurement": {
+    "gross_return_bps": true,
+    "reference_round_trip_cost_bps": 2.0,
+    "stress_round_trip_cost_bps": 3.0,
+    "position_size": "unit_notional_normalized_paper_only",
+    "real_orders": false
+  },
+  "isolation": {
+    "canonical_h1_runtime_read": false,
+    "h1_economics_read": false,
+    "canonical_h1_credit": 0,
+    "canonical_h1_counter_effect": 0,
+    "canonical_h1_methodology_change": false,
+    "separate_ledger": "runtime/ledgers/b3_h1_inspired_challengers",
+    "no_partial_prospective_feedback": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "MT5_READ_ONLY": true,
+    "NO_ORDER_SEND": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
