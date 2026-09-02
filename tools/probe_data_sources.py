@@ -242,18 +242,36 @@ def probe_indice_b3() -> str:
 
     # Controlos: as duas fontes actuais, para comparar escala e ultimo fecho.
     try:
-        status, body = _get("https://query1.finance.yahoo.com/v8/finance/chart/"
-                            "%5EBVSP?range=1y&interval=1d")
-        d = json.loads(body)["chart"]["result"][0]
-        fechos = d["indicators"]["quote"][0]["close"]
-        datas = [datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%d")
-                 for t in d["timestamp"]]
-        serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
-        linhas.append(f"\n    yahoo ^BVSP (fonte actual): HTTP {status} · "
-                      f"{_retrato(serie)}")
-    except Exception as err:  # noqa: BLE001
-        linhas.append(f"\n    yahoo ^BVSP (fonte actual): "
-                      f"{type(err).__name__}: {str(err)[:70]}")
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+
+    # O Yahoo ja e fonte configurada do indice e pede range=2y — cerca de 500
+    # pregoes, que encheria a SMA 200 de uma vez. Mas a cascata devolve na
+    # primeira fonte que responde, e a brapi responde sempre (com 3mo), por
+    # isso o Yahoo nunca chega a ser consultado para o ^BVSP: todos os
+    # relatorios desde 18/08 dizem 'brapi: 1' e nenhum diz 'yahoo'.
+    #
+    # A pergunta que isto responde nao e "ha outra fonte" — e "a fonte que ja
+    # temos consegue dar o historico longo, se lhe perguntarmos?".
+    for host in ("https://query1.finance.yahoo.com",
+                 "https://query2.finance.yahoo.com"):
+        for rng in ("2y", "5y"):
+            try:
+                status, body = _get(f"{host}/v8/finance/chart/"
+                                    f"%5EBVSP?range={rng}&interval=1d")
+                d = json.loads(body)["chart"]["result"][0]
+                fechos = d["indicators"]["quote"][0]["close"]
+                datas = [datetime.fromtimestamp(t, tz=timezone.utc)
+                         .strftime("%Y-%m-%d") for t in d["timestamp"]]
+                serie = [(dt, f) for dt, f in zip(datas, fechos) if f]
+                edge = host.split("//")[1].split(".")[0]
+                linhas.append(f"\n    yahoo {edge} ^BVSP range={rng}: "
+                              f"HTTP {status} · {_retrato(serie)}")
+            except Exception as err:  # noqa: BLE001
+                edge = host.split("//")[1].split(".")[0]
+                linhas.append(f"\n    yahoo {edge} ^BVSP range={rng}: "
+                              f"{type(err).__name__}: {str(err)[:70]}")
 
     # Todos os ranges que o agente tenta, pela mesma ordem: e a resposta a
     # "quanto historico a brapi consegue dar para o indice", que decide se a
