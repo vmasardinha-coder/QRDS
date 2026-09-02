@@ -15,10 +15,14 @@
     "signal_window_end": "10:00:00",
     "required_signal_bars": 12,
     "decision_deadline_exclusive": "10:05:00",
-    "entry": "10:00 M5 bar open, observed only during the causal decision window",
-    "exit": "11:00 M5 bar open",
+    "entry": "10:05 M5 bar open; decision must already exist before that timestamp",
+    "entry_capture_deadline_exclusive": "10:10:00",
+    "exit": "11:05 M5 bar open",
+    "exit_capture_deadline_exclusive": "11:10:00",
     "hold_minutes": 60,
-    "missed_window_policy": "MISSED_CAUSAL_WINDOW_NO_BACKFILL"
+    "missed_window_policy": "MISSED_CAUSAL_WINDOW_NO_BACKFILL",
+    "missed_entry_policy": "MISSED_ENTRY_NO_BACKFILL",
+    "missed_exit_policy": "MISSED_EXIT_FAIL_CLOSED"
   },
   "signal": {
     "name": "WIN_FIRST_HOUR_RETURN_SIGN",

@@ -86,8 +86,7 @@ def resolve_current_win(mt5, now: datetime) -> str:
         if tick is None or int(getattr(tick, "time", 0) or 0) <= 0:
             continue
         tick_ts = datetime.fromtimestamp(int(tick.time), tz=timezone.utc).astimezone(TZ)
-        age = abs((now - tick_ts).total_seconds())
-        if age > 6 * 3600:
+        if abs((now - tick_ts).total_seconds()) > 6 * 3600:
             continue
         candidates.append((year, month, name))
     if not candidates:
@@ -153,15 +152,17 @@ def append_event(root: Path, challenger: str, session: str, event: dict) -> None
 
 def summarize(root: Path, challenger: str) -> dict:
     d = root / challenger / "events"
-    decisions = closed = 0
+    decisions = entries = closed = 0
     gross = net = stress = 0.0
     if d.exists():
         for session in d.iterdir():
             if not session.is_dir():
                 continue
             dec = find_event(root, challenger, session.name, "DECISION")
+            ent = find_event(root, challenger, session.name, "ENTRY")
             clo = find_event(root, challenger, session.name, "CLOSE")
             decisions += int(dec is not None)
+            entries += int(ent is not None)
             if clo:
                 closed += 1
                 gross += float(clo["gross_return_bps"])
@@ -170,6 +171,7 @@ def summarize(root: Path, challenger: str) -> dict:
     return {
         "challenger": challenger,
         "prospective_decisions": decisions,
+        "paper_entries": entries,
         "closed_paper_trades": closed,
         "gross_return_bps_sum": gross,
         "reference_net_return_bps_sum": net,
@@ -191,8 +193,11 @@ def main() -> int:
     session = now.date().isoformat()
     start = datetime(now.year, now.month, now.day, 9, 0, tzinfo=TZ)
     signal_end = start + timedelta(hours=1)
-    deadline = signal_end + timedelta(minutes=5)
-    exit_time = signal_end + timedelta(hours=1)
+    decision_deadline = signal_end + timedelta(minutes=5)
+    entry_time = decision_deadline
+    entry_capture_deadline = entry_time + timedelta(minutes=5)
+    exit_time = entry_time + timedelta(hours=1)
+    exit_capture_deadline = exit_time + timedelta(minutes=5)
 
     status = {
         "schema": "qrds.h1_inspired_challenger_shadow_status.v1",
@@ -225,24 +230,25 @@ def main() -> int:
             symbol = resolve_current_win(mt5, now)
             status["mt5_ready"] = True
             status["source_symbol"] = symbol
-            bars = mt5_bars(mt5, symbol, start, max(now, exit_time))
+            bars = mt5_bars(mt5, symbol, start, max(now, exit_capture_deadline))
             by_time = {datetime.fromisoformat(r["timestamp"]): r for r in bars}
             signal_times = [start + timedelta(minutes=5*i) for i in range(12)]
             signal_rows = [by_time.get(t) for t in signal_times]
-            entry_row = by_time.get(signal_end)
-            exit_row = by_time.get(exit_time)
 
             for spec in contract["challengers"]:
                 cid = spec["id"]
                 dec = find_event(root, cid, session, "DECISION")
+                ent = find_event(root, cid, session, "ENTRY")
+                close = find_event(root, cid, session, "CLOSE")
+
                 if dec is None:
                     if now < signal_end:
                         status["challengers"][cid] = {"state": "WAITING_SIGNAL_WINDOW"}
                         continue
-                    if now >= deadline:
+                    if now >= decision_deadline:
                         status["challengers"][cid] = {"state": "MISSED_CAUSAL_WINDOW_NO_BACKFILL"}
                         continue
-                    if any(r is None for r in signal_rows) or entry_row is None:
+                    if any(r is None for r in signal_rows):
                         status["challengers"][cid] = {"state": "CAUSAL_DATA_NOT_READY_FAIL_CLOSED"}
                         continue
                     o = float(signal_rows[0]["open"])
@@ -250,7 +256,6 @@ def main() -> int:
                     signal_bps = (c / o - 1.0) * 10000.0
                     sign = 1 if signal_bps > 0 else -1 if signal_bps < 0 else 0
                     side = sign if cid == "H1C_TREND_60" else -sign
-                    trigger = "TRIGGER" if side else "NO_TRADE_ZERO_SIGNAL"
                     dec = {
                         "schema": "qrds.h1_inspired_challenger_event.v1",
                         "event_type": "DECISION",
@@ -260,24 +265,61 @@ def main() -> int:
                         "source_symbol": symbol,
                         "signal_bps": signal_bps,
                         "side": side,
-                        "trigger_state": trigger,
-                        "entry_timestamp": signal_end.isoformat() if side else None,
-                        "entry_price": float(entry_row["open"]) if side else None,
+                        "trigger_state": "TRIGGER" if side else "NO_TRADE_ZERO_SIGNAL",
+                        "planned_entry_timestamp": entry_time.isoformat() if side else None,
+                        "planned_exit_timestamp": exit_time.isoformat() if side else None,
                         "contract_hash_sha256": stable_hash(contract),
                         **SAFETY,
                     }
                     append_event(root, cid, session, dec)
+                    dec = find_event(root, cid, session, "DECISION")
 
-                dec = find_event(root, cid, session, "DECISION")
-                close = find_event(root, cid, session, "CLOSE") if dec else None
-                if dec and dec.get("side") and close is None and now >= exit_time:
+                if dec and dec.get("side") and ent is None:
+                    if now < entry_time:
+                        status["challengers"][cid] = {"state": "DECIDED_WAITING_ENTRY"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
+                        continue
+                    if now >= entry_capture_deadline:
+                        status["challengers"][cid] = {"state": "MISSED_ENTRY_NO_BACKFILL"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
+                        continue
+                    entry_row = by_time.get(entry_time)
+                    if entry_row is None:
+                        status["challengers"][cid] = {"state": "ENTRY_DATA_NOT_READY_FAIL_CLOSED"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
+                        continue
+                    append_event(root, cid, session, {
+                        "schema": "qrds.h1_inspired_challenger_event.v1",
+                        "event_type": "ENTRY",
+                        "challenger": cid,
+                        "session": session,
+                        "observed_at": now.isoformat(),
+                        "source_symbol": symbol,
+                        "side": int(dec["side"]),
+                        "entry_timestamp": entry_time.isoformat(),
+                        "entry_price": float(entry_row["open"]),
+                        **SAFETY,
+                    })
+                    ent = find_event(root, cid, session, "ENTRY")
+
+                if ent and close is None:
+                    if now < exit_time:
+                        status["challengers"][cid] = {"state": "PAPER_POSITION_OPEN"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
+                        continue
+                    if now >= exit_capture_deadline:
+                        status["challengers"][cid] = {"state": "MISSED_EXIT_FAIL_CLOSED"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
+                        continue
+                    exit_row = by_time.get(exit_time)
                     if exit_row is None:
                         status["challengers"][cid] = {"state": "EXIT_DATA_NOT_READY_FAIL_CLOSED"}
+                        write_json(root / cid / "SUMMARY.json", summarize(root, cid))
                         continue
-                    entry = float(dec["entry_price"])
+                    entry = float(ent["entry_price"])
                     exit_px = float(exit_row["open"])
-                    gross = int(dec["side"]) * (exit_px / entry - 1.0) * 10000.0
-                    close = {
+                    gross = int(ent["side"]) * (exit_px / entry - 1.0) * 10000.0
+                    append_event(root, cid, session, {
                         "schema": "qrds.h1_inspired_challenger_event.v1",
                         "event_type": "CLOSE",
                         "challenger": cid,
@@ -286,30 +328,31 @@ def main() -> int:
                         "source_symbol": symbol,
                         "entry_price": entry,
                         "exit_price": exit_px,
-                        "side": int(dec["side"]),
+                        "side": int(ent["side"]),
                         "gross_return_bps": gross,
                         "reference_net_return_bps": gross - float(contract["paper_measurement"]["reference_round_trip_cost_bps"]),
                         "stress_net_return_bps": gross - float(contract["paper_measurement"]["stress_round_trip_cost_bps"]),
                         **SAFETY,
-                    }
-                    append_event(root, cid, session, close)
+                    })
+                    close = find_event(root, cid, session, "CLOSE")
 
-                dec = find_event(root, cid, session, "DECISION")
-                close = find_event(root, cid, session, "CLOSE") if dec else None
                 if close:
                     state = "PAPER_TRADE_CLOSED"
-                elif dec and dec.get("side"):
+                elif ent:
                     state = "PAPER_POSITION_OPEN"
-                elif dec:
+                elif dec and not dec.get("side"):
                     state = "NO_TRADE"
+                elif dec:
+                    state = "DECIDED_WAITING_ENTRY"
                 else:
                     state = status["challengers"].get(cid, {}).get("state", "WAITING")
                 status["challengers"][cid] = {"state": state}
                 write_json(root / cid / "SUMMARY.json", summarize(root, cid))
 
-            if all(v["state"] == "MISSED_CAUSAL_WINDOW_NO_BACKFILL" for v in status["challengers"].values()):
+            states = [v["state"] for v in status["challengers"].values()]
+            if states and all(x == "MISSED_CAUSAL_WINDOW_NO_BACKFILL" for x in states):
                 status["state"] = "MISSED_CAUSAL_WINDOW_NO_BACKFILL"
-            elif status["mt5_ready"]:
+            else:
                 status["state"] = "ACTIVE_PROSPECTIVE_SHADOW"
         finally:
             mt5.shutdown()
