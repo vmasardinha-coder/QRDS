@@ -1,0 +1,95 @@
+{
+  "schema": "qrds.factory.b3_bluechips_univariate_prereg.v1",
+  "stage": "PREREGISTER",
+  "frontier": "B3_BLUECHIPS_UNIVARIATE",
+  "source_contract": "tools/gate_btc_factory/B3_COTAHIST_DATA_SOURCE.v1.json",
+  "source_status_required": "OFFICIAL_PRIMARY_SOURCE_PHYSICAL_CAPTURE_QUALIFIED",
+  "economics_read_before_this_prereg": false,
+  "family_count": 10,
+  "family_ids": ["EQB01","EQB02","EQB03","EQB04","EQB05","EQB06","EQB07","EQB08","EQB09","EQB10"],
+  "windows": {
+    "independent_replication": ["2020-01-01", "2021-12-31"],
+    "discovery": ["2022-01-01", "2024-12-31"],
+    "cutoff_exclusive": "2026-08-10"
+  },
+  "instrument_filter": {
+    "market_type": "010_SPOT",
+    "bdi_code": "02_STANDARD_LOT",
+    "security_specification_contains_any": [" ON", " PN", " UNT"],
+    "identity": "trading_code+isin+market_type+security_specification",
+    "no_current_constituent_list": true,
+    "pit_universe_rule": "eligibility is computed independently per instrument from its own causally prior COTAHIST observations only",
+    "eligibility_lookback_sessions": 60,
+    "eligibility_min_observations": 45,
+    "eligibility_median_traded_value_brl": 20000000,
+    "eligibility_median_trade_count": 500
+  },
+  "signal_timing": {
+    "feature_day": "t completed B3 daily record",
+    "decision_time": "after t close for t+1 open",
+    "execution_entry": "t+1 open",
+    "execution_exit": "t+1 close",
+    "overnight_price_ratio_used": false,
+    "corporate_action_boundary": "no price ratio is computed across different trading dates"
+  },
+  "fixed_cost_model": {
+    "primary_round_trip_bps": 30,
+    "robustness_round_trip_bps": [20, 30, 40],
+    "retune_allowed": false
+  },
+  "features": {
+    "body": "(close-open)/open",
+    "intraday_range": "(high-low)/open",
+    "close_location": "(close-low)/(high-low) when high>low",
+    "volume_shock": "traded_value/median(traded_value prior 20 eligible observations)"
+  },
+  "families": [
+    {"id":"EQB01","mechanism":"BODY_CONTINUATION","rule":"sign(body_t)","direction":"continuation"},
+    {"id":"EQB02","mechanism":"BODY_REVERSAL","rule":"-sign(body_t)","direction":"reversal"},
+    {"id":"EQB03","mechanism":"CLOSE_LOCATION_CONTINUATION","rule":"long if close_location_t>=0.80; short if <=0.20; else flat","direction":"continuation"},
+    {"id":"EQB04","mechanism":"CLOSE_LOCATION_REVERSAL","rule":"short if close_location_t>=0.80; long if <=0.20; else flat","direction":"reversal"},
+    {"id":"EQB05","mechanism":"WIDE_RANGE_CONTINUATION","rule":"sign(body_t) only if intraday_range_t>=0.03","direction":"continuation"},
+    {"id":"EQB06","mechanism":"WIDE_RANGE_REVERSAL","rule":"-sign(body_t) only if intraday_range_t>=0.03","direction":"reversal"},
+    {"id":"EQB07","mechanism":"NARROW_RANGE_CONTINUATION","rule":"sign(body_t) only if intraday_range_t<=0.01","direction":"continuation"},
+    {"id":"EQB08","mechanism":"NARROW_RANGE_REVERSAL","rule":"-sign(body_t) only if intraday_range_t<=0.01","direction":"reversal"},
+    {"id":"EQB09","mechanism":"VOLUME_SHOCK_CONTINUATION","rule":"sign(body_t) only if volume_shock_t>=1.50","direction":"continuation"},
+    {"id":"EQB10","mechanism":"VOLUME_SHOCK_REVERSAL","rule":"-sign(body_t) only if volume_shock_t>=1.50","direction":"reversal"}
+  ],
+  "portfolio_aggregation": {
+    "signal_inputs": "own-market-only per instrument",
+    "daily_active_positions": "equal notional weight across all non-flat eligible signals in the same family",
+    "gross_exposure": 1.0,
+    "leverage": 1.0,
+    "cross_asset_signal_feature": false
+  },
+  "mortality": ["NO_TRADES","DATA_GAP","SOURCE_QA_FAIL","SCIENTIFIC_REJECTION"],
+  "gates": {
+    "discovery_required_before_replication": true,
+    "bias_causality_qa_required": true,
+    "robustness_required": true,
+    "independent_replication_required": true,
+    "prospective_only_after_replication": true,
+    "no_result_guided_threshold_change": true,
+    "no_result_guided_direction_change": true,
+    "no_hold_change": true,
+    "no_cost_change": true
+  },
+  "anti_duplication": {
+    "legacy_h170_h2729_not_reused": true,
+    "h31_cross_asset_inputs_forbidden": true,
+    "btc_macro_fx_di_external_regime_inputs_forbidden": true,
+    "scientific_credit_inherited": 0
+  },
+  "economics_read_allowed_after_merge": true,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "fail_closed": true,
+  "next_action": "EXECUTE_EQB01_EQB10_DISCOVERY_WITHOUT_RETUNING"
+}
