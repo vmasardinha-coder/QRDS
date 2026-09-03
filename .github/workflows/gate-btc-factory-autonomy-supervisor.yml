@@ -141,11 +141,22 @@ jobs:
           while IFS=$'\t' read -r track workflow; do
             [ -n "$workflow" ] || continue
             active=$(gh run list --repo "${{ github.repository }}" --workflow "$workflow" --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
-            if [ "$active" = 0 ]; then
-              gh workflow run "$workflow" --repo "${{ github.repository }}" --ref main
-              echo "AUTO_REPAIR_DISPATCHED=$track:$workflow"
-            else
+            if [ "$active" != 0 ]; then
               echo "AUTO_REPAIR_SINGLE_FLIGHT=$track:$workflow"
+              continue
+            fi
+            dispatched=0
+            for attempt in 1 2 3 4; do
+              if gh workflow run "$workflow" --repo "${{ github.repository }}" --ref main; then
+                echo "AUTO_REPAIR_DISPATCHED=$track:$workflow:attempt=$attempt"
+                dispatched=1
+                break
+              fi
+              echo "::warning title=Factory transient dispatch retry::$track $workflow attempt=$attempt"
+              sleep $((attempt*3))
+            done
+            if [ "$dispatched" = 0 ]; then
+              echo "::warning title=Factory dispatch deferred::$track $workflow exhausted transient retries; supervisor continues fail-closed and will retry next heartbeat"
             fi
           done < /tmp/repairs.tsv
 
