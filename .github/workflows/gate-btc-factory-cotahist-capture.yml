@@ -1,0 +1,66 @@
+name: GATE BTC Factory B3 COTAHIST Physical Capture
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/b3_cotahist_capture.py'
+      - 'tools/gate_btc_factory/B3_COTAHIST_DATA_SOURCE.v1.json'
+      - '.github/workflows/gate-btc-factory-cotahist-capture.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  physical-capture-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile capture tool
+        run: python -m py_compile tools/gate_btc_factory/b3_cotahist_capture.py
+      - name: Capture official annual COTAHIST objects and QA
+        run: python tools/gate_btc_factory/b3_cotahist_capture.py --years 2020-2026 --out artifacts/gate_btc/factory/cotahist_capture
+      - name: Assert manifest and immutable safety
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc/factory/cotahist_capture/MANIFEST.json'
+          x=json.load(open(p))
+          assert x['status']=='PASS_PHYSICAL_CAPTURE_QA', x
+          assert len(x['objects'])==7, len(x['objects'])
+          for o in x['objects']:
+              assert len(o['raw_zip_sha256'])==64
+              assert len(o['payload_sha256'])==64
+              assert o['daily_quote_record_count']>0
+              assert o['duplicate_full_identity_count']==0
+              assert o['invalid_record_length_count']==0
+              assert o['invalid_daily_quote_count']==0
+          expected={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
+          for k,v in expected.items(): assert x[k]==v,(k,x[k])
+          assert x['economics_read_allowed'] is False
+          assert x['family_creation_allowed'] is False
+          print('COTAHIST_PHYSICAL_CAPTURE_QA=PASS')
+          PY
+      - name: Upload immutable physical capture evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-cotahist-physical-capture-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/cotahist_capture/
+          if-no-files-found: error
+          retention-days: 90
