@@ -12,7 +12,7 @@ CONTRACT = {
     "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
     "candidate_definition": {
         "activation_gain": 0.40,
-        "trailing_buffer_fraction_of_running_close_high"] if False else 0.10,
+        "trailing_buffer_fraction_of_running_close_high": 0.10,
         "same_bar_arm_and_exit": False,
         "parameter_retuning_before_gate": False,
     },
