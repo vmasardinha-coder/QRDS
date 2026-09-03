@@ -1,0 +1,42 @@
+name: GATE BTC 2 V2A FF Binance Qualification
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_ff_binance_qualification_runner.py'
+      - 'tests/test_gate_btc_2_v2a_ff_binance_qualification_runner.py'
+      - '.github/workflows/gate-btc-2-v2a-ff-binance-qualification.yml'
+permissions:
+  contents: read
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m pip install --disable-pip-version-check pytest
+      - run: python -m pytest -q tests/test_gate_btc_2_v2a_ff_binance_qualification_runner.py
+      - name: Physical qualification capture
+        run: python tools/gate_btc_2_v2a_ff_binance_qualification_runner.py --end 2026-09-02 --output artifacts/gate_btc_2/v2a_ff_binance_qualification
+      - name: Safety assertions
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/gate_btc_2/v2a_ff_binance_qualification/SUMMARY.json')
+          if p.exists():
+              d=json.loads(p.read_text())
+              assert d['research_only'] and d['shadow_only'] and d['not_approved']
+              assert d['engine_feed'] is False and d['orders']==0 and d['real_capital_brl']==0
+              assert d['no_retune'] and d['no_backfill'] and d['no_silent_source_substitution'] and d['fail_closed']
+              assert d['scientific_credit'] is False and d['prospective_credit'] is False and d['dataset_sealed'] is False
+              assert d['admission_scope']=='NONE' and d['historical_coverage_sufficiency_asserted'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-v2a-ff-binance-qualification
+          path: artifacts/gate_btc_2/v2a_ff_binance_qualification
+          if-no-files-found: warn
