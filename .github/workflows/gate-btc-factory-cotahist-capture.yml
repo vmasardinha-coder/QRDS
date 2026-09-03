@@ -5,6 +5,10 @@ on:
     paths:
       - 'tools/gate_btc_factory/b3_cotahist_capture.py'
       - 'tools/gate_btc_factory/B3_COTAHIST_DATA_SOURCE.v1.json'
+      - 'tools/gate_btc_factory/B3_COTAHIST_FROZEN_HASHES.v1.json'
+      - 'tools/gate_btc_factory/B3_BLUECHIPS_UNIVARIATE_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_BLUECHIPS_UNIVARIATE_GATES.v1.json'
+      - 'tools/gate_btc_factory/b3_bluechips_univariate_execute.py'
       - '.github/workflows/gate-btc-factory-cotahist-capture.yml'
   workflow_dispatch:
 
@@ -26,14 +30,16 @@ env:
 jobs:
   physical-capture-qa:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile capture tool
-        run: python -m py_compile tools/gate_btc_factory/b3_cotahist_capture.py
+      - name: Compile capture and frozen family executor
+        run: |
+          python -m py_compile tools/gate_btc_factory/b3_cotahist_capture.py
+          python -m py_compile tools/gate_btc_factory/b3_bluechips_univariate_execute.py
       - name: Capture official annual COTAHIST objects and QA
         run: python tools/gate_btc_factory/b3_cotahist_capture.py --years 2020-2026 --out artifacts/gate_btc/factory/cotahist_capture
       - name: Assert manifest and immutable safety
@@ -57,10 +63,37 @@ jobs:
           assert x['family_creation_allowed'] is False
           print('COTAHIST_PHYSICAL_CAPTURE_QA=PASS')
           PY
+      - name: Execute frozen EQB01-EQB10 scientific funnel
+        run: |
+          python tools/gate_btc_factory/b3_bluechips_univariate_execute.py \
+            --capture-dir artifacts/gate_btc/factory/cotahist_capture \
+            --out artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json
+      - name: Assert EQB result safety and finite family set
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json'
+          x=json.load(open(p))
+          assert x['schema']=='qrds.factory.b3_bluechips_univariate_result.v1'
+          assert x['family_count']==10
+          assert sorted(x['results'])==[f'EQB{i:02d}' for i in range(1,11)]
+          expected={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
+          for k,v in expected.items(): assert x[k]==v,(k,x[k])
+          assert x['prospective_activation_performed'] is False
+          assert x['prospective_credit']==0
+          print('EQB_SCIENTIFIC_FUNNEL_EXECUTED=PASS')
+          PY
       - name: Upload immutable physical capture evidence
         uses: actions/upload-artifact@v4
         with:
           name: b3-cotahist-physical-capture-${{ github.run_id }}
           path: artifacts/gate_btc/factory/cotahist_capture/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Upload EQB scientific result
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-bluechips-univariate-result-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json
           if-no-files-found: error
           retention-days: 90
