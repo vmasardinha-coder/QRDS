@@ -218,7 +218,11 @@ def main() -> int:
         predecessor = current
         predecessor_stage = stage
 
-    print(f"NEXTGEN_PROGRESS=CHAIN_COMPLETE:{frontier_key}:final_run={predecessor.get('databaseId')}")
+    print(
+        "NEXTGEN_PROGRESS=BLOCKED_LEGACY_CHAIN_NOT_FRONTIER_BOUND:"
+        f"{frontier_key}:final_run={predecessor.get('databaseId')}:"
+        f"target={next_generation}:requires_frontier_authoritative_generator"
+    )
     return 0
 
 
