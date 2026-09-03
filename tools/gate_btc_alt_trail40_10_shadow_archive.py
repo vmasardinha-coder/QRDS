@@ -78,6 +78,7 @@ def write_status(ledger_dir, anchor):
         "snapshot_count": len(paths),
         "latest_snapshot_date": latest.get("snapshot_date") if latest else None,
         "latest_row_sha256": latest.get("row_sha256") if latest else None,
+        "latest_gap_dates": latest.get("prospective_gap_dates", []) if latest else [],
         "contract_sha256": anchor["contract_sha256"],
         "research_only": True,
         "shadow_only": True,
@@ -189,13 +190,18 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
 
     paths = snapshot_paths(ledger_dir)
     previous = load_json(paths[-1]) if paths else None
+    prospective_gap_dates = []
     if previous is None:
         require(snapshot_day == first_signal, "first prospective record must be exact first eligible signal date; backfill prohibited")
         previous_sha = None
     else:
         previous_day = date.fromisoformat(previous["snapshot_date"])
-        require(snapshot_day == previous_day + timedelta(days=1), f"daily gap/backfill prohibited: prev={previous_day} current={snapshot_day}")
+        require(snapshot_day > previous_day, f"non-forward snapshot prohibited: prev={previous_day} current={snapshot_day}")
         require(previous["row_sha256"] == payload_sha(previous, "row_sha256"), "previous row hash invalid")
+        cursor = previous_day + timedelta(days=1)
+        while cursor < snapshot_day:
+            prospective_gap_dates.append(cursor.isoformat())
+            cursor += timedelta(days=1)
         previous_sha = previous["row_sha256"]
 
     signals = parse_signals(read_csv(current_portfolios))
@@ -217,6 +223,8 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
         "signals": signals,
         "selected_alt_closes": prices,
+        "prospective_gap_dates": prospective_gap_dates,
+        "prospective_gap_policy": "RECORD_GAP_AND_CONTINUE_FORWARD_NO_BACKFILL",
         "current_portfolios_sha256": file_sha(current_portfolios),
         "master_daily_sha256": file_sha(master_daily),
         "previous_row_sha256": previous_sha,
@@ -233,10 +241,11 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
     write_json(output_path, row)
     write_status(ledger_dir, anchor)
     return {
-        "result": "APPENDED",
+        "result": "APPENDED_WITH_RECORDED_GAP" if prospective_gap_dates else "APPENDED",
         "snapshot_date": snapshot_id,
         "row_sha256": row["row_sha256"],
         "price_count": len(prices),
+        "prospective_gap_dates": prospective_gap_dates,
     }
 
 
