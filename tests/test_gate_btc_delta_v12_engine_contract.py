@@ -77,9 +77,35 @@ class DeltaV12EngineContractTests(unittest.TestCase):
         for key in ('orders', 'real_capital', 'methodology_changes'):
             self.assertEqual(safety[key], 0, key)
 
-    def test_contract_declares_it_has_no_implementation_yet(self):
-        self.assertEqual(self.engine['status'], 'PREREGISTERED_NOT_YET_IMPLEMENTED')
-        self.assertIn('NO_IMPLEMENTATION_NO_RESULT', self.engine['decision'])
+    def test_an_implemented_status_is_backed_by_a_real_implementation(self):
+        """The status may only claim implementation once the code exists.
+
+        This began as an assertion that nothing was implemented yet, which was
+        the right guard while the premises were frozen and no engine existed.
+        Now that one does, the same intent is served by refusing a status that
+        claims more than the tree contains, in either direction.
+        """
+        from pathlib import Path
+
+        status = self.engine['status']
+        if status == 'PREREGISTERED_NOT_YET_IMPLEMENTED':
+            self.assertIn('NO_IMPLEMENTATION_NO_RESULT', self.engine['decision'])
+            self.assertNotIn('implementation', self.engine)
+            return
+        self.assertEqual(status, 'IMPLEMENTED_PROSPECTIVE_COLLECTION')
+        implementation = self.engine['implementation']
+        for key in ('tool', 'tests'):
+            self.assertTrue(Path(implementation[key]).is_file(),
+                            f"{key} {implementation[key]} does not exist")
+        self.assertNotIn('NO_IMPLEMENTATION', self.engine['decision'])
+
+    def test_an_implemented_contract_still_promises_no_result(self):
+        # Implementation is not evidence. Nothing here may claim a result, and
+        # the anchor stays null until a production run establishes it.
+        self.assertFalse(self.engine['safety']['promotion_eligible'])
+        self.assertEqual(self.engine['evidence']['min_observations'], 60)
+        self.assertTrue(self.engine['anchor']['backdating_prohibited'])
+        self.assertIsNone(self.engine['anchor']['anchor_date'])
 
 
 if __name__ == '__main__':
