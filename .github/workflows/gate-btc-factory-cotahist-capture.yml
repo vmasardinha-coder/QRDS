@@ -173,3 +173,39 @@ jobs:
           path: artifacts/gate_btc/factory/win_wdo_coverage/2020_Q1.json
           if-no-files-found: error
           retention-days: 90
+
+  win-wdo-coverage-2020-q2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile incremental coverage qualifier
+        run: python -m py_compile tools/gate_btc_factory/b3_win_wdo_coverage_block.py
+      - name: Qualify official B3 2020 Q2 PriceReport coverage block
+        run: python tools/gate_btc_factory/b3_win_wdo_coverage_block.py --start 2020-04-01 --end 2020-06-30 --out artifacts/gate_btc/factory/win_wdo_coverage/2020_Q2.json
+      - name: Assert DATA-only block boundary
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/gate_btc/factory/win_wdo_coverage/2020_Q2.json'))
+          assert x['schema']=='qrds.factory.b3_win_wdo_coverage_block.v1'
+          assert x['source_admission_pass'] is False
+          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
+          assert x['prospective_credit']==0 and x['scientific_credit']==0
+          s=x['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          print('WIN_WDO_2020_Q2_DATA_ONLY_BOUNDARY=PASS')
+          PY
+      - name: Upload 2020 Q2 coverage evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-win-wdo-coverage-2020-q2-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_coverage/2020_Q2.json
+          if-no-files-found: error
+          retention-days: 90

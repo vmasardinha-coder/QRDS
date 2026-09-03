@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import io
 import json
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -29,11 +30,22 @@ SAFETY = {
 
 def fetch(url: str) -> tuple[int, dict, bytes]:
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 QRDS research-only source QA"})
-    try:
-        with urllib.request.urlopen(req, timeout=45) as r:
-            return int(r.status), dict(r.headers.items()), r.read()
-    except urllib.error.HTTPError as e:
-        return int(e.code), dict(e.headers.items()), e.read()
+    backoff = (0, 2, 5)
+    for attempt, delay in enumerate(backoff, start=1):
+        if delay:
+            time.sleep(delay)
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                return int(r.status), dict(r.headers.items()), r.read()
+        except urllib.error.HTTPError as e:
+            if 500 <= int(e.code) < 600 and attempt < len(backoff):
+                continue
+            return int(e.code), dict(e.headers.items()), e.read()
+        except (TimeoutError, urllib.error.URLError):
+            if attempt < len(backoff):
+                continue
+            return 599, {}, b""
+    return 599, {}, b""
 
 
 def local(tag: str) -> str:
@@ -42,6 +54,7 @@ def local(tag: str) -> str:
 
 def leaf_xmls(raw: bytes) -> list[tuple[str, bytes]]:
     out: list[tuple[str, bytes]] = []
+
     def walk(blob: bytes, prefix: str, depth: int) -> None:
         if depth > 3:
             return
@@ -62,6 +75,7 @@ def leaf_xmls(raw: bytes) -> list[tuple[str, bytes]]:
                         out.append((full, b))
         except zipfile.BadZipFile:
             return
+
     walk(raw, "", 0)
     return out
 
@@ -130,8 +144,9 @@ def main() -> int:
     published = [r for r in rows if r["http_status"] == 200 and r["leaf_payloads"]]
     source_days = [r for r in published if r["pricereport_schema"] and r["win_tickers"] and r["wdo_tickers"]]
     weekday_no_object = [r["date"] for r in rows if r["http_status"] != 200 or not r["leaf_payloads"]]
+    transport_failures = [r["date"] for r in rows if r["http_status"] == 599]
     source_days_missing_line = [r["date"] for r in published if not (r["pricereport_schema"] and r["win_tickers"] and r["wdo_tickers"])]
-    block_pass = bool(source_days) and not source_days_missing_line
+    block_pass = bool(source_days) and not source_days_missing_line and not transport_failures
     result = {
         "schema": "qrds.factory.b3_win_wdo_coverage_block.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -140,10 +155,12 @@ def main() -> int:
         "block": {"start": start.isoformat(), "end": end.isoformat()},
         "official_surface": "B3 Pesquisa por pregao / PriceReport",
         "candidate_contract": "https://www.b3.com.br/pesquisapregao/download?filelist=PR{YYMMDD}.zip",
+        "transport_retry_policy": {"attempts": 3, "backoff_seconds": [0, 2, 5], "timeout_seconds": 45, "terminal_transport_status": 599},
         "weekday_probe_count": len(rows),
         "published_object_count": len(published),
         "qualified_source_day_count": len(source_days),
         "weekday_no_object_dates": weekday_no_object,
+        "transport_failure_dates": transport_failures,
         "published_dates_missing_win_wdo_or_schema": source_days_missing_line,
         "block_contract_pass": block_pass,
         "calendar_gap_status": "REQUIRES_OFFICIAL_CALENDAR_CROSSCHECK" if weekday_no_object else "NO_WEEKDAY_GAPS",
