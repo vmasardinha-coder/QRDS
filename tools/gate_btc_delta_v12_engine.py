@@ -21,9 +21,11 @@ Prospective discipline, which is the whole point of the exercise:
     changed, so a silent restatement cannot pass as new evidence.
   * A missing UTC day fails closed. Gaps are never backfilled.
 
-Known incompleteness, recorded rather than hidden: the V12 price pipeline
-carries no funding feed, so funding is zero here while V11 charges observed OKX
-funding. That flatters a long-tilted book. See FUNDING_MODEL below.
+Funding comes from tools/gate_btc_delta_v12_funding.py, read from the venue each
+asset is pinned to. Pass --funding-csv and the model is OBSERVED; omit it and
+funding books as zero, which flatters a long-tilted book and is recorded as such
+in every position row. Under the OBSERVED model, holding an asset the feed does
+not cover fails closed rather than quietly costing it nothing.
 """
 from __future__ import annotations
 
@@ -50,7 +52,10 @@ BOOKS = (
     {"strategy": "V12_LS_50_50_StopVol", "gross_long": 0.50, "gross_short": 0.50, "stopvol": True},
 )
 
-FUNDING_MODEL = "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY"
+FUNDING_OBSERVED = "OBSERVED_PER_PINNED_VENUE_SUMMED_TO_THE_UTC_DAY_OF_SETTLEMENT"
+FUNDING_ABSENT = "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY"
+# Retained under the old name so an older ledger's marker still resolves.
+FUNDING_MODEL = FUNDING_ABSENT
 
 SAFETY = {
     "research_only": True,
@@ -313,9 +318,27 @@ def stop_levels(position: dict[str, Any]) -> tuple[float, float]:
     return stop, take
 
 
+def read_funding(path: Path | None) -> tuple[dict[tuple[str, str], float], set[str], str]:
+    """Daily funding by (date, symbol), plus the symbols the feed actually covers."""
+    if path is None:
+        return {}, set(), FUNDING_ABSENT
+    rates: dict[tuple[str, str], float] = {}
+    covered: set[str] = set()
+    for row in read_csv_rows(path):
+        symbol = str(row["symbol"]).strip().upper()
+        rates[(str(row["date"])[:10], symbol)] = float(row["funding_rate"])
+        covered.add(symbol)
+    if not covered:
+        raise EngineError(f"funding file {path} is empty; refusing to imply zero carry")
+    return rates, covered, FUNDING_OBSERVED
+
+
 def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: dict[str, Any],
              panel: dict[str, dict[str, dict[str, float]]], cost_rate: dict[str, float],
-             anchor: str, cfg: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+             anchor: str, cfg: dict[str, Any],
+             funding: dict[tuple[str, str], float] | None = None,
+             funded: set[str] | None = None,
+             funding_model: str = FUNDING_ABSENT) -> dict[str, list[dict[str, Any]]]:
     name = book["strategy"]
     schedule, selections = target_schedule(dates, bases, panels, book, cfg)
     traded = [d for d in dates if d > anchor]
@@ -453,14 +476,23 @@ def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: d
                                     else min(position["best"], float(low)))
 
         for symbol, position in sorted(positions.items()):
-            # Funding is zero because the V12 price pipeline carries no funding
-            # feed. Recorded so the omission is visible in the ledger itself.
+            if funding_model == FUNDING_OBSERVED:
+                if symbol not in (funded or set()):
+                    # Booking a day we cannot cost is how a zero assumption
+                    # sneaks back in one asset at a time.
+                    raise EngineError(
+                        f"FAIL_CLOSED: {symbol} is held on {day} but the funding feed "
+                        "does not cover it; refusing to book an uncosted position")
+                rate = float((funding or {}).get((day, symbol), 0.0))
+            else:
+                rate = 0.0
+            funding_return += -position["weight"] * rate
             holdings.append({
                 "strategy": name, "date": day, "symbol": symbol,
                 "side": "LONG" if position["weight"] > 0 else "SHORT",
                 "signed_weight": position["weight"], "entry_price": position["entry"],
-                "best_price": position["best"], "funding_rate_daily": 0.0,
-                "funding_model": FUNDING_MODEL})
+                "best_price": position["best"], "funding_rate_daily": rate,
+                "funding_model": funding_model})
 
         gross_return = overnight + intraday + funding_return
         net_return = gross_return - trading_cost
@@ -653,7 +685,7 @@ def load_or_create_anchor(path: Path, latest_close: str, not_before: str,
 # --------------------------------------------------------------------------
 
 def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path,
-        run_id: str = "") -> dict[str, Any]:
+        run_id: str = "", funding_csv: Path | None = None) -> dict[str, Any]:
     contract = json.loads(contract_path.read_text(encoding="utf-8-sig"))
     if contract["version"] != ENGINE_VERSION:
         raise EngineError(f"contract version {contract['version']} is not {ENGINE_VERSION}")
@@ -687,6 +719,7 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
             "the pipeline can no longer produce")
 
     panels = build_panels(dates, bases, panel, cfg)
+    funding, funded, funding_model = read_funding(funding_csv)
 
     ledger: list[dict[str, Any]] = []
     selections: list[dict[str, Any]] = []
@@ -694,7 +727,8 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     events: list[dict[str, Any]] = []
     summaries: dict[str, dict[str, Any]] = {}
     for book in BOOKS:
-        result = simulate(book, dates, bases, panels, panel, cost_rate, anchor, cfg)
+        result = simulate(book, dates, bases, panels, panel, cost_rate, anchor, cfg,
+                          funding, funded, funding_model)
         for row in result["daily"]:
             row["engine_version"] = ENGINE_VERSION
         ledger.extend(result["daily"])
@@ -738,7 +772,8 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
         "evidence_gate_min_observations": cfg["evidence_gate_min_observations"],
         "leaderboard_descriptive_only": True,
         "retrospective_winner_selection_forbidden": True,
-        "funding_model": FUNDING_MODEL,
+        "funding_model": funding_model,
+        "funding_covered_symbols": len(funded),
         "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
         "latest_chain_sha256": chained[-1]["chain_sha256"] if chained else ZERO_HASH,
         "price_panel_sha256": sha256_bytes(prices_csv.read_bytes()),
@@ -761,11 +796,14 @@ def main() -> int:
                         default=Path("migration/reporting/delta_v12_engine_contract.json"))
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--run-id", default="")
+    parser.add_argument("--funding-csv", type=Path, default=None,
+                        help="FUNDING_DAILY.csv; omitted means funding is booked as zero")
     args = parser.parse_args()
-    status = run(args.prices_csv, args.universe_csv, args.contract, args.out_dir, args.run_id)
+    status = run(args.prices_csv, args.universe_csv, args.contract, args.out_dir,
+                 args.run_id, args.funding_csv)
     print(json.dumps({k: status[k] for k in (
         "status", "anchor_date", "data_as_of", "observed_days", "universe_size",
-        "anchor_established_this_run", "latest_chain_sha256")}, indent=2, sort_keys=True))
+        "anchor_established_this_run", "funding_model", "latest_chain_sha256")}, indent=2, sort_keys=True))
     return 0
 
 

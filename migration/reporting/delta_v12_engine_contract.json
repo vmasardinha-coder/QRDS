@@ -12,6 +12,17 @@
       ],
       "what_did_not_change": "No selection rule, no risk parameter, no cost band, no evidence threshold and no selection size. top_n and bottom_n remain 10 and 10 frozen on 2026-08-21.",
       "why_this_is_not_backdating": "The anchor was still null when this was written and no V12 return existed. The venue order was corrected on 2026-08-26, before any pin was established, and the pins that exist were created under the corrected order."
+    },
+    {
+      "amended_on": "2026-09-03",
+      "amendment": "OBSERVED_FUNDING_ADDED_BEFORE_THE_FIRST_PROSPECTIVE_OBSERVATION",
+      "anchor_state_when_amended": "NULL_NO_LEDGER_NO_OBSERVATION",
+      "methodology_changes": 0,
+      "what_changed": [
+        "funding moves from booked-as-zero to observed per pinned venue",
+        "holding an asset the funding feed does not cover now fails closed"
+      ],
+      "what_did_not_change": "No selection rule, risk parameter, cost band, evidence threshold or selection size. The daily aggregation rule is V11's, adopted unchanged."
     }
   ],
   "anchor": {
@@ -40,7 +51,7 @@
     "stopvol_observation": "In the V11 paper monitor the StopVol books returned figures identical to their base books on every observed day, including a plus 5.58 percent day, so the vol cap has not bound once. The variants are kept here for comparability with V11, not because they are known to differ.",
     "stopvol_variants": true
   },
-  "contract_revision": "1.1",
+  "contract_revision": "1.2",
   "costs": {
     "fee_bps_per_side": 5.0,
     "model": "LIQUIDITY_TIERED_NOT_FLAT",
@@ -63,11 +74,38 @@
   },
   "frozen_date": "2026-08-21",
   "funding": {
-    "known_bias": "Perpetual funding is normally paid by the long side in an upward market, so omitting it flatters a book that is long-tilted, which both gross profiles are. V12 economics are therefore NOT comparable to V11 economics at face value.",
-    "model": "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY",
-    "problem": "V11 charges observed OKX funding to each held position. The V12 price pipeline reads candles only and carries no funding feed, so this engine books funding as zero on every position.",
-    "recorded_before_any_v12_return": true,
-    "resolution_policy": "A funding feed is a NEW preregistration with its own freeze date. It must never be added after observing which direction it would move the result, and adding it does not license restating any close already committed to the ledger."
+    "aggregation_is_inherited_not_invented": "This is the DELTA_WALK_FORWARD_1.1 rule verbatim (funding_daily groupby sum in 00_run_delta_v11.py). It absorbs the difference between an 8-hour and an hourly cadence without a per-venue choice, so no convention was selected after seeing which one flatters a result.",
+    "application": "funding_return = -signed_weight * daily_rate for each position held at the close, as in V11.",
+    "coverage_measured_before_the_anchor": {
+      "covered": 100,
+      "events": 3300,
+      "mean_daily_rate": 0.000124,
+      "measured_on": "2026-09-03",
+      "pinned_assets": 100,
+      "share_of_days_with_positive_funding": 0.84,
+      "uncovered": 0,
+      "window": "2026-08-01..2026-09-02"
+    },
+    "daily_aggregation": "Every settled funding event is stamped to the UTC day of its own settlement timestamp and the daily rate is the SUM of that day's events.",
+    "frozen_date": "2026-09-03",
+    "measured_effect_before_any_prospective_observation": {
+      "V12_LS_50_50": -0.000791,
+      "V12_LS_50_50_StopVol": -0.000472,
+      "V12_LS_70_30": -0.001139,
+      "V12_LS_70_30_StopVol": -0.000388,
+      "direction_confirmed": "Funding costs the long-tilted 70/30 book more than the balanced 50/50 book, which is the direction predicted when the omission was first recorded.",
+      "note": "Measured on a diagnostic 8-day window that is NOT prospective evidence, purely to confirm the direction of the bias the previous zero assumption carried."
+    },
+    "model": "OBSERVED_PER_PINNED_VENUE_SUMMED_TO_THE_UTC_DAY_OF_SETTLEMENT",
+    "pipeline": "tools/gate_btc_delta_v12_funding.py",
+    "read_from": "THE_VENUE_THE_ASSET_IS_PINNED_TO",
+    "sources": {
+      "HYPERLIQUID": "public info fundingHistory, fundingRate, settles hourly",
+      "OKX_SWAP": "public /api/v5/public/funding-rate-history, fundingRate, settles every 8 hours"
+    },
+    "supersedes": "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY",
+    "uncovered_policy": "FAIL_CLOSED. An asset held on a day the feed does not cover halts the run. A zero rate is never implied for a position that could not be costed.",
+    "why_this_is_not_a_mid_collection_change": "No V12 ledger existed and no V12 anchor had been established when this was frozen. The engine had never run in production. Adding funding after observing a prospective return would have been a methodology change; adding it before the first observation completes the specification."
   },
   "implementation": {
     "deviation_from_v11": "None in selection or risk. Costs are tiered per the frozen band table and funding is absent; both are recorded below.",

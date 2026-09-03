@@ -92,11 +92,20 @@ class ContractTests(unittest.TestCase):
         self.assertGreaterEqual(self.contract["anchor"]["not_before"],
                                 self.contract["frozen_date"])
 
-    def test_funding_absence_is_recorded_with_its_direction_of_bias(self):
+    def test_funding_is_observed_and_its_convention_is_inherited(self):
         funding = self.contract["funding"]
-        self.assertEqual(funding["model"], engine.FUNDING_MODEL)
-        self.assertIn("long", funding["known_bias"].lower())
-        self.assertTrue(funding["recorded_before_any_v12_return"])
+        self.assertEqual(funding["model"], engine.FUNDING_OBSERVED)
+        self.assertIn("DELTA_WALK_FORWARD_1.1",
+                      funding["aggregation_is_inherited_not_invented"])
+        self.assertEqual(funding["uncovered_policy"][:11], "FAIL_CLOSED")
+
+    def test_funding_was_frozen_before_any_prospective_observation(self):
+        funding = self.contract["funding"]
+        self.assertEqual(funding["anchor_state_when_frozen"]
+                         if "anchor_state_when_frozen" in funding
+                         else self.contract["amendments"][-1]["anchor_state_when_amended"],
+                         "NULL_NO_LEDGER_NO_OBSERVATION")
+        self.assertEqual(self.contract["amendments"][-1]["methodology_changes"], 0)
 
     def test_implementation_claims_no_methodology_change(self):
         self.assertEqual(self.contract["safety"]["methodology_changes"], 0)
@@ -301,3 +310,88 @@ class RunTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FundingIntegrationTests(unittest.TestCase):
+    """The engine must charge observed funding, or refuse the day."""
+
+    def write_funding(self, root: Path, days, symbols, rate=0.0005):
+        path = root / "FUNDING_DAILY.csv"
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=[
+                "date", "symbol", "venue", "funding_rate", "events"])
+            writer.writeheader()
+            for day in days:
+                for symbol in symbols:
+                    writer.writerow({"date": day, "symbol": symbol, "venue": "OKX_SWAP",
+                                     "funding_rate": rate, "events": 3})
+        return path
+
+    def all_days(self, rows):
+        return sorted({r["date"] for r in rows})
+
+    def test_observed_funding_charges_a_long_book_and_says_so(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            rows = price_panel(days=70)
+            prices, universe = write_inputs(root, rows)
+            contract = CONTRACT
+            engine.run(prices, universe, contract, root / "ledger", "seed")
+            rows = price_panel(days=76)
+            prices, universe = write_inputs(root, rows)
+            fund = self.write_funding(root, self.all_days(rows), BASES)
+            status = engine.run(prices, universe, contract, root / "ledger", "obs", fund)
+            held = engine.read_csv_rows(root / "ledger" / "POSITIONS_HISTORY.csv")
+        self.assertEqual(status["funding_model"], engine.FUNDING_OBSERVED)
+        self.assertEqual(status["funding_covered_symbols"], len(BASES))
+        self.assertTrue(held)
+        self.assertTrue(any(float(r["funding_rate_daily"]) != 0.0 for r in held))
+        for row in held:
+            self.assertEqual(row["funding_model"], engine.FUNDING_OBSERVED)
+
+    def test_positive_funding_reduces_a_long_tilted_book(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            seed = price_panel(days=70)
+            prices, universe = write_inputs(root, seed)
+            engine.run(prices, universe, CONTRACT, root / "free", "seed")
+            engine.run(prices, universe, CONTRACT, root / "charged", "seed")
+            rows = price_panel(days=76)
+            prices, universe = write_inputs(root, rows)
+            free = engine.run(prices, universe, CONTRACT, root / "free", "free")
+            fund = self.write_funding(root, self.all_days(rows), BASES)
+            charged = engine.run(prices, universe, CONTRACT, root / "charged", "chg", fund)
+        # 70/30 is long-tilted, so paying funding must cost it return.
+        self.assertLess(charged["books"]["V12_LS_70_30"]["total_return"],
+                        free["books"]["V12_LS_70_30"]["total_return"])
+
+    def test_holding_an_asset_the_feed_does_not_cover_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            seed = price_panel(days=70)
+            prices, universe = write_inputs(root, seed)
+            engine.run(prices, universe, CONTRACT, root / "ledger", "seed")
+            rows = price_panel(days=76)
+            prices, universe = write_inputs(root, rows)
+            partial = self.write_funding(root, self.all_days(rows), BASES[:3])
+            with self.assertRaises(engine.EngineError) as caught:
+                engine.run(prices, universe, CONTRACT, root / "ledger", "gap", partial)
+        self.assertIn("FAIL_CLOSED", str(caught.exception))
+        self.assertIn("uncosted", str(caught.exception))
+
+    def test_an_empty_funding_file_is_refused_rather_than_read_as_zero(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            empty = root / "FUNDING_DAILY.csv"
+            empty.write_text("date,symbol,venue,funding_rate,events\n")
+            with self.assertRaises(engine.EngineError) as caught:
+                engine.read_funding(empty)
+        self.assertIn("zero carry", str(caught.exception))
+
+    def test_omitting_the_feed_still_marks_the_rows_as_uncosted(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            prices, universe = write_inputs(root, price_panel(days=70))
+            status = engine.run(prices, universe, CONTRACT, root / "ledger", "none")
+        self.assertEqual(status["funding_model"], engine.FUNDING_ABSENT)
+        self.assertEqual(status["funding_covered_symbols"], 0)
