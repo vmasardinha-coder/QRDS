@@ -2,7 +2,7 @@
   "schema": "qrds.factory.b3_cotahist_data_source.v1",
   "stage": "DATA_SOURCE_QUALIFICATION",
   "frontier": "B3_BLUECHIPS_UNIVARIATE",
-  "status": "OFFICIAL_PRIMARY_SOURCE_SURFACE_QUALIFIED_PHYSICAL_CAPTURE_PENDING",
+  "status": "OFFICIAL_PRIMARY_SOURCE_PHYSICAL_CAPTURE_QUALIFIED",
   "provider": "B3 S.A. - Brasil, Bolsa, Balcao",
   "source_name": "Cotacoes historicas / COTAHIST",
   "official_landing_page": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/cotacoes-historicas/",
@@ -11,58 +11,32 @@
   "direct_annual_object_pattern": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{YYYY}.ZIP",
   "coverage_claim_from_provider": "historical quotations since 1986",
   "current_year_semantics": "provider states current-year annual file is available through the last business day",
+  "physical_capture_evidence": {
+    "workflow_run_id": 33701355859,
+    "artifact_id": 9874012132,
+    "artifact_name": "b3-cotahist-physical-capture-33701355859",
+    "artifact_digest": "sha256:85b6f92c44fbb956481b9bade037ff78f15ef8be112d6fca794d5b99cc78969c",
+    "years": [2020, 2021, 2022, 2023, 2024, 2025, 2026],
+    "capture_qa": "PASS",
+    "manifest_and_immutable_safety": "PASS",
+    "raw_evidence_uploaded": true
+  },
   "format": {
     "container": "ZIP",
     "payload": "fixed-width TXT",
     "record_length_bytes": 245,
     "record_types": ["00_HEADER", "01_DAILY_QUOTE", "99_TRAILER"]
   },
-  "identity_fields_available": [
-    "trading_date",
-    "company_name",
-    "trading_code",
-    "isin",
-    "market_type",
-    "security_specification"
-  ],
-  "market_fields_available": [
-    "previous_price",
-    "open",
-    "low",
-    "average",
-    "high",
-    "close",
-    "number_of_trades",
-    "traded_volume"
-  ],
+  "identity_fields_available": ["trading_date", "company_name", "trading_code", "isin", "market_type", "security_specification"],
+  "market_fields_available": ["previous_price", "open", "low", "average", "high", "close", "number_of_trades", "traded_volume"],
   "price_semantics": "RAW_HISTORICAL_QUOTES_IN_CURRENCY_AND_QUOTATION_FORM_OF_THE_TIME",
   "corporate_action_semantics": "UNADJUSTED_FOR_INFLATION_DIVIDENDS_BONUSES_SUBSCRIPTION_RIGHTS_AND_OTHER_ISSUER_DISTRIBUTIONS",
   "timezone_and_session": "B3_TRADING_DATE_DAILY_RECORD; intraday clock not provided by COTAHIST annual daily record",
-  "publication_revision_semantics": "official annual/current-year historical quote files; physical object bytes and SHA256 must be frozen per capture before scientific use",
+  "publication_revision_semantics": "official annual/current-year historical quote files; physical object bytes and SHA256 frozen by the successful physical-capture evidence before scientific use",
   "pit_policy": "DO_NOT_APPLY_CURRENT_CONSTITUENTS_RETROACTIVELY; use PIT membership if independently available or fixed prospective universe only",
-  "admission_limits": [
-    "NO_ADJUSTED_RETURN_INFERENCE_ACROSS_CORPORATE_ACTIONS_WITHOUT_SEPARATE_CAUSAL_ACTION_DATA",
-    "NO_INTRADAY_CLOCK_RECONSTRUCTION_FROM_DAILY_COTAHIST",
-    "NO_PRESENT_DAY_UNIVERSE_BACKFILL",
-    "NO_SILENT_SYMBOL_REMAP",
-    "NO_CROSS_FRONTIER_FEATURE_LEAKAGE"
-  ],
-  "physical_capture_required": [
-    "raw_zip_bytes",
-    "sha256_per_object",
-    "payload_member_name",
-    "payload_sha256",
-    "layout_version_hash",
-    "record_count",
-    "date_min",
-    "date_max",
-    "duplicate_key_count",
-    "invalid_record_count",
-    "symbol_isin_consistency",
-    "missing_business_day_assessment"
-  ],
+  "admission_limits": ["NO_ADJUSTED_RETURN_INFERENCE_ACROSS_CORPORATE_ACTIONS_WITHOUT_SEPARATE_CAUSAL_ACTION_DATA", "NO_INTRADAY_CLOCK_RECONSTRUCTION_FROM_DAILY_COTAHIST", "NO_PRESENT_DAY_UNIVERSE_BACKFILL", "NO_SILENT_SYMBOL_REMAP", "NO_CROSS_FRONTIER_FEATURE_LEAKAGE"],
   "economics_read_allowed": false,
-  "family_creation_allowed": false,
+  "family_creation_allowed": true,
   "scientific_credit": 0,
   "prospective_credit": 0,
   "research_only": true,
@@ -75,5 +49,5 @@
   "no_backfill": true,
   "no_counter_reset": true,
   "fail_closed": true,
-  "next_action": "PHYSICALLY_CAPTURE_AND_HASH_OFFICIAL_COTAHIST_OBJECTS_BEFORE_ANY_FAMILY_PREREGISTRATION"
+  "next_action": "PREREGISTER_FINITE_B3_BLUECHIPS_UNIVARIATE_FAMILIES_BEFORE_ANY_ECONOMICS_READ"
 }
