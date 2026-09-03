@@ -26,6 +26,7 @@ SAFETY = {
 }
 
 DATES = ["2020-01-02", "2021-01-04", "2022-01-03", "2023-01-02"]
+PRICE_TAGS = [b"TckrSymb", b"FrstPric", b"MinPric", b"MaxPric", b"LastPric"]
 
 
 def yymmdd(iso: str) -> str:
@@ -42,25 +43,44 @@ def fetch(url: str) -> tuple[int, dict, bytes]:
 
 
 def inspect_zip(raw: bytes) -> dict:
-    out = {"zip_valid": False, "members": [], "contains_bvbg086": False, "contains_win": False, "contains_wdo": False}
-    try:
-        with zipfile.ZipFile(io.BytesIO(raw)) as z:
-            names = z.namelist()
-            out["zip_valid"] = True
-            out["members"] = names
-            out["contains_bvbg086"] = any("BVBG.086" in n.upper() for n in names)
-            for n in names:
-                if n.endswith("/"):
-                    continue
-                b = z.read(n)
-                if b"WIN" in b:
-                    out["contains_win"] = True
-                if b"WDO" in b:
-                    out["contains_wdo"] = True
-                if out["contains_win"] and out["contains_wdo"]:
-                    break
-    except zipfile.BadZipFile:
-        pass
+    out = {
+        "zip_valid": False,
+        "members": [],
+        "leaf_payload_count": 0,
+        "contains_pricereport_schema": False,
+        "contains_win": False,
+        "contains_wdo": False,
+    }
+
+    def walk(blob: bytes, prefix: str, depth: int) -> None:
+        if depth > 3:
+            return
+        try:
+            with zipfile.ZipFile(io.BytesIO(blob)) as z:
+                out["zip_valid"] = True
+                for n in z.namelist():
+                    if n.endswith("/"):
+                        continue
+                    b = z.read(n)
+                    full = f"{prefix}{n}"
+                    out["members"].append(full)
+                    try:
+                        with zipfile.ZipFile(io.BytesIO(b)):
+                            walk(b, full + "::", depth + 1)
+                            continue
+                    except zipfile.BadZipFile:
+                        pass
+                    out["leaf_payload_count"] += 1
+                    if all(tag in b for tag in PRICE_TAGS):
+                        out["contains_pricereport_schema"] = True
+                    if b"WIN" in b:
+                        out["contains_win"] = True
+                    if b"WDO" in b:
+                        out["contains_wdo"] = True
+        except zipfile.BadZipFile:
+            return
+
+    walk(raw, "", 0)
     return out
 
 
@@ -83,7 +103,15 @@ def main() -> int:
             "sha256": hashlib.sha256(raw).hexdigest(),
             **z,
         })
-    qualified = [r for r in rows if r["http_status"] == 200 and r["zip_valid"] and r["contains_bvbg086"] and r["contains_win"] and r["contains_wdo"]]
+    qualified = [
+        r for r in rows
+        if r["http_status"] == 200
+        and r["zip_valid"]
+        and r["leaf_payload_count"] > 0
+        and r["contains_pricereport_schema"]
+        and r["contains_win"]
+        and r["contains_wdo"]
+    ]
     result = {
         "schema": "qrds.factory.b3_win_wdo_official_source_probe.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
