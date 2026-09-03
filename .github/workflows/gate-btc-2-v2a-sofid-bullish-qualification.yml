@@ -1,0 +1,45 @@
+name: GATE BTC 2 V2A SOFID Bullish Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_sofid_bullish_qualification.py
+      - .github/workflows/gate-btc-2-v2a-sofid-bullish-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-sofid-bullish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_sofid_bullish_qualification.py
+      - name: Physically qualify preregistered SOFIDUSDC Bullish spot route
+        run: python tools/gate_btc_2_v2a_sofid_bullish_qualification.py --end 2026-09-02 --output artifacts/gate_btc_2_v2a_sofid_bullish_qualification
+      - name: Assert qualification-only zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path('artifacts/gate_btc_2_v2a_sofid_bullish_qualification/SUMMARY.json').read_text())
+          assert s['qa_pass'] is True
+          assert s['status']=='QUALIFICATION_CAPTURE_COMPLETE_WITHOUT_ADMISSION'
+          assert s['provider']=='BULLISH' and s['api_symbol']=='SOFIDUSDC'
+          assert s['scientific_credit'] is False and s['prospective_credit'] is False
+          assert s['admission_scope']=='NONE' and s['engine_feed'] is False
+          assert s['orders']==0 and s['real_capital_brl']==0
+          assert s['no_backfill'] is True and s['no_silent_source_substitution'] is True and s['fail_closed'] is True
+          print('SOFID_BULLISH_QUALIFICATION=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-v2a-sofid-bullish-qualification
+          path: artifacts/gate_btc_2_v2a_sofid_bullish_qualification
+          if-no-files-found: warn
