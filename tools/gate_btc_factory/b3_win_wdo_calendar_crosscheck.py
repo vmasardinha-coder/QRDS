@@ -25,8 +25,9 @@ SAFETY = {
 }
 
 
-def cotahist_dates(capture_dir: Path) -> set[str]:
-    out: set[str] = set()
+def cotahist_index(capture_dir: Path) -> tuple[set[str], dict[str, dict[str, list[dict]]]]:
+    sessions: set[str] = set()
+    exact: dict[str, dict[str, list[dict]]] = {}
     zips = sorted(capture_dir.glob("COTAHIST_A*.ZIP"))
     if not zips:
         raise RuntimeError(f"no COTAHIST annual objects under {capture_dir}")
@@ -42,8 +43,26 @@ def cotahist_dates(capture_dir: Path) -> set[str]:
                         continue
                     ds = line[2:10].decode("ascii", errors="strict")
                     datetime.strptime(ds, "%Y%m%d")
-                    out.add(f"{ds[:4]}-{ds[4:6]}-{ds[6:8]}")
-    return out
+                    day = f"{ds[:4]}-{ds[4:6]}-{ds[6:8]}"
+                    sessions.add(day)
+                    symbol = line[12:24].decode("latin1", errors="replace").strip()
+                    prefix = "WIN" if symbol.startswith("WIN") else "WDO" if symbol.startswith("WDO") else None
+                    if not prefix:
+                        continue
+                    def price(a: int, b: int) -> int | None:
+                        s = line[a:b].decode("ascii", errors="ignore").strip()
+                        return int(s) if s.isdigit() else None
+                    rec = {
+                        "symbol": symbol,
+                        "bdi": line[10:12].decode("ascii", errors="replace").strip(),
+                        "market_type": line[24:27].decode("ascii", errors="replace").strip(),
+                        "open_raw": price(56, 69),
+                        "high_raw": price(69, 82),
+                        "low_raw": price(82, 95),
+                        "close_raw": price(108, 121),
+                    }
+                    exact.setdefault(day, {}).setdefault(prefix, []).append(rec)
+    return sessions, exact
 
 
 def load_coverage(coverage_dir: Path) -> list[dict]:
@@ -121,6 +140,27 @@ def probe_sprd(day: str) -> dict:
     }
 
 
+def probe_cotahist_ohlc(day: str, exact: dict[str, dict[str, list[dict]]]) -> dict:
+    by_prefix = exact.get(day, {})
+    def usable(prefix: str) -> list[dict]:
+        out = []
+        for r in by_prefix.get(prefix, []):
+            vals = [r.get("open_raw"), r.get("high_raw"), r.get("low_raw"), r.get("close_raw")]
+            if all(isinstance(v, int) and v > 0 for v in vals):
+                out.append(r)
+        return out
+    win = usable("WIN")
+    wdo = usable("WDO")
+    return {
+        "date": day,
+        "win_records": win,
+        "wdo_records": wdo,
+        "win_usable_record_count": len(win),
+        "wdo_usable_record_count": len(wdo),
+        "usable_as_exact_ohlc_fallback": bool(win and wdo),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--coverage-dir", required=True)
@@ -129,15 +169,19 @@ def main() -> int:
     args = ap.parse_args()
 
     coverage = load_coverage(Path(args.coverage_dir))
-    sessions = cotahist_dates(Path(args.cotahist_dir))
+    sessions, cotahist_exact = cotahist_index(Path(args.cotahist_dir))
 
     no_object = sorted({d for x in coverage for d in x.get("weekday_no_object_dates", [])})
     raw_inconsistent_gaps = sorted(d for d in no_object if d in sessions)
     corroborated_non_sessions = sorted(d for d in no_object if d not in sessions)
 
-    fallback_probes = [probe_sprd(d) for d in raw_inconsistent_gaps]
-    fallback_days = sorted(x["date"] for x in fallback_probes if x["usable_as_exact_ohlc_fallback"])
-    unresolved_inconsistent_gaps = sorted(d for d in raw_inconsistent_gaps if d not in fallback_days)
+    sprd_probes = [probe_sprd(d) for d in raw_inconsistent_gaps]
+    sprd_days = sorted(x["date"] for x in sprd_probes if x["usable_as_exact_ohlc_fallback"])
+    after_sprd = sorted(d for d in raw_inconsistent_gaps if d not in sprd_days)
+
+    cotahist_ohlc_probes = [probe_cotahist_ohlc(d, cotahist_exact) for d in after_sprd]
+    cotahist_ohlc_days = sorted(x["date"] for x in cotahist_ohlc_probes if x["usable_as_exact_ohlc_fallback"])
+    unresolved_inconsistent_gaps = sorted(d for d in after_sprd if d not in cotahist_ohlc_days)
 
     published_dates = sorted({r["date"] for x in coverage for r in x.get("rows", []) if r.get("http_status") == 200 and r.get("leaf_payloads")})
     published_not_in_cotahist = sorted(d for d in published_dates if d not in sessions)
@@ -164,15 +208,17 @@ def main() -> int:
         "coverage_horizon": ["2020-01-01", "2024-12-31"],
         "calendar_reference": "OFFICIAL_B3_COTAHIST_DAILY_QUOTE_DATES",
         "primary_surface": "BVBG.086.01_PRICEREPORT",
-        "fallback_surface_probe": "BVBG.187.01_SIMPLIFIED_PRICE_REPORT_DERIVATIVES_SPRD_ONLY_FOR_PRIMARY_SESSION_GAPS",
+        "fallback_surface_probe": "BVBG.187.01_SPRD_THEN_OFFICIAL_COTAHIST_EXACT_OHLC_ONLY_FOR_PRIMARY_SESSION_GAPS",
         "quarter_count": len(coverage),
         "cotahist_session_count": len([d for d in sessions if "2020-01-01" <= d <= "2024-12-31"]),
         "weekday_no_object_count": len(no_object),
         "weekday_no_object_dates": no_object,
         "corroborated_non_session_dates": corroborated_non_sessions,
         "raw_primary_price_report_gaps_on_cotahist_sessions": raw_inconsistent_gaps,
-        "sprd_fallback_probes": fallback_probes,
-        "sprd_exact_ohlc_fallback_dates": fallback_days,
+        "sprd_fallback_probes": sprd_probes,
+        "sprd_exact_ohlc_fallback_dates": sprd_days,
+        "cotahist_exact_ohlc_fallback_probes": cotahist_ohlc_probes,
+        "cotahist_exact_ohlc_fallback_dates": cotahist_ohlc_days,
         "inconsistent_price_report_gaps_on_cotahist_sessions": unresolved_inconsistent_gaps,
         "published_price_report_dates_not_in_cotahist": published_not_in_cotahist,
         "calendar_crosscheck_pass": calendar_crosscheck_pass,
@@ -192,7 +238,8 @@ def main() -> int:
         "quarter_count": result["quarter_count"],
         "weekday_no_object_count": result["weekday_no_object_count"],
         "raw_primary_session_gap_count": len(raw_inconsistent_gaps),
-        "sprd_exact_ohlc_fallback_count": len(fallback_days),
+        "sprd_exact_ohlc_fallback_count": len(sprd_days),
+        "cotahist_exact_ohlc_fallback_count": len(cotahist_ohlc_days),
         "unresolved_session_gap_count": len(unresolved_inconsistent_gaps),
         "calendar_crosscheck_pass": result["calendar_crosscheck_pass"],
         "source_admission_pass": result["source_admission_pass"],
