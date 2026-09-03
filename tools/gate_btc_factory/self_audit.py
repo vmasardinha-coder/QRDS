@@ -56,6 +56,26 @@ def d50_qualification_healthy(row: dict | None) -> bool:
     )
 
 
+def open_generation_issue(frontier: dict | None) -> dict | None:
+    if not frontier:
+        return None
+    try:
+        next_start=int(frontier.get('next_generation_start'))
+    except (TypeError,ValueError):
+        return None
+    if next_start <= 0:
+        return None
+    marker=f'B3 H{next_start}-H{next_start + 9}'
+    try:
+        from tools.gate_btc_factory.apply_factory_transitions import find_issue
+    except ImportError:
+        from apply_factory_transitions import find_issue
+    try:
+        return find_issue(marker,state='open')
+    except (SystemExit,subprocess.CalledProcessError,FileNotFoundError,json.JSONDecodeError):
+        return None
+
+
 def main() -> int:
     src=load(SOURCE); plan=load(PLAN); watch=load(WATCH); surv=load(SURV)
     tracks=src.get('tracks',{})
@@ -66,6 +86,7 @@ def main() -> int:
     h31=load_runtime('runtime/ledgers/b3_h31_prospective/STATUS.json')
     momentum=load_runtime('runtime/ledgers/momentum_m1_m2/STATUS.json')
     v16b=load_runtime('runtime/ledgers/v16b/STATUS.json')
+    generation_issue=open_generation_issue(frontier)
 
     blockers=[]
     for name,row in sorted(tracks.items()):
@@ -104,6 +125,11 @@ def main() -> int:
             'latest_date': v16b.get('data_as_of') if v16b else None,
         },
     }
+    next_expected_action=(
+        'REUSE_EXISTING_GENERATION_ISSUE' if generation_issue else
+        plan.get('actions',[{}])[0].get('action') if plan.get('actions') else
+        ('OPERATIONAL_REPAIR' if watch.get('stalled_tracks') else 'MONITOR')
+    )
     report={
         'schema':'qrds.factory.self_audit.v2',
         'generated_at_utc':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
@@ -111,7 +137,7 @@ def main() -> int:
         'frontier_generation': frontier.get('generation') if frontier else b3.get('canonical_active_generation'),
         'frontier_next_generation_start': frontier.get('next_generation_start') if frontier else None,
         'frontier_authority': 'gate-btc-runtime' if frontier else 'static_fallback',
-        'active_generation_open_issue': b3.get('open_issue'),
+        'active_generation_open_issue': generation_issue.get('number') if generation_issue else b3.get('open_issue'),
         'active_generation_open_pr': b3.get('open_pr'),
         'planned_actions': plan.get('actions',[]),
         'stalled_tracks': watch.get('stalled_tracks',[]),
@@ -119,10 +145,7 @@ def main() -> int:
         'transitions_allowed': plan.get('transitions_allowed'),
         'source_freshness': plan.get('source_freshness'),
         'runtime_authority': runtime_authority,
-        'next_expected_action': (
-            plan.get('actions',[{}])[0].get('action') if plan.get('actions') else
-            ('OPERATIONAL_REPAIR' if watch.get('stalled_tracks') else 'MONITOR')
-        ),
+        'next_expected_action': next_expected_action,
         'scientific_blockers':blockers,
         'safety':{
             'research_only':True,'shadow_only':True,'orders':0,'real_capital':0,

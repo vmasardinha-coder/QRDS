@@ -19,10 +19,25 @@ def gh(*args: str) -> str:
     return subprocess.check_output(["gh", *args], cwd=ROOT, env=env, text=True).strip()
 
 
-def issue_exists(marker: str) -> bool:
-    raw = gh("issue", "list", "--state", "all", "--limit", "200", "--search", marker, "--json", "number,title,body")
+def find_issue(marker: str, state: str = "all") -> dict | None:
+    raw = gh(
+        "issue", "list",
+        "--state", state,
+        "--limit", "200",
+        "--search", marker,
+        "--json", "number,title,body,state",
+    )
     rows = json.loads(raw or "[]")
-    return any(marker in (r.get("title") or "") or marker in (r.get("body") or "") for r in rows)
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if marker in (row.get("title") or "") or marker in (row.get("body") or ""):
+            return row
+    return None
+
+
+def issue_exists(marker: str) -> bool:
+    return find_issue(marker, state="all") is not None
 
 
 def create_issue(action: dict) -> None:
