@@ -1,0 +1,36 @@
+name: GATE BTC 2 V2A Qualified Source Seed
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_qualified_source_seed_v1.json
+      - tests/test_gate_btc_2_v2a_qualified_source_seed.py
+      - .github/workflows/gate-btc-2-v2a-qualified-source-seed.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-seed-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate partial exact-source seed
+        run: python -m unittest tests.test_gate_btc_2_v2a_qualified_source_seed -v
+      - name: Assert zero-credit non-activation boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('tools/gate_btc_2_v2a_qualified_source_seed_v1.json'))
+          assert d['status']=='PARTIAL_SEED_NOT_D0_REGISTRY'
+          assert len(d['entries'])==18
+          c=d['credit_boundary']
+          assert c['epoch_credit']==0 and c['d0_credit']==0 and c['historical_credit']==0
+          assert c['complete_registry_claimed'] is False
+          assert c['collector_override_activation_allowed'] is False
+          print('V2A_QUALIFIED_SOURCE_SEED=PASS_PARTIAL_ZERO_CREDIT')
+          PY
