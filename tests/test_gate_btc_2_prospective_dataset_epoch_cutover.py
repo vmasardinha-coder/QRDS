@@ -60,6 +60,9 @@ class ProspectiveDatasetEpochCutoverTests(unittest.TestCase):
                 "universe_sha256": "u" * 64,
                 "quality_sha256": "q" * 64,
             },
+            "universe_archive": {"archive_path": "universe.gz", "archive_sha256": "a" * 64},
+            "quality_archive": {"archive_path": "quality.gz", "archive_sha256": "b" * 64},
+            "failures_archive": {"archive_path": "failures.gz", "archive_sha256": "c" * 64},
         }
 
     def _registry(self, symbols: list[str]) -> dict:
@@ -73,6 +76,10 @@ class ProspectiveDatasetEpochCutoverTests(unittest.TestCase):
                     "source_identity": f"official:{symbol}",
                     "source_symbol": f"{symbol}-USD",
                     "provenance_sha256": (symbol.lower()[:1] or "a") * 64,
+                    "timezone": "UTC",
+                    "cutoff_semantics": "canonical_daily_cutoff",
+                    "qa_pass": True,
+                    "observed_vs_derived": "OBSERVED",
                 }
                 for symbol in symbols
             ],
@@ -110,6 +117,7 @@ class ProspectiveDatasetEpochCutoverTests(unittest.TestCase):
             result = assess(status, snaps, registry)
             self.assertTrue(result["cutover_eligible"], result["blockers"])
             self.assertEqual(result["state"], "CUTOVER_ELIGIBLE")
+            self.assertEqual(len(result["per_symbol_source_contracts"]), 2)
 
             d0 = root / "D0.json"
             self.assertTrue(write_d0_if_eligible(result, d0))
@@ -117,6 +125,7 @@ class ProspectiveDatasetEpochCutoverTests(unittest.TestCase):
             self.assertEqual(frozen["schema"], D0_SCHEMA)
             self.assertEqual(frozen["epoch_id"], EPOCH_ID)
             self.assertEqual(frozen["preregistration_commit_sha"], PREREG_COMMIT)
+            self.assertEqual(len(frozen["per_symbol_source_contracts"]), 2)
             self.assertEqual(frozen["historical_credit"], 0)
             self.assertFalse(frozen["backfill_performed"])
             self.assertFalse(write_d0_if_eligible(result, d0))
