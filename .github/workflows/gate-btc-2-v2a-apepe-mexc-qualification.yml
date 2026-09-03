@@ -1,0 +1,42 @@
+name: GATE BTC 2 V2A APEPE MEXC Qualification
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/gate-btc-2-v2a-apepe-mexc-qualification.yml
+      - tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture preregistered exact source
+        run: >-
+          python tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+          --provider MEXC --symbol APEPE --coin-id ape-and-pepe
+          --pair APEPEUSDT --base-asset APEPE --quote-asset USDT
+          --end 2026-09-02 --output artifacts/gate_btc_2/v2a_apepe_mexc_qualification
+      - name: Assert qualification-only boundary
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/gate_btc_2/v2a_apepe_mexc_qualification/SUMMARY.json'))
+          assert x['qa_pass'] is True and x['admission_scope']=='NONE'
+          assert x['scientific_credit'] is False and x['prospective_credit'] is False
+          assert x['engine_feed'] is False and x['orders']==0 and x['real_capital_brl']==0
+          assert x['no_backfill'] and x['no_counter_reset'] and x['no_silent_source_substitution'] and x['fail_closed']
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-v2a-apepe-mexc-qualification
+          path: artifacts/gate_btc_2/v2a_apepe_mexc_qualification
+          retention-days: 90
+          if-no-files-found: error
