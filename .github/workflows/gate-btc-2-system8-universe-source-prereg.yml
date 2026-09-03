@@ -1,0 +1,38 @@
+name: GATE BTC 2 System 8 Universe Source Preregistration
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_system8_universe_source_coingecko_v1.json
+      - tests/test_gate_btc_2_system8_universe_source_coingecko.py
+      - .github/workflows/gate-btc-2-system8-universe-source-prereg.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prereg-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate preregistration contract
+        run: python -m unittest tests.test_gate_btc_2_system8_universe_source_coingecko -v
+      - name: Assert no capture or credit in preregistration
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('tools/gate_btc_2_system8_universe_source_coingecko_v1.json'))
+          assert d['status']=='PREREGISTERED_NOT_QUALIFIED'
+          c=d['credit_boundary']
+          assert c['preregistration_credit']==0 and c['qualification_credit']==0
+          assert c['pre_merge_capture_credit']==0 and c['historical_credit']==0
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL_BRL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['NO_SILENT_SOURCE_SUBSTITUTION'] and s['FAIL_CLOSED']
+          print('SYSTEM8_UNIVERSE_SOURCE_PREREG=PASS_ZERO_CREDIT')
+          PY
