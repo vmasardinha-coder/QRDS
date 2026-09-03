@@ -1,0 +1,34 @@
+name: GATE BTC 2 V2A Exact Spot Qualifier
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+      - tests/test_gate_btc_2_v2a_exact_spot_qualification_runner.py
+      - .github/workflows/gate-btc-2-v2a-exact-spot-qualifier.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-spot-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile runner
+        run: python -m py_compile tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+      - name: Run deterministic contract tests
+        run: python -m unittest tests.test_gate_btc_2_v2a_exact_spot_qualification_runner -v
+      - name: Assert frozen zero-credit boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/gate_btc_2_v2a_exact_spot_qualification_runner.py').read_text()
+          required=['research_only','shadow_only','not_approved','engine_feed','orders','real_capital_brl','no_retune','no_backfill','no_counter_reset','no_silent_source_substitution','fail_closed','scientific_credit','prospective_credit','admission_scope']
+          assert all(x in s for x in required)
+          print('EXACT_SPOT_QUALIFIER_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
