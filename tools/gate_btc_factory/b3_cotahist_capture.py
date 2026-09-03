@@ -50,8 +50,7 @@ def fetch(url: str, attempts: int = 3) -> bytes:
     raise RuntimeError(f"official source fetch failed: {url}: {err}")
 
 def parse_date(raw: bytes) -> date:
-    s = raw.decode("ascii")
-    return datetime.strptime(s, "%Y%m%d").date()
+    return datetime.strptime(raw.decode("ascii"), "%Y%m%d").date()
 
 def weekday_gap_count(ds: set[date]) -> int:
     if not ds:
@@ -64,13 +63,16 @@ def weekday_gap_count(ds: set[date]) -> int:
         cur += timedelta(days=1)
     return n
 
+def field(line: bytes, a: int, b: int, enc: str = "ascii") -> str:
+    return line[a:b].decode(enc, errors="replace").strip()
+
 def inspect_payload(payload: bytes) -> dict:
     lines = payload.splitlines()
     invalid_len = 0
     invalid_quote = 0
     quote_count = 0
     dates: set[date] = set()
-    keys: set[tuple[str, str, str, str]] = set()
+    keys: set[tuple[str, ...]] = set()
     duplicate_keys = 0
     symbol_isins: dict[str, set[str]] = defaultdict(set)
     record_types: dict[str, int] = defaultdict(int)
@@ -79,23 +81,35 @@ def inspect_payload(payload: bytes) -> dict:
         if len(line) != 245:
             invalid_len += 1
             continue
-        rt = line[0:2].decode("ascii", errors="replace")
+        rt = field(line, 0, 2)
         record_types[rt] += 1
         if rt != "01":
             continue
         try:
             d = parse_date(line[2:10])
-            symbol = line[12:24].decode("latin1").strip()
-            market = line[24:27].decode("ascii").strip()
-            isin = line[230:242].decode("ascii", errors="replace").strip()
-            if not symbol or not market:
+            bdi = field(line, 10, 12)
+            symbol = field(line, 12, 24, "latin1")
+            market = field(line, 24, 27)
+            company = field(line, 27, 39, "latin1")
+            spec = field(line, 39, 49, "latin1")
+            term = field(line, 49, 52)
+            currency = field(line, 52, 56)
+            option_index = field(line, 201, 202)
+            expiry = field(line, 202, 210)
+            quotation_factor = field(line, 210, 217)
+            isin = field(line, 230, 242)
+            distribution = field(line, 242, 245)
+            if not symbol or not market or not bdi:
                 raise ValueError("empty identity")
         except Exception:
             invalid_quote += 1
             continue
         quote_count += 1
         dates.add(d)
-        key = (d.isoformat(), symbol, market, isin)
+        key = (
+            d.isoformat(), bdi, symbol, market, company, spec, term, currency,
+            option_index, expiry, quotation_factor, isin, distribution,
+        )
         if key in keys:
             duplicate_keys += 1
         else:
@@ -110,7 +124,7 @@ def inspect_payload(payload: bytes) -> dict:
         "daily_quote_record_count": quote_count,
         "date_min": min(dates).isoformat() if dates else None,
         "date_max": max(dates).isoformat() if dates else None,
-        "duplicate_key_count": duplicate_keys,
+        "duplicate_full_identity_count": duplicate_keys,
         "invalid_record_length_count": invalid_len,
         "invalid_daily_quote_count": invalid_quote,
         "weekday_gap_count_in_observed_range_including_market_holidays": weekday_gap_count(dates),
@@ -136,8 +150,8 @@ def capture_year(year: int, out: Path) -> dict:
     qa = inspect_payload(payload)
     if qa["daily_quote_record_count"] <= 0:
         raise RuntimeError(f"{year}: no daily quote records")
-    if qa["duplicate_key_count"] != 0:
-        raise RuntimeError(f"{year}: duplicate identity keys={qa['duplicate_key_count']}")
+    if qa["duplicate_full_identity_count"] != 0:
+        raise RuntimeError(f"{year}: duplicate full identity records={qa['duplicate_full_identity_count']}")
     if qa["invalid_record_length_count"] != 0 or qa["invalid_daily_quote_count"] != 0:
         raise RuntimeError(f"{year}: invalid records: {qa}")
     return {
