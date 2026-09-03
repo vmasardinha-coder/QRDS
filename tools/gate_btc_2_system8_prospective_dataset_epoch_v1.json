@@ -1,0 +1,65 @@
+{
+  "schema": "gate_btc.2_0.system8_prospective_dataset_epoch.v1",
+  "epoch_id": "GATE_BTC_2_SYSTEM8_PROSPECTIVE_EPOCH_2026_09_03",
+  "system_id": 8,
+  "status": "PREREGISTERED_NOT_ACTIVE_UNTIL_MERGE",
+  "authorization": {
+    "human_authorized": true,
+    "authorized_at_local": "2026-09-03T06:13:00-03:00",
+    "scope": "CREATE_AND_ACTIVATE_SEPARATE_PROSPECTIVE_DATASET_EPOCH"
+  },
+  "predecessor": {
+    "original_historical_dataset_seal": "UNSEALED_FAILED",
+    "reason": "FROZEN_READINESS_CONTRACT_UNSATISFIABLE_UNDER_NO_BACKFILL",
+    "historical_credit_into_this_epoch": 0,
+    "counter_carryover": 0,
+    "negative_evidence_preserved": true
+  },
+  "cutover": {
+    "rule": "FIRST_CAUSAL_OBSERVATION_STRICTLY_AFTER_MERGE_OF_THIS_PR",
+    "backdating_allowed": false,
+    "pre_merge_observations_credit": 0,
+    "missed_observations_backfilled": false,
+    "timestamp_repair_allowed": false
+  },
+  "methodology": {
+    "universe_rule": "FREEZE_FROM_CAUSALLY_OBSERVED_POST_MERGE_UNIVERSE_SNAPSHOT_BEFORE_FIRST_CREDITED_PANEL",
+    "source_rule": "ONLY_EXPLICITLY_QUALIFIED_EXACT_SOURCES_OR_SEPARATELY_PREREGISTERED_NEW_SOURCES",
+    "silent_source_substitution": false,
+    "point_in_time_required": true,
+    "survivorship_bias_allowed": false,
+    "raw_bytes_or_immutable_reference_required": true,
+    "manifest_and_sha256_required": true,
+    "schema_timezone_cutoff_qa_required": true,
+    "duplicate_missing_row_qa_required": true,
+    "observed_vs_derived_label_required": true,
+    "independent_readiness_clock": true
+  },
+  "readiness": {
+    "initial_state": "COLLECT_MORE",
+    "initial_counter": 0,
+    "historical_dataset_seal_can_satisfy": false,
+    "new_epoch_must_satisfy_frozen_readiness_contract_independently": true,
+    "economics_allowed": false,
+    "automatic_promotion": false
+  },
+  "separation": {
+    "stage9_clock_unchanged": true,
+    "stage9_required_n_unchanged": true,
+    "system15_independent": true,
+    "systems10_14_not_unlocked_by_preregistration": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
