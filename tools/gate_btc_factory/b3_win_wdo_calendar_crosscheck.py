@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
+import time
+import urllib.request
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -58,6 +61,66 @@ def load_coverage(coverage_dir: Path) -> list[dict]:
     return rows
 
 
+def fetch(url: str, attempts: int = 3) -> bytes:
+    err = None
+    for i in range(attempts):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "QRDS-research-source-audit/1.0"})
+            with urllib.request.urlopen(req, timeout=45) as r:
+                body = r.read()
+                if r.status != 200:
+                    raise RuntimeError(f"HTTP {r.status}")
+                return body
+        except Exception as e:
+            err = e
+            if i + 1 < attempts:
+                time.sleep(i + 1)
+    raise RuntimeError(f"fetch failed {url}: {err}")
+
+
+def xml_leaf_payloads(blob: bytes) -> list[bytes]:
+    out: list[bytes] = []
+    def walk(data: bytes) -> None:
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as z:
+                for name in z.namelist():
+                    if name.endswith("/"):
+                        continue
+                    child = z.read(name)
+                    if child[:4] == b"PK\x03\x04":
+                        walk(child)
+                    elif child.lstrip().startswith(b"<"):
+                        out.append(child)
+        except zipfile.BadZipFile:
+            return
+    walk(blob)
+    return out
+
+
+def probe_sprd(day: str) -> dict:
+    ymd = datetime.strptime(day, "%Y-%m-%d").strftime("%y%m%d")
+    url = f"https://www.b3.com.br/pesquisapregao/download?filelist=SPRD{ymd}.zip"
+    body = fetch(url)
+    leafs = xml_leaf_payloads(body)
+    text = b"\n".join(leafs)
+    tickers = []
+    for prefix in (b"WIN", b"WDO"):
+        if prefix in text:
+            tickers.append(prefix.decode())
+    required_price_tags = [b"FrstPric", b"MinPric", b"MaxPric", b"LastPric"]
+    return {
+        "date": day,
+        "url": url,
+        "outer_bytes": len(body),
+        "xml_leaf_count": len(leafs),
+        "win_present": "WIN" in tickers,
+        "wdo_present": "WDO" in tickers,
+        "trade_date_present": day.encode() in text,
+        "full_ohlc_tag_set_present": all(tag in text for tag in required_price_tags),
+        "usable_as_exact_ohlc_fallback": bool(leafs) and "WIN" in tickers and "WDO" in tickers and day.encode() in text and all(tag in text for tag in required_price_tags),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--coverage-dir", required=True)
@@ -69,8 +132,12 @@ def main() -> int:
     sessions = cotahist_dates(Path(args.cotahist_dir))
 
     no_object = sorted({d for x in coverage for d in x.get("weekday_no_object_dates", [])})
-    inconsistent_gaps = sorted(d for d in no_object if d in sessions)
+    raw_inconsistent_gaps = sorted(d for d in no_object if d in sessions)
     corroborated_non_sessions = sorted(d for d in no_object if d not in sessions)
+
+    fallback_probes = [probe_sprd(d) for d in raw_inconsistent_gaps]
+    fallback_days = sorted(x["date"] for x in fallback_probes if x["usable_as_exact_ohlc_fallback"])
+    unresolved_inconsistent_gaps = sorted(d for d in raw_inconsistent_gaps if d not in fallback_days)
 
     published_dates = sorted({r["date"] for x in coverage for r in x.get("rows", []) if r.get("http_status") == 200 and r.get("leaf_payloads")})
     published_not_in_cotahist = sorted(d for d in published_dates if d not in sessions)
@@ -88,7 +155,7 @@ def main() -> int:
             "block_contract_pass": x["block_contract_pass"],
         })
 
-    calendar_crosscheck_pass = not inconsistent_gaps and not published_not_in_cotahist
+    calendar_crosscheck_pass = not unresolved_inconsistent_gaps and not published_not_in_cotahist
     result = {
         "schema": "qrds.factory.b3_win_wdo_calendar_crosscheck.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -96,17 +163,22 @@ def main() -> int:
         "stage": "DATA_CALENDAR_CROSSCHECK",
         "coverage_horizon": ["2020-01-01", "2024-12-31"],
         "calendar_reference": "OFFICIAL_B3_COTAHIST_DAILY_QUOTE_DATES",
+        "primary_surface": "BVBG.086.01_PRICEREPORT",
+        "fallback_surface_probe": "BVBG.187.01_SIMPLIFIED_PRICE_REPORT_DERIVATIVES_SPRD_ONLY_FOR_PRIMARY_SESSION_GAPS",
         "quarter_count": len(coverage),
         "cotahist_session_count": len([d for d in sessions if "2020-01-01" <= d <= "2024-12-31"]),
         "weekday_no_object_count": len(no_object),
         "weekday_no_object_dates": no_object,
         "corroborated_non_session_dates": corroborated_non_sessions,
-        "inconsistent_price_report_gaps_on_cotahist_sessions": inconsistent_gaps,
+        "raw_primary_price_report_gaps_on_cotahist_sessions": raw_inconsistent_gaps,
+        "sprd_fallback_probes": fallback_probes,
+        "sprd_exact_ohlc_fallback_dates": fallback_days,
+        "inconsistent_price_report_gaps_on_cotahist_sessions": unresolved_inconsistent_gaps,
         "published_price_report_dates_not_in_cotahist": published_not_in_cotahist,
         "calendar_crosscheck_pass": calendar_crosscheck_pass,
         "quarter_summary": quarter_summary,
         "source_admission_pass": False,
-        "source_admission_blocker": "IDENTITY_DEDUPE_PUBLICATION_TIMING_AND_PIT_QA_NOT_YET_FROZEN" if calendar_crosscheck_pass else "CALENDAR_CROSSCHECK_FAIL",
+        "source_admission_blocker": "IDENTITY_DEDUPE_PUBLICATION_TIMING_AND_PIT_QA_NOT_YET_FROZEN" if calendar_crosscheck_pass else "CALENDAR_CROSSCHECK_FAIL_UNRESOLVED_OFFICIAL_SESSION_GAP",
         "economics_read_allowed": False,
         "family_creation_allowed": False,
         "prospective_credit": 0,
@@ -119,6 +191,9 @@ def main() -> int:
     print(json.dumps({
         "quarter_count": result["quarter_count"],
         "weekday_no_object_count": result["weekday_no_object_count"],
+        "raw_primary_session_gap_count": len(raw_inconsistent_gaps),
+        "sprd_exact_ohlc_fallback_count": len(fallback_days),
+        "unresolved_session_gap_count": len(unresolved_inconsistent_gaps),
         "calendar_crosscheck_pass": result["calendar_crosscheck_pass"],
         "source_admission_pass": result["source_admission_pass"],
     }, sort_keys=True))
