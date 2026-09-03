@@ -1,0 +1,38 @@
+{
+  "schema": "qrds.factory.invalidated_definitive_gap_policy.v1",
+  "status": "ACTIVE",
+  "purpose": "Close historically invalidated families when all free or official auditable source paths have been exhausted without a qualifying source, while preserving automatic reactivation if a future source gate becomes green.",
+  "terminal_status": "DEFINITIVE_EXTERNAL_DATA_GAP_REVISITABLE",
+  "closure_requirements": {
+    "root_cause_classification": "SOURCE_DATA_GAP",
+    "source_search_status": "ACTIVE_SEARCHING_QUALIFICATION",
+    "source_gate_present": false,
+    "source_gate_valid": false,
+    "official_b3_exact_intraday_source_qualified": false,
+    "independent_public_exact_win_m5_source_qualified": false,
+    "mt5_source_admission_pass": false,
+    "minimum_sessions_required": 161,
+    "point_in_time_required": true
+  },
+  "reactivation": {
+    "automatic": true,
+    "condition": "ANY_VALID_GLOBAL_OR_SCOPED_SOURCE_GATE_GREEN",
+    "action": "RETURN_TO_REQUALIFICATION_PIPELINE_WITH_ORIGINAL_FROZEN_CONTRACT",
+    "historical_result_mutation": false,
+    "backfill": false,
+    "counter_reset": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
