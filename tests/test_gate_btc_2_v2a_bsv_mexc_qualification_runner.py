@@ -1,7 +1,11 @@
 import json
 import unittest
+from datetime import date
 
-from tools.gate_btc_2_v2a_bsv_mexc_qualification_runner import parse_payload
+from tools.gate_btc_2_v2a_bsv_mexc_qualification_runner import (
+    filter_rows_to_end,
+    parse_payload,
+)
 
 
 class TestBSVMexcQualificationRunner(unittest.TestCase):
@@ -15,6 +19,15 @@ class TestBSVMexcQualificationRunner(unittest.TestCase):
         self.assertEqual(rows[0]["high"], 2.0)
         self.assertEqual(rows[0]["base_volume"], 10.0)
         self.assertEqual(rows[0]["quote_volume"], 15.0)
+
+    def test_rows_after_requested_end_are_excluded(self):
+        rows = [
+            {"day": "2026-09-02", "timestamp_ms": 1},
+            {"day": "2026-09-03", "timestamp_ms": 2},
+        ]
+        accepted, excluded = filter_rows_to_end(rows, date(2026, 9, 2))
+        self.assertEqual([r["day"] for r in accepted], ["2026-09-02"])
+        self.assertEqual(excluded, 1)
 
     def test_error_envelope_fails_closed(self):
         with self.assertRaises(ValueError):
