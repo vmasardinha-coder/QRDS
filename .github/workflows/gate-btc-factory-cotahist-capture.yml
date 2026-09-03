@@ -48,7 +48,7 @@ jobs:
               assert len(o['raw_zip_sha256'])==64
               assert len(o['payload_sha256'])==64
               assert o['daily_quote_record_count']>0
-              assert o['duplicate_key_count']==0
+              assert o['duplicate_full_identity_count']==0
               assert o['invalid_record_length_count']==0
               assert o['invalid_daily_quote_count']==0
           expected={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
