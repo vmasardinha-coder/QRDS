@@ -1,0 +1,51 @@
+{
+  "schema": "gate_btc.2_0.system8_universe_source_preregistration.v1",
+  "epoch_id": "GATE_BTC_2_SYSTEM8_PROSPECTIVE_EPOCH_2026_09_03",
+  "source_id": "COINGECKO_PUBLIC_MARKETS_TOP150_USD_V1",
+  "status": "PREREGISTERED_NOT_QUALIFIED",
+  "provider": "COINGECKO_PUBLIC_API",
+  "endpoint": "https://api.coingecko.com/api/v3/coins/markets",
+  "request_contract": {
+    "vs_currency": "usd",
+    "order": "market_cap_desc",
+    "per_page": 100,
+    "pages": [1, 2],
+    "sparkline": false,
+    "target_universe_size": 150,
+    "selection_rule": "CONCATENATE_PAGE_1_AND_PAGE_2_IN_PROVIDER_ORDER_THEN_TAKE_FIRST_150_UNIQUE_COIN_IDS",
+    "identity_key": "id",
+    "required_fields": ["id", "symbol", "name", "market_cap", "market_cap_rank", "last_updated"]
+  },
+  "qualification_requirements": {
+    "raw_http_bytes_preserved": true,
+    "sha256_per_page_required": true,
+    "captured_at_utc_required": true,
+    "http_status_200_required": true,
+    "json_array_required": true,
+    "minimum_combined_rows": 150,
+    "unique_coin_id_required": true,
+    "market_cap_rank_positive_integer_required": true,
+    "provider_order_preserved": true,
+    "no_posthoc_symbol_substitution": true
+  },
+  "credit_boundary": {
+    "preregistration_credit": 0,
+    "qualification_credit": 0,
+    "first_epoch_universe_credit_requires_separate_post_qualification_activation": true,
+    "pre_merge_capture_credit": 0,
+    "historical_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
