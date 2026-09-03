@@ -7,6 +7,12 @@ on:
   workflow_run:
     workflows: ["GATE BTC Factory Root Cause Audit"]
     types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/finalize_invalidated_gap.py'
+      - 'tools/gate_btc_factory/INVALIDATED_DEFINITIVE_GAP_POLICY.v1.json'
+      - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
   pull_request:
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
