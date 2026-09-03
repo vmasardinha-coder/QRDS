@@ -21,8 +21,9 @@ REAL_CAPITAL = 0
 
 # CMC_TOP150 is created causally at SIGNAL. During D-2/D-1 preflight, require
 # the existing immutable producer to be armed; the exact contemporaneous CMC
-# artifact is still mandatory at SIGNAL. EXECUTABILITY remains fail-closed here
-# until a working official/auditable causal producer is available.
+# artifact is still mandatory at SIGNAL. EXECUTABILITY is an ENTRY-stage
+# requirement: it must remain fail-closed, but its intentional absence before
+# SIGNAL must not make the D-2/D-1 readiness check red.
 PRODUCER_REQUIREMENTS = {
     'CMC_TOP150': (
         '.github/workflows/gate-btc-v16b-cmc-snapshot.yml',
@@ -33,14 +34,17 @@ PRODUCER_REQUIREMENTS = {
 DISCOVERABLE_REQUIREMENTS = {
     'PROVENANCE_MANIFEST': ('manifest', 'sha'),
     'SHORTABILITY': ('shortability',),
-    'EXECUTABILITY': ('executability',),
     'FUNDING': ('funding',),
     'PRICES': ('price',),
 }
 
+ENTRY_STAGE_REQUIREMENTS = {
+    'EXECUTABILITY': ('executability',),
+}
+
 STAGE_SEMANTICS = {
     'CMC_TOP150': 'PRODUCER_READY_AT_PREFLIGHT__EXACT_IMMUTABLE_SNAPSHOT_REQUIRED_AT_SIGNAL',
-    'EXECUTABILITY': 'EXACT_CAUSAL_EVIDENCE_REQUIRED__FAIL_CLOSED_UNTIL_AVAILABLE',
+    'EXECUTABILITY': 'ENTRY_STAGE_ONLY__EXACT_CAUSAL_EVIDENCE_REQUIRED_AFTER_SIGNAL__FAIL_CLOSED_UNTIL_AVAILABLE',
 }
 
 
@@ -86,6 +90,16 @@ def evaluate(roots: list[Path], source_root: Path, signal_date: str = '2026-08-2
         matches = _find(roots, words)
         checks.append(Check(name, 'PASS_PRESENT' if matches else 'FAIL_MISSING', matches))
 
+    # ENTRY executability cannot exist causally at D-2/D-1. Surface the state
+    # explicitly without weakening the ENTRY gate or pretending evidence exists.
+    for name, words in ENTRY_STAGE_REQUIREMENTS.items():
+        matches = _find(roots, words)
+        checks.append(Check(
+            name,
+            'PASS_PRESENT' if matches else 'PENDING_ENTRY_STAGE_CAUSAL_EVIDENCE',
+            matches,
+        ))
+
     rehearsal = (source_root / 'tools/gate_btc_v16b_rehearsal.py').exists()
     checks.append(Check(
         'REHEARSAL_TOOL',
@@ -93,19 +107,22 @@ def evaluate(roots: list[Path], source_root: Path, signal_date: str = '2026-08-2
         [str(source_root / 'tools/gate_btc_v16b_rehearsal.py')] if rehearsal else [],
     ))
 
-    overall = 'PASS_PREFLIGHT_DISCOVERY' if all(c.status.startswith('PASS') for c in checks) else 'FAIL_PREFLIGHT_MISSING_INPUT'
+    blocking = [c for c in checks if c.status.startswith('FAIL')]
+    overall = 'PASS_PREFLIGHT_DISCOVERY' if not blocking else 'FAIL_PREFLIGHT_MISSING_INPUT'
     return {
-        'schema': 'gate_btc.v16b.preflight_status.v3',
+        'schema': 'gate_btc.v16b.preflight_status.v4',
         'status': overall,
         'signal_date': window.signal_date.isoformat(),
         'entry_date': window.entry_date.isoformat(),
         'complete_exit_date': window.complete_exit_date.isoformat(),
         'canonical_cycle_count': 0,
         'calendar_authority': 'FROZEN_WEEKLY_V16B_CLOCK',
-        'preflight_scope': 'CMC_PRODUCER_READINESS_PLUS_FAIL_CLOSED_DISCOVERY_FOR_OTHER_INPUTS',
+        'preflight_scope': 'SIGNAL_READINESS_PLUS_EXPLICIT_NONBLOCKING_ENTRY_STAGE_PENDING_STATE',
         'stage_semantics': STAGE_SEMANTICS,
-        'roots': [str(r) for r in roots],
         'checks': [asdict(c) for c in checks],
+        'blocking_checks': [c.name for c in blocking],
+        'entry_stage_pending': [c.name for c in checks if c.status == 'PENDING_ENTRY_STAGE_CAUSAL_EVIDENCE'],
+        'roots': [str(r) for r in roots],
         'RESEARCH_ONLY': RESEARCH_ONLY,
         'SHADOW_ONLY': SHADOW_ONLY,
         'NOT_APPROVED': NOT_APPROVED,
