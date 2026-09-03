@@ -46,7 +46,7 @@ def inspect_zip(raw: bytes) -> dict:
     out = {
         "zip_valid": False,
         "members": [],
-        "leaf_payload_count": 0,
+        "leaf_payloads": [],
         "contains_pricereport_schema": False,
         "contains_win": False,
         "contains_wdo": False,
@@ -70,7 +70,7 @@ def inspect_zip(raw: bytes) -> dict:
                             continue
                     except zipfile.BadZipFile:
                         pass
-                    out["leaf_payload_count"] += 1
+                    out["leaf_payloads"].append({"path": full, "byte_count": len(b), "sha256": hashlib.sha256(b).hexdigest()})
                     if all(tag in b for tag in PRICE_TAGS):
                         out["contains_pricereport_schema"] = True
                     if b"WIN" in b:
@@ -81,6 +81,8 @@ def inspect_zip(raw: bytes) -> dict:
             return
 
     walk(raw, "", 0)
+    out["leaf_payload_count"] = len(out["leaf_payloads"])
+    out["leaf_payload_sha256"] = sorted(x["sha256"] for x in out["leaf_payloads"])
     return out
 
 
@@ -91,27 +93,36 @@ def main() -> int:
     rows = []
     for iso in DATES:
         url = f"https://www.b3.com.br/pesquisapregao/download?filelist=PR{yymmdd(iso)}.zip"
-        status, headers, raw = fetch(url)
-        z = inspect_zip(raw)
+        status1, headers1, raw1 = fetch(url)
+        z1 = inspect_zip(raw1)
+        status2, _headers2, raw2 = fetch(url)
+        z2 = inspect_zip(raw2)
+        repeat_match = z1["leaf_payload_sha256"] == z2["leaf_payload_sha256"] and bool(z1["leaf_payload_sha256"])
         rows.append({
             "date": iso,
             "url": url,
-            "http_status": status,
-            "content_type": headers.get("Content-Type") or headers.get("content-type"),
-            "content_disposition": headers.get("Content-Disposition") or headers.get("content-disposition"),
-            "byte_count": len(raw),
-            "sha256": hashlib.sha256(raw).hexdigest(),
-            **z,
+            "http_status": status1,
+            "repeat_http_status": status2,
+            "content_type": headers1.get("Content-Type") or headers1.get("content-type"),
+            "content_disposition": headers1.get("Content-Disposition") or headers1.get("content-disposition"),
+            "outer_byte_count": len(raw1),
+            "outer_sha256": hashlib.sha256(raw1).hexdigest(),
+            "repeat_outer_sha256": hashlib.sha256(raw2).hexdigest(),
+            "repeat_payload_digest_match": repeat_match,
+            **z1,
         })
     qualified = [
         r for r in rows
         if r["http_status"] == 200
+        and r["repeat_http_status"] == 200
         and r["zip_valid"]
         and r["leaf_payload_count"] > 0
         and r["contains_pricereport_schema"]
         and r["contains_win"]
         and r["contains_wdo"]
+        and r["repeat_payload_digest_match"]
     ]
+    sentinel_contract_pass = len(qualified) == len(rows)
     result = {
         "schema": "qrds.factory.b3_win_wdo_official_source_probe.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -121,7 +132,10 @@ def main() -> int:
         "candidate_contract": "https://www.b3.com.br/pesquisapregao/download?filelist=PR{YYMMDD}.zip",
         "sentinels": rows,
         "sentinel_pass_count": len(qualified),
-        "source_admission_pass": len(qualified) == len(rows),
+        "sentinel_contract_pass": sentinel_contract_pass,
+        "source_admission_pass": False,
+        "source_admission_blocker": "FULL_2020_2024_COVERAGE_MISSINGNESS_DEDUPE_IDENTITY_AND_PUBLICATION_TIMING_QA_NOT_YET_FROZEN",
+        "next_action": "QUALIFY_COVERAGE_INCREMENTALLY_BY_YEAR_WITHOUT_ECONOMICS",
         "economics_read_allowed": False,
         "family_creation_allowed": False,
         "prospective_credit": 0,
@@ -130,7 +144,7 @@ def main() -> int:
     }
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"sentinel_pass_count": len(qualified), "total": len(rows), "source_admission_pass": result["source_admission_pass"]}, sort_keys=True))
+    print(json.dumps({"sentinel_pass_count": len(qualified), "total": len(rows), "sentinel_contract_pass": sentinel_contract_pass, "source_admission_pass": False}, sort_keys=True))
     return 0
 
 
