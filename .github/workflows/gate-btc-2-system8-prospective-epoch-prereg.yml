@@ -1,0 +1,39 @@
+name: GATE BTC 2 System 8 Prospective Epoch Preregistration
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_system8_prospective_dataset_epoch_v1.json
+      - tests/test_gate_btc_2_system8_prospective_dataset_epoch.py
+      - .github/workflows/gate-btc-2-system8-prospective-epoch-prereg.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prospective-epoch-prereg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen epoch contract
+        run: python -m unittest tests.test_gate_btc_2_system8_prospective_dataset_epoch -v
+      - name: Assert zero historical credit and safety
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('tools/gate_btc_2_system8_prospective_dataset_epoch_v1.json'))
+          assert d['predecessor']['historical_credit_into_this_epoch']==0
+          assert d['predecessor']['counter_carryover']==0
+          assert d['cutover']['pre_merge_observations_credit']==0
+          assert d['readiness']['initial_state']=='COLLECT_MORE' and d['readiness']['initial_counter']==0
+          assert d['readiness']['economics_allowed'] is False
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL_BRL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['NO_SILENT_SOURCE_SUBSTITUTION'] and s['FAIL_CLOSED']
+          print('SYSTEM8_PROSPECTIVE_EPOCH_PREREG=PASS_ZERO_CREDIT')
+          PY
