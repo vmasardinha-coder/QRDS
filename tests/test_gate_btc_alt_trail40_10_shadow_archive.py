@@ -12,7 +12,7 @@ CONTRACT = {
     "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
     "candidate_definition": {
         "activation_gain": 0.40,
-        "trailing_buffer_fraction_of_running_close_high": 0.10,
+        "trailing_buffer_fraction_of_running_close_high"] if False else 0.10,
         "same_bar_arm_and_exit": False,
         "parameter_retuning_before_gate": False,
     },
@@ -67,16 +67,15 @@ class AltTrailShadowArchiveTests(unittest.TestCase):
         self.portfolios = self.root / "portfolios.csv"
         write_csv(self.portfolios, portfolios())
         self.master = self.root / "master.csv"
-        write_csv(self.master, [
-            {"date": "2026-08-31", "symbol": "SOL", "close_usd": "100"},
-            {"date": "2026-08-31", "symbol": "LINK", "close_usd": "20"},
-            {"date": "2026-08-31", "symbol": "AVAX", "close_usd": "30"},
-            {"date": "2026-08-31", "symbol": "BNB", "close_usd": "900"},
-            {"date": "2026-09-01", "symbol": "SOL", "close_usd": "101"},
-            {"date": "2026-09-01", "symbol": "LINK", "close_usd": "21"},
-            {"date": "2026-09-01", "symbol": "AVAX", "close_usd": "31"},
-            {"date": "2026-09-01", "symbol": "BNB", "close_usd": "910"},
-        ])
+        rows=[]
+        for day, values in {
+            "2026-08-31": {"SOL":100,"LINK":20,"AVAX":30,"BNB":900},
+            "2026-09-01": {"SOL":101,"LINK":21,"AVAX":31,"BNB":910},
+            "2026-09-02": {"SOL":102,"LINK":22,"AVAX":32,"BNB":920},
+        }.items():
+            for symbol, close in values.items():
+                rows.append({"date":day,"symbol":symbol,"close_usd":str(close)})
+        write_csv(self.master, rows)
         archive.initialize(self.contract, self.ledger)
 
     def tearDown(self):
@@ -96,10 +95,15 @@ class AltTrailShadowArchiveTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-01", "2")
 
-    def test_daily_gap_fails_closed(self):
+    def test_daily_gap_is_recorded_without_backfill_and_current_day_continues(self):
         archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-08-31", "1")
-        with self.assertRaises(RuntimeError):
-            archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
+        result = archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
+        self.assertEqual(result["result"], "APPENDED_WITH_RECORDED_GAP")
+        self.assertEqual(result["prospective_gap_dates"], ["2026-09-01"])
+        self.assertFalse((self.ledger / "snapshots/2026-09-01.json").exists())
+        row = json.loads((self.ledger / "snapshots/2026-09-02.json").read_text(encoding="utf-8"))
+        self.assertEqual(row["prospective_gap_policy"], "RECORD_GAP_AND_CONTINUE_FORWARD_NO_BACKFILL")
+        self.assertEqual(row["prospective_gap_dates"], ["2026-09-01"])
 
     def test_midcycle_pre_freeze_signal_fails_closed(self):
         write_csv(self.portfolios, portfolios("2026-07-31", "2026-08-01"))
