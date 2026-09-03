@@ -60,33 +60,28 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $56,922.08 |
-| Retorno do dia | -1.09% |
-| Retorno desde inicio (2026-08-06) | +13.84% |
-| Benchmark BTC | +19.72% |
-| **Alfa vs BTC** | **-5.87%** |
+| NAV | $56,836.66 |
+| Retorno do dia | -1.24% |
+| Retorno desde inicio (2026-08-06) | +13.67% |
+| Benchmark BTC | +19.76% |
+| **Alfa vs BTC** | **-6.08%** |
 | Caixa | $2,719.51 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.369158 | $77,120.26 | $28,469.53 | 50.0% |
-| UNI | 1482.27 | $5.86 | $8,692.93 | 15.3% |
-| ZEC | 10.4953 | $813.78 | $8,540.86 | 15.0% |
-| CRV | 23530.6 | $0.36 | $8,499.26 | 14.9% |
+| BTC | 0.369158 | $77,145.49 | $28,478.84 | 50.1% |
+| UNI | 1482.27 | $5.81 | $8,614.22 | 15.2% |
+| ZEC | 10.4953 | $811.58 | $8,517.77 | 15.0% |
+| CRV | 23530.6 | $0.36 | $8,506.32 | 15.0% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BTC | VENDA | 0.00356212 | $77,043.14 | $274.44 | rebalanceio |
-| ENA | VENDA | 54921.7 | $0.15 | $8,150.46 | rebalanceio |
-| ZEC | COMPRA | 10.4953 | $814.59 | $8,549.40 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ZEC: 0.0% vs alvo 15.0%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (BTC):** momentum de +21.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 9
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
@@ -96,7 +91,7 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (+7.7% <= +21.2%) |
+| ADA | nao bate o benchmark (+7.4% <= +21.2%) |
 | ALGO | liquidez baixa (0.8M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
@@ -132,19 +127,12 @@ _Sem movimentacoes hoje._
 | PRIO3 | 103.18 | R$ 64.41 | R$ 6,645.80 | 12.4% |
 | WEGE3 | 126.445 | R$ 50.84 | R$ 6,428.46 | 12.0% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| ABEV3 | VENDA | 423.887 | R$ 15.58 | R$ 6,606.02 | rebalanceio |
-| PETR4 | VENDA | 5.57354 | R$ 48.15 | R$ 268.38 | rebalanceio |
-| VALE3 | COMPRA | 3.26852 | R$ 80.88 | R$ 264.36 | rebalanceio |
-| VBBR3 | COMPRA | 6.02685 | R$ 36.39 | R$ 219.29 | rebalanceio |
-| WEGE3 | COMPRA | 126.445 | R$ 50.89 | R$ 6,434.88 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em WEGE3: 0.0% vs alvo 12.5%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.3% — so entram ativos acima disto
 - **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 49, nasdaq: 101
