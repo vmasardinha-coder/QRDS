@@ -105,16 +105,31 @@ jobs:
         id: collect_snapshot
         if: steps.v2a.outputs.source_ok == 'true' && steps.freeze.outcome == 'success'
         continue-on-error: true
-        run: >-
-          python tools/gate_btc_momentum_shadow_collect.py
-          --v2a-zip artifacts/momentum_qos/qos_v2a_outputs.zip
-          --cutoff "$MOMENTUM_CUTOFF"
-          --ledger-dir runtime_repo/runtime/ledgers/momentum_m1_m2
-          --output artifacts/momentum/GATE_BTC_MOMENTUM_M1M2_${MOMENTUM_CUTOFF}.json
+        shell: bash
+        run: |
+          set +e
+          output=$(python tools/gate_btc_momentum_shadow_collect.py \
+            --v2a-zip artifacts/momentum_qos/qos_v2a_outputs.zip \
+            --cutoff "$MOMENTUM_CUTOFF" \
+            --ledger-dir runtime_repo/runtime/ledgers/momentum_m1_m2 \
+            --output artifacts/momentum/GATE_BTC_MOMENTUM_M1M2_${MOMENTUM_CUTOFF}.json 2>&1)
+          rc=$?
+          printf '%s\n' "$output"
+          if [ "$rc" -eq 0 ]; then
+            echo 'collection_state=collected' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$output" | grep -Eq 'cutoff .* absent from canonical prices'; then
+            echo 'collection_state=wait_source_close' >> "$GITHUB_OUTPUT"
+            echo 'MOMENTUM_COLLECTION=AMBER_WAIT_SOURCE_CLOSE'
+            exit 0
+          fi
+          echo 'collection_state=processing_failure' >> "$GITHUB_OUTPUT"
+          exit "$rc"
 
       - name: Build canonical Momentum status
         id: build_status
-        if: steps.v2a.outputs.source_ok == 'true' && steps.freeze.outcome == 'success' && steps.collect_snapshot.outcome == 'success'
+        if: steps.v2a.outputs.source_ok == 'true' && steps.freeze.outcome == 'success' && steps.collect_snapshot.outcome == 'success' && steps.collect_snapshot.outputs.collection_state == 'collected'
         continue-on-error: true
         run: |
           python - <<'PY'
@@ -144,8 +159,8 @@ jobs:
           print(json.dumps({'status':status['status'],'data_as_of':status['data_as_of'],'observed_snapshots':status['observed_snapshots']},sort_keys=True))
           PY
 
-      - name: Build AMBER runtime status when public source is unavailable
-        if: steps.v2a.outputs.source_ok != 'true'
+      - name: Build AMBER runtime status when waiting for public data
+        if: steps.v2a.outputs.source_ok != 'true' || steps.collect_snapshot.outputs.collection_state == 'wait_source_close'
         run: |
           python - <<'PY'
           import json, os
@@ -157,13 +172,15 @@ jobs:
           if p.exists():
               try: existing=json.loads(p.read_text(encoding='utf-8'))
               except Exception: existing={}
+          waiting_close='${{ steps.collect_snapshot.outputs.collection_state }}' == 'wait_source_close'
           status={
             'schema':'gate_btc.momentum_m1_m2.status.v1',
-            'status':'BLOCKED_SOURCE_RETRY_EXHAUSTED',
-            'data_as_of':os.environ['MOMENTUM_CUTOFF'],
+            'status':'WAIT_SOURCE_PUBLICATION' if waiting_close else 'BLOCKED_SOURCE_RETRY_EXHAUSTED',
+            'requested_cutoff':os.environ['MOMENTUM_CUTOFF'],
+            'data_as_of':existing.get('data_as_of'),
             'prospective_freeze_date':existing.get('prospective_freeze_date','2026-08-21'),
             'observed_snapshots':existing.get('observed_snapshots',0),
-            'last_run_state':'NO_NEW_SNAPSHOT_PUBLIC_SOURCE_UNAVAILABLE',
+            'last_run_state':'NO_NEW_SNAPSHOT_CUTOFF_NOT_PUBLISHED' if waiting_close else 'NO_NEW_SNAPSHOT_PUBLIC_SOURCE_UNAVAILABLE',
             'methodology_failure':False,
             'repair_scope':'ORCHESTRATION_AND_DATA_DELIVERY_ONLY',
             'research_only':True,'shadow_only':True,'not_approved':True,
@@ -172,11 +189,11 @@ jobs:
           }
           p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
           Path('artifacts/momentum/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print('MOMENTUM_DELIVERY=AMBER_FAIL_CLOSED')
+          print('MOMENTUM_DELIVERY=AMBER_WAIT_DATA')
           PY
 
       - name: Build RED diagnostic status on true processing failure
-        if: steps.v2a.outputs.source_ok == 'true' && (steps.freeze.outcome != 'success' || steps.collect_snapshot.outcome != 'success' || steps.build_status.outcome != 'success')
+        if: steps.v2a.outputs.source_ok == 'true' && (steps.freeze.outcome != 'success' || steps.collect_snapshot.outcome != 'success' || steps.collect_snapshot.outputs.collection_state == 'processing_failure' || (steps.collect_snapshot.outputs.collection_state == 'collected' && steps.build_status.outcome != 'success'))
         run: |
           python - <<'PY'
           import json, os
@@ -247,11 +264,13 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.v2a.outputs.source_ok }}" = "true" ] && \
-             { [ "${{ steps.freeze.outcome }}" != "success" ] || [ "${{ steps.collect_snapshot.outcome }}" != "success" ] || [ "${{ steps.build_status.outcome }}" != "success" ]; }; then
+             { [ "${{ steps.freeze.outcome }}" != "success" ] || [ "${{ steps.collect_snapshot.outputs.collection_state }}" = "processing_failure" ] || { [ "${{ steps.collect_snapshot.outputs.collection_state }}" = "collected" ] && [ "${{ steps.build_status.outcome }}" != "success" ]; }; }; then
             echo 'MOMENTUM_COLLECTION=RED_TRUE_PROCESSING_FAILURE'
             exit 1
           fi
-          if [ "${{ steps.v2a.outputs.source_ok }}" = "true" ]; then
+          if [ "${{ steps.collect_snapshot.outputs.collection_state }}" = "wait_source_close" ]; then
+            echo 'MOMENTUM_COLLECTION=AMBER_WAIT_SOURCE_PUBLICATION'
+          elif [ "${{ steps.v2a.outputs.source_ok }}" = "true" ]; then
             echo 'MOMENTUM_COLLECTION=GREEN'
           else
             echo 'MOMENTUM_COLLECTION=AMBER_SOURCE_BLOCKED_FAIL_CLOSED'
