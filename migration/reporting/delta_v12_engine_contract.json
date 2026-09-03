@@ -1,11 +1,27 @@
 {
+  "amendments": [
+    {
+      "amended_on": "2026-09-03",
+      "amendment": "IMPLEMENTATION_AND_ALIGNMENT_WITH_ESTABLISHED_PINS",
+      "methodology_changes": 0,
+      "what_changed": [
+        "status moves from PREREGISTERED_NOT_YET_IMPLEMENTED to IMPLEMENTED_PROSPECTIVE_COLLECTION",
+        "venue_preference_order corrected to the order actually frozen and actually used to pin",
+        "anchor_rule now says both required venues rather than all four, matching the pins",
+        "the absent funding feed is recorded explicitly with its direction of bias"
+      ],
+      "what_did_not_change": "No selection rule, no risk parameter, no cost band, no evidence threshold and no selection size. top_n and bottom_n remain 10 and 10 frozen on 2026-08-21.",
+      "why_this_is_not_backdating": "The anchor was still null when this was written and no V12 return existed. The venue order was corrected on 2026-08-26, before any pin was established, and the pins that exist were created under the corrected order."
+    }
+  ],
   "anchor": {
     "anchor_date": null,
-    "anchor_rule": "The anchor is the first completed UTC close processed by a production run that executes AFTER the venue pins have been established from an environment where all four venues are reachable. It is recorded at that moment and never chosen later.",
+    "anchor_rule": "The anchor is the first completed UTC close processed by a production run that executes AFTER the venue pins have been established from an environment where both required venues are reachable. It is recorded at that moment and never chosen later.",
     "backdating_prohibited": true,
     "historical_replay_status": "DIAGNOSTIC_ONLY. Any replay before the anchor inherits survivorship and current-liquidity conditioning from the universe snapshot and is not prospective evidence.",
     "initial_nav": 1.0,
-    "not_before": "2026-08-21"
+    "not_before": "2026-08-21",
+    "pins_established_on": "2026-08-26"
   },
   "annualization_days": 365,
   "books": {
@@ -24,6 +40,7 @@
     "stopvol_observation": "In the V11 paper monitor the StopVol books returned figures identical to their base books on every observed day, including a plus 5.58 percent day, so the vol cap has not bound once. The variants are kept here for comparability with V11, not because they are known to differ.",
     "stopvol_variants": true
   },
+  "contract_revision": "1.1",
   "costs": {
     "fee_bps_per_side": 5.0,
     "model": "LIQUIDITY_TIERED_NOT_FLAT",
@@ -36,7 +53,7 @@
     },
     "source": "delta_v12_universe_expansion_contract.json cost_model_by_liquidity_band"
   },
-  "decision": "PREREGISTERED_PREMISES_ONLY_NO_IMPLEMENTATION_NO_RESULT",
+  "decision": "PREREGISTERED_PREMISES_IMPLEMENTED_WITHOUT_CHANGE",
   "evidence": {
     "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
     "leaderboard_role": "DESCRIPTIVE_ONLY",
@@ -45,15 +62,45 @@
     "min_product_sharpe": 0.5
   },
   "frozen_date": "2026-08-21",
+  "funding": {
+    "known_bias": "Perpetual funding is normally paid by the long side in an upward market, so omitting it flatters a book that is long-tilted, which both gross profiles are. V12 economics are therefore NOT comparable to V11 economics at face value.",
+    "model": "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY",
+    "problem": "V11 charges observed OKX funding to each held position. The V12 price pipeline reads candles only and carries no funding feed, so this engine books funding as zero on every position.",
+    "recorded_before_any_v12_return": true,
+    "resolution_policy": "A funding feed is a NEW preregistration with its own freeze date. It must never be added after observing which direction it would move the result, and adding it does not license restating any close already committed to the ledger."
+  },
+  "implementation": {
+    "deviation_from_v11": "None in selection or risk. Costs are tiered per the frozen band table and funding is absent; both are recorded below.",
+    "inherits_from": "migration/canonical/delta/scripts/00_run_delta_v11.py",
+    "rules_reimplemented_verbatim": [
+      "cross_section_z uses population stdev (ddof=0); a flat cross-section yields undefined, not zero",
+      "vol30 uses sample stdev (ddof=1) over a 30-day window with 30 minimum periods",
+      "liquidity is log1p of the 14-day rolling median volume with 7 minimum periods",
+      "a score with any undefined component is undefined, never a partial sum",
+      "persistence requires the same side on the signal day and the day before",
+      "base weight is gross divided by the configured count, not by the number that persisted",
+      "gap exit at the open, then rebalance at the open, then intraday stop/take with stop winning ties",
+      "trailing best updates only on days without an exit",
+      "reentry cooldown and the daily and weekly kill switches",
+      "the StopVol variant must beat its base on both Sharpe and drawdown or it is rejected"
+    ],
+    "tests": "tests/test_gate_btc_delta_v12_engine.py",
+    "tool": "tools/gate_btc_delta_v12_engine.py"
+  },
   "prices": {
     "bar_calendar": "UTC_DAILY_COMPLETED_ONLY",
     "pipeline": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
-    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
-    "venue_preference_order": [
-      "BINANCE_FUTURES",
-      "BYBIT_LINEAR",
+    "required_venues": [
       "OKX_SWAP",
       "HYPERLIQUID"
+    ],
+    "venue_order_authority": "delta_v12_universe_expansion_contract.json amendment VENUE_PREFERENCE_REORDER_AND_REQUIRED_VENUE_SET (2026-08-26)",
+    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
+    "venue_preference_order": [
+      "OKX_SWAP",
+      "HYPERLIQUID",
+      "BINANCE_FUTURES",
+      "BYBIT_LINEAR"
     ]
   },
   "purpose": "Preregister the frozen premises of a parallel long/short engine over the Delta V12 TOP100 universe, before any implementation exists and before any TOP100 return has been observed. The frozen V11 engine and its running paper monitor are untouched by this contract.",
@@ -105,7 +152,7 @@
   },
   "selection_size_policy": "top_n and bottom_n are frozen at 10 and 10 on 2026-08-21. Any other selection size is a NEW preregistration carrying its own freeze date and its own clean-evidence start. A size must never be added or switched after observing the return of another size, and no size may be backdated to this freeze.",
   "selection_size_rationale_recorded_before_any_return": "V11 selects 5 long and 5 short from 20 names, half the universe. Holding 5+5 on 100 names would trade only the 10 percent extremes; holding the 50 percent proportion would mean 25+25 and push the book across the whole liquidity tail. 10+10 doubles V11 diversification while keeping the book out of the thinnest band by default. No TOP100 return existed when this was chosen; the engine was not implemented.",
-  "status": "PREREGISTERED_NOT_YET_IMPLEMENTED",
+  "status": "IMPLEMENTED_PROSPECTIVE_COLLECTION",
   "universe": {
     "other_strata_available": [
       30,
