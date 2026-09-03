@@ -1,0 +1,112 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_RESIDUAL_SOURCE_PREREG_BATCH_20260903_V1",
+  "issue": 111,
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "purpose": "Bounded parallel source qualification for unresolved V2A SOURCE_RECOVERY_CANDIDATE names using materially distinct official free/public spot-market sources.",
+  "authoritative_runtime": {
+    "daily_run_id": 33714746536,
+    "data_cutoff": "2026-09-02",
+    "attempted_symbols": 150,
+    "loaded_symbols": 94,
+    "failed_symbols": 56,
+    "download_failures_sha256": "5643cba10f40f0d7d445a1c9818ee56885fd5e698b56ce1d78d4d5468287ed3e",
+    "source_package_sha256": "98148696b12c276ea440113e5f96bbcba0372eeb0575602801feb50c4fd0e74a"
+  },
+  "residual_reconciliation": {
+    "unresolved_without_completed_alternate_source_track": [
+      "BCAP",
+      "YLDS",
+      "HASH",
+      "SOFID",
+      "FF",
+      "PIEVERSE",
+      "OHM",
+      "REAL",
+      "APEPE",
+      "TIBBIR",
+      "KOGE",
+      "AKE",
+      "CASHCAT",
+      "PONS"
+    ],
+    "batch_selected": ["FF", "AKE", "CASHCAT"],
+    "selection_reason": "Official provider surfaces currently expose exact named asset identity plus a public centralized spot market; ambiguous or unsupported residual names remain fail-closed and are not silently substituted."
+  },
+  "candidates": [
+    {
+      "symbol": "FF",
+      "coin_id": "falcon-finance-ff",
+      "name": "Falcon Finance",
+      "provider": "BINANCE",
+      "market": "SPOT",
+      "pair": "FFUSDT",
+      "official_identity_and_market_surface": "https://www.binance.com/en/trade/FF_USDT",
+      "official_public_api_surface": "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints",
+      "exact_identity_asserted": false,
+      "physical_history_asserted": false,
+      "historical_coverage_sufficiency_asserted": false
+    },
+    {
+      "symbol": "AKE",
+      "coin_id": "akedo",
+      "name": "Akedo",
+      "provider": "MEXC",
+      "market": "SPOT",
+      "pair": "AKEUSDT",
+      "official_identity_and_market_surface": "https://www.mexc.com/exchange/AKE_USDT",
+      "official_public_api_surface": "https://www.mexc.com/api-docs/spot-v3/market-data-endpoints",
+      "exact_identity_asserted": false,
+      "physical_history_asserted": false,
+      "historical_coverage_sufficiency_asserted": false
+    },
+    {
+      "symbol": "CASHCAT",
+      "coin_id": "cash-cat",
+      "name": "Cash Cat",
+      "provider": "MEXC",
+      "market": "SPOT",
+      "pair": "CASHCATUSDT",
+      "official_identity_and_market_surface": "https://www.mexc.com/announcements/article/first-in-market-17827791536751",
+      "official_public_api_surface": "https://www.mexc.com/api-docs/spot-v3/market-data-endpoints",
+      "exact_identity_asserted": false,
+      "physical_history_asserted": false,
+      "historical_coverage_sufficiency_asserted": false
+    }
+  ],
+  "qualification_requirements": [
+    "Each source must remain official, free/public, auditable and accessible without private credentials.",
+    "Exact asset identity must match the frozen V2A coin_id and symbol; ticker equality alone is insufficient.",
+    "Physical qualification must preserve raw response bytes and SHA-256 before normalization.",
+    "Provider, pair, endpoint, request parameters, retrieval timestamp, raw hash and parser/schema version must be recorded.",
+    "Timestamp semantics/timezone and deterministic schema mapping must be explicit.",
+    "Duplicate, missing-bucket, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed where exposed.",
+    "Observed gaps remain negative evidence and cannot be synthesized, stitched across sources or silently repaired.",
+    "Historical coverage/admissibility must be adjudicated under the already-frozen V2A contract without changing denominator, cutoff, methodology, clocks or economics.",
+    "Qualification cannot repair prior PIT snapshots or count as prospective scientific evidence.",
+    "A clean candidate may only be admitted by a separate read-only adjudication."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true,
+    "scientific_credit": false,
+    "prospective_evidence_credit": false,
+    "dataset_sealed": false,
+    "promotion_allowed": false
+  },
+  "master_effect_if_merged": {
+    "system_8": "RESIDUAL_SOURCE_QUALIFICATION_BATCH_PREREGISTERED_ONLY",
+    "system_9": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "systems_10_to_14": "UNCHANGED_DEPENDENCY_BOUND",
+    "system_15": "INDEPENDENT_UNCHANGED",
+    "system_16": "UNCHANGED_FUTURE_CONTROLLED",
+    "dataset_seal_issue_111": "BLOCKED"
+  }
+}
