@@ -73,6 +73,11 @@ def parse_payload(raw: bytes) -> list[dict]:
     return out
 
 
+def filter_rows_to_end(rows: list[dict], end_day: date) -> tuple[list[dict], int]:
+    accepted = [r for r in rows if date.fromisoformat(r["day"]) <= end_day]
+    return accepted, len(rows) - len(accepted)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--end", required=True)
@@ -85,9 +90,10 @@ def main() -> int:
 
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
+    requested_end_day = date.fromisoformat(args.end)
     end_ms = int(
         datetime.combine(
-            date.fromisoformat(args.end), datetime.max.time(), tzinfo=timezone.utc
+            requested_end_day, datetime.max.time(), tzinfo=timezone.utc
         ).timestamp()
         * 1000
     )
@@ -97,6 +103,7 @@ def main() -> int:
     status = "QUALIFICATION_CAPTURE_COMPLETE_WITHOUT_ADMISSION"
     error = None
     duplicate_rows = 0
+    boundary_rows_excluded = 0
     gaps: list[str] = []
     monotonic = False
     qa_pass = False
@@ -116,17 +123,21 @@ def main() -> int:
             digest = hashlib.sha256(raw).hexdigest()
             (out / f"RAW_{idx:03d}.json").write_bytes(raw)
             parsed = parse_payload(raw)
+            accepted, excluded = filter_rows_to_end(parsed, requested_end_day)
+            boundary_rows_excluded += excluded
             pages.append(
                 {
                     "page": idx,
                     "request": params,
                     "sha256": digest,
-                    "rows": len(parsed),
+                    "raw_rows": len(parsed),
+                    "accepted_rows": len(accepted),
+                    "boundary_rows_excluded": excluded,
                 }
             )
             if not parsed:
                 break
-            all_rows.extend(parsed)
+            all_rows.extend(accepted)
             oldest = min(r["timestamp_ms"] for r in parsed)
             if oldest in seen_oldest:
                 raise ValueError("pagination repeated oldest timestamp")
@@ -142,7 +153,7 @@ def main() -> int:
         rows = sorted(dedup.values(), key=lambda r: r["timestamp_ms"])
         duplicate_rows = len(all_rows) - len(rows)
         if not rows:
-            raise ValueError("no BSVUSDT historical candles returned")
+            raise ValueError("no in-window BSVUSDT historical candles returned")
 
         monotonic = all(
             rows[i]["timestamp_ms"] < rows[i + 1]["timestamp_ms"]
@@ -155,7 +166,12 @@ def main() -> int:
             if cur.isoformat() not in have:
                 gaps.append(cur.isoformat())
             cur += timedelta(days=1)
-        qa_pass = monotonic and duplicate_rows == 0 and not gaps
+        qa_pass = (
+            monotonic
+            and duplicate_rows == 0
+            and not gaps
+            and date.fromisoformat(rows[-1]["day"]) <= requested_end_day
+        )
     except Exception as exc:
         status = "FAIL_CLOSED_SOURCE_OR_PARSE_ERROR"
         error = str(exc)
@@ -204,6 +220,7 @@ def main() -> int:
         "earliest_day": rows[0]["day"] if rows else None,
         "latest_day": rows[-1]["day"] if rows else None,
         "duplicate_rows": duplicate_rows,
+        "boundary_rows_excluded": boundary_rows_excluded,
         "missing_days_within_returned_interval": gaps,
         "monotonic": monotonic,
         "qa_pass": qa_pass,
