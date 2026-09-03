@@ -1,0 +1,74 @@
+name: GATE BTC Factory WIN/WDO Coverage 2025-2026
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/b3_win_wdo_coverage_block.py'
+      - '.github/workflows/gate-btc-factory-win-wdo-coverage-2025-2026.yml'
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  win-wdo-coverage-2025-2026:
+    name: win-wdo-coverage-${{ matrix.block }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {block: '2025-q1', start: '2025-01-01', end: '2025-03-31', file: '2025_Q1.json'}
+          - {block: '2025-q2', start: '2025-04-01', end: '2025-06-30', file: '2025_Q2.json'}
+          - {block: '2025-q3', start: '2025-07-01', end: '2025-09-30', file: '2025_Q3.json'}
+          - {block: '2025-q4', start: '2025-10-01', end: '2025-12-31', file: '2025_Q4.json'}
+          - {block: '2026-q1', start: '2026-01-01', end: '2026-03-31', file: '2026_Q1.json'}
+          - {block: '2026-q2', start: '2026-04-01', end: '2026-06-30', file: '2026_Q2.json'}
+          - {block: '2026-q3-cutoff', start: '2026-07-01', end: '2026-09-02', file: '2026_Q3_TO_CUTOFF.json'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile incremental coverage qualifier
+        run: python -m py_compile tools/gate_btc_factory/b3_win_wdo_coverage_block.py
+      - name: Qualify official B3 PriceReport coverage block
+        run: python tools/gate_btc_factory/b3_win_wdo_coverage_block.py --start '${{ matrix.start }}' --end '${{ matrix.end }}' --out 'artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}'
+      - name: Assert DATA-only block boundary
+        env:
+          COVERAGE_FILE: artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}
+        run: |
+          python - <<'PY'
+          import json, os
+          x=json.load(open(os.environ['COVERAGE_FILE']))
+          assert x['schema']=='qrds.factory.b3_win_wdo_coverage_block.v1'
+          assert x['source_admission_pass'] is False
+          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
+          assert x['prospective_credit']==0 and x['scientific_credit']==0
+          s=x['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          assert x['block_contract_pass'] is True, x
+          print('WIN_WDO_2025_2026_DATA_ONLY_BOUNDARY=PASS')
+          PY
+      - name: Upload coverage evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-win-wdo-coverage-${{ matrix.block }}-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}
+          if-no-files-found: error
+          retention-days: 90
