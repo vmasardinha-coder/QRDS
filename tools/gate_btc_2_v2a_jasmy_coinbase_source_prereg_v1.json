@@ -1,0 +1,80 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_JASMY_COINBASE_SOURCE_PREREG_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "issue": 111,
+  "purpose": "Bounded free/public source-redundancy qualification for the existing JASMY SOURCE_RECOVERY_CANDIDATE recorded in Dataset Seal #111.",
+  "scientific_credit": false,
+  "prospective_evidence_credit": false,
+  "dataset_sealed": false,
+  "promotion_allowed": false,
+  "challenger_economics_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true,
+  "frozen_methodology": true,
+  "candidate": {
+    "coin_id": "jasmycoin",
+    "symbol": "JASMY",
+    "current_failure_class": "SOURCE_RECOVERY_CANDIDATE",
+    "candidate_source": {
+      "provider": "COINBASE_EXCHANGE",
+      "market": "SPOT",
+      "pair": "JASMY-USD",
+      "public_api": true,
+      "official_provider_identity_surface": "https://www.coinbase.com/price/jasmy",
+      "official_pair_identity_surface": "https://www.coinbase.com/converter/JASMY/USD",
+      "official_api_surface": "https://docs.cdp.coinbase.com/api-reference/exchange-api/rest-api/products/get-product-candles",
+      "official_product_surface": "https://docs.cdp.coinbase.com/api-reference/exchange-api/rest-api/products/get-single-product",
+      "endpoint_family": "Coinbase Exchange public GET /products/{product_id}/candles plus GET /products/{product_id}"
+    },
+    "pre_registration_evidence": {
+      "source_recovery_candidate_recorded_in_runtime": true,
+      "frozen_coin_id": "jasmycoin",
+      "official_provider_jasmy_identity_observed": true,
+      "official_provider_centralized_exchange_availability_observed": true,
+      "official_public_exchange_product_endpoint_observed": true,
+      "official_public_exchange_candle_endpoint_observed": true,
+      "historical_coverage_sufficiency_asserted": false,
+      "exact_asset_identity_asserted": false,
+      "pair_history_asserted": false,
+      "api_history_availability_asserted": false
+    }
+  },
+  "qualification_requirements": [
+    "Source must be official, free/public, auditable and legally accessible without private credentials.",
+    "Exact asset identity must match frozen V2A coin_id=jasmycoin and symbol=JASMY; ticker equality alone is insufficient.",
+    "Physical qualification must confirm that Coinbase Exchange exposes product JASMY-USD and that its identity is the frozen Jasmy asset rather than an unrelated similarly named token.",
+    "Raw response bytes must be preserved and SHA-256 hashed before normalization.",
+    "Provider, product, endpoint, request parameters, retrieval timestamp, raw hash and parser/schema version must be recorded.",
+    "Timestamp semantics/timezone and deterministic schema mapping must be explicit.",
+    "Duplicate, missing-bucket, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed where the source exposes those fields.",
+    "Any observed gaps remain evidence and cannot be silently synthesized.",
+    "Historical coverage and asset-lifetime sufficiency must be adjudicated under the already-frozen V2A rule without changing denominator, cutoff or methodology.",
+    "Any clean Coinbase candidate may only be admitted under a separate adjudication; qualification data cannot repair prior PIT snapshots or count as prospective evidence.",
+    "No methodology, denominator, threshold, cutoff, clocks or economics may change as part of source recovery.",
+    "Any identity/API/schema/continuity failure or insufficient history remains evidence and must not trigger silent substitution."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_PRODUCT_UNAVAILABLE",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ],
+  "master_effect_if_merged": {
+    "system_8_data_path": "JASMY_COINBASE_SOURCE_REDUNDANCY_PREREGISTERED_ONLY",
+    "system_9_microstructure": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED",
+    "system_15_lean_b3_factory": "INDEPENDENT_UNCHANGED"
+  }
+}
