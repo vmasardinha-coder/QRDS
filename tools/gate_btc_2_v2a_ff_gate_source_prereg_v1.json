@@ -1,0 +1,59 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_FF_GATE_SOURCE_PREREG_V1",
+  "issue": 111,
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "purpose": "Materially distinct source-redundancy candidate for FF/Falcon Finance after Binance public access failed closed with HTTP 451 in physical qualification #442.",
+  "candidate": {
+    "symbol": "FF",
+    "coin_id": "falcon-finance-ff",
+    "name": "Falcon Finance",
+    "provider": "GATE",
+    "market": "SPOT",
+    "pair": "FF_USDT",
+    "official_listing_surface": "https://www.gate.com/announcements/article/47399",
+    "official_trade_surface": "https://www.gate.com/trade/FF_USDT",
+    "official_api_surface": "https://www.gate.com/docs/developers/apiv4/en/#market-candlesticks",
+    "exact_identity_asserted": false,
+    "physical_history_asserted": false,
+    "historical_coverage_sufficiency_asserted": false
+  },
+  "prior_negative_evidence": {
+    "provider": "BINANCE",
+    "physical_pr": 442,
+    "head_sha": "1bfcf4e1930c6420ed164da4a60ed4f8329a5295",
+    "artifact_digest": "sha256:007a4e3fcaabd6043a06d88c744962ebdb4b52af2c6289ba4258f3afc1c58818",
+    "outcome": "FAIL_CLOSED_SOURCE_OR_PARSE_ERROR",
+    "error": "HTTP 451 after bounded retries",
+    "admitted_rows": 0
+  },
+  "qualification_requirements": [
+    "Confirm exact frozen FF/Falcon Finance identity; ticker equality alone is insufficient.",
+    "Use only official free/public Gate surfaces without private credentials.",
+    "Preserve raw pair/candle bytes and SHA-256 before normalization.",
+    "Record provider, pair, request parameters, retrieval timestamp, schema/time semantics and cutoff.",
+    "Enforce duplicate, gap, monotonic, OHLC and nonnegative-volume QA fail-closed.",
+    "Observed gaps or source limitations remain evidence and are never synthesized or stitched with Binance.",
+    "Qualification cannot repair prior PIT snapshots or earn prospective/scientific evidence credit.",
+    "Any clean result requires separate read-only adjudication before prospective-only source admission."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true,
+    "scientific_credit": false,
+    "prospective_evidence_credit": false,
+    "dataset_sealed": false
+  },
+  "master_effect_if_merged": {
+    "system_8": "FF_GATE_ALTERNATIVE_PREREGISTERED_ONLY",
+    "system_9": "UNCHANGED_COLLECT_MORE_FORWARD_EVIDENCE",
+    "dataset_seal_issue_111": "BLOCKED"
+  }
+}
