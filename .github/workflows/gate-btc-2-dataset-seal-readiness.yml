@@ -6,17 +6,21 @@ on:
     paths:
       - tools/gate_btc_2_challenger_foundation.py
       - tools/gate_btc_2_dataset_seal_readiness.py
+      - tools/gate_btc_2_prospective_dataset_epoch_cutover.py
+      - tools/gate_btc_2_prospective_dataset_epoch_prereg_2026_09_03.md
       - tools/gate_btc_2_item2_checkpoint4_decision_v1.json
       - tools/gate_btc_reporting_current_state.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_health_dimensions.py
       - tests/test_gate_btc_2_challenger_foundation.py
       - tests/test_gate_btc_2_dataset_seal_readiness.py
+      - tests/test_gate_btc_2_prospective_dataset_epoch_cutover.py
       - tests/test_gate_btc_2_item2_checkpoint4_decision.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
   schedule:
     # Daily collection starts at 00:15 UTC and has historically published its
-    # runtime pointer around 02:00 UTC. This read-only assessment follows it.
+    # runtime pointer around 02:00 UTC. This assessment follows it and reuses
+    # the same runtime evidence; no duplicate collector is created.
     - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
@@ -31,7 +35,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: gate-btc-2-dataset-seal-readiness-${{ github.ref }}
@@ -57,11 +61,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Compile readiness gate
+      - name: Compile readiness gates
         run: >-
           python -m py_compile
           tools/gate_btc_2_challenger_foundation.py
           tools/gate_btc_2_dataset_seal_readiness.py
+          tools/gate_btc_2_prospective_dataset_epoch_cutover.py
           tools/gate_btc_reporting_current_state.py
           tools/gate_btc_reporting_operational_overlay.py
 
@@ -70,6 +75,7 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_2_challenger_foundation.py
           tests/test_gate_btc_2_dataset_seal_readiness.py
+          tests/test_gate_btc_2_prospective_dataset_epoch_cutover.py
           tests/test_gate_btc_2_item2_checkpoint4_decision.py
 
   runtime-readiness-assessment:
@@ -80,7 +86,7 @@ jobs:
       - name: Checkout baseline tools
         uses: actions/checkout@v4
 
-      - name: Checkout read-only runtime evidence
+      - name: Checkout canonical runtime evidence
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -100,7 +106,7 @@ jobs:
             --runtime-root runtime_repo/runtime \
             --state artifacts/gate_btc_2/dataset_seal/reporting_current_state.json
 
-      - name: Assess runtime evidence without sealing
+      - name: Assess original historical readiness without sealing
         env:
           EXPECTED_CUTOFF: ${{ inputs.expected_cutoff }}
           MIN_D50_ECONOMIC: ${{ inputs.min_d50_economic || '0' }}
@@ -120,24 +126,64 @@ jobs:
           fi
           python tools/gate_btc_2_dataset_seal_readiness.py "${args[@]}"
 
-      - name: Verify assessment cannot self-promote
+      - name: Assess replacement epoch cutover gate
+        run: |
+          python tools/gate_btc_2_prospective_dataset_epoch_cutover.py \
+            --v2a-status runtime_repo/runtime/data_quality/v2a/STATUS.json \
+            --snapshots-dir runtime_repo/runtime/data_quality/v2a/snapshots \
+            --qualified-source-registry runtime_repo/runtime/data_quality/v2a/QUALIFIED_SOURCE_REGISTRY.json \
+            --output artifacts/gate_btc_2/dataset_seal/prospective_epoch_cutover.json
+
+      - name: Verify assessments cannot self-promote economics
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          payload = json.loads(Path(
+          historical = json.loads(Path(
               'artifacts/gate_btc_2/dataset_seal/readiness.json'
           ).read_text(encoding='utf-8'))
-          assert payload['assessment_kind'] == 'READINESS_ONLY_NOT_A_DATASET_SEAL'
-          assert payload['stage_3_dataset_sealed'] is False
-          assert payload['official_challenger_runs_allowed'] is False
-          assert payload['orders_generated'] == 0
-          assert payload['real_capital_used'] == 0
-          assert payload['promotion_allowed'] is False
-          print('GATE_BTC_2_DATASET_SEAL_READINESS=ASSESSMENT_ONLY')
+          cutover = json.loads(Path(
+              'artifacts/gate_btc_2/dataset_seal/prospective_epoch_cutover.json'
+          ).read_text(encoding='utf-8'))
+          assert historical['assessment_kind'] == 'READINESS_ONLY_NOT_A_DATASET_SEAL'
+          assert historical['stage_3_dataset_sealed'] is False
+          assert historical['official_challenger_runs_allowed'] is False
+          assert historical['orders_generated'] == 0
+          assert historical['real_capital_used'] == 0
+          assert historical['promotion_allowed'] is False
+          assert cutover['assessment_kind'] == 'CUTOVER_READINESS_ONLY_NO_ECONOMIC_CREDIT'
+          assert cutover['historical_credit'] == 0
+          assert cutover['prospective_credit_before_d0'] == 0
+          assert cutover['backfill_performed'] is False
+          assert cutover['counter_reset_performed'] is False
+          assert cutover['engine_feed'] is False
+          assert cutover['orders'] == 0
+          assert cutover['real_capital_brl'] == 0
+          assert cutover['promotion_allowed'] is False
+          print('GATE_BTC_2_DATASET_READINESS=FAIL_CLOSED')
           PY
 
-      - name: Upload read-only readiness evidence
+      - name: Materialize immutable D0 only on a passing native cutover gate
+        if: github.event_name != 'pull_request'
+        run: |
+          python tools/gate_btc_2_prospective_dataset_epoch_cutover.py \
+            --v2a-status runtime_repo/runtime/data_quality/v2a/STATUS.json \
+            --snapshots-dir runtime_repo/runtime/data_quality/v2a/snapshots \
+            --qualified-source-registry runtime_repo/runtime/data_quality/v2a/QUALIFIED_SOURCE_REGISTRY.json \
+            --output artifacts/gate_btc_2/dataset_seal/prospective_epoch_cutover.json \
+            --write-d0 runtime_repo/runtime/dataset_epochs/GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03/D0.json
+
+          if git -C runtime_repo status --porcelain -- runtime/dataset_epochs/GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03/D0.json | grep -q .; then
+            git -C runtime_repo config user.name "github-actions[bot]"
+            git -C runtime_repo config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C runtime_repo add runtime/dataset_epochs/GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03/D0.json
+            git -C runtime_repo commit -m "GATE BTC 2.0: freeze prospective Dataset Epoch D0"
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
+          else
+            echo "No D0 mutation: cutover remains waiting or D0 is already frozen."
+          fi
+
+      - name: Upload readiness and cutover evidence
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-2-dataset-seal-readiness-${{ github.run_id }}

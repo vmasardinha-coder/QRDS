@@ -1,6 +1,6 @@
 # Gate BTC 2.0 — Canonical 16-System Master Plan
 
-Status: `RECOVERED_AND_RECONCILED_2026_08_31`
+Status: `RECONCILED_2026_09_03_DATASET_EPOCH`
 
 This document restores the original Gate BTC 2.0 technology roadmap without restarting or redesigning the program. The 16 numbered systems remain the canonical roadmap. The Research/Strategy Factory, Evidence Factory and Collector Supervisor are permanent cross-cutting layers; they are not a phase 17 and do not replace any numbered system.
 
@@ -21,7 +21,8 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 
 - Selector Alpha/QOS incremental-alpha hypothesis is closed/refuted under its frozen program. This removes scientific privilege from that selector; it does not invalidate Gate BTC 2.0 infrastructure.
 - Terminal PIT reconstruction recovered 9819/10254 expected observations (~95.76%); unresolved PIT/survivorship gaps remain evidence, not permission to weaken gates.
-- Official Gate BTC 2.0 dataset seal/readiness remains blocked until its independent readiness contract passes.
+- The original historical Gate BTC 2.0 Dataset Seal is terminal `UNSEALED_FAILED / FROZEN_READINESS_CONTRACT_UNSATISFIABLE_UNDER_NO_BACKFILL` and remains immutable negative evidence.
+- A separate forward-only replacement Dataset Epoch was explicitly authorized and preregistered on 2026-09-03. Its state is `AUTHORIZED_PREREGISTERED_WAITING_CUTOVER_GATE`; scientific D0 has not started and may begin only on the first complete causally admissible post-preregistration V2A snapshot under qualified exact source contracts. Pre-D0 collection is health/rehearsal only and earns zero epoch credit.
 - Stage 9 implementation/builder/workflow existence is not prospective evidence. Only authorized forward-only observations can earn prospective credit. If evidence is valid but insufficient, remain `COLLECT_MORE`. Authorized forward-only captures have now earned prospective credit, but evidence remains insufficient for Stage 9 completion and the state is `COLLECT_MORE` until the frozen evidence target is satisfied.
 - Strategy Factory discovery continues independently from Evidence Factory adjudication.
 
@@ -36,7 +37,7 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 | 5 | Jesse | Crypto strategy lifecycle/backtest/execution reference | strategy lifecycle, costs, execution semantics and research boundaries internalized | PREREG→validation→economics→survival lifecycle | FUNCTION_ABSORBED_PARTIAL | Independent parity where Jesse semantics add evidence | No material uncovered lifecycle/execution gap or explicit documented non-adoption |
 | 6 | PyBroker | Walk-forward/model/portfolio research reference | walk-forward, selection/replay and frozen research contracts | Automated hypothesis generation/elimination on top | FUNCTIONAL_PARTIAL | Stronger independent runner adapters | Frozen candidate reproducible by independent authority |
 | 7 | Freqtrade | Crypto backtest/paper/strategy lifecycle reference | shadow/paper semantics, costs, collectors, engine blocked | Survivors can receive prospective clocks without auto-trading | ADVANCED | Complete prospective evidence for active lines | Survivor advances only with valid collector and real forward clock |
-| 8 | Cryptofeed | Streaming/multiexchange market-data reference | multifonte source contracts, provenance/source identity | Factory/Collector Supervisor declare and monitor required sources | PARTIAL | Mature streaming/microstructure forward path | Authorized feeds prove provenance, freshness and gap visibility |
+| 8 | Cryptofeed | Streaming/multiexchange market-data reference | multifonte source contracts, provenance/source identity plus replacement Dataset Epoch preregistration | Factory/Collector Supervisor declare and monitor required sources | PROSPECTIVE_EPOCH_WAITING_CUTOVER_GATE | Produce the first complete causally admissible post-preregistration V2A cutover snapshot using qualified exact source contracts; until then D0 remains unset and pre-D0 captures earn zero epoch credit | Authorized feeds prove provenance, freshness and gap visibility and the replacement epoch starts only on a complete fail-closed D0 snapshot |
 | 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled forward capture/admission/append-only ledger | Evidence Factory credits only admitted physical forward evidence | COLLECT_MORE_FORWARD_EVIDENCE | Accumulate sufficient admitted forward N under the frozen Stage 9 evidence contract | Physical forward captures pass hash/provenance/admission and the frozen evidence target is satisfied |
 | 10 | NautilusTrader | Institutional event-driven engine/reference | event/shadow/state boundaries partly internalized | Receives frozen candidates only; no execution authority | PARTIAL | Deeper event/cross-engine replication | Independent event replay/state parity demonstrated |
 | 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation for microstructure evidence | Can be emitted as required evidence; never synthesized | IN_BUILD | Admissible forward LOB data and replay criteria | Causal book dataset + execution stress/replay passes frozen contract |
@@ -78,7 +79,9 @@ System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be pau
 
 ### Immediate bounded checkpoint
 
-System 9 has completed the first authorized forward-only capture/admission checkpoint and now remains in `COLLECT_MORE`. The next admissible System 9 action is continued scheduled forward collection and admission until the already-frozen evidence target is met; implementation existence, scheduler existence, or historical recovery earn zero prospective credit. In parallel, the broader Gate BTC 2.0 dataset seal/readiness blocker remains authoritative and is not resolved by Stage 9 alone. No economics, engine feed, orders or capital are unlocked by the current Stage 9 state.
+System 8 is now the primary unresolved dependency in the canonical chain. The original historical Dataset Seal is permanently failed under its frozen no-backfill contract; the authorized replacement Dataset Epoch is separately preregistered and remains `AUTHORIZED_PREREGISTERED_WAITING_CUTOVER_GATE`. The next admissible System 8 action is to use existing authorized forward collection/source-qualification plumbing to obtain the first complete causally admissible post-preregistration V2A snapshot under qualified exact source contracts. Only that event may set scientific D0 and freeze the epoch source/universe contract. Pre-D0 health/rehearsal captures earn zero epoch credit, and no duplicate collector/workflow may be created merely to manufacture D0.
+
+In parallel, System 9 remains `COLLECT_MORE_FORWARD_EVIDENCE`: continue scheduled forward capture/admission until its already-frozen evidence target is met. System 9 implementation, scheduler existence, or historical recovery earn zero prospective credit and do not resolve System 8. No economics, engine feed, orders or capital are unlocked by either current state.
 
 ## Governance rule
 
