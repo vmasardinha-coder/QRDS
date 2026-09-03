@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import io
 import json
+import urllib.error
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -27,9 +28,8 @@ SAFETY = {
 DATES = ["2020-01-02", "2021-01-04", "2022-01-03", "2023-01-02"]
 
 
-def ddmmyy(iso: str) -> str:
-    d = datetime.strptime(iso, "%Y-%m-%d")
-    return d.strftime("%d%m%y")
+def yymmdd(iso: str) -> str:
+    return datetime.strptime(iso, "%Y-%m-%d").strftime("%y%m%d")
 
 
 def fetch(url: str) -> tuple[int, dict, bytes]:
@@ -70,7 +70,7 @@ def main() -> int:
     args = ap.parse_args()
     rows = []
     for iso in DATES:
-        url = f"https://www.b3.com.br/pesquisapregao/download?filelist=PRA{ddmmyy(iso)}.zip"
+        url = f"https://www.b3.com.br/pesquisapregao/download?filelist=PR{yymmdd(iso)}.zip"
         status, headers, raw = fetch(url)
         z = inspect_zip(raw)
         rows.append({
@@ -90,7 +90,7 @@ def main() -> int:
         "frontier": "WIN_UNIVARIATE_WDO_UNIVARIATE",
         "stage": "DATA_SOURCE_QUALIFICATION_PROBE",
         "official_surface": "B3 Pesquisa por pregao / BVBG.086.01 PriceReport",
-        "candidate_contract": "https://www.b3.com.br/pesquisapregao/download?filelist=PRA{DDMMYY}.zip",
+        "candidate_contract": "https://www.b3.com.br/pesquisapregao/download?filelist=PR{YYMMDD}.zip",
         "sentinels": rows,
         "sentinel_pass_count": len(qualified),
         "source_admission_pass": len(qualified) == len(rows),
