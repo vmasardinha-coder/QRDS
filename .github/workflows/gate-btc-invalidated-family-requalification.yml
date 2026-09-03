@@ -10,16 +10,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'tools/gate_btc_factory/finalize_invalidated_gap.py'
-      - 'tools/gate_btc_factory/INVALIDATED_DEFINITIVE_GAP_POLICY.v1.json'
+      - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
+      - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
+      - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
       - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
   pull_request:
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
-      - 'tools/gate_btc_factory/finalize_invalidated_gap.py'
       - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
       - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
-      - 'tools/gate_btc_factory/INVALIDATED_DEFINITIVE_GAP_POLICY.v1.json'
       - 'tests/test_gate_btc_invalidated_family_requalification_runner.py'
       - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
 
@@ -55,7 +54,6 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest numpy pandas
       - run: python -m pytest -q tests/test_gate_btc_invalidated_family_requalification_runner.py
-      - run: python -m py_compile tools/gate_btc_factory/finalize_invalidated_gap.py
 
   requalify-all:
     if: >-
@@ -89,7 +87,6 @@ jobs:
         run: |
           set -euo pipefail
           test -f main_repo/tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json
-          test -f main_repo/tools/gate_btc_factory/INVALIDATED_DEFINITIVE_GAP_POLICY.v1.json
           test -f runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
           test -d runtime_repo/runtime/autonomous_science/results
           python - <<'PY'
@@ -155,18 +152,6 @@ jobs:
             --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
             --output "$OUT"
 
-      - name: Close exhausted source gap without erasing future reactivation
-        run: |
-          set -euo pipefail
-          SEARCH='runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json'
-          QUEUE='runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
-          if [ -f "$SEARCH" ]; then
-            python main_repo/tools/gate_btc_factory/finalize_invalidated_gap.py \
-              --queue "$QUEUE" \
-              --search "$SEARCH" \
-              --policy main_repo/tools/gate_btc_factory/INVALIDATED_DEFINITIVE_GAP_POLICY.v1.json
-          fi
-
       - name: Validate no historical mutation and no live trading
         run: |
           set -euo pipefail
@@ -183,9 +168,6 @@ jobs:
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
           assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
           assert s['h1_economics_read'] is False
-          if q.get('legacy_passive_backlog_closed') is True:
-              assert q.get('waiting_source_count') == 0
-              assert q.get('definitive_external_data_gap_count') == q['affected_family_count']
           print('REQUALIFICATION_SAFETY=PASS')
           PY
 
