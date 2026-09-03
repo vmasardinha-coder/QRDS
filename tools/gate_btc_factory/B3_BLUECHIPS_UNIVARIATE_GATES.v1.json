@@ -1,0 +1,87 @@
+{
+  "schema": "qrds.factory.b3_bluechips_univariate_gates.v1",
+  "stage": "PREREGISTER_GATES",
+  "frontier": "B3_BLUECHIPS_UNIVARIATE",
+  "family_prereg": "tools/gate_btc_factory/B3_BLUECHIPS_UNIVARIATE_PREREG.v1.json",
+  "economics_read_before_gate_freeze": false,
+  "metric_semantics": {
+    "daily_return_calendar": "all B3 sessions in the evaluation window; zero return on sessions with no active family position",
+    "portfolio_return": "equal-notional mean of active instrument signal returns on the execution session",
+    "primary_cost_bps_round_trip": 30,
+    "robustness_cost_bps_round_trip": [20,30,40],
+    "annualization_sessions": 252,
+    "max_drawdown": "compounded daily equity peak-to-trough",
+    "month_concentration": "largest positive calendar-month PnL divided by sum of positive calendar-month PnL; 1.0 if no positive month",
+    "execution_window_assignment": "trade belongs to the window of its execution date",
+    "t_plus_1": "next observed B3 trading session, not next calendar day",
+    "eligibility_lookback": "previous 60 B3 sessions excluding feature day t; at least 45 own observations",
+    "security_class_interpretation": "security_specification first whitespace-delimited token must be exactly ON, PN or UNT; this is a schema clarification only and not an economic change",
+    "volume_shock_history": "median traded value of the prior 20 observations that were themselves eligible under the frozen liquidity rule",
+    "delayed_execution_robustness": "same frozen signal from t executed at t+2 open and exited t+2 close; no signal recalculation and no hold change"
+  },
+  "discovery_gate": {
+    "window": ["2022-01-01","2024-12-31"],
+    "minimum_active_days": 200,
+    "minimum_instrument_positions": 1000,
+    "primary_net_mean_daily_gt": 0.0,
+    "primary_annualized_sharpe_gte": 0.50,
+    "minimum_positive_calendar_years": 2,
+    "max_drawdown_lte": 0.25,
+    "month_concentration_lte": 0.50
+  },
+  "bias_causality_qa": {
+    "own_market_only": true,
+    "feature_day_completed_before_decision": true,
+    "eligibility_uses_prior_sessions_only": true,
+    "volume_shock_uses_prior_eligible_observations_only": true,
+    "outcome_same_day_open_to_close_only": true,
+    "current_constituent_membership_forbidden": true,
+    "cross_asset_inputs_forbidden": true,
+    "frozen_source_hash_match_required": true,
+    "duplicate_reduced_identity_date_allowed": false
+  },
+  "robustness_gate": {
+    "cost_40bps_net_mean_daily_gt": 0.0,
+    "cost_40bps_annualized_sharpe_gte": 0.25,
+    "delayed_t_plus_2_primary_net_mean_daily_gt": 0.0,
+    "delayed_t_plus_2_primary_annualized_sharpe_gte": 0.0,
+    "delayed_t_plus_2_minimum_active_days": 150,
+    "bootstrap": {
+      "method": "moving_block_daily_returns",
+      "block_sessions": 5,
+      "resamples": 1000,
+      "seed": 20260903,
+      "reported_not_selection_gate": true
+    }
+  },
+  "independent_replication_gate": {
+    "window": ["2020-01-01","2021-12-31"],
+    "evaluated_only_for_discovery_and_robustness_passers": true,
+    "minimum_active_days": 120,
+    "minimum_instrument_positions": 500,
+    "primary_net_mean_daily_gt": 0.0,
+    "primary_annualized_sharpe_gte": 0.25,
+    "minimum_positive_calendar_years": 1,
+    "max_drawdown_lte": 0.30,
+    "month_concentration_lte": 0.60
+  },
+  "survivor_policy": {
+    "replicated_survivor_requires_all_gates": true,
+    "prospective_candidate_cap": 2,
+    "if_more_than_two_replicated_survivors_rank_by": "descending min(discovery_sharpe_40bps, delayed_t_plus_2_sharpe_30bps, replication_sharpe_30bps), tie family_id ascending",
+    "no_result_guided_rule_change": true,
+    "no_result_guided_threshold_change": true,
+    "null_is_valid": true
+  },
+  "mortality": ["NO_TRADES","DATA_GAP","SOURCE_QA_FAIL","SCIENTIFIC_REJECTION"],
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "fail_closed": true
+}
