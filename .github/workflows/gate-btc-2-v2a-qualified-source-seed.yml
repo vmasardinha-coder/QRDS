@@ -27,7 +27,7 @@ jobs:
           import json
           d=json.load(open('tools/gate_btc_2_v2a_qualified_source_seed_v1.json'))
           assert d['status']=='PARTIAL_SEED_NOT_D0_REGISTRY'
-          assert len(d['entries'])==18
+          assert len(d['entries'])==23
           c=d['credit_boundary']
           assert c['epoch_credit']==0 and c['d0_credit']==0 and c['historical_credit']==0
           assert c['complete_registry_claimed'] is False
