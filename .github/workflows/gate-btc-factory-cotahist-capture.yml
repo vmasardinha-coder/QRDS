@@ -11,6 +11,7 @@ on:
       - 'tools/gate_btc_factory/b3_bluechips_univariate_execute.py'
       - 'tools/gate_btc_factory/b3_win_wdo_official_source_probe.py'
       - 'tools/gate_btc_factory/b3_win_wdo_coverage_block.py'
+      - 'tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py'
       - '.github/workflows/gate-btc-factory-cotahist-capture.yml'
   workflow_dispatch:
 
@@ -199,5 +200,62 @@ jobs:
         with:
           name: b3-win-wdo-coverage-${{ matrix.block }}-${{ github.run_id }}
           path: artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}
+          if-no-files-found: error
+          retention-days: 90
+
+  win-wdo-calendar-crosscheck:
+    needs: [physical-capture-qa, win-wdo-coverage-2020-2024]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile calendar crosscheck
+        run: python -m py_compile tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py
+      - name: Download quarter coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: b3-win-wdo-coverage-*-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_coverage
+          merge-multiple: true
+      - name: Download official COTAHIST capture
+        uses: actions/download-artifact@v4
+        with:
+          name: b3-cotahist-physical-capture-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/cotahist_capture
+      - name: Crosscheck PriceReport weekday gaps against official B3 sessions
+        run: |
+          python tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py \
+            --coverage-dir artifacts/gate_btc/factory/win_wdo_coverage \
+            --cotahist-dir artifacts/gate_btc/factory/cotahist_capture \
+            --out artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json
+      - name: Assert calendar QA and research-only boundary
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json'))
+          assert x['schema']=='qrds.factory.b3_win_wdo_calendar_crosscheck.v1'
+          assert x['quarter_count']==20
+          assert x['calendar_crosscheck_pass'] is True, x
+          assert x['inconsistent_price_report_gaps_on_cotahist_sessions']==[]
+          assert x['published_price_report_dates_not_in_cotahist']==[]
+          assert x['source_admission_pass'] is False
+          assert x['source_admission_blocker']=='IDENTITY_DEDUPE_PUBLICATION_TIMING_AND_PIT_QA_NOT_YET_FROZEN'
+          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
+          assert x['prospective_credit']==0 and x['scientific_credit']==0
+          s=x['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          print('WIN_WDO_CALENDAR_CROSSCHECK=PASS')
+          PY
+      - name: Upload calendar crosscheck evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-win-wdo-calendar-crosscheck-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json
           if-no-files-found: error
           retention-days: 90
