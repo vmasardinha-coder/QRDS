@@ -1,0 +1,44 @@
+name: GATE BTC 2 V2A Residual Second Source Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_residual_second_source_qualification.py
+      - artifacts/gate_btc_2/v2a_residual_second_source_prereg_20260903.json
+      - .github/workflows/gate-btc-2-v2a-residual-second-source-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-second-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_residual_second_source_qualification.py
+      - name: Physically qualify preregistered second-source routes
+        run: python tools/gate_btc_2_v2a_residual_second_source_qualification.py --end 2026-09-02 --output artifacts/gate_btc_2/residual_second_source_physical
+      - name: Assert zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/gate_btc_2/residual_second_source_physical/SUMMARY.json').read_text())
+          assert x['status']=='PHYSICAL_QUALIFICATION_BATCH_COMPLETE'
+          assert {r['symbol'] for r in x['results']}=={'KOGE','BCAP','SOFID'}
+          assert x['research_only'] and x['shadow_only'] and x['not_approved'] and x['fail_closed']
+          assert x['engine_feed'] is False and x['orders']==0 and x['real_capital_brl']==0
+          assert x['no_retune'] and x['no_backfill'] and x['no_counter_reset'] and x['no_silent_source_substitution']
+          assert x['qualification_only'] and x['source_admitted'] is False
+          assert x['scientific_credit'] is False and x['prospective_credit'] is False and x['d0_credit']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-v2a-residual-second-source-${{ github.run_id }}
+          path: artifacts/gate_btc_2/residual_second_source_physical
