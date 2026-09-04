@@ -1,0 +1,96 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_TERMINAL_SOURCE_EXHAUSTION_BLOCKER_V1",
+  "date": "2026-09-04",
+  "system": 8,
+  "status": "FAIL_CLOSED_TERMINAL_SOURCE_EXHAUSTION_UNDER_FROZEN_CONTRACT",
+  "master_plan_status_before": "PROSPECTIVE_EPOCH_WAITING_CUTOVER_GATE",
+  "master_plan_requirement": "Replacement Dataset Epoch may start only on the first complete causally admissible post-preregistration V2A snapshot under qualified exact source contracts.",
+  "residual_assets": {
+    "SOFID": {
+      "coin_id": "sofiusd",
+      "routes_exhausted": [
+        {
+          "provider": "BULLISH",
+          "market": "SOFID/USDC",
+          "result": "FAIL_CLOSED_FULL_CORPUS_QA",
+          "reason": "Exact market identity and physical trades were proven, but frozen continuity failed because 2026-08-29 had no trade and therefore no daily bucket."
+        },
+        {
+          "provider": "KRAKEN",
+          "result": "FAIL_CLOSED_NO_PHYSICAL_OHLC",
+          "reason": "Public OHLC returned only zero sentinel / non-physical data for the preregistered exact route."
+        },
+        {
+          "provider": "GECKOTERMINAL_ETHEREUM_EXACT_CONTRACT",
+          "result": "FAIL_CLOSED_NO_EXACT_POOL",
+          "reason": "No exact public pool satisfied the frozen source contract."
+        },
+        {
+          "provider": "GECKOTERMINAL_SOLANA_EXACT_MINT",
+          "result": "FAIL_CLOSED_NO_EXACT_POOL",
+          "reason": "Exact Solana mint qualification produced no exact public pool."
+        }
+      ],
+      "source_exhaustion": true
+    },
+    "BCAP": {
+      "coin_id": "blockchain-capital",
+      "routes_exhausted": [
+        {
+          "provider": "PUBLIC_DEX_EXACT_CONTRACT_DISCOVERY",
+          "result": "FAIL_CLOSED_NO_EXACT_PUBLIC_POOL",
+          "reason": "Exact-token public DEX route did not establish an admissible pool."
+        },
+        {
+          "provider": "REDSTONE",
+          "result": "SEMANTICALLY_INCOMPATIBLE",
+          "reason": "BCAP feed reflects valuation/NAV/oracle semantics rather than spot-market execution OHLCV."
+        },
+        {
+          "provider": "SECURITIZE_MARKETS_ATS",
+          "market": "BCAP/USDC",
+          "result": "FAIL_CLOSED_NO_PUBLIC_AUDITABLE_EXECUTION_DATA",
+          "reason": "Exact regulated secondary venue exists, but no free/public/auditable ATS execution-history endpoint or trade tape is exposed; issuer/investor APIs are authenticated and ordinary transfers/NAV are not reinterpreted as trades."
+        }
+      ],
+      "source_exhaustion": true
+    }
+  },
+  "canonical_rule_search": {
+    "structural_unobservable_waiver_found": false,
+    "silent_exclusion_rule_found": false,
+    "denominator_reduction_rule_found": false,
+    "partial_complete_d0_rule_found": false,
+    "conclusion": "No existing canonical rule was found that permits declaring a complete D0 snapshot while silently excluding source-exhausted assets or reducing the frozen completeness requirement."
+  },
+  "d0_adjudication": {
+    "d0_can_start_now": false,
+    "reason": "The frozen System 8 contract requires a complete snapshot under qualified exact source contracts, while SOFID and BCAP have no currently admissible exact public/auditable source.",
+    "manufactured_150_150_forbidden": true,
+    "historical_or_synthetic_repair_forbidden": true
+  },
+  "next_allowed_states": [
+    "WAIT_FOR_MATERIALLY_NEW_PUBLIC_AUDITABLE_EXACT_SOURCE",
+    "EXPLICIT_EX_ANTE_METHODOLOGY_OR_UNIVERSE_REVISION_BEFORE_ANY_NEW_D0_ATTEMPT"
+  ],
+  "human_decision_needed": true,
+  "human_decision_scope": "Only if the program chooses not to wait for materially new exact sources: explicitly preregister a result-independent rule governing structurally unobservable/source-exhausted assets and the frozen D0 completeness denominator before any new D0 attempt. No silent exclusion, retrospective denominator change or source substitution is authorized.",
+  "source_admitted": false,
+  "complete_registry_claimed": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "collector_override_activation_allowed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
