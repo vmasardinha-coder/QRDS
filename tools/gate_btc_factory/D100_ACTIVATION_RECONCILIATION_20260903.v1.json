@@ -1,0 +1,62 @@
+{
+  "schema": "gate_btc.factory.d100_activation_reconciliation.v1",
+  "effective_date": "2026-09-03",
+  "status": "BLOCKED_FROZEN_SPEC_NOT_RECOVERED",
+  "purpose": "Reconcile the 2026-09-01 D100 activation authorization with the later canonical 2026-09-02 fail-closed preregistration gate without inventing scientific specification after activation was requested.",
+  "authority_evidence": {
+    "issue_358": {
+      "title": "Activate D100 after D50 30/30 gate PASS",
+      "created_at": "2026-09-01T11:16:13Z",
+      "asserted_state": "D100_UNIVERSE_EXPANSION_V1 | FROZEN | NOT_STARTED | FROZEN_DORMANT",
+      "requested_action": "activate already-defined D100 at next admissible prospective bar"
+    },
+    "september_activation_artifact": {
+      "path": "tools/gate_btc_factory/SEPTEMBER_ACTIVATION_20260902.v1.json",
+      "effective_date": "2026-09-02",
+      "activation_rule": "ACTIVATE_AUTOMATICALLY_WHEN_ALL_PREREQUISITES_ARE_TRUE; NEVER INFER MISSING SCIENTIFIC SPECIFICATION",
+      "true_prerequisites": [
+        "D50_DATA_QUALIFICATION_7_OF_7_PASS",
+        "D50_FROZEN_HISTORY_PRESERVED",
+        "NO_BACKFILL_NO_RETUNE_NO_COUNTER_RESET"
+      ],
+      "false_prerequisites": [
+        "D100_UNIVERSE_MEMBERSHIP_SEALED_BEFORE_FIRST_SCORED_OBSERVATION",
+        "D100_SOURCE_BINDING_SEALED_BEFORE_FIRST_SCORED_OBSERVATION",
+        "D100_LIQUIDITY_AND_DATA_COVERAGE_QA_PASS",
+        "D100_COST_AND_FUNDING_FIELDS_DEFINED_OR_EXPLICITLY_NOT_APPLICABLE",
+        "D100_POSITION_LIMITS_AND_MISSING_DATA_POLICY_FROZEN",
+        "D50_VS_D100_COMPARISON_PROTOCOL_FROZEN"
+      ]
+    }
+  },
+  "recovery_audit": {
+    "default_branch_code_search_for_D100_UNIVERSE_EXPANSION_V1": "NO_RESULT",
+    "default_branch_code_search_for_FROZEN_DORMANT": "NO_RESULT",
+    "runtime_branch_tree_search_for_d100": "NO_RECOVERED_FROZEN_CONTRACT",
+    "issue_358_comments": 0,
+    "conclusion": "The activation authorization is real, but the asserted already-frozen D100 scientific contract could not be recovered from repository/runtime governance surfaces. The later canonical activation artifact explicitly prohibits inferring the missing six specifications."
+  },
+  "decision": {
+    "d100_status": "PREREGISTERED_ACTIVATION_GATE_BLOCKED",
+    "live_prospective": false,
+    "activation_allowed_now": false,
+    "reason": "Activating now would require inventing or late-freezing one or more of six scientific specifications after activation authorization, which would violate NO_RETUNE/fail-closed governance.",
+    "counter": "NOT_STARTED",
+    "backfill_credit": 0,
+    "counter_reconstruction_allowed": false,
+    "economics_locked": true,
+    "resolution_required": "Recover an immutable pre-first-observation D100 contract that supplies all six missing definitions. If such an artifact cannot be recovered, D100 must remain blocked rather than be silently redesigned."
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
