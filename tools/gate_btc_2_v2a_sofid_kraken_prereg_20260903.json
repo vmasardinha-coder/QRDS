@@ -1,0 +1,72 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOFID_KRAKEN_PREREG_20260903_V1",
+  "issue": 455,
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "system": 8,
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "purpose": "Bounded prospective exact-source exhaustion for frozen V2A SOFID / sofiusd after Bullish exact-market identity passed but frozen missing-daily-bucket QA failed on 2026-08-29.",
+  "prior_candidate_evidence": {
+    "provider": "BULLISH",
+    "pair": "SOFID/USDC",
+    "exact_market_identity_passed": true,
+    "physical_trades_observed": 159,
+    "physical_window_utc": "2026-08-27/2026-09-02",
+    "negative_evidence": "MISSING_DAILY_BUCKET_2026-08-29",
+    "source_admitted": false
+  },
+  "candidate": {
+    "symbol": "SOFID",
+    "coin_id": "sofiusd",
+    "name": "SoFiUSD",
+    "provider": "KRAKEN",
+    "market": "SPOT",
+    "pair": "DISCOVER_FROM_OFFICIAL_ASSETPAIRS_BEFORE_QUALIFICATION",
+    "official_asset_surface": "https://www.kraken.com/prices/sofiusd",
+    "official_public_api_base": "https://api.kraken.com/0/public",
+    "official_pair_discovery_endpoint": "/AssetPairs",
+    "official_asset_discovery_endpoint": "/Assets",
+    "official_ohlc_endpoint": "/OHLC",
+    "exact_identity_asserted": false,
+    "physical_history_asserted": false,
+    "historical_coverage_sufficiency_asserted": false,
+    "prospective_cutover_admissibility_asserted": false
+  },
+  "qualification_requirements": [
+    "The Kraken source must remain official, public, auditable and accessible for market-data qualification without private credentials.",
+    "Exact Kraken asset and market identity must match frozen V2A coin_id=sofiusd and symbol=SOFID; a commercial price page or ticker equality alone is insufficient.",
+    "The exact spot pair must be discovered from the official Kraken Assets/AssetPairs public API before any historical request is treated as qualification evidence.",
+    "Physical qualification must preserve raw response bytes and SHA-256 before normalization.",
+    "Provider, exact pair, endpoint, request parameters, retrieval timestamp, raw hash and parser/schema version must be recorded.",
+    "Timestamp semantics/timezone and deterministic schema mapping must be explicit.",
+    "Duplicate, missing-bucket, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed where exposed.",
+    "Observed gaps remain negative evidence and cannot be synthesized, stitched across sources or silently repaired.",
+    "Qualification is prospective-source readiness only and earns zero D0, epoch, historical or scientific credit.",
+    "A clean physical qualification requires a separate read-only adjudication before inclusion in any exact-source registry or cutover assessment."
+  ],
+  "credit_boundary": {
+    "epoch_credit": 0,
+    "d0_credit": 0,
+    "historical_credit": 0,
+    "scientific_credit": 0,
+    "source_admitted": false,
+    "collector_override_activation_allowed": false,
+    "complete_registry_claimed": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  },
+  "master_effect_if_merged": {
+    "system_8": "SOFID_KRAKEN_SOURCE_QUALIFICATION_PREREGISTERED_ONLY",
+    "scientific_d0": "UNSET"
+  }
+}
