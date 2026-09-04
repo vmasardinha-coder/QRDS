@@ -1,0 +1,48 @@
+name: GATE BTC 2 V2A BCAP RedStone Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_bcap_redstone_qualify.py
+      - artifacts/gate_btc_2/v2a_bcap_redstone_prereg_20260903.json
+      - .github/workflows/gate-btc-2-v2a-bcap-redstone-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-bcap-redstone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_bcap_redstone_qualify.py
+      - name: Physically qualify preregistered BCAP RedStone route
+        run: python tools/gate_btc_2_v2a_bcap_redstone_qualify.py --output-dir artifacts/gate_btc_2/bcap_redstone_qualification
+      - name: Assert qualification-only safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/gate_btc_2/bcap_redstone_qualification/SUMMARY.json').read_text())
+          assert p['qualification_only'] is True
+          assert p['source_admitted'] is False
+          assert p['historical_credit'] == 0
+          assert p['scientific_credit'] is False
+          assert p['prospective_credit'] is False
+          assert p['d0_credit'] == 0
+          assert p['research_only'] is True and p['shadow_only'] is True and p['not_approved'] is True
+          assert p['engine_feed'] is False and p['orders'] == 0 and p['real_capital_brl'] == 0
+          assert p['no_retune'] is True and p['no_backfill'] is True
+          assert p['no_counter_reset'] is True and p['no_silent_source_substitution'] is True and p['fail_closed'] is True
+          print('BCAP_REDSTONE_QUALIFICATION_BOUNDARY=PASS')
+          print('SCIENTIFIC_RESULT='+p['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-v2a-bcap-redstone-${{ github.run_id }}
+          path: artifacts/gate_btc_2/bcap_redstone_qualification/
