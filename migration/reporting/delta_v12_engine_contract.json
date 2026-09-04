@@ -23,6 +23,22 @@
         "holding an asset the funding feed does not cover now fails closed"
       ],
       "what_did_not_change": "No selection rule, risk parameter, cost band, evidence threshold or selection size. The daily aggregation rule is V11's, adopted unchanged."
+    },
+    {
+      "amended_on": "2026-09-03",
+      "amendment": "UNIVERSE_ROTATES_DAILY_WITH_APPEND_ONLY_MEMBERSHIP",
+      "anchor_state_when_amended": "NULL_NO_LEDGER_NO_OBSERVATION",
+      "methodology_changes": 0,
+      "what_changed": [
+        "membership is read per day, recorded append-only in the ledger, and never re-derived",
+        "a traded day without recorded membership fails closed",
+        "pinned assets stay priced after leaving the universe so held positions can be marked",
+        "a pin is no longer dropped when its asset cannot be priced on a given day",
+        "a new entrant no venue serves is excluded and recorded instead of halting the run",
+        "slippage follows the rank held on the trading day"
+      ],
+      "what_did_not_change": "No selection rule, risk parameter, cost band, evidence threshold or selection size. Score, persistence, stops, kill switches and the 60-observation gate are untouched.",
+      "why_now": "The first scheduled pinning run failed because the daily snapshot rotated names into the TOP100 that neither primary venue serves. That exposed a premise the contract never stated: whether the engine trades a fixed or a rotating universe. The owner decided rotating."
     }
   ],
   "anchor": {
@@ -51,7 +67,7 @@
     "stopvol_observation": "In the V11 paper monitor the StopVol books returned figures identical to their base books on every observed day, including a plus 5.58 percent day, so the vol cap has not bound once. The variants are kept here for comparability with V11, not because they are known to differ.",
     "stopvol_variants": true
   },
-  "contract_revision": "1.2",
+  "contract_revision": "1.3",
   "costs": {
     "fee_bps_per_side": 5.0,
     "model": "LIQUIDITY_TIERED_NOT_FLAT",
@@ -192,12 +208,25 @@
   "selection_size_rationale_recorded_before_any_return": "V11 selects 5 long and 5 short from 20 names, half the universe. Holding 5+5 on 100 names would trade only the 10 percent extremes; holding the 50 percent proportion would mean 25+25 and push the book across the whole liquidity tail. 10+10 doubles V11 diversification while keeping the book out of the thinnest band by default. No TOP100 return existed when this was chosen; the engine was not implemented.",
   "status": "IMPLEMENTED_PROSPECTIVE_COLLECTION",
   "universe": {
+    "membership_policy": "ROTATES_DAILY",
     "other_strata_available": [
       30,
       50,
       75
     ],
     "other_strata_status": "NOT_TRADED_BY_THIS_CONTRACT_SEPARATE_PREREGISTRATION_REQUIRED",
+    "rotation": {
+      "cost_follows_the_day": "Slippage uses the liquidity band of the rank the asset held on the day it traded, not its rank on any other day. A name outside the universe is costed at the widest band.",
+      "decided_by": "account owner, asked explicitly after the first pinning failure exposed the gap",
+      "decided_on": "2026-09-03",
+      "first_traded_day": "Selection needs the signal day and the day before it for persistence, so the first day the book can trade is the anchor plus two. This is a consequence of never inventing membership, not a tuned delay.",
+      "held_dropout_policy": "A position outlives its membership. Every pinned asset stays priced and funded even after it leaves the TOP100, so the book can mark and close it. Leaving the universe removes a name from selection, never from the panel.",
+      "known_consequence_recorded_before_any_result": "The cross-section the score is computed over changes composition day to day, so a z-score is relative to that day's universe rather than a fixed set. This is inherent to a rotating universe and was accepted knowingly. The alternative, freezing the universe at the anchor, was rejected by the owner.",
+      "membership_is_recorded_append_only": "Each run appends the membership it observed to UNIVERSE_MEMBERSHIP.csv in the ledger, and recomputation reads it back. A recorded day is never rewritten and a day the engine never observed is never reconstructed from a later snapshot, because that would re-select the past with hindsight.",
+      "missing_day_policy": "FAIL_CLOSED. A traded day with no recorded membership halts the run rather than selecting from an empty universe and booking a flat day that never happened.",
+      "new_entrant_no_venue_serves": "Excluded from that day's selection and recorded in COVERAGE.json as an unpriced new entrant. This is a documented exclusion, not a silent drop, and it does not halt the pipeline. Losing an asset that was ALREADY PINNED does halt it, because the book may still hold it.",
+      "policy": "The TOP100 is re-read from each day's universe snapshot. Membership on day D governs which names are ELIGIBLE FOR SELECTION on D and nothing else."
+    },
     "source": "delta_v12_universe_expansion_contract.json",
     "stratum": "TOP100",
     "stratum_frozen_date": "2026-08-21"

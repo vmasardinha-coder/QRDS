@@ -20,6 +20,10 @@ Prospective discipline, which is the whole point of the exercise:
     post-anchor series and refuses to write if a previously committed row
     changed, so a silent restatement cannot pass as new evidence.
   * A missing UTC day fails closed. Gaps are never backfilled.
+  * The TOP100 rotates daily. Each day's membership is appended to the ledger and
+    read back on recomputation, so a past day is never re-selected against a
+    later snapshot. Membership governs selection only: a name that drops out
+    while still held stays priced and marked until the book closes it.
 
 Funding comes from tools/gate_btc_delta_v12_funding.py, read from the venue each
 asset is pinned to. Pass --funding-csv and the model is OBSERVED; omit it and
@@ -161,6 +165,41 @@ def slippage_bps(rank: int | None, bands: dict[str, float]) -> float:
     return max(float(v) for v in bands.values())
 
 
+MEMBERSHIP_FIELDS = ["date", "base", "liquidity_rank"]
+
+
+def load_membership(path: Path) -> dict[str, dict[str, int]]:
+    """Recorded TOP100 membership per UTC day, base to liquidity rank."""
+    history: dict[str, dict[str, int]] = {}
+    for row in read_csv_rows(path):
+        history.setdefault(str(row["date"])[:10], {})[
+            str(row["base"]).strip().upper()] = int(row["liquidity_rank"])
+    return history
+
+
+def record_membership(path: Path, history: dict[str, dict[str, int]],
+                      day: str, ranks: dict[str, int]) -> dict[str, dict[str, int]]:
+    """Append today's membership. A recorded day is never rewritten.
+
+    The universe rotates daily, so a run recomputing the series from the anchor
+    must know which names were in the TOP100 on each past day. Reading today's
+    snapshot for a past day would silently re-select history with hindsight,
+    which is the whole failure mode the preregistration exists to prevent.
+    """
+    if day in history:
+        if history[day] != ranks:
+            raise EngineError(
+                f"FAIL_CLOSED: recorded universe membership for {day} differs from "
+                "the snapshot handed to this run; membership is append-only and a "
+                "past day is never re-selected")
+        return history
+    history = {**history, day: dict(ranks)}
+    rows = [{"date": d, "base": b, "liquidity_rank": r}
+            for d in sorted(history) for b, r in sorted(history[d].items())]
+    write_csv_rows(path, rows, MEMBERSHIP_FIELDS)
+    return history
+
+
 def assert_no_gaps(dates: list[str]) -> None:
     """FAIL_CLOSED_NO_BACKFILL: a missing UTC day is a refusal, never a fill."""
     for earlier, later in zip(dates, dates[1:]):
@@ -237,11 +276,24 @@ def build_panels(dates: list[str], bases: list[str],
 
 def raw_selections(dates: list[str], bases: list[str],
                    score: dict[str, dict[str, float | None]],
-                   cfg: dict[str, Any]) -> dict[str, dict[str, int]]:
+                   cfg: dict[str, Any],
+                   membership: dict[str, dict[str, int]] | None = None,
+                   ) -> dict[str, dict[str, int]]:
+    """Rank the day's universe. Membership governs who is eligible, nothing else.
+
+    A day with no recorded membership selects nothing. That covers the warmup
+    before the anchor, where the panel has prices but the universe of the day
+    was never observed, and guessing it from a later snapshot would be hindsight.
+    """
     n_long, n_short = int(cfg["top_n"]), int(cfg["bottom_n"])
     result: dict[str, dict[str, int]] = {}
     for day in dates:
-        valid = [(b, v) for b, v in score[day].items() if v is not None]
+        eligible = membership.get(day) if membership is not None else None
+        if membership is not None and not eligible:
+            result[day] = {}
+            continue
+        valid = [(b, v) for b, v in score[day].items()
+                 if v is not None and (eligible is None or b in eligible)]
         if len(valid) < n_long + n_short:
             result[day] = {}
             continue
@@ -254,9 +306,10 @@ def raw_selections(dates: list[str], bases: list[str],
 
 def target_schedule(dates: list[str], bases: list[str], panels: dict[str, Any],
                     book: dict[str, Any], cfg: dict[str, Any],
+                    membership: dict[str, dict[str, int]] | None = None,
                     ) -> tuple[dict[str, dict[str, float]], list[dict[str, Any]]]:
     score, vol30 = panels["score"], panels["vol30"]
-    raw = raw_selections(dates, bases, score, cfg)
+    raw = raw_selections(dates, bases, score, cfg, membership)
     persistence = int(cfg["persistence_days"])
     schedule: dict[str, dict[str, float]] = {}
     rows: list[dict[str, Any]] = []
@@ -334,13 +387,15 @@ def read_funding(path: Path | None) -> tuple[dict[tuple[str, str], float], set[s
 
 
 def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: dict[str, Any],
-             panel: dict[str, dict[str, dict[str, float]]], cost_rate: dict[str, float],
+             panel: dict[str, dict[str, dict[str, float]]], cost_rate: dict[tuple[str, str], float],
              anchor: str, cfg: dict[str, Any],
              funding: dict[tuple[str, str], float] | None = None,
              funded: set[str] | None = None,
-             funding_model: str = FUNDING_ABSENT) -> dict[str, list[dict[str, Any]]]:
+             funding_model: str = FUNDING_ABSENT,
+             membership: dict[str, dict[str, int]] | None = None,
+             ) -> dict[str, list[dict[str, Any]]]:
     name = book["strategy"]
-    schedule, selections = target_schedule(dates, bases, panels, book, cfg)
+    schedule, selections = target_schedule(dates, bases, panels, book, cfg, membership)
     traded = [d for d in dates if d > anchor]
     index = {d: i for i, d in enumerate(dates)}
 
@@ -383,7 +438,7 @@ def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: d
                     reason = "TAKE_PROFIT_GAP"
             if reason:
                 weight = abs(position["weight"])
-                trading_cost += weight * cost_rate[symbol]
+                trading_cost += weight * cost_rate[(day, symbol)]
                 turnover += weight
                 events.append({
                     "strategy": name, "date": day, "symbol": symbol, "event": reason,
@@ -412,7 +467,7 @@ def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: d
             delta = new_weight - old_weight
             if abs(delta) > 1e-12:
                 turnover += abs(delta)
-                trading_cost += abs(delta) * cost_rate[symbol]
+                trading_cost += abs(delta) * cost_rate[(day, symbol)]
             today_bar = bar(day, symbol)
             open_price = today_bar["open"] if today_bar else None
             crossing = old_weight != 0 and (new_weight == 0 or (old_weight > 0) != (new_weight > 0))
@@ -462,7 +517,7 @@ def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: d
             intraday += position["weight"] * (mark / float(open_price) - 1)
             if exit_price is not None:
                 weight = abs(position["weight"])
-                trading_cost += weight * cost_rate[symbol]
+                trading_cost += weight * cost_rate[(day, symbol)]
                 turnover += weight
                 events.append({
                     "strategy": name, "date": day, "symbol": symbol, "event": exit_reason,
@@ -705,10 +760,9 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
 
     dates, bases, panel = read_prices(prices_csv)
     assert_no_gaps(dates)
-    ranks = read_universe_bands(universe_csv)
+    ranks_today = read_universe_bands(universe_csv)
     bands = contract["costs"]["slippage_by_band"]
     fee = float(contract["costs"]["fee_bps_per_side"])
-    cost_rate = {b: (fee + slippage_bps(ranks.get(b), bands)) / 10000.0 for b in bases}
 
     anchor, first_run = load_or_create_anchor(
         out_dir / "ANCHOR.json", dates[-1], contract["anchor"]["not_before"], run_id)
@@ -717,6 +771,31 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
             f"FAIL_CLOSED: anchor {anchor} is absent from the price panel "
             f"({dates[0]}..{dates[-1]}); the ledger cannot be continued from a close "
             "the pipeline can no longer produce")
+
+    # The universe rotates daily, so the composition of each past day is read
+    # back from the ledger, never re-derived from today's snapshot.
+    membership_path = out_dir / "UNIVERSE_MEMBERSHIP.csv"
+    membership = record_membership(
+        membership_path, load_membership(membership_path), dates[-1], ranks_today)
+
+    # Every day the ledger books must have had its universe observed. A day the
+    # engine never ran on cannot be reconstructed: reading its membership from a
+    # later snapshot would select it with hindsight, and trading it on an empty
+    # universe would book a flat day that never happened.
+    missing = [d for d in dates if d > anchor and d not in membership]
+    if missing:
+        raise EngineError(
+            f"FAIL_CLOSED: no recorded universe membership for {', '.join(missing[:5])}"
+            f"{' and others' if len(missing) > 5 else ''}. The universe rotates daily, so a "
+            "day the engine did not observe is not recoverable and is never backfilled")
+
+    # Cost follows the rank the asset actually held on the day it traded. A name
+    # that drifted from rank 20 to rank 90 does not get last month's slippage,
+    # and one that left the universe entirely is costed at the widest band.
+    cost_rate = {
+        (day, base): (fee + slippage_bps(membership.get(day, {}).get(base), bands)) / 10000.0
+        for day in dates for base in bases
+    }
 
     panels = build_panels(dates, bases, panel, cfg)
     funding, funded, funding_model = read_funding(funding_csv)
@@ -728,7 +807,7 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     summaries: dict[str, dict[str, Any]] = {}
     for book in BOOKS:
         result = simulate(book, dates, bases, panels, panel, cost_rate, anchor, cfg,
-                          funding, funded, funding_model)
+                          funding, funded, funding_model, membership)
         for row in result["daily"]:
             row["engine_version"] = ENGINE_VERSION
         ledger.extend(result["daily"])
@@ -765,7 +844,10 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
         "anchor_date": anchor, "anchor_established_this_run": first_run,
         "data_as_of": dates[-1], "observed_days": observed_days,
         "universe_stratum": contract["universe"]["stratum"],
-        "universe_size": len(bases),
+        "universe_policy": "ROTATES_DAILY_MEMBERSHIP_RECORDED_APPEND_ONLY",
+        "universe_size_today": len(ranks_today),
+        "priced_assets_including_dropouts": len(bases),
+        "membership_days_recorded": len(membership),
         "selection": {"top_n": cfg["top_n"], "bottom_n": cfg["bottom_n"]},
         "books": {b["strategy"]: {**summaries[b["strategy"]], **gate[b["strategy"]]}
                   for b in BOOKS},
