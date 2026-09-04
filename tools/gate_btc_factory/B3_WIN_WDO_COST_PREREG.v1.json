@@ -1,0 +1,43 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_cost_prereg.v1",
+  "created_at_utc": "2026-09-04T10:44:00Z",
+  "stage": "PREREGISTER_COSTS",
+  "applies_to": ["B3WIN01","B3WIN02","B3WIN03","B3WIN04","B3WIN05","B3WIN06","B3WDO01","B3WDO02","B3WDO03","B3WDO04","B3WDO05","B3WDO06"],
+  "source_prereg": "tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_PREREG.v1.json",
+  "decision_origin": "USER_APPROVED_EX_ANTE_CONVENTION_BEFORE_ANY_ECONOMIC_READ",
+  "cost_model": {
+    "unit": "BRL_PER_CONTRACT_ROUND_TRIP",
+    "WIN": 0.50,
+    "WDO": 2.12,
+    "interpretation": "Conservative ex-ante execution-cost convention accepted for this frozen research generation; it is not asserted to reconstruct historically applicable broker/exchange tariffs.",
+    "brokerage_or_slippage_invented": false,
+    "historical_tariff_reconstruction_claimed": false,
+    "result_conditioned": false
+  },
+  "scientific_boundary": {
+    "economics_read_before_this_prereg": false,
+    "cost_change_after_economic_read_allowed": false,
+    "threshold_change_allowed": false,
+    "family_change_allowed": false,
+    "direction_change_allowed": false,
+    "hold_change_allowed": false,
+    "cutoff_change_allowed": false,
+    "d0_change_allowed": false,
+    "pit_change_allowed": false,
+    "counter_reset_allowed": false,
+    "backfill_allowed": false
+  },
+  "next_action_after_merge": "EXECUTE_FROZEN_WIN_WDO_DISCOVERY_USING_THIS_COST_CONVENTION_WITHOUT_RETUNING",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
