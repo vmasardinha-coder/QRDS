@@ -1,0 +1,89 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_official_source_contract.v1",
+  "frontier": ["WIN_UNIVARIATE", "WDO_UNIVARIATE"],
+  "stage": "DATA_SOURCE_ADMISSION",
+  "status": "OFFICIAL_PRIMARY_SOURCE_PHYSICAL_CAPTURE_QUALIFIED_WITH_FROZEN_SINGLE_KNOWN_GAP",
+  "primary_surface": {
+    "owner": "B3",
+    "report": "BVBG.086.01 PriceReport",
+    "endpoint_contract": "https://www.b3.com.br/pesquisapregao/download?filelist=PR{YYMMDD}.zip",
+    "payload_identity": "INNER_LEAF_XML_BYTES_SHA256",
+    "outer_zip_hash_admissible": false,
+    "outer_zip_reason": "dynamic packaging observed; scientific identity is the immutable inner XML payload bytes",
+    "coverage_horizon": ["2020-01-01", "2024-12-31"],
+    "calendar_reference": "OFFICIAL_B3_COTAHIST_DAILY_QUOTE_SESSION_DATES"
+  },
+  "coverage": {
+    "quarter_blocks": 20,
+    "all_blocks_contract_pass": true,
+    "official_session_count": 1245,
+    "weekday_no_object_count": 61,
+    "corroborated_non_session_count": 60,
+    "accepted_known_primary_source_gaps": ["2021-06-10"],
+    "known_gap_policy": "DROP_SESSION_FROM_ELIGIBLE_OBSERVATIONS_ONLY; NO_RECONSTRUCTION; NO_INTERPOLATION; NO_BACKFILL; NO_SCIENTIFIC_OR_PROSPECTIVE_CREDIT",
+    "future_gap_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_QUALIFIED_AND_FROZEN_BEFORE_ECONOMICS"
+  },
+  "instrument_identity": {
+    "scope": "B3 listed mini futures whose ticker begins WIN or WDO",
+    "exact_row_key": ["trade_date", "ticker_symbol", "report_leaf_payload_sha256"],
+    "contract_code_preserved": true,
+    "expiry_contracts_must_not_be_collapsed_before_feature_construction": true,
+    "continuous_series": "FORBIDDEN_UNLESS_A_SEPARATE_PREDECLARED_ROLL_RULE_IS_FROZEN_BEFORE_ECONOMICS",
+    "cross_asset_read": false,
+    "WIN_may_read_WDO": false,
+    "WDO_may_read_WIN": false,
+    "H31_read": false,
+    "BTC_read": false,
+    "DI_FX_macro_external_regime_read": false
+  },
+  "dedupe": {
+    "duplicate_rule": "same trade_date + ticker_symbol + semantically identical PriceReport row within the same qualified payload is one observation",
+    "conflicting_duplicate_rule": "FAIL_CLOSED_AND_EXCLUDE_AFFECTED_DATE_INSTRUMENT_PENDING_SOURCE_QA",
+    "cross_leaf_duplicate_rule": "identical row content may be deduplicated only after exact content comparison; conflicting rows may not be averaged or selected by economics",
+    "no_result_guided_resolution": true
+  },
+  "session_and_timezone": {
+    "market_timezone": "America/Sao_Paulo",
+    "report_frequency": "EOD",
+    "feature_date_semantics": "all fields from session t are treated as available only after the session-t PriceReport publication surface is available",
+    "same_session_decision_from_session_t_report": false,
+    "earliest_signal_use": "session t fields may first affect a decision for session t+1 or later",
+    "holiday_and_non_session_reference": "official B3 COTAHIST session-date set"
+  },
+  "publication_timing_and_pit": {
+    "historical_download_is_current_retrieval_of_official_historical_EOD_record": true,
+    "exact_original_publication_timestamp_required_for_admission": false,
+    "conservative_pit_rule": "one-session lag minimum for all admitted PriceReport fields",
+    "fields_allowed": ["own-market OHLC", "own-market volume/quantity/trade-count fields physically present in the qualified report", "own-market open-interest fields physically present in the qualified report"],
+    "fields_forbidden_without_separate_revision_QA": ["fields whose historical revision or publication semantics cannot be established", "derived values reconstructed from later data", "external-market regime labels"],
+    "revisions": "if B3 historical payload bytes differ across repeated qualification captures, affected date/report must fail closed until the revision is explicitly classified; no silent latest-vintage substitution",
+    "lookahead_prevention": true
+  },
+  "source_admission": {
+    "pass": true,
+    "family_creation_allowed": true,
+    "economics_read_allowed": false,
+    "next_stage": "PREREGISTER_FINITE_DETERMINISTIC_WIN_ONLY_AND_WDO_ONLY_FAMILIES"
+  },
+  "scientific_boundaries": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "H1_ECONOMICS_READ": false,
+    "prospective_credit": 0,
+    "scientific_credit_from_source_repair": 0
+  },
+  "evidence": {
+    "calendar_qualification_merge_commit": "70b191e1de2be650fcb3def6f78a8ed0d7b8db29",
+    "full_2020_2024_coverage_merge_commit": "3e32063de76e365851bc435180cf1ada58e7c0cd",
+    "sentinel_source_probe_merge_commit": "957848150809c1e5b6f1c7ec80dcb64b18a23065",
+    "known_gap_operator_disposition": "2021-06-10 accepted as one frozen missing observation out of 1245 official sessions"
+  }
+}
