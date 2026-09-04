@@ -32,19 +32,12 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-09-04-grafico
 | LRCX | 15.4541 | $292.66 | $4,522.79 | 9.7% |
 | TGT | 26.5332 | $164.01 | $4,351.71 | 9.3% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| GOOGL | VENDA | 13.7166 | $342.31 | $4,695.32 | rebalanceio |
-| INTC | VENDA | 3.44002 | $91.62 | $315.19 | rebalanceio |
-| AMAT | COMPRA | 0.56034 | $436.13 | $244.38 | rebalanceio |
-| PANW | COMPRA | 1.2413 | $332.11 | $412.24 | rebalanceio |
-| TGT | COMPRA | 26.5332 | $164.09 | $4,353.88 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em TGT: 0.0% vs alvo 10.0%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (SPY):** momentum de +19.6% — so entram ativos acima disto
 - **Candidatos elegiveis:** 45
 - **Fontes usadas:** nasdaq: 101
@@ -67,21 +60,21 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-09-04-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $60,576.56 |
-| Retorno do dia | -0.12% |
-| Retorno desde inicio (2026-08-06) | +21.15% |
-| Benchmark BTC | +25.53% |
-| **Alfa vs BTC** | **-4.38%** |
+| NAV | $60,304.52 |
+| Retorno do dia | -0.57% |
+| Retorno desde inicio (2026-08-06) | +20.61% |
+| Benchmark BTC | +23.67% |
+| **Alfa vs BTC** | **-3.06%** |
 | Caixa | $2,719.51 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.369158 | $80,864.66 | $29,851.80 | 49.3% |
-| ZEC | 10.4953 | $939.67 | $9,862.11 | 16.3% |
-| UNI | 1482.27 | $6.37 | $9,446.22 | 15.6% |
-| CRV | 23530.6 | $0.37 | $8,696.92 | 14.4% |
+| BTC | 0.369158 | $79,665.98 | $29,409.30 | 48.8% |
+| ZEC | 10.4953 | $1,029.49 | $10,804.80 | 17.9% |
+| UNI | 1482.27 | $6.13 | $9,092.85 | 15.1% |
+| CRV | 23530.6 | $0.35 | $8,278.07 | 13.7% |
 
 _Sem movimentacoes hoje._
 
@@ -89,7 +82,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +29.0% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de +27.1% — so entram ativos acima disto
 - **Candidatos elegiveis:** 12
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
@@ -98,7 +91,7 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (+28.3% <= +29.0%) |
+| ADA | nao bate o benchmark (+22.3% <= +27.1%) |
 | ALGO | liquidez baixa (0.8M < 1M) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
@@ -116,9 +109,9 @@ _Sem movimentacoes hoje._
 | NAV | R$ 53,101.69 |
 | Retorno do dia | -0.71% |
 | Retorno desde inicio (2026-08-06) | +6.20% |
-| Benchmark IBOV | +5.49% |
-| Benchmark CDI | +0.99% |
-| **Alfa vs o maior (IBOV)** | **+0.71%** |
+| Benchmark IBOV | +5.47% |
+| Benchmark CDI | +1.04% |
+| **Alfa vs o maior (IBOV)** | **+0.73%** |
 | Caixa | R$ 0.00 |
 | Regime | risco ligado — avaliado por proxy (BOVA11) |
 
@@ -163,13 +156,13 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 52,112.02 |
+| NAV | R$ 52,112.37 |
 | Retorno do dia | +0.09% |
 | Retorno desde inicio (2026-08-06) | +4.22% |
-| Benchmark IBOV | +5.49% |
-| Benchmark CDI | +0.99% |
-| **Alfa vs o maior (IBOV)** | **-1.27%** |
-| Caixa | R$ 683.57 |
+| Benchmark IBOV | +5.47% |
+| Benchmark CDI | +1.04% |
+| **Alfa vs o maior (IBOV)** | **-1.24%** |
+| Caixa | R$ 683.92 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
