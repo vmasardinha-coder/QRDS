@@ -9,14 +9,19 @@
     "candidate_provider": "REDSTONE_PUBLIC_ORACLE",
     "network": "zksync",
     "token_contract": "0x57fd71a86522dc06d6255537521886057c1772a3",
-    "source_identity": "REDSTONE_SECURITIZE_BCAP_ZKSYNC_PRICE_FEED",
+    "source_identity": "BCAP_FUNDAMENTAL",
+    "source_semantics": "FUNDAMENTAL_NAV_FAIR_VALUE_FROM_SECURITIZE_NOT_SPOT_MARKET_OHLCV",
+    "price_feed_address_zksync": "0x0eF2418216476Ab5264821070B8c24b6B458F796",
+    "source_components": ["securitize-tsso", "securitize-api"],
     "public_http_api": "https://api.redstone.finance/prices",
     "official_evidence": [
       "https://blog.redstone.finance/2025/05/06/redstone-and-securitize-catalyze-rwa-market-with-bcap-token-price-feed-on-zksync-era/",
       "https://investors.securitize.io/news/news-details/2025/RedStone-and-Securitize-Catalyze-20Bn-RWA-Market-with-First-Ever-BCAP-Price-Feed-on-ZKsync-05-06-2025/default.aspx",
+      "https://github.com/redstone-finance/redstone-oracles-monorepo/blob/main/packages/relayer-remote-config/main/relayer-manifests-multi-feed/zksyncMultiFeed.json",
+      "https://github.com/redstone-finance/redstone-oracles-monorepo/blob/main/packages/node-remote-config/dev/manifests/data-services/primary.json",
       "https://github.com/redstone-finance/redstone-api/blob/main/docs/HTTP_API.md"
     ],
-    "rationale": "Materially distinct exact-source route after Kraken had no exact BCAP asset metadata and Ethereum exact-contract DEX discovery produced no exact pool. Blockchain Capital migrated BCAP fully to ZKsync, and RedStone/Securitize publicly document a BCAP-specific oracle feed on ZKsync. RedStone documents a public no-key HTTP API and historical price access. Physical qualification must independently prove BCAP symbol identity, timestamped observations, frozen-window availability/continuity, raw-response hashes and fail closed on unsupported symbol, stale/non-physical data or any identity ambiguity.",
+    "rationale": "Materially distinct exact-source route after Kraken had no exact BCAP asset metadata and Ethereum exact-contract DEX discovery produced no exact pool. Official RedStone config resolves the feed identity as BCAP_FUNDAMENTAL and explicitly sources it from Securitize. This is a fundamental/NAV fair-value feed rather than spot-market OHLCV. Physical qualification must prove the exact feed if possible but MUST fail closed on semantic incompatibility with the frozen V2A market-data contract; it may not silently substitute fundamental NAV for market OHLCV.",
     "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
   },
   "source_admitted": false,
