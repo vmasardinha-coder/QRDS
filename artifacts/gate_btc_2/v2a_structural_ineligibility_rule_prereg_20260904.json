@@ -1,0 +1,80 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_STRUCTURAL_INELIGIBILITY_RULE_V1",
+  "date": "2026-09-04",
+  "system": 8,
+  "approval": {
+    "human_approved": true,
+    "approved_option": "B_PREREGISTER_STRUCTURAL_INELIGIBILITY_RULE",
+    "approval_source": "explicit_user_approval_in_project_conversation",
+    "approval_effective_before_next_d0_attempt": true
+  },
+  "purpose": "PREREGISTER_EX_ANTE_STRUCTURAL_INELIGIBILITY_RULE_BEFORE_ANY_NEW_D0_ATTEMPT",
+  "rule": {
+    "eligibility_scope": "FROZEN_V2A_UNIVERSE_MEMBERS",
+    "structurally_ineligible_only_if": [
+      "documented materially distinct exact-source routes have been exhausted",
+      "each route was evaluated under the same frozen public/auditable source semantics",
+      "failure is structural observability/source availability rather than temporary collector defect",
+      "no admissible exact-source contract can currently satisfy frozen continuity/schema/OHLCV QA"
+    ],
+    "not_sufficient_for_exclusion": [
+      "single-source failure",
+      "temporary outage",
+      "ordinary missing bucket without source exhaustion",
+      "stale collector",
+      "private-only source when a public exact source still exists",
+      "NAV/oracle/transfer data that is semantically incompatible with spot execution OHLCV"
+    ],
+    "completeness_definition": "For the next replacement Dataset Epoch D0 only, completeness is evaluated against the ex-ante eligible universe after applying this rule. Structurally ineligible members remain preserved in an immutable exclusion ledger and are not counted as observed, repaired, or credited.",
+    "eligible_denominator_freeze": "Freeze the eligible-universe denominator at the first valid post-rule D0 snapshot. No silent denominator changes are allowed within the epoch.",
+    "reentry_rule": "An excluded member may re-enter only through a separately preregistered future eligibility event after a materially new exact public/auditable source is demonstrated. Re-entry cannot rewrite prior epoch evidence.",
+    "credit_boundary": {
+      "historical_credit_for_exclusion": 0,
+      "scientific_credit_for_exclusion": false,
+      "prospective_credit_for_exclusion": false,
+      "d0_credit_for_exclusion": 0,
+      "retroactive_d0": false
+    }
+  },
+  "initial_exclusion_ledger": [
+    {
+      "symbol": "SOFID",
+      "coin_id": "sofiusd",
+      "status": "STRUCTURALLY_INELIGIBLE_PENDING_RULE_MERGE",
+      "basis": [
+        "Bullish exact market failed frozen continuity due missing 2026-08-29 bucket",
+        "Kraken returned zero sentinel / no physical OHLC",
+        "Ethereum exact contract had no qualifying pool",
+        "Solana exact mint had no qualifying pool"
+      ]
+    },
+    {
+      "symbol": "BCAP",
+      "coin_id": "blockchain-capital",
+      "status": "STRUCTURALLY_INELIGIBLE_PENDING_RULE_MERGE",
+      "basis": [
+        "public DEX exact-contract route failed",
+        "RedStone rejected as NAV/oracle rather than spot execution",
+        "Securitize Markets ATS exposes no free/public/auditable execution-history surface"
+      ]
+    }
+  ],
+  "d0_retry_allowed_after_merge": true,
+  "d0_started_by_this_preregistration": false,
+  "source_admission_changed": false,
+  "universe_history_rewritten": false,
+  "methodology_change_scope": "Only structural eligibility/completeness denominator semantics for future D0 attempts, as explicitly approved. No other methodology change is authorized.",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
