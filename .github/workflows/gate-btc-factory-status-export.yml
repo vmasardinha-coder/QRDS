@@ -27,7 +27,7 @@ jobs:
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
-        with: {ref: main, path: main_repo}
+        with: {path: main_repo}
       - uses: actions/checkout@v4
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
