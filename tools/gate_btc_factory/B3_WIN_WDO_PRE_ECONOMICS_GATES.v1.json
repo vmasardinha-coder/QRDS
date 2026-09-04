@@ -1,0 +1,122 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_pre_economics_gates.v1",
+  "created_at_utc": "2026-09-04T18:50:00Z",
+  "stage": "PREREGISTER_PRE_ECONOMICS_SEMANTICS_AND_GATES",
+  "applies_to": ["B3WIN01","B3WIN02","B3WIN03","B3WIN04","B3WIN05","B3WIN06","B3WDO01","B3WDO02","B3WDO03","B3WDO04","B3WDO05","B3WDO06"],
+  "prereg": "tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_PREREG.v1.json",
+  "cost_prereg": "tools/gate_btc_factory/B3_WIN_WDO_COST_PREREG.v1.json",
+  "economics_read_before_freeze": false,
+  "contract_economics": {
+    "WIN": {
+      "official_spec_reference": "B3 Mini Ibovespa Futures: contract size = index points x BRL 0.20",
+      "point_value_brl": 0.20,
+      "entry_notional_brl": "abs(open_price) * 0.20",
+      "gross_trade_pnl_brl": "signal * (close_price - open_price) * 0.20",
+      "round_trip_cost_brl": 0.50
+    },
+    "WDO": {
+      "official_spec_reference": "B3 Mini USD/BRL Futures: contract size USD 10,000; quote BRL per USD 1,000",
+      "quote_point_value_brl": 10.0,
+      "entry_notional_brl": "abs(open_price) * 10.0",
+      "gross_trade_pnl_brl": "signal * (close_price - open_price) * 10.0",
+      "round_trip_cost_brl": 2.12
+    }
+  },
+  "return_normalization": {
+    "per_trade_net_return": "(gross_trade_pnl_brl - round_trip_cost_brl) / entry_notional_brl",
+    "short_trade_cost_treatment": "same positive round-trip BRL cost deducted from signed gross PnL",
+    "family_daily_return": "arithmetic mean of valid same-prefix exact-contract per_trade_net_return values for that session",
+    "equal_notional_interpretation": "each valid contract signal contributes one equal notional normalized return observation before family averaging",
+    "gross_exposure": 1.0,
+    "leverage": 1.0,
+    "continuous_series": false,
+    "roll_stitching": false,
+    "same_contract_next_session_required": true,
+    "missing_next_session": "FLAT_NO_TRADE"
+  },
+  "discovery_2022_2024": {
+    "min_active_days": 180,
+    "min_trades": 300,
+    "net_mean_daily_gt": 0.0,
+    "annualized_sharpe_gte": 0.50,
+    "positive_calendar_years_gte": 2,
+    "max_drawdown_lte": 0.25,
+    "max_single_month_abs_pnl_concentration_lte": 0.50
+  },
+  "bias_causality_qa": {
+    "own_market_only": true,
+    "feature_session_completed_before_decision": true,
+    "earliest_execution": "t+1",
+    "same_exact_contract_execution": true,
+    "same_session_use": false,
+    "cross_contract_feature_read": false,
+    "WIN_may_read_WDO": false,
+    "WDO_may_read_WIN": false,
+    "H1_H31_BTC_DI_FX_macro_external_read": false,
+    "known_gap_2021_06_10_excluded_without_credit": true,
+    "duplicate_identity": "date+ticker_symbol+report_leaf_identity",
+    "source_contract_must_pass": true
+  },
+  "robustness": {
+    "cost_stress_multiplier": 2.0,
+    "cost_stress_net_mean_daily_gt": 0.0,
+    "cost_stress_annualized_sharpe_gte": 0.25,
+    "delayed_execution": "same exact contract t+2 open to t+2 close when physically present; otherwise flat",
+    "delayed_execution_net_mean_daily_gt": 0.0,
+    "delayed_execution_annualized_sharpe_gte": 0.0,
+    "delayed_execution_min_active_days": 120,
+    "bootstrap": {
+      "method": "moving_block_bootstrap",
+      "block_sessions": 5,
+      "resamples": 1000,
+      "seed": 20260904,
+      "selection_gate": false,
+      "report_only": true
+    }
+  },
+  "independent_replication_2020_2021": {
+    "execute_only_for_discovery_and_robustness_passers": true,
+    "min_active_days": 100,
+    "min_trades": 150,
+    "net_mean_daily_gt": 0.0,
+    "annualized_sharpe_gte": 0.25,
+    "positive_calendar_years_gte": 1,
+    "max_drawdown_lte": 0.30,
+    "max_single_month_abs_pnl_concentration_lte": 0.60
+  },
+  "survivor_policy": {
+    "all_gates_required": true,
+    "prospective_candidate_cap_per_frontier": 1,
+    "ranking_if_multiple": "descending min(discovery_cost_stress_sharpe, delayed_execution_sharpe, replication_sharpe), tie family_id",
+    "prospective_forward_only": true,
+    "no_backfill": true,
+    "null_is_valid": true
+  },
+  "mortality": ["NO_TRADES","DATA_GAP","SOURCE_QA_FAIL","SCIENTIFIC_REJECTION"],
+  "scientific_boundary": {
+    "no_result_guided_threshold_change": true,
+    "no_result_guided_family_change": true,
+    "no_result_guided_direction_change": true,
+    "no_result_guided_cost_change": true,
+    "no_hold_change": true,
+    "no_cutoff_change": true,
+    "no_d0_change": true,
+    "no_pit_change": true,
+    "no_counter_reset": true,
+    "no_backfill": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  },
+  "next_action_after_merge": "EXECUTE_FROZEN_12_FAMILY_FUNNEL_WITHOUT_RETUNING"
+}
