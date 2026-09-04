@@ -1,0 +1,52 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_PREREG_V1",
+  "date": "2026-09-03",
+  "purpose": "BOUND_SYSTEM8_RESIDUAL_SOURCE_EXHAUSTION_ONLY",
+  "candidates": [
+    {
+      "symbol": "BCAP",
+      "coin_id": "blockchain-capital",
+      "name": "Blockchain Capital",
+      "candidate_provider": "KRAKEN_PUBLIC_SPOT",
+      "candidate_route": "discover exact BCAP asset/pair through official Kraken public Assets/AssetPairs, then public OHLC if a physically tradable exact pair exists",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY",
+      "notes": "CoinGecko currently reports zero trading volume/no active exchange trading; this candidate must fail closed if Kraken metadata is non-tradable or OHLC is sentinel/empty."
+    },
+    {
+      "symbol": "OHM",
+      "coin_id": "olympus",
+      "name": "Olympus",
+      "candidate_provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "network": "eth",
+      "token_contract": "0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5",
+      "candidate_route": "discover token pools by exact contract, deterministically select the highest-ranked liquid pool whose base/quote metadata contains the exact frozen token contract, then daily OHLCV through GeckoTerminal public API",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+    },
+    {
+      "symbol": "KOGE",
+      "coin_id": "bnb48-club-token",
+      "name": "KOGE",
+      "candidate_provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "network": "bsc",
+      "token_contract": "0xe6df05ce8c8301223373cf5b969afcb1498c5528",
+      "candidate_route": "discover token pools by exact contract, deterministically select the highest-ranked liquid pool whose base/quote metadata contains the exact frozen token contract, then daily OHLCV through GeckoTerminal public API",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+    }
+  ],
+  "source_admitted": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
