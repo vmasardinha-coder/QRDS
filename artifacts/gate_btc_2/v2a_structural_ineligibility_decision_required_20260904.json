@@ -1,0 +1,82 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_METHODOLOGY_DECISION_REQUIRED_V1",
+  "date": "2026-09-04",
+  "system": 8,
+  "status": "HUMAN_DECISION_REQUIRED_BEFORE_ANY_D0_RETRY",
+  "trigger": "EXACT_SOURCE_EXHAUSTION_FOR_FROZEN_UNIVERSE_MEMBERS",
+  "affected_assets": [
+    {
+      "symbol": "SOFID",
+      "coin_id": "sofiusd",
+      "source_exhaustion": [
+        "BULLISH_EXACT_MARKET_FAILED_FROZEN_CONTINUITY_2026_08_29_MISSING_BUCKET",
+        "KRAKEN_ZERO_SENTINEL_NO_PHYSICAL_OHLC",
+        "ETHEREUM_EXACT_CONTRACT_NO_POOL",
+        "SOLANA_EXACT_MINT_NO_POOL"
+      ]
+    },
+    {
+      "symbol": "BCAP",
+      "coin_id": "blockchain-capital",
+      "source_exhaustion": [
+        "PUBLIC_DEX_EXACT_CONTRACT_ROUTE_FAILED",
+        "REDSTONE_REJECTED_AS_NAV_ORACLE_NOT_SPOT_EXECUTION",
+        "SECURITIZE_MARKETS_ATS_NO_FREE_PUBLIC_AUDITABLE_EXECUTION_HISTORY"
+      ]
+    }
+  ],
+  "current_frozen_contract": {
+    "complete_snapshot_required": true,
+    "qualified_exact_source_contract_required_for_each_included_member": true,
+    "silent_exclusion_allowed": false,
+    "partial_complete_d0_allowed": false,
+    "denominator_reduction_allowed": false,
+    "d0_started": false
+  },
+  "repository_precedent_search": {
+    "existing_structural_unobservable_rule_found": false,
+    "existing_source_exhausted_waiver_found": false,
+    "existing_partial_complete_d0_rule_found": false
+  },
+  "decision_options": [
+    {
+      "id": "A_KEEP_CURRENT_CONTRACT",
+      "effect": "System 8 remains fail-closed until materially new public/auditable exact sources become available for SOFID and BCAP.",
+      "methodology_change": false,
+      "d0_retry_allowed_now": false
+    },
+    {
+      "id": "B_PREREGISTER_STRUCTURAL_INELIGIBILITY_RULE",
+      "effect": "Before any new D0 attempt, freeze an ex-ante rule that marks a frozen-universe member structurally ineligible only after documented multi-route exact-source exhaustion under the same public/auditable semantics. Completeness is then measured against the post-rule eligible universe, with excluded members retained in an immutable exclusion ledger and no historical/prospective credit granted for the exclusion itself.",
+      "methodology_change": true,
+      "recommended": true,
+      "guardrails": [
+        "Rule must be approved and merged before the next D0 attempt.",
+        "No retroactive D0 or historical credit.",
+        "No threshold, clock, economics, source-semantic or QA relaxation.",
+        "Exclusion requires documented exact-source exhaustion, not mere missing data or temporary outage.",
+        "Excluded assets remain visible in an immutable audit ledger and can re-enter only through a separately preregistered future eligibility event.",
+        "The eligible-universe denominator must be frozen at the next D0 and cannot change silently within the epoch.",
+        "No backfill, stitching, counter reset or synthetic substitute."
+      ],
+      "d0_retry_allowed_now": false
+    }
+  ],
+  "recommended_decision": "B_PREREGISTER_STRUCTURAL_INELIGIBILITY_RULE",
+  "recommendation_reason": "The blocker is structural observability rather than a transient collector defect. A narrowly scoped, ex-ante eligibility rule preserves fail-closed source semantics while preventing permanently non-observable instruments from making a forward-only epoch logically impossible. This is preferable to silent exclusion, denominator manipulation, NAV substitution, or indefinite source hunting.",
+  "approval_required": true,
+  "approval_scope": "Authorize only the preregistration of the structural-ineligibility rule described in option B. Approval does not start D0, grant source admission, remove negative evidence, or authorize any other methodology change.",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
