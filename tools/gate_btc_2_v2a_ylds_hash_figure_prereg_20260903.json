@@ -1,0 +1,75 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_YLDS_HASH_FIGURE_PREREG_20260903_V1",
+  "issue": 455,
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "system": 8,
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "authoritative_frozen_identities": [
+    {"symbol": "YLDS", "coin_id": "ylds", "name": "YLDS"},
+    {"symbol": "HASH", "coin_id": "hash-2", "name": "Provenance Blockchain"}
+  ],
+  "candidate_provider": {
+    "provider": "FIGURE_MARKETS",
+    "market": "SPOT",
+    "official_public_api_base": "https://api.figuremarkets.com/public",
+    "market_discovery_endpoint": "/v1/markets",
+    "market_identity_endpoint": "/v1/markets/{symbol}",
+    "candle_endpoint": "/v1/markets/{symbol}/candles",
+    "trade_endpoint": "/v1/trades/{symbol}",
+    "authentication_required_for_market_data": false
+  },
+  "candidates": [
+    {
+      "symbol": "YLDS",
+      "coin_id": "ylds",
+      "expected_base_asset": "YLDS",
+      "candidate_quotes": ["USD", "USDC", "USDT"],
+      "exact_pair": "DISCOVER_FROM_OFFICIAL_MARKETS_API_BEFORE_QUALIFICATION",
+      "exact_identity_asserted": false,
+      "physical_history_asserted": false,
+      "prospective_cutover_admissibility_asserted": false
+    },
+    {
+      "symbol": "HASH",
+      "coin_id": "hash-2",
+      "expected_base_asset": "HASH",
+      "expected_name": "Provenance Blockchain",
+      "candidate_quotes": ["USD"],
+      "exact_pair": "DISCOVER_FROM_OFFICIAL_MARKETS_API_BEFORE_QUALIFICATION",
+      "exact_identity_asserted": false,
+      "physical_history_asserted": false,
+      "prospective_cutover_admissibility_asserted": false
+    }
+  ],
+  "qualification_requirements": [
+    "Discover exact Figure market symbol from the official unauthenticated Public API before historical qualification.",
+    "Exact frozen CoinGecko identity must be bound independently of ticker equality; HASH must be hash-2 / Provenance Blockchain, not another HASH token.",
+    "Preserve raw response bytes and SHA-256 before normalization.",
+    "Record provider, market symbol, denom, quoteDenom, endpoint, parameters, retrieval timestamp and parser/schema version.",
+    "Use TRADE candles for physical OHLCV qualification and explicit UTC semantics; periods with no activity remain missing evidence.",
+    "Duplicate, missing-bucket, monotonic-time, OHLC and nonnegative-volume QA must pass fail-closed.",
+    "No synthetic candles, source stitching, backfill credit, retune or counter reset.",
+    "Passing physical qualification only makes the route eligible for a separate prospective-only adjudication; it earns zero D0/epoch/historical/scientific credit."
+  ],
+  "credit_boundary": {
+    "epoch_credit": 0,
+    "d0_credit": 0,
+    "historical_credit": 0,
+    "scientific_credit": 0,
+    "source_admitted": false,
+    "collector_override_activation_allowed": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
