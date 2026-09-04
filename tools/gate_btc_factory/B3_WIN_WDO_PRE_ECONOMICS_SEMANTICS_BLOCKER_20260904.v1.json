@@ -1,0 +1,82 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_pre_economics_semantics_blocker.v1",
+  "created_at_utc": "2026-09-04T11:12:00Z",
+  "stage": "FAIL_CLOSED_BEFORE_FIRST_ECONOMIC_READ",
+  "frontier": ["WIN_UNIVARIATE", "WDO_UNIVARIATE"],
+  "main_anchor_sha": "baca29bfb6eda9d870f2b628248acf58cb4629e7",
+  "family_prereg": "tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_PREREG.v1.json",
+  "source_contract": "tools/gate_btc_factory/B3_WIN_WDO_OFFICIAL_SOURCE_CONTRACT.v1.json",
+  "cost_prereg": "tools/gate_btc_factory/B3_WIN_WDO_COST_PREREG.v1.json",
+  "cost_blocker_resolved": true,
+  "cost_model_frozen": {
+    "unit": "BRL_PER_CONTRACT_ROUND_TRIP",
+    "WIN": 0.50,
+    "WDO": 2.12
+  },
+  "blockers": [
+    {
+      "id": "MISSING_CANONICAL_RETURN_NORMALIZATION",
+      "status": "BLOCKING",
+      "evidence": "The frozen cost convention is BRL per contract round-trip while the family preregistration specifies equal-notional aggregation and signal returns but does not freeze the exact contract-level BRL PnL to portfolio-return normalization, including point-value/multiplier semantics. Applying a convention now without a preregistered rule would create a result-affecting economic assumption.",
+      "forbidden_resolution": [
+        "infer normalization from observed results",
+        "reuse an unrelated equity return/cost convention",
+        "silently choose a point value or multiplier",
+        "convert the BRL cost to bps using a result-dependent denominator"
+      ]
+    },
+    {
+      "id": "MISSING_WIN_WDO_NUMERIC_SELECTION_GATES",
+      "status": "BLOCKING",
+      "evidence": "No canonical tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_GATES.v1.json exists on main. The WIN/WDO family preregistration requires discovery, robustness and independent replication but does not freeze numeric survivor thresholds. The existing B3_BLUECHIPS_UNIVARIATE_GATES.v1.json belongs to a materially different cash-equity frontier and cannot be transplanted without an explicit pre-economics decision.",
+      "forbidden_resolution": [
+        "copy blue-chip gates by analogy",
+        "derive thresholds after looking at WIN/WDO outcomes",
+        "relax gates to obtain a survivor",
+        "declare survivor status without pre-frozen numeric gates"
+      ]
+    }
+  ],
+  "what_is_allowed_before_resolution": [
+    "source/schema parsing development that does not read economic outcomes",
+    "mechanical CI/integrity fixes that do not alter scientific gates",
+    "explicit preregistration of contract return normalization before any economic read",
+    "explicit preregistration of numeric discovery/robustness/replication gates before any economic read"
+  ],
+  "what_is_not_allowed": [
+    "WIN/WDO discovery economics",
+    "WIN/WDO robustness economics",
+    "WIN/WDO independent replication economics",
+    "WIN/WDO survivor ranking",
+    "WIN/WDO prospective activation",
+    "threshold retuning",
+    "backfill",
+    "counter reset",
+    "cross-asset input",
+    "H1 or H31 economic read"
+  ],
+  "economics_read_after_cost_prereg": false,
+  "results_read": false,
+  "replication_read": false,
+  "prospective_read": false,
+  "human_decision_required": true,
+  "human_decision_scope": [
+    "Freeze exact WIN and WDO contract-level BRL PnL/point-value/multiplier and equal-notional return-normalization semantics compatible with the already-frozen R$/contract round-trip costs.",
+    "Freeze numeric discovery, robustness and independent-replication gates for B3WIN01-06 and B3WDO01-06 before the first economic read."
+  ],
+  "no_scientific_credit": true,
+  "no_prospective_credit": true,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
