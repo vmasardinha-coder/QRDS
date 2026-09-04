@@ -1,0 +1,43 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_PREREG_V1",
+  "date": "2026-09-03",
+  "purpose": "BCAP_MATERIALLY_DISTINCT_PUBLIC_ORACLE_SOURCE_EXHAUSTION",
+  "candidate": {
+    "symbol": "BCAP",
+    "coin_id": "blockchain-capital",
+    "name": "Blockchain Capital",
+    "candidate_provider": "REDSTONE_PUBLIC_ORACLE",
+    "network": "zksync",
+    "token_contract": "0x57fd71a86522dc06d6255537521886057c1772a3",
+    "source_identity": "BCAP_FUNDAMENTAL",
+    "source_semantics": "FUNDAMENTAL_NAV_FAIR_VALUE_FROM_SECURITIZE_NOT_SPOT_MARKET_OHLCV",
+    "price_feed_address_zksync": "0x0eF2418216476Ab5264821070B8c24b6B458F796",
+    "source_components": ["securitize-tsso", "securitize-api"],
+    "public_http_api": "https://api.redstone.finance/prices",
+    "official_evidence": [
+      "https://blog.redstone.finance/2025/05/06/redstone-and-securitize-catalyze-rwa-market-with-bcap-token-price-feed-on-zksync-era/",
+      "https://investors.securitize.io/news/news-details/2025/RedStone-and-Securitize-Catalyze-20Bn-RWA-Market-with-First-Ever-BCAP-Price-Feed-on-ZKsync-05-06-2025/default.aspx",
+      "https://github.com/redstone-finance/redstone-oracles-monorepo/blob/main/packages/relayer-remote-config/main/relayer-manifests-multi-feed/zksyncMultiFeed.json",
+      "https://github.com/redstone-finance/redstone-oracles-monorepo/blob/main/packages/node-remote-config/dev/manifests/data-services/primary.json",
+      "https://github.com/redstone-finance/redstone-api/blob/main/docs/HTTP_API.md"
+    ],
+    "rationale": "Materially distinct exact-source route after Kraken had no exact BCAP asset metadata and Ethereum exact-contract DEX discovery produced no exact pool. Official RedStone config resolves the feed identity as BCAP_FUNDAMENTAL and explicitly sources it from Securitize. This is a fundamental/NAV fair-value feed rather than spot-market OHLCV. Physical qualification must prove the exact feed if possible but MUST fail closed on semantic incompatibility with the frozen V2A market-data contract; it may not silently substitute fundamental NAV for market OHLCV.",
+    "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+  },
+  "source_admitted": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
