@@ -1,0 +1,64 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_cost_schedule_blocker.v1",
+  "stage": "PRE_ECONOMICS_COST_GATE",
+  "recorded_utc": "2026-09-04T08:08:56Z",
+  "base_main_sha": "525703872f5a60ab88a57d1a260cf596bd5b1039",
+  "depends_on_prereg": "tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_PREREG.v1.json",
+  "family_ids": ["B3WIN01","B3WIN02","B3WIN03","B3WIN04","B3WIN05","B3WIN06","B3WDO01","B3WDO02","B3WDO03","B3WDO04","B3WDO05","B3WDO06"],
+  "status": "FAIL_CLOSED_CANONICAL_COST_SCHEDULE_UNRESOLVED",
+  "economics_read": false,
+  "discovery_executed": false,
+  "replication_executed": false,
+  "prospective_started": false,
+  "repo_audit": {
+    "canonical_win_wdo_cost_schedule_found": false,
+    "bluechips_30bps_schedule_reused": false,
+    "reason_not_reused": "Different instrument family and execution microstructure; reuse would violate frozen independence and no-cost-change constraints."
+  },
+  "official_source_audit": [
+    {
+      "publisher": "B3",
+      "url": "https://edu.b3.com.br/pt/day-trade",
+      "retrieved_utc": "2026-09-04T08:08:56Z",
+      "claim": "Current B3 educational table states maximum B3 fees/emoluments for one contract entry+exit of BRL 0.50 for WIN and BRL 2.12 for WDO.",
+      "coverage": "CURRENT_PAGE_ONLY",
+      "historical_2022_2024_schedule_proven": false,
+      "admitted_as_historical_cost_schedule": false
+    },
+    {
+      "publisher": "B3",
+      "url": "https://b3.com.br/pt_br/produtos-e-servicos/tarifas/listados-a-vista-e-derivativos/moedas/tarifas-de-dolar-dos-estados-unidos/dolar-hft/",
+      "retrieved_utc": "2026-09-04T08:08:56Z",
+      "claim": "Official WDO HFT tariff surface exists and is explicitly participant/program dependent.",
+      "coverage": "PROGRAM_SPECIFIC_CURRENT_OR_EFFECTIVE_FROM_2024",
+      "representative_default_retail_cost": false,
+      "admitted_as_family_cost_schedule": false
+    }
+  ],
+  "unresolved_components": {
+    "historically_applicable_b3_fee_schedule_2022_2024": true,
+    "brokerage_or_execution_service_fee": true,
+    "slippage_model": true,
+    "all_in_round_trip_schedule": true
+  },
+  "forbidden_inferences": [
+    "Do not apply current B3 maximum fees retrospectively as if historically proven.",
+    "Do not infer zero brokerage.",
+    "Do not invent one-tick or fixed-bps slippage.",
+    "Do not reuse B3 blue-chip 30 bps costs.",
+    "Do not read family economics before a separate canonical cost preregistration is frozen and merged."
+  ],
+  "required_resolution": "A separate ex-ante canonical WIN/WDO all-in cost schedule must be preregistered without result feedback, with provenance for exchange fees and an explicit independently chosen brokerage/slippage model; otherwise economics remains sealed.",
+  "human_decision_needed": true,
+  "human_decision_scope": "Only if no pre-existing canonical WIN/WDO all-in cost schedule can be recovered: approve an ex-ante cost-model convention before any economic result is read, or provide an auditable historical schedule. No threshold, family rule, hold, source, or gate change is authorized.",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "fail_closed": true
+}
