@@ -35,22 +35,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out canonical code
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: main_repo
-
-      - name: Check out canonical runtime
-        uses: actions/checkout@v4
-        with:
-          ref: gate-btc-runtime
-          path: runtime_repo
-          fetch-depth: 0
-
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        with: {python-version: '3.12'}
 
       - name: Assert immutable boundary
         run: |
@@ -73,53 +63,51 @@ jobs:
           python -m py_compile tools/gate_btc_factory/build_invalidated_forward_holdout_gates.py
           pytest -q tests/test_gate_btc_invalidated_forward_holdout_gates.py
 
-      - name: Build immutable forward-unseen dataset and 12 scoped gates
+      - name: Build strict 2025-2026 forward-unseen dataset and 12 scoped gates
         run: |
           python main_repo/tools/gate_btc_factory/build_invalidated_forward_holdout_gates.py \
             --root-cause runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
             --results-dir runtime_repo/runtime/autonomous_science/results \
             --runtime-root runtime_repo/runtime/factory_autonomy/invalidated_requalification
 
-      - name: Assert complete batch coverage and no scientific mutation
+      - name: Assert complete batch coverage and strict unseen boundary
         run: |
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
           root=Path('runtime_repo/runtime/factory_autonomy/invalidated_requalification')
           m=json.load(open(root/'FORWARD_HOLDOUT_MANIFEST.json',encoding='utf-8'))
-          assert m['affected_family_count']==768, m
-          assert m['batch_count']==12, m
-          assert m['batch_size']==64, m
+          assert m['schema']=='qrds.factory.invalidated_forward_holdout_manifest.v2', m
+          assert m['affected_family_count']==768 and m['batch_count']==12 and m['batch_size']==64, m
           assert m['eligible_session_count'] >= 322, m
+          assert m['holdout_start']=='2025-01-01' and m['cutoff_exclusive']=='2026-08-10', m
+          assert m['windows']['discovery']['start'] >= '2025-01-01', m
+          assert m['windows']['replication']['start'] >= '2025-01-01', m
           assert m['windows']['discovery']['end'] < m['windows']['replication']['start'], m
+          assert m['windows']['replication']['end'] < '2026-08-10', m
+          assert len(m['sources'])==2
           assert m['forward_unseen_verified_against_original_results'] is True
-          assert m['economics_read_during_gate_build'] is False
-          assert m['historical_observations_credited']==0
+          assert m['economics_read_during_gate_build'] is False and m['historical_observations_credited']==0
           dataset=Path('runtime_repo')/m['dataset_relative_path']
-          assert dataset.is_file()
-          assert hashlib.sha256(dataset.read_bytes()).hexdigest()==m['dataset_sha256']
-          gates=sorted((root/'source_gates').glob('WIN_M5_FORWARD_UNSEEN_2025_2026_BATCH_*.json'))
+          assert dataset.is_file() and hashlib.sha256(dataset.read_bytes()).hexdigest()==m['dataset_sha256']
+          gates=sorted((root/'source_gates').glob('WIN_M5_STRICT_FORWARD_UNSEEN_2025_2026_BATCH_*.json'))
           assert len(gates)==12
           seen=[]
           for p in gates:
-              g=json.load(open(p,encoding='utf-8'))
-              seen += g['family_ids']
+              g=json.load(open(p,encoding='utf-8')); seen += g['family_ids']
               for k in ['qualified','free_or_official_auditable','publication_semantics_proven','revision_semantics_proven','identity_qa_pass','schema_qa_pass','point_in_time_valid','independent_unseen_evaluation_data','no_historical_backfill_credit']:
                   assert g[k] is True, (p,k)
-              assert g['economics_pre_read'] is False
-              assert g['historical_observations_credited']==0
-              assert g['same_historical_window_rerun'] is False
-              assert g['scientific_change_allowed'] is False
-              s=g['safety']
-              assert s['research_only'] and s['shadow_only'] and s['not_approved']
+              assert g['source']['holdout_start']=='2025-01-01'
+              assert g['source']['cutoff_exclusive']=='2026-08-10'
+              assert g['economics_pre_read'] is False and g['historical_observations_credited']==0
+              assert g['same_historical_window_rerun'] is False and g['scientific_change_allowed'] is False
+              s=g['safety']; assert s['research_only'] and s['shadow_only'] and s['not_approved']
               assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
-              assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
-              assert s['h1_economics_read'] is False
+              assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed'] and s['h1_economics_read'] is False
           assert len(seen)==768 and len(set(seen))==768
           q=json.load(open(root/'QUEUE.json',encoding='utf-8'))
-          expected=[x['original_family_id'] for x in q['families']]
-          assert set(seen)==set(expected)
-          print('INVALIDATED_FORWARD_HOLDOUT_GATES=PASS')
+          assert set(seen)=={x['original_family_id'] for x in q['families']}
+          print('INVALIDATED_STRICT_FORWARD_HOLDOUT_GATES=PASS')
           PY
 
       - name: Persist hash-bound dataset, scoped gates and manifest
@@ -131,10 +119,8 @@ jobs:
           git add runtime/factory_autonomy/invalidated_requalification/datasets \
                   runtime/factory_autonomy/invalidated_requalification/source_gates \
                   runtime/factory_autonomy/invalidated_requalification/FORWARD_HOLDOUT_MANIFEST.json
-          if git diff --cached --quiet; then
-            echo 'HOLDOUT_GATES_ALREADY_CURRENT=true'
-          else
-            git commit -m "Factory publish forward-unseen gates for 768 invalidated families"
+          if ! git diff --cached --quiet; then
+            git commit -m "Factory publish strict 2025-2026 unseen gates for 768 invalidated families"
             for i in 1 2 3 4 5; do
               git pull --rebase origin gate-btc-runtime
               if git push origin HEAD:gate-btc-runtime; then break; fi
