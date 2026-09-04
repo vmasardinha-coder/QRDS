@@ -1,0 +1,62 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_EXHAUSTION_V1",
+  "date": "2026-09-04",
+  "purpose": "BCAP_SECURETIZE_ATS_PUBLIC_AUDITABILITY_EXHAUSTION",
+  "preregistration": "artifacts/gate_btc_2/v2a_bcap_securitize_ats_prereg_20260903.json",
+  "candidate": {
+    "symbol": "BCAP",
+    "coin_id": "blockchain-capital",
+    "provider": "SECURITIZE_MARKETS_ATS",
+    "market": "BCAP/USDC",
+    "venue_type": "SEC_FINRA_REGULATED_ATS"
+  },
+  "official_evidence_checked": [
+    {
+      "url": "https://investors.securitize.io/news/news-details/2026/Securitize-Receives-Approval-to-Enable-Custody-and-Atomic-Settlement-for-Tokenized-Securities/default.aspx",
+      "finding": "Confirms regulated broker-dealer ATS and atomic settlement capability, but exposes no public execution-history/OHLCV endpoint or auditable trade tape."
+    },
+    {
+      "url": "https://issuersupport.securitize.io/hc/en-us/articles/33015702531863-Getting-Started-with-the-Securitize-APIs",
+      "finding": "Official API catalog exposes issuer Domain API and investor Connect API; no public secondary-market execution-data API is documented."
+    },
+    {
+      "url": "https://investors.securitize.io/news/news-details/2025/RedStone-and-Securitize-Catalyze-20Bn-RWA-Market-with-First-Ever-BCAP-Price-Feed-on-ZKsync-05-06-2025/default.aspx",
+      "finding": "Confirms BCAP identity and RedStone price feed, but that feed is valuation/oracle semantics and is already frozen as incompatible with spot execution OHLCV."
+    },
+    {
+      "url": "https://www.sec.gov/about/crypto-task-force/crypto-task-force-meetings/ctf-memo-securitize-markets-33125",
+      "finding": "Confirms Securitize Markets regulatory identity; provides no public BCAP trade-history feed."
+    }
+  ],
+  "physical_qualification": {
+    "exact_identity_established": true,
+    "actual_secondary_venue_semantics_established": true,
+    "public_auditable_execution_endpoint_established": false,
+    "raw_execution_bytes_captured": false,
+    "raw_execution_sha256": null,
+    "execution_schema": null,
+    "execution_timezone": null,
+    "coverage": null,
+    "frozen_window_ohlcv_qa_possible": false,
+    "status": "FAIL_CLOSED_NO_PUBLIC_AUDITABLE_EXECUTION_DATA"
+  },
+  "interpretation": "This is source-exhaustion evidence, not a DATA_GAP repair and not proof that BCAP never trades. The regulated ATS may have private/authenticated execution data, but without a free/public/auditable execution surface it cannot qualify for the frozen V2A source contract. On-chain transfers, NAV/oracle values, or third-party indicative prices may not substitute for ATS executions.",
+  "source_admitted": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "collector_override_activation_allowed": false,
+  "complete_registry_claimed": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
