@@ -10,12 +10,38 @@ from tools.gate_btc_factory import invalidated_family_requalification_runner as 
 
 STRICT_NAMESPACE = "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
 STRICT_PREFIX = "WIN_M5_STRICT_FORWARD_UNSEEN_2025_2026_BATCH_"
+CONTAMINATED_V1_NAMESPACE = "RQ_FORWARD_UNSEEN_2025_2026_V1"
+CONTAMINATED_V1_PREFIX = "WIN_M5_FORWARD_UNSEEN_2025_2026_BATCH_"
 HOLDOUT_START = "2025-01-01"
 CUTOFF_EXCLUSIVE = "2026-08-10"
 
 
 def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def contaminated_v1_gate_names(source_gates_dir: Path | None) -> list[str]:
+    """Return superseded V1 gates that overlap the original 2020-2024 evaluator.
+
+    They are retained on the runtime branch as immutable audit evidence, but they
+    are never eligible for new scientific credit.  The defect is mechanical: the
+    gate claimed unseen temporal holdout semantics while its discovery window
+    started in 2024.
+    """
+    if source_gates_dir is None or not source_gates_dir.is_dir():
+        return []
+    names = []
+    for path in sorted(source_gates_dir.glob(f"{CONTAMINATED_V1_PREFIX}*.json")):
+        gate = _load(path)
+        windows = gate.get("windows") or {}
+        discovery = windows.get("discovery") or {}
+        start = str(discovery.get("start") or "")
+        mode = str((gate.get("source") or {}).get("independence_mode") or "")
+        if gate.get("evaluation_namespace") == CONTAMINATED_V1_NAMESPACE and (
+            start < HOLDOUT_START or mode == "TEMPORAL_HOLDOUT_NOT_READ_BY_ORIGINAL_2020_2024_EVALUATOR"
+        ):
+            names.append(path.name)
+    return names
 
 
 def strict_scoped_sources(source_gates_dir: Path | None, runtime_dir: Path):
@@ -51,27 +77,38 @@ def strict_scoped_sources(source_gates_dir: Path | None, runtime_dir: Path):
     return out
 
 
-def prepare_existing(existing: dict | None, strict_sources) -> dict | None:
-    if existing is None or not strict_sources:
-        return existing
+def prepare_existing(existing: dict | None, strict_sources) -> tuple[dict | None, int]:
+    """Remove scientific credit from the known contaminated V1 namespace only.
+
+    Valid discovery-only 2025 terminal rejections remain immutable and terminal.
+    Contaminated V1 result files and attempt counters are also preserved; only
+    their terminal scientific credit is revoked.  This happens even when no
+    strict V2 source is currently green, so lack of a replacement source can
+    never make an invalid result look completed.
+    """
+    if existing is None:
+        return None, 0
     strict_by_family = {}
     for gate, _ in strict_sources:
         for fid in gate.get("family_ids") or []:
             strict_by_family[fid] = gate
     prepared = copy.deepcopy(existing)
+    invalidated = 0
     for row in prepared.get("families") or []:
         fid = row.get("original_family_id")
-        gate = strict_by_family.get(fid)
-        if gate is None:
-            continue
-        wanted_ns = f"{STRICT_NAMESPACE}::{fid}"
-        old_ns = row.get("new_namespace")
-        if row.get("status") in runner.TERMINAL and old_ns != wanted_ns:
-            # Preserve attempts and immutable result files; only make the row eligible
-            # for the materially distinct, preregistered strict namespace.
+        old_ns = str(row.get("new_namespace") or "")
+        if row.get("status") in runner.TERMINAL and old_ns == f"{CONTAMINATED_V1_NAMESPACE}::{fid}":
             row["status"] = "WAITING_SOURCE_QUALIFICATION"
-            row["source_gate_status"] = "SUPERSEDED_TERMINAL_NAMESPACE_AWAITING_STRICT_V2"
-    return prepared
+            row["source_gate_status"] = "INVALIDATED_2024_OVERLAP_AWAITING_STRICT_V2"
+            invalidated += 1
+            continue
+        # A strict V2 gate may execute an unresolved row, but it must never
+        # reopen a terminal result from the valid 2025-only discovery namespace.
+        gate = strict_by_family.get(fid)
+        wanted_ns = f"{STRICT_NAMESPACE}::{fid}"
+        if gate is not None and row.get("status") not in runner.TERMINAL and old_ns != wanted_ns:
+            row["source_gate_status"] = "STRICT_V2_SOURCE_AVAILABLE"
+    return prepared, invalidated
 
 
 def main() -> int:
@@ -88,8 +125,9 @@ def main() -> int:
     root = _load(ns.root_cause)
     policy = _load(ns.policy)
     existing = _load(ns.existing) if ns.existing and ns.existing.is_file() else None
+    contaminated_gates = contaminated_v1_gate_names(ns.source_gates_dir)
     strict_sources = strict_scoped_sources(ns.source_gates_dir, ns.runtime_dir)
-    prepared = prepare_existing(existing, strict_sources)
+    prepared, invalidated_v1 = prepare_existing(existing, strict_sources)
 
     queue = runner.run_all(
         root,
@@ -104,11 +142,17 @@ def main() -> int:
     queue["authoritative_replay_namespace"] = STRICT_NAMESPACE
     queue["strict_source_gate_count"] = len(strict_sources)
     queue["strict_source_gate_green"] = bool(strict_sources)
+    queue["contaminated_v1_credit_invalidated_count"] = invalidated_v1
+    queue["contaminated_v1_gate_count"] = len(contaminated_gates)
+    queue["contaminated_v1_gates_authoritative"] = False
     runner.dump(ns.output, queue)
     print(json.dumps({
         "strict_gate_count": len(strict_sources),
         "strict_gate_green": bool(strict_sources),
+        "contaminated_v1_credit_invalidated": invalidated_v1,
+        "contaminated_v1_gate_count": len(contaminated_gates),
         "completed": queue.get("completed_family_count", 0),
+        "waiting_source": queue.get("waiting_source_count", 0),
         "survivors": queue.get("survivor_count", 0),
         "orders": 0,
         "real_capital": 0,
