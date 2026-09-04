@@ -11,12 +11,14 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
+      - 'tools/gate_btc_factory/invalidated_strict_namespace_handoff.py'
       - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
       - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
       - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
   pull_request:
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
+      - 'tools/gate_btc_factory/invalidated_strict_namespace_handoff.py'
       - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
       - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
       - 'tests/test_gate_btc_invalidated_family_requalification_runner.py'
@@ -54,6 +56,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest numpy pandas
       - run: python -m pytest -q tests/test_gate_btc_invalidated_family_requalification_runner.py
+      - run: python -m py_compile tools/gate_btc_factory/invalidated_strict_namespace_handoff.py
 
   requalify-all:
     if: >-
@@ -100,56 +103,20 @@ jobs:
           print('AFFECTED_FAMILY_COUNT='+str(a['family_count']))
           PY
 
-      - name: Resolve legacy global source gate and independent dataset
-        id: source
-        run: |
-          set -euo pipefail
-          GATE='runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_GATE.json'
-          echo "gate=$GATE" >> "$GITHUB_OUTPUT"
-          if [ ! -f "$GATE" ]; then
-            echo 'dataset=' >> "$GITHUB_OUTPUT"
-            echo 'source_gate_present=false' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          REL=$(python - <<'PY'
-          import json
-          g=json.load(open('runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_GATE.json',encoding='utf-8'))
-          print(g.get('dataset_relative_path',''))
-          PY
-          )
-          if [ -n "$REL" ]; then
-            echo "dataset=runtime_repo/$REL" >> "$GITHUB_OUTPUT"
-          else
-            echo 'dataset=' >> "$GITHUB_OUTPUT"
-          fi
-          echo 'source_gate_present=true' >> "$GITHUB_OUTPUT"
-
-      - name: Build or advance independently source-gated family queue
+      - name: Advance only the strict preregistered replay namespace
         working-directory: main_repo
-        env:
-          SOURCE_GATE: ../${{ steps.source.outputs.gate }}
-          DATASET: ../${{ steps.source.outputs.dataset }}
-          SCOPED_SOURCE_GATES: ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates
         run: |
           set -euo pipefail
           OUT='../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
           EXISTING=()
           [ -f "$OUT" ] && EXISTING=(--existing "$OUT")
-          SG=()
-          [ -f "$SOURCE_GATE" ] && SG=(--source-gate "$SOURCE_GATE")
-          SGS=()
-          [ -d "$SCOPED_SOURCE_GATES" ] && SGS=(--source-gates-dir "$SCOPED_SOURCE_GATES")
-          DS=()
-          [ -n "${DATASET:-}" ] && [ -f "$DATASET" ] && DS=(--dataset "$DATASET")
-          python -m tools.gate_btc_factory.invalidated_family_requalification_runner \
+          python -m tools.gate_btc_factory.invalidated_strict_namespace_handoff \
             --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
             --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json \
             --results-dir ../runtime_repo/runtime/autonomous_science/results \
-            "${SG[@]}" \
-            "${SGS[@]}" \
-            "${DS[@]}" \
-            "${EXISTING[@]}" \
+            --source-gates-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates \
             --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
+            "${EXISTING[@]}" \
             --output "$OUT"
 
       - name: Validate no historical mutation and no live trading
@@ -163,6 +130,7 @@ jobs:
           assert len(q['families'])==q['affected_family_count']
           ids=[x['original_family_id'] for x in q['families']]
           assert len(ids)==len(set(ids))
+          assert q['authoritative_replay_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
           s=q['safety']
           assert s['research_only'] and s['shadow_only'] and s['not_approved']
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
@@ -179,7 +147,7 @@ jobs:
           git config user.email gate-btc-actions@users.noreply.github.com
           git add runtime/factory_autonomy/invalidated_requalification
           git diff --cached --quiet && exit 0
-          git commit -m 'Advance invalidated-family requalification queue'
+          git commit -m 'Advance invalidated-family strict requalification queue'
           for attempt in 1 2 3 4 5; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then
