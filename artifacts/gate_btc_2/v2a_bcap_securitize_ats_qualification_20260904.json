@@ -1,0 +1,73 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_QUALIFICATION_V1",
+  "date": "2026-09-04",
+  "purpose": "BCAP_SECURITIZE_MARKETS_ATS_PHYSICAL_QUALIFICATION",
+  "preregistration": "artifacts/gate_btc_2/v2a_bcap_securitize_ats_prereg_20260903.json",
+  "candidate": {
+    "symbol": "BCAP",
+    "coin_id": "blockchain-capital",
+    "candidate_provider": "SECURITIZE_MARKETS_ATS",
+    "market": "BCAP/USDC",
+    "settlement_network": "ethereum",
+    "ethereum_contract": "0x8347fffb3abeb2fae5c21b09e983bdefa1a047dc"
+  },
+  "physical_findings": {
+    "secondary_market_exists": true,
+    "public_reference_marketplace": "SECURITIZE_MARKETS",
+    "public_reference_last_trade_date": "2025-01-07",
+    "public_reference_last_trade_price_usd": 5.10,
+    "public_reference_24h_volume_usd": 0,
+    "public_full_trade_history_without_login": false,
+    "official_public_ats_execution_history_endpoint_found": false,
+    "official_public_ats_ohlcv_endpoint_found": false,
+    "official_public_ats_trade_stream_found": false,
+    "documented_securitize_apis_require_credentials_or_oauth_for_investor_issuer_flows": true,
+    "transfer_activity_is_not_admitted_as_trade_execution": true,
+    "nav_or_valuation_feed_is_not_admitted_as_spot_execution": true
+  },
+  "evidence": [
+    {
+      "url": "https://issuersupport.securitize.io/hc/en-us/categories/33015617041047-Securitize-APIs",
+      "finding": "Public Securitize API resource center documents issuer/investor integration surfaces; no public ATS execution-history or OHLCV surface identified."
+    },
+    {
+      "url": "https://issuersupport.securitize.io/hc/en-us/articles/33015702531863-Getting-Started-with-the-Securitize-APIs",
+      "finding": "Documented API families are Domain API for issuers and Connect API for investors."
+    },
+    {
+      "url": "https://issuersupport.securitize.io/hc/en-us/articles/33016271658007-Log-in-as-an-investor-via-API",
+      "finding": "Investor API access uses OAuth, client_id, application secret and access tokens; it is not an unauthenticated public market-data feed."
+    },
+    {
+      "url": "https://stomarket.com/sto/blockchain-capital-bcap/trading",
+      "finding": "Public BCAP trading page identifies Securitize Markets, last trade 2025-01-07, price USD 5.10, 24h volume 0."
+    },
+    {
+      "url": "https://stomarket.com/sto/blockchain-capital-bcap",
+      "finding": "Public BCAP overview states full trading history requires login; security is an LP fund interest and secondary marketplace is Securitize Markets."
+    }
+  ],
+  "qualification_result": "FAIL_CLOSED_NO_PUBLIC_AUDITABLE_ATS_EXECUTION_DATA",
+  "reason": "The exact BCAP secondary venue exists, but the preregistered frozen V2A contract requires public/auditable execution data sufficient for deterministic timestamp/schema continuity and OHLCV QA. The bounded physical qualification did not identify an official unauthenticated Securitize ATS trade-history, trade-stream, or OHLCV endpoint. The public third-party surface is stale/zero-volume and gates full history behind login. Authenticated issuer/investor APIs do not satisfy public-auditability, and NAV or ordinary token transfers cannot be silently reinterpreted as spot executions.",
+  "source_admitted": false,
+  "source_exhaustion_status": "SECURITIZE_ATS_ROUTE_EXHAUSTED_UNDER_FROZEN_PUBLIC_AUDITABLE_CONTRACT",
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "collector_override_activation_allowed": false,
+  "complete_registry_claimed": false,
+  "human_decision_needed": false,
+  "next_allowed_action": "Reconcile BCAP as structurally unobservable under the current frozen contract or identify a materially distinct preregisterable public/auditable execution source. Do not reopen Securitize ATS without materially new public market-data capability.",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
