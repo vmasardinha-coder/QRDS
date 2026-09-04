@@ -1,0 +1,134 @@
+name: GATE BTC Invalidated Discovery First
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/invalidated_discovery_first.py'
+      - 'tests/test_gate_btc_invalidated_discovery_first.py'
+      - '.github/workflows/gate-btc-invalidated-discovery-first.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-invalidated-discovery-first
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+jobs:
+  discovery-first:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true && test "$SHADOW_ONLY" = true && test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false && test "$ORDERS" = 0 && test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true && test "$NO_BACKFILL" = true && test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true && test "$H1_ECONOMICS_READ" = false
+
+      - name: Test discovery-first contract
+        run: |
+          python -m pip install -q pytest pandas numpy
+          cd main_repo
+          python -m py_compile tools/gate_btc_factory/invalidated_discovery_first.py
+          pytest -q tests/test_gate_btc_invalidated_discovery_first.py
+
+      - name: Materialize strict unseen 2025 WIN M5 discovery dataset
+        run: |
+          python - <<'PY'
+          import csv, hashlib, io, urllib.request
+          from datetime import datetime
+          from pathlib import Path
+          url='https://raw.githubusercontent.com/wesleyzilva/tradetech/e891c7be2257b4ff439d04661df1971e6df19684/CandlesHistoryDatas/2024_26/WINFUT_F_0_5min.csv'
+          req=urllib.request.Request(url,headers={'User-Agent':'QRDS-research-only-discovery-2025'})
+          raw=urllib.request.urlopen(req,timeout=90).read()
+          rows=[]
+          for r in csv.DictReader(io.StringIO(raw.decode('latin1')),delimiter=';'):
+              if str(r.get('Ativo') or '').strip().upper()!='WINFUT': continue
+              ds,ts=str(r.get('Data') or '').strip(),str(r.get('Hora') or '').strip()
+              if not ds or not ts: continue
+              dt=datetime.strptime(ds+' '+ts,'%d/%m/%Y %H:%M:%S')
+              if not ('2025-01-01' <= dt.strftime('%Y-%m-%d') <= '2025-12-31'): continue
+              def num(k): return float(str(r.get(k) or '0').strip().replace('.','').replace(',','.'))
+              rows.append({'timestamp':dt.strftime('%Y-%m-%d %H:%M:%S'),'open':num('Abertura'),'high':num('Máximo'),'low':num('Mínimo'),'close':num('Fechamento'),'volume':num('Volume') or num('Quantidade')})
+          dedup={}
+          for x in rows:
+              p=dedup.get(x['timestamp'])
+              if p is not None and p!=x: raise SystemExit('CONFLICTING_DUPLICATE_TIMESTAMP:'+x['timestamp'])
+              dedup[x['timestamp']]=x
+          out=Path('runtime_repo/runtime/factory_autonomy/invalidated_requalification/datasets/WIN_M5_DISCOVERY_2025.csv')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          with out.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=['timestamp','open','high','low','close','volume']); w.writeheader(); w.writerows(dedup[k] for k in sorted(dedup))
+          sha=hashlib.sha256(out.read_bytes()).hexdigest()
+          Path('DISCOVERY_DATASET_SHA').write_text(sha,encoding='utf-8')
+          print('DISCOVERY_DATASET_SHA256='+sha)
+          PY
+
+      - name: Run discovery across all 768 frozen contracts
+        working-directory: main_repo
+        run: |
+          SHA=$(cat ../DISCOVERY_DATASET_SHA)
+          python -m tools.gate_btc_factory.invalidated_discovery_first \
+            --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
+            --results-dir ../runtime_repo/runtime/autonomous_science/results \
+            --queue ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json \
+            --dataset ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/datasets/WIN_M5_DISCOVERY_2025.csv \
+            --dataset-sha256 "$SHA" \
+            --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
+            --output ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json
+
+      - name: Validate terminal discovery semantics
+        run: |
+          python - <<'PY'
+          import json
+          q=json.load(open('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json',encoding='utf-8'))
+          assert q['affected_family_count']==768
+          assert q['waiting_source_count']==0
+          assert q['discovery_rejection_count']+q['waiting_replication_count']+q['inconclusive_count']==768
+          assert q['completed_family_count']==q['discovery_rejection_count']
+          assert q['discovery_first_namespace']=='RQ_DISCOVERY_2025_V1'
+          s=q['safety']; assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          print('DISCOVERY_REJECTED='+str(q['discovery_rejection_count']))
+          print('WAITING_REPLICATION='+str(q['waiting_replication_count']))
+          print('INCONCLUSIVE='+str(q['inconclusive_count']))
+          PY
+
+      - name: Persist append-only discovery results
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/invalidated_requalification
+          git commit -m 'Factory run 2025 discovery for 768 invalidated families'
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            [ "$i" = 5 ] && exit 1
+            sleep $((i*2))
+          done
