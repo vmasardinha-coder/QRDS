@@ -46,6 +46,39 @@ def canonical_frontier_block() -> tuple[int, int, str]:
     return max(blocks, key=lambda row: (row[1], row[0], row[2]))
 
 
+def preregistered_family_ranges() -> list[tuple[int, int, str]]:
+    """Return immutable family-id reservations declared by preregistered manifests.
+
+    These ranges are not treated as completed economic generations. They only
+    prevent the generic decade continuation loop from reusing family IDs that
+    were already assigned by a materially distinct preregistration.
+    """
+    ranges: list[tuple[int, int, str]] = []
+    for path in glob.glob('research/b3_h_*family_manifest.json'):
+        try:
+            payload = json.loads(Path(path).read_text(encoding='utf-8'))
+        except Exception:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        status = str(payload.get('status') or '').upper()
+        if 'PREREGISTERED' not in status:
+            continue
+        start = payload.get('first_family_number')
+        end = payload.get('last_family_number')
+        if not isinstance(start, int) or not isinstance(end, int) or end < start:
+            continue
+        ranges.append((start, end, path))
+    return ranges
+
+
+def preregistered_range_covering(family_number: int) -> tuple[int, int, str] | None:
+    matches = [row for row in preregistered_family_ranges() if row[0] <= family_number <= row[1]]
+    if not matches:
+        return None
+    return max(matches, key=lambda row: (row[1], row[0], row[2]))
+
+
 def canonical_result_path(start: int, end: int) -> Path:
     return Path(f'tools/gate_btc_b3_h{start}_h{end}_result.json')
 
@@ -112,6 +145,21 @@ def main() -> int:
 
     state, should_dispatch, result_path = classify_frontier(start, end)
     next_start, next_end = end + 1, end + 10
+    reserved = preregistered_range_covering(next_start) if should_dispatch else None
+    reserved_source = ''
+    if reserved is not None:
+        reserved_start, reserved_end, reserved_source = reserved
+        # Family identities are already frozen by another preregistration. The
+        # generic decade loop must not recycle them, even when that distinct
+        # track later terminates in DATA_GAP. Advancement beyond the reservation
+        # remains fail-closed and belongs to that track's own source/stage gates.
+        state = 'NEXT_RANGE_ALREADY_PREREGISTERED'
+        should_dispatch = False
+        next_start = reserved_end + 1
+        next_end = next_start + 9
+        print(f'B3_FACTORY_RESERVED_RANGE=H{reserved_start}-H{reserved_end}')
+        print(f'B3_FACTORY_RESERVED_SOURCE={reserved_source}')
+
     frontier_key = f'H{end}-TO-H{next_start}-H{next_end}'
 
     print(f'B3_FACTORY_FRONTIER=H{start}-H{end}')
@@ -133,6 +181,7 @@ def main() -> int:
         'next_start': next_start,
         'next_end': next_end,
         'should_dispatch': should_dispatch,
+        'reserved_source': reserved_source,
     }.items():
         write_output(key, value)
     return 0
