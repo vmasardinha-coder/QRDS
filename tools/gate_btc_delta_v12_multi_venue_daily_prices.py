@@ -220,9 +220,17 @@ def price_one(base: str, pinned: str | None, today: date) -> dict[str, Any]:
 def build(universe_csv: Path, out_dir: Path, pins_path: Path,
           today: date | None = None, min_history: int = 30) -> dict[str, Any]:
     today = today or datetime.now(timezone.utc).date()
-    bases = read_universe(universe_csv)
+    in_universe = read_universe(universe_csv)
     pins = load_pins(pins_path)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # The V12 universe rotates daily, but a position outlives its membership: a
+    # name can drop out of the TOP100 while the book still holds it, and an
+    # unmarked holding is worse than an unselected one. So price the union of
+    # today's universe and every asset ever pinned, and let membership govern
+    # selection alone.
+    universe_set = set(in_universe)
+    bases = in_universe + sorted(set(pins) - universe_set)
 
     panel: list[dict[str, Any]] = []
     provenance: dict[str, Any] = {}
@@ -233,7 +241,9 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
         pinned = (pins.get(base) or {}).get("venue")
         result = price_one(base, pinned, today)
         if result["venue"] is None:
-            unpriced.append({"base": base, "attempts": result["attempts"]})
+            unpriced.append({"base": base, "attempts": result["attempts"],
+                             "was_pinned": bool(pinned),
+                             "in_universe_today": base in universe_set})
             continue
         for row in result["bars"]:
             panel.append({**row, "base": base, "venue": result["venue"]})
@@ -265,13 +275,25 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
     for name in provenance.values():
         by_venue[name["venue"]] = by_venue.get(name["venue"], 0) + 1
 
+    lost_pins = [u for u in unpriced if u["was_pinned"]]
+    new_excluded = [u for u in unpriced if not u["was_pinned"]]
+    universe_priced = sum(1 for b in provenance if b in universe_set)
+
     coverage = {
         "schema": SCHEMA,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "universe_file": universe_csv.name,
-        "universe_size": len(bases),
-        "priced": len(provenance),
+        "universe_policy": "ROTATES_DAILY_MEMBERSHIP_GOVERNS_SELECTION_ONLY",
+        "universe_size": len(in_universe),
+        "universe_priced": universe_priced,
+        "priced_including_held_dropouts": len(provenance),
+        "carried_pins_outside_universe": len(bases) - len(in_universe),
         "unpriced": len(unpriced),
+        # A brand-new entrant no venue serves is excluded from today's selection
+        # and recorded. A name that was already pinned and can no longer be
+        # priced is a different animal: the book may still hold it.
+        "unpriced_new_entrants": len(new_excluded),
+        "unpriced_pinned_assets": len(lost_pins),
         "meets_min_history": sum(1 for p in provenance.values() if p["meets_min_history"]),
         "min_history_required": min_history,
         "venue_counts": by_venue,
@@ -287,10 +309,14 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
         json.dumps({"schema": SCHEMA, "as_of": today.isoformat(), "provenance": provenance},
                    indent=2, sort_keys=True) + "\n", encoding="utf-8")
     pins_path.parent.mkdir(parents=True, exist_ok=True)
+    # A pin is permanent. An asset that could not be priced today keeps the pin
+    # it already had; rewriting the ledger from today's successes alone would
+    # quietly un-pin it and let a later run re-pin it to a different venue.
+    kept = {b: dict(entry) for b, entry in pins.items()}
+    kept.update({b: {"venue": p["venue"], "pinned_at": p["pinned_at"]}
+                 for b, p in provenance.items()})
     pins_path.write_text(json.dumps(
-        {"schema": SCHEMA, "updated_on": today.isoformat(),
-         "pins": {b: {"venue": p["venue"], "pinned_at": p["pinned_at"]}
-                  for b, p in provenance.items()}},
+        {"schema": SCHEMA, "updated_on": today.isoformat(), "pins": kept},
         indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return coverage
 
@@ -306,9 +332,17 @@ def main() -> int:
     today = date.fromisoformat(args.today) if args.today else None
     coverage = build(args.universe_csv, args.out_dir, args.pins, today, args.min_history)
     print(json.dumps({k: coverage[k] for k in (
-        "universe_size", "priced", "unpriced", "meets_min_history", "venue_counts",
+        "universe_size", "universe_priced", "priced_including_held_dropouts",
+        "carried_pins_outside_universe", "unpriced_new_entrants",
+        "unpriced_pinned_assets", "meets_min_history", "venue_counts",
         "research_only", "orders", "real_capital")}, indent=2, sort_keys=True))
-    return 0 if coverage["unpriced"] == 0 else 1
+    for record in coverage["unpriced_detail"]:
+        print(f"UNPRICED {record['base']} was_pinned={record['was_pinned']} "
+              f"in_universe_today={record['in_universe_today']}")
+    # A rotating universe brings in names no venue here serves; excluding them
+    # from a day's selection is normal and recorded. Losing an asset that was
+    # already pinned is not: the book may hold it and it can no longer be marked.
+    return 1 if coverage["unpriced_pinned_assets"] else 0
 
 
 if __name__ == "__main__":

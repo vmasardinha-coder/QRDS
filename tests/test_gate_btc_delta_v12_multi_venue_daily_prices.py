@@ -156,7 +156,7 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
             with (root / "out" / "DAILY_PRICES.csv").open(encoding="utf-8") as handle:
                 panel_bases = {r["base"] for r in csv.DictReader(handle)}
 
-        self.assertEqual(coverage["priced"], 1)
+        self.assertEqual(coverage["universe_priced"], 1)
         self.assertEqual(coverage["unpriced"], 1)
         self.assertNotIn("XMR", provenance["provenance"])
         self.assertNotIn("XMR", panel_bases)
@@ -170,7 +170,7 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
             root = Path(td)
             coverage, _ = self.run_build(root, router(okx=okx_payload(count=12)))
             provenance = json.loads((root / "out" / "PRICE_PROVENANCE.json").read_text())
-        self.assertEqual(coverage["priced"], 1)
+        self.assertEqual(coverage["universe_priced"], 1)
         self.assertEqual(coverage["meets_min_history"], 0)
         self.assertFalse(provenance["provenance"]["BTC"]["meets_min_history"])
 
@@ -221,3 +221,77 @@ class MultiVenueDailyPriceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RotatingUniverseTests(unittest.TestCase):
+    """The universe rotates daily, so pricing must outlive membership."""
+
+    def test_a_pinned_asset_outside_todays_universe_is_still_priced(self):
+        # A position can outlive its TOP100 membership; an unmarked holding is
+        # worse than an unselected one.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pins = root / "PINS.json"
+            pins.write_text(json.dumps({"pins": {
+                "OLD": {"venue": "OKX_SWAP", "pinned_at": "2026-08-01"}}}))
+            with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
+                coverage = adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+            with (root / "out" / "DAILY_PRICES.csv").open(encoding="utf-8") as handle:
+                priced = {r["base"] for r in csv.DictReader(handle)}
+        self.assertEqual(coverage["universe_size"], 1)
+        self.assertEqual(coverage["carried_pins_outside_universe"], 1)
+        self.assertIn("OLD", priced)
+        self.assertIn("BTC", priced)
+
+    def test_a_new_entrant_no_venue_serves_is_excluded_not_fatal(self):
+        def only_btc(url, payload=None):
+            if "okx.com" in url and "BTC-USDT-SWAP" in url:
+                return okx_payload()
+            raise adapter.PriceAdapterError("instrument not served")
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pins = root / "PINS.json"
+            with mock.patch.object(adapter, "fetch_url", side_effect=only_btc):
+                coverage = adapter.build(universe(root, ("BTC", "NEWCOIN")), root / "out",
+                                         pins, TODAY)
+        self.assertEqual(coverage["unpriced_new_entrants"], 1)
+        self.assertEqual(coverage["unpriced_pinned_assets"], 0)
+        record = coverage["unpriced_detail"][0]
+        self.assertEqual(record["base"], "NEWCOIN")
+        self.assertFalse(record["was_pinned"])
+        self.assertTrue(record["in_universe_today"])
+
+    def test_losing_an_already_pinned_asset_is_reported_separately(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pins = root / "PINS.json"
+            pins.write_text(json.dumps({"pins": {
+                "GONE": {"venue": "OKX_SWAP", "pinned_at": "2026-08-01"}}}))
+            def only_btc(url, payload=None):
+                if "okx.com" in url and "BTC-USDT-SWAP" in url:
+                    return okx_payload()
+                raise adapter.PriceAdapterError("instrument not served")
+            with mock.patch.object(adapter, "fetch_url", side_effect=only_btc):
+                coverage = adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+        self.assertEqual(coverage["unpriced_pinned_assets"], 1)
+        self.assertEqual(coverage["unpriced_new_entrants"], 0)
+
+    def test_a_pin_survives_a_day_the_asset_could_not_be_priced(self):
+        # Rewriting the ledger from today's successes alone would un-pin it and
+        # let a later run pin it to a different venue.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pins = root / "PINS.json"
+            pins.write_text(json.dumps({"pins": {
+                "GONE": {"venue": "HYPERLIQUID", "pinned_at": "2026-08-01"}}}))
+            def only_btc(url, payload=None):
+                if "okx.com" in url and "BTC-USDT-SWAP" in url:
+                    return okx_payload()
+                raise adapter.PriceAdapterError("instrument not served")
+            with mock.patch.object(adapter, "fetch_url", side_effect=only_btc):
+                adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+            stored = json.loads(pins.read_text())["pins"]
+        self.assertEqual(stored["GONE"]["venue"], "HYPERLIQUID")
+        self.assertEqual(stored["GONE"]["pinned_at"], "2026-08-01")
+        self.assertEqual(stored["BTC"]["venue"], "OKX_SWAP")

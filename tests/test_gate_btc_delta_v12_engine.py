@@ -173,10 +173,27 @@ class SignalTests(unittest.TestCase):
         self.assertEqual(len(last), 20)
 
 
-class RunTests(unittest.TestCase):
-    def run_engine(self, root: Path, rows=None, out=None):
+class EngineRunMixin:
+    def run_engine(self, root: Path, rows=None, out=None, funding=None):
+        """One run against one panel, the way a single daily execution behaves."""
         prices, universe = write_inputs(root, rows)
-        return engine.run(prices, universe, CONTRACT, out or (root / "ledger"), "test-run")
+        return engine.run(prices, universe, CONTRACT, out or (root / "ledger"),
+                          "test-run", funding)
+
+    def advance(self, root: Path, first_days: int, last_days: int, out=None, funding=None):
+        """Run once per day from first_days to last_days, as the workflow does.
+
+        The universe rotates daily and its membership is only recorded by the run
+        that observes it, so a test that jumps several days at once is not
+        exercising the system as it actually runs.
+        """
+        status = None
+        for count in range(first_days, last_days + 1):
+            status = self.run_engine(root, price_panel(days=count), out, funding)
+        return status
+
+
+class RunTests(EngineRunMixin, unittest.TestCase):
 
     def test_first_run_establishes_the_anchor_and_writes_no_returns(self):
         with tempfile.TemporaryDirectory() as td:
@@ -193,7 +210,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             first = self.run_engine(root, price_panel(days=70))
-            second = self.run_engine(root, price_panel(days=75))
+            second = self.advance(root, 71, 75)
         self.assertEqual(second["anchor_date"], first["anchor_date"])
         self.assertFalse(second["anchor_established_this_run"])
         self.assertEqual(second["observed_days"], 5)
@@ -202,7 +219,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             first = self.run_engine(root, price_panel(days=70))
-            self.run_engine(root, price_panel(days=76))
+            self.advance(root, 71, 76)
             with (root / "ledger" / "DAILY_NAV.csv").open(encoding="utf-8") as handle:
                 dates = {r["date"] for r in csv.DictReader(handle)}
         self.assertTrue(all(d > first["anchor_date"] for d in dates), sorted(dates)[:3])
@@ -211,9 +228,9 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            self.run_engine(root, price_panel(days=74))
+            self.advance(root, 71, 74)
             before = engine.read_csv_rows(root / "ledger" / "DAILY_NAV.csv")
-            self.run_engine(root, price_panel(days=78))
+            self.advance(root, 75, 78)
             after = engine.read_csv_rows(root / "ledger" / "DAILY_NAV.csv")
         self.assertGreater(len(after), len(before))
         for old, new in zip(before, after):
@@ -223,7 +240,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            self.run_engine(root, price_panel(days=74))
+            self.advance(root, 71, 74)
             # Same days, different prices: the kind of silent source revision the
             # hash chain exists to catch.
             tampered = price_panel(days=74)
@@ -249,7 +266,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            status = self.run_engine(root, price_panel(days=76))
+            status = self.advance(root, 71, 76)
             rows = engine.read_csv_rows(root / "ledger" / "DAILY_NAV.csv")
         self.assertEqual(set(status["books"]), {b["strategy"] for b in engine.BOOKS})
         by_date = {}
@@ -262,7 +279,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            self.run_engine(root, price_panel(days=78))
+            self.advance(root, 71, 78)
             rows = engine.read_csv_rows(root / "ledger" / "DAILY_NAV.csv")
         gross = {(r["date"], r["strategy"]): float(r["gross_long"]) for r in rows}
         for (day, name), value in gross.items():
@@ -273,7 +290,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            status = self.run_engine(root, price_panel(days=78))
+            status = self.advance(root, 71, 78)
         for name, book in status["books"].items():
             self.assertFalse(book["evidence_eligible"], name)
             self.assertIn("observations_below_60", book["rejection_reasons"], name)
@@ -282,7 +299,7 @@ class RunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.run_engine(root, price_panel(days=70))
-            self.run_engine(root, price_panel(days=78))
+            self.advance(root, 71, 78)
             rows = engine.read_csv_rows(root / "ledger" / "POSITIONS_HISTORY.csv")
         self.assertTrue(rows)
         for row in rows:
@@ -312,7 +329,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
-class FundingIntegrationTests(unittest.TestCase):
+class FundingIntegrationTests(EngineRunMixin, unittest.TestCase):
     """The engine must charge observed funding, or refuse the day."""
 
     def write_funding(self, root: Path, days, symbols, rate=0.0005):
@@ -333,14 +350,10 @@ class FundingIntegrationTests(unittest.TestCase):
     def test_observed_funding_charges_a_long_book_and_says_so(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            rows = price_panel(days=70)
-            prices, universe = write_inputs(root, rows)
             contract = CONTRACT
-            engine.run(prices, universe, contract, root / "ledger", "seed")
             rows = price_panel(days=76)
-            prices, universe = write_inputs(root, rows)
             fund = self.write_funding(root, self.all_days(rows), BASES)
-            status = engine.run(prices, universe, contract, root / "ledger", "obs", fund)
+            status = self.advance(root, 71, 76, funding=fund)
             held = engine.read_csv_rows(root / "ledger" / "POSITIONS_HISTORY.csv")
         self.assertEqual(status["funding_model"], engine.FUNDING_OBSERVED)
         self.assertEqual(status["funding_covered_symbols"], len(BASES))
@@ -353,14 +366,11 @@ class FundingIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             seed = price_panel(days=70)
-            prices, universe = write_inputs(root, seed)
-            engine.run(prices, universe, CONTRACT, root / "free", "seed")
-            engine.run(prices, universe, CONTRACT, root / "charged", "seed")
-            rows = price_panel(days=76)
-            prices, universe = write_inputs(root, rows)
-            free = engine.run(prices, universe, CONTRACT, root / "free", "free")
-            fund = self.write_funding(root, self.all_days(rows), BASES)
-            charged = engine.run(prices, universe, CONTRACT, root / "charged", "chg", fund)
+            self.run_engine(root, seed, out=root / "free")
+            self.run_engine(root, seed, out=root / "charged")
+            fund = self.write_funding(root, self.all_days(price_panel(days=76)), BASES)
+            free = self.advance(root, 71, 76, out=root / "free")
+            charged = self.advance(root, 71, 76, out=root / "charged", funding=fund)
         # 70/30 is long-tilted, so paying funding must cost it return.
         self.assertLess(charged["books"]["V12_LS_70_30"]["total_return"],
                         free["books"]["V12_LS_70_30"]["total_return"])
@@ -368,14 +378,10 @@ class FundingIntegrationTests(unittest.TestCase):
     def test_holding_an_asset_the_feed_does_not_cover_fails_closed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            seed = price_panel(days=70)
-            prices, universe = write_inputs(root, seed)
-            engine.run(prices, universe, CONTRACT, root / "ledger", "seed")
-            rows = price_panel(days=76)
-            prices, universe = write_inputs(root, rows)
-            partial = self.write_funding(root, self.all_days(rows), BASES[:3])
+            self.run_engine(root, price_panel(days=70))
+            partial = self.write_funding(root, self.all_days(price_panel(days=76)), BASES[:3])
             with self.assertRaises(engine.EngineError) as caught:
-                engine.run(prices, universe, CONTRACT, root / "ledger", "gap", partial)
+                self.advance(root, 71, 76, funding=partial)
         self.assertIn("FAIL_CLOSED", str(caught.exception))
         self.assertIn("uncosted", str(caught.exception))
 
@@ -391,7 +397,122 @@ class FundingIntegrationTests(unittest.TestCase):
     def test_omitting_the_feed_still_marks_the_rows_as_uncosted(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            prices, universe = write_inputs(root, price_panel(days=70))
-            status = engine.run(prices, universe, CONTRACT, root / "ledger", "none")
+            status = self.run_engine(root, price_panel(days=70))
         self.assertEqual(status["funding_model"], engine.FUNDING_ABSENT)
         self.assertEqual(status["funding_covered_symbols"], 0)
+
+
+class RotatingUniverseTests(EngineRunMixin, unittest.TestCase):
+    """The universe rotates daily; membership governs selection and nothing else."""
+
+    def universe_csv(self, root: Path, bases):
+        path = root / "UNIVERSE_TOP100.csv"
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["liquidity_rank", "baseAsset"])
+            writer.writeheader()
+            for rank, base in enumerate(bases, 1):
+                writer.writerow({"liquidity_rank": rank, "baseAsset": base})
+        return path
+
+    def prices_csv(self, root: Path, rows):
+        path = root / "DAILY_PRICES.csv"
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=[
+                "date", "base", "venue", "open", "high", "low", "close", "volume"])
+            writer.writeheader()
+            writer.writerows(rows)
+        return path
+
+    def step(self, root, days, bases, out="ledger", funding=None):
+        return engine.run(self.prices_csv(root, price_panel(days=days)),
+                          self.universe_csv(root, bases), CONTRACT,
+                          root / out, "rot", funding)
+
+    def test_membership_is_recorded_per_day_and_never_rewritten(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.step(root, 70, BASES)
+            self.step(root, 71, BASES[:-1])   # one name leaves
+            self.step(root, 72, BASES)        # and comes back
+            rows = engine.read_csv_rows(root / "ledger" / "UNIVERSE_MEMBERSHIP.csv")
+        by_day = {}
+        for row in rows:
+            by_day.setdefault(row["date"], set()).add(row["base"])
+        days = sorted(by_day)
+        self.assertEqual(len(days), 3)
+        self.assertNotIn(BASES[-1], by_day[days[1]])
+        self.assertIn(BASES[-1], by_day[days[2]])
+
+    def test_a_past_day_cannot_be_reselected_against_a_later_snapshot(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.step(root, 70, BASES)
+            # Same day, different universe: hindsight re-selection.
+            with self.assertRaises(engine.EngineError) as caught:
+                self.step(root, 70, BASES[:-3])
+        self.assertIn("append-only", str(caught.exception))
+        self.assertIn("never re-selected", str(caught.exception))
+
+    def test_a_day_the_engine_never_observed_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.step(root, 70, BASES)
+            with self.assertRaises(engine.EngineError) as caught:
+                self.step(root, 74, BASES)   # skipped 71, 72, 73
+        message = str(caught.exception)
+        self.assertIn("FAIL_CLOSED", message)
+        self.assertIn("never backfilled", message)
+
+    def test_a_name_outside_the_universe_is_never_selected(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            excluded = BASES[0]
+            trimmed = BASES[1:]
+            self.step(root, 70, trimmed)
+            for day in range(71, 78):
+                self.step(root, day, trimmed)
+            rows = engine.read_csv_rows(root / "ledger" / "SELECTIONS_HISTORY.csv")
+        self.assertTrue(rows)
+        self.assertNotIn(excluded, {r["symbol"] for r in rows})
+
+    def test_cost_follows_the_rank_the_asset_held_on_the_trading_day(self):
+        bands = {"1-30": 3.0, "31-50": 5.5, "51-75": 8.4, "76-100": 10.5}
+        # The same asset at a different rank must not carry yesterday's cost.
+        self.assertNotEqual(engine.slippage_bps(20, bands), engine.slippage_bps(90, bands))
+
+    def test_a_held_dropout_keeps_being_priced_and_marked(self):
+        # A position outlives its universe membership. It must remain markable,
+        # or the book would carry an unpriced holding.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.step(root, 70, BASES)
+            for day in range(71, 76):
+                self.step(root, day, BASES)
+            held = {r["symbol"] for r in engine.read_csv_rows(
+                root / "ledger" / "POSITIONS_HISTORY.csv")}
+            # Drop every held name from the universe but keep pricing them.
+            survivors = [b for b in BASES if b not in held] or BASES[:12]
+            status = self.step(root, 76, survivors)
+        self.assertGreater(status["observed_days"], 0)
+        self.assertEqual(status["universe_policy"],
+                         "ROTATES_DAILY_MEMBERSHIP_RECORDED_APPEND_ONLY")
+
+
+class RotationContractTests(unittest.TestCase):
+    def setUp(self):
+        self.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+
+    def test_rotation_is_frozen_with_its_known_consequence(self):
+        rotation = self.contract["universe"]["rotation"]
+        self.assertEqual(self.contract["universe"]["membership_policy"], "ROTATES_DAILY")
+        self.assertIn("hindsight", rotation["membership_is_recorded_append_only"])
+        self.assertEqual(rotation["missing_day_policy"][:11], "FAIL_CLOSED")
+        self.assertIn("cross-section", rotation["known_consequence_recorded_before_any_result"])
+
+    def test_rotation_was_decided_before_any_observation(self):
+        amendment = self.contract["amendments"][-1]
+        self.assertEqual(amendment["amendment"],
+                         "UNIVERSE_ROTATES_DAILY_WITH_APPEND_ONLY_MEMBERSHIP")
+        self.assertEqual(amendment["anchor_state_when_amended"],
+                         "NULL_NO_LEDGER_NO_OBSERVATION")
+        self.assertEqual(amendment["methodology_changes"], 0)
