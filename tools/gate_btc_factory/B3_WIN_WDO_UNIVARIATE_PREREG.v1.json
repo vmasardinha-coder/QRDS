@@ -1,0 +1,109 @@
+{
+  "schema": "qrds.factory.b3_win_wdo_univariate_prereg.v1",
+  "stage": "PREREGISTER",
+  "frontier": ["WIN_UNIVARIATE", "WDO_UNIVARIATE"],
+  "source_contract": "tools/gate_btc_factory/B3_WIN_WDO_OFFICIAL_SOURCE_CONTRACT.v1.json",
+  "source_status_required": "OFFICIAL_PRIMARY_SOURCE_PHYSICAL_CAPTURE_QUALIFIED_WITH_FROZEN_SINGLE_KNOWN_GAP",
+  "economics_read_before_this_prereg": false,
+  "family_count": 12,
+  "family_ids": ["B3WIN01","B3WIN02","B3WIN03","B3WIN04","B3WIN05","B3WIN06","B3WDO01","B3WDO02","B3WDO03","B3WDO04","B3WDO05","B3WDO06"],
+  "windows": {
+    "independent_replication": ["2020-01-01", "2021-12-31"],
+    "discovery": ["2022-01-01", "2024-12-31"],
+    "cutoff_exclusive": "2026-08-10",
+    "known_gap_excluded_without_credit": ["2021-06-10"]
+  },
+  "instrument_identity": {
+    "WIN": "exact PriceReport contract rows whose ticker_symbol begins WIN",
+    "WDO": "exact PriceReport contract rows whose ticker_symbol begins WDO",
+    "contract_code_preserved": true,
+    "continuous_series": false,
+    "roll_rule": "NONE",
+    "same_contract_next_session_required": true,
+    "missing_same_contract_next_session_action": "FLAT_NO_TRADE",
+    "cross_contract_feature_read": false,
+    "cross_asset_feature_read": false,
+    "WIN_may_read_WDO": false,
+    "WDO_may_read_WIN": false
+  },
+  "signal_timing": {
+    "feature_session": "t completed qualified B3 PriceReport row",
+    "decision_time": "after t report is causally available; earliest use t+1",
+    "execution_entry": "same exact contract t+1 open when physically present",
+    "execution_exit": "same exact contract t+1 close",
+    "same_session_use": false,
+    "lookahead_allowed": false
+  },
+  "features": {
+    "body": "(close-open)/open",
+    "intraday_range": "(high-low)/open",
+    "close_location": "(close-low)/(high-low) when high>low",
+    "volume_shock": "own-contract volume_or_traded_quantity_t / median(own-contract prior 20 physically available observations)",
+    "minimum_volume_history": 10
+  },
+  "families": [
+    {"id":"B3WIN01","instrument":"WIN","mechanism":"BODY_CONTINUATION","rule":"sign(body_t)","direction":"continuation"},
+    {"id":"B3WIN02","instrument":"WIN","mechanism":"BODY_REVERSAL","rule":"-sign(body_t)","direction":"reversal"},
+    {"id":"B3WIN03","instrument":"WIN","mechanism":"CLOSE_LOCATION_CONTINUATION","rule":"long if close_location_t>=0.80; short if <=0.20; else flat","direction":"continuation"},
+    {"id":"B3WIN04","instrument":"WIN","mechanism":"CLOSE_LOCATION_REVERSAL","rule":"short if close_location_t>=0.80; long if <=0.20; else flat","direction":"reversal"},
+    {"id":"B3WIN05","instrument":"WIN","mechanism":"VOLUME_SHOCK_CONTINUATION","rule":"sign(body_t) only if volume_shock_t>=1.50; else flat","direction":"continuation"},
+    {"id":"B3WIN06","instrument":"WIN","mechanism":"VOLUME_SHOCK_REVERSAL","rule":"-sign(body_t) only if volume_shock_t>=1.50; else flat","direction":"reversal"},
+    {"id":"B3WDO01","instrument":"WDO","mechanism":"BODY_CONTINUATION","rule":"sign(body_t)","direction":"continuation"},
+    {"id":"B3WDO02","instrument":"WDO","mechanism":"BODY_REVERSAL","rule":"-sign(body_t)","direction":"reversal"},
+    {"id":"B3WDO03","instrument":"WDO","mechanism":"CLOSE_LOCATION_CONTINUATION","rule":"long if close_location_t>=0.80; short if <=0.20; else flat","direction":"continuation"},
+    {"id":"B3WDO04","instrument":"WDO","mechanism":"CLOSE_LOCATION_REVERSAL","rule":"short if close_location_t>=0.80; long if <=0.20; else flat","direction":"reversal"},
+    {"id":"B3WDO05","instrument":"WDO","mechanism":"VOLUME_SHOCK_CONTINUATION","rule":"sign(body_t) only if volume_shock_t>=1.50; else flat","direction":"continuation"},
+    {"id":"B3WDO06","instrument":"WDO","mechanism":"VOLUME_SHOCK_REVERSAL","rule":"-sign(body_t) only if volume_shock_t>=1.50; else flat","direction":"reversal"}
+  ],
+  "aggregation": {
+    "within_family": "equal notional weight across all same-prefix exact contracts with a non-flat signal and valid same-contract t+1 execution row",
+    "gross_exposure": 1.0,
+    "leverage": 1.0,
+    "cross_asset_netting": false,
+    "cross_frontier_netting": false
+  },
+  "costs": {
+    "economics_locked_at_prereg": true,
+    "numeric_cost_values_invented_here": false,
+    "require_existing_canonical_cost_schedule_before_first_economic_read": true,
+    "if_no_canonical_cost_schedule": "FAIL_CLOSED_BEFORE_ECONOMICS_AND_PREREGISTER_COSTS_SEPARATELY",
+    "result_guided_cost_change": false
+  },
+  "mortality": ["NO_TRADES","DATA_GAP","SOURCE_QA_FAIL","SCIENTIFIC_REJECTION"],
+  "no_trades_audit": {
+    "mass_no_trades_requires_plumbing_audit": true,
+    "threshold_retune_allowed": false,
+    "data_defect_may_not_be_reclassified_as_legitimate_rarity_without_evidence": true
+  },
+  "gates": {
+    "discovery_required_before_replication": true,
+    "bias_causality_qa_required": true,
+    "robustness_required": true,
+    "independent_replication_required": true,
+    "prospective_only_after_replication": true,
+    "no_result_guided_threshold_change": true,
+    "no_result_guided_direction_change": true,
+    "no_hold_change": true,
+    "no_cost_change": true
+  },
+  "isolation": {
+    "H1": "SEPARATE",
+    "H31": "SEPARATE",
+    "H1_ECONOMICS_READ": false,
+    "BTC_read": false,
+    "DI_FX_macro_external_regime_read": false,
+    "scientific_credit_inherited": 0
+  },
+  "economics_read_allowed_after_merge": true,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "fail_closed": true,
+  "next_action": "VALIDATE_CANONICAL_COST_SCHEDULE_THEN_EXECUTE_DISCOVERY_WITHOUT_RETUNING"
+}
