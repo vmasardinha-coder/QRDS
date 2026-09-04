@@ -1,0 +1,65 @@
+name: GATE BTC Factory Status Export
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory_status_export.py'
+      - '.github/workflows/gate-btc-factory-status-export.yml'
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  NO_COUNTER_RESET: 'true'
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Build canonical multi-track status
+        run: |
+          python main_repo/tools/gate_btc_factory_status_export.py \
+            --runtime-root runtime_repo \
+            --output runtime_repo/runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
+      - name: Assert immutable research boundary
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/GATE_BTC_FACTORY_STATUS_LATEST.json'
+          d=json.load(open(p, encoding='utf-8'))
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_BACKFILL'] and s['NO_RETUNE'] and s['NO_COUNTER_RESET']
+          assert d['methodology_changed'] is False
+          PY
+      - name: Persist status only
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Factory refresh complete status ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
