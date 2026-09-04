@@ -30,6 +30,12 @@ DISCOVERY_START = "2025-01-01"
 DISCOVERY_END = "2025-12-31"
 REPLICATION_START = "2026-01-01"
 REPLICATION_END = "2026-08-09"
+DISCOVERY_NAMESPACE = "RQ_DISCOVERY_2025_V1"
+VALID_DISCOVERY_ROW_STATUSES = {
+    "SCIENTIFIC_REJECTION",
+    "WAITING_INDEPENDENT_REPLICATION_2026",
+    "INCONCLUSIVE_INSUFFICIENT_ELIGIBLE_UNSEEN_DATA",
+}
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -87,6 +93,54 @@ def discovery_result(fid: str, contract: dict[str, Any], sessions: dict[str, Any
     return {**base,"status":"SCIENTIFIC_REJECTION_DISCOVERY","scientific_rejection":True,"survives_discovery":False,"discovery":disc,"structural_reason":reason}
 
 
+def valid_existing_discovery(row: dict[str, Any], fid: str, contract: dict[str, Any],
+                             runtime_dir: Path, dataset_sha256: str) -> bool:
+    """Prove an already-persisted 2025 discovery attempt before skipping it.
+
+    This is an idempotency guard, not a result shortcut.  We only preserve a row
+    when both preregistration and result are physically present and bind the same
+    frozen contract, dataset hash, exact 2025 window and namespace.  Otherwise the
+    family is evaluated normally.  Historical attempts are never decremented.
+    """
+    namespace=f"{DISCOVERY_NAMESPACE}::{fid}"
+    if row.get("new_namespace") != namespace or row.get("status") not in VALID_DISCOVERY_ROW_STATUSES:
+        return False
+    stem=namespace.replace("::","__")
+    prereg_path=runtime_dir/"preregistrations"/f"{stem}.json"
+    result_path=runtime_dir/"results"/f"{stem}.json"
+    if not prereg_path.is_file() or not result_path.is_file():
+        return False
+    try:
+        prereg=load(prereg_path); result=load(result_path)
+    except Exception:
+        return False
+    expected_window={"start":DISCOVERY_START,"end":DISCOVERY_END}
+    expected_replication={"start":REPLICATION_START,"end":REPLICATION_END}
+    if prereg.get("namespace") != namespace or result.get("namespace") != namespace:
+        return False
+    if prereg.get("original_family_id") != fid or result.get("original_family_id") != fid:
+        return False
+    if prereg.get("dataset_sha256") != dataset_sha256:
+        return False
+    if prereg.get("grammar_contract") != contract or prereg.get("grammar_contract_mode") != "EXACT_FROZEN_ORIGINAL":
+        return False
+    if prereg.get("discovery_window") != expected_window or result.get("discovery_window") != expected_window:
+        return False
+    if prereg.get("replication_window_reserved") != expected_replication or result.get("replication_window_reserved") != expected_replication:
+        return False
+    if prereg.get("historical_observations_credited") != 0 or result.get("historical_observations_credited") != 0:
+        return False
+    if prereg.get("same_historical_window_rerun") is not False or result.get("same_historical_window_rerun") is not False:
+        return False
+    status=result.get("status")
+    expected_row={
+        "SCIENTIFIC_REJECTION_DISCOVERY":"SCIENTIFIC_REJECTION",
+        "DISCOVERY_SURVIVOR_WAITING_INDEPENDENT_REPLICATION":"WAITING_INDEPENDENT_REPLICATION_2026",
+        "INCONCLUSIVE_DISCOVERY_STRUCTURALLY_INSUFFICIENT":"INCONCLUSIVE_INSUFFICIENT_ELIGIBLE_UNSEEN_DATA",
+    }.get(status)
+    return expected_row == row.get("status")
+
+
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--root-cause",type=Path,required=True)
@@ -110,19 +164,24 @@ def main() -> int:
     if len(disc_sessions) < 100: raise RuntimeError(f"DISCOVERY_DATA_TOO_SMALL:{len(disc_sessions)}")
 
     rows_by_id={str(x.get("original_family_id")):x for x in q.get("families") or []}
-    results=[]
+    if set(rows_by_id) != set(ids): raise RuntimeError("QUEUE_SCOPE_MISMATCH")
+    evaluated=0; preserved=0
     for i,fid in enumerate(ids):
         row=rows_by_id[fid]
-        namespace=f"RQ_DISCOVERY_2025_V1::{fid}"
+        contract=copy.deepcopy(contracts[fid])
+        if valid_existing_discovery(row,fid,contract,ns.runtime_dir,ns.dataset_sha256):
+            preserved+=1
+            continue
+        namespace=f"{DISCOVERY_NAMESPACE}::{fid}"
         gate_id=f"WIN_M5_DISCOVERY_2025_BATCH_{i//64+1:02d}"
-        res=discovery_result(fid,copy.deepcopy(contracts[fid]),disc_sessions,namespace,gate_id)
+        res=discovery_result(fid,contract,disc_sessions,namespace,gate_id)
         result_path=ns.runtime_dir/"results"/f"{namespace.replace('::','__')}.json"
         prereg_path=ns.runtime_dir/"preregistrations"/f"{namespace.replace('::','__')}.json"
         prereg={
             "schema":"qrds.factory.invalidated_discovery_first_prereg.v1",
             "namespace":namespace,
             "original_family_id":fid,
-            "grammar_contract":copy.deepcopy(contracts[fid]),
+            "grammar_contract":contract,
             "grammar_contract_mode":"EXACT_FROZEN_ORIGINAL",
             "source_gate_id":gate_id,
             "dataset_sha256":ns.dataset_sha256,
@@ -145,18 +204,20 @@ def main() -> int:
             row["status"]="WAITING_INDEPENDENT_REPLICATION_2026"
         else:
             row["status"]="INCONCLUSIVE_INSUFFICIENT_ELIGIBLE_UNSEEN_DATA"
-        results.append(res)
+        evaluated+=1
 
     q["completed_family_count"]=sum(1 for x in q["families"] if x.get("status") in {"SCIENTIFIC_REJECTION","VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE"})
     q["discovery_rejection_count"]=sum(1 for x in q["families"] if x.get("status")=="SCIENTIFIC_REJECTION")
     q["waiting_replication_count"]=sum(1 for x in q["families"] if x.get("status")=="WAITING_INDEPENDENT_REPLICATION_2026")
     q["inconclusive_count"]=sum(1 for x in q["families"] if str(x.get("status","")).startswith("INCONCLUSIVE"))
     q["waiting_source_count"]=sum(1 for x in q["families"] if x.get("status")=="WAITING_SOURCE_QUALIFICATION")
-    q["discovery_first_namespace"]="RQ_DISCOVERY_2025_V1"
+    q["discovery_first_namespace"]=DISCOVERY_NAMESPACE
     q["discovery_first_dataset_sha256"]=ns.dataset_sha256
+    q["discovery_first_preserved_valid_count"]=preserved
+    q["discovery_first_evaluated_this_run_count"]=evaluated
     q["updated_at_utc"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
     dump(ns.output,q)
-    print(json.dumps({"affected":len(ids),"discovery_sessions":len(disc_sessions),"rejected":q["discovery_rejection_count"],"waiting_replication":q["waiting_replication_count"],"inconclusive":q["inconclusive_count"],"orders":0,"real_capital":0},sort_keys=True))
+    print(json.dumps({"affected":len(ids),"discovery_sessions":len(disc_sessions),"preserved_valid":preserved,"evaluated_this_run":evaluated,"rejected":q["discovery_rejection_count"],"waiting_replication":q["waiting_replication_count"],"inconclusive":q["inconclusive_count"],"waiting_source":q["waiting_source_count"],"orders":0,"real_capital":0},sort_keys=True))
     return 0
 
 if __name__=="__main__": raise SystemExit(main())
