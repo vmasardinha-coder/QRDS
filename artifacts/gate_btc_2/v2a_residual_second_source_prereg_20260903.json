@@ -1,0 +1,56 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SOURCE_PREREG_V1",
+  "date": "2026-09-03",
+  "purpose": "SECOND_DISTINCT_SOURCE_EXHAUSTION_FOR_REMAINING_SYSTEM8_RESIDUALS",
+  "candidates": [
+    {
+      "symbol": "KOGE",
+      "coin_id": "bnb48-club-token",
+      "name": "KOGE",
+      "candidate_provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "network": "bsc",
+      "token_contract": "0xe6df05ce8c8301223373cf5b969afcb1498c5528",
+      "pool_contract": "0x26de6c26dd5560c181011907d8f70c202c2a29d6",
+      "pool_dex": "pancakeswap_v2",
+      "pair": "KOGE/WBNB",
+      "rationale": "Materially distinct DEX/pool preregistered only after the first-ranked Uniswap-BSC KOGE/USDT pool failed frozen continuity on 2026-08-16.",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+    },
+    {
+      "symbol": "BCAP",
+      "coin_id": "blockchain-capital",
+      "name": "Blockchain Capital",
+      "candidate_provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "network": "eth",
+      "token_contract": "0x8347fffb3abeb2fae5c21b09e983bdefa1a047dc",
+      "rationale": "Materially distinct exact-contract on-chain route after Kraken public Assets returned no exact BCAP asset metadata. Must fail closed if no exact trading pool/OHLCV exists.",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+    },
+    {
+      "symbol": "SOFID",
+      "coin_id": "sofiusd",
+      "name": "SoFiUSD",
+      "candidate_provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "network": "eth",
+      "token_contract": "0x0cb6d03b0ac88a463f67b7ad99f9f3ec4678092e",
+      "rationale": "Materially distinct exact-contract on-chain route after Bullish failed one frozen daily bucket and pre-listing Kraken OHLC returned only a non-physical sentinel. Must fail closed if no exact DEX pool/OHLCV exists.",
+      "qualification": "PREREGISTERED_QUALIFICATION_ONLY"
+    }
+  ],
+  "source_admitted": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
