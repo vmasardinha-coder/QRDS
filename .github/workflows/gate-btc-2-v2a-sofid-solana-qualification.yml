@@ -1,0 +1,43 @@
+name: GATE BTC 2 V2A SOFID Solana Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_sofid_solana_qualification.py
+      - artifacts/gate_btc_2/v2a_sofid_solana_prereg_20260903.json
+      - .github/workflows/gate-btc-2-v2a-sofid-solana-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-sofid-solana:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_sofid_solana_qualification.py
+      - name: Physically qualify exact SOFID Solana route
+        run: python tools/gate_btc_2_v2a_sofid_solana_qualification.py --end 2026-09-02 --output artifacts/gate_btc_2/sofid_solana_physical
+      - name: Assert zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/gate_btc_2/sofid_solana_physical/SUMMARY.json').read_text())
+          assert x['result']['symbol']=='SOFID' and x['result']['coin_id']=='sofiusd'
+          assert x['research_only'] and x['shadow_only'] and x['not_approved'] and x['fail_closed']
+          assert x['engine_feed'] is False and x['orders']==0 and x['real_capital_brl']==0
+          assert x['no_retune'] and x['no_backfill'] and x['no_counter_reset'] and x['no_silent_source_substitution']
+          assert x['qualification_only'] and x['source_admitted'] is False
+          assert x['scientific_credit'] is False and x['prospective_credit'] is False and x['d0_credit']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-v2a-sofid-solana-${{ github.run_id }}
+          path: artifacts/gate_btc_2/sofid_solana_physical
