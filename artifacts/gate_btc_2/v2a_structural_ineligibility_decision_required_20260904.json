@@ -2,7 +2,7 @@
   "schema_version": "GATE_BTC_2_V2A_METHODOLOGY_DECISION_REQUIRED_V1",
   "date": "2026-09-04",
   "system": 8,
-  "status": "HUMAN_DECISION_REQUIRED_BEFORE_ANY_D0_RETRY",
+  "status": "HUMAN_DECISION_RECEIVED_OPTION_B_PREREGISTERED",
   "trigger": "EXACT_SOURCE_EXHAUSTION_FOR_FROZEN_UNIVERSE_MEMBERS",
   "affected_assets": [
     {
@@ -63,9 +63,16 @@
     }
   ],
   "recommended_decision": "B_PREREGISTER_STRUCTURAL_INELIGIBILITY_RULE",
-  "recommendation_reason": "The blocker is structural observability rather than a transient collector defect. A narrowly scoped, ex-ante eligibility rule preserves fail-closed source semantics while preventing permanently non-observable instruments from making a forward-only epoch logically impossible. This is preferable to silent exclusion, denominator manipulation, NAV substitution, or indefinite source hunting.",
-  "approval_required": true,
-  "approval_scope": "Authorize only the preregistration of the structural-ineligibility rule described in option B. Approval does not start D0, grant source admission, remove negative evidence, or authorize any other methodology change.",
+  "human_decision": {
+    "received": true,
+    "approved_option": "B_PREREGISTER_STRUCTURAL_INELIGIBILITY_RULE",
+    "approval_source": "explicit_user_approval_in_project_conversation",
+    "approval_date": "2026-09-04",
+    "approval_scope": "Authorize only the preregistration of the structural-ineligibility rule described in option B. Approval does not start D0, grant source admission, remove negative evidence, or authorize any other methodology change."
+  },
+  "preregistered_rule_artifact": "artifacts/gate_btc_2/v2a_structural_ineligibility_rule_prereg_20260904.json",
+  "approval_required": false,
+  "d0_retry_allowed_after_rule_merge": true,
   "safety": {
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true,
