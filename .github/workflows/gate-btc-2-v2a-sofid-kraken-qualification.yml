@@ -1,0 +1,45 @@
+name: GATE BTC 2 V2A SOFID Kraken Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_sofid_kraken_qualification.py
+      - .github/workflows/gate-btc-2-v2a-sofid-kraken-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-sofid-kraken:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_sofid_kraken_qualification.py
+      - name: Physically qualify preregistered SOFID Kraken route
+        run: python tools/gate_btc_2_v2a_sofid_kraken_qualification.py --end 2026-09-02 --output artifacts/sofid_kraken
+      - name: Assert qualification-only zero-credit boundary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/sofid_kraken/SUMMARY.json')
+          assert p.exists(), 'summary missing'
+          x=json.loads(p.read_text())
+          assert x['research_only'] is True and x['shadow_only'] is True and x['not_approved'] is True
+          assert x['engine_feed'] is False and x['orders']==0 and x['real_capital_brl']==0
+          assert x['no_retune'] is True and x['no_backfill'] is True and x['no_counter_reset'] is True
+          assert x['no_silent_source_substitution'] is True and x['fail_closed'] is True
+          assert x['source_admitted'] is False and x['scientific_credit'] is False and x['prospective_credit'] is False and x['d0_credit']==0
+          print('SOFID_KRAKEN_QUALIFICATION_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-v2a-sofid-kraken-${{ github.run_id }}
+          path: artifacts/sofid_kraken
