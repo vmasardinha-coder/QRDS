@@ -5,7 +5,7 @@ import argparse
 import csv
 import hashlib
 import json
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 STRATEGIES = ("QOS_Moderada", "QOS_Ultra")
@@ -69,6 +69,12 @@ def snapshot_paths(ledger_dir):
 def write_status(ledger_dir, anchor):
     paths = snapshot_paths(ledger_dir)
     latest = load_json(paths[-1]) if paths else None
+    gap_count = 0
+    skipped_days = 0
+    for p in paths:
+        row = load_json(p)
+        gap_count += int(bool(row.get("gap_from_previous")))
+        skipped_days += int(row.get("skipped_calendar_days", 0) or 0)
     write_json(Path(ledger_dir) / "STATUS.json", {
         "schema": "gate_btc.alt_trail40_10_shadow_status.v1",
         "status": "ACTIVE_PROSPECTIVE_ARCHIVE" if latest else "WAITING_FIRST_UNTOUCHED_SIGNAL",
@@ -78,6 +84,9 @@ def write_status(ledger_dir, anchor):
         "snapshot_count": len(paths),
         "latest_snapshot_date": latest.get("snapshot_date") if latest else None,
         "latest_row_sha256": latest.get("row_sha256") if latest else None,
+        "recorded_gap_count": gap_count,
+        "skipped_calendar_days": skipped_days,
+        "continuity_policy": "FORWARD_ONLY_RESUME_WITH_EXPLICIT_GAP_NO_BACKFILL",
         "contract_sha256": anchor["contract_sha256"],
         "research_only": True,
         "shadow_only": True,
@@ -189,14 +198,19 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
 
     paths = snapshot_paths(ledger_dir)
     previous = load_json(paths[-1]) if paths else None
+    gap_from_previous = False
+    skipped_calendar_days = 0
     if previous is None:
         require(snapshot_day == first_signal, "first prospective record must be exact first eligible signal date; backfill prohibited")
         previous_sha = None
     else:
         previous_day = date.fromisoformat(previous["snapshot_date"])
-        require(snapshot_day == previous_day + timedelta(days=1), f"daily gap/backfill prohibited: prev={previous_day} current={snapshot_day}")
+        require(snapshot_day > previous_day, f"non-forward snapshot prohibited: prev={previous_day} current={snapshot_day}")
         require(previous["row_sha256"] == payload_sha(previous, "row_sha256"), "previous row hash invalid")
         previous_sha = previous["row_sha256"]
+        delta_days = (snapshot_day - previous_day).days
+        gap_from_previous = delta_days > 1
+        skipped_calendar_days = max(0, delta_days - 1)
 
     signals = parse_signals(read_csv(current_portfolios))
     for strategy, signal in signals.items():
@@ -220,6 +234,9 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         "current_portfolios_sha256": file_sha(current_portfolios),
         "master_daily_sha256": file_sha(master_daily),
         "previous_row_sha256": previous_sha,
+        "gap_from_previous": gap_from_previous,
+        "skipped_calendar_days": skipped_calendar_days,
+        "gap_policy": "FORWARD_ONLY_RESUME_WITH_EXPLICIT_GAP_NO_BACKFILL",
         "contract_sha256": anchor["contract_sha256"],
         "economics_opened": False,
         "research_only": True,
@@ -237,6 +254,8 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         "snapshot_date": snapshot_id,
         "row_sha256": row["row_sha256"],
         "price_count": len(prices),
+        "gap_from_previous": gap_from_previous,
+        "skipped_calendar_days": skipped_calendar_days,
     }
 
 

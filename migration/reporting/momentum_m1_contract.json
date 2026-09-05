@@ -41,10 +41,19 @@
     "delta_metric": "spearman_rank_correlation",
     "macro_quant": "independent_replica_expected_same_formula_no_shared_tuning"
   },
+  "economic_mirror": {
+    "contract": "migration/reporting/momentum_m1m2_economic_contract_v1.json",
+    "selection": "TOP_10",
+    "weighting": "EQUAL_WEIGHT",
+    "rebalance": "EVERY_7_COMPLETED_UTC_DAILY_CLOSES_FROM_FIRST_ECONOMIC_ACTIVATION",
+    "benchmark": "BTC",
+    "changes_score_formula": false,
+    "approved_at": "2026-09-05"
+  },
   "reporting": {
     "collection": "clock_provenance_status_only",
     "master": "full_scores_ranks_breadth_median_dispersion_negative_distance_and_comparisons",
-    "executive": "material_regime_change_only",
+    "executive": "material_regime_change_plus_separate_economic_mirror",
     "profit_preservation": "EXCLUDED",
     "allocation_engine": "EXCLUDED"
   },

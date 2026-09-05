@@ -1,0 +1,98 @@
+name: GATE BTC Momentum M1 M2 Economics
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 3 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_momentum_economic_shadow.py
+      - migration/reporting/momentum_m1m2_economic_contract_v1.json
+      - .github/workflows/gate-btc-momentum-economics.yml
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m py_compile tools/gate_btc_momentum_economic_shadow.py
+      - run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('migration/reporting/momentum_m1m2_economic_contract_v1.json'))
+          assert p['strategies']['M1_TOP10']['selection']=='TOP_10'
+          assert p['strategies']['M2_TOP10']['selection']=='TOP_10'
+          assert p['strategies']['M1_TOP10']['weighting']=='EQUAL_WEIGHT'
+          assert p['rebalance']['cadence'].startswith('EVERY_7_COMPLETED')
+          assert p['historical_backfill'] is False and p['retune'] is False
+          assert p['orders']==0 and p['real_capital']==0
+          PY
+
+  economics:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install canonical V2A dependencies
+        working-directory: main_repo
+        run: pip install -r migration/canonical/v2a/requirements.txt
+      - name: Resolve latest Momentum cutoff
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
+          snaps=sorted(p for p in root.glob('20*.json'))
+          if not snaps: raise SystemExit('NO_MOMENTUM_SNAPSHOT')
+          latest=json.loads(snaps[-1].read_text())
+          with open(os.environ['GITHUB_ENV'],'a') as f: f.write(f"MOMENTUM_CUTOFF={latest['cutoff']}\nMOMENTUM_SNAPSHOT={snaps[-1]}\n")
+          print(latest['cutoff'])
+          PY
+      - name: Collect public V2A prices
+        working-directory: main_repo
+        run: python migration/canonical/v2a/scripts/00_run_all_v2a.py --output-zip ../qos_v2a_public_collection.zip
+      - name: Freeze prices to Momentum cutoff
+        working-directory: main_repo
+        run: python tools/v2a_frozen_replay.py ../qos_v2a_public_collection.zip --data-cutoff "$MOMENTUM_CUTOFF" --output-zip ../qos_v2a_outputs.zip --evidence-dir ../v2a_evidence
+      - name: Append economic shadow
+        working-directory: main_repo
+        run: python tools/gate_btc_momentum_economic_shadow.py --snapshot "../$MOMENTUM_SNAPSHOT" --v2a-zip ../qos_v2a_outputs.zip --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics
+      - name: Assert safety
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime_repo/runtime/ledgers/momentum_m1_m2_economics/ECONOMICS_STATUS.json'))
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          assert p['status']=='ECONOMICS_ACTIVE'
+          PY
+      - name: Publish economics runtime
+        working-directory: runtime_repo
+        run: |
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/momentum_m1_m2_economics
+          git diff --cached --quiet && exit 0
+          git commit -m "Append Momentum M1/M2 economics ${MOMENTUM_CUTOFF}"
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1

@@ -1,0 +1,23 @@
+{
+  "schema": "gate_btc.momentum_m1m2_economic_contract.v1",
+  "status": "FROZEN_EX_ANTE_BEFORE_FIRST_ECONOMIC_ROW",
+  "approved_at": "2026-09-05",
+  "purpose": "Economic shadow mirror for already-frozen M1 and M2 scores; does not alter score formulas or collection.",
+  "strategies": {
+    "M1_TOP10": {"score": "m1", "rank_field": "rank_m1", "selection": "TOP_10", "weighting": "EQUAL_WEIGHT"},
+    "M2_TOP10": {"score": "m2", "rank_field": "rank_m2", "selection": "TOP_10", "weighting": "EQUAL_WEIGHT"}
+  },
+  "rebalance": {"cadence": "EVERY_7_COMPLETED_UTC_DAILY_CLOSES_FROM_FIRST_ECONOMIC_ACTIVATION", "execution": "CURRENT_COMPLETED_CLOSE_SHADOW", "between_rebalances": "HOLD"},
+  "benchmarks": ["BTC"],
+  "reporting_base_brl": 180000,
+  "cost_policy": "N_D_UNTIL_CANONICAL_COST_MODEL_IS_BOUND; REPORT_GROSS_AND_COST_STATUS_EXPLICITLY",
+  "prospective_only": true,
+  "historical_backfill": false,
+  "retune": false,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0
+}
