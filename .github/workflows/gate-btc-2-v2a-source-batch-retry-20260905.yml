@@ -1,0 +1,34 @@
+name: GATE BTC 2 V2A Source Batch Retry 20260905
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_source_batch_retry_20260905.py
+      - .github/workflows/gate-btc-2-v2a-source-batch-retry-20260905.yml
+permissions:
+  contents: read
+jobs:
+  retry-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retry only mechanically unresolved preregistered targets
+        run: python tools/gate_btc_2_v2a_source_batch_retry_20260905.py --output artifacts/gate_btc_2/v2a_source_batch_retry_20260905
+      - name: Verify zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/gate_btc_2/v2a_source_batch_retry_20260905/BATCH_SUMMARY.json'))
+          assert x['source_admission_changed'] is False and x['d0_started'] is False
+          assert x['scientific_credit'] is False and x['prospective_credit'] is False
+          assert x['RESEARCH_ONLY'] and x['SHADOW_ONLY'] and x['NOT_APPROVED'] and x['FAIL_CLOSED']
+          assert not x['ENGINE_FEED'] and x['ORDERS']==0 and x['REAL_CAPITAL_BRL']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-source-batch-retry-${{ github.run_id }}
+          path: artifacts/gate_btc_2/v2a_source_batch_retry_20260905
+          retention-days: 90
