@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '40 3 * * *'
+  workflow_run:
+    workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
+    types: [completed]
   pull_request:
     branches: [main]
     paths:
@@ -44,7 +47,12 @@ jobs:
           PY
 
   economics:
-    if: github.event_name != 'pull_request'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
