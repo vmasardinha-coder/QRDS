@@ -1,0 +1,40 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_PROSPECTIVE_PIT_SEMANTICS_RECONCILIATION_V1",
+  "date": "2026-09-05",
+  "system": 8,
+  "classification": "MECHANICAL_CONTRACT_RECONCILIATION_NO_METHODOLOGY_RELAXATION",
+  "finding": {
+    "legacy_historical_model": "The V2A historical strategy uses a current-universe reconstruction and therefore retains survivorship bias. That negative evidence remains true and immutable.",
+    "prospective_epoch": "The replacement Dataset Epoch is forward-only. Each daily run archives the universe bytes observed at that run, with source_run_utc, immutable hashes and retrospective_reconstruction=false. That contemporaneously observed membership is point-in-time evidence for future outcomes and is not a retrospective survivor reconstruction.",
+    "latent_bug": "tools/gate_btc_v2a_data_ledger.py currently copies the historical-model survivorship warning into the prospective point-in-time snapshot/status as survivorship_bias_present=true, while simultaneously labeling the record FUTURE_POINT_IN_TIME_UNIVERSE_AND_DATA_QUALITY_EVIDENCE_ONLY. The cutover gate then interprets that legacy flag as a prospective-PIT failure, making the authorized forward-only epoch impossible even when contemporaneous membership is archived correctly."
+  },
+  "frozen_resolution": {
+    "old_snapshots_mutated": false,
+    "historical_model_survivorship_bias_present": true,
+    "future_snapshot_fields": {
+      "historical_model_survivorship_bias_present": "copy the legacy historical quality warning",
+      "prospective_point_in_time_universe_observed": true,
+      "prospective_point_in_time_universe_bias_present": false
+    },
+    "prospective_false_requirement": "prospective_point_in_time_universe_bias_present must be false only when the universe archive is captured in the same forward run, source_run_utc is present, retrospective_reconstruction=false, and immutable universe archive/hash metadata are present",
+    "cutover_behavior": "For post-change snapshots, the cutover gate evaluates the explicit prospective PIT field and separately preserves/reports historical_model_survivorship_bias_present. Legacy snapshots without the explicit prospective field continue to fail closed and cannot be reinterpreted into D0.",
+    "historical_backtest_or_seal_repaired": false,
+    "retroactive_d0_allowed": false,
+    "d0_created_by_this_change": false,
+    "source_or_denominator_gate_changed": false
+  },
+  "why_not_methodology_change": "The replacement epoch was already explicitly authorized as forward-only and the runtime ledger already archives contemporaneous universe bytes for future point-in-time evidence. This reconciliation separates two evidence domains that the implementation incorrectly collapsed; it does not alter selection, universe membership, source QA, completeness, thresholds, clocks, economics or historical conclusions.",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
