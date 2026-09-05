@@ -1,0 +1,37 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_NATIVE_EXACT_IDENTITY_RULE_PREREG_V1",
+  "date": "2026-09-05",
+  "system": 8,
+  "purpose": "FREEZE_A_GENERIC_PROSPECTIVE_IDENTITY_BINDING_RULE_FOR_ROTATING_V2A_UNIVERSE_MEMBERS_USING_NATIVE_PUBLIC_CEX_SOURCES",
+  "scope": "replacement forward-only Dataset Epoch only; legacy historical V2A source-selection and >=200-row model gate are unchanged",
+  "problem": "The legacy collector selects CDD/Binance/OKX using ticker-derived symbols. A rotating future top-150 can contain ticker collisions, so historical load success is not sufficient evidence for the D0 exact-source registry.",
+  "rule": {
+    "universe_identity_authority": "the exact coin_id + symbol + name observed in the same immutable CoinGecko point-in-time universe archive",
+    "candidate_provider_order": ["BINANCE_PUBLIC_SPOT", "OKX_PUBLIC_SPOT"],
+    "CDD_historical_files": "may remain an input to the legacy historical model but are not by themselves a prospective exact-identity authority",
+    "pair_construction": {"BINANCE_PUBLIC_SPOT":"<SYMBOL>USDT", "OKX_PUBLIC_SPOT":"<SYMBOL>-USDT"},
+    "admission_conditions_all_required": [
+      "The official provider public instrument metadata reports the exact constructed base/quote pair as live spot market data.",
+      "A current public coin-id-to-market identity bridge for the same observed CoinGecko coin_id identifies that exact provider and base/quote market; ticker match alone is forbidden.",
+      "The provider public OHLCV response contains physical non-sentinel rows with UTC timestamps and frozen QA invariants.",
+      "Raw universe identity bytes, provider instrument metadata, identity-bridge evidence and OHLCV bytes are preserved with SHA256.",
+      "Any ambiguity, duplicate identity, provider mismatch or bridge absence fails closed and falls through only to an already-preregistered materially distinct exact-source contract."
+    ],
+    "rotating_universe_behavior": "The rule is preregistered by class rather than by asset, so a future observed universe member may qualify prospectively in the same daily collection cycle without post-result source selection. The universe itself is not frozen until an actual D0 passes.",
+    "no_silent_fallback": "If neither preregistered native provider qualifies exact identity, only an already-preregistered alternate exact-source contract or an Option-B structural ineligibility adjudication may satisfy the eligible-universe source contract.",
+    "provider_switch_within_epoch": "forbidden after D0 unless separately preregistered as a future source eligibility/cutover event; D0 freezes the per-member source identity",
+    "identity_collision_guard": "A source whose ticker/pair exists but binds to a different coin identity is explicit SOURCE_IDENTITY_MISMATCH evidence, not a usable source."
+  },
+  "qa": {
+    "timezone":"UTC",
+    "zero_or_sentinel_rows_invalid":true,
+    "ohlc_invariants_required":true,
+    "nonnegative_volume_required":true,
+    "prospective_snapshot_freshness_required":true,
+    "raw_bytes_and_sha256_required":true,
+    "historical_200_row_requirement_changed":false,
+    "backfill_or_stitching_allowed":false
+  },
+  "credit_boundary": {"source_admission_at_preregistration":false,"historical_credit":0,"scientific_credit":false,"prospective_credit":false,"d0_credit":0},
+  "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL_BRL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"NO_SILENT_SOURCE_SUBSTITUTION":true,"FAIL_CLOSED":true}
+}
