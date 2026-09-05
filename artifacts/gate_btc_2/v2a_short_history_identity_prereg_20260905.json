@@ -1,0 +1,30 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_SHORT_HISTORY_EXACT_IDENTITY_PREREG_V1",
+  "date": "2026-09-05",
+  "system": 8,
+  "purpose": "SEPARATE_LEGACY_SHORT_HISTORY_FROM_PROSPECTIVE_EXACT_SOURCE_IDENTITY_BEFORE_D0",
+  "runtime_finding": "The canonical historical collector returned fewer than 200 OKX daily rows for six ticker-based names. Short history is not itself a prospective source failure, but ticker-only matching is insufficient for the exact-source D0 registry.",
+  "targets": [
+    {"symbol":"GRAM","coin_id":"the-open-network","name":"Gram (prev. Toncoin)","provider":"OKX","pair":"GRAM-USDT","source_semantics":"OFFICIAL_PUBLIC_SPOT_EXECUTION_OHLCV","identity_requirement":"Bind the OKX GRAM listing to the current Gram/Toncoin identity before accepting physical candles."},
+    {"symbol":"TAO","coin_id":"bittensor","name":"Bittensor","provider":"OKX","pair":"TAO-USDT","source_semantics":"OFFICIAL_PUBLIC_SPOT_EXECUTION_OHLCV","identity_requirement":"Bind exact Bittensor identity; official OKX listing evidence exists."},
+    {"symbol":"MON","coin_id":"monad","name":"Monad","provider":"OKX","pair":"MON-USDT","source_semantics":"OFFICIAL_PUBLIC_SPOT_EXECUTION_OHLCV","identity_requirement":"Bind exact Monad identity before accepting physical candles."},
+    {"symbol":"GRASS","coin_id":"grass","name":"Grass","provider":"OKX","pair":"GRASS-USDT","source_semantics":"OFFICIAL_PUBLIC_SPOT_EXECUTION_OHLCV","identity_requirement":"Bind exact Grass identity; official OKX listing evidence exists."},
+    {"symbol":"EDGE","coin_id":"edgex","name":"edgeX","provider":"OKX","pair":"EDGE-USDT","source_semantics":"OFFICIAL_PUBLIC_SPOT_EXECUTION_OHLCV","identity_requirement":"Bind exact edgeX identity; official OKX listing evidence exists."},
+    {"symbol":"AI","coin_id":"artificial-inu-3","name":"Artificial Inu","provider":"GECKOTERMINAL_PUBLIC_ONCHAIN","network":"robinhood","token_contract":"0x2E8c31162b855A2ffa90F6F8634643Ad6F111e18","pair_preference":["AI/USDG","AI/WETH","AI/NVDA"],"selection_rule":"DISCOVER_POOLS_BY_EXACT_CONTRACT_THEN_FREEZE_FIRST_EXACT_API_RANKED_POOL_MATCHING_QUOTE_PREFERENCE; NO_POST_RESULT_SWITCHING","source_semantics":"PUBLIC_ONCHAIN_EXECUTION_OHLCV","identity_requirement":"The legacy ticker-only OKX AI candles are explicitly non-admissible because the current universe member is Artificial Inu on Robinhood Chain and current market evidence does not bind that identity to OKX AI-USDT."}
+  ],
+  "qualification_contract": {
+    "exact_coin_identity_required": true,
+    "raw_identity_and_ohlcv_bytes_sha256_required": true,
+    "requested_window_days": 33,
+    "timezone": "UTC",
+    "daily_continuity_required": true,
+    "zero_or_sentinel_rows_invalid": true,
+    "ohlc_invariants_required": true,
+    "nonnegative_volume_required": true,
+    "legacy_200_row_history_requirement_changed": false,
+    "historical_short_history_repaired": false,
+    "source_admission_at_preregistration": false,
+    "scientific_prospective_or_d0_credit": false
+  },
+  "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL_BRL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"NO_SILENT_SOURCE_SUBSTITUTION":true,"FAIL_CLOSED":true}
+}
