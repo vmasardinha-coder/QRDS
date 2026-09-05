@@ -111,16 +111,30 @@ def parse_xml(xml_bytes: bytes, leaf_path: str, leaf_sha256: str) -> tuple[set[s
     market_rows: list[dict] = []
     seen = set()
     volume_candidates = ("FinInstrmQty", "TradQty", "RglrTxsQty", "Qty", "NtlFinVol")
+
+    # Mechanical performance cache only: preserve the exact nearest-ancestor
+    # selection semantics while avoiding repeated full subtree scans for every
+    # WIN/WDO ticker node in large PriceReport XML payloads.
+    values_cache: dict[ET.Element, dict[str, str]] = {}
+
+    def values_for(element: ET.Element) -> dict[str, str]:
+        cached = values_cache.get(element)
+        if cached is not None:
+            return cached
+        values: dict[str, str] = {}
+        for d in element.iter():
+            n = local(d.tag)
+            if n not in values and d.text and d.text.strip():
+                values[n] = d.text.strip()
+        values_cache[element] = values
+        return values
+
     for node, symbol in ticker_nodes:
         cur = parent.get(node)
         chosen = None
         values = None
         while cur is not None:
-            m = {}
-            for d in cur.iter():
-                n = local(d.tag)
-                if n not in m and d.text and d.text.strip():
-                    m[n] = d.text.strip()
+            m = values_for(cur)
             if all(k in m for k in required):
                 chosen, values = cur, m
                 break
