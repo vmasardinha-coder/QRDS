@@ -30,9 +30,6 @@ class GateBTC2Checkpoint7EvidenceInventoryDecisionTests(unittest.TestCase):
         validation = self.payload["validation"]
         self.assertEqual(validation["inventory_tool_sha256"], file_sha("tools/gate_btc_2_official_evidence_inventory.py"))
         self.assertEqual(validation["inventory_test_file_sha256"], file_sha("tests/test_gate_btc_2_official_evidence_inventory.py"))
-        # Checkpoint 7 is a historical decision. Preserve the recorded workflow digest as
-        # immutable evidence, but do not require the live CI workflow to keep those exact
-        # bytes forever. Current workflow safety is validated semantically below.
         self.assertTrue(HEX64.fullmatch(validation["workflow_file_sha256"]))
         for claim in self.payload["deep_sweep"]["historical_qrds_claims"]:
             self.assertEqual(claim["report_sha256"], file_sha(claim["report_path"]))
@@ -46,12 +43,12 @@ class GateBTC2Checkpoint7EvidenceInventoryDecisionTests(unittest.TestCase):
             'GATE_BTC_ENGINE_FEED: "false"',
             'GATE_BTC_ORDERS: "0"',
             'GATE_BTC_REAL_CAPITAL: "0"',
-            "assert p['admissible_candidate_count']==0",
-            "assert s['official_dataset_descriptor_created'] is False",
-            "assert s['official_dataset_sealed'] is False",
-            "assert s['engine_feed'] is False",
-            "assert s['orders_generated']==0",
-            "assert s['real_capital_used']==0",
+            "p['admissible_candidate_count']==0",
+            "s['official_dataset_descriptor_created'] is False",
+            "s['official_dataset_sealed'] is False",
+            "s['engine_feed'] is False",
+            "s['orders_generated']==0",
+            "s['real_capital_used']==0",
         ):
             self.assertIn(required, text)
 
