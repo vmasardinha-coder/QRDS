@@ -3,7 +3,8 @@
 
 The original prospective ledger remains immutable. This creates a separate namespace
 using the exact same frozen candidate contract, starting only from an untouched
-snapshot on/after the retrial freeze date. It never backfills missed dates.
+post-freeze signal cycle. It never backfills missed dates or reconstructs the
+invalidated original path.
 """
 from __future__ import annotations
 
@@ -33,12 +34,14 @@ def snapshot_paths(ledger_dir):
     return sorted((Path(ledger_dir) / "snapshots").glob("*.json"))
 
 
-def write_status(ledger_dir, anchor):
+def write_status(ledger_dir, anchor, wait_reason=None):
     paths = snapshot_paths(ledger_dir)
     latest = load_json(paths[-1]) if paths else None
+    status = "ACTIVE_FORWARD_ONLY_RETRIAL" if latest else "WAITING_FIRST_UNTOUCHED_SIGNAL_CYCLE"
     write_json(Path(ledger_dir) / "STATUS.json", {
         "schema": "gate_btc.alt_trail40_10_retrial_status.v1",
-        "status": "ACTIVE_FORWARD_ONLY_RETRIAL" if latest else "WAITING_FIRST_UNTOUCHED_RETRIAL_SNAPSHOT",
+        "status": status,
+        "wait_reason": None if latest else (wait_reason or "NEXT_SIGNAL_DATE_MUST_BE_ON_OR_AFTER_RETRIAL_FREEZE"),
         "retrial_id": RETRIAL_ID,
         "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
         "retrial_reason": "OPERATIONAL_DELIVERY_GAP_ORIGINAL_LEDGER_STOPPED_AFTER_2026_08_31",
@@ -68,7 +71,7 @@ def initialize(contract_path, ledger_dir):
     validate_contract(contract)
     anchor = {
         "schema": "gate_btc.alt_trail40_10_retrial_anchor.v1",
-        "status": "WAITING_FIRST_UNTOUCHED_RETRIAL_SNAPSHOT",
+        "status": "WAITING_FIRST_UNTOUCHED_SIGNAL_CYCLE",
         "retrial_id": RETRIAL_ID,
         "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
         "contract_sha256": file_sha(contract_path),
@@ -124,19 +127,29 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         require(existing.get("row_sha256") == payload_sha(existing, "row_sha256"), "duplicate row hash invalid")
         return {"result": "DUPLICATE_IDENTICAL", "snapshot_date": snapshot_id, "row_sha256": existing["row_sha256"]}
 
+    signals = parse_signals(read_csv(current_portfolios))
     paths = snapshot_paths(ledger_dir)
     previous = load_json(paths[-1]) if paths else None
-    if previous is not None:
+    if previous is None:
+        stale = sorted(
+            strategy for strategy, signal in signals.items()
+            if date.fromisoformat(signal["signal_date"]) < freeze_day
+        )
+        if stale:
+            reason = "WAIT_NEXT_UNTOUCHED_SIGNAL_CYCLE:" + ",".join(stale)
+            write_status(ledger_dir, anchor, reason)
+            return {"result": "WAITING_UNTOUCHED_SIGNAL_CYCLE", "snapshot_date": snapshot_id, "stale_strategies": stale}
+        previous_sha = None
+    else:
         previous_day = date.fromisoformat(previous["snapshot_date"])
         require(snapshot_day == previous_day + timedelta(days=1), f"retrial daily gap/backfill prohibited: prev={previous_day} current={snapshot_day}")
         require(previous["row_sha256"] == payload_sha(previous, "row_sha256"), "previous retrial row hash invalid")
         previous_sha = previous["row_sha256"]
-    else:
-        previous_sha = None
 
-    signals = parse_signals(read_csv(current_portfolios))
-    # The retrial may begin mid-cycle only because the prior prospective archive was invalidated
-    # by delivery failure. No historical row is reconstructed or credited.
+    for strategy, signal in signals.items():
+        require(date.fromisoformat(signal["signal_date"]) >= freeze_day, f"pre-retrial signal reappeared for {strategy}")
+        require(date.fromisoformat(signal["execution_eligible_from"]) > date.fromisoformat(signal["signal_date"]), "non-lagged signal")
+
     assets = {
         pick["asset"]
         for signal in signals.values()
