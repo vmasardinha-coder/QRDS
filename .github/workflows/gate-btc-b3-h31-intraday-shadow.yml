@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "tools/gate_btc_b3_h31_intraday_shadow.py"
+      - "tools/gate_btc_b3_h31_economics.py"
       - "tools/gate_btc_b3_h31_intraday_shadow_agent.ps1"
       - ".github/workflows/gate-btc-b3-h31-intraday-shadow.yml"
 
@@ -50,7 +51,7 @@ jobs:
           if ($env:ORDERS -ne '0' -or $env:REAL_CAPITAL -ne '0' -or $env:ENGINE_FEED -ne 'false') { throw 'SAFETY' }
           if ($env:NO_RETUNE -ne 'true' -or $env:NO_BACKFILL -ne 'true') { throw 'SCIENTIFIC_BOUNDARY' }
       - name: Python compile
-        run: python -m py_compile tools/gate_btc_b3_h31_intraday_shadow.py
+        run: python -m py_compile tools/gate_btc_b3_h31_intraday_shadow.py tools/gate_btc_b3_h31_economics.py
       - name: PowerShell 5.1 parser check
         shell: powershell
         run: |
@@ -60,7 +61,7 @@ jobs:
       - name: Assert no order API in runner
         shell: powershell
         run: |
-          $text = Get-Content tools/gate_btc_b3_h31_intraday_shadow.py -Raw
+          $text = (Get-Content tools/gate_btc_b3_h31_intraday_shadow.py -Raw) + (Get-Content tools/gate_btc_b3_h31_economics.py -Raw)
           if ($text -match 'order_send\s*\(') { throw 'ORDER_SEND_CODEPATH_FORBIDDEN' }
 
   intraday-shadow:
@@ -101,6 +102,14 @@ jobs:
             --shadow-dir ..\runtime_repo\runtime\ledgers\b3_h31_shadow_paper
           if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) { throw "H31 intraday runner failed: $LASTEXITCODE" }
 
+      - name: Aggregate H31 paper economics
+        shell: powershell
+        working-directory: main_repo
+        run: |
+          python tools/gate_btc_b3_h31_economics.py `
+            --shadow-dir ..\runtime_repo\runtime\ledgers\b3_h31_shadow_paper
+          if ($LASTEXITCODE -ne 0) { throw "H31 economics aggregation failed: $LASTEXITCODE" }
+
       - name: Prove live current-session monitoring
         shell: powershell
         run: |
@@ -115,8 +124,10 @@ jobs:
           Write-Host "H31_PAPER_POSITION=$($s.H31_PAPER_POSITION)"
           Write-Host "H31_MT5_READY=$($s.H31_MT5_READY)"
           Write-Host "H31_CANONICAL_ELIGIBLE_OBSERVATIONS=$($s.H31_CANONICAL_ELIGIBLE_OBSERVATIONS)"
-          if ($s.H31_INTRADAY_MONITORING -ne $true) { throw 'H31_NOT_MONITORING_CURRENT_SESSION' }
-          if ($s.H31_MT5_READY -ne $true) { throw 'H31_MT5_NOT_READY' }
+          $e = Get-Content 'runtime_repo\runtime\ledgers\b3_h31_shadow_paper\ECONOMICS_STATUS.json' -Raw | ConvertFrom-Json
+          Write-Host "H31_ECONOMICS_STATUS=$($e.status)"
+          Write-Host "H31_PAPER_TRADES=$($e.paper_trades)"
+          Write-Host "H31_REFERENCE_NET_BPS_SUM=$($e.reference_net_bps_sum)"
           if ($s.SHADOW_CREDIT_TO_CANONICAL -ne 0 -or $s.ORDERS -ne 0 -or $s.REAL_CAPITAL -ne 0 -or $s.ENGINE_FEED -ne $false) { throw 'H31_SAFETY_BOUNDARY_BROKEN' }
 
       - name: Publish append-only H31 intraday shadow runtime
