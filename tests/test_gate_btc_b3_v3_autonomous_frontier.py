@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.gate_btc_factory.autonomous_family_generator import build_generation
+from tools.gate_btc_factory.b3_v3_family_generator import build_generation
 from tools.gate_btc_factory.b3_v3_source_qualifier import qualify
 
 
@@ -14,6 +14,7 @@ class TestB3V3AutonomousFrontier(unittest.TestCase):
         self.assertTrue(d["protocol"].endswith("protocol_v3.md"))
         self.assertEqual(d["data_dimension"], "TICK_MICROSTRUCTURE")
         self.assertTrue(d["source_gate_required_before_economics"])
+        self.assertFalse(d["economics_authorized"])
         self.assertEqual(len(d["families"]), 10)
         self.assertTrue(all(x["protocol"] == "v3" for x in d["families"]))
         self.assertTrue(all(x["data_dimension"] == "TICK_MICROSTRUCTURE" for x in d["families"]))
@@ -31,7 +32,7 @@ class TestB3V3AutonomousFrontier(unittest.TestCase):
     def test_v3_is_finite_through_h2889(self):
         last = build_generation(2880)
         self.assertEqual(last["generation"], "H2880-H2889")
-        with self.assertRaisesRegex(RuntimeError, "AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED"):
+        with self.assertRaisesRegex(RuntimeError, "NONCANONICAL_V3_START"):
             build_generation(2890)
 
     def test_missing_official_tick_manifest_is_yellow_not_economics(self):
