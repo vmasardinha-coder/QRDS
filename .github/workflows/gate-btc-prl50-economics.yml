@@ -1,0 +1,70 @@
+name: GATE BTC PRL50 Economics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_prl50_position_economics.py
+      - tools/gate_btc_prl50_position_shadow_archive.py
+      - .github/workflows/gate-btc-prl50-economics.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["GATE BTC PRL50 Position Shadow Archive"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: "true"
+  SHADOW_ONLY: "true"
+  NOT_APPROVED: "true"
+  ENGINE_FEED: "false"
+  ORDERS: "0"
+  REAL_CAPITAL: "0"
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m py_compile tools/gate_btc_prl50_position_shadow_archive.py tools/gate_btc_prl50_position_economics.py
+
+  economics:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Build PRL50 hold-vs-preservation economics
+        working-directory: main_repo
+        run: >-
+          python tools/gate_btc_prl50_position_economics.py
+          --contract tools/gate_btc_prl50_position_shadow_contract_v1.json
+          --ledger-dir ../runtime_repo/runtime/ledgers/prl50_position
+      - name: Assert immutable safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/ECONOMICS_STATUS.json'))
+          assert p['research_only'] and p['shadow_only'] and p['not_approved']
+          assert p['engine_feed'] is False and p['orders_generated']==0 and p['real_capital_used']==0
+          assert p['retrospective_backfill'] is False
+          PY
+      - name: Persist economics only
+        working-directory: runtime_repo
+        run: |
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/prl50_position/ECONOMICS_STATUS.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh PRL50 economic mirror $GITHUB_RUN_ID"
+          git pull --rebase origin gate-btc-runtime
+          git push origin HEAD:gate-btc-runtime
