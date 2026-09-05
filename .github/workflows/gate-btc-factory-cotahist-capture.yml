@@ -169,8 +169,12 @@ jobs:
           assert x['schema']=='qrds.factory.b3_win_wdo_coverage_block.v1'
           assert x['source_admission_pass'] is False and x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
           assert x['prospective_credit']==0 and x['scientific_credit']==0
-          assert x['parsed_win_row_count']>0 and x['parsed_wdo_row_count']>0
-          assert x['block_contract_pass'] is True, x
+          if x['calendar_gap_status']=='REQUIRES_OFFICIAL_CALENDAR_CROSSCHECK':
+              assert x['parsed_win_row_count']==0 and x['parsed_wdo_row_count']==0
+              assert x['block_contract_pass'] is False
+          else:
+              assert x['parsed_win_row_count']>0 and x['parsed_wdo_row_count']>0
+              assert x['block_contract_pass'] is True, x
           s=x['safety']; assert s['H1_ECONOMICS_READ'] is False
           PY
       - name: Upload coverage evidence
