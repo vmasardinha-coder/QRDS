@@ -76,6 +76,10 @@ class AltTrailShadowArchiveTests(unittest.TestCase):
             {"date": "2026-09-01", "symbol": "LINK", "close_usd": "21"},
             {"date": "2026-09-01", "symbol": "AVAX", "close_usd": "31"},
             {"date": "2026-09-01", "symbol": "BNB", "close_usd": "910"},
+            {"date": "2026-09-02", "symbol": "SOL", "close_usd": "102"},
+            {"date": "2026-09-02", "symbol": "LINK", "close_usd": "22"},
+            {"date": "2026-09-02", "symbol": "AVAX", "close_usd": "32"},
+            {"date": "2026-09-02", "symbol": "BNB", "close_usd": "920"},
         ])
         archive.initialize(self.contract, self.ledger)
 
@@ -91,15 +95,24 @@ class AltTrailShadowArchiveTests(unittest.TestCase):
         self.assertEqual(row["selected_alt_closes"]["SOL"], 101.0)
         self.assertNotIn("BNB", row["selected_alt_closes"])
         self.assertFalse(row["economics_opened"])
+        self.assertFalse(row["gap_from_previous"])
 
     def test_late_first_record_fails_closed(self):
         with self.assertRaises(RuntimeError):
             archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-01", "2")
 
-    def test_daily_gap_fails_closed(self):
+    def test_daily_gap_resumes_forward_without_backfill(self):
         archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-08-31", "1")
-        with self.assertRaises(RuntimeError):
-            archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
+        result = archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
+        self.assertTrue(result["gap_from_previous"])
+        self.assertEqual(result["skipped_calendar_days"], 1)
+        row = json.loads((self.ledger / "snapshots/2026-09-02.json").read_text(encoding="utf-8"))
+        self.assertTrue(row["gap_from_previous"])
+        self.assertEqual(row["skipped_calendar_days"], 1)
+        self.assertFalse((self.ledger / "snapshots/2026-09-01.json").exists())
+        status = json.loads((self.ledger / "STATUS.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["recorded_gap_count"], 1)
+        self.assertEqual(status["skipped_calendar_days"], 1)
 
     def test_midcycle_pre_freeze_signal_fails_closed(self):
         write_csv(self.portfolios, portfolios("2026-07-31", "2026-08-01"))
