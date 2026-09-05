@@ -1,0 +1,59 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_ONCHAIN_SOURCE_PREREG_V1",
+  "date": "2026-09-05",
+  "system": 8,
+  "purpose": "PREREGISTER_EXACT_PUBLIC_ONCHAIN_EXECUTION_SOURCES_BEFORE_PHYSICAL_QUALIFICATION",
+  "targets": [
+    {
+      "symbol": "ONYC",
+      "coin_id": "onyc",
+      "network": "solana",
+      "token_mint": "5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5",
+      "provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "venue": "ORCA",
+      "pair": "ONYC/USDC",
+      "pool_address": "7jhhyxPUKpu42hPGSYwgMXbR2dtVJHKhs8DW3sAAgAvX",
+      "selection_rule": "EXACT_PREREGISTERED_POOL_ONLY",
+      "source_semantics": "PUBLIC_ONCHAIN_EXECUTION_OHLCV"
+    },
+    {
+      "symbol": "USX",
+      "coin_id": "usx",
+      "network": "solana",
+      "token_mint": "6FrrzDk5mQARGc1TDYoyVnSyRdds1t4PbtohCD6p3tgG",
+      "provider": "GECKOTERMINAL_PUBLIC_ONCHAIN",
+      "venue": "ORCA_OR_OTHER_EXACT_PUBLIC_POOL",
+      "pair_preference": ["USX/USDC", "USX/USDT"],
+      "pool_address": null,
+      "selection_rule": "DISCOVER_POOLS_BY_EXACT_TOKEN_MINT_THEN_FREEZE_FIRST_EXACT_API_RANKED_POOL_MATCHING_QUOTE_PREFERENCE; NO_POST_RESULT_POOL_SWITCHING",
+      "source_semantics": "PUBLIC_ONCHAIN_EXECUTION_OHLCV"
+    }
+  ],
+  "qualification_contract": {
+    "requested_window_days": 33,
+    "timezone": "UTC",
+    "exact_token_identity_required": true,
+    "raw_pool_discovery_and_ohlcv_bytes_sha256_required": true,
+    "daily_continuity_required": true,
+    "zero_or_sentinel_rows_invalid": true,
+    "ohlc_invariants_required": true,
+    "nonnegative_volume_required": true,
+    "no_source_admission_at_preregistration": true,
+    "no_historical_repair": true,
+    "no_scientific_prospective_or_d0_credit": true,
+    "second_pool_allowed_only_after_first_preregistered_selection_physically_fails_and_a_new_materially_distinct_route_is_separately_preregistered": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
