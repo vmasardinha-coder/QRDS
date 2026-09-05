@@ -1,0 +1,51 @@
+name: GATE BTC 2 V2A Short History Qualification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_v2a_short_history_qualification.py'
+      - '.github/workflows/gate-btc-2-v2a-short-history-qualification.yml'
+      - 'artifacts/gate_btc_2/v2a_short_history_identity_prereg_20260905.json'
+      - 'artifacts/gate_btc_2/v2a_native_exact_identity_rule_prereg_20260905.json'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify preregistrations
+        run: |
+          test -f artifacts/gate_btc_2/v2a_short_history_identity_prereg_20260905.json
+          test -f artifacts/gate_btc_2/v2a_native_exact_identity_rule_prereg_20260905.json
+      - name: Run physical qualification
+        run: |
+          python tools/gate_btc_2_v2a_short_history_qualification.py --out runtime/qualification/v2a_short_history_20260905
+      - name: Assert fail-closed safety envelope
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('runtime/qualification/v2a_short_history_20260905/BATCH_SUMMARY.json').read_text())
+          assert x['source_admission'] is False
+          assert x['legacy_history_repair'] is False
+          assert x['d0_credit'] == 0
+          assert x['research_only'] and x['shadow_only'] and x['not_approved'] and x['fail_closed']
+          assert x['engine_feed'] is False and x['orders'] == 0 and x['real_capital_brl'] == 0
+          assert x['no_retune'] and x['no_backfill'] and x['no_counter_reset'] and x['no_silent_source_substitution']
+          PY
+      - name: Upload immutable qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-short-history-qualification-${{ github.run_id }}
+          path: runtime/qualification/v2a_short_history_20260905
+          if-no-files-found: error
