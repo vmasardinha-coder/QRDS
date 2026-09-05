@@ -1,0 +1,149 @@
+{
+  "schema": "gate_btc.b3.autonomous_family_contract.v1",
+  "generation": "H260-H269",
+  "protocol": "research/b3_h_autonomous_science_protocol_v1.md",
+  "frozen_before_economics": true,
+  "discovery": "2022-01-01/2024-12-31",
+  "replication": "2020-01-01/2021-12-31",
+  "h1_cutoff_exclusive": "2026-08-10",
+  "max_survivors": 2,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "orders": 0,
+  "real_capital": 0,
+  "engine_feed": false,
+  "h1_economics_read": false,
+  "families": [
+    {
+      "family_id": "H260",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 60,
+      "abs_z_threshold": 1.25,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H261",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 60,
+      "abs_z_threshold": 1.5,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H262",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 90,
+      "abs_z_threshold": 0.75,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H263",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 90,
+      "abs_z_threshold": 1.0,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H264",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 90,
+      "abs_z_threshold": 1.25,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H265",
+      "feature": "REALIZED_VOL",
+      "direction": "REVERSION",
+      "decision_window_minutes": 90,
+      "abs_z_threshold": 1.5,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H266",
+      "feature": "VOLUME_EARLY",
+      "direction": "CONTINUATION",
+      "decision_window_minutes": 15,
+      "abs_z_threshold": 0.75,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H267",
+      "feature": "VOLUME_EARLY",
+      "direction": "CONTINUATION",
+      "decision_window_minutes": 15,
+      "abs_z_threshold": 1.0,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H268",
+      "feature": "VOLUME_EARLY",
+      "direction": "CONTINUATION",
+      "decision_window_minutes": 15,
+      "abs_z_threshold": 1.25,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    },
+    {
+      "family_id": "H269",
+      "feature": "VOLUME_EARLY",
+      "direction": "CONTINUATION",
+      "decision_window_minutes": 15,
+      "abs_z_threshold": 1.5,
+      "holding_horizons_minutes": [
+        30,
+        60,
+        120
+      ],
+      "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD"
+    }
+  ]
+}
