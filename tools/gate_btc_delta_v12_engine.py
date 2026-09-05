@@ -20,6 +20,10 @@ Prospective discipline, which is the whole point of the exercise:
     post-anchor series and refuses to write if a previously committed row
     changed, so a silent restatement cannot pass as new evidence.
   * A missing UTC day fails closed. Gaps are never backfilled.
+  * The ledger starts on the first day the selection machinery has its inputs.
+    A day right after the anchor whose signal and persistence days have no
+    recorded universe measures nothing, and padding the 60-observation gate with
+    such a day would inflate the sample with a non-observation.
   * The TOP100 rotates daily. Each day's membership is appended to the ledger and
     read back on recomputation, so a past day is never re-selected against a
     later snapshot. Membership governs selection only: a name that drops out
@@ -348,6 +352,39 @@ def target_schedule(dates: list[str], bases: list[str], panels: dict[str, Any],
 # simulation — the canonical loop, with per-symbol tiered cost
 # --------------------------------------------------------------------------
 
+def tradeable_days(dates: list[str], anchor: str, cfg: dict[str, Any],
+                   membership: dict[str, dict[str, int]] | None,
+                   already_booked: str | None = None) -> list[str]:
+    """Days after the anchor on which the engine could actually form an opinion.
+
+    Selection needs the signal day and, for persistence, the day before it. Right
+    after the anchor those days have no recorded universe, so the book is empty
+    for a reason that has nothing to do with the strategy. Booking such a day as
+    a flat observation would pad the 60-observation gate with days that measure
+    nothing, so the ledger starts on the first day the machinery has its inputs.
+
+    A day the strategy itself leaves empty — no name persisted, a kill switch —
+    is a real observation and is booked normally.
+
+    Once the ledger has booked its first day, that day is fixed: the warmup rule
+    may never advance past it again, or a later gap would silently shorten the
+    series instead of failing closed.
+    """
+    after = [d for d in dates if d > anchor]
+    if membership is None:
+        return after
+    if already_booked:
+        return [d for d in after if d >= already_booked]
+    index = {d: i for i, d in enumerate(dates)}
+    lookback = int(cfg["persistence_days"])
+    for position, day in enumerate(after):
+        i = index[day]
+        needed = [dates[i - lag] for lag in range(1, lookback + 1) if i - lag >= 0]
+        if len(needed) == lookback and all(d in membership for d in needed):
+            return after[position:]
+    return []
+
+
 def stop_parameters(vol_daily: float | None, cfg: dict[str, Any]) -> tuple[float, float, float]:
     multiplier = float(cfg["stop_vol_multiplier"])
     volatility = (float(vol_daily) if vol_daily is not None and math.isfinite(vol_daily)
@@ -396,7 +433,7 @@ def simulate(book: dict[str, Any], dates: list[str], bases: list[str], panels: d
              ) -> dict[str, list[dict[str, Any]]]:
     name = book["strategy"]
     schedule, selections = target_schedule(dates, bases, panels, book, cfg, membership)
-    traded = [d for d in dates if d > anchor]
+    traded = tradeable_days(dates, anchor, cfg, membership)
     index = {d: i for i, d in enumerate(dates)}
 
     positions: dict[str, dict[str, Any]] = {}
@@ -782,7 +819,10 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     # engine never ran on cannot be reconstructed: reading its membership from a
     # later snapshot would select it with hindsight, and trading it on an empty
     # universe would book a flat day that never happened.
-    missing = [d for d in dates if d > anchor and d not in membership]
+    committed = read_csv_rows(out_dir / "DAILY_NAV.csv")
+    first_booked = min((r["date"] for r in committed), default=None)
+    booked = tradeable_days(dates, anchor, cfg, membership, first_booked)
+    missing = [d for d in booked if d not in membership]
     if missing:
         raise EngineError(
             f"FAIL_CLOSED: no recorded universe membership for {', '.join(missing[:5])}"
@@ -848,6 +888,13 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
         "universe_size_today": len(ranks_today),
         "priced_assets_including_dropouts": len(bases),
         "membership_days_recorded": len(membership),
+        "warmup_days_not_booked": sum(1 for d in dates if d > anchor) - len(booked),
+        "first_booked_date": booked[0] if booked else None,
+        # The designed warmup is exactly persistence_days. Anything longer means
+        # the chain missed runs before the series ever started, and while that
+        # produces no false evidence it must not pass unseen.
+        "warmup_longer_than_designed": (
+            sum(1 for d in dates if d > anchor) - len(booked) > int(cfg["persistence_days"])),
         "selection": {"top_n": cfg["top_n"], "bottom_n": cfg["bottom_n"]},
         "books": {b["strategy"]: {**summaries[b["strategy"]], **gate[b["strategy"]]}
                   for b in BOOKS},
