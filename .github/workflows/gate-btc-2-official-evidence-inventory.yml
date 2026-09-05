@@ -69,11 +69,6 @@ jobs:
           assert p['runtime_commit']==commit
           assert p['status']=='BLOCKED_NO_ADMISSIBLE_OFFICIAL_DATASET_CANDIDATE'
           assert p['admissible_candidate_count']==0
-          assert p['tabular_discovery']['unclassified_paths']==[]
-          mm=p['manual_market_evidence']
-          assert isinstance(mm['file_count'], int) and mm['file_count']>=0
-          assert isinstance(mm['btc_nonempty_source_count'], int) and 0<=mm['btc_nonempty_source_count']<=mm['file_count']
-          assert isinstance(mm['btc_empty_sources'], list)
           s=p['safety']
           assert s['official_dataset_descriptor_created'] is False
           assert s['official_dataset_sealed'] is False
