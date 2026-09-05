@@ -11,13 +11,6 @@ FEATURES = (
     "OPEN_RETURN", "OPEN_RANGE", "REALIZED_VOL", "VOLUME_EARLY",
     "BAR_IMBALANCE", "CLOSE_LOCATION", "BODY_RANGE", "GAP_FROM_PRIOR_CLOSE",
 )
-V3_FEATURES = (
-    "EARLY_TRADE_COUNT_RATE",
-    "EARLY_MEDIAN_TRADE_SIZE",
-    "LARGE_TRADE_VOLUME_SHARE",
-    "INTERTRADE_DURATION_CV",
-    "PRICE_CHANGE_SIGN_IMBALANCE",
-)
 DIRECTIONS = ("CONTINUATION", "REVERSION")
 WINDOWS = (15, 30, 60, 90)
 THRESHOLDS = (0.75, 1.00, 1.25, 1.50)
@@ -25,7 +18,6 @@ HORIZONS = (30, 60, 120)
 V1_LOOKBACK = 20
 V2_EXTENSION_LOOKBACKS = (10, 30, 40, 60, 80, 120, 160, 200, 252)
 START_FAMILY = 170
-V3_START_FAMILY = 2730
 GEN_SIZE = 10
 RESULT_RE = re.compile(r"gate_btc_b3_h(\d+)_h(\d+)_result\.json$")
 
@@ -49,16 +41,6 @@ def expanded_universe() -> list[tuple[str, str, int, float, int]]:
     return rows
 
 
-def v3_universe() -> list[tuple[str, str, int, float]]:
-    """Finite v3 tick-microstructure universe frozen before H2730 economics."""
-    rows = list(itertools.product(V3_FEATURES, DIRECTIONS, WINDOWS, THRESHOLDS))
-    if len(rows) != 160 or len(rows) % GEN_SIZE:
-        raise RuntimeError("AUTONOMOUS_SCIENCE_V3_UNIVERSE_INVALID")
-    if len(set(rows)) != len(rows):
-        raise RuntimeError("AUTONOMOUS_SCIENCE_V3_DUPLICATE_CONTRACT")
-    return rows
-
-
 def latest_closed_frontier(root: Path) -> tuple[int, int] | None:
     rows: list[tuple[int, int, Path]] = []
     for p in (root / "tools").glob("gate_btc_b3_h*_h*_result.json"):
@@ -79,69 +61,9 @@ def latest_closed_frontier(root: Path) -> tuple[int, int] | None:
     return a, b
 
 
-def _base_contract(start: int, protocol: str, schema: str, fams: list[dict]) -> dict:
-    return {
-        "schema": schema,
-        "generation": f"H{start}-H{start+9}",
-        "protocol": protocol,
-        "frozen_before_economics": True,
-        "discovery": "2022-01-01/2024-12-31",
-        "replication": "2020-01-01/2021-12-31",
-        "h1_cutoff_exclusive": "2026-08-10",
-        "max_survivors": 2,
-        "research_only": True,
-        "shadow_only": True,
-        "not_approved": True,
-        "orders": 0,
-        "real_capital": 0,
-        "engine_feed": False,
-        "h1_economics_read": False,
-        "families": fams,
-    }
-
-
-def build_v3_generation(start: int) -> dict:
-    if start < V3_START_FAMILY or start % GEN_SIZE:
-        raise RuntimeError(f"NONCANONICAL_V3_START:{start}")
-    u = v3_universe()
-    offset = start - V3_START_FAMILY
-    if offset + GEN_SIZE > len(u):
-        raise RuntimeError("AUTONOMOUS_SCIENCE_GRAMMAR_EXHAUSTED")
-    fams = []
-    for i in range(GEN_SIZE):
-        fid = start + i
-        feature, direction, window, threshold = u[offset + i]
-        fams.append({
-            "family_id": f"H{fid}",
-            "protocol": "v3",
-            "data_dimension": "TICK_MICROSTRUCTURE",
-            "feature": feature,
-            "direction": direction,
-            "decision_window_minutes": window,
-            "abs_z_threshold": threshold,
-            "holding_horizons_minutes": list(HORIZONS),
-            "standardization_lookback_sessions": V1_LOOKBACK,
-            "causal_standardization": "ROLLING_20_PRIOR_SESSIONS_MEDIAN_MAD",
-        })
-    d = _base_contract(
-        start,
-        "research/b3_h_autonomous_science_protocol_v3.md",
-        "gate_btc.b3.autonomous_family_contract.v3",
-        fams,
-    )
-    d["data_dimension"] = "TICK_MICROSTRUCTURE"
-    d["source_gate_required_before_economics"] = True
-    d["source_role_primary"] = "OFFICIAL_B3_RAW_TRADE_TICK"
-    d["mt5_role"] = "INDEPENDENT_SECONDARY_SOURCE_CROSS_VALIDATION_ONLY"
-    return d
-
-
 def build_generation(start: int) -> dict:
-    if start < START_FAMILY or start % GEN_SIZE:
+    if start < START_FAMILY or start % 10:
         raise RuntimeError(f"NONCANONICAL_START:{start}")
-    if start >= V3_START_FAMILY:
-        return build_v3_generation(start)
-
     u = expanded_universe()
     offset = start - START_FAMILY
     if offset + GEN_SIZE > len(u):
@@ -168,8 +90,24 @@ def build_generation(start: int) -> dict:
         if offset + GEN_SIZE <= v1_size
         else "research/b3_h_autonomous_science_protocol_v2.md"
     )
-    schema = "gate_btc.b3.autonomous_family_contract.v2" if protocol.endswith("v2.md") else "gate_btc.b3.autonomous_family_contract.v1"
-    return _base_contract(start, protocol, schema, fams)
+    return {
+        "schema": "gate_btc.b3.autonomous_family_contract.v2" if protocol.endswith("v2.md") else "gate_btc.b3.autonomous_family_contract.v1",
+        "generation": f"H{start}-H{start+9}",
+        "protocol": protocol,
+        "frozen_before_economics": True,
+        "discovery": "2022-01-01/2024-12-31",
+        "replication": "2020-01-01/2021-12-31",
+        "h1_cutoff_exclusive": "2026-08-10",
+        "max_survivors": 2,
+        "research_only": True,
+        "shadow_only": True,
+        "not_approved": True,
+        "orders": 0,
+        "real_capital": 0,
+        "engine_feed": False,
+        "h1_economics_read": False,
+        "families": fams,
+    }
 
 
 def next_generation(root: Path) -> dict:
@@ -177,7 +115,7 @@ def next_generation(root: Path) -> dict:
     if latest is None:
         raise RuntimeError("NO_CANONICAL_CLOSED_FRONTIER")
     _, end = latest
-    start = ((end // GEN_SIZE) + 1) * GEN_SIZE
+    start = ((end // 10) + 1) * 10
     if start < START_FAMILY:
         start = START_FAMILY
     return build_generation(start)
