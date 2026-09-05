@@ -1,0 +1,56 @@
+name: GATE BTC 2 V2A Source Batch 20260905 Qualification
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_source_batch_20260905_qualification.py'
+      - '.github/workflows/gate-btc-2-v2a-source-batch-20260905-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture preregistered exact-source evidence
+        run: |
+          python tools/gate_btc_2_v2a_source_batch_20260905_qualification.py \
+            --output artifacts/gate_btc_2/v2a_source_batch_qualification_20260905
+      - name: Verify evidence boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/gate_btc_2/v2a_source_batch_qualification_20260905/BATCH_SUMMARY.json')
+          x=json.loads(p.read_text())
+          assert x['source_admission_changed'] is False
+          assert x['d0_started'] is False
+          assert x['scientific_credit'] is False
+          assert x['prospective_credit'] is False
+          assert x['RESEARCH_ONLY'] is True
+          assert x['SHADOW_ONLY'] is True
+          assert x['NOT_APPROVED'] is True
+          assert x['ENGINE_FEED'] is False
+          assert x['ORDERS'] == 0
+          assert x['REAL_CAPITAL_BRL'] == 0
+          assert x['NO_RETUNE'] is True
+          assert x['NO_BACKFILL'] is True
+          assert x['NO_COUNTER_RESET'] is True
+          assert x['NO_SILENT_SOURCE_SUBSTITUTION'] is True
+          assert x['FAIL_CLOSED'] is True
+          print(json.dumps(x, indent=2, sort_keys=True))
+          PY
+      - name: Upload immutable qualification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-source-batch-qualification-${{ github.run_id }}
+          path: artifacts/gate_btc_2/v2a_source_batch_qualification_20260905
+          if-no-files-found: error
+          retention-days: 90
