@@ -57,7 +57,7 @@ def latest_closed_frontier(root: Path) -> tuple[int, int] | None:
             rows.append((a, b, p))
     if not rows:
         return None
-    a, b, _ = max(rows, key=lambda x: x[1])
+    a, b, _ = max(rows, key=lambda x:x[1])
     return a, b
 
 

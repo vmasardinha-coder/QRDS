@@ -1,0 +1,183 @@
+name: GATE BTC B3 V3 Frontier Source Gate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '12,42 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'research/b3_h_autonomous_science_protocol_v3.md'
+      - 'research/b3_h_autonomous_science_v3_family_manifest.json'
+      - 'research/b3_h_autonomous_science_v3_source_contract.json'
+      - 'tools/gate_btc_factory/b3_v3_family_generator.py'
+      - 'tools/gate_btc_factory/b3_v3_source_qualifier.py'
+      - 'tests/test_gate_btc_b3_v3_autonomous_frontier.py'
+      - '.github/workflows/gate-btc-b3-v3-frontier.yml'
+
+permissions:
+  contents: write
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+concurrency:
+  group: gate-btc-b3-v3-frontier
+  cancel-in-progress: false
+
+jobs:
+  arm-and-qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+
+      - name: Validate V3 grammar and source gate tests
+        run: |
+          python -m py_compile tools/gate_btc_factory/b3_v3_family_generator.py
+          python -m py_compile tools/gate_btc_factory/b3_v3_source_qualifier.py
+          python -m unittest -v tests/test_gate_btc_b3_v3_autonomous_frontier.py
+
+      - name: Resolve authorized V3 frontier
+        id: frontier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/v3.env
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/autonomous_science/CURRENT.json')
+          d=json.load(open(p,encoding='utf-8')) if p.exists() else {}
+          nxt=int(d.get('next_generation_start',2730))
+          status=str(d.get('status',''))
+          generation=str(d.get('generation',''))
+          if generation.startswith('H27') and status in {'WAITING_OFFICIAL_TICK_SOURCE','SOURCE_QA_FAIL'}:
+              try:
+                  nxt=int(generation.split('-')[0][1:])
+              except Exception:
+                  nxt=2730
+          if nxt < 2730:
+              raise SystemExit(f'V3_FRONTIER_NOT_REACHED:{nxt}')
+          if nxt > 2880:
+              print('ACTION=V3_GRAMMAR_EXHAUSTED')
+              print(f'START={nxt}')
+          else:
+              print('ACTION=ARM')
+              print(f'START={nxt}')
+          PY
+          source /tmp/v3.env
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+          echo "start=$START" >> "$GITHUB_OUTPUT"
+
+      - name: Materialize deterministic V3 preregistration
+        if: steps.frontier.outputs.action == 'ARM'
+        shell: bash
+        run: |
+          set -euo pipefail
+          start='${{ steps.frontier.outputs.start }}'
+          python tools/gate_btc_factory/b3_v3_family_generator.py --start "$start" --out /tmp/v3_contract.json
+          gen=$(python -c "import json; print(json.load(open('/tmp/v3_contract.json'))['generation'])")
+          lo=${gen%%-*}; hi=${gen##*-}; lo=${lo#H}; hi=${hi#H}
+          contract="runtime_repo/runtime/autonomous_science/contracts/b3_h${lo}_h${hi}_v3_prereg.json"
+          if [ -f "$contract" ]; then
+            cmp -s "$contract" /tmp/v3_contract.json || { echo 'EXISTING_V3_CONTRACT_MISMATCH' >&2; exit 1; }
+          else
+            mkdir -p "$(dirname "$contract")"
+            cp /tmp/v3_contract.json "$contract"
+          fi
+          echo "$contract" > /tmp/v3_contract_path
+
+      - name: Qualify physical official-B3 historical tick source
+        if: steps.frontier.outputs.action == 'ARM'
+        run: |
+          python tools/gate_btc_factory/b3_v3_source_qualifier.py \
+            --contract "$(cat /tmp/v3_contract_path)" \
+            --out /tmp/v3_source_gate.json
+
+      - name: Persist V3 armed/source-wait authority
+        if: steps.frontier.outputs.action == 'ARM'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          contract=json.load(open('/tmp/v3_contract.json',encoding='utf-8'))
+          gate=json.load(open('/tmp/v3_source_gate.json',encoding='utf-8'))
+          gen=contract['generation']
+          root=Path('runtime_repo/runtime/autonomous_science')
+          gdir=root/'source_gates'; gdir.mkdir(parents=True,exist_ok=True)
+          gp=gdir/(gen.replace('-','_')+'.json')
+          gp.write_text(json.dumps(gate,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          start=int(gen.split('-')[0][1:])
+          pointer={
+              'schema':'gate_btc.b3.autonomous_science_pointer.v2',
+              'generation':gen,
+              'status':gate['status'] if not gate['ready_for_economics'] else 'SOURCE_READY_ECONOMICS_STILL_FAIL_CLOSED',
+              'survivors':[],
+              'contract_frozen':True,
+              'source_gate_status':gate['status'],
+              'source_ready_for_economics':bool(gate['ready_for_economics']),
+              'economics_opened':False,
+              'research_only':True,
+              'shadow_only':True,
+              'not_approved':True,
+              'orders':0,
+              'real_capital':0,
+              'engine_feed':False,
+              'h1_economics_read':False,
+              'next_generation_start':start,
+          }
+          (root/'CURRENT.json').write_text(json.dumps(pointer,indent=2)+'\n',encoding='utf-8')
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/autonomous_science
+          if git diff --cached --quiet; then
+            echo 'V3_RUNTIME_ALREADY_CURRENT'
+            exit 0
+          fi
+          git commit -m "B3 H2730+ arm v3 source-gated frontier"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+
+      - name: Enforce no economics before green official source
+        if: steps.frontier.outputs.action == 'ARM'
+        run: |
+          python - <<'PY'
+          import json
+          g=json.load(open('/tmp/v3_source_gate.json'))
+          assert g['economics_read'] is False
+          assert g['orders']==0 and g['real_capital']==0 and g['engine_feed'] is False
+          if g['ready_for_economics']:
+              print('V3_SOURCE_GREEN=TRUE; ECONOMICS_REMAINS_FAIL_CLOSED_UNTIL SEPARATE TICK EVALUATOR AUTHORITY IS GREEN')
+          else:
+              assert g['status'] in {'WAITING_OFFICIAL_TICK_SOURCE','SOURCE_QA_FAIL'}
+              print('V3_FRONTIER=ARMED_YELLOW_SOURCE_WAIT')
+          PY
+
+      - name: Report finite V3 exhaustion
+        if: steps.frontier.outputs.action == 'V3_GRAMMAR_EXHAUSTED'
+        run: echo 'V3_FRONTIER=FINITE_GRAMMAR_EXHAUSTED_NO_AUTOMATIC_V4'
