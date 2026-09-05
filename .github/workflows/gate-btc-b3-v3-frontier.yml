@@ -10,7 +10,7 @@ on:
       - 'research/b3_h_autonomous_science_protocol_v3.md'
       - 'tools/gate_btc_factory/autonomous_family_generator.py'
       - 'tools/gate_btc_factory/b3_v3_source_qualifier.py'
-      - 'tests/test_b3_v3_autonomous_frontier.py'
+      - 'tests/test_gate_btc_b3_v3_autonomous_frontier.py'
       - '.github/workflows/gate-btc-b3-v3-frontier.yml'
 
 permissions:
@@ -52,7 +52,7 @@ jobs:
         run: |
           python -m py_compile tools/gate_btc_factory/autonomous_family_generator.py
           python -m py_compile tools/gate_btc_factory/b3_v3_source_qualifier.py
-          python -m unittest -v tests/test_b3_v3_autonomous_frontier.py
+          python -m unittest -v tests/test_gate_btc_b3_v3_autonomous_frontier.py
 
       - name: Resolve authorized V3 frontier
         id: frontier
