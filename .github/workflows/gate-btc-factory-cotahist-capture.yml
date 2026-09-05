@@ -256,7 +256,8 @@ jobs:
           x=json.load(open('artifacts/gate_btc/factory/win_wdo_univariate/RESULT.json'))
           assert x['schema']=='qrds.factory.b3_win_wdo_univariate_result.v1'
           assert x['family_count']==12
-          assert sorted(x['results'])==[f'B3WIN{i:02d}' for i in range(1,7)]+[f'B3WDO{i:02d}' for i in range(1,7)]
+          expected={f'B3WIN{i:02d}' for i in range(1,7)} | {f'B3WDO{i:02d}' for i in range(1,7)}
+          assert set(x['results'])==expected
           s=x['safety']
           assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
           assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
