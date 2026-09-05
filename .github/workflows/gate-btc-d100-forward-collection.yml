@@ -1,0 +1,89 @@
+name: GATE BTC D100 Forward Collection
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '11 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-d100-forward-collection.yml'
+      - 'tools/gate_btc_factory/d100_forward_collection.py'
+      - 'tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-d100-forward-collection
+  cancel-in-progress: false
+
+jobs:
+  collect-forward-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GATE_BTC_RESEARCH_ONLY: 'true'
+      GATE_BTC_SHADOW_ONLY: 'true'
+      GATE_BTC_NOT_APPROVED: 'true'
+      GATE_BTC_ENGINE_FEED: 'false'
+      GATE_BTC_ORDERS: '0'
+      GATE_BTC_REAL_CAPITAL: '0'
+      GATE_BTC_NO_RETUNE: 'true'
+      GATE_BTC_NO_BACKFILL: 'true'
+      GATE_BTC_NO_COUNTER_RESET: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Assert forward-only safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+          test "$GATE_BTC_ENGINE_FEED" = false
+          test "$GATE_BTC_ORDERS" = 0
+          test "$GATE_BTC_REAL_CAPITAL" = 0
+          test "$GATE_BTC_NO_RETUNE" = true
+          test "$GATE_BTC_NO_BACKFILL" = true
+          test "$GATE_BTC_NO_COUNTER_RESET" = true
+      - name: Collect D100 forward heartbeat
+        run: |
+          python tools/gate_btc_factory/d100_forward_collection.py \
+            --output runtime_repo/runtime/ledgers/d100/STATUS.json
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/ledgers/d100/STATUS.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='ACTIVE_FORWARD_COLLECTION'
+          assert d['collection_enabled'] is True
+          assert d['historical_recovery_attempted'] is False
+          assert d['backfill_performed'] is False
+          assert d['economics_enabled'] is False
+          s=d['safety']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          print('D100_FORWARD_COLLECTION_RUNTIME=PASS')
+          PY
+      - name: Persist D100 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/d100/STATUS.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "D100 forward collection ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
