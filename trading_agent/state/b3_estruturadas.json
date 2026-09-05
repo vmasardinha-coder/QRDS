@@ -3,7 +3,7 @@
   "currency": "BRL",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 683.9239736797052,
+  "cash": 45.40168919585915,
   "positions": {
     "BOVA11": {
       "qty": 290.33975761074475,
@@ -178,6 +178,12 @@
       "nav": 52112.37,
       "benchmark_nav": 52734.55,
       "benchmark2_nav": 50519.14
+    },
+    {
+      "date": "2026-09-05",
+      "nav": 52132.13,
+      "benchmark_nav": 52734.5,
+      "benchmark2_nav": 50519.14
     }
   ],
   "trades": [
@@ -196,18 +202,34 @@
       "qty": 290.33975761074475,
       "price": 2.3314,
       "value": 676.9
+    },
+    {
+      "date": "2026-09-05",
+      "symbol": "CALL 177.20 (venc.)",
+      "side": "settle",
+      "qty": 290.33975761074475,
+      "price": 181.94,
+      "value": -1376.21
+    },
+    {
+      "date": "2026-09-05",
+      "symbol": "CALL 187.40 venc. 2026-10-05",
+      "side": "sell",
+      "qty": 290.33975761074475,
+      "price": 2.5408,
+      "value": 737.69
     }
   ],
   "benchmark2": {
     "symbol": "CDI"
   },
   "short_call": {
-    "strike": 177.2,
-    "expiry": "2026-09-05",
+    "strike": 187.4,
+    "expiry": "2026-10-05",
     "qty": 290.33975761074475,
-    "premium_unit": 2.3314,
-    "sold_on": "2026-08-06",
-    "sigma": 0.1879
+    "premium_unit": 2.5408,
+    "sold_on": "2026-09-05",
+    "sigma": 0.1923
   },
   "decision_log": [
     {
@@ -925,6 +947,34 @@
         "premium_unit": 2.3314,
         "sold_on": "2026-08-06",
         "sigma": 0.1879
+      },
+      "data_failures": [],
+      "selected": [
+        {
+          "symbol": "BOVA11",
+          "weight": 1.0
+        }
+      ],
+      "rejected": [],
+      "stops": [],
+      "cooldowns": {},
+      "note": ""
+    },
+    {
+      "date": "2026-09-05",
+      "regime": "-",
+      "hurdle": "CDI",
+      "rebalance_trigger": "liquidacao da call vencida; venda de nova call coberta",
+      "vol_source": "GARCH(1,1)",
+      "sigma": 0.1923,
+      "vol_realized": 0.1847,
+      "short_call": {
+        "strike": 187.4,
+        "expiry": "2026-10-05",
+        "qty": 290.33975761074475,
+        "premium_unit": 2.5408,
+        "sold_on": "2026-09-05",
+        "sigma": 0.1923
       },
       "data_failures": [],
       "selected": [
