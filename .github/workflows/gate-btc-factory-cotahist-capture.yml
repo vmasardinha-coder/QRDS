@@ -171,7 +171,7 @@ jobs:
           assert x['prospective_credit']==0 and x['scientific_credit']==0
           assert x['parsed_win_row_count']>0 and x['parsed_wdo_row_count']>0
           assert x['block_contract_pass'] is True, x
-          assert x['calendar_gap_status'] in ('REQUIRES_OFFICIAL_CALENDAR_CROSSCHECK','NO_UNEXPLAINED_WEEKDAY_GAPS')
+          assert x['calendar_gap_status'] in ('REQUIRES_OFFICIAL_CALENDAR_CROSSCHECK','NO_UNEXPLAINED_WEEKDAY_GAPS','NO_WEEKDAY_GAPS')
           s=x['safety']; assert s['H1_ECONOMICS_READ'] is False
           PY
       - name: Upload coverage evidence
