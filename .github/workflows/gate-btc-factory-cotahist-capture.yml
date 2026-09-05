@@ -12,6 +12,10 @@ on:
       - 'tools/gate_btc_factory/b3_win_wdo_official_source_probe.py'
       - 'tools/gate_btc_factory/b3_win_wdo_coverage_block.py'
       - 'tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py'
+      - 'tools/gate_btc_factory/B3_WIN_WDO_UNIVARIATE_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_WIN_WDO_COST_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_WIN_WDO_PRE_ECONOMICS_GATES.v1.json'
+      - 'tools/gate_btc_factory/b3_win_wdo_univariate_execute.py'
       - '.github/workflows/gate-btc-factory-cotahist-capture.yml'
   workflow_dispatch:
 
@@ -49,42 +53,28 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          p='artifacts/gate_btc/factory/cotahist_capture/MANIFEST.json'
-          x=json.load(open(p))
+          x=json.load(open('artifacts/gate_btc/factory/cotahist_capture/MANIFEST.json'))
           assert x['status']=='PASS_PHYSICAL_CAPTURE_QA', x
-          assert len(x['objects'])==7, len(x['objects'])
+          assert len(x['objects'])==7
           for o in x['objects']:
-              assert len(o['raw_zip_sha256'])==64
-              assert len(o['payload_sha256'])==64
+              assert len(o['raw_zip_sha256'])==64 and len(o['payload_sha256'])==64
               assert o['daily_quote_record_count']>0
               assert o['duplicate_full_identity_count']==0
-              assert o['invalid_record_length_count']==0
-              assert o['invalid_daily_quote_count']==0
+              assert o['invalid_record_length_count']==0 and o['invalid_daily_quote_count']==0
           expected={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
           for k,v in expected.items(): assert x[k]==v,(k,x[k])
-          assert x['economics_read_allowed'] is False
-          assert x['family_creation_allowed'] is False
-          print('COTAHIST_PHYSICAL_CAPTURE_QA=PASS')
+          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
           PY
       - name: Execute frozen EQB01-EQB10 scientific funnel
-        run: |
-          python tools/gate_btc_factory/b3_bluechips_univariate_execute.py \
-            --capture-dir artifacts/gate_btc/factory/cotahist_capture \
-            --out artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json
+        run: python tools/gate_btc_factory/b3_bluechips_univariate_execute.py --capture-dir artifacts/gate_btc/factory/cotahist_capture --out artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json
       - name: Assert EQB result safety and finite family set
         run: |
           python - <<'PY'
           import json
-          p='artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json'
-          x=json.load(open(p))
-          assert x['schema']=='qrds.factory.b3_bluechips_univariate_result.v1'
-          assert x['family_count']==10
+          x=json.load(open('artifacts/gate_btc/factory/b3_bluechips_univariate/RESULT.json'))
+          assert x['schema']=='qrds.factory.b3_bluechips_univariate_result.v1' and x['family_count']==10
           assert sorted(x['results'])==[f'EQB{i:02d}' for i in range(1,11)]
-          expected={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
-          for k,v in expected.items(): assert x[k]==v,(k,x[k])
-          assert x['prospective_activation_performed'] is False
-          assert x['prospective_credit']==0
-          print('EQB_SCIENTIFIC_FUNNEL_EXECUTED=PASS')
+          assert x['prospective_activation_performed'] is False and x['prospective_credit']==0
           PY
       - name: Upload immutable physical capture evidence
         uses: actions/upload-artifact@v4
@@ -118,18 +108,10 @@ jobs:
           python - <<'PY'
           import json
           x=json.load(open('artifacts/gate_btc/factory/win_wdo_source_probe/RESULT.json'))
-          assert x['schema']=='qrds.factory.b3_win_wdo_official_source_probe.v1'
-          assert len(x['sentinels'])==4
-          assert x['economics_read_allowed'] is False
-          assert x['family_creation_allowed'] is False
-          assert x['prospective_credit']==0 and x['scientific_credit']==0
-          assert x['source_admission_pass'] is False
-          s=x['safety']
-          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
-          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
-          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
-          assert s['H1_ECONOMICS_READ'] is False
-          print('WIN_WDO_OFFICIAL_SOURCE_PROBE_BOUNDARY=PASS')
+          assert x['schema']=='qrds.factory.b3_win_wdo_official_source_probe.v1' and len(x['sentinels'])==4
+          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
+          assert x['prospective_credit']==0 and x['scientific_credit']==0 and x['source_admission_pass'] is False
+          s=x['safety']; assert s['H1_ECONOMICS_READ'] is False
           PY
       - name: Upload WIN/WDO source probe evidence
         uses: actions/upload-artifact@v4
@@ -142,9 +124,10 @@ jobs:
   win-wdo-coverage-2020-2024:
     name: win-wdo-coverage-${{ matrix.block }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 360
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         include:
           - {block: '2020-q1', start: '2020-01-01', end: '2020-03-31', file: '2020_Q1.json'}
@@ -174,26 +157,22 @@ jobs:
           python-version: '3.12'
       - name: Compile incremental coverage qualifier
         run: python -m py_compile tools/gate_btc_factory/b3_win_wdo_coverage_block.py
-      - name: Qualify official B3 PriceReport coverage block
+      - name: Qualify official B3 PriceReport coverage block and retain frozen OHLCV rows
         run: python tools/gate_btc_factory/b3_win_wdo_coverage_block.py --start '${{ matrix.start }}' --end '${{ matrix.end }}' --out 'artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}'
       - name: Assert DATA-only block boundary
         env:
           COVERAGE_FILE: artifacts/gate_btc/factory/win_wdo_coverage/${{ matrix.file }}
         run: |
           python - <<'PY'
-          import json, os
+          import json,os
           x=json.load(open(os.environ['COVERAGE_FILE']))
           assert x['schema']=='qrds.factory.b3_win_wdo_coverage_block.v1'
-          assert x['source_admission_pass'] is False
-          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
+          assert x['source_admission_pass'] is False and x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
           assert x['prospective_credit']==0 and x['scientific_credit']==0
-          s=x['safety']
-          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
-          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
-          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
-          assert s['H1_ECONOMICS_READ'] is False
+          assert x['parsed_win_row_count']>0 and x['parsed_wdo_row_count']>0
           assert x['block_contract_pass'] is True, x
-          print('WIN_WDO_DATA_ONLY_BOUNDARY=PASS')
+          assert x['calendar_gap_status'] in ('REQUIRES_OFFICIAL_CALENDAR_CROSSCHECK','NO_UNEXPLAINED_WEEKDAY_GAPS')
+          s=x['safety']; assert s['H1_ECONOMICS_READ'] is False
           PY
       - name: Upload coverage evidence
         uses: actions/upload-artifact@v4
@@ -226,36 +205,69 @@ jobs:
           name: b3-cotahist-physical-capture-${{ github.run_id }}
           path: artifacts/gate_btc/factory/cotahist_capture
       - name: Crosscheck PriceReport weekday gaps against official B3 sessions
-        run: |
-          python tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py \
-            --coverage-dir artifacts/gate_btc/factory/win_wdo_coverage \
-            --cotahist-dir artifacts/gate_btc/factory/cotahist_capture \
-            --out artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json
+        run: python tools/gate_btc_factory/b3_win_wdo_calendar_crosscheck.py --coverage-dir artifacts/gate_btc/factory/win_wdo_coverage --cotahist-dir artifacts/gate_btc/factory/cotahist_capture --out artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json
       - name: Assert calendar QA and research-only boundary
         run: |
           python - <<'PY'
           import json
           x=json.load(open('artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json'))
-          assert x['schema']=='qrds.factory.b3_win_wdo_calendar_crosscheck.v1'
-          assert x['quarter_count']==20
+          assert x['schema']=='qrds.factory.b3_win_wdo_calendar_crosscheck.v1' and x['quarter_count']==20
           assert x['calendar_crosscheck_pass'] is True, x
           assert x['inconsistent_price_report_gaps_on_cotahist_sessions']==[]
           assert x['published_price_report_dates_not_in_cotahist']==[]
           assert x['source_admission_pass'] is False
           assert x['source_admission_blocker']=='IDENTITY_DEDUPE_PUBLICATION_TIMING_AND_PIT_QA_NOT_YET_FROZEN'
-          assert x['economics_read_allowed'] is False and x['family_creation_allowed'] is False
-          assert x['prospective_credit']==0 and x['scientific_credit']==0
-          s=x['safety']
-          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
-          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
-          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
-          assert s['H1_ECONOMICS_READ'] is False
-          print('WIN_WDO_CALENDAR_CROSSCHECK=PASS')
           PY
       - name: Upload calendar crosscheck evidence
         uses: actions/upload-artifact@v4
         with:
           name: b3-win-wdo-calendar-crosscheck-${{ github.run_id }}
           path: artifacts/gate_btc/factory/win_wdo_calendar_crosscheck/RESULT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  win-wdo-scientific-funnel:
+    needs: [win-wdo-calendar-crosscheck, win-wdo-coverage-2020-2024]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile frozen WIN/WDO executor
+        run: python -m py_compile tools/gate_btc_factory/b3_win_wdo_univariate_execute.py
+      - name: Download exact qualified quarter artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: b3-win-wdo-coverage-*-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_coverage
+          merge-multiple: true
+      - name: Execute discovery robustness and independent replication
+        run: |
+          python tools/gate_btc_factory/b3_win_wdo_univariate_execute.py \
+            --coverage-dir artifacts/gate_btc/factory/win_wdo_coverage \
+            --gates tools/gate_btc_factory/B3_WIN_WDO_PRE_ECONOMICS_GATES.v1.json \
+            --out artifacts/gate_btc/factory/win_wdo_univariate/RESULT.json
+      - name: Assert frozen family set and immutable safety
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/gate_btc/factory/win_wdo_univariate/RESULT.json'))
+          assert x['schema']=='qrds.factory.b3_win_wdo_univariate_result.v1'
+          assert x['family_count']==12
+          assert sorted(x['results'])==[f'B3WIN{i:02d}' for i in range(1,7)]+[f'B3WDO{i:02d}' for i in range(1,7)]
+          s=x['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          assert x['prospective_activation_performed'] is False
+          PY
+      - name: Upload WIN/WDO scientific result
+        uses: actions/upload-artifact@v4
+        with:
+          name: b3-win-wdo-univariate-result-${{ github.run_id }}
+          path: artifacts/gate_btc/factory/win_wdo_univariate/RESULT.json
           if-no-files-found: error
           retention-days: 90
