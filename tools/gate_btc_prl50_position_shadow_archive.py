@@ -62,6 +62,10 @@ def snapshot_paths(ledger_dir):
     return sorted((Path(ledger_dir) / "snapshots").glob("*.json"))
 
 
+def is_month_end(d: date) -> bool:
+    return (d + timedelta(days=1)).month != d.month
+
+
 def write_status(ledger_dir, anchor):
     paths = snapshot_paths(ledger_dir)
     latest = load_json(paths[-1]) if paths else None
@@ -73,6 +77,8 @@ def write_status(ledger_dir, anchor):
         "snapshot_count": len(paths),
         "latest_snapshot_date": latest.get("snapshot_date") if latest else None,
         "latest_row_sha256": latest.get("row_sha256") if latest else None,
+        "active_signal_date": (latest.get("active_signals", {}).get("QOS_Moderada", {}).get("signal_date") if latest else None),
+        "monthly_signal_policy": "MONTH_END_SIGNAL_HELD_UNTIL_NEXT_MONTH_END",
         "contract_sha256": anchor["contract_sha256"],
         "research_only": True,
         "shadow_only": True,
@@ -119,10 +125,7 @@ def parse_signals(rows):
     for strategy in STRATEGIES:
         selected = [row for row in rows if row.get("strategy") == strategy]
         require(selected, f"missing {strategy}")
-        metadata = {
-            key: {row.get(key, "") for row in selected}
-            for key in ("data_as_of", "signal_period", "execution_eligible_from", "regime")
-        }
+        metadata = {key: {row.get(key, "") for row in selected} for key in ("data_as_of", "signal_period", "execution_eligible_from", "regime")}
         require(all(len(values) == 1 for values in metadata.values()), f"ambiguous signal metadata {strategy}")
         picks = []
         for row in selected:
@@ -160,12 +163,10 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
     ledger_dir = Path(ledger_dir)
     anchor = load_json(ledger_dir / "ANCHOR.json")
     require(anchor["contract_sha256"] == file_sha(contract_path), "contract differs from anchor")
-
     snapshot_day = date.fromisoformat(snapshot_id)
     first_signal = date.fromisoformat(contract["first_eligible_signal_date"])
     if snapshot_day < first_signal:
         return {"result": "BEFORE_FIRST_SIGNAL_NOOP", "snapshot_date": snapshot_id}
-
     output_path = ledger_dir / "snapshots" / f"{snapshot_id}.json"
     if output_path.exists():
         existing = load_json(output_path)
@@ -173,12 +174,7 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         require(existing.get("current_portfolios_sha256") == file_sha(current_portfolios), "duplicate portfolio source mismatch")
         require(existing.get("master_daily_sha256") == file_sha(master_daily), "duplicate master source mismatch")
         require(existing.get("row_sha256") == payload_sha(existing, "row_sha256"), "duplicate row hash invalid")
-        return {
-            "result": "DUPLICATE_IDENTICAL",
-            "snapshot_date": snapshot_id,
-            "row_sha256": existing["row_sha256"],
-            "price_count": len(existing.get("selected_alt_closes", {})),
-        }
+        return {"result": "DUPLICATE_IDENTICAL", "snapshot_date": snapshot_id, "row_sha256": existing["row_sha256"], "price_count": len(existing.get("selected_alt_closes", {}))}
 
     paths = snapshot_paths(ledger_dir)
     previous = load_json(paths[-1]) if paths else None
@@ -191,24 +187,29 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         require(previous["row_sha256"] == payload_sha(previous, "row_sha256"), "previous row hash invalid")
         previous_sha = previous["row_sha256"]
 
-    signals = parse_signals(read_csv(current_portfolios))
-    for strategy, signal in signals.items():
+    observed_signals = parse_signals(read_csv(current_portfolios))
+    for strategy, signal in observed_signals.items():
         require(date.fromisoformat(signal["signal_date"]) >= first_signal, f"pre-freeze signal still active for {strategy}; mid-cycle initialization prohibited")
         require(date.fromisoformat(signal["execution_eligible_from"]) > date.fromisoformat(signal["signal_date"]), "non-lagged signal")
 
-    assets = {
-        pick["asset"]
-        for signal in signals.values()
-        if date.fromisoformat(signal["execution_eligible_from"]) <= snapshot_day
-        for pick in signal["picks"]
-    }
+    if previous is None or is_month_end(snapshot_day):
+        active_signals = observed_signals
+        active_signal_changed = True
+    else:
+        active_signals = previous.get("active_signals", previous.get("signals", {}))
+        require(active_signals, "missing active monthly signal")
+        active_signal_changed = False
+
+    assets = {pick["asset"] for signal in active_signals.values() if date.fromisoformat(signal["execution_eligible_from"]) <= snapshot_day for pick in signal["picks"]}
     prices = exact_prices(read_csv(master_daily), assets, snapshot_id) if assets else {}
     row = {
         "schema": "gate_btc.prl50_position_shadow_daily.v1",
         "snapshot_date": snapshot_id,
         "source_run_id": str(source_run_id),
         "candidate_name": "PRL50_POSITION",
-        "signals": signals,
+        "signals": observed_signals,
+        "active_signals": active_signals,
+        "active_signal_changed": active_signal_changed,
         "selected_alt_closes": prices,
         "current_portfolios_sha256": file_sha(current_portfolios),
         "master_daily_sha256": file_sha(master_daily),
@@ -224,12 +225,7 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
     row["row_sha256"] = payload_sha(row, "row_sha256")
     write_json(output_path, row)
     write_status(ledger_dir, anchor)
-    return {
-        "result": "APPENDED",
-        "snapshot_date": snapshot_id,
-        "row_sha256": row["row_sha256"],
-        "price_count": len(prices),
-    }
+    return {"result": "APPENDED", "snapshot_date": snapshot_id, "row_sha256": row["row_sha256"], "price_count": len(prices), "active_signal_changed": active_signal_changed}
 
 
 def main():
@@ -246,17 +242,7 @@ def main():
     app.add_argument("--snapshot-id", required=True)
     app.add_argument("--source-run-id", required=True)
     args = parser.parse_args()
-    if args.command == "initialize":
-        result = initialize(args.contract, args.ledger_dir)
-    else:
-        result = append(
-            args.contract,
-            args.ledger_dir,
-            args.current_portfolios,
-            args.master_daily,
-            args.snapshot_id,
-            args.source_run_id,
-        )
+    result = initialize(args.contract, args.ledger_dir) if args.command == "initialize" else append(args.contract, args.ledger_dir, args.current_portfolios, args.master_daily, args.snapshot_id, args.source_run_id)
     print(json.dumps(result, sort_keys=True), flush=True)
     return 0
 
