@@ -1,0 +1,105 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_FINAL_SOURCE_EXHAUSTION_PREREG_V1",
+  "date": "2026-09-05",
+  "system": 8,
+  "purpose": "PREREGISTER_FINAL_CURRENT_TOP150_SOURCE_QUALIFICATION_OR_EXHAUSTION_PROBES_BEFORE_OPTION_B_ADJUDICATION",
+  "targets": [
+    {
+      "symbol": "BUIDL",
+      "coin_id": "blackrock-usd-institutional-digital-liquidity-fund",
+      "candidate_provider": "SECURITIZE_UNISWAPX_RFQ",
+      "candidate_semantics": "WHITELISTED_SECONDARY_EXECUTIONS_WITH_ATOMIC_ONCHAIN_SETTLEMENT",
+      "qualification_requirement": "Establish exact BUIDL share identity and a free/public/auditable execution or settlement history from which exact physical trades and UTC daily OHLCV can be reproduced. RFQ availability alone is insufficient."
+    },
+    {
+      "symbol": "OUSG",
+      "coin_id": "ousg",
+      "candidate_provider": "ASSETERA_REGULATED_SECONDARY_MARKET",
+      "candidate_semantics": "REGULATED_SECONDARY_EXECUTIONS",
+      "qualification_requirement": "Establish exact OUSG identity and free/public/auditable execution history or tape. Minute reference pricing, NAV, mint/redemption pricing or authenticated-only trading UI is insufficient."
+    },
+    {
+      "symbol": "KAU",
+      "coin_id": "kinesis-gold",
+      "candidate_provider": "KINESIS_MONEY_EXCHANGE",
+      "candidate_semantics": "CENTRALIZED_SPOT_EXECUTIONS",
+      "qualification_requirement": "Establish exact KAU market and a free unauthenticated public execution-history/OHLCV surface. A documented API that requires account API keys is insufficient under the frozen public/auditable contract."
+    },
+    {
+      "symbol": "KAG",
+      "coin_id": "kinesis-silver",
+      "candidate_provider": "KINESIS_MONEY_EXCHANGE",
+      "candidate_semantics": "CENTRALIZED_SPOT_EXECUTIONS",
+      "qualification_requirement": "Establish exact KAG market and a free unauthenticated public execution-history/OHLCV surface. A documented API that requires account API keys is insufficient under the frozen public/auditable contract."
+    },
+    {
+      "symbol": "EURSAFO",
+      "coin_id": "spiko-amundi-overnight-swap-fund-eur",
+      "candidate_provider": "SPIKO_OR_MATERIALLY_DISTINCT_PUBLIC_SECONDARY_VENUE",
+      "candidate_semantics": "TOKENIZED_FUND_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Search exact public secondary execution venues. Contract/NAV/subscription/redemption pricing and transfer activity are not execution OHLCV."
+    },
+    {
+      "symbol": "EUTBL",
+      "coin_id": "eutbl",
+      "candidate_provider": "SPIKO_OR_MATERIALLY_DISTINCT_PUBLIC_SECONDARY_VENUE",
+      "candidate_semantics": "TOKENIZED_FUND_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Search exact public secondary execution venues. Contract/NAV/subscription/redemption pricing and transfer activity are not execution OHLCV."
+    },
+    {
+      "symbol": "JTRSY",
+      "coin_id": "janus-henderson-anemoy-treasury-fund",
+      "candidate_provider": "CENTRIFUGE_OR_MATERIALLY_DISTINCT_PUBLIC_SECONDARY_VENUE",
+      "candidate_semantics": "TOKENIZED_FUND_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Search exact JTRSY secondary executions. Instant redemption to USDC, collateral integrations and transferability are not a public spot execution tape. deJTRSY or any derivative/wrapper is forbidden as a substitute."
+    },
+    {
+      "symbol": "USTB",
+      "coin_id": "superstate-short-duration-us-government-securities-fund-ustb",
+      "candidate_provider": "SUPERSTATE_OR_MATERIALLY_DISTINCT_PUBLIC_SECONDARY_VENUE",
+      "candidate_semantics": "TOKENIZED_FUND_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Search exact USTB public secondary executions. NAV, mint/redemption and allowlisted peer-to-peer transfer support are insufficient."
+    },
+    {
+      "symbol": "JAAA",
+      "coin_id": "janus-henderson-anemoy-aaa-clo-fund",
+      "candidate_provider": "CENTRIFUGE_OR_MATERIALLY_DISTINCT_PUBLIC_SECONDARY_VENUE",
+      "candidate_semantics": "TOKENIZED_FUND_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Search exact JAAA public secondary executions. Custody, collateral, borrowing/lending and fund liquidity/redemption are insufficient. The Dinari security sharing ticker JAAA is a different identity and forbidden as a substitute."
+    },
+    {
+      "symbol": "PC0000031",
+      "coin_id": "tradable-na-rent-financing-platform-sstn",
+      "candidate_provider": "TRADABLE_SECONDARY_MARKET",
+      "candidate_semantics": "PERMISSIONED_PRIVATE_CREDIT_SECONDARY_EXECUTIONS_IF_ANY",
+      "qualification_requirement": "Establish whether the exact SSTN secondary venue exposes free/public/auditable execution history. Contract-fetched price, stale last-trade references, zero volume and authenticated-only history are insufficient."
+    }
+  ],
+  "exhaustion_contract": {
+    "option_b_rule_reference": "artifacts/gate_btc_2/v2a_structural_ineligibility_rule_prereg_20260904.json",
+    "single_source_failure_insufficient": true,
+    "temporary_outage_insufficient": true,
+    "provider_marketing_or_venue_exist_only_insufficient": true,
+    "nav_or_oracle_forbidden_as_spot_execution_substitute": true,
+    "onchain_transfer_forbidden_as_trade_without_execution_linkage": true,
+    "wrapper_or_derivative_identity_substitution_forbidden": true,
+    "structural_ineligibility_only_after_bounded_materially_distinct_public_route_search": true,
+    "raw_public_evidence_and_urls_or_sha256_required": true,
+    "no_historical_repair": true,
+    "no_scientific_prospective_or_d0_credit": true,
+    "human_decision_needed_if_option_b_can_be_applied_from_existing_approved_rule": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
