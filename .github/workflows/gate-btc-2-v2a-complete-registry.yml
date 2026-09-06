@@ -1,0 +1,84 @@
+name: GATE BTC 2 V2A Complete Qualified Source Registry
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_build_complete_registry.py'
+      - 'tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json'
+      - '.github/workflows/gate-btc-2-v2a-complete-registry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build-complete-registry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download canonical merged qualification evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p e91 e50 e9 ebtt exmr out
+          for spec in '9990251632:e91' '9991028302:e50' '9991199275:e9' '9991923974:ebtt' '9992470782:exmr'; do
+            id=${spec%%:*}; dir=${spec##*:}
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > "${dir}.zip"
+            unzip -q "${dir}.zip" -d "$dir"
+            test -f "$dir/RESULTS.json"
+          done
+      - name: Build complete registry from evidence only
+        run: |
+          python tools/gate_btc_2_v2a_build_complete_registry.py \
+            --seed tools/gate_btc_2_v2a_qualified_source_seed_v1.json \
+            --legacy91 e91/RESULTS.json --legacy50 e50/RESULTS.json --legacy9 e9/RESULTS.json \
+            --btt ebtt/RESULTS.json --xmr exmr/RESULTS.json \
+            --out out/registry.json
+          sed -i 's/QUALIFIER_ARTIFACT_DIGEST_BOUND_BY_WORKFLOW/66f66bba2d74f2020ae89a33cc36298d704cf42777dd8e1d3b83b4cfd801711d/' out/registry.json
+      - name: Assert 137 admitted sources and zero D0 credit
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/registry.json'))
+          assert d['entry_count']==137==len(d['entries'])
+          assert len({x['symbol'] for x in d['entries']})==137
+          assert len(d['structural_exclusions'])==13
+          assert not ({x['symbol'] for x in d['entries']} & set(d['structural_exclusions']))
+          assert all(x['qualification']=='QUALIFIED_EXACT_SOURCE' and x['qa_pass'] and x['source_admitted'] for x in d['entries'])
+          assert d['complete_registry_claimed'] and d['collector_override_activation_allowed']
+          assert d['d0_started'] is False and d['historical_credit']==0 and d['d0_credit']==0
+          s=d['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED'] and s['FAIL_CLOSED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL_BRL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['NO_SILENT_SOURCE_SUBSTITUTION']
+          print('COMPLETE_REGISTRY=PASS entries=137 exclusions=13 d0=0')
+          PY
+      - name: Persist exact CI-validated registry on PR head
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          cp out/registry.json tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          git config user.name 'gate-btc-factory'
+          git config user.email 'gate-btc-factory@users.noreply.github.com'
+          git add tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'GATE BTC 2.0: persist validated 137-source registry'
+            git push origin "HEAD:${HEAD_REF}"
+          fi
+      - name: Verify committed registry byte-for-byte
+        run: cmp out/registry.json tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-complete-registry-${{ github.run_id }}
+          path: out/registry.json
+          retention-days: 30
+          if-no-files-found: error
