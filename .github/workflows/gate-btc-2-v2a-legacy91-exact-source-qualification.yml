@@ -1,0 +1,73 @@
+name: GATE BTC 2 V2A Legacy91 Exact Source Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_legacy91_exact_source_qualification.py
+      - tests/test_gate_btc_2_v2a_legacy91_exact_source_qualification.py
+      - .github/workflows/gate-btc-2-v2a-legacy91-exact-source-qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  qualify-legacy91:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and test frozen qualifier
+        run: |
+          python -m py_compile tools/gate_btc_2_v2a_legacy91_exact_source_qualification.py
+          python -m pytest -q tests/test_gate_btc_2_v2a_legacy91_exact_source_qualification.py
+      - name: Download exact frozen Daily Research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RUN_ID=34011930549
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false and .name == "gate-btc-daily-research-34011930549") | .id')
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > frozen_daily.zip
+          test "$(sha256sum frozen_daily.zip | awk '{print $1}')" != ""
+          mkdir -p frozen_daily frozen_v2a
+          unzip -q frozen_daily.zip -d frozen_daily
+          test -f frozen_daily/qos_daily/qos_v2a_outputs.zip
+          unzip -q frozen_daily/qos_daily/qos_v2a_outputs.zip -d frozen_v2a
+          test -f frozen_v2a/data/raw/coingecko_current_universe_v04.csv
+          test -f frozen_v2a/data/processed/qos_v2a_master_daily.csv
+      - name: Physically qualify all 91 frozen legacy-loaded exact sources
+        run: >-
+          python tools/gate_btc_2_v2a_legacy91_exact_source_qualification.py
+          --universe-csv frozen_v2a/data/raw/coingecko_current_universe_v04.csv
+          --master-daily frozen_v2a/data/processed/qos_v2a_master_daily.csv
+          --output-dir artifacts/gate_btc_2/v2a_legacy91_exact_source_qualification
+      - name: Assert zero-credit boundary and frozen partition
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc_2/v2a_legacy91_exact_source_qualification/SUMMARY.json'
+          d=json.load(open(p, encoding='utf-8'))
+          assert d['target_symbol_count']==91
+          assert d['qualification_only'] is True
+          assert d['source_admission_changed'] is False
+          assert d['complete_registry_claimed'] is False
+          assert d['collector_override_activation_allowed'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders']==0 and d['real_capital_brl']==0
+          assert d['no_retune'] and d['no_backfill'] and d['no_counter_reset'] and d['no_silent_source_substitution']
+          print('LEGACY91_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-v2a-legacy91-exact-source-${{ github.run_id }}
+          path: artifacts/gate_btc_2/v2a_legacy91_exact_source_qualification/
+          retention-days: 30
+          if-no-files-found: error
