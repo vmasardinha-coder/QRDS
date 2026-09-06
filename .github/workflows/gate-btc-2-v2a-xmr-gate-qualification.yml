@@ -1,0 +1,60 @@
+name: GATE BTC 2 V2A XMR Gate Qualification
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_xmr_gate_qualification.py'
+      - '.github/workflows/gate-btc-2-v2a-xmr-gate-qualification.yml'
+      - 'artifacts/gate_btc_2/v2a_xmr_gate_exact_source_prereg_20260906.json'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-xmr-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_xmr_gate_qualification.py
+      - name: Assert merged preregistration
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc_2/v2a_xmr_gate_exact_source_prereg_20260906.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['schema_version']=='GATE_BTC_2_V2A_XMR_GATE_EXACT_SOURCE_PREREG_V1'
+          assert d['candidate_source']['provider']=='GATE_SPOT'
+          assert d['candidate_source']['source_symbol']=='XMR_USDT'
+          assert d['frozen_qualification']['window_start_utc']=='2026-08-04'
+          assert d['frozen_qualification']['window_end_utc']=='2026-09-05'
+          assert d['frozen_qualification']['required_daily_buckets']==33
+          assert d['frozen_qualification']['route_switch_after_result'] is False
+          PY
+      - name: Physically qualify exact XMR Gate route
+        run: |
+          mkdir -p out
+          python tools/gate_btc_2_v2a_xmr_gate_qualification.py --out out
+      - name: Assert zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/SUMMARY.json',encoding='utf-8'))
+          assert d['qualification_only'] is True
+          assert d['source_admitted'] is False and d['complete_registry_claimed'] is False and d['d0_started'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders']==0 and d['real_capital_brl']==0
+          assert d['no_retune'] and d['no_backfill'] and d['no_counter_reset'] and d['no_silent_source_substitution']
+          print('XMR_GATE_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-xmr-gate-${{ github.run_id }}
+          path: out/
+          retention-days: 30
+          if-no-files-found: error
