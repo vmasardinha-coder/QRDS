@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/gate-btc-v16b-full-rehearsal-test.yml
       - tools/gate_btc_v16b_*.py
+      - tests/test_gate_btc_v16b_*.py
 
 permissions:
   contents: read
@@ -17,6 +18,7 @@ env:
   ENGINE_FEED: 'false'
   ORDERS: '0'
   REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
   NO_BACKFILL: 'true'
   NO_COUNTER_RESET: 'true'
   FAIL_CLOSED: 'true'
@@ -29,16 +31,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pandas numpy requests scikit-learn
-      - name: Compile frozen V16B chain
+      - run: pip install pandas numpy requests scikit-learn pytest
+      - name: Compile frozen V16B chain and panel producer
         run: |
           python -m py_compile \
             tools/gate_btc_v16b_calendar.py \
             tools/gate_btc_v16b_preflight_status.py \
+            tools/gate_btc_v16b_feature_panel.py \
             tools/gate_btc_v16b_prospective_signal.py \
             tools/gate_btc_v16b_prospective_entry.py \
             tools/gate_btc_v16b_prospective_chain.py \
             tools/gate_btc_v16b_rehearsal.py
+      - name: Prove panel causality and PIT separation
+        run: pytest -q tests/test_gate_btc_v16b_feature_panel.py
       - name: Assert stage-aware preflight and safety
         run: |
           python tools/gate_btc_v16b_preflight_status.py --source-root . --root . --signal-date 2026-09-03 > /tmp/preflight.json
@@ -57,12 +62,9 @@ jobs:
           from pathlib import Path
           from tools.gate_btc_v16b_rehearsal import _assert_rehearsal_ledger
           _assert_rehearsal_ledger(Path('/tmp/v16b_rehearsal.jsonl'))
-          try:
-              _assert_rehearsal_ledger(Path('/tmp/v16b_prospective.jsonl'))
-          except ValueError:
-              print('V16B_REHEARSAL_CANONICAL_GUARD=PASS')
-          else:
-              raise SystemExit('canonical ledger guard failed open')
+          try: _assert_rehearsal_ledger(Path('/tmp/v16b_prospective.jsonl'))
+          except ValueError: print('V16B_REHEARSAL_CANONICAL_GUARD=PASS')
+          else: raise SystemExit('canonical ledger guard failed open')
           PY
       - name: Assert entry builder fails closed on noncausal or missing official metadata
         run: |
@@ -74,12 +76,9 @@ jobs:
           sig={'signal_seal_timestamp_utc':'2026-09-03T23:00:00Z','signal_date_utc':'2026-09-03','entry_date_utc':'2026-09-04','preliminary_longs_10':['BTC','ETH','SOL','XRP','BNB','DOGE','ADA','LINK','AVAX','SUI'],'short_ranking_asc':['A','B','C','D','E','F','G','H','I','J','K','L']}
           bad={'serverTime':0,'symbols':[]}
           for n in ('u.json','s.json'): (root/n).write_text(json.dumps(bad))
-          try:
-              e.build(sig,root/'u.json',root/'s.json')
-          except Exception as ex:
-              print('V16B_ENTRY_FAIL_CLOSED=PASS',type(ex).__name__)
-          else:
-              raise SystemExit('entry builder accepted invalid/noncausal metadata')
+          try: e.build(sig,root/'u.json',root/'s.json')
+          except Exception as ex: print('V16B_ENTRY_FAIL_CLOSED=PASS',type(ex).__name__)
+          else: raise SystemExit('entry builder accepted invalid/noncausal metadata')
           PY
       - name: Frozen safety invariants
         run: |
@@ -89,6 +88,7 @@ jobs:
           test "$ENGINE_FEED" = false
           test "$ORDERS" = 0
           test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
           test "$NO_BACKFILL" = true
           test "$NO_COUNTER_RESET" = true
           test "$FAIL_CLOSED" = true
