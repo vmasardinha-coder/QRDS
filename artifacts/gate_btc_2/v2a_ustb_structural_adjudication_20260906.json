@@ -1,0 +1,66 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_STRUCTURAL_ADJUDICATION_V1",
+  "symbol": "USTB",
+  "status": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+  "rule_pr": 536,
+  "evidence_chain": {
+    "bounded_discovery_pr": 568,
+    "exact_route_prereg_pr": 573,
+    "negative_physical_evidence_pr": 580,
+    "exact_route": {
+      "provider": "MULTILIQUID_SOLANA_MAINNET",
+      "pair_pda": "CPCnfrQwHEoDDt9BYCw5ZygUfjtuGK5tVRhdgzNUdWYH",
+      "swap_program": "FKeT8H2RSgsamrABNNxwT5f9g3n9msfm6D5AvocjrJAD",
+      "ustb_mint": "CCz3SGVziFeLYk2xfEstkiqJfYkjaSWb2GCABYsVcjo2",
+      "usdc_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "frozen_window_utc": "2026-08-04..2026-09-05",
+      "history_complete_to_before_start": true,
+      "signature_count": 1,
+      "physical_swap_count": 0,
+      "daily_bucket_count": 0,
+      "qualification_status": "FAIL_CLOSED_NO_PHYSICAL_SWAPS"
+    },
+    "materially_distinct_routes_exhausted": [
+      {
+        "route": "SUPERSTATE_PRIMARY_LIQUIDITY_AND_ALLOWLISTED_TRANSFERS",
+        "result": "NOT_EXECUTION_TAPE",
+        "reason": "continuous NAV, mint/redeem and allowlisted transfers are not spot executions under frozen semantics"
+      },
+      {
+        "route": "RAYDIUM_PERMISSIONED_AMM_GENERIC_INFRASTRUCTURE",
+        "result": "EXACT_USTB_POOL_UNPROVEN",
+        "reason": "generic integration/infrastructure cannot be substituted for an exact USTB execution market"
+      },
+      {
+        "route": "MULTILIQUID_EXACT_USDC_USTB_SOLANA_PAIR",
+        "result": "NO_PHYSICAL_SWAPS_IN_FROZEN_WINDOW",
+        "reason": "exact public pair/program history was exhausted through before the frozen start and produced zero qualifying swaps"
+      }
+    ]
+  },
+  "adjudication": {
+    "structural_observability_failure": true,
+    "temporary_collector_defect": false,
+    "historical_universe_rewrite": false,
+    "future_d0_denominator_exclusion_only": true,
+    "reentry_requires_separate_preregistration": true,
+    "source_admitted": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
