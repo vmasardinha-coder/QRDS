@@ -1,0 +1,49 @@
+name: GATE BTC 2 V2A Legacy9 Binance Rate Limit Retry
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_legacy9_binance_rate_limit_retry.py'
+      - '.github/workflows/gate-btc-2-v2a-legacy9-binance-rate-limit-retry.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retry-nine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile tools/gate_btc_2_v2a_legacy9_binance_rate_limit_retry.py
+      - name: Download canonical #607 result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p parent out
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/9991028302/zip" > p.zip
+          unzip -q p.zip -d parent
+          test -f parent/RESULTS.json
+      - name: Retry exact nine rate-limited identities
+        run: python tools/gate_btc_2_v2a_legacy9_binance_rate_limit_retry.py --parent-results parent/RESULTS.json --out out
+      - name: Assert boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/SUMMARY.json'))
+          assert d['target_symbol_count']==9 and d['qualification_only'] is True
+          assert d['source_admission_changed'] is False and d['complete_registry_claimed'] is False and d['d0_started'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders']==0 and d['real_capital_brl']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-legacy9-binance-${{ github.run_id }}
+          path: out/
+          retention-days: 30
