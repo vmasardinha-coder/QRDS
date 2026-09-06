@@ -88,7 +88,10 @@ def _candidate_priority(path: str, repo: str) -> int:
 
 def _sample_response(session: requests.Session, url: str) -> dict[str, Any]:
     try:
-        with session.get(url, timeout=30, stream=True, allow_redirects=True, headers={"Range": "bytes=0-65535"}) as r:
+        # The official rapinegocios endpoint returns HTTP 200 with an empty body when
+        # probed with a Range header. Read only the stream prefix without Range so
+        # physical payload presence can be measured without downloading the full file.
+        with session.get(url, timeout=30, stream=True, allow_redirects=True) as r:
             status = int(r.status_code)
             sample = b""
             if 200 <= status < 400:
