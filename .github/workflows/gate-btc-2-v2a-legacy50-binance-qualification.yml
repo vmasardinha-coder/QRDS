@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p parent_evidence out
-          gh api '/repos/${GITHUB_REPOSITORY}/actions/artifacts/9990251632/zip' > parent.zip
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/9990251632/zip" > parent.zip
           unzip -q parent.zip -d parent_evidence
           test -f parent_evidence/RESULTS.json
           test -f parent_evidence/SUMMARY.json
