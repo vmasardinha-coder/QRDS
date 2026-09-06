@@ -5,7 +5,7 @@ import argparse, hashlib, json, time, urllib.request
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-RPC_CANDIDATES=('https://ethereum-rpc.publicnode.com','https://eth.llamarpc.com','https://1rpc.io/eth')
+RPC_CANDIDATES=('https://ethereum-rpc.publicnode.com','https://eth.llamarpc.com','https://eth.drpc.org','https://1rpc.io/eth')
 BUIDL='0x7712c34205737192402172409a8f7ccef8aa2aec'; USDC='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 REACTORS={x.lower() for x in ['0x00000011F84B9aa48e5f8aA8B9897600006289Be','0x0000000015757c461808EA25Eb309638B62681cf','0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4']}
 TRANSFER='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'; START=date(2026,8,4); END=date(2026,9,5); UA='QRDS-GateBTC2-ResearchOnly/1'
