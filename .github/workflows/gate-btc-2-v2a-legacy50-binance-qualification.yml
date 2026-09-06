@@ -1,0 +1,72 @@
+name: GATE BTC 2 V2A Legacy50 Binance Qualification
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_v2a_legacy50_binance_qualification.py'
+      - '.github/workflows/gate-btc-2-v2a-legacy50-binance-qualification.yml'
+      - 'artifacts/gate_btc_2/v2a_legacy50_binance_exact_source_prereg_20260906.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  qualify-legacy50-binance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_legacy50_binance_qualification.py
+      - name: Download canonical parent evidence from PR 605 run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p parent_evidence out
+          gh api '/repos/${GITHUB_REPOSITORY}/actions/artifacts/9990251632/zip' > parent.zip
+          unzip -q parent.zip -d parent_evidence
+          test -f parent_evidence/RESULTS.json
+          test -f parent_evidence/SUMMARY.json
+          python - <<'PY'
+          import json
+          d=json.load(open('parent_evidence/SUMMARY.json',encoding='utf-8'))
+          assert d['target_symbol_count']==91
+          assert d['passed_symbol_count']==41
+          assert d['failed_symbol_count']==50
+          assert d['qualification_only'] is True
+          assert d['source_admission_changed'] is False
+          PY
+      - name: Physically qualify Binance recovery for exact 50
+        run: |
+          python tools/gate_btc_2_v2a_legacy50_binance_qualification.py \
+            --parent-results parent_evidence/RESULTS.json \
+            --out out
+      - name: Assert zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/SUMMARY.json',encoding='utf-8'))
+          assert d['target_symbol_count']==50
+          assert d['qualification_only'] is True
+          assert d['source_admission_changed'] is False
+          assert d['complete_registry_claimed'] is False
+          assert d['collector_override_activation_allowed'] is False
+          assert d['d0_started'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders']==0 and d['real_capital_brl']==0
+          assert d['no_retune'] and d['no_backfill'] and d['no_counter_reset'] and d['no_silent_source_substitution']
+          print('LEGACY50_BINANCE_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-legacy50-binance-${{ github.run_id }}
+          path: out/
+          retention-days: 30
+          if-no-files-found: error
