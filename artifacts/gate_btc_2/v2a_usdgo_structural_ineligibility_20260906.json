@@ -1,0 +1,46 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_STRUCTURAL_INELIGIBILITY_V1",
+  "date": "2026-09-06",
+  "symbol": "USDGO",
+  "decision": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+  "rule_authority": "#536",
+  "bounded_source_exhaustion": [
+    {
+      "provider": "KRAKEN",
+      "route": "USDGO/USD",
+      "qualification_pr": 552,
+      "result": "FAIL_CLOSED_FULL_CORPUS_QA"
+    },
+    {
+      "provider": "OSL_GLOBAL_PRO_TRADE",
+      "route": "USDGO/USD",
+      "qualification_pr": 596,
+      "qualification_head_sha": "4247f0431fd9eaf8798b46b30dc22701bb7836de",
+      "result": "FAIL_CLOSED_NO_PUBLIC_HISTORICAL_EXECUTION_TAPE",
+      "exact_live_market_confirmed": true,
+      "public_historical_execution_tape_resolved": false,
+      "required_daily_buckets": 33,
+      "missing_days": 33
+    }
+  ],
+  "reason": "Two materially distinct exact public USDGO/USD venues were exhausted under frozen semantics. Kraken failed the frozen full-corpus QA. OSL publicly resolves the exact live market but its historical transaction surface is not free/public/auditable without authentication, and live ticker/order-book data cannot substitute for the frozen historical execution corpus.",
+  "scope": "FUTURE_D0_DENOMINATOR_ONLY",
+  "historical_universe_rewrite": false,
+  "source_admitted": false,
+  "historical_credit": 0,
+  "scientific_credit": false,
+  "prospective_credit": false,
+  "d0_credit": 0,
+  "reentry_requires_new_preregistered_exact_public_execution_source": true,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "no_retune": true,
+  "no_backfill": true,
+  "no_counter_reset": true,
+  "no_silent_source_substitution": true,
+  "fail_closed": true
+}
