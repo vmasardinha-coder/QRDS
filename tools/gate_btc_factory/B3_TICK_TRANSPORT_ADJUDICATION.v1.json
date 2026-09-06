@@ -1,0 +1,63 @@
+{
+  "schema": "qrds.factory.b3_tick_transport_adjudication.v1",
+  "as_of": "2026-09-06",
+  "scope": "strict-V2 H1962-H2729 official/free B3 tick source qualification only",
+  "classification": "INSUFFICIENT_EVIDENCE_FAIL_CLOSED",
+  "status": "CURRENT_OFFICIAL_B3_TICK_TRANSPORTS_EXHAUSTED_WITHOUT_ADMISSIBLE_WIN_PAYLOAD",
+  "definitive_data_gap_declared": false,
+  "source_gate_green": false,
+  "economics_read": false,
+  "evidence": {
+    "rapinegocios_type2_recent": {
+      "date": "2026-09-04",
+      "physical_zip_observed": true,
+      "zip_filename": "04-09-2026_NEGOCIOSAVISTA_RV.zip",
+      "zip_sha256": "282f761e9f31b3da54659d526bdd71773435f61af7faf1b4078e923cebc73957",
+      "exact_win_identity_observed": false,
+      "adjudication": "REJECT_AS_WIN_SOURCE"
+    },
+    "bdi_tickbytick_derivatives": {
+      "table_key": "TickByTickDerivatives",
+      "friendly_name": "Negócio a negócio",
+      "classification": "Derivativos de bolsa",
+      "date": "2026-09-04",
+      "tested_transport_variants": 5,
+      "physical_variant_count": 0,
+      "all_variants_http_500_empty_body": true,
+      "matrix_artifact_sha256": "250b4f3394ef50174208864fa2d3d894976a84a6b696e8649b552cf78a20104d",
+      "adjudication": "OFFICIAL_SURFACE_IDENTIFIED_BUT_TRANSPORT_CONTRACT_UNRESOLVED"
+    }
+  },
+  "reopen_only_if": [
+    "MATERIALLY_NEW_OFFICIAL_B3_ENDPOINT_OR_TRANSPORT_CONTRACT",
+    "PHYSICAL_AUDITABLE_WIN_PAYLOAD_FROM_OFFICIAL_FREE_SOURCE",
+    "NEW_OFFICIAL_DOCUMENTATION_THAT_RESOLVES_TICKBYTICKDERIVATIVES_TRANSPORT"
+  ],
+  "forbidden_inference": [
+    "DO_NOT_TREAT_TYPE2_RV_ZIP_AS_DERIVATIVES",
+    "DO_NOT_TREAT_HTTP_500_AS_PROOF_OF_DATA_ABSENCE",
+    "DO_NOT_DECLARE_DATA_GAP_FROM_TRANSPORT_FAILURE",
+    "DO_NOT_USE_MT5_AS_PRIMARY_OR_TO_RECONSTRUCT_CLOCKS",
+    "DO_NOT_OPEN_ECONOMICS",
+    "DO_NOT_REDUCE_STRICT_SOURCE_REQUIREMENTS"
+  ],
+  "credit": {
+    "source_gate": 0,
+    "historical": 0,
+    "prospective": 0,
+    "scientific": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
