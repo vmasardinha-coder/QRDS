@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -58,11 +58,22 @@ jobs:
           assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['NO_SILENT_SOURCE_SUBSTITUTION']
           print('COMPLETE_REGISTRY=PASS entries=137 exclusions=13 d0=0')
           PY
-      - name: Verify committed registry if present
+      - name: Persist exact CI-validated registry on PR head
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          if test -f tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json; then
-            cmp out/registry.json tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          set -euo pipefail
+          cp out/registry.json tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          git config user.name 'gate-btc-factory'
+          git config user.email 'gate-btc-factory@users.noreply.github.com'
+          git add tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'GATE BTC 2.0: persist validated 137-source registry'
+            git push origin "HEAD:${HEAD_REF}"
           fi
+      - name: Verify committed registry byte-for-byte
+        run: cmp out/registry.json tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
       - uses: actions/upload-artifact@v4
         with:
           name: gate-btc-2-v2a-complete-registry-${{ github.run_id }}
