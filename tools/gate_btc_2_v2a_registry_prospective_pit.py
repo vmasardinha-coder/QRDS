@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Registry-driven, fail-closed prospective PIT collector for GATE BTC 2.0 V2A.
 
-Consumes only the already-admitted complete qualified-source registry.  It never
-switches venue/source after seeing a result and never backfills.  The output is
+Consumes only the already-admitted complete qualified-source registry. It never
+switches venue/source after seeing a result and never backfills. The output is
 runtime-ready evidence for the frozen cutover gate; it carries zero scientific
 or economic credit.
 """
@@ -16,6 +16,7 @@ import io
 import json
 import os
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -47,6 +48,17 @@ def _get(url: str, retries: int = 3) -> bytes:
                 if not raw:
                     raise RuntimeError("empty response")
                 return raw
+        except urllib.error.HTTPError as exc:
+            last = exc
+            if exc.code == 429:
+                retry_after = exc.headers.get("Retry-After") if exc.headers else None
+                try:
+                    delay = float(retry_after) if retry_after is not None else 2.0 * (n + 1)
+                except ValueError:
+                    delay = 2.0 * (n + 1)
+                time.sleep(min(max(delay, 1.0), 30.0))
+            else:
+                time.sleep(1.5 * (n + 1))
         except Exception as exc:  # fail-closed after bounded retries
             last = exc
             time.sleep(1.5 * (n + 1))
@@ -78,10 +90,17 @@ def _probe(entry: dict[str, Any], now: datetime) -> tuple[str, bytes]:
         u = _url("https://api.bitget.com/api/v2/spot/market/candles", {"symbol": symbol, "granularity": "1day", "limit": 2})
         return u, _get(u)
     if upper.startswith("BYBIT_SPOT"):
-        # Qualification for these identities was execution-archive based; use a
-        # current public execution print, not a derived/index price.
-        u = _url("https://api.bybit.com/v5/market/recent-trade", {"category": "spot", "symbol": symbol, "limit": 1})
-        return u, _get(u)
+        # Both are official Bybit mainnet REST base endpoints. This is transport
+        # redundancy inside the same frozen provider/source_symbol, not a source fallback.
+        params = {"category": "spot", "symbol": symbol, "limit": 1}
+        last: Exception | None = None
+        for base in ("https://api.bybit.com", "https://api.bytick.com"):
+            u = _url(base + "/v5/market/recent-trade", params)
+            try:
+                return u, _get(u, retries=2)
+            except Exception as exc:
+                last = exc
+        raise RuntimeError(f"request failed across official Bybit transports: {last}")
     if upper.startswith("COINBASE_EXCHANGE_SPOT"):
         product = symbol
         u = _url(f"https://api.exchange.coinbase.com/products/{urllib.parse.quote(product, safe='-')}/candles", {"granularity": 86400})
@@ -91,13 +110,12 @@ def _probe(entry: dict[str, Any], now: datetime) -> tuple[str, bytes]:
         u = _url("https://api.kraken.com/0/public/OHLC", {"pair": pair, "interval": 1440})
         return u, _get(u)
     if upper.startswith("GECKOTERMINAL_PUBLIC_ONCHAIN"):
-        # source_symbol is frozen as network:pool_address.
         network, pool = symbol.split(":", 1)
         u = _url(
             f"https://api.geckoterminal.com/api/v2/networks/{urllib.parse.quote(network, safe='')}/pools/{urllib.parse.quote(pool, safe='')}/ohlcv/day",
             {"aggregate": 1, "limit": 2, "currency": "usd"},
         )
-        return u, _get(u)
+        return u, _get(u, retries=6)
     if upper.startswith("DERIBIT_SPOT"):
         end_ms = int(now.timestamp() * 1000)
         start_ms = int((now - timedelta(days=3)).timestamp() * 1000)
@@ -127,8 +145,10 @@ def _response_has_observation(entry: dict[str, Any], raw: bytes) -> bool:
     except Exception:
         return False
     identity = str(entry["source_identity"]).upper()
-    if identity.startswith("BINANCE_SPOT") or identity.startswith("MEXC_SPOT") or identity.startswith("BITGET_SPOT"):
+    if identity.startswith("BINANCE_SPOT") or identity.startswith("MEXC_SPOT"):
         return isinstance(payload, list) and len(payload) > 0
+    if identity.startswith("BITGET_SPOT"):
+        return isinstance(payload, dict) and str(payload.get("code")) in {"00000", "0"} and bool(payload.get("data"))
     if identity.startswith("OKX_SPOT") or identity.startswith("OKX_PUBLIC_SPOT"):
         return isinstance(payload, dict) and str(payload.get("code")) == "0" and bool(payload.get("data"))
     if identity.startswith("GATE_SPOT"):
