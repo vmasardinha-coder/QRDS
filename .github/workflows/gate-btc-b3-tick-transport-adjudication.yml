@@ -1,0 +1,56 @@
+name: GATE BTC B3 Tick Transport Adjudication
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_factory/B3_TICK_TRANSPORT_ADJUDICATION.v1.json
+      - tests/test_gate_btc_b3_tick_transport_adjudication.py
+      - .github/workflows/gate-btc-b3-tick-transport-adjudication.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/B3_TICK_TRANSPORT_ADJUDICATION.v1.json
+      - tests/test_gate_btc_b3_tick_transport_adjudication.py
+      - .github/workflows/gate-btc-b3-tick-transport-adjudication.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adjudication:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: "true"
+      SHADOW_ONLY: "true"
+      NOT_APPROVED: "true"
+      ENGINE_FEED: "false"
+      ORDERS: "0"
+      REAL_CAPITAL: "0"
+      NO_RETUNE: "true"
+      NO_BACKFILL: "true"
+      NO_COUNTER_RESET: "true"
+      FAIL_CLOSED: "true"
+      H1_ECONOMICS_READ: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+      - name: Validate adjudication contract
+        run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_b3_tick_transport_adjudication.py
