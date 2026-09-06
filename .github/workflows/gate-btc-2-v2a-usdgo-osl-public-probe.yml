@@ -1,0 +1,42 @@
+name: GATE BTC 2 V2A USDGO OSL Public Probe
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_usdgo_osl_public_probe.py
+      - .github/workflows/gate-btc-2-v2a-usdgo-osl-public-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe-usdgo-osl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install evidence-only websocket client
+        run: python -m pip install --disable-pip-version-check websocket-client==1.8.0
+      - name: Compile probe
+        run: python -m py_compile tools/gate_btc_2_v2a_usdgo_osl_public_probe.py
+      - name: Probe exact OSL USDGO/USD public market-data surface
+        run: python tools/gate_btc_2_v2a_usdgo_osl_public_probe.py --output-dir artifacts/gate_btc_2/usdgo_osl_public_probe --seconds 20
+      - name: Assert zero-credit boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/usdgo_osl_public_probe/SUMMARY.json'))
+          assert d['qualification_only'] and d['source_admitted'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['historical_33_bucket_qa_pass'] is False
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders_generated']==0 and d['real_capital_brl']==0
+          assert d['no_retune'] and d['no_backfill'] and d['no_counter_reset'] and d['no_silent_source_substitution']
+          print('USDGO_OSL_PUBLIC_PROBE_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-usdgo-osl-public-probe-${{ github.run_id }}
+          path: artifacts/gate_btc_2/usdgo_osl_public_probe/
+          retention-days: 30
+          if-no-files-found: error
