@@ -1,0 +1,89 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_BYBIT4_MEXC_SOURCE_PREREG_V1",
+  "status": "PREREGISTERED_QUALIFICATION_ONLY",
+  "purpose": "Freeze one materially distinct public exact-source qualification path for the four currently qualified BYBIT_SPOT identities whose contemporaneous GitHub-hosted PIT probes are transport-blocked with HTTP 403 on both official mainnet REST hosts before System 8 D0.",
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "prereg_at_utc": "2026-09-06T22:15:00Z",
+  "qualification_window_utc": {
+    "start_date": "2026-08-04",
+    "end_date": "2026-09-05",
+    "required_unique_daily_buckets": 33,
+    "timezone": "UTC"
+  },
+  "current_evidence": {
+    "registry_state": "COMPLETE_137_SOURCE_REGISTRY_PRE_D0",
+    "d0_started": false,
+    "pit_run_id": "34062990898",
+    "pit_result": "131_OF_137_FAIL_CLOSED",
+    "bybit_transport_failure": "HTTP_403_ON_API_BYBIT_COM_AND_API_BYTICK_COM",
+    "affected_symbols": ["HTX", "KAS", "KCS", "MNT"],
+    "scientific_failure_asserted": false,
+    "source_identity_failure_asserted": false,
+    "classification": "OPERATIONAL_TRANSPORT_BLOCKER_REQUIRES_PREREGISTERED_DISTINCT_SOURCE_BEFORE_D0"
+  },
+  "targets": [
+    {
+      "symbol": "HTX",
+      "candidate_source": {"provider": "MEXC", "market": "SPOT", "pair": "HTXUSDT", "source_identity_if_qualified": "MEXC_SPOT", "source_symbol_if_qualified": "HTXUSDT"}
+    },
+    {
+      "symbol": "KAS",
+      "candidate_source": {"provider": "MEXC", "market": "SPOT", "pair": "KASUSDT", "source_identity_if_qualified": "MEXC_SPOT", "source_symbol_if_qualified": "KASUSDT"}
+    },
+    {
+      "symbol": "KCS",
+      "candidate_source": {"provider": "MEXC", "market": "SPOT", "pair": "KCSUSDT", "source_identity_if_qualified": "MEXC_SPOT", "source_symbol_if_qualified": "KCSUSDT"}
+    },
+    {
+      "symbol": "MNT",
+      "candidate_source": {"provider": "MEXC", "market": "SPOT", "pair": "MNTUSDT", "source_identity_if_qualified": "MEXC_SPOT", "source_symbol_if_qualified": "MNTUSDT"}
+    }
+  ],
+  "frozen_endpoint_family": {
+    "instrument_identity": "MEXC public spot exchangeInfo / official market metadata for exact pair identity",
+    "daily_execution_ohlcv": "https://api.mexc.com/api/v3/klines",
+    "interval": "1d",
+    "private_credentials": false,
+    "route_switching_after_result": false
+  },
+  "qualification_requirements": [
+    "Each target must bind the frozen V2A asset identity to the exact MEXC spot pair; ticker equality alone is insufficient.",
+    "Preserve raw public response bytes and SHA-256 before normalization.",
+    "Record provider, exact pair, endpoint, request parameters, retrieval UTC timestamp, raw hashes and parser/schema version.",
+    "Reproduce exactly 33 unique UTC daily buckets covering 2026-08-04 through 2026-09-05 inclusive.",
+    "Fail closed on any missing or duplicate daily bucket, non-monotonic timestamps, invalid OHLC relation, negative volume, identity ambiguity or transport failure.",
+    "Do not silently fall back to another provider, pair or endpoint family after observing a result.",
+    "Historical qualification evidence carries zero prospective/scientific/economic credit and cannot repair any prior PIT snapshot.",
+    "Any source admission and 137-registry replacement must occur only after separate successful physical qualification/adjudication and before D0."
+  ],
+  "allowed_outcomes": [
+    "QUALIFIED_EXACT_SOURCE",
+    "REJECT_IDENTITY_MISMATCH",
+    "REJECT_INSUFFICIENT_HISTORY",
+    "REJECT_SCHEMA_OR_TIME_SEMANTICS",
+    "REJECT_SOURCE_UNAVAILABLE",
+    "COLLECT_MORE_SOURCE_CANDIDATES"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "scientific_credit": 0,
+    "prospective_credit": 0,
+    "economic_credit": 0
+  },
+  "explicit_non_effects": [
+    "No denominator change: eligible universe remains 137.",
+    "No D0 start or cutover claim.",
+    "No methodology, threshold, ranking, costs, clock, cutoff or family change.",
+    "No automatic registry mutation or source admission.",
+    "The existing BYBIT_SPOT qualification evidence remains preserved as historical source-QA evidence."
+  ]
+}
