@@ -1,0 +1,90 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_STRUCTURAL_SOURCE_ADJUDICATION_V1",
+  "date": "2026-09-06",
+  "system": 8,
+  "rule_reference": "artifacts/gate_btc_2/v2a_structural_ineligibility_rule_prereg_20260904.json",
+  "preregistration_reference": "artifacts/gate_btc_2/v2a_final_source_exhaustion_prereg_20260905.json",
+  "discovery_reference": "artifacts/gate_btc_2/v2a_final_source_discovery_20260906.json",
+  "targets": [
+    {
+      "symbol": "KAU",
+      "coin_id": "kinesis-gold",
+      "exact_frozen_identity": "KINESIS_NATIVE_KAU",
+      "candidate_exact_provider": "KINESIS_MONEY_EXCHANGE",
+      "exact_market_exists": true,
+      "public_unauthenticated_execution_history_available": false,
+      "api_access_status": "API_KEY_REQUESTED_THROUGH_KINESIS_ACCOUNT_PLATFORM",
+      "materially_distinct_routes_checked": [
+        {
+          "route": "KINESIS_MONEY_EXCHANGE",
+          "status": "EXACT_VENUE_EXISTS_BUT_PUBLIC_UNAUTHENTICATED_HISTORY_NOT_EXPOSED",
+          "evidence_url": "https://kinesis.money/company-news/q2-q3-ceo-quarterly-update/"
+        },
+        {
+          "route": "MEXC",
+          "status": "NOT_LISTED_FOR_SPOT_EXECUTION_AGGREGATOR_ONLY",
+          "evidence_url": "https://www.mexc.com/price/kinesis-gold"
+        },
+        {
+          "route": "KMS_LABS_ERC20_KAU",
+          "status": "FORBIDDEN_WRAPPER_SUBSTITUTION",
+          "reason": "KMS Labs ERC-20 KAU is a separately issued Ethereum claim backed 1:1 by native Kinesis KAU; counterparty/issuer identity differs from frozen native KAU.",
+          "evidence_url": "https://kmslabs.money/"
+        }
+      ],
+      "adjudication": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "basis": "The exact native KAU venue exists but its programmatic exchange history requires account/API-key access, while no materially distinct free/public/auditable exact native-KAU execution tape was identified. Public ERC-20 KAU routes are separately issued wrapper/claim instruments and are forbidden substitutions under the frozen rule.",
+      "reentry": "ONLY_BY_SEPARATELY_PREREGISTERED_FUTURE_ELIGIBILITY_EVENT_AFTER_NEW_EXACT_PUBLIC_AUDITABLE_SOURCE",
+      "historical_credit": 0,
+      "scientific_credit": false,
+      "prospective_credit": false,
+      "d0_credit": 0
+    },
+    {
+      "symbol": "KAG",
+      "coin_id": "kinesis-silver",
+      "exact_frozen_identity": "KINESIS_NATIVE_KAG",
+      "candidate_exact_provider": "KINESIS_MONEY_EXCHANGE",
+      "exact_market_exists": true,
+      "public_unauthenticated_execution_history_available": false,
+      "api_access_status": "API_KEY_REQUESTED_THROUGH_KINESIS_ACCOUNT_PLATFORM",
+      "materially_distinct_routes_checked": [
+        {
+          "route": "KINESIS_MONEY_EXCHANGE",
+          "status": "EXACT_VENUE_EXISTS_BUT_PUBLIC_UNAUTHENTICATED_HISTORY_NOT_EXPOSED",
+          "evidence_url": "https://kinesis.money/company-news/q2-q3-ceo-quarterly-update/"
+        },
+        {
+          "route": "KMS_LABS_ERC20_KAG_UNISWAP_V4",
+          "status": "FORBIDDEN_WRAPPER_SUBSTITUTION",
+          "reason": "The Ethereum KAG traded on Uniswap v4 is issued by KMS Labs and represents a 1:1 claim on native Kinesis KAG. It is not the frozen native Kinesis Cayman/Kinesis-chain instrument.",
+          "evidence_url": "https://kmslabs.money/"
+        }
+      ],
+      "adjudication": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "basis": "The exact native KAG venue exists but public unauthenticated historical execution data was not found. The newly observed Ethereum/Uniswap route is a separately issued KMS Labs ERC-20 claim and therefore cannot silently replace the frozen native KAG identity.",
+      "reentry": "ONLY_BY_SEPARATELY_PREREGISTERED_FUTURE_ELIGIBILITY_EVENT_AFTER_NEW_EXACT_PUBLIC_AUDITABLE_SOURCE",
+      "historical_credit": 0,
+      "scientific_credit": false,
+      "prospective_credit": false,
+      "d0_credit": 0
+    }
+  ],
+  "denominator_effect": "FUTURE_D0_ELIGIBLE_UNIVERSE_ONLY_AFTER_THIS_ADJUDICATION_IS_MERGED_AND_APPLIED_WITH_RULE_536; NO_RETROACTIVE_D0",
+  "source_admission_changed": false,
+  "historical_universe_rewritten": false,
+  "d0_started": false,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
