@@ -213,7 +213,10 @@ class RunTests(EngineRunMixin, unittest.TestCase):
             second = self.advance(root, 71, 75)
         self.assertEqual(second["anchor_date"], first["anchor_date"])
         self.assertFalse(second["anchor_established_this_run"])
-        self.assertEqual(second["observed_days"], 5)
+        # Four, not five: the day right after the anchor is warmup, whose signal
+        # and persistence days have no recorded universe, so it measures nothing.
+        self.assertEqual(second["observed_days"], 4)
+        self.assertEqual(second["warmup_days_not_booked"], 1)
 
     def test_no_pre_anchor_day_can_enter_the_ledger(self):
         with tempfile.TemporaryDirectory() as td:
@@ -453,12 +456,24 @@ class RotatingUniverseTests(EngineRunMixin, unittest.TestCase):
         self.assertIn("append-only", str(caught.exception))
         self.assertIn("never re-selected", str(caught.exception))
 
-    def test_a_day_the_engine_never_observed_fails_closed(self):
+    def test_days_missed_before_the_series_starts_are_surfaced_not_hidden(self):
+        # Nothing false is produced, but a warmup longer than designed means the
+        # chain missed runs and must not pass unseen.
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self.step(root, 70, BASES)
+            status = self.step(root, 74, BASES)   # skipped 71, 72, 73
+        self.assertEqual(status["observed_days"], 0)
+        self.assertTrue(status["warmup_longer_than_designed"])
+
+    def test_a_gap_after_the_series_started_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.step(root, 70, BASES)
+            for day in range(71, 75):
+                self.step(root, day, BASES)
             with self.assertRaises(engine.EngineError) as caught:
-                self.step(root, 74, BASES)   # skipped 71, 72, 73
+                self.step(root, 78, BASES)   # skipped 75, 76, 77
         message = str(caught.exception)
         self.assertIn("FAIL_CLOSED", message)
         self.assertIn("never backfilled", message)
@@ -516,3 +531,84 @@ class RotationContractTests(unittest.TestCase):
         self.assertEqual(amendment["anchor_state_when_amended"],
                          "NULL_NO_LEDGER_NO_OBSERVATION")
         self.assertEqual(amendment["methodology_changes"], 0)
+
+
+class WarmupTests(EngineRunMixin, unittest.TestCase):
+    """A structurally empty day is not an observation."""
+
+    def test_the_anchor_warmup_is_not_booked_as_a_flat_observation(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.run_engine(root, price_panel(days=70))     # anchor only
+            first = self.run_engine(root, price_panel(days=71))
+            second = self.run_engine(root, price_panel(days=72))
+        # The day after the anchor has no membership for its signal or
+        # persistence day, so it is warmup, not a zero-return observation.
+        self.assertEqual(first["observed_days"], 0)
+        self.assertEqual(first["warmup_days_not_booked"], 1)
+        self.assertGreaterEqual(second["observed_days"], 1)
+
+    def test_a_day_the_strategy_leaves_empty_is_still_booked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.run_engine(root, price_panel(days=70))
+            status = self.advance(root, 71, 78)
+            rows = engine.read_csv_rows(root / "ledger" / "DAILY_NAV.csv")
+        booked = sorted({r["date"] for r in rows})
+        self.assertEqual(status["observed_days"], len(booked))
+        # Once booking starts it is contiguous: no day is skipped after the
+        # first, or the series would carry an invisible gap.
+        for earlier, later in zip(booked, booked[1:]):
+            self.assertEqual(
+                (date.fromisoformat(later) - date.fromisoformat(earlier)).days, 1)
+
+
+class CommandLineTests(EngineRunMixin, unittest.TestCase):
+    """main() is the production entry point and must be exercised as one.
+
+    Run 33915818743 failed with KeyError: 'universe_size' because a STATUS field
+    was renamed and main()'s summary list was not. Every test called run()
+    directly, so nothing caught it until it ran for real.
+    """
+
+    def test_every_summary_key_exists_in_status(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            status = self.run_engine(root, price_panel(days=70))
+        for key in engine.SUMMARY_KEYS:
+            self.assertIn(key, status, key)
+
+    def test_main_runs_end_to_end_and_prints_the_summary(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            prices, universe = write_inputs(root, price_panel(days=70))
+            code = engine.main([
+                "--prices-csv", str(prices),
+                "--universe-csv", str(universe),
+                "--contract", str(CONTRACT),
+                "--out-dir", str(root / "ledger"),
+                "--run-id", "cli",
+            ])
+        self.assertEqual(code, 0)
+
+    def test_main_accepts_a_funding_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            prices, universe = write_inputs(root, price_panel(days=70))
+            funding = root / "FUNDING_DAILY.csv"
+            with funding.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=[
+                    "date", "symbol", "venue", "funding_rate", "events"])
+                writer.writeheader()
+                for base in BASES:
+                    writer.writerow({"date": "2026-09-01", "symbol": base,
+                                     "venue": "OKX_SWAP", "funding_rate": 0.0001,
+                                     "events": 3})
+            code = engine.main([
+                "--prices-csv", str(prices),
+                "--universe-csv", str(universe),
+                "--contract", str(CONTRACT),
+                "--out-dir", str(root / "ledger"),
+                "--funding-csv", str(funding),
+            ])
+        self.assertEqual(code, 0)
