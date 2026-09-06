@@ -1,0 +1,55 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_USDGO_OSL_PREREG_V1",
+  "date": "2026-09-06",
+  "symbol": "USDGO",
+  "purpose": "PREREGISTER_MATERIALLY_DISTINCT_EXACT_SOURCE_ROUTE_ONLY",
+  "prior_route": {
+    "provider": "KRAKEN_PUBLIC_SPOT",
+    "source_symbol": "USDGO/USD",
+    "status": "FAIL_CLOSED_FULL_CORPUS_QA",
+    "evidence_prs": [547, 552]
+  },
+  "candidate_route": {
+    "provider": "OSL_GLOBAL_PUBLIC_MARKET_DATA",
+    "venue_product": "OSL Global Pro Trade",
+    "source_symbol": "USDGO/USD",
+    "market_type": "SPOT",
+    "identity_policy": "EXACT_USDGO_USD_ONLY",
+    "public_market_data_required": true,
+    "authenticated_history_forbidden_as_sole_evidence": true,
+    "nav_oracle_mint_redeem_forbidden": true,
+    "route_switching_after_result": false
+  },
+  "frozen_qualification": {
+    "start_utc": "2026-08-03",
+    "end_utc": "2026-09-04",
+    "required_daily_buckets": 33,
+    "raw_bytes_sha256_required": true,
+    "exact_execution_history_required": true,
+    "ohlcv_continuity_required": true,
+    "fail_closed_on_missing_days": true,
+    "fail_closed_on_source_ambiguity": true,
+    "fail_closed_on_authenticated_only_history": true
+  },
+  "credit_boundary": {
+    "source_admitted": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0,
+    "d0_started": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
