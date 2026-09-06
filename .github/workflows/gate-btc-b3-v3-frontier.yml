@@ -52,6 +52,19 @@ jobs:
           python - <<'PY' > /tmp/v3.env
           import json
           from pathlib import Path
+
+          rq=Path('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json')
+          if rq.exists():
+              q=json.load(open(rq,encoding='utf-8'))
+              namespace=str(q.get('authoritative_replay_namespace',''))
+              affected=int(q.get('affected_family_count',0))
+              completed=int(q.get('completed_family_count',0))
+              if namespace == 'RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2' and completed < affected:
+                  print('ACTION=BLOCKED_CURRENT_GENERATION_CLOSURE')
+                  print('START=2730')
+                  print(f'CLOSURE={completed}/{affected}')
+                  raise SystemExit(0)
+
           p=Path('runtime_repo/runtime/autonomous_science/CURRENT.json')
           d=json.load(open(p,encoding='utf-8')) if p.exists() else {}
           nxt=int(d.get('next_generation_start',2730))
@@ -74,6 +87,7 @@ jobs:
           source /tmp/v3.env
           echo "action=$ACTION" >> "$GITHUB_OUTPUT"
           echo "start=$START" >> "$GITHUB_OUTPUT"
+          if [ -n "${CLOSURE:-}" ]; then echo "closure=$CLOSURE" >> "$GITHUB_OUTPUT"; fi
 
       - name: Materialize deterministic V3 preregistration
         if: steps.frontier.outputs.action == 'ARM'
@@ -165,6 +179,13 @@ jobs:
               assert g['status'] in {'WAITING_OFFICIAL_TICK_SOURCE','SOURCE_QA_FAIL'}
               print('V3_FRONTIER=ARMED_YELLOW_SOURCE_WAIT')
           PY
+
+      - name: Report pending strict-V2 closure
+        if: steps.frontier.outputs.action == 'BLOCKED_CURRENT_GENERATION_CLOSURE'
+        run: |
+          echo "V3_FRONTIER=PAUSED_STRICT_V2_H1962_H2729_CLOSURE_PENDING"
+          echo "STRICT_V2_COMPLETION=${{ steps.frontier.outputs.closure }}"
+          echo "NO_NEW_FAMILY_MATERIALIZATION=true"
 
       - name: Report finite V3 exhaustion
         if: steps.frontier.outputs.action == 'V3_GRAMMAR_EXHAUSTED'
