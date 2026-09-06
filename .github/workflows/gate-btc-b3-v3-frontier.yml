@@ -2,18 +2,6 @@ name: GATE BTC B3 V3 Frontier Source Gate
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '12,42 * * * *'
-  push:
-    branches: [main]
-    paths:
-      - 'research/b3_h_autonomous_science_protocol_v3.md'
-      - 'research/b3_h_autonomous_science_v3_family_manifest.json'
-      - 'research/b3_h_autonomous_science_v3_source_contract.json'
-      - 'tools/gate_btc_factory/b3_v3_family_generator.py'
-      - 'tools/gate_btc_factory/b3_v3_source_qualifier.py'
-      - 'tests/test_gate_btc_b3_v3_autonomous_frontier.py'
-      - '.github/workflows/gate-btc-b3-v3-frontier.yml'
 
 permissions:
   contents: write
