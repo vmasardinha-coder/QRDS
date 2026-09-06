@@ -1,0 +1,72 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_LEGACY50_BINANCE_EXACT_SOURCE_PREREG_V1",
+  "date": "2026-09-06",
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "purpose": "Preregister one materially distinct exact public execution route for the 50 failures produced by merged physical qualification #605. No source is admitted here.",
+  "parent_evidence": {
+    "pr": 605,
+    "workflow_run_id": 34034632101,
+    "artifact_id": 9990251632,
+    "artifact_sha256": "cba5ce4bd6ee72f42ffce950808ad0da666d08b29d8171913df4a60bb9e4b3b5",
+    "target_count": 91,
+    "pass_count": 41,
+    "fail_count": 50
+  },
+  "failure_partition": {
+    "cdd_transport_or_corpus_failures": ["AAVE","ADA","ALGO","AR","ATOM","AVAX","BCH","BNB","BTC","BTT","CAKE","CFX","COMP","CRV","DASH","DCR","DOGE","DOT","ETC","ETH","FET","FIL","GNO","GRT","HBAR","ICP","INJ","JST","LINK","LTC","NEAR","PAXG","QNT","RAY","SHIB","SOL","STX","SUN","TRX","TWT","UNI","VET","WIF","XLM","XMR","XRP","XTZ","ZEC"],
+    "okx_failures": ["ONDO","POL"],
+    "assertions": ["len(cdd_transport_or_corpus_failures)==48", "len(okx_failures)==2", "union_count==50"]
+  },
+  "frozen_candidate_route": {
+    "provider": "BINANCE_SPOT",
+    "market_type": "SPOT",
+    "source_symbol_template": "{SYMBOL}USDT",
+    "base": "exact frozen symbol only",
+    "quote": "USDT",
+    "identity_binding": "CoinGecko frozen coin_id must physically resolve to exact Binance base/USDT market; Binance exchangeInfo must independently confirm baseAsset and quoteAsset",
+    "why_materially_distinct": "For the 48 CDD failures this bypasses the third-party CryptoDataDownload transport and queries the native Binance venue directly. For ONDO and POL this is a distinct venue from the failed frozen OKX route.",
+    "route_switch_after_result": false,
+    "silent_fallback": false
+  },
+  "physical_qualification_contract": {
+    "window_start_utc": "2026-08-04",
+    "window_end_utc": "2026-09-05",
+    "required_daily_buckets": 33,
+    "timezone": "UTC",
+    "endpoint_family": "official Binance public spot exchangeInfo + klines",
+    "raw_public_bytes_sha256_required": true,
+    "exact_source_identity_required": true,
+    "coingecko_exact_market_bridge_required": true,
+    "monotonic_daily_dates_required": true,
+    "duplicate_days_allowed": false,
+    "missing_days_allowed": false,
+    "finite_numeric_ohlc_required": true,
+    "observed_execution_candles_only": true,
+    "source_admission_on_pass": false,
+    "registry_mutation_on_pass": false,
+    "failure_semantics": "Fail closed per symbol. A failure may only proceed to another separately preregistered materially distinct exact source route or structural-ineligibility adjudication after bounded exhaustion."
+  },
+  "credit_boundary": {
+    "source_admission_changed": false,
+    "complete_registry_claimed": false,
+    "collector_override_activation_allowed": false,
+    "d0_started": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
