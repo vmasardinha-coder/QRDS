@@ -1,0 +1,57 @@
+name: GATE BTC B3 BDI TickByTick Transport Matrix
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.py
+      - tests/test_gate_btc_b3_bdi_tickbytick_transport_matrix.py
+      - .github/workflows/gate-btc-b3-bdi-tickbytick-transport-matrix.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.py
+      - .github/workflows/gate-btc-b3-bdi-tickbytick-transport-matrix.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: true
+      SHADOW_ONLY: true
+      NOT_APPROVED: true
+      ENGINE_FEED: false
+      ORDERS: 0
+      REAL_CAPITAL: 0
+      NO_RETUNE: true
+      NO_BACKFILL: true
+      NO_COUNTER_RESET: true
+      FAIL_CLOSED: true
+      H1_ECONOMICS_READ: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests pytest
+      - name: Test finite fail-closed matrix
+        run: pytest -q tests/test_gate_btc_b3_bdi_tickbytick_transport_matrix.py
+      - name: Probe official BDI special transport
+        if: github.event_name != 'pull_request'
+        run: python tools/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.py --date 2026-09-04 --output artifacts/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.json
+      - name: Assert zero-credit boundary
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.json'))
+          assert d['strict_source_gate_green'] is False
+          assert d['source_gate_credit']==d['historical_backfill_credit']==d['prospective_credit']==0
+          assert d['economics_read'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-b3-bdi-transport-matrix-${{ github.run_id }}
+          path: artifacts/gate_btc_factory/b3_bdi_tickbytick_transport_matrix.json
+          retention-days: 30
+          if-no-files-found: error
