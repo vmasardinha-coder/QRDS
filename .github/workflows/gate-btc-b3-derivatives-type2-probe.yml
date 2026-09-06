@@ -1,0 +1,63 @@
+name: GATE BTC B3 Derivatives Type2 Source Probe
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_factory/b3_derivatives_type2_probe.py
+      - tests/test_gate_btc_b3_derivatives_type2_probe.py
+      - .github/workflows/gate-btc-b3-derivatives-type2-probe.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/b3_derivatives_type2_probe.py
+      - .github/workflows/gate-btc-b3-derivatives-type2-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install probe dependency
+        run: python -m pip install requests pytest
+      - name: Test immutable fail-closed source boundary
+        run: python -m pytest -q tests/test_gate_btc_b3_derivatives_type2_probe.py
+      - name: Probe official derivatives type=2 surface
+        if: github.event_name != 'pull_request'
+        run: |
+          python tools/gate_btc_factory/b3_derivatives_type2_probe.py \
+            --recent-date 2026-09-04 \
+            --output artifacts/gate_btc_factory/b3_derivatives_type2_probe.json
+      - name: Assert zero-credit research boundary
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc_factory/b3_derivatives_type2_probe.json'
+          d=json.load(open(p, encoding='utf-8'))
+          assert d['strict_source_gate_green'] is False
+          assert d['source_gate_credit'] == 0
+          assert d['historical_backfill_credit'] == 0
+          assert d['prospective_credit'] == 0
+          assert d['full_161_session_coverage_proven'] is False
+          assert d['exact_win_identity_proven'] is False
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved'] and s['fail_closed']
+          assert s['engine_feed'] is False and s['orders'] == 0 and s['real_capital'] == 0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset']
+          assert s['h1_economics_read'] is False
+          print('B3_DERIVATIVES_TYPE2_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-b3-derivatives-type2-${{ github.run_id }}
+          path: artifacts/gate_btc_factory/b3_derivatives_type2_probe.json
+          retention-days: 30
+          if-no-files-found: error
