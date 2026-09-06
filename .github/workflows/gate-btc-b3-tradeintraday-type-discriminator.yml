@@ -1,0 +1,95 @@
+name: GATE BTC B3 TradeIntraday Type Discriminator
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/b3_tradeintraday_type_discriminator.py'
+      - 'tests/test_gate_btc_b3_tradeintraday_type_discriminator.py'
+      - '.github/workflows/gate-btc-b3-tradeintraday-type-discriminator.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/b3_tradeintraday_type_discriminator.py'
+      - 'tests/test_gate_btc_b3_tradeintraday_type_discriminator.py'
+      - '.github/workflows/gate-btc-b3-tradeintraday-type-discriminator.yml'
+  workflow_dispatch:
+    inputs:
+      probe_date:
+        description: B3 session date YYYY-MM-DD
+        required: false
+        default: '2026-09-04'
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+jobs:
+  discriminate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+      - name: Test discriminator fail-closed contract
+        run: |
+          python -m pip install -q requests pytest
+          python -m py_compile tools/gate_btc_factory/b3_tradeintraday_type_discriminator.py
+          pytest -q tests/test_gate_btc_b3_tradeintraday_type_discriminator.py
+      - name: Compare official B3 query variants
+        if: github.event_name != 'pull_request'
+        env:
+          INPUT_DATE: ${{ github.event.inputs.probe_date }}
+        run: |
+          DATE="${INPUT_DATE:-2026-09-04}"
+          python tools/gate_btc_factory/b3_tradeintraday_type_discriminator.py --date "$DATE" --output B3_TRADEINTRADAY_TYPE_EVIDENCE.json
+          python - <<'PY'
+          import json
+          d=json.load(open('B3_TRADEINTRADAY_TYPE_EVIDENCE.json',encoding='utf-8'))
+          assert d['strict_source_gate_green'] is False
+          assert d['source_gate_credit'] == 0
+          assert d['historical_backfill_credit'] == 0
+          assert d['prospective_credit'] == 0
+          assert d['exact_derivatives_identity_proven'] is False
+          assert d['exact_win_identity_proven'] is False
+          s=d['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved'] and s['fail_closed']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset']
+          assert s['h1_economics_read'] is False
+          print('B3_TRADEINTRADAY_TYPE_STATUS=' + d['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-b3-tradeintraday-type-${{ github.run_id }}
+          path: B3_TRADEINTRADAY_TYPE_EVIDENCE.json
+          if-no-files-found: error
+          retention-days: 30
