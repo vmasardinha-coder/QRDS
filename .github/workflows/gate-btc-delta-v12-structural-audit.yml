@@ -31,8 +31,10 @@ jobs:
     steps:
       - name: Propagate failed main Daily collection
         env:
+          UPSTREAM_BRANCH: ${{ github.event.workflow_run.head_branch }}
           UPSTREAM_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
+          test "$UPSTREAM_BRANCH" = "main"
           test "$UPSTREAM_CONCLUSION" = "success"
 
   contract-test:
