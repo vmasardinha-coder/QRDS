@@ -1,0 +1,80 @@
+{
+  "schema": "qrds.factory.b3_type1_drv_semantic_coverage_prereg.v1",
+  "created_at_utc": "2026-09-06T12:30:17Z",
+  "stage": "PREREGISTER_OFFICIAL_PRIMARY_SOURCE_QUALIFICATION",
+  "provider": "B3",
+  "source_role": "OFFICIAL_PRIMARY_CANDIDATE_NOT_ADMITTED",
+  "prior_physical_evidence": {
+    "pr": 591,
+    "merge_commit": "7c0f3acb54ed0efedb52577468e60ea4c132416b",
+    "probe_date": "2026-09-04",
+    "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2026-09-04?type=1",
+    "zip_sha256": "bddf3f01119791c4ea6fcb447dd78607a08b3d80fc5c686b100c0e8429a70350",
+    "zip_size_bytes": 42167724,
+    "member_name": "04-09-2026_NEGOCIOSAVISTA_DRV.txt",
+    "exact_win_identity_observed": true,
+    "win_symbols_observed": ["WING27", "WINV26", "WINZ26"],
+    "columns": ["DataReferencia", "CodigoInstrumento", "AcaoAtualizacao", "PrecoNegocio", "QuantidadeNegociada", "HoraFechamento", "CodigoIdentificadorNegocio", "TipoSessaoPregao", "DataNegocio", "CodigoParticipanteComprador", "CodigoParticipanteVendedor", "TipoDoCanal"]
+  },
+  "official_migration_evidence": {
+    "b3_quotes_page": "Since 2025-12-15, listed tick-by-tick data is available in BDM under Derivativos > Derivativos de bolsa > Negócio a negócio.",
+    "external_communication": "CE 001/2026-VTEC states all former public-data-page information was migrated to the Boletim Diario do Mercado and the old page was discontinued on 2026-03-31."
+  },
+  "frozen_qualification_questions": {
+    "schema_identity": "Require stable trade schema containing exact WIN instrument identity and trade timestamp fields.",
+    "timezone_session_semantics": "Prove the interpretation and timezone/session mapping of HoraFechamento and DataNegocio without inferring from economics or reconstructing missing clocks.",
+    "publication_semantics": "Prove when a session becomes publicly observable and whether the file is intraday, end-of-day, D+1, or later.",
+    "revision_semantics": "Prove whether published rows/files may be revised, cancelled, replaced, or adjusted and how revisions are identified.",
+    "pit_validity": "Qualification must support point-in-time use without hindsight or silent replacement.",
+    "coverage": "Require at least 161 distinct eligible B3 trading sessions in the frozen evaluation corpus; transport availability alone does not grant credit.",
+    "independence": "Evaluation data must remain independent and unseen by family selection; no economics may be read during source qualification."
+  },
+  "frozen_transport_probe_dates": [
+    "2026-09-04",
+    "2026-08-28",
+    "2026-08-14",
+    "2026-07-31",
+    "2026-06-30",
+    "2026-05-29",
+    "2026-04-30",
+    "2026-03-31",
+    "2026-02-27",
+    "2026-01-30",
+    "2025-12-30"
+  ],
+  "admission_rule": {
+    "strict_source_gate_green": "ONLY_IF_ALL_FROZEN_QUALIFICATION_QUESTIONS_ARE_PROVEN_AND_HASH_BOUND_DATASET_MEETS_161_SESSION_REQUIREMENT",
+    "partial_positive_evidence_grants_credit": false,
+    "transport_failure_is_data_gap": false,
+    "silent_source_substitution_allowed": false,
+    "mt5_primary_allowed": false,
+    "mt5_role_if_qualified": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "scientific_boundary": {
+    "cutoff_change_allowed": false,
+    "preregistered_family_change_allowed": false,
+    "threshold_change_allowed": false,
+    "cost_change_allowed": false,
+    "direction_change_allowed": false,
+    "hold_change_allowed": false,
+    "pit_change_allowed": false,
+    "counter_reset_allowed": false,
+    "backfill_allowed": false,
+    "partial_result_feedback_allowed": false,
+    "h1_economics_read_allowed": false
+  },
+  "next_action_after_merge": "EXECUTE_SEPARATE_APPEND_ONLY_OFFICIAL_TYPE1_DRV_SEMANTIC_AND_COVERAGE_QUALIFIER_USING_ONLY_THIS_FROZEN_CONTRACT",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
