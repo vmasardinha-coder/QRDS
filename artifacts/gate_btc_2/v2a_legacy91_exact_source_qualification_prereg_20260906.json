@@ -1,0 +1,106 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_LEGACY91_EXACT_SOURCE_QUALIFICATION_PREREG_V1",
+  "date": "2026-09-06",
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "purpose": "Pre-register physical exact-source qualification for the 91 symbols that were actually loaded by the canonical legacy V2A collector in the frozen 2026-09-05 source snapshot. This is source QA only; it does not admit sources, materialize the D0 registry, start D0, or grant credit.",
+  "frozen_input_snapshot": {
+    "source_run_id": 34011930549,
+    "data_cutoff_utc": "2026-09-05",
+    "attempted_symbols": 150,
+    "loaded_symbols": 91,
+    "failed_symbols": 59,
+    "coverage_ratio": 0.6066666666666667,
+    "input_snapshot_id": "7b858d30762df82e2e9456340564d5816c4c1b7e09d711013563ad81be2038fc",
+    "universe_sha256": "763a99cc6d3af815fca534776f21e26b2623a11b5824aacd36873ed20eabd78c",
+    "master_daily_sha256": "c907b09e312af53d169e8564a858314a2af497e77f170dbbea5a1dfa69434f49",
+    "failures_sha256": "b15806cde07cdf1ce99c56ff5b9b8bbfa32d16809bd7ea2a1a42da4388bb9590",
+    "source_package_sha256": "43a663b9954763282b9d2da48c2b5fc615dd960812257d0e689e29159a8a9e90",
+    "daily_research_artifact_sha256": "1a7dc674c2e5b3f338d4956d87b3d89fd624c746eb0a0c2e6871e0a9b19f22bf"
+  },
+  "resolved_failure_partition": {
+    "qualified_recovered_exact_sources": 46,
+    "structurally_ineligible_current_epoch": 13,
+    "expected_failure_union_count": 59,
+    "structural_exclusions": [
+      "SOFID", "BCAP", "KAU", "KAG", "EURSAFO", "EUTBL", "JTRSY", "JAAA", "OUSG", "PC0000031", "USTB", "BUIDL", "USDGO"
+    ],
+    "required_partition_assertions": [
+      "frozen_failure_symbol_set == recovered_seed_symbol_set UNION structural_exclusion_symbol_set",
+      "recovered_seed_symbol_set INTERSECTION structural_exclusion_symbol_set == empty",
+      "frozen_loaded_symbol_set INTERSECTION frozen_failure_symbol_set == empty",
+      "len(frozen_loaded_symbol_set) == 91",
+      "len(recovered_seed_symbol_set) == 46",
+      "len(structural_exclusion_symbol_set) == 13"
+    ]
+  },
+  "legacy_source_selection_contract": {
+    "implementation_path": "migration/canonical/v2a/scripts/00_run_all_v2a.py",
+    "selection_order": ["cdd", "binance", "okx"],
+    "historical_load_gate_rows": 200,
+    "target_source_for_each_symbol": "the unique source value physically present for that symbol in the frozen master_daily snapshot; do not re-select a more convenient source after observing qualification results",
+    "exact_identity_mapping": {
+      "cdd": {
+        "provider": "CRYPTODATADOWNLOAD_BINANCE_DAILY",
+        "source_symbol_template": "Binance_{SYMBOL}USDT_d.csv",
+        "observation": "OBSERVED_DAILY_CANDLES"
+      },
+      "binance": {
+        "provider": "BINANCE_SPOT",
+        "source_symbol_template": "{SYMBOL}USDT",
+        "observation": "OBSERVED_DAILY_CANDLES"
+      },
+      "okx": {
+        "provider": "OKX_SPOT",
+        "source_symbol_template": "{SYMBOL}-USDT",
+        "observation": "OBSERVED_DAILY_CANDLES"
+      }
+    }
+  },
+  "physical_qualification_contract": {
+    "window_start_utc": "2026-08-04",
+    "window_end_utc": "2026-09-05",
+    "required_daily_buckets": 33,
+    "timezone": "UTC",
+    "raw_public_bytes_sha256_required": true,
+    "exact_source_identity_required": true,
+    "monotonic_daily_dates_required": true,
+    "duplicate_days_allowed": false,
+    "missing_days_allowed": false,
+    "finite_numeric_close_required": true,
+    "observed_vs_derived": "OBSERVED",
+    "route_switch_after_result": false,
+    "source_admission_on_pass": false,
+    "registry_mutation_on_pass": false,
+    "failure_semantics": "Preserve source/transport/corpus QA failures exactly. A failed frozen legacy route may only be followed by a separately preregistered materially distinct exact source route; no silent fallback or repair-by-promotion."
+  },
+  "expected_outputs": [
+    "machine-readable 91-symbol frozen source map",
+    "per-symbol raw provenance hashes",
+    "per-symbol 33-day QA result",
+    "pass/fail counts and exact failed-symbol list",
+    "zero-credit boundary assertion"
+  ],
+  "credit_boundary": {
+    "source_admission_changed": false,
+    "complete_registry_claimed": false,
+    "collector_override_activation_allowed": false,
+    "d0_started": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
