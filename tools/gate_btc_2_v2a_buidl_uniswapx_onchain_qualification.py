@@ -24,7 +24,12 @@ def raw_call(rpc,method,params,retries=3):
             if obj.get('error'): raise RuntimeError(json.dumps(obj['error'],sort_keys=True))
             return raw,obj.get('result')
         except Exception as exc:
-            last=exc; time.sleep(min(4,2**n))
+            last=exc
+            # Bounded transport-only backoff. 1RPC demonstrably serves the same
+            # exact ledger query in <=50-block pages but can transiently return
+            # 503. No scientific/source/window semantics are altered here.
+            pause=min(20, 2**n) if rpc=='https://1rpc.io/eth' else min(4,2**n)
+            time.sleep(pause)
     raise RuntimeError(f'{type(last).__name__}:{last}')
 
 def choose_basic_rpc():
@@ -41,8 +46,9 @@ def call(method,params):
     global ACTIVE_RPC
     preferred=choose_basic_rpc(); ordered=(preferred,)+tuple(x for x in RPC_CANDIDATES if x!=preferred)
     for rpc in ordered:
+        tries=8 if rpc=='https://1rpc.io/eth' else 3
         try:
-            raw,res=raw_call(rpc,method,params,3); ACTIVE_RPC=rpc; return raw,res
+            raw,res=raw_call(rpc,method,params,tries); ACTIVE_RPC=rpc; return raw,res
         except Exception as exc:
             TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':method,'result':'FAIL','error':str(exc)})
     ACTIVE_RPC=None; raise RuntimeError(f'RPC_FAILED_ALL_TRANSPORTS:{method}')
@@ -58,30 +64,30 @@ def block_for(ts):
     return lo
 
 def get_logs_bounded(sb,eb):
-    """Read exact BUIDL Transfer logs while respecting each public RPC's immutable transport limit.
-
-    A transport that fails eth_getLogs once is retired for this capture. This prevents the
-    prior probe-success/log-failure loop from retrying the same non-progressing transport.
-    No source, chain, token, reactor, window or scientific rule changes here.
-    """
+    """Read exact BUIDL Transfer logs respecting each public RPC's transport limit."""
     global ACTIVE_RPC
-    logs=[]; hashes=[]; left=sb; retired=set()
+    logs=[]; hashes=[]; left=sb; permanently_retired=set()
     while left<=eb:
         progressed=False
-        order=tuple(x for x in RPC_CANDIDATES if x not in retired)
+        order=tuple(x for x in RPC_CANDIDATES if x not in permanently_retired)
         if not order: raise RuntimeError(f'ETH_GETLOGS_ALL_PUBLIC_TRANSPORTS_EXHAUSTED_AT_BLOCK:{left}')
         for rpc in order:
             step=50 if rpc=='https://1rpc.io/eth' else 10000
             right=min(eb,left+step-1)
+            tries=8 if rpc=='https://1rpc.io/eth' else 3
             try:
-                raw,res=raw_call(rpc,'eth_getLogs',[{'fromBlock':hex(left),'toBlock':hex(right),'address':BUIDL,'topics':[TRANSFER]}],3)
+                raw,res=raw_call(rpc,'eth_getLogs',[{'fromBlock':hex(left),'toBlock':hex(right),'address':BUIDL,'topics':[TRANSFER]}],tries)
                 hashes.append(hashlib.sha256(raw).hexdigest()); logs.extend(res or [])
                 TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':'eth_getLogs','from':left,'to':right,'result':'PASS'})
-                ACTIVE_RPC=rpc; left=right+1; progressed=True; break
+                ACTIVE_RPC=rpc; left=right+1; progressed=True
+                # Courtesy delay prevents public-RPC burst throttling while preserving
+                # exactly the same block window and query semantics.
+                if rpc=='https://1rpc.io/eth': time.sleep(0.35)
+                break
             except Exception as exc:
                 TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':'eth_getLogs','from':left,'to':right,'result':'FAIL','error':str(exc)})
-                retired.add(rpc)
-        if not progressed and len(retired)==len(RPC_CANDIDATES):
+                permanently_retired.add(rpc)
+        if not progressed and len(permanently_retired)==len(RPC_CANDIDATES):
             raise RuntimeError(f'ETH_GETLOGS_ALL_PUBLIC_TRANSPORTS_EXHAUSTED_AT_BLOCK:{left}')
     return logs,hashes
 
@@ -126,7 +132,7 @@ def main():
         error=str(exc); sb=eb=None; logs=[]; fills=[]; daily=[]; missing=[]; qa=False; status='FAIL_CLOSED_SOURCE_OR_PARSE'
     for name,obj in [('FILLS.json',fills),('DAILY_OHLCV.json',daily),('CANDIDATES.json',candidates),('TRANSPORT_ATTEMPTS.json',TRANSPORT_ATTEMPTS)]:
         (out/name).write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
-    summary={'schema_version':'GATE_BTC_2_V2A_BUIDL_UNISWAPX_ONCHAIN_QUALIFICATION_V4_FORWARD_PROGRESS','symbol':'BUIDL','provider':'UNISWAPX_ETHEREUM_DIRECT_CHAIN','ethereum_rpc_transport':ACTIVE_RPC,'rpc_transport_candidates':list(RPC_CANDIDATES),'transport_attempts':TRANSPORT_ATTEMPTS,'buidl_contract':BUIDL,'usdc_contract':USDC,'reactors':sorted(REACTORS),'start_block':sb,'end_block':eb,'buidl_transfer_logs':len(logs),'reactor_linked_candidates':len(candidates),'physical_fill_count':len(fills),'daily_bucket_count':len(daily),'missing_days':missing,'rpc_response_sha256':raw_hashes,'qa_pass':qa,'status':status,'error':error,'qualification_only':True,'source_admitted':False,'historical_credit':0,'scientific_credit':False,'prospective_credit':False,'d0_credit':0,'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders_generated':0,'real_capital_brl':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'no_silent_source_substitution':True,'fail_closed':True}
+    summary={'schema_version':'GATE_BTC_2_V2A_BUIDL_UNISWAPX_ONCHAIN_QUALIFICATION_V5_TRANSIENT_BACKOFF','symbol':'BUIDL','provider':'UNISWAPX_ETHEREUM_DIRECT_CHAIN','ethereum_rpc_transport':ACTIVE_RPC,'rpc_transport_candidates':list(RPC_CANDIDATES),'transport_attempts':TRANSPORT_ATTEMPTS,'buidl_contract':BUIDL,'usdc_contract':USDC,'reactors':sorted(REACTORS),'start_block':sb,'end_block':eb,'buidl_transfer_logs':len(logs),'reactor_linked_candidates':len(candidates),'physical_fill_count':len(fills),'daily_bucket_count':len(daily),'missing_days':missing,'rpc_response_sha256':raw_hashes,'qa_pass':qa,'status':status,'error':error,'qualification_only':True,'source_admitted':False,'historical_credit':0,'scientific_credit':False,'prospective_credit':False,'d0_credit':0,'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders_generated':0,'real_capital_brl':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'no_silent_source_substitution':True,'fail_closed':True}
     (out/'SUMMARY.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n'); print(json.dumps(summary,sort_keys=True)); return 0
 
 if __name__=='__main__': raise SystemExit(main())
