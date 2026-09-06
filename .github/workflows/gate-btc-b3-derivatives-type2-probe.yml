@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install probe dependency
-        run: python -m pip install requests
+        run: python -m pip install requests pytest
       - name: Test immutable fail-closed source boundary
         run: python -m pytest -q tests/test_gate_btc_b3_derivatives_type2_probe.py
       - name: Probe official derivatives type=2 surface
