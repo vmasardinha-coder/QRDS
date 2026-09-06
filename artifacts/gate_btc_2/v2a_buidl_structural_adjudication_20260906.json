@@ -1,0 +1,49 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_BUIDL_STRUCTURAL_ADJUDICATION_V1",
+  "date": "2026-09-06",
+  "symbol": "BUIDL",
+  "decision": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+  "rule": "APPROVED_STRUCTURAL_INELIGIBILITY_RULE_PR_536",
+  "evidence_chain": {
+    "final_discovery_pr": 568,
+    "public_orders_api_attempt_pr": 571,
+    "direct_chain_prereg_pr": 575,
+    "direct_chain_physical_pr": 581,
+    "exact_identity": {
+      "buidl_ethereum": "0x7712c34205737192402172409a8f7ccef8aa2aec",
+      "usdc_ethereum": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+    },
+    "final_physical_status": "FAIL_CLOSED_NO_PHYSICAL_UNISWAPX_FILLS",
+    "history_complete_to_before_start": true,
+    "indexed_buidl_transfer_count": 850,
+    "reactor_linked_candidates": 0,
+    "physical_fill_count": 0,
+    "daily_bucket_count": 0,
+    "requested_window": ["2026-08-04", "2026-09-05"],
+    "ledger_index_transport": "BLOCKSCOUT_PUBLIC_API_V2"
+  },
+  "rationale": "Materially distinct public routes were exhausted under the frozen exact-identity semantics. The public UniswapX orders route repeatedly failed operationally and the separately preregistered direct Ethereum ledger reconstruction was completed through public indexed chain data with no transport error, proving 850 BUIDL transfers in scope history but zero transactions linked to the frozen official UniswapX reactor set and zero exact BUIDL/USDC physical fills in the frozen window. Venue/RFQ availability alone is insufficient and NAV/oracle/mint/redemption are forbidden substitutes.",
+  "reentry_policy": "SEPARATELY_PREREGISTERED_FUTURE_ELIGIBILITY_ONLY_AFTER_MATERIALLY_NEW_EXACT_PUBLIC_AUDITABLE_EXECUTION_SOURCE",
+  "credit_boundary": {
+    "source_admitted": false,
+    "historical_universe_rewritten": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0,
+    "retroactive_d0": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
