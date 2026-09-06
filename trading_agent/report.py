@@ -28,7 +28,8 @@ def _money(value: float, cur: str) -> str:
 
 def _performance_table(state: dict, entry: dict, benchmark_name: str,
                        benchmark2_name: str | None, regime: str,
-                       regime_avaliado: bool = True) -> list[str]:
+                       regime_avaliado: bool = True,
+                       regime_fonte: str | None = None) -> list[str]:
     cur = state.get("currency", "USD")
     nav_now = entry["nav"]
     initial = state["initial_capital"]
@@ -68,7 +69,11 @@ def _performance_table(state: dict, entry: dict, benchmark_name: str,
             # sai e o mesmo de uma aprovacao. Dizer qual dos dois foi e a
             # diferenca entre um filtro e a aparencia de um filtro.
             estado = (f"{estado} — filtro NAO avaliado "
-                      f"(indice sem {config.SMA_REGIME_DAYS} pregoes)")
+                      f"(serie sem {config.SMA_REGIME_DAYS} pregoes)")
+        elif regime_fonte and regime_fonte != benchmark_name:
+            # Avaliado, mas noutra serie que nao a do benchmark. Quem le tem de
+            # saber que o numero do regime e o do alfa nao vem do mesmo sitio.
+            estado = f"{estado} — avaliado por proxy ({regime_fonte})"
         lines.append(f"| Regime | {estado} |")
     return lines
 
@@ -165,7 +170,8 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
     lines = [f"## {title}", ""]
     lines += _performance_table(state, entry, benchmark_name, benchmark2_name,
                                result.get("regime", "-"),
-                               result.get("regime_avaliado", True))
+                               result.get("regime_avaliado", True),
+                               result.get("regime_fonte"))
     lines.append("")
     lines += _positions_table(state, result["prices"], entry["nav"], cur)
 
