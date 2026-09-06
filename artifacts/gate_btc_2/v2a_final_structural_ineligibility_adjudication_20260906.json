@@ -1,0 +1,91 @@
+{
+  "schema_version":"GATE_BTC_2_V2A_STRUCTURAL_INELIGIBILITY_ADJUDICATION_V1",
+  "date":"2026-09-06",
+  "system":8,
+  "rule_reference":"artifacts/gate_btc_2/v2a_structural_ineligibility_rule_prereg_20260904.json",
+  "preregistration_reference":"artifacts/gate_btc_2/v2a_final_source_exhaustion_prereg_20260905.json",
+  "discovery_reference":"artifacts/gate_btc_2/v2a_final_source_discovery_20260906.json",
+  "status":"STRUCTURAL_INELIGIBILITY_ADJUDICATION_NO_CREDIT",
+  "adjudications":[
+    {
+      "symbol":"EURSAFO",
+      "coin_id":"spiko-amundi-overnight-swap-fund-eur",
+      "status":"STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "exact_route_exhaustion":[
+        "Spiko public API exposes exact fund/share-class/NAV data but not public spot execution history",
+        "Spiko documented order lifecycle executes subscriptions/redemptions on a daily schedule at fund NAV",
+        "investor transaction/order history is authenticated and therefore not a free public auditable spot tape",
+        "no materially distinct exact public secondary execution venue was established in bounded source discovery"
+      ],
+      "evidence":[
+        "https://docs.spiko.io/embedded/distributor_api_recipes/order_lifecycle/",
+        "https://docs.spiko.io/direct/recipes/available_products/"
+      ]
+    },
+    {
+      "symbol":"EUTBL",
+      "coin_id":"eutbl",
+      "status":"STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "exact_route_exhaustion":[
+        "Spiko public API exposes exact EUTBL share-class/NAV data but not public spot execution history",
+        "documented EUTBL orders execute once per business day at fund NAV rather than on a public spot tape",
+        "investor transaction/order history is authenticated and therefore not a free public auditable execution history",
+        "no materially distinct exact public secondary execution venue was established in bounded source discovery"
+      ],
+      "evidence":[
+        "https://docs.spiko.io/embedded/distributor_api_recipes/order_lifecycle/",
+        "https://docs.spiko.io/direct/recipes/available_products/"
+      ]
+    },
+    {
+      "symbol":"JTRSY",
+      "coin_id":"janus-henderson-anemoy-treasury-fund",
+      "status":"STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "exact_route_exhaustion":[
+        "exact JTRSY fund supports subscription/redemption and instant USDC liquidity facilities but no free public auditable exact spot execution tape was established",
+        "recent Fission/Symbiotic liquidity is fund-liquidity/redemption infrastructure rather than a reproducible public spot OHLCV tape",
+        "freely transferable deJTRSY is a separately issued wrapper identity and is forbidden as a substitute by the frozen source semantics"
+      ],
+      "evidence":[
+        "https://centrifuge.io/blog/symbiotic-centrifuge",
+        "https://centrifuge.io/blog/fission-centrifuge",
+        "https://docs.centrifuge.io/developer/protocol/deployments/"
+      ]
+    },
+    {
+      "symbol":"JAAA",
+      "coin_id":"janus-henderson-anemoy-aaa-clo-fund",
+      "status":"STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+      "exact_route_exhaustion":[
+        "exact JAAA fund supports fund liquidity/redemption and institutional onchain integrations but no free public auditable exact spot execution tape was established",
+        "recent Fission/Symbiotic liquidity is fund-liquidity/redemption infrastructure rather than a reproducible public spot OHLCV tape",
+        "freely transferable deJAAA is a separately issued wrapper identity and is forbidden as a substitute by the frozen source semantics",
+        "ticker-sharing unrelated securities are forbidden identity substitutes"
+      ],
+      "evidence":[
+        "https://centrifuge.io/blog/symbiotic-centrifuge",
+        "https://centrifuge.io/blog/fission-centrifuge",
+        "https://docs.centrifuge.io/developer/protocol/deployments/"
+      ]
+    }
+  ],
+  "future_d0_denominator_effect_only":true,
+  "historical_universe_rewritten":false,
+  "source_admission_performed":false,
+  "historical_credit":0,
+  "scientific_credit":false,
+  "prospective_credit":false,
+  "d0_credit":0,
+  "reentry_requires_separate_preregistration":true,
+  "research_only":true,
+  "shadow_only":true,
+  "not_approved":true,
+  "engine_feed":false,
+  "orders":0,
+  "real_capital_brl":0,
+  "no_retune":true,
+  "no_backfill":true,
+  "no_counter_reset":true,
+  "no_silent_source_substitution":true,
+  "fail_closed":true
+}
