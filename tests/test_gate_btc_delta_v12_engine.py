@@ -561,3 +561,54 @@ class WarmupTests(EngineRunMixin, unittest.TestCase):
         for earlier, later in zip(booked, booked[1:]):
             self.assertEqual(
                 (date.fromisoformat(later) - date.fromisoformat(earlier)).days, 1)
+
+
+class CommandLineTests(EngineRunMixin, unittest.TestCase):
+    """main() is the production entry point and must be exercised as one.
+
+    Run 33915818743 failed with KeyError: 'universe_size' because a STATUS field
+    was renamed and main()'s summary list was not. Every test called run()
+    directly, so nothing caught it until it ran for real.
+    """
+
+    def test_every_summary_key_exists_in_status(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            status = self.run_engine(root, price_panel(days=70))
+        for key in engine.SUMMARY_KEYS:
+            self.assertIn(key, status, key)
+
+    def test_main_runs_end_to_end_and_prints_the_summary(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            prices, universe = write_inputs(root, price_panel(days=70))
+            code = engine.main([
+                "--prices-csv", str(prices),
+                "--universe-csv", str(universe),
+                "--contract", str(CONTRACT),
+                "--out-dir", str(root / "ledger"),
+                "--run-id", "cli",
+            ])
+        self.assertEqual(code, 0)
+
+    def test_main_accepts_a_funding_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            prices, universe = write_inputs(root, price_panel(days=70))
+            funding = root / "FUNDING_DAILY.csv"
+            with funding.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=[
+                    "date", "symbol", "venue", "funding_rate", "events"])
+                writer.writeheader()
+                for base in BASES:
+                    writer.writerow({"date": "2026-09-01", "symbol": base,
+                                     "venue": "OKX_SWAP", "funding_rate": 0.0001,
+                                     "events": 3})
+            code = engine.main([
+                "--prices-csv", str(prices),
+                "--universe-csv", str(universe),
+                "--contract", str(CONTRACT),
+                "--out-dir", str(root / "ledger"),
+                "--funding-csv", str(funding),
+            ])
+        self.assertEqual(code, 0)

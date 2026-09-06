@@ -917,7 +917,19 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     return status
 
 
-def main() -> int:
+# What a run prints. Kept as a named constant so a test can assert every key
+# exists in STATUS: a rename that misses this list crashes only in production,
+# which is exactly how run 33915818743 failed.
+SUMMARY_KEYS = (
+    "status", "anchor_date", "data_as_of", "observed_days", "universe_size_today",
+    "priced_assets_including_dropouts", "membership_days_recorded",
+    "warmup_days_not_booked", "first_booked_date", "warmup_longer_than_designed",
+    "anchor_established_this_run", "funding_model", "funding_covered_symbols",
+    "latest_chain_sha256",
+)
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prices-csv", type=Path, required=True)
     parser.add_argument("--universe-csv", type=Path, required=True)
@@ -927,12 +939,10 @@ def main() -> int:
     parser.add_argument("--run-id", default="")
     parser.add_argument("--funding-csv", type=Path, default=None,
                         help="FUNDING_DAILY.csv; omitted means funding is booked as zero")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     status = run(args.prices_csv, args.universe_csv, args.contract, args.out_dir,
                  args.run_id, args.funding_csv)
-    print(json.dumps({k: status[k] for k in (
-        "status", "anchor_date", "data_as_of", "observed_days", "universe_size",
-        "anchor_established_this_run", "funding_model", "latest_chain_sha256")}, indent=2, sort_keys=True))
+    print(json.dumps({k: status[k] for k in SUMMARY_KEYS}, indent=2, sort_keys=True))
     return 0
 
 
