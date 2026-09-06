@@ -1,0 +1,51 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_USDGO_STRUCTURAL_ADJUDICATION_V1",
+  "date": "2026-09-06",
+  "symbol": "USDGO",
+  "decision": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+  "rule": "APPROVED_STRUCTURAL_INELIGIBILITY_RULE_PR_536",
+  "evidence_chain": {
+    "first_exact_route_prereg_pr": 542,
+    "first_exact_route_physical_pr": 547,
+    "first_exact_route_adjudication_pr": 552,
+    "first_exact_route": "KRAKEN:USDGO/USD",
+    "first_exact_route_status": "FAIL_CLOSED_FULL_CORPUS_QA",
+    "materially_distinct_osl_prereg_pr": 593,
+    "materially_distinct_osl_physical_pr": 596,
+    "second_exact_route": "OSL_GLOBAL_PRO_TRADE:USDGO/USD",
+    "osl_exact_pair_publicly_resolved": true,
+    "osl_instrument_http_status": 200,
+    "osl_public_historical_execution_tape_resolved": false,
+    "osl_transaction_history_http_status": 403,
+    "required_daily_buckets": 33,
+    "daily_bucket_count": 0,
+    "missing_days_count": 33,
+    "frozen_window": ["2026-08-03", "2026-09-04"],
+    "final_physical_status": "FAIL_CLOSED_NO_PUBLIC_HISTORICAL_EXECUTION_TAPE",
+    "osl_physical_artifact_digest_sha256": "61efa64c4b1ca422444ae29e77169dac534e46c71601d6856347947434e46953"
+  },
+  "rationale": "Two materially distinct exact public venue routes were exhausted under the frozen source semantics. The preregistered Kraken USDGO/USD route reached the exact market but failed the complete frozen 33-day corpus QA. The separately preregistered OSL Global Pro Trade USDGO/USD route physically resolved the exact current market through the public instrument catalog, while the tested historical transaction surface returned HTTP 403 and no free/public/auditable historical venue execution tape sufficient to reconstruct the frozen 33 UTC daily buckets was available. Live/current market data and authenticated account transaction history cannot substitute for public historical execution OHLCV.",
+  "reentry_policy": "SEPARATELY_PREREGISTERED_FUTURE_ELIGIBILITY_ONLY_AFTER_MATERIALLY_NEW_EXACT_PUBLIC_AUDITABLE_HISTORICAL_EXECUTION_SOURCE",
+  "credit_boundary": {
+    "source_admitted": false,
+    "historical_universe_rewritten": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0,
+    "retroactive_d0": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
