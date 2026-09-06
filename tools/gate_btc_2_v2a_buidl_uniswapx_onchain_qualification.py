@@ -31,7 +31,6 @@ def call(method,params):
  rpc=select_rpc()
  try:return raw_call(rpc,method,params,3)
  except Exception as first:
-  # Same public Ethereum ledger, same frozen query. Rotate transport only; never source/identity/semantics.
   global ACTIVE_RPC; TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':method,'result':'FAIL','error':str(first)}); ACTIVE_RPC=None
   for alt in RPC_CANDIDATES:
    if alt==rpc:continue
@@ -43,19 +42,31 @@ def block(n): _,x=call('eth_getBlockByNumber',[hex(n),False]); return x
 def block_for(ts):
  _,latest=call('eth_blockNumber',[]); lo,hi=1,int(latest,16)
  while lo<hi:
-  mid=(lo+hi)//2; bt=int(block(mid)['timestamp'],16); lo=mid+1 if bt<ts else lo; hi=hi if bt<ts else mid
+  mid=(lo+hi)//2; bt=int(block(mid)['timestamp'],16)
+  if bt<ts: lo=mid+1
+  else: hi=mid
  return lo
 def topic_addr(t): return '0x'+str(t)[-40:].lower()
 def decode_transfer(log):
  if len(log.get('topics') or [])<3:return None
  try:return {'token':str(log['address']).lower(),'from':topic_addr(log['topics'][1]),'to':topic_addr(log['topics'][2]),'amount':int(log['data'],16)}
  except Exception:return None
+def get_logs_bounded(sb,eb):
+ global ACTIVE_RPC
+ logs=[]; hashes=[]; left=sb
+ while left<=eb:
+  rpc=select_rpc(); step=50 if rpc=='https://1rpc.io/eth' else 10000; right=min(eb,left+step-1)
+  try:
+   raw,res=raw_call(rpc,'eth_getLogs',[{'fromBlock':hex(left),'toBlock':hex(right),'address':BUIDL,'topics':[TRANSFER]}],3)
+   TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':'eth_getLogs','from':left,'to':right,'result':'PASS'})
+  except Exception as e:
+   TRANSPORT_ATTEMPTS.append({'rpc':rpc,'method':'eth_getLogs','from':left,'to':right,'result':'FAIL','error':str(e)}); ACTIVE_RPC=None; continue
+  hashes.append(hashlib.sha256(raw).hexdigest()); logs.extend(res or []); left=right+1
+ return logs,hashes
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--output-dir',type=Path,required=True);a=ap.parse_args();out=a.output_dir;out.mkdir(parents=True,exist_ok=True);error=None;candidates=[];fills=[];raw_hashes=[]
  try:
-  s_ts=int(datetime.combine(START,datetime.min.time(),tzinfo=timezone.utc).timestamp());e_ts=int(datetime.combine(END+timedelta(days=1),datetime.min.time(),tzinfo=timezone.utc).timestamp())-1;sb=block_for(s_ts);eb=block_for(e_ts);logs=[]
-  for left in range(sb,eb+1,10000):
-   right=min(eb,left+9999);raw,res=call('eth_getLogs',[{'fromBlock':hex(left),'toBlock':hex(right),'address':BUIDL,'topics':[TRANSFER]}]);raw_hashes.append(hashlib.sha256(raw).hexdigest());logs.extend(res or [])
+  s_ts=int(datetime.combine(START,datetime.min.time(),tzinfo=timezone.utc).timestamp());e_ts=int(datetime.combine(END+timedelta(days=1),datetime.min.time(),tzinfo=timezone.utc).timestamp())-1;sb=block_for(s_ts);eb=block_for(e_ts);logs,log_hashes=get_logs_bounded(sb,eb);raw_hashes.extend(log_hashes)
   for h in sorted({str(x.get('transactionHash')) for x in logs if x.get('transactionHash')}):
    rr,rec=call('eth_getTransactionReceipt',[h]);rt,tx=call('eth_getTransactionByHash',[h]);raw_hashes += [hashlib.sha256(rr).hexdigest(),hashlib.sha256(rt).hexdigest()]
    if not rec or rec.get('status')!='0x1':continue
@@ -77,5 +88,5 @@ def main():
   qa=bool(fills) and len(daily)==33 and not missing and all(x['low']<=min(x['open'],x['close'])<=max(x['open'],x['close'])<=x['high'] for x in daily);status='QUALIFIED_PHYSICAL_SOURCE_PENDING_SEPARATE_ADJUDICATION' if qa else ('FAIL_CLOSED_NO_PHYSICAL_UNISWAPX_FILLS' if not fills else 'FAIL_CLOSED_FULL_CORPUS_QA')
  except Exception as e:error=str(e);sb=eb=None;logs=[];fills=[];daily=[];missing=[];qa=False;status='FAIL_CLOSED_SOURCE_OR_PARSE'
  for name,obj in [('FILLS.json',fills),('DAILY_OHLCV.json',daily),('CANDIDATES.json',candidates),('TRANSPORT_ATTEMPTS.json',TRANSPORT_ATTEMPTS)]: (out/name).write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
- s={'schema_version':'GATE_BTC_2_V2A_BUIDL_UNISWAPX_ONCHAIN_QUALIFICATION_V2_TRANSPORT_EXHAUSTION','symbol':'BUIDL','provider':'UNISWAPX_ETHEREUM_DIRECT_CHAIN','ethereum_rpc_transport':ACTIVE_RPC,'rpc_transport_candidates':list(RPC_CANDIDATES),'transport_attempts':TRANSPORT_ATTEMPTS,'buidl_contract':BUIDL,'usdc_contract':USDC,'reactors':sorted(REACTORS),'start_block':sb,'end_block':eb,'buidl_transfer_logs':len(logs),'reactor_linked_candidates':len(candidates),'physical_fill_count':len(fills),'daily_bucket_count':len(daily),'missing_days':missing,'rpc_response_sha256':raw_hashes,'qa_pass':qa,'status':status,'error':error,'qualification_only':True,'source_admitted':False,'historical_credit':0,'scientific_credit':False,'prospective_credit':False,'d0_credit':0,'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders_generated':0,'real_capital_brl':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'no_silent_source_substitution':True,'fail_closed':True};(out/'SUMMARY.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n');print(json.dumps(s,sort_keys=True));return 0
+ s={'schema_version':'GATE_BTC_2_V2A_BUIDL_UNISWAPX_ONCHAIN_QUALIFICATION_V3_BOUNDED_LOG_PAGINATION','symbol':'BUIDL','provider':'UNISWAPX_ETHEREUM_DIRECT_CHAIN','ethereum_rpc_transport':ACTIVE_RPC,'rpc_transport_candidates':list(RPC_CANDIDATES),'transport_attempts':TRANSPORT_ATTEMPTS,'buidl_contract':BUIDL,'usdc_contract':USDC,'reactors':sorted(REACTORS),'start_block':sb,'end_block':eb,'buidl_transfer_logs':len(logs),'reactor_linked_candidates':len(candidates),'physical_fill_count':len(fills),'daily_bucket_count':len(daily),'missing_days':missing,'rpc_response_sha256':raw_hashes,'qa_pass':qa,'status':status,'error':error,'qualification_only':True,'source_admitted':False,'historical_credit':0,'scientific_credit':False,'prospective_credit':False,'d0_credit':0,'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders_generated':0,'real_capital_brl':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'no_silent_source_substitution':True,'fail_closed':True};(out/'SUMMARY.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n');print(json.dumps(s,sort_keys=True));return 0
 if __name__=='__main__':raise SystemExit(main())
