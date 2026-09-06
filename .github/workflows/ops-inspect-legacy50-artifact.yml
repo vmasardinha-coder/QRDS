@@ -1,0 +1,24 @@
+name: OPS Inspect Legacy50 Artifact
+
+on:
+  push:
+    branches:
+      - ops-inspect-legacy50-artifact-20260906
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect canonical qualification artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/9991028302/zip" > r.zip
+          mkdir r && unzip -q r.zip -d r
+          jq -c '.[] | select(.symbol=="AVAX" or .symbol=="BTT" or .symbol=="DCR" or .symbol=="FIL" or .symbol=="JST" or .symbol=="POL" or .symbol=="SUN" or .symbol=="UNI" or .symbol=="XMR" or .symbol=="XRP") | {symbol,status,coingecko_exact_market_bridge,official_identity_ok,qa_pass,daily_bucket_count,missing_days,error}' r/RESULTS.json
