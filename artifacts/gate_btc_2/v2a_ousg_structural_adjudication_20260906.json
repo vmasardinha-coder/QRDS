@@ -1,0 +1,56 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_STRUCTURAL_INELIGIBILITY_ADJUDICATION_V1",
+  "date": "2026-09-06",
+  "system": 8,
+  "symbol": "OUSG",
+  "coin_id": "ousg",
+  "preregistration_pr": 544,
+  "bounded_discovery_pr": 568,
+  "rule_reference_pr": 536,
+  "candidate_provider": "ASSETERA_REGULATED_SECONDARY_MARKET",
+  "exact_market": "OUSG/USDC",
+  "public_market_evidence": {
+    "marketplace_url": "https://marketplace.assetera.com/en",
+    "market_type": "OTC / Secondary",
+    "access_type": "Realtime",
+    "public_surface_observed": [
+      "exact OUSG/USDC listing",
+      "buy/sell availability",
+      "24h change field",
+      "24h volume field"
+    ],
+    "public_surface_not_established": [
+      "free/public/auditable historical execution tape",
+      "reproducible trade-by-trade history",
+      "reproducible UTC daily execution OHLCV"
+    ],
+    "current_display_observation": "24h change and 24h volume are shown as em-dash on the public marketplace surface",
+    "generic_market_existence_is_not_source_qualification": true
+  },
+  "adjudication": {
+    "status": "STRUCTURALLY_INELIGIBLE_CURRENT_EPOCH",
+    "reason": "Exact OUSG/USDC secondary market exists, but the bounded public route search did not establish a free/public/auditable execution-history surface from which exact physical trades and UTC daily OHLCV can be reproduced. Listing/realtime access alone is insufficient under the frozen source contract.",
+    "future_d0_denominator_excluded": true,
+    "historical_universe_rewritten": false,
+    "source_admitted": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0,
+    "reentry_requires_separate_preregistration": true,
+    "reentry_condition": "materially new exact free/public/auditable OUSG execution-history source"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
