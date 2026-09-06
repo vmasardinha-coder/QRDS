@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, json, urllib.parse, urllib.request
+import argparse, hashlib, json, time, urllib.parse, urllib.request
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -13,9 +13,16 @@ START=END-timedelta(days=32)
 UA='QRDS-GateBTC2-ResearchOnly/1'
 
 
-def req(url:str)->bytes:
-    r=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':UA})
-    with urllib.request.urlopen(r,timeout=90) as resp:return resp.read()
+def req(url:str,retries:int=5)->bytes:
+    last=None
+    for n in range(retries):
+        try:
+            r=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':UA})
+            with urllib.request.urlopen(r,timeout=90) as resp:return resp.read()
+        except Exception as exc:
+            last=exc
+            if n+1<retries: time.sleep(min(16,2**n))
+    raise RuntimeError(f'UNISWAPX_REQUEST_FAILED_AFTER_{retries}_ATTEMPTS:{last}')
 
 def sha(raw:bytes)->str:return hashlib.sha256(raw).hexdigest()
 def norm(a:str)->str:return str(a or '').lower()
