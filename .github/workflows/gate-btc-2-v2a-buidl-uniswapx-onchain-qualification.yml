@@ -1,0 +1,39 @@
+name: GATE BTC 2 V2A BUIDL UniswapX Onchain Qualification
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_buidl_uniswapx_onchain_qualification.py
+      - .github/workflows/gate-btc-2-v2a-buidl-uniswapx-onchain-qualification.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify-buidl-uniswapx-onchain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualifier
+        run: python -m py_compile tools/gate_btc_2_v2a_buidl_uniswapx_onchain_qualification.py
+      - name: Capture exact direct-chain BUIDL UniswapX evidence
+        run: python tools/gate_btc_2_v2a_buidl_uniswapx_onchain_qualification.py --output-dir artifacts/gate_btc_2/buidl_uniswapx_onchain_qualification
+      - name: Assert zero-credit qualification boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/buidl_uniswapx_onchain_qualification/SUMMARY.json'))
+          assert d['qualification_only'] and d['source_admitted'] is False
+          assert d['historical_credit']==0 and d['scientific_credit'] is False and d['prospective_credit'] is False and d['d0_credit']==0
+          assert d['research_only'] and d['shadow_only'] and d['not_approved'] and d['fail_closed']
+          assert d['engine_feed'] is False and d['orders_generated']==0 and d['real_capital_brl']==0
+          assert d['no_retune'] and d['no_backfill'] and d['no_counter_reset'] and d['no_silent_source_substitution']
+          print('BUIDL_UNISWAPX_ONCHAIN_BOUNDARY=PASS_ZERO_CREDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-buidl-uniswapx-onchain-${{ github.run_id }}
+          path: artifacts/gate_btc_2/buidl_uniswapx_onchain_qualification/
+          retention-days: 30
+          if-no-files-found: error
