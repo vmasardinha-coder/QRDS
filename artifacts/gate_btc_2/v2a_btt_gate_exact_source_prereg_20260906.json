@@ -1,0 +1,66 @@
+{
+  "schema_version": "GATE_BTC_2_V2A_BTT_GATE_EXACT_SOURCE_PREREG_V1",
+  "date": "2026-09-06",
+  "epoch_id": "GATE_BTC_2_V2A_PROSPECTIVE_EPOCH_2026_09_03",
+  "purpose": "Pre-register one materially distinct exact public execution route for the sole residual BTT after merged #608 mechanically retried the nine Binance qualifications and left BTT unresolved.",
+  "parent_evidence": {
+    "pr": 608,
+    "workflow_run": 34039262131,
+    "artifact_id": 9991199275,
+    "parent_status": "UNRESOLVED_AFTER_BINANCE_MECHANICAL_RETRY",
+    "frozen_coin_identity_must_be_read_from_parent_artifact": true
+  },
+  "candidate_source": {
+    "provider": "GATE_SPOT",
+    "venue": "Gate",
+    "source_symbol": "BTT_USDT",
+    "market_type": "SPOT",
+    "identity_policy": "EXACT_PARENT_COIN_ID_TO_GATE_BTT_USDT_ONLY",
+    "public_api_base": "https://api.gateio.ws/api/v4",
+    "instrument_surface": "/spot/currency_pairs",
+    "candlestick_surface": "/spot/candlesticks",
+    "trade_surface": "/spot/trades",
+    "authentication_required": false,
+    "observed_execution_data_only": true
+  },
+  "frozen_qualification": {
+    "window_start_utc": "2026-08-04",
+    "window_end_utc": "2026-09-05",
+    "required_daily_buckets": 33,
+    "timezone": "UTC",
+    "exact_parent_coin_identity_binding_required": true,
+    "official_instrument_identity_required": true,
+    "raw_public_bytes_sha256_required": true,
+    "monotonic_daily_dates_required": true,
+    "duplicate_days_allowed": false,
+    "missing_days_allowed": false,
+    "finite_numeric_ohlc_required": true,
+    "route_switch_after_result": false,
+    "symbol_substitution_forbidden": true,
+    "BTTC_substitution_forbidden": true,
+    "nav_oracle_mint_redeem_forbidden": true,
+    "authenticated_history_as_sole_evidence_forbidden": true
+  },
+  "credit_boundary": {
+    "source_admission_changed": false,
+    "complete_registry_claimed": false,
+    "d0_started": false,
+    "historical_credit": 0,
+    "scientific_credit": false,
+    "prospective_credit": false,
+    "d0_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
