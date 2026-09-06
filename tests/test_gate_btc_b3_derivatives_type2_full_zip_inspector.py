@@ -42,7 +42,9 @@ class Session:
 
 def test_full_zip_detects_win_but_never_opens_gate():
     raw = make_zip("Ticker;Price;Qty;Time\nWINV26;140000;1;101500000\nPETR4;32;10;101501000\n")
-    result = mod.inspect(Session(raw), "2026-09-04")
+    session = Session(raw)
+    result = mod.inspect(session, "2026-09-04")
+    assert session.urls == ["https://arquivos.b3.com.br/rapinegocios/tickercsv/2026-09-04?type=2"]
     assert result["exact_win_identity_observed_in_payload"] is True
     assert result["win_symbols"] == ["WINV26"]
     assert result["schema_surface_observed"] is True
@@ -52,7 +54,6 @@ def test_full_zip_detects_win_but_never_opens_gate():
     assert result["prospective_credit"] == 0
     assert result["economics_read"] is False
     assert result["full_161_session_coverage_proven"] is False
-    assert "?type=2" in Session(raw).get if False else True
     s = result["safety"]
     assert s["research_only"] and s["shadow_only"] and s["not_approved"] and s["fail_closed"]
     assert s["engine_feed"] is False and s["orders"] == 0 and s["real_capital"] == 0
