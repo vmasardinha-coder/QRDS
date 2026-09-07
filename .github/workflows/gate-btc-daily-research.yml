@@ -16,6 +16,9 @@ on:
       - .github/workflows/gate-btc-daily-fallback.yml
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
+      - tools/gate_btc_2_v2a_registry_prospective_pit.py
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
       - tests/test_gate_btc_lock_valuation_sidecar.py
@@ -32,9 +35,12 @@ on:
       - migration/gateway/**
       - migration/reporting/**
   push:
-    branches: [agent/gate-btc-actions-migration]
+    branches: [agent/gate-btc-actions-migration, main]
     paths:
       - .github/workflows/gate-btc-daily-research.yml
+      - tools/gate_btc_2_v2a_registry_prospective_pit.py
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
@@ -95,6 +101,7 @@ jobs:
           tests/test_gate_btc_daily_research.py
           tests/test_gate_btc_shadow_delivery.py
           tests/test_gate_btc_lock_valuation_sidecar.py
+          tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - name: Resolve most recent completed UTC close
         env:
           REQUESTED_CUTOFF: ${{ inputs.data_cutoff || '' }}
@@ -119,6 +126,12 @@ jobs:
           --public-data
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
+      - name: Collect registry-driven prospective V2A PIT
+        run: >-
+          python tools/gate_btc_2_v2a_registry_prospective_pit.py
+          --registry tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --output-dir artifacts/prospective_v2a
+          --run-id "$GITHUB_RUN_ID"
       - name: Freeze exact active-holding LOCK valuation closes
         run: >-
           python tools/gate_btc_lock_valuation_sidecar.py
@@ -215,18 +228,25 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Publish deterministic pointer to runtime branch
+      - name: Publish deterministic pointer and prospective PIT to runtime branch
         run: |
           set -euo pipefail
           test -f daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          test -f daily_evidence/prospective_v2a/STATUS.json
+          test -f daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json
           git -C runtime_repo config user.name "gate-btc-actions"
           git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
           mkdir -p runtime_repo/runtime
           cp daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          mkdir -p runtime_repo/runtime/data_quality/v2a/snapshots runtime_repo/runtime/data_quality/v2a/archives
+          cp daily_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a/STATUS.json
+          cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a/QUALIFIED_SOURCE_REGISTRY.json
+          cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a/snapshots/
+          cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a/archives/
+          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime/data_quality/v2a
           if git -C runtime_repo diff --cached --quiet; then
-            echo "Runtime pointer already current"
+            echo "Runtime pointer and prospective PIT already current"
           else
-            git -C runtime_repo commit -m "Update latest eligible GATE BTC run pointer"
+            git -C runtime_repo commit -m "Update GATE BTC runtime pointer and prospective V2A PIT"
             git -C runtime_repo push origin HEAD:gate-btc-runtime
           fi

@@ -17,6 +17,10 @@ on:
       - tests/test_gate_btc_2_prospective_dataset_epoch_cutover.py
       - tests/test_gate_btc_2_item2_checkpoint4_decision.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+    branches: [main]
   schedule:
     # Daily collection starts at 00:15 UTC and has historically published its
     # runtime pointer around 02:00 UTC. This assessment follows it and reuses
@@ -52,6 +56,7 @@ env:
 
 jobs:
   readiness-contract:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
