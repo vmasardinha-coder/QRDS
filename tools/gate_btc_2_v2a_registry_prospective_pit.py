@@ -53,10 +53,10 @@ def _get(url: str, retries: int = 3) -> bytes:
             if exc.code == 429:
                 retry_after = exc.headers.get("Retry-After") if exc.headers else None
                 try:
-                    delay = float(retry_after) if retry_after is not None else 2.0 * (n + 1)
+                    delay = float(retry_after) if retry_after is not None else 5.0 * (2 ** n)
                 except ValueError:
-                    delay = 2.0 * (n + 1)
-                time.sleep(min(max(delay, 1.0), 30.0))
+                    delay = 5.0 * (2 ** n)
+                time.sleep(min(max(delay, 2.0), 45.0))
             else:
                 time.sleep(1.5 * (n + 1))
         except Exception as exc:  # fail-closed after bounded retries
@@ -115,7 +115,10 @@ def _probe(entry: dict[str, Any], now: datetime) -> tuple[str, bytes]:
             f"https://api.geckoterminal.com/api/v2/networks/{urllib.parse.quote(network, safe='')}/pools/{urllib.parse.quote(pool, safe='')}/ohlcv/day",
             {"aggregate": 1, "limit": 2, "currency": "usd"},
         )
-        return u, _get(u, retries=6)
+        # Mechanical transport pacing only: keep the exact frozen pool/source,
+        # but stay below burst limits and back off boundedly on HTTP 429.
+        time.sleep(2.5)
+        return u, _get(u, retries=8)
     if upper.startswith("DERIBIT_SPOT"):
         end_ms = int(now.timestamp() * 1000)
         start_ms = int((now - timedelta(days=3)).timestamp() * 1000)
