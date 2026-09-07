@@ -18,6 +18,8 @@ on:
       - tools/gate_btc_shadow_delivery.py
       - tools/gate_btc_2_v2a_registry_prospective_pit.py
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
+      - tools/gate_btc_2_v2a_apply_registry_amendment.py
       - tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
@@ -40,6 +42,8 @@ on:
       - .github/workflows/gate-btc-daily-research.yml
       - tools/gate_btc_2_v2a_registry_prospective_pit.py
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
+      - tools/gate_btc_2_v2a_apply_registry_amendment.py
       - tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
@@ -126,10 +130,16 @@ jobs:
           --public-data
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
+      - name: Materialize admitted MEXC4 registry amendment
+        run: >-
+          python tools/gate_btc_2_v2a_apply_registry_amendment.py
+          --base tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
+          --out artifacts/prospective_v2a_runtime_registry.json
       - name: Collect registry-driven prospective V2A PIT
         run: >-
           python tools/gate_btc_2_v2a_registry_prospective_pit.py
-          --registry tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --registry artifacts/prospective_v2a_runtime_registry.json
           --output-dir artifacts/prospective_v2a
           --run-id "$GITHUB_RUN_ID"
       - name: Freeze exact active-holding LOCK valuation closes
