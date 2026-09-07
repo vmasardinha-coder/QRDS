@@ -1,0 +1,92 @@
+{
+  "schema": "gate_btc.b3.v3.tradeintraday_origin_evidence.v1",
+  "as_of_date": "2026-09-07",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "runtime_precondition": "WAITING_OFFICIAL_TICK_SOURCE",
+  "purpose": "Narrow official/free historical source discovery without changing the frozen source gate, family grammar, economics, clocks, thresholds or evidence credit.",
+  "official_evidence": [
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_SCHEMA_AND_PUBLICATION_SEMANTICS",
+      "name": "Glossario - Negocio a negocio - Listados",
+      "url": "https://www.b3.com.br/data/files/14/42/28/31/FEC4A8103234E0A8AC094EA8/Glossario_NegociosListados_PT.pdf",
+      "document_date": "2023-05-15",
+      "provenance": "B3 public Data/Public glossary linked from the official B3 glossary page",
+      "physical_payload_sha256": null,
+      "hash_status": "NOT_CAPTURED_IN_THIS_DISCOVERY_STEP_DO_NOT_CREDIT_AS_PHYSICAL_ARCHIVE",
+      "schema": {
+        "file_identity": "DD-MM-AAAA_NEGOCIOSAVISTA (TradeIntradayFile)",
+        "container": "ZIP containing TXT",
+        "fields": [
+          "DataReferencia/ReportDate",
+          "CodigoInstrumento/TickerSymbol",
+          "AcaoAtualizacao/UpdateAction",
+          "PrecoNegocio/GrossTradeAmount",
+          "QuantidadeNegociada/TradeQuantity",
+          "HoraFechamento/EntryTime",
+          "CodigoIdentificadorNegocio/TradeIdentification",
+          "TipoSessaoPregao/TradingSessionIdentification",
+          "DataNegocio/TradeDate",
+          "CodigoParticipanteComprador/BuyerParticipantCode",
+          "CodigoParticipanteVendedor/SellerParticipantCode"
+        ]
+      },
+      "timezone_semantics": "EntryTime explicitly UTC-3 in the official glossary",
+      "publication_semantics": "Prior trading day's trade-by-trade file published the following morning",
+      "coverage_evidence": "Glossary change log states initial version January/2020; this proves the schema/service lineage existed by 2020, but does not prove free physical payload retention for every required 2020-2024 session.",
+      "qualifies_required_2020_2024_physical_coverage": false
+    },
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_MIGRATION_AUTHORITY",
+      "name": "Comunicado Externo 007/2025-VTEC",
+      "url": "https://www.b3.com.br/data/files/28/C7/3A/11/33F7A9105B12E5A9AC094EA8/CE%20007-2025-VTEC%20MELHORIAS%20NO%20ACESSO%20AOS%20DADOS%20NO%20SITE%20B3_PT.pdf",
+      "provenance": "B3 official external communication",
+      "physical_payload_sha256": null,
+      "hash_status": "NOT_CAPTURED_IN_THIS_DISCOVERY_STEP",
+      "schema": "Migration mapping document",
+      "timezone_semantics": "N/A",
+      "coverage_evidence": "Annex maps the legacy Public Data archive item 'Negocio a Negocio - Listados' to the new BDM Derivativos > Derivativos de bolsa > Negocio a negocio table. This establishes lineage: the BDM table is a migrated successor of the legacy Public Data file, not evidence that pre-migration BDM PDFs themselves contain the required tick history.",
+      "qualifies_required_2020_2024_physical_coverage": false
+    },
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_MIGRATION_AUTHORITY",
+      "name": "Comunicado Externo 001/2026-VTEC / B3 current BDI notice",
+      "url": "https://www.b3.com.br/data/files/24/92/1D/71/773CB9109B5E99B9AC094EA8/CE%20001-2026-VTEC_NOVA%20DATA%20PARA%20DESCONTINUACAO%20DA%20PAGINA%20DE%20DADOS%20PUBLICOS_PT.pdf",
+      "provenance": "B3 official external communication and current BDI notice",
+      "physical_payload_sha256": null,
+      "hash_status": "NOT_CAPTURED_IN_THIS_DISCOVERY_STEP",
+      "schema": "Migration mapping document",
+      "timezone_semantics": "N/A",
+      "coverage_evidence": "B3 states that the migration of Public Data into BDM occurred in December 2025 and current BDI notices state availability there since 2025-12-15. This narrows the search: required 2020-2024 physical history must be sought in the legacy Public Data/TradeIntraday archive or another official archive, not inferred from the BDM successor view.",
+      "qualifies_required_2020_2024_physical_coverage": false
+    }
+  ],
+  "adjudication": {
+    "status": "LEGACY_TRADEINTRADAY_ARCHIVE_IS_NOW_PRIMARY_FREE_OFFICIAL_DISCOVERY_TARGET",
+    "material_update": true,
+    "data_gap_definitive": false,
+    "source_gate_credit": 0,
+    "historical_backfill_credit": 0,
+    "prospective_credit": 0,
+    "economics_read": false,
+    "reason": "Official B3 documents now establish both a January-2020 TradeIntraday schema lineage and the exact 2025 migration path into BDM. This is materially stronger provenance, but no complete physical 2020-2024 payload set with audit hashes has been proven. Keep the frontier fail-closed and continue legacy archive discovery.",
+    "next_action": "QUALIFY_LEGACY_PUBLIC_DATA_TRADEINTRADAY_ARCHIVE_PHYSICAL_EXTENT_WITH_HASHES_BEFORE_ANY_DATA_GAP",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
