@@ -48,7 +48,8 @@ class GateBtc2MasterPlanTests(unittest.TestCase):
         self.assertNotRegex(self.text, r"\|\s*17\s*\|")
 
     def test_resume_order_and_deferred_frontier_are_frozen(self):
-        self.assertIn("8 Cryptofeed/data path → 9 hftbacktest/Stage 9 → 10 Nautilus/event parity → 11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs", self.text)
+        self.assertIn("Systems 1–8 are mature/closed enough to serve as foundation", self.text)
+        self.assertIn("9 hftbacktest/Stage 9 → 10 Nautilus/event parity → 11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs", self.text)
         self.assertIn("System 15 / LEAN-B3 + Strategy Factory continues in parallel", self.text)
         self.assertIn("System 16 remains deliberately deferred", self.text)
 
@@ -56,6 +57,14 @@ class GateBtc2MasterPlanTests(unittest.TestCase):
         self.assertIn("Stage 9 implementation/builder/workflow existence is not prospective evidence", self.text)
         self.assertIn("Only authorized forward-only observations can earn prospective credit", self.text)
         self.assertIn("If evidence is valid but insufficient, remain `COLLECT_MORE`", self.text)
+
+    def test_stage9_exit_segment_is_explicit_and_forward_only(self):
+        self.assertIn("50 pre-audit observations are preserved as valid evidence", self.text)
+        self.assertIn("zero credit toward the separately preregistered exit segment", self.text)
+        self.assertIn("`required_N=168`", self.text)
+        self.assertIn("24 distinct UTC hour bins", self.text)
+        self.assertIn("7 distinct UTC weekdays", self.text)
+        self.assertIn("at least 167 elapsed hours", self.text)
 
     def test_permanent_zero_capital_boundary(self):
         for required in (
