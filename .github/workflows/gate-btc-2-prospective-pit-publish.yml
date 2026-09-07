@@ -41,33 +41,83 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          p = Path('daily_evidence/prospective_v2a/STATUS.json')
-          if not p.exists():
+
+          root = Path('daily_evidence/prospective_v2a')
+          status_path = root / 'STATUS.json'
+          registry_path = root / 'QUALIFIED_SOURCE_REGISTRY.json'
+          if not status_path.exists() or not registry_path.exists():
               raise SystemExit('prospective PIT evidence absent; fail closed')
-          s = json.loads(p.read_text(encoding='utf-8'))
-          required = {
-              'attempted': 137,
-              'loaded': 137,
-              'failed': 0,
-              'coverage_ratio': 1.0,
-              'cutover_input_pass': True,
+
+          status = json.loads(status_path.read_text(encoding='utf-8'))
+          required_status = {
+              'schema': 'gate_btc.v2a_point_in_time_data_ledger_status.v1',
+              'latest_attempted_symbols': 137,
+              'latest_loaded_symbols': 137,
+              'latest_failed_symbols': 0,
+              'latest_coverage_ratio': 1.0,
+              'latest_no_candle_failure_count': 0,
+              'latest_short_history_failure_count': 0,
+              'prospective_point_in_time_universe_observed': True,
+              'prospective_point_in_time_universe_bias_present': False,
+              'future_point_in_time_only': True,
+              'retrospective_backfill_allowed': False,
               'research_only': True,
               'shadow_only': True,
               'not_approved': True,
-              'engine_feed': False,
-              'orders': 0,
-              'real_capital_brl': 0,
-              'no_retune': True,
-              'no_backfill': True,
-              'no_counter_reset': True,
-              'fail_closed': True,
+              'feeds_frozen_engine': False,
+              'orders_generated': 0,
+              'real_capital_used': 0,
+              'promotion_allowed': False,
           }
-          for key, value in required.items():
-              if s.get(key) != value:
-                  raise SystemExit(f'prospective PIT gate failed: {key}={s.get(key)!r}, expected {value!r}')
-          if s.get('failures') != []:
-              raise SystemExit('prospective PIT failures must be empty')
-          print('PROSPECTIVE_V2A_PIT=PASS_137_OF_137_ZERO_FAILURES')
+          for key, value in required_status.items():
+              if status.get(key) != value:
+                  raise SystemExit(
+                      f'prospective PIT status gate failed: {key}={status.get(key)!r}, expected {value!r}'
+                  )
+
+          snapshot_id = status.get('latest_snapshot_id')
+          if not snapshot_id:
+              raise SystemExit('prospective PIT latest_snapshot_id absent; fail closed')
+          snapshot_path = root / 'snapshots' / f'{snapshot_id}.json'
+          if not snapshot_path.exists():
+              raise SystemExit(f'prospective PIT snapshot absent: {snapshot_path}')
+          snapshot = json.loads(snapshot_path.read_text(encoding='utf-8'))
+          required_snapshot = {
+              'schema': 'gate_btc.v2a_point_in_time_data_snapshot.v1',
+              'snapshot_id': snapshot_id,
+              'attempted_symbols': 137,
+              'loaded_symbols': 137,
+              'failed_symbols': 0,
+              'coverage_ratio': 1.0,
+              'download_failure_row_count': 0,
+              'no_candle_failure_count': 0,
+              'short_history_failure_count': 0,
+              'universe_row_count': 137,
+              'prospective_point_in_time_universe_observed': True,
+              'prospective_point_in_time_universe_bias_present': False,
+              'retrospective_reconstruction': False,
+              'backfill_performed': False,
+              'counter_reset_performed': False,
+              'historical_credit': 0,
+              'prospective_credit_before_d0': 0,
+              'research_only': True,
+              'shadow_only': True,
+              'not_approved': True,
+              'feeds_frozen_engine': False,
+              'orders_generated': 0,
+              'real_capital_used': 0,
+              'promotion_allowed': False,
+          }
+          for key, value in required_snapshot.items():
+              if snapshot.get(key) != value:
+                  raise SystemExit(
+                      f'prospective PIT snapshot gate failed: {key}={snapshot.get(key)!r}, expected {value!r}'
+                  )
+          selected_sources = snapshot.get('selected_sources')
+          if not isinstance(selected_sources, dict) or len(selected_sources) != 137:
+              raise SystemExit('prospective PIT selected_sources must contain exactly 137 symbols')
+
+          print(f'PROSPECTIVE_V2A_PIT=PASS_137_OF_137_ZERO_FAILURES snapshot={snapshot_id}')
           PY
 
       - name: Check out runtime branch only
