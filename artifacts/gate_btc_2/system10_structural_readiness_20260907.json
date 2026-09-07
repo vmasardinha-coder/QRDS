@@ -1,0 +1,43 @@
+{
+  "schema": "gate_btc_2.system10.structural_readiness.v1",
+  "system": 10,
+  "reference": "NautilusTrader",
+  "status": "STRUCTURAL_READY_WAITING_STAGE9_GATE",
+  "as_of_utc": "2026-09-07T18:45:00Z",
+  "implemented_boundaries": {
+    "engine_neutral_event_envelope": true,
+    "read_only_shadow_adapter_contract": true,
+    "deterministic_parity_receipt": true,
+    "hash_bound_readiness_record": true,
+    "engine_instantiated": false,
+    "engine_execution": false,
+    "nautilus_execution_enabled": false,
+    "engine_parity_proven": false,
+    "system10_complete": false
+  },
+  "dependency": {
+    "stage9_required_before_engine_replication": true,
+    "stage9_exit_decision_required": "PASS_STAGE9_EXIT_GATE",
+    "stage9_current_state": "COLLECT_MORE_FORWARD_EVIDENCE"
+  },
+  "next_legitimate_step": "INDEPENDENT_EVENT_REPLAY_STATE_PARITY_AFTER_STAGE9_EXIT_PASS",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "economics_allowed": false,
+    "automatic_promotion": false
+  },
+  "scientific_claims": {
+    "plumbing_ready": true,
+    "independent_engine_parity_demonstrated": false,
+    "completion_criterion_changed": false,
+    "stage9_bypassed": false
+  }
+}
