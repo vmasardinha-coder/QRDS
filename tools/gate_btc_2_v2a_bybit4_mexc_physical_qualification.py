@@ -6,7 +6,10 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
-from tools import gate_btc_2_v2a_exact_spot_qualification_runner as q
+try:
+    from tools import gate_btc_2_v2a_exact_spot_qualification_runner as q
+except ModuleNotFoundError:
+    import gate_btc_2_v2a_exact_spot_qualification_runner as q
 
 ROOT = Path(__file__).resolve().parents[1]
 PREREG = ROOT / "tools/gate_btc_2_v2a_bybit4_mexc_source_prereg_v1.json"
