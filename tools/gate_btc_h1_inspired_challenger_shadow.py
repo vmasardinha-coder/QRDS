@@ -114,14 +114,30 @@ def normalize_rates(rows, start: datetime, end: datetime) -> list[dict]:
 
 
 def mt5_bars(mt5, symbol: str, start: datetime, end: datetime) -> list[dict]:
-    rows = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M5, start.astimezone(timezone.utc), end.astimezone(timezone.utc))
-    out = normalize_rates(rows, start, end)
-    if out:
-        return out
-    rows = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
-    if rows is None:
-        raise RuntimeError(f"MT5_RATES_FAILED symbol={symbol} error={mt5.last_error()}")
-    return normalize_rates(rows, start, end)
+    # A non-empty copy_rates_range result can still be incomplete while MT5
+    # hydrates local history. Merge both native retrieval paths so partial range
+    # reads cannot hide already available M5 bars. No signal/threshold timing changes.
+    range_rows = mt5.copy_rates_range(
+        symbol,
+        mt5.TIMEFRAME_M5,
+        start.astimezone(timezone.utc),
+        end.astimezone(timezone.utc),
+    )
+    range_error = mt5.last_error()
+    pos_rows = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
+    pos_error = mt5.last_error()
+
+    if range_rows is None and pos_rows is None:
+        raise RuntimeError(
+            f"MT5_RATES_FAILED symbol={symbol} range_error={range_error} pos_error={pos_error}"
+        )
+
+    merged: dict[str, dict] = {}
+    for row in normalize_rates(pos_rows, start, end):
+        merged[row["timestamp"]] = row
+    for row in normalize_rates(range_rows, start, end):
+        merged[row["timestamp"]] = row
+    return [merged[k] for k in sorted(merged)]
 
 
 def event_dir(root: Path, challenger: str, session: str) -> Path:
@@ -249,7 +265,11 @@ def main() -> int:
                         status["challengers"][cid] = {"state": "MISSED_CAUSAL_WINDOW_NO_BACKFILL"}
                         continue
                     if any(r is None for r in signal_rows):
-                        status["challengers"][cid] = {"state": "CAUSAL_DATA_NOT_READY_FAIL_CLOSED"}
+                        missing = [t.isoformat() for t, r in zip(signal_times, signal_rows) if r is None]
+                        status["challengers"][cid] = {
+                            "state": "CAUSAL_DATA_NOT_READY_FAIL_CLOSED",
+                            "missing_signal_timestamps": missing,
+                        }
                         continue
                     o = float(signal_rows[0]["open"])
                     c = float(signal_rows[-1]["close"])
@@ -285,7 +305,10 @@ def main() -> int:
                         continue
                     entry_row = by_time.get(entry_time)
                     if entry_row is None:
-                        status["challengers"][cid] = {"state": "ENTRY_DATA_NOT_READY_FAIL_CLOSED"}
+                        status["challengers"][cid] = {
+                            "state": "ENTRY_DATA_NOT_READY_FAIL_CLOSED",
+                            "expected_entry_timestamp": entry_time.isoformat(),
+                        }
                         write_json(root / cid / "SUMMARY.json", summarize(root, cid))
                         continue
                     append_event(root, cid, session, {
@@ -313,7 +336,10 @@ def main() -> int:
                         continue
                     exit_row = by_time.get(exit_time)
                     if exit_row is None:
-                        status["challengers"][cid] = {"state": "EXIT_DATA_NOT_READY_FAIL_CLOSED"}
+                        status["challengers"][cid] = {
+                            "state": "EXIT_DATA_NOT_READY_FAIL_CLOSED",
+                            "expected_exit_timestamp": exit_time.isoformat(),
+                        }
                         write_json(root / cid / "SUMMARY.json", summarize(root, cid))
                         continue
                     entry = float(ent["entry_price"])
