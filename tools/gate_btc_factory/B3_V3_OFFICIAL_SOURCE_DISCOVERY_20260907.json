@@ -1,0 +1,84 @@
+{
+  "schema": "gate_btc.b3.v3.official_source_discovery.v1",
+  "as_of_date": "2026-09-07",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "purpose": "Continue free/official source discovery before any definitive DATA_GAP adjudication, without opening economics or altering frozen family contracts.",
+  "current_runtime_status": "WAITING_OFFICIAL_TICK_SOURCE",
+  "required_historical_coverage": {
+    "start_year": 2020,
+    "end_year": 2024,
+    "instrument_identity_policy": "FROZEN_FRONT_CONTRACT",
+    "timezone": "America/Sao_Paulo"
+  },
+  "official_surfaces_checked": [
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_PRIMARY_CANDIDATE",
+      "name": "B3 Cotações / Negócio a negócio migration notice",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes/",
+      "observed_statement": "Since 2025-12-15 the page's information is available in Boletim Diário do Mercado under Derivativos > Derivativos de bolsa > Negócio a negócio; page deactivation announced for 2026-04-08.",
+      "coverage_implication": "Confirms the canonical current publication surface but does not attest that free downloadable trade-by-trade history for 2020-2024 is exposed there.",
+      "physical_payload_captured": false,
+      "payload_sha256": null,
+      "payload_schema": null,
+      "qualifies_required_2020_2024_coverage": false
+    },
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_PRIMARY_CANDIDATE",
+      "name": "B3 Boletim Diário do Mercado archive",
+      "url_pattern": "https://arquivos.b3.com.br/bdi/download/bdi/YYYY-MM-DD/BDI_*.pdf",
+      "observed_statement": "Official BDM PDFs are publicly downloadable and contain market tables; the migration notice identifies BDM as the current home for listed derivatives trade-by-trade information.",
+      "coverage_implication": "Current/post-migration BDM is an auditable official surface. This discovery step found no official statement proving that the same trade-by-trade table is retrospectively available across all required 2020-2024 sessions.",
+      "physical_payload_captured": false,
+      "payload_sha256": null,
+      "payload_schema": "PDF/publication surface; exact historical tick schema not yet qualified",
+      "qualifies_required_2020_2024_coverage": false
+    },
+    {
+      "provider": "B3",
+      "source_role": "OFFICIAL_PRIMARY_CANDIDATE",
+      "name": "B3 Public Data / daily regulatory downloads",
+      "url": "https://www.b3.com.br/pt_br/noticias/dados-para-download.htm",
+      "observed_statement": "B3 describes free daily regulatory downloads and states a 10-day history for the listed datasets on that public surface.",
+      "coverage_implication": "A 10-day public-history contract cannot satisfy the frozen 2020-2024 historical tick requirement.",
+      "physical_payload_captured": false,
+      "payload_sha256": null,
+      "payload_schema": "daily regulatory closing files; not qualified as historical tick archive",
+      "qualifies_required_2020_2024_coverage": false
+    },
+    {
+      "provider": "B3",
+      "source_role": "COMMERCIAL_OFFICIAL_NOT_FREE_PRIMARY",
+      "name": "B3 UP2DATA",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/dados-disponiveis/",
+      "observed_statement": "B3 advertises tick-by-tick datasets on UP2DATA for several product families.",
+      "coverage_implication": "Official commercial availability is not silently treated as a free primary source and does not unlock the frozen free-source gate.",
+      "physical_payload_captured": false,
+      "payload_sha256": null,
+      "payload_schema": "commercial catalog; exact WIN/WDO 2020-2024 qualification not established in this step",
+      "qualifies_required_2020_2024_coverage": false
+    }
+  ],
+  "adjudication": {
+    "status": "BLOCKED_REQUIRED_HISTORICAL_TICK_COVERAGE_NOT_YET_PROVEN",
+    "data_gap_definitive": false,
+    "reason": "A new official BDM publication route is confirmed, but no free official physical archive has yet been proven to cover the frozen 2020-2024 WIN/WDO tick requirement. Continue official/free discovery; do not reconstruct missing clocks from MT5 or aggregated tables.",
+    "next_action": "QUALIFY_BDM_HISTORICAL_EXTENT_AND_ANY_LEGACY_OFFICIAL_ARCHIVE_BEFORE_DATA_GAP",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
