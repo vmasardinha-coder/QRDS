@@ -146,27 +146,12 @@ jobs:
           retention-days: 90
 
       - name: Verify coverage and safety boundary
-        run: |
-          python - <<'PY'
-          import json
-          c = json.load(open('prices_out/COVERAGE.json', encoding='utf-8'))
-          for key, expected in {
-              'research_only': True, 'shadow_only': True, 'not_approved': True,
-              'engine_feed': False, 'orders': 0, 'real_capital': 0,
-          }.items():
-              assert c[key] == expected, (key, c[key])
-          assert c['unpriced'] == 0, c['unpriced_detail']
-          assert c['priced'] == c['universe_size'], (c['priced'], c['universe_size'])
-          # A venue change is legitimate but never silent: surface it in the log.
-          for change in c['venue_changes']:
-              print(f"VENUE_CHANGE {change['base']} {change['from_venue']} -> {change['to_venue']} on {change['changed_on']}")
-          print(json.dumps({
-              'priced': c['priced'],
-              'meets_min_history': c['meets_min_history'],
-              'venue_counts': c['venue_counts'],
-              'venue_changes': len(c['venue_changes']),
-          }, indent=2, sort_keys=True))
-          PY
+        # The assertions live in the adapter, with tests, rather than inline
+        # here: an earlier copy of them in this file went stale when coverage
+        # keys were renamed and failed only in production, three days running.
+        run: >-
+          python tools/gate_btc_delta_v12_multi_venue_daily_prices.py
+          --verify prices_out/COVERAGE.json
 
       - name: Commit the pin ledger only
         working-directory: runtime_repo
