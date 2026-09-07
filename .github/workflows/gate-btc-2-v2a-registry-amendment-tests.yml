@@ -1,0 +1,39 @@
+name: GATE BTC 2 V2A Registry Amendment Tests
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
+      - tools/gate_btc_2_v2a_apply_registry_amendment.py
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tests/test_gate_btc_2_v2a_registry_source_amendment.py
+      - .github/workflows/gate-btc-2-v2a-registry-amendment-tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  registry-amendment-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest tests.test_gate_btc_2_v2a_registry_source_amendment -v
+      - name: Materialize and assert exact amended registry
+        run: |
+          python tools/gate_btc_2_v2a_apply_registry_amendment.py \
+            --base tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json \
+            --out /tmp/registry.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/registry.json'))
+          assert len(p['entries']) == 137
+          assert len({e['symbol'] for e in p['entries']}) == 137
+          by={e['symbol']:e for e in p['entries']}
+          assert all(by[s]['source_identity']=='MEXC_SPOT' for s in ('HTX','KAS','KCS','MNT'))
+          assert p['d0_started'] is False
+          assert p['historical_credit'] == 0 and p['d0_credit'] == 0
+          PY
