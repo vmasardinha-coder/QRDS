@@ -295,3 +295,72 @@ class RotatingUniverseTests(unittest.TestCase):
         self.assertEqual(stored["GONE"]["venue"], "HYPERLIQUID")
         self.assertEqual(stored["GONE"]["pinned_at"], "2026-08-01")
         self.assertEqual(stored["BTC"]["venue"], "OKX_SWAP")
+
+
+class CoverageVerificationTests(unittest.TestCase):
+    """The workflow's gate lives here, with tests, not as inline YAML.
+
+    Run 34091571649 failed three days running with KeyError: 'priced' because
+    the rotation change renamed coverage keys and the workflow's inline copy of
+    these assertions was never exercised by a test.
+    """
+
+    def good(self, **overrides):
+        coverage = {
+            **adapter.SAFETY,
+            "universe_size": 100, "universe_priced": 100,
+            "priced_including_held_dropouts": 104,
+            "carried_pins_outside_universe": 4,
+            "unpriced_new_entrants": 0, "unpriced_pinned_assets": 0,
+            "meets_min_history": 100, "venue_counts": {"OKX_SWAP": 97, "HYPERLIQUID": 7},
+            "venue_changes": [], "unpriced_detail": [],
+        }
+        coverage.update(overrides)
+        return coverage
+
+    def test_a_healthy_day_passes(self):
+        self.assertEqual(adapter.verify_coverage(self.good()), [])
+
+    def test_a_rotating_universe_with_an_excluded_entrant_still_balances(self):
+        problems = adapter.verify_coverage(self.good(
+            universe_priced=99, unpriced_new_entrants=1))
+        self.assertEqual(problems, [])
+
+    def test_losing_an_already_pinned_asset_is_refused(self):
+        problems = adapter.verify_coverage(self.good(unpriced_pinned_assets=1))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("already-pinned", problems[0])
+
+    def test_universe_accounting_that_does_not_balance_is_refused(self):
+        problems = adapter.verify_coverage(self.good(universe_priced=90))
+        self.assertIn("does not balance", problems[0])
+
+    def test_a_broken_safety_flag_is_refused(self):
+        problems = adapter.verify_coverage(self.good(engine_feed=True))
+        self.assertIn("engine_feed", problems[0])
+
+    def test_a_coverage_file_missing_the_keys_is_refused_not_crashed(self):
+        # The exact production failure: renamed keys must fail closed with a
+        # readable reason, never a traceback.
+        problems = adapter.verify_coverage({**adapter.SAFETY})
+        self.assertTrue(any("missing" in p for p in problems), problems)
+
+    def test_verify_returns_nonzero_for_a_bad_file_and_zero_for_a_good_one(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            ok = root / "ok.json"
+            ok.write_text(json.dumps(self.good()))
+            bad = root / "bad.json"
+            bad.write_text(json.dumps(self.good(unpriced_pinned_assets=2)))
+            self.assertEqual(adapter.verify(ok), 0)
+            self.assertEqual(adapter.verify(bad), 1)
+
+    def test_verify_reads_the_file_a_real_build_writes(self):
+        # Guards the rename that broke production: the verifier and the writer
+        # must agree on key names, checked against a genuine build output.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pins = root / "PINS.json"
+            with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
+                adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+            self.assertEqual(adapter.verify(root / "out" / "COVERAGE.json"), 0)
