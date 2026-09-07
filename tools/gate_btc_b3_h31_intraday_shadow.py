@@ -97,27 +97,39 @@ def _normalize_rates(rows, start: datetime, end: datetime) -> list[dict]:
 
 
 def mt5_bars(mt5, symbol: str, start: datetime, end: datetime) -> list[dict]:
-    rates = mt5.copy_rates_range(
+    # Range reads can be transiently non-empty but incomplete while MT5 history
+    # is hydrating. Merge both native retrieval paths so a partial range cannot
+    # hide a bar already present in terminal history. Frozen windows/rules stay unchanged.
+    range_rows = mt5.copy_rates_range(
         symbol,
         mt5.TIMEFRAME_M5,
         start.astimezone(timezone.utc),
         end.astimezone(timezone.utc),
     )
-    if rates is None:
-        raise RuntimeError(f"MT5_COPY_RATES_FAILED symbol={symbol} error={mt5.last_error()}")
-    out = _normalize_rates(rates, start, end)
-    if out:
-        return out
+    range_error = mt5.last_error()
+    pos_rows = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
+    pos_error = mt5.last_error()
 
-    recent = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
-    if recent is None:
-        raise RuntimeError(f"MT5_COPY_RATES_FALLBACK_FAILED symbol={symbol} error={mt5.last_error()}")
-    return _normalize_rates(recent, start, end)
+    if range_rows is None and pos_rows is None:
+        raise RuntimeError(
+            f"MT5_RATES_FAILED symbol={symbol} range_error={range_error} pos_error={pos_error}"
+        )
+
+    merged: dict[str, dict] = {}
+    for row in _normalize_rates(pos_rows, start, end):
+        merged[row["timestamp"]] = row
+    for row in _normalize_rates(range_rows, start, end):
+        merged[row["timestamp"]] = row
+    return [merged[k] for k in sorted(merged)]
 
 
 def session_bars(rows: list[dict], start: datetime) -> list[dict]:
     end = start + timedelta(hours=8)
     return [r for r in rows if start <= datetime.fromisoformat(r["timestamp"]) < end]
+
+
+def by_timestamp(rows: list[dict]) -> dict[datetime, dict]:
+    return {datetime.fromisoformat(r["timestamp"]): r for r in rows}
 
 
 def write_event(shadow_dir: Path, session: str, event: dict) -> str:
@@ -213,9 +225,16 @@ def main() -> int:
                     scale, dates = allowed_scale(contract, canonical_dir, session)
                     wdo_rows = session_bars(mt5_bars(mt5, wdo, start, now), start)
                     win_rows = session_bars(mt5_bars(mt5, win, start, now), start)
-                    if len(wdo_rows) < 6:
-                        raise RuntimeError(f"WDO_MISSING_FIRST_30M bars={len(wdo_rows)}")
-                    o, c30 = wdo_rows[0]["open"], wdo_rows[5]["close"]
+                    wdo_by = by_timestamp(wdo_rows)
+                    win_by = by_timestamp(win_rows)
+
+                    required_wdo = [start + timedelta(minutes=5 * i) for i in range(6)]
+                    missing_wdo = [t.isoformat() for t in required_wdo if t not in wdo_by]
+                    if missing_wdo:
+                        raise RuntimeError(f"WDO_MISSING_FIRST_30M missing={missing_wdo}")
+
+                    o = float(wdo_by[start]["open"])
+                    c30 = float(wdo_by[start + timedelta(minutes=25)]["close"])
                     ret30 = (c30 / o - 1.0) * 10000.0
                     z = ret30 / scale
                     trigger = abs(z) >= float(rule["trigger_abs_z_gte"])
@@ -236,18 +255,29 @@ def main() -> int:
                         }
                         write_event(shadow_dir, session, decision)
                     status["H31_TRIGGER_STATE"] = decision["trigger_state"]
+
                     if decision["trigger_state"] == "TRIGGER":
-                        if len(win_rows) < 7:
+                        entry_time = window_end
+                        close_time = start + timedelta(minutes=150)
+                        entry_row = win_by.get(entry_time)
+                        if entry_row is None:
                             status["H31_PAPER_POSITION"] = "NONE"
+                            status["paper_data_state"] = f"ENTRY_DATA_NOT_READY expected={entry_time.isoformat()}"
                         else:
-                            entry = float(win_rows[6]["open"])
+                            entry = float(entry_row["open"])
                             side = int(decision["side"])
-                            if now < start + timedelta(minutes=150) or len(win_rows) < 31:
+                            close_row = win_by.get(close_time)
+                            if now < close_time or close_row is None:
                                 status["H31_PAPER_POSITION"] = "OPEN"
+                                if now >= close_time and close_row is None:
+                                    status["paper_data_state"] = f"CLOSE_DATA_NOT_READY expected={close_time.isoformat()}"
                             else:
-                                exit_ = float(win_rows[30]["open"])
+                                exit_ = float(close_row["open"])
                                 gross = side * (exit_ / entry - 1.0) * 10000.0
-                                hold = win_rows[6:31]
+                                hold_times = [entry_time + timedelta(minutes=5 * i) for i in range(25)]
+                                hold = [win_by[t] for t in hold_times if t in win_by]
+                                if not hold:
+                                    raise RuntimeError("WIN_HOLD_WINDOW_EMPTY")
                                 if side > 0:
                                     mae = (min(x["low"] for x in hold) / entry - 1.0) * 10000.0
                                     mfe = (max(x["high"] for x in hold) / entry - 1.0) * 10000.0
@@ -260,8 +290,8 @@ def main() -> int:
                                     "session": session,
                                     "decision_hash": stable_hash({k:v for k,v in decision.items() if k != "event_hash_sha256"}),
                                     "side": side,
-                                    "entry_timestamp": win_rows[6]["timestamp"], "entry": entry,
-                                    "exit_timestamp": win_rows[30]["timestamp"], "exit": exit_,
+                                    "entry_timestamp": entry_row["timestamp"], "entry": entry,
+                                    "exit_timestamp": close_row["timestamp"], "exit": exit_,
                                     "gross_bps": gross,
                                     "reference_net_bps": gross - float(rule["reference_roundtrip_cost_bp"]),
                                     "stress_net_bps": gross - float(rule["stress_roundtrip_cost_bp"]),
