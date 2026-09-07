@@ -1,0 +1,110 @@
+{
+  "schema": "gate_btc.b3.v3.bdm_extent_audit.v2",
+  "as_of_date": "2026-09-07",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "purpose": "Bound the official B3 Boletim Diario do Mercado and legacy Dados Publicos trade-by-trade surfaces before any definitive DATA_GAP adjudication, without reading economics or changing any frozen family contract.",
+  "runtime_precondition": {
+    "status": "WAITING_OFFICIAL_TICK_SOURCE",
+    "source_ready_for_economics": false,
+    "economics_opened": false,
+    "survivors": []
+  },
+  "required_source_contract": {
+    "provider": "B3",
+    "source_role": "OFFICIAL_PRIMARY",
+    "required_years": [2020, 2021, 2022, 2023, 2024],
+    "instrument_identity_policy": "FROZEN_FRONT_CONTRACT",
+    "timezone_semantics": "America/Sao_Paulo",
+    "required_dimension": "trade/tick event-level data sufficient for frozen TICK_MICROSTRUCTURE families"
+  },
+  "official_evidence": [
+    {
+      "name": "B3 Cotações migration notice",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes/",
+      "observed": "B3 states that since 2025-12-15 the information is available in Boletim Diario do Mercado under Derivativos > Derivativos de bolsa > Negocio a negocio.",
+      "implication": "BDM is the canonical current official publication surface for this class of information, but the notice does not attest retrospective 2020-2024 tick coverage."
+    },
+    {
+      "name": "B3 Dados Publicos Negocio a negocio - Listados glossary",
+      "url": "https://www.b3.com.br/data/files/14/42/28/31/FEC4A8103234E0A8AC094EA8/Glossario_NegociosListados_PT.pdf",
+      "document_date": "2023-05-15",
+      "observed": "The official glossary defines DD-MM-AAAA_NEGOCIOSAVISTA (TradeIntradayFile) as containing all trades from the trading session at trade-by-trade level, published on the following morning in a ZIP containing TXT.",
+      "event_level_fields": [
+        "DataReferencia/ReportDate",
+        "CodigoInstrumento/TickerSymbol",
+        "AcaoAtualizacao/UpdateAction",
+        "PrecoNegocio/GrossTradeAmount",
+        "QuantidadeNegociada/TradeQuantity",
+        "HoraFechamento/EntryTime",
+        "CodigoIdentificadorNegocio/TradeIdentification",
+        "TipoSessaoPregao/TradingSessionIdentification",
+        "DataNegocio/TradeDate"
+      ],
+      "time_semantics": "HoraFechamento is documented as the trade instant in UTC-3 with HHMMSSNNN precision.",
+      "version_history": {
+        "initial_version": "January/2020",
+        "participant_fields_added": "February/2023",
+        "layout_rule_update": "May/2023"
+      },
+      "implication": "Official B3 documentation proves that an event-level TradeIntraday schema existed from January 2020 and is semantically suitable for tick microstructure. It does not by itself prove that free physical files for every required 2020-2024 session remain retrievable today."
+    },
+    {
+      "name": "BDM public application",
+      "url": "https://arquivos.b3.com.br/bdi/tabelas?lang=pt-BR",
+      "observed": "The official B3 page embeds the public BDM application at arquivos.b3.com.br.",
+      "implication": "The surface is official and public; historical event-level extent still requires physical qualification."
+    },
+    {
+      "name": "BDM derivatives summary physical sample",
+      "url": "https://arquivos.b3.com.br/bdi/download/bdi/2025-12-29/BDI_03-1_20251229.pdf",
+      "session_date": "2025-12-29",
+      "observed_schema": [
+        "Categoria",
+        "Mercado",
+        "Commodity",
+        "Tipo de contrato",
+        "Numero de negocios",
+        "Contratos negociados",
+        "Volume total (R$)",
+        "Volume total (US$)"
+      ],
+      "observed_win_row": "WIN is present as an aggregated MINI INDICES FUTURO row with number of trades/contracts/volume.",
+      "observed_wdo_row": "WDO is present as an aggregated MINI TAXAS DE CAMBIO FUTURO row with number of trades/contracts/volume.",
+      "event_timestamp_field_observed": false,
+      "individual_trade_rows_observed": false,
+      "physical_payload_role": "OFFICIAL_PUBLIC_AGGREGATE_SAMPLE",
+      "qualifies_tick_microstructure": false,
+      "reason": "The sampled BDM summary chapter is aggregate-only and cannot be substituted for event-level tick data."
+    }
+  ],
+  "historical_extent": {
+    "event_level_schema_semantically_proven_from_2020": true,
+    "required_2020_2024_physically_proven": false,
+    "same_event_level_files_retrievable_for_required_years": false,
+    "free_official_tick_archive_identified": false,
+    "definitive_data_gap": false,
+    "reason": "The official glossary establishes the correct event-level schema and a January/2020 initial version, materially narrowing the problem from semantic availability to present-day physical archive retrieval. No free official physical archive has yet been proven to provide all required WIN/WDO 2020-2024 sessions."
+  },
+  "adjudication": {
+    "status": "BLOCKED_PHYSICAL_2020_2024_ARCHIVE_RETRIEVAL_UNPROVEN",
+    "source_gate_change": "NONE",
+    "ready_for_economics": false,
+    "economics_read": false,
+    "next_action": "QUALIFY_PHYSICAL_LEGACY_TRADEINTRADAY_ARCHIVE_OR_BDM_EVENT_LEVEL_DOWNLOAD_WITH_PROVENANCE_HASH_SCHEMA_TIMEZONE_AND_SESSION_COVERAGE_BEFORE_DATA_GAP",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
