@@ -1,0 +1,74 @@
+{
+  "schema": "gate_btc.2_0.stage9_exit_segment.v1",
+  "status": "PREREGISTERED_PROSPECTIVE_ONLY",
+  "system": 9,
+  "reference_block": "hftbacktest",
+  "purpose": "RESOLVE_MISSING_STAGE9_EXIT_GATE_WITHOUT_POST_HOC_CREDIT",
+  "authority_origin": {
+    "prior_gate_authority_status": "artifacts/gate_btc_2/stage9_gate_authority_status_20260907.json",
+    "prior_canonical_counter": 50,
+    "prior_counter_credit_to_exit_segment": 0,
+    "reason": "The original Stage 9 implementation accumulated valid forward evidence but no numeric required_N authority was ever preregistered. Existing observations are preserved as evidence but cannot satisfy a threshold selected after they were observed."
+  },
+  "source_contract": {
+    "provider": "BITGET_PUBLIC_V2",
+    "venue": "BITGET",
+    "instrument": "BTCUSDT",
+    "required_roles": [
+      "FUNDING",
+      "OPEN_INTEREST",
+      "PERP_VOLUME",
+      "SPOT_VOLUME"
+    ],
+    "cadence_minutes": 60,
+    "forward_only": true,
+    "admission_required": true,
+    "append_only_ledger_required": true
+  },
+  "activation": {
+    "eligible_captured_at_utc_gte": "2026-09-08T00:00:00Z",
+    "pre_activation_observations_receive_exit_credit": 0,
+    "missed_runs_backfilled": false,
+    "late_timestamp_repair": false,
+    "counter_reset_of_original_stage9_ledger": false
+  },
+  "exit_gate": {
+    "required_N": 168,
+    "required_distinct_utc_hours": 24,
+    "required_distinct_utc_weekdays": 7,
+    "required_elapsed_hours": 167,
+    "earliest_decision_date_utc": "2026-09-14T23:00:00Z",
+    "pass_decision": "PASS_STAGE9_EXIT_GATE",
+    "insufficient_decision": "COLLECT_MORE_FORWARD_EVIDENCE"
+  },
+  "design_rationale": {
+    "basis": "STRUCTURAL_24_7_WEEKLY_MARKET_COVERAGE",
+    "explanation": "At the frozen 60-minute cadence, 168 admitted observations represent one full 24x7 crypto market cycle. Requiring every UTC hour-of-day bin, every UTC weekday, and at least 167 elapsed hours prevents a narrow intraday or weekday-only sample from satisfying the gate. The rule is based on calendar coverage rather than observed Stage 9 values or performance.",
+    "statistical_independence_claimed": false,
+    "performance_threshold_used": false,
+    "observed_values_used_to_choose_threshold": false
+  },
+  "completion_effect": {
+    "stage_9_complete_on_pass": true,
+    "system_10_dependency_released_for_research_only_engine_parity": true,
+    "economics_allowed": false,
+    "engine_feed_allowed": false,
+    "orders_allowed": false,
+    "real_capital_allowed": false,
+    "automatic_real_capital_promotion": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "NO_SILENT_SOURCE_SUBSTITUTION": true,
+    "FAIL_CLOSED": true
+  }
+}
