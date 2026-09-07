@@ -1,0 +1,98 @@
+name: GATE BTC 2 Prospective PIT Publish
+
+on:
+  workflow_run:
+    workflows: ["GATE BTC Daily Research Collection"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-2-prospective-pit-publish
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+  GATE_BTC_ENGINE_FEED: "false"
+  GATE_BTC_ORDERS: "0"
+  GATE_BTC_REAL_CAPITAL: "0"
+
+jobs:
+  publish-prospective-pit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download source Daily artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-daily-research-${{ github.event.workflow_run.id }}
+          path: daily_evidence
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+
+      - name: Validate isolated prospective PIT gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('daily_evidence/prospective_v2a/STATUS.json')
+          if not p.exists():
+              raise SystemExit('prospective PIT evidence absent; fail closed')
+          s = json.loads(p.read_text(encoding='utf-8'))
+          required = {
+              'attempted': 137,
+              'loaded': 137,
+              'failed': 0,
+              'coverage_ratio': 1.0,
+              'cutover_input_pass': True,
+              'research_only': True,
+              'shadow_only': True,
+              'not_approved': True,
+              'engine_feed': False,
+              'orders': 0,
+              'real_capital_brl': 0,
+              'no_retune': True,
+              'no_backfill': True,
+              'no_counter_reset': True,
+              'fail_closed': True,
+          }
+          for key, value in required.items():
+              if s.get(key) != value:
+                  raise SystemExit(f'prospective PIT gate failed: {key}={s.get(key)!r}, expected {value!r}')
+          if s.get('failures') != []:
+              raise SystemExit('prospective PIT failures must be empty')
+          print('PROSPECTIVE_V2A_PIT=PASS_137_OF_137_ZERO_FAILURES')
+          PY
+
+      - name: Check out runtime branch only
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Publish isolated prospective PIT to runtime branch
+        run: |
+          set -euo pipefail
+          test -f daily_evidence/prospective_v2a/STATUS.json
+          test -f daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json
+          git -C runtime_repo config user.name "gate-btc-actions"
+          git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
+          mkdir -p runtime_repo/runtime/data_quality/v2a/snapshots runtime_repo/runtime/data_quality/v2a/archives
+          cp daily_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a/STATUS.json
+          cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a/QUALIFIED_SOURCE_REGISTRY.json
+          cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a/snapshots/
+          cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a/archives/
+          git -C runtime_repo add runtime/data_quality/v2a
+          if git -C runtime_repo diff --cached --quiet; then
+            echo "Prospective PIT already current"
+          else
+            git -C runtime_repo commit -m "Update prospective V2A PIT evidence"
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
+          fi
