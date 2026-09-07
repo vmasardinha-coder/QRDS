@@ -364,3 +364,46 @@ class CoverageVerificationTests(unittest.TestCase):
             with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
                 adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
             self.assertEqual(adapter.verify(root / "out" / "COVERAGE.json"), 0)
+
+
+class CommandLineTests(unittest.TestCase):
+    """The workflow reaches this file only through argv, so argv is what is tested.
+
+    The pinning job failed on a run where --verify was correct but argparse
+    rejected the command before it could execute, because the build arguments
+    were still required. Calling verify() directly never sees that.
+    """
+
+    def build_a_day(self, root: Path) -> Path:
+        with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
+            adapter.build(universe(root, ("BTC",)), root / "out", root / "PINS.json", TODAY)
+        return root / "out" / "COVERAGE.json"
+
+    def test_verify_alone_is_a_complete_command_line(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            coverage = self.build_a_day(root)
+            self.assertEqual(adapter.main(["--verify", str(coverage)]), 0)
+
+    def test_verify_alone_reports_a_bad_day_as_a_nonzero_exit(self):
+        with tempfile.TemporaryDirectory() as td:
+            bad = Path(td) / "bad.json"
+            bad.write_text(json.dumps({**adapter.SAFETY, "universe_size": 100,
+                                       "universe_priced": 99, "unpriced_new_entrants": 0,
+                                       "unpriced_pinned_assets": 1}))
+            self.assertEqual(adapter.main(["--verify", str(bad)]), 1)
+
+    def test_a_build_without_verify_still_needs_its_arguments(self):
+        with self.assertRaises(SystemExit) as raised:
+            adapter.main(["--out-dir", "out"])
+        self.assertEqual(raised.exception.code, 2)
+
+    def test_a_full_build_command_line_runs_the_build(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            argv = ["--universe-csv", str(universe(root, ("BTC",))),
+                    "--out-dir", str(root / "out"), "--pins", str(root / "PINS.json"),
+                    "--today", TODAY.isoformat()]
+            with mock.patch.object(adapter, "fetch_url", side_effect=router(okx=okx_payload())):
+                self.assertEqual(adapter.main(argv), 0)
+            self.assertTrue((root / "out" / "COVERAGE.json").exists())

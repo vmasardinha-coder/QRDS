@@ -368,20 +368,25 @@ def verify(path: Path) -> int:
     return 1 if problems else 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--verify", type=Path,
                         help="check a COVERAGE.json and exit non-zero if it must not be committed")
+    # None of the build arguments are required at the parser level: --verify is a
+    # standalone mode and must run without them. main() demands them below.
     parser.add_argument("--universe-csv", type=Path)
-    parser.add_argument("--out-dir", type=Path, required=True)
-    parser.add_argument("--pins", type=Path, required=True)
+    parser.add_argument("--out-dir", type=Path)
+    parser.add_argument("--pins", type=Path)
     parser.add_argument("--today", type=str)
     parser.add_argument("--min-history", type=int, default=30)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.verify:
         return verify(args.verify)
-    if not args.universe_csv:
-        parser.error("--universe-csv is required unless --verify is given")
+    missing = [name for name, value in (("--universe-csv", args.universe_csv),
+                                        ("--out-dir", args.out_dir),
+                                        ("--pins", args.pins)) if value is None]
+    if missing:
+        parser.error(f"{', '.join(missing)} required unless --verify is given")
     today = date.fromisoformat(args.today) if args.today else None
     coverage = build(args.universe_csv, args.out_dir, args.pins, today, args.min_history)
     print(json.dumps({k: coverage[k] for k in (
