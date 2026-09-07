@@ -1,0 +1,85 @@
+{
+  "schema": "gate_btc.b3.v3.bdm_extent_audit.v1",
+  "as_of_date": "2026-09-07",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "purpose": "Bound the official B3 Boletim Diario do Mercado surface before any definitive DATA_GAP adjudication, without reading economics or changing any frozen family contract.",
+  "runtime_precondition": {
+    "status": "WAITING_OFFICIAL_TICK_SOURCE",
+    "source_ready_for_economics": false,
+    "economics_opened": false,
+    "survivors": []
+  },
+  "required_source_contract": {
+    "provider": "B3",
+    "source_role": "OFFICIAL_PRIMARY",
+    "required_years": [2020, 2021, 2022, 2023, 2024],
+    "instrument_identity_policy": "FROZEN_FRONT_CONTRACT",
+    "timezone_semantics": "America/Sao_Paulo",
+    "required_dimension": "trade/tick event-level data sufficient for frozen TICK_MICROSTRUCTURE families"
+  },
+  "official_evidence": [
+    {
+      "name": "B3 Cotações migration notice",
+      "url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes/",
+      "observed": "B3 states that since 2025-12-15 the information is available in Boletim Diario do Mercado under Derivativos > Derivativos de bolsa > Negocio a negocio.",
+      "implication": "BDM is the canonical current official publication surface for this class of information, but the notice does not attest retrospective 2020-2024 tick coverage."
+    },
+    {
+      "name": "BDM public application",
+      "url": "https://arquivos.b3.com.br/bdi/tabelas?lang=pt-BR",
+      "observed": "The official B3 page embeds the public BDM application at arquivos.b3.com.br.",
+      "implication": "The surface is official and public; historical extent and event-level schema still require physical qualification."
+    },
+    {
+      "name": "BDM derivatives summary physical sample",
+      "url": "https://arquivos.b3.com.br/bdi/download/bdi/2025-12-29/BDI_03-1_20251229.pdf",
+      "session_date": "2025-12-29",
+      "observed_schema": [
+        "Categoria",
+        "Mercado",
+        "Commodity",
+        "Tipo de contrato",
+        "Numero de negocios",
+        "Contratos negociados",
+        "Volume total (R$)",
+        "Volume total (US$)"
+      ],
+      "observed_win_row": "WIN is present as an aggregated MINI INDICES FUTURO row with number of trades/contracts/volume.",
+      "observed_wdo_row": "WDO is present as an aggregated MINI TAXAS DE CAMBIO FUTURO row with number of trades/contracts/volume.",
+      "event_timestamp_field_observed": false,
+      "individual_trade_rows_observed": false,
+      "physical_payload_role": "OFFICIAL_PUBLIC_AGGREGATE_SAMPLE",
+      "qualifies_tick_microstructure": false,
+      "reason": "The sampled BDM chapter is an aggregate summary and cannot be substituted for event-level tick data."
+    }
+  ],
+  "historical_extent": {
+    "required_2020_2024_physically_proven": false,
+    "same_event_level_schema_proven_for_required_years": false,
+    "free_official_tick_archive_identified": false,
+    "definitive_data_gap": false,
+    "reason": "The current BDM route is official, but neither its event-level trade-by-trade payload nor a free official retrospective 2020-2024 WIN/WDO tick archive has yet been physically qualified. Aggregate BDM chapters do not satisfy the frozen v3 source contract."
+  },
+  "adjudication": {
+    "status": "BLOCKED_BDM_EVENT_LEVEL_HISTORICAL_EXTENT_UNPROVEN",
+    "source_gate_change": "NONE",
+    "ready_for_economics": false,
+    "economics_read": false,
+    "next_action": "PROBE_BDM_EVENT_LEVEL_NEGOCIO_A_NEGOCIO_PAYLOAD_AND_LEGACY_OFFICIAL_ARCHIVE_WITH_HASH_SCHEMA_TIMEZONE_AND_COVERAGE_BEFORE_DATA_GAP",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
