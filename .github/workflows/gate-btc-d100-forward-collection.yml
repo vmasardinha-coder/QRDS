@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '11 * * * *'
+    - cron: '41 * * * *'
   push:
     branches: [main]
     paths:
@@ -55,7 +56,43 @@ jobs:
           test "$GATE_BTC_NO_RETUNE" = true
           test "$GATE_BTC_NO_BACKFILL" = true
           test "$GATE_BTC_NO_COUNTER_RESET" = true
+      - name: Decide whether heartbeat is due
+        id: heartbeat_gate
+        env:
+          SCHEDULE_EXPR: ${{ github.event.schedule }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          schedule = os.environ.get('SCHEDULE_EXPR', '')
+          status_path = Path('runtime_repo/runtime/ledgers/d100/STATUS.json')
+          should = True
+          reason = 'PRIMARY_OR_MANUAL_TRIGGER'
+
+          if schedule == '41 * * * *':
+              reason = 'BACKUP_STALE_CHECK'
+              try:
+                  d = json.loads(status_path.read_text(encoding='utf-8'))
+                  raw = d.get('last_heartbeat_utc')
+                  if raw:
+                      last = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+                      age_minutes = (datetime.now(timezone.utc) - last).total_seconds() / 60.0
+                      should = age_minutes >= 75.0
+                      reason = f'BACKUP_HEARTBEAT_AGE_MINUTES={age_minutes:.1f}'
+              except Exception as exc:
+                  should = True
+                  reason = f'BACKUP_STATUS_UNREADABLE_FAIL_SAFE={type(exc).__name__}'
+
+          out = Path(os.environ['GITHUB_OUTPUT'])
+          with out.open('a', encoding='utf-8') as fh:
+              fh.write(f"should_heartbeat={'true' if should else 'false'}\n")
+              fh.write(f"reason={reason}\n")
+          print(f"D100_HEARTBEAT_DUE={should} {reason}")
+          PY
       - name: Collect D100 forward heartbeat
+        if: steps.heartbeat_gate.outputs.should_heartbeat == 'true'
         run: |
           python tools/gate_btc_factory/d100_forward_collection.py \
             --output runtime_repo/runtime/ledgers/d100/STATUS.json
@@ -68,11 +105,14 @@ jobs:
           assert d['historical_recovery_attempted'] is False
           assert d['backfill_performed'] is False
           assert d['economics_enabled'] is False
+          assert d['scientific_observations_credited'] == 0
           s=d['safety']
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_backfill'] is True and s['no_counter_reset'] is True
           print('D100_FORWARD_COLLECTION_RUNTIME=PASS')
           PY
       - name: Persist D100 runtime
+        if: steps.heartbeat_gate.outputs.should_heartbeat == 'true'
         shell: bash
         run: |
           set -euo pipefail
