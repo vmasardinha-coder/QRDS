@@ -1,0 +1,92 @@
+{
+  "schema": "qrds.factory.current_collection_audit.v1",
+  "as_of_date": "2026-09-07",
+  "authority_rule": "Use CURRENT_STATE_PRECEDENCE.v1.json. Newer track-specific commits/workflows/runtime outrank stale aggregate health files.",
+  "scope": "Current collector/track operational state only; no methodology, thresholds, clocks, evidence credit, economics, promotion, orders or capital are changed.",
+  "tracks": {
+    "D100": {
+      "classification": "ACTIVE_FORWARD_COLLECTION",
+      "collection_ready": true,
+      "scientific_line_ready": false,
+      "economics_enabled": false,
+      "notes": "Activated 2026-09-05 as forward-only data feed. Historical gap is explicit and not recovered. Scientific observations credited remain zero until separately authorized."
+    },
+    "GATEWAY_DYNAMICS": {
+      "classification": "ACTIVE_HEALTHY",
+      "valid_snapshot_count": 33,
+      "required_snapshot_count": 80,
+      "latest_source_data_as_of": "2026-09-07",
+      "notes": "Collect more forward evidence; no operational blocker observed."
+    },
+    "MOMENTUM_M1_M2": {
+      "classification": "ACTIVE_PROSPECTIVE_SHADOW",
+      "observed_snapshots": 13,
+      "data_as_of": "2026-09-06",
+      "notes": "Operationally active; no current blocker observed."
+    },
+    "B3_H1": {
+      "classification": "ACTIVE_STRUCTURAL_COLLECTION",
+      "valid_observation_count": 7,
+      "latest_valid_date": "2026-09-04",
+      "notes": "No backfill. Economics remain locked. No current operational blocker inferred from the Sep-7 holiday/weekend boundary."
+    },
+    "B3_H31": {
+      "classification": "ACTIVE_PROSPECTIVE_CLOCK",
+      "clock_started": true,
+      "eligible_observations": 0,
+      "notes": "Zero eligible observations is not by itself a collection failure. Expected-run/calendar semantics must be checked before any blocker classification."
+    },
+    "LOCK25_50": {
+      "classification": "ACTIVE_HEALTHY",
+      "valid_snapshot_count": 22,
+      "latest_snapshot_id": "2026-09-06",
+      "notes": "Interrupted historical series preserved; no retroactive fill."
+    },
+    "BULL_REPLAY_LIVE_SHADOW": {
+      "classification": "LIVE_DIAGNOSTIC_ACTIVE",
+      "observed_days": 24,
+      "data_as_of": "2026-09-06",
+      "notes": "Diagnostic leaderboard is descriptive only and does not replace formal prospective tests."
+    },
+    "DELTA_PAPER_MONITOR": {
+      "classification": "ACTIVE_PROSPECTIVE_PAPER_SHADOW",
+      "observed_days": 24,
+      "data_as_of": "2026-09-06",
+      "notes": "No methodology changes; no current collector blocker observed."
+    },
+    "V16B": {
+      "classification": "FROZEN_WEEKLY_CLOCK_PREPARED",
+      "current_signal_date": "2026-09-10",
+      "current_entry_date": "2026-09-11",
+      "current_complete_exit_date": "2026-09-18",
+      "canonical_cycle_count": 0,
+      "notes": "Use stage-aware preflight/rehearsal/watchdog and current weekly window. Do not resurrect the closed Aug-27/28 blocker."
+    },
+    "ALT_TRAIL40_10": {
+      "classification": "CALENDAR_GATED_PROSPECTIVE_ARCHIVE",
+      "notes": "Forward resume after recorded gaps is authorized; generic freshness must not classify the track as broken."
+    },
+    "PRL50": {
+      "classification": "MONTHLY_CALENDAR_GATED_PROSPECTIVE_ARCHIVE",
+      "notes": "Health is governed by month-end signal and executable-price collection contract, not daily generic freshness."
+    }
+  },
+  "current_operational_blockers_confirmed": [],
+  "unresolved_review_items": [
+    "Continue expected-run-aware verification for any track whose next scheduled observation becomes due.",
+    "Continue Stage 9 forward-only causal collection under its frozen exit gate.",
+    "Do not interpret D100 zero scientific credit as a collector defect."
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true
+  }
+}
