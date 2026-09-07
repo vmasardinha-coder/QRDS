@@ -1,0 +1,50 @@
+name: GATE BTC 2 V2A Bybit4 MEXC Physical Qualification
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_bybit4_mexc_physical_qualification.py
+      - tools/gate_btc_2_v2a_bybit4_mexc_source_prereg_v1.json
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+      - .github/workflows/gate-btc-2-v2a-bybit4-mexc-physical.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  physical-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile qualification runners
+        run: |
+          python -m py_compile tools/gate_btc_2_v2a_exact_spot_qualification_runner.py
+          python -m py_compile tools/gate_btc_2_v2a_bybit4_mexc_physical_qualification.py
+      - name: Execute frozen four-symbol MEXC qualification
+        run: python tools/gate_btc_2_v2a_bybit4_mexc_physical_qualification.py
+      - name: Assert zero-credit boundary and exact window
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/gate_btc_2/v2a_bybit4_mexc_physical/SUMMARY.json')
+          assert p.is_file(), 'SUMMARY missing'
+          s=json.loads(p.read_text())
+          for k,v in {'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders':0,'real_capital_brl':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'fail_closed':True,'scientific_credit':0,'prospective_credit':0,'economic_credit':0,'source_admission':False,'d0_started':False}.items():
+              assert s[k] == v, (k,s[k],v)
+          print(json.dumps(s, sort_keys=True))
+          PY
+      - name: Upload physical evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-2-v2a-bybit4-mexc-physical
+          path: artifacts/gate_btc_2/v2a_bybit4_mexc_physical
+          if-no-files-found: error
