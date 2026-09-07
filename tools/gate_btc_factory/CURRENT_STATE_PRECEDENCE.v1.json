@@ -1,0 +1,63 @@
+{
+  "schema": "qrds.factory.current_state_precedence.v1",
+  "as_of_utc": "2026-09-07T18:40:00Z",
+  "purpose": "Prevent stale aggregate reporting from overriding newer track-specific canonical history or runtime authority.",
+  "precedence": [
+    "LATEST_MERGED_TRACK_SPECIFIC_CHANGE",
+    "LATEST_SUCCESSFUL_TRACK_WORKFLOW",
+    "LATEST_TRACK_SPECIFIC_RUNTIME_STATUS_LEDGER_RECEIPT",
+    "LATEST_EXPLICIT_RECONCILIATION_EXPORT",
+    "AGGREGATE_HEALTH_REPORT_IF_CONTEMPORANEOUS_AND_CONSISTENT"
+  ],
+  "rules": {
+    "stale_aggregate_cannot_resurrect_resolved_blocker": true,
+    "generic_freshness_cannot_mark_calendar_gated_archive_broken": true,
+    "missed_causal_windows_must_not_be_backfilled": true,
+    "track_expected_run_contract_required_for_health": true,
+    "partial_prospective_economics_must_not_drive_retune": true
+  },
+  "reconciled_tracks": {
+    "D50": {
+      "legacy_red_label_authoritative": false,
+      "current_health_authority": "RUNTIME_AUTHORITATIVE_WATCHDOG_AND_FORWARD_ONLY_PRODUCER",
+      "do_not_infer": "UNRESOLVED_OUTAGE_FROM_2026_08_22_MIRROR_ALONE"
+    },
+    "V16B": {
+      "legacy_2026_08_27_28_block_authoritative": false,
+      "current_window": {
+        "signal_date": "2026-09-10",
+        "entry_date": "2026-09-11",
+        "complete_exit_date": "2026-09-18",
+        "canonical_cycle_count": 0
+      },
+      "current_health_authority": "FROZEN_WEEKLY_CLOCK_STAGE_AWARE_PREFLIGHT_REHEARSAL_AND_WATCHDOG"
+    },
+    "ALT_TRAIL40_10": {
+      "legacy_red_stale_authoritative": false,
+      "current_health_authority": "TRACK_EXPECTED_RUN_AND_CALENDAR_CONTRACT",
+      "classification": "CALENDAR_GATED_PROSPECTIVE_ARCHIVE_WITH_FORWARD_RESUME_AFTER_RECORDED_GAPS"
+    },
+    "PRL50": {
+      "legacy_red_stale_authoritative": false,
+      "current_health_authority": "MONTH_END_SIGNAL_AND_EXECUTABLE_PRICE_COLLECTION_CONTRACT",
+      "classification": "MONTHLY_CALENDAR_GATED_PROSPECTIVE_ARCHIVE"
+    }
+  },
+  "superseded_aggregate": {
+    "path": "runtime/GATE_BTC_HEALTH_DIMENSIONS.json",
+    "generated_at_utc": "2026-09-07T08:35:38.661348+00:00",
+    "red_labels_not_sufficient_as_current_blockers": ["alt_trail", "d50", "prl50", "v16b"]
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true
+  }
+}
