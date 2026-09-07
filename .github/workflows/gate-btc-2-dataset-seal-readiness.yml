@@ -17,10 +17,12 @@ on:
       - tests/test_gate_btc_2_prospective_dataset_epoch_cutover.py
       - tests/test_gate_btc_2_item2_checkpoint4_decision.py
       - .github/workflows/gate-btc-2-dataset-seal-readiness.yml
+      - .github/workflows/gate-btc-2-prospective-pit-publish.yml
+  workflow_run:
+    workflows: ["GATE BTC 2 Prospective PIT Publish"]
+    types: [completed]
+    branches: [main]
   schedule:
-    # Daily collection starts at 00:15 UTC and has historically published its
-    # runtime pointer around 02:00 UTC. This assessment follows it and reuses
-    # the same runtime evidence; no duplicate collector is created.
     - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
@@ -52,6 +54,7 @@ env:
 
 jobs:
   readiness-contract:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -139,12 +142,8 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          historical = json.loads(Path(
-              'artifacts/gate_btc_2/dataset_seal/readiness.json'
-          ).read_text(encoding='utf-8'))
-          cutover = json.loads(Path(
-              'artifacts/gate_btc_2/dataset_seal/prospective_epoch_cutover.json'
-          ).read_text(encoding='utf-8'))
+          historical = json.loads(Path('artifacts/gate_btc_2/dataset_seal/readiness.json').read_text(encoding='utf-8'))
+          cutover = json.loads(Path('artifacts/gate_btc_2/dataset_seal/prospective_epoch_cutover.json').read_text(encoding='utf-8'))
           assert historical['assessment_kind'] == 'READINESS_ONLY_NOT_A_DATASET_SEAL'
           assert historical['stage_3_dataset_sealed'] is False
           assert historical['official_challenger_runs_allowed'] is False
