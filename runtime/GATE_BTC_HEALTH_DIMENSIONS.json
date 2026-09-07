@@ -57,15 +57,15 @@
       "source_status": "ACTIVE"
     },
     "momentum_m1_m2": {
-      "collection_health": "RED_FAILED_DELIVERY",
-      "freshness": "FRESH",
-      "scientific_state": "PRESERVED_DELIVERY_FAILURE",
-      "source_status": "RED_TRUE_PROCESSING_FAILURE"
-    },
-    "prl50": {
       "collection_health": "GREEN",
       "freshness": "FRESH",
       "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "ACTIVE_PROSPECTIVE_SHADOW"
+    },
+    "prl50": {
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
       "source_status": "ACTIVE_PROSPECTIVE_ARCHIVE"
     },
     "qos_monthly": {
@@ -78,10 +78,10 @@
       "collection_health": "RED_STALE",
       "freshness": "STALE",
       "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "WAITING_NEXT_CANONICAL_WINDOW"
+      "source_status": "SCIENTIFIC_BLOCK"
     }
   },
-  "generated_at_utc": "2026-09-06T08:04:51.510281+00:00",
+  "generated_at_utc": "2026-09-07T08:35:38.661348+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -90,13 +90,13 @@
   "red_collection_components": [
     "alt_trail",
     "d50",
-    "momentum_m1_m2",
+    "prl50",
     "v16b"
   ],
-  "reference_data_date": "2026-09-02",
+  "reference_data_date": "2026-09-06",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "6ecd1add2a7e88907800913b217ff3949427dd2e5752b5d2aab8ff5b06533c95"
+  "status_sha256": "981f4a4b265650c25696622ff3e13f3444200c657df3a3bd1700c5f354d1b030"
 }
