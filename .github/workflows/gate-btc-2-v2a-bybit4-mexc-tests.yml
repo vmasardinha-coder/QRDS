@@ -1,0 +1,21 @@
+name: GATE BTC 2 V2A Bybit4 MEXC Tests
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_2_v2a_bybit4_mexc_physical_qualification.py
+      - tests/test_gate_btc_2_v2a_bybit4_mexc_physical_qualification.py
+      - .github/workflows/gate-btc-2-v2a-bybit4-mexc-tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest tests.test_gate_btc_2_v2a_bybit4_mexc_physical_qualification -v
