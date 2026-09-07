@@ -1,6 +1,8 @@
 name: GATE BTC 2 Stage 9 Exit Gate
 
 on:
+  schedule:
+    - cron: "20 * * * *"
   pull_request:
     branches: [main]
     paths:
@@ -45,12 +47,14 @@ jobs:
         run: python -m py_compile tools/gate_btc_2_stage9_exit_gate.py tests/test_gate_btc_2_stage9_exit_gate.py
       - name: Run Stage 9 exit gate regressions
         run: python -m unittest -v tests.test_gate_btc_2_stage9_exit_gate
-      - name: Assert frozen prospective boundary
+      - name: Assert frozen prospective boundary and redundant clock
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.loads(Path('tools/gate_btc_2_stage9_exit_segment_v1.json').read_text())
+          w=Path('.github/workflows/gate-btc-2-stage9-exit-gate.yml').read_text()
+          assert 'cron: "20 * * * *"' in w
           assert p['authority_origin']['prior_canonical_counter']==50
           assert p['authority_origin']['prior_counter_credit_to_exit_segment']==0
           assert p['activation']['eligible_captured_at_utc_gte']=='2026-09-08T00:00:00Z'
@@ -60,15 +64,17 @@ jobs:
           assert p['exit_gate']['required_elapsed_hours']==167
           assert p['safety']['ENGINE_FEED'] is False
           assert p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0
-          print('STAGE9_EXIT_PREREG=PASS')
+          print('STAGE9_EXIT_PREREG_AND_REDUNDANT_CLOCK=PASS')
           PY
 
   evaluate-canonical-ledger:
     if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'workflow_run' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
@@ -89,28 +95,51 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12.13"
-      - name: Bind triggering canonical ledger run
+      - name: Resolve latest canonical ledger artifact fail-closed
         env:
-          LEDGER_RUN_ID: ${{ github.event.workflow_run.id }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          META="$(gh api repos/${{ github.repository }}/actions/runs/${LEDGER_RUN_ID})"
-          test "$(jq -r .name <<<"$META")" = "GATE BTC 2 Stage 9 Bitget Ledger Bridge"
-          test "$(jq -r .event <<<"$META")" = "workflow_run"
-          test "$(jq -r .head_branch <<<"$META")" = "main"
-          test "$(jq -r .conclusion <<<"$META")" = "success"
-          echo "LEDGER_RUN_ID=$LEDGER_RUN_ID" >> "$GITHUB_ENV"
-      - name: Download exact canonical ledger artifact
-        env:
+          TRIGGER_LEDGER_RUN_ID: ${{ github.event.workflow_run.id }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p ledger_artifact
-          gh run download "$LEDGER_RUN_ID" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${LEDGER_RUN_ID}" --dir ledger_artifact
-          LEDGER="$(find ledger_artifact -name stage9_admission_ledger.jsonl -type f -print -quit)"
-          test -n "$LEDGER"
+          : > candidate_runs.txt
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ] && [ -n "${TRIGGER_LEDGER_RUN_ID:-}" ]; then
+            echo "$TRIGGER_LEDGER_RUN_ID" >> candidate_runs.txt
+          fi
+          gh run list \
+            --repo "${{ github.repository }}" \
+            --workflow gate-btc-2-stage9-bitget-ledger-bridge.yml \
+            --branch main \
+            --event workflow_run \
+            --status success \
+            --limit 20 \
+            --json databaseId \
+            --jq '.[].databaseId' >> candidate_runs.txt
+          awk '!seen[$0]++ && NF' candidate_runs.txt > candidate_runs.unique
+          LEDGER_RUN_ID=""
+          for RUN_ID in $(cat candidate_runs.unique); do
+            META="$(gh api repos/${{ github.repository }}/actions/runs/${RUN_ID})"
+            [ "$(jq -r .name <<<"$META")" = "GATE BTC 2 Stage 9 Bitget Ledger Bridge" ] || continue
+            [ "$(jq -r .event <<<"$META")" = "workflow_run" ] || continue
+            [ "$(jq -r .head_branch <<<"$META")" = "main" ] || continue
+            [ "$(jq -r .conclusion <<<"$META")" = "success" ] || continue
+            rm -rf ledger_artifact/*
+            if gh run download "$RUN_ID" \
+              --repo "${{ github.repository }}" \
+              --name "gate-btc-stage9-bitget-ledger-${RUN_ID}" \
+              --dir ledger_artifact >/dev/null 2>&1; then
+              LEDGER="$(find ledger_artifact -name stage9_admission_ledger.jsonl -type f -print -quit)"
+              if [ -n "$LEDGER" ]; then
+                LEDGER_RUN_ID="$RUN_ID"
+                break
+              fi
+            fi
+          done
+          test -n "$LEDGER_RUN_ID"
+          test -n "${LEDGER:-}"
+          echo "LEDGER_RUN_ID=$LEDGER_RUN_ID" >> "$GITHUB_ENV"
           echo "LEDGER=$LEDGER" >> "$GITHUB_ENV"
+          echo "STAGE9_CANONICAL_LEDGER_RUN=$LEDGER_RUN_ID"
       - name: Evaluate frozen prospective exit gate
         run: |
           set -euo pipefail
