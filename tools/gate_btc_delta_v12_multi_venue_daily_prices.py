@@ -321,14 +321,72 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
     return coverage
 
 
-def main() -> int:
+# What a verified coverage file must satisfy for the pin ledger to be committed.
+# This lives here, with tests, rather than as inline YAML in the workflow: the
+# rename that broke run 34091571649 changed these key names and no test ran the
+# workflow's copy, so it failed only in production three days running.
+def verify_coverage(coverage: dict[str, Any]) -> list[str]:
+    """Reasons the day's coverage must not be committed. Empty means good."""
+    problems: list[str] = []
+    for key, expected in SAFETY.items():
+        if coverage.get(key) != expected:
+            problems.append(f"safety flag {key} is {coverage.get(key)!r}, expected {expected!r}")
+    # A rotating universe legitimately drops a new entrant no venue serves, but
+    # losing an asset that was already pinned means the book may hold something
+    # that can no longer be marked.
+    if coverage.get("unpriced_pinned_assets"):
+        problems.append(
+            f"{coverage['unpriced_pinned_assets']} already-pinned asset(s) could not be priced")
+    priced, size = coverage.get("universe_priced"), coverage.get("universe_size")
+    excluded = coverage.get("unpriced_new_entrants", 0)
+    if priced is None or size is None:
+        problems.append("coverage file is missing universe_priced or universe_size")
+    elif priced + excluded != size:
+        problems.append(
+            f"universe accounting does not balance: {priced} priced plus {excluded} "
+            f"excluded is not {size}")
+    return problems
+
+
+def verify(path: Path) -> int:
+    coverage = json.loads(path.read_text(encoding="utf-8-sig"))
+    problems = verify_coverage(coverage)
+    # A venue change is legitimate but never silent.
+    for change in coverage.get("venue_changes", []):
+        print(f"VENUE_CHANGE {change['base']} {change['from_venue']} -> "
+              f"{change['to_venue']} on {change['changed_on']}")
+    for record in coverage.get("unpriced_detail", []):
+        print(f"UNPRICED {record['base']} was_pinned={record.get('was_pinned')} "
+              f"in_universe_today={record.get('in_universe_today')}")
+    print(json.dumps({k: coverage.get(k) for k in (
+        "universe_size", "universe_priced", "priced_including_held_dropouts",
+        "carried_pins_outside_universe", "unpriced_new_entrants",
+        "unpriced_pinned_assets", "meets_min_history", "venue_counts")},
+        indent=2, sort_keys=True))
+    for problem in problems:
+        print(f"FAIL_CLOSED: {problem}")
+    return 1 if problems else 0
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--universe-csv", type=Path, required=True)
-    parser.add_argument("--out-dir", type=Path, required=True)
-    parser.add_argument("--pins", type=Path, required=True)
+    parser.add_argument("--verify", type=Path,
+                        help="check a COVERAGE.json and exit non-zero if it must not be committed")
+    # None of the build arguments are required at the parser level: --verify is a
+    # standalone mode and must run without them. main() demands them below.
+    parser.add_argument("--universe-csv", type=Path)
+    parser.add_argument("--out-dir", type=Path)
+    parser.add_argument("--pins", type=Path)
     parser.add_argument("--today", type=str)
     parser.add_argument("--min-history", type=int, default=30)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.verify:
+        return verify(args.verify)
+    missing = [name for name, value in (("--universe-csv", args.universe_csv),
+                                        ("--out-dir", args.out_dir),
+                                        ("--pins", args.pins)) if value is None]
+    if missing:
+        parser.error(f"{', '.join(missing)} required unless --verify is given")
     today = date.fromisoformat(args.today) if args.today else None
     coverage = build(args.universe_csv, args.out_dir, args.pins, today, args.min_history)
     print(json.dumps({k: coverage[k] for k in (
