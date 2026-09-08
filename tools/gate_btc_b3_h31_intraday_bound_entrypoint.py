@@ -45,24 +45,22 @@ def bounded_shadow_schedule() -> dict[str, dict[str, str]]:
         raise RuntimeError(f"NO_FROZEN_FRONT_SCHEDULE_FOR_DATE {today}")
     front = dict(schedule[last_date])
 
-    # Shadow continuation is permitted only while the exact last frozen symbols
-    # remain live. There is deliberately no automatic rollover.
-    if not mt5.initialize():
-        raise RuntimeError(f"MT5_INITIALIZE_FAILED_FOR_FRONT_BINDING {mt5.last_error()}")
-    try:
-        now = datetime.now(TZ)
-        for root in ("WIN", "WDO"):
-            symbol = front[root]
-            if mt5.symbol_info(symbol) is None or not mt5.symbol_select(symbol, True):
-                raise RuntimeError(f"LAST_FROZEN_FRONT_NOT_SELECTABLE root={root} symbol={symbol}")
-            mode, tick_ts = clock.detect_time_mode(mt5, symbol, now)
-            print(
-                f"H31_SHADOW_FRONT_CONTINUATION root={root} symbol={symbol} "
-                f"from_date={last_date} mode={mode} tick={tick_ts.isoformat()}",
-                flush=True,
-            )
-    finally:
-        mt5.shutdown()
+    # h31.main() has already initialized MT5 before it calls load_schedule().
+    # Reuse that live session; do not initialize/shutdown recursively here.
+    terminal = mt5.terminal_info()
+    if terminal is None or not bool(getattr(terminal, "connected", False)):
+        raise RuntimeError("MT5_NOT_CONNECTED_FOR_FRONT_BINDING")
+    now = datetime.now(TZ)
+    for root in ("WIN", "WDO"):
+        symbol = front[root]
+        if mt5.symbol_info(symbol) is None or not mt5.symbol_select(symbol, True):
+            raise RuntimeError(f"LAST_FROZEN_FRONT_NOT_SELECTABLE root={root} symbol={symbol}")
+        mode, tick_ts = clock.detect_time_mode(mt5, symbol, now)
+        print(
+            f"H31_SHADOW_FRONT_CONTINUATION root={root} symbol={symbol} "
+            f"from_date={last_date} mode={mode} tick={tick_ts.isoformat()}",
+            flush=True,
+        )
 
     extended = dict(schedule)
     extended[today] = front
@@ -142,7 +140,6 @@ def main() -> int:
         annotate_status(shadow_dir)
         return 2
 
-    # Preserve original loader before monkeypatching it.
     if not hasattr(h31, "load_schedule_original"):
         h31.load_schedule_original = h31.load_schedule
     h31.load_schedule = bounded_shadow_schedule
