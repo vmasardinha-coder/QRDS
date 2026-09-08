@@ -94,15 +94,26 @@ jobs:
             echo "REAL_CAPITAL=0"
           } > artifacts/b3_h1_daily/ACTIONS_STATUS.txt
 
-      - name: Classify collector outcome
-        if: steps.h1.outcome == 'failure'
+      - name: Classify any unqualified structural outcome
+        if: always()
         run: |
           set -euo pipefail
           STATUS=$(find artifacts/b3_h1_daily -name H1_STRUCTURAL_STATUS.json -print -quit)
           test -n "$STATUS"
-          python tools/gate_btc_b3_gap_classifier.py h1 \
-            --status "$STATUS" \
-            --out artifacts/b3_h1_daily/H1_OPERATIONAL_GAP.json
+          if python - "$STATUS" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding='utf-8') as f:
+              s = json.load(f)
+          qualified = s.get('status') == 'STRUCTURAL_PASS' and s.get('qualified') is True
+          raise SystemExit(1 if qualified else 0)
+          PY
+          then
+            python tools/gate_btc_b3_gap_classifier.py h1 \
+              --status "$STATUS" \
+              --out artifacts/b3_h1_daily/H1_OPERATIONAL_GAP.json
+          else
+            echo "H1_STRUCTURAL_QUALIFIED=true; operational gap not required"
+          fi
 
       - name: Upload structural evidence
         if: always()
