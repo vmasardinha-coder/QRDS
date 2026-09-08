@@ -21,6 +21,8 @@ on:
       - 'tools/gate_btc_delta_v12_funding.py'
       - 'tests/test_gate_btc_delta_v12_engine.py'
       - 'tests/test_gate_btc_delta_v12_funding.py'
+      - 'tools/gate_btc_delta_v12_report.py'
+      - 'tests/test_gate_btc_delta_v12_report.py'
       - 'migration/reporting/delta_v12_engine_contract.json'
 
 permissions:
@@ -45,16 +47,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Test the engine and the funding adapter
+      - name: Test the engine, the funding adapter and the report
         run: >-
           python -m unittest -v
           tests.test_gate_btc_delta_v12_engine
           tests.test_gate_btc_delta_v12_funding
+          tests.test_gate_btc_delta_v12_report
       - name: Compile
         run: >-
           python -m py_compile
           tools/gate_btc_delta_v12_engine.py
           tools/gate_btc_delta_v12_funding.py
+          tools/gate_btc_delta_v12_report.py
 
   run-engine:
     needs: engine-tests
@@ -204,6 +208,11 @@ jobs:
               'latest_chain_sha256': status['latest_chain_sha256'][:16],
           }, indent=2, sort_keys=True))
           PY
+
+      - name: Render the executive report
+        run: >-
+          python tools/gate_btc_delta_v12_report.py
+          --runtime-dir "runtime_repo/${ENGINE_LEDGER}"
 
       - name: Commit the engine ledger only
         working-directory: runtime_repo
