@@ -247,15 +247,15 @@ jobs:
           git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
           mkdir -p runtime_repo/runtime
           cp daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          mkdir -p runtime_repo/runtime/data_quality/v2a/snapshots runtime_repo/runtime/data_quality/v2a/archives
-          cp daily_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a/STATUS.json
-          cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a/QUALIFIED_SOURCE_REGISTRY.json
-          cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a/snapshots/
-          cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a/archives/
-          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime/data_quality/v2a
+          mkdir -p runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots runtime_repo/runtime/data_quality/v2a_registry_pit/archives
+          cp daily_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a_registry_pit/STATUS.json
+          cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
+          cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
+          cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
+          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime/data_quality/v2a_registry_pit
           if git -C runtime_repo diff --cached --quiet; then
             echo "Runtime pointer and prospective PIT already current"
           else
-            git -C runtime_repo commit -m "Update GATE BTC runtime pointer and prospective V2A PIT"
+            git -C runtime_repo commit -m "Update GATE BTC runtime pointer and prospective V2A registry PIT"
             git -C runtime_repo push origin HEAD:gate-btc-runtime
           fi
