@@ -1,0 +1,82 @@
+{
+  "schema": "gate_btc.b3.v3.distinct_official_route_prereg.v1",
+  "as_of_date": "2026-09-07",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "purpose": "Preregister the next bounded official/free source qualification after the legacy TradeIntraday type=1 route failed the frozen 2020-2024 physical matrix. No economics may be read and no frozen family rule may change.",
+  "runtime_precondition": {
+    "status": "WAITING_OFFICIAL_TICK_SOURCE",
+    "source_ready_for_economics": false,
+    "economics_opened": false,
+    "survivors": []
+  },
+  "frozen_probe_dates": [
+    "2020-12-18",
+    "2021-12-17",
+    "2022-12-16",
+    "2023-12-15",
+    "2024-12-20"
+  ],
+  "candidate_surfaces": [
+    {
+      "provider": "B3",
+      "name": "Boletim Diario do Mercado public application",
+      "base_url": "https://arquivos.b3.com.br/bdi/tabelas?lang=pt-BR",
+      "required_route": "Derivativos > Derivativos de bolsa > Negocio a negocio",
+      "role": "OFFICIAL_PRIMARY_CANDIDATE"
+    },
+    {
+      "provider": "B3/MUB3",
+      "name": "Acervo MUB3 historical BDI",
+      "base_url": "https://mub3.org.br/acervo",
+      "role": "OFFICIAL_ARCHIVE_CANDIDATE"
+    }
+  ],
+  "qualification_contract": {
+    "provider": "B3",
+    "source_role_required": "OFFICIAL_PRIMARY",
+    "instrument_identity_policy": "FROZEN_FRONT_CONTRACT",
+    "timezone_semantics_required": "America/Sao_Paulo or explicit official equivalent",
+    "event_level_required": true,
+    "required_instruments": ["WIN", "WDO"],
+    "required_fields_semantically": [
+      "instrument identity",
+      "individual trade/event identity",
+      "event timestamp",
+      "price",
+      "quantity"
+    ],
+    "physical_capture_required": true,
+    "sha256_required": true,
+    "schema_required": true,
+    "coverage_required": "frozen 2020-2024 historical requirement; five-date probe is transport/semantic qualification only and cannot itself green the full source gate"
+  },
+  "frozen_adjudication": {
+    "if_event_level_official_payload_found": "RECORD_PROVENANCE_HASH_SCHEMA_TIMEZONE_AND_ADVANCE_TO_SEPARATE_PREREGISTERED_FULL_COVERAGE_CAPTURE",
+    "if_only_aggregate_payload_found": "REJECT_AS_TICK_PRIMARY_AND_CONTINUE_DISTINCT_OFFICIAL_FREE_ARCHIVE_DISCOVERY",
+    "if_historical_archive_is_only_BDI_AGGREGATE": "RECORD_NONQUALIFYING_ARCHIVE_BOUNDARY_WITHOUT_DATA_GAP",
+    "if_no_free_official_event_level_route_remains_after_documented_exhaustion": "ALLOW_SEPARATE_DATA_GAP_ADJUDICATION_ONLY_AFTER_REVIEW_OF_ALL_RECORDED_OFFICIAL_SURFACES",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "prohibitions": [
+    "NO economics read",
+    "NO threshold retune",
+    "NO family ID reuse",
+    "NO backfill from MT5",
+    "NO clock reconstruction from secondary sources",
+    "NO H1/H31 cross-feedback"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
