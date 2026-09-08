@@ -1,0 +1,111 @@
+name: GATE BTC B3 V3 Physical Archive Probe
+
+on:
+  push:
+    branches:
+      - factory/b3-v3-physical-archive-probe-20260907
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert frozen preregistration and safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('tools/gate_btc_factory/B3_V3_PHYSICAL_ARCHIVE_EXTENT_PREREG_20260907.json')
+          d=json.loads(p.read_text())
+          assert d['generation']=='H2730-H2739'
+          assert d['frozen_probe_dates']==['2020-12-18','2021-12-17','2022-12-16','2023-12-15','2024-12-20']
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          PY
+
+      - name: Execute frozen transport-only matrix
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error
+          from pathlib import Path
+
+          prereg=json.loads(Path('tools/gate_btc_factory/B3_V3_PHYSICAL_ARCHIVE_EXTENT_PREREG_20260907.json').read_text())
+          rows=[]
+          for date in prereg['frozen_probe_dates']:
+              url=f'https://arquivos.b3.com.br/rapinegocios/tickercsv/{date}?type=1'
+              req=urllib.request.Request(url, headers={'User-Agent':'QRDS-research-source-qualification/1.0','Range':'bytes=0-7'})
+              row={'date':date,'url':url,'http_status':None,'content_type':None,'content_disposition':None,'content_length_header':None,'prefix_hex':'','zip_magic_observed':False,'drv_filename_observed':False,'physical_drv_transport_observed':False}
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      prefix=r.read(8)
+                      row['http_status']=getattr(r,'status',None)
+                      row['content_type']=r.headers.get('Content-Type')
+                      row['content_disposition']=r.headers.get('Content-Disposition')
+                      row['content_length_header']=r.headers.get('Content-Length')
+                      row['prefix_hex']=prefix.hex()
+              except urllib.error.HTTPError as e:
+                  row['http_status']=e.code
+                  row['content_type']=e.headers.get('Content-Type') if e.headers else None
+                  row['content_disposition']=e.headers.get('Content-Disposition') if e.headers else None
+                  row['content_length_header']=e.headers.get('Content-Length') if e.headers else None
+                  try: row['prefix_hex']=e.read(8).hex()
+                  except Exception: pass
+              except Exception as e:
+                  row['transport_error']=type(e).__name__+':'+str(e)
+              cd=(row.get('content_disposition') or '')
+              row['zip_magic_observed']=row['prefix_hex'].startswith('504b0304')
+              row['drv_filename_observed']='NEGOCIOSAVISTA_DRV' in cd
+              row['physical_drv_transport_observed']=(row['http_status']==200 and row['zip_magic_observed'] and row['drv_filename_observed'])
+              rows.append(row)
+
+          positives=sum(1 for r in rows if r['physical_drv_transport_observed'])
+          if positives==5:
+              adjudication='ADVANCE_TO_SEPARATE_PREREGISTERED_161_SESSION_HASHED_COVERAGE_CAPTURE'
+          elif positives:
+              adjudication='RECORD_PARTIAL_ARCHIVE_EXTENT_AND_CONTINUE_OFFICIAL_FREE_DISCOVERY_WITHOUT_CREDIT'
+          else:
+              adjudication='RECORD_LEGACY_ROUTE_NONRECOVERABILITY_FOR_FROZEN_MATRIX_AND_CONTINUE_DISTINCT_OFFICIAL_BDM_OR_ARCHIVE_DISCOVERY_BEFORE_DATA_GAP'
+          out={
+            'schema':'gate_btc.b3.v3.physical_archive_extent_probe.v1',
+            'generation':'H2730-H2739',
+            'transport_only':True,
+            'rows':rows,
+            'positive_count':positives,
+            'adjudication':adjudication,
+            'source_gate_green':False,
+            'economics_read':False,
+            'data_gap_definitive':False,
+            'research_only':True,
+            'shadow_only':True,
+            'not_approved':True,
+            'orders':0,
+            'real_capital':0,
+            'engine_feed':False,
+            'no_retune':True,
+            'no_backfill':True,
+            'no_counter_reset':True,
+            'fail_closed':True,
+            'h1_economics_read':False
+          }
+          Path('b3_v3_physical_archive_extent_probe.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-v3-physical-archive-extent-probe
+          path: b3_v3_physical_archive_extent_probe.json
