@@ -8,6 +8,7 @@ on:
       - migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
       - migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_DECISION.md
       - tools/gate_btc_qos_prospective_three_track.py
+      - tools/gate_btc_qos_prospective_three_track_idempotent.py
       - tests/test_gate_btc_qos_prospective_three_track.py
   workflow_dispatch:
     inputs:
@@ -57,8 +58,8 @@ jobs:
         run: python -m pip install --disable-pip-version-check numpy pandas pytest
       - name: Verify three-track contract and fail-closed tests
         run: python -m pytest -q tests/test_gate_btc_qos_prospective_three_track.py
-      - name: Compile prospective sidecar
-        run: python -m py_compile tools/gate_btc_qos_prospective_three_track.py
+      - name: Compile prospective sidecars
+        run: python -m py_compile tools/gate_btc_qos_prospective_three_track.py tools/gate_btc_qos_prospective_three_track_idempotent.py
 
   append-prospective-evidence:
     needs: contract-tests
@@ -146,7 +147,7 @@ jobs:
 
       - name: Process prospective three-track signal and daily path
         run: >-
-          python tools/gate_btc_qos_prospective_three_track.py
+          python tools/gate_btc_qos_prospective_three_track_idempotent.py
           --contract migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
           --v2a-zip source_artifact/qos_daily/qos_v2a_outputs.zip
           --runtime-dir runtime_repo/runtime/ledgers/qos_three_track

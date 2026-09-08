@@ -1,4 +1,4 @@
-import importlib.util,json,zipfile
+import importlib.util,json,sys,zipfile
 from pathlib import Path
 import pandas as pd
 ROOT=Path(__file__).resolve().parents[1]; TOOL=ROOT/'tools/gate_btc_qos_prospective_three_track.py'; CONTRACT=ROOT/'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json'
@@ -70,3 +70,17 @@ def test_process_daily_automation(tmp_path):
     for d in pd.date_range('2026-08-31','2026-10-01'):
         z=tmp_path/f'{d.date()}.zip'; write_v2a(z,d,m); assert mod.process_daily(z,c,rt,d,f'R-{d.date()}')['status']=='PASS_DAILY_PROCESS'
     led=json.loads((rt/'RESULT_LEDGER.json').read_text()); st=json.loads((rt/'STATUS.json').read_text()); by={x['signal_date']:x['status'] for x in st['cycles']}; assert len(led)==2 and by['2026-08-31']=='COMPLETED' and by['2026-09-30']=='WAITING_CYCLE_COMPLETION'
+
+def test_bounded_retrigger_is_noop_but_revision_still_fails(tmp_path):
+    tools=ROOT/'tools'; sys.path.insert(0,str(tools))
+    wrapper_path=tools/'gate_btc_qos_prospective_three_track_idempotent.py'
+    ws=importlib.util.spec_from_file_location('three_track_idempotent',wrapper_path); wrap=importlib.util.module_from_spec(ws); ws.loader.exec_module(wrap)
+    s=state(); ar=tmp_path/'a'; mod.initialize_cycle_archive(s,ar); m=daily_master(); day=pd.Timestamp('2026-08-31')
+    assert mod.append_path_snapshot(s,ar,m,day,'RUN-A')['result']=='APPENDED'
+    sealed=ar/'snapshots'/'2026-08-31.json'; before=sealed.read_bytes()
+    assert wrap.append_path_idempotent(s,ar,m,day,'RUN-B')['result']=='DUPLICATE_IDENTICAL'
+    assert sealed.read_bytes()==before
+    changed=m.copy(); changed.loc[(changed.symbol=='AAA')&(changed.date==day),'close_usd']=101
+    try: wrap.append_path_idempotent(s,ar,changed,day,'RUN-C'); assert False
+    except RuntimeError as e: assert 'same-date revision/backfill' in str(e)
+    assert sealed.read_bytes()==before
