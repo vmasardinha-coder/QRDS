@@ -113,12 +113,23 @@ jobs:
             echo "FAIL_CLOSED: no pin ledger; run the pinning workflow first"; exit 1; }
           python -c "import json,sys;p=json.load(open(sys.argv[1]))['pins'];print(f'pinned={len(p)}');sys.exit(0 if p else 1)" "runtime_repo/${PIN_LEDGER}/PINS.json"
 
+      - name: Copy the pins out of the runtime checkout
+        run: |
+          set -euo pipefail
+          # The price adapter maintains the pin file it is handed: it writes the
+          # ledger back. That ledger belongs to the pinning workflow, and writing
+          # into this checkout leaves the tree dirty, which made the rebase
+          # before the push refuse and lost a run that had already succeeded.
+          # The engine reads a copy and never writes into runtime_repo.
+          mkdir -p pins_scratch
+          cp "runtime_repo/${PIN_LEDGER}/PINS.json" pins_scratch/PINS.json
+
       - name: Price the TOP100 from the pins
         run: >-
           python tools/gate_btc_delta_v12_multi_venue_daily_prices.py
           --universe-csv universe/UNIVERSE_TOP100.csv
           --out-dir prices_out
-          --pins "runtime_repo/${PIN_LEDGER}/PINS.json"
+          --pins pins_scratch/PINS.json
 
       - name: Resolve the funding window from the anchor
         run: |
@@ -138,7 +149,7 @@ jobs:
       - name: Read observed funding from each pinned venue
         run: >-
           python tools/gate_btc_delta_v12_funding.py
-          --pins "runtime_repo/${PIN_LEDGER}/PINS.json"
+          --pins pins_scratch/PINS.json
           --out-dir funding_out
           --since "${FUNDING_SINCE}"
 
@@ -201,6 +212,14 @@ jobs:
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add "${ENGINE_LEDGER}"
+          # Only the engine ledger may change in this checkout. Anything else is
+          # a defect, and it must say so by name instead of surfacing later as an
+          # unexplained rebase failure.
+          if ! git diff --quiet; then
+            echo "FAIL_CLOSED: the run modified files outside ${ENGINE_LEDGER}:"
+            git diff --name-only
+            exit 1
+          fi
           git diff --cached --quiet && exit 0
           git commit -m "Update Delta V12 engine ledger from run ${GITHUB_RUN_ID}"
           for attempt in 1 2 3 4 5; do
