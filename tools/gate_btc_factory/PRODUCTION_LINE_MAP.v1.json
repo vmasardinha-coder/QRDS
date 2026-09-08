@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.production_line_map.v1",
-  "generated_at_utc": "2026-09-05T22:05:00Z",
+  "generated_at_utc": "2026-09-08T18:00:00Z",
   "purpose": "Classify current collected/reported tracks by whether they are finished, collect-only frozen, active factory evolution, challenger-capable, data/feed-only, or future-dependent. This metadata does not mutate any active collector, clock, methodology, ledger, or economics.",
   "state_enum": [
     "CLOSED_DELIVERED_NO_COLLECTION",
@@ -17,6 +17,7 @@
     {"track":"PIT_SURVIVORSHIP_SELECTOR_AUDIT","group_id":"DATA_INFRA_ONLY","state":"CLOSED_DELIVERED_NO_COLLECTION","evolve":false,"collect":false,"reason":"Causal selector not proven; audit conclusion is permanent unless a materially new PIT data/mechanism design is preregistered."},
     {"track":"REGIME_2026_06_29_2026_08_16","group_id":"CYCLICAL_REGIME","state":"PRESERVE_AS_BENCHMARK_ONLY","evolve":false,"collect":false,"reason":"Fixed historical regime benchmark; do not keep re-running the same window."},
     {"track":"DELTA_EXTERNAL_HISTORICAL","group_id":"TREND_MOMENTUM","state":"PRESERVE_AS_BENCHMARK_ONLY","evolve":false,"collect":false,"reason":"Independent historical ruler; never retune internal models to match it."},
+    {"track":"EMPIRICUS_DELTA","group_id":"TREND_MOMENTUM","state":"PRESERVE_AS_BENCHMARK_ONLY","evolve":false,"collect":false,"reason":"Explicit external/manual Empiricus Delta reference track. Must remain visible in executive inventories and must not be omitted, merged into, or replaced by other Delta tracks. Presence here does not assert an automated collector, ledger, or scientific equivalence."},
     {"track":"DELTA_V12_REPLICATION_ATTEMPTS","group_id":"TREND_MOMENTUM","state":"COLLECT_ONLY_FROZEN","evolve":false,"collect":true,"reason":"Frozen replication contract may collect independent evidence; no retune. New Delta ideas must be isolated challengers."},
     {"track":"BULL_REPLAY_DELTA_70_30","group_id":"TREND_MOMENTUM","state":"INCUMBENT_PLUS_ISOLATED_CHALLENGERS","evolve":true,"collect":true,"reason":"Keep current LIVE shadow arm frozen as incumbent; create new Delta challengers outside the incumbent using distinct mechanisms/cadences/risk controls."},
     {"track":"BULL_REPLAY_DELTA_50_50","group_id":"TREND_MOMENTUM","state":"INCUMBENT_PLUS_ISOLATED_CHALLENGERS","evolve":true,"collect":true,"reason":"Same as 70/30: incumbent remains untouched while challengers are researched separately."},
