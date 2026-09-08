@@ -49,6 +49,13 @@ def validate_record(path:Path,record:dict[str,Any],ledger_dir:Path)->None:
 def validated_records(ledger_dir:Path)->list[tuple[int,Path,dict[str,Any]]]:
     records=[]
     for path in (ledger_dir/"snapshots").glob("*.json"):
+        # Registry-driven prospective PIT evidence historically shared this
+        # directory but is a distinct contract, with its own richer payload
+        # and hash semantics.  Never reinterpret those immutable PIT files as
+        # append-ledger records.  They are preserved in place as legacy
+        # evidence; future PIT publication uses a separate namespace.
+        if "-registry-pit-" in path.name:
+            continue
         record=load_json(path); validate_record(path,record,ledger_dir); sequence=int(record.get("sequence",0)); require(sequence>=1,f"invalid V2A data sequence: {path}"); records.append((sequence,path,record))
     records.sort(key=lambda x:x[0]); require([x[0] for x in records]==list(range(1,len(records)+1)),"V2A data ledger sequence is not contiguous"); return records
 def archive_metadata(ledger_dir:Path,archive_rel:Path,raw:bytes)->dict[str,Any]:

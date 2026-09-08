@@ -30,4 +30,16 @@ class V2ADataLedgerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); manifest,universe,quality,failures=self.fixture(root,"2026-08-06"); self.assertEqual(append(self.args(root,manifest,universe,quality,failures,"2026-08-06","9")),0); manifest,universe,quality,failures=self.fixture(root,"2026-08-05")
             with self.assertRaisesRegex(RuntimeError,"retrospective backfill is prohibited"): append(self.args(root,manifest,universe,quality,failures,"2026-08-05","10"))
+    def test_legacy_registry_pit_snapshot_is_preserved_but_not_reinterpreted_as_append_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); snapshots=root/"ledger/snapshots"; snapshots.mkdir(parents=True)
+            legacy=snapshots/"2026-09-08-registry-pit-34187408288.json"
+            original=b'{"schema":"gate_btc.v2a_point_in_time_data_snapshot.v1","record_sha256":"intentionally-different-contract"}\n'
+            legacy.write_bytes(original)
+            manifest,universe,quality,failures=self.fixture(root,"2026-09-08")
+            self.assertEqual(append(self.args(root,manifest,universe,quality,failures,"2026-09-08","34187408288")),0)
+            self.assertEqual(legacy.read_bytes(),original)
+            record=json.loads((snapshots/"2026-09-08-run-34187408288.json").read_text())
+            self.assertEqual(record["sequence"],1)
+            self.assertEqual(record["snapshot_id"],"2026-09-08-run-34187408288")
 if __name__=="__main__": unittest.main()
