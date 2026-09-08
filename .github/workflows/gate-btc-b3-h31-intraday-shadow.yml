@@ -31,7 +31,7 @@ env:
 
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('gate-btc-b3-h31-intraday-shadow-pr-{0}', github.event.pull_request.number) || 'gate-btc-b3-h31-intraday-shadow-live' }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate:
