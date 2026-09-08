@@ -54,6 +54,14 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertIn('survivor_promotion', c['B3_H31']['prohibited_actions'])
         self.assertIn('recover_approved_missing_collector', c['B3_H31']['approved_auto_repair_actions'])
 
+    def test_d100_registry_matches_forward_only_authority(self):
+        c = {x['collector_id']: x for x in self.r['collectors']}['D100']
+        self.assertEqual(c['status_expected'], 'ACTIVE_DATA_FEED')
+        self.assertEqual(c['expected_workflow_job'], 'gate-btc-d100-forward-collection.yml')
+        self.assertEqual(c['approved_auto_repair_actions'], [])
+        self.assertIn('synthetic_backfill', c['prohibited_actions'])
+        self.assertIn('scientific_clock_change', c['prohibited_actions'])
+
     def test_production_map_remains_authoritative(self):
         states = {x['track']: x['state'] for x in self.p['tracks']}
         self.assertEqual(states['B3_H1'], 'COLLECT_ONLY_FROZEN')
@@ -61,7 +69,7 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['B3_H60_PLUS'], 'FACTORY_ACTIVE_DISCOVERY')
         self.assertEqual(states['V16B'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
-        self.assertEqual(states['D100'], 'FUTURE_DEPENDENT')
+        self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
 
 
 if __name__ == '__main__':
