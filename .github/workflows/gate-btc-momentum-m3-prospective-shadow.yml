@@ -1,0 +1,170 @@
+name: GATE BTC Momentum M3 Prospective Shadow
+
+on:
+  workflow_run:
+    workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+concurrency:
+  group: gate-btc-momentum-m3-prospective-shadow
+  cancel-in-progress: false
+
+jobs:
+  collect-m3:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check out append-only runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Validate frozen M3 contract and implementation
+        run: |
+          python -m py_compile tools/gate_btc_momentum_m3_persistence.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('migration/reporting/momentum_m3_persistence_contract.json').read_text())
+          q=json.loads(Path('migration/reporting/momentum_m3_persistence_clarification_20260909.json').read_text())
+          assert c['status']=='FROZEN_EX_ANTE_NO_ECONOMICS_READ'
+          assert c['freeze_date']=='2026-09-09'
+          assert c['prospective_policy']['historical_backfill'] is False
+          assert c['prospective_policy']['retrospective_credit']==0
+          assert q['economics_read'] is False
+          assert c['safety']['engine_feed'] is False
+          assert c['safety']['orders']==0 and c['safety']['real_capital']==0
+          PY
+
+      - name: Resolve canonical source cutoff
+        id: cutoff
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import date
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/ledgers/momentum_m1_m2/STATUS.json')
+          if not p.exists():
+              raise SystemExit('canonical Momentum M1/M2 STATUS missing')
+          s=json.loads(p.read_text())
+          cutoff=s.get('data_as_of')
+          if not cutoff:
+              raise SystemExit('canonical Momentum source cutoff missing')
+          eligible=date.fromisoformat(cutoff) > date.fromisoformat('2026-09-09')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'cutoff={cutoff}\n')
+              f.write(f'eligible={str(eligible).lower()}\n')
+          print(json.dumps({'source_status':s.get('status'),'cutoff':cutoff,'eligible_after_freeze':eligible},sort_keys=True))
+          PY
+
+      - name: Pre-freeze/no-new-close no-op
+        if: steps.cutoff.outputs.eligible != 'true'
+        run: |
+          echo 'M3=NOOP_WAIT_FIRST_CLOSE_STRICTLY_AFTER_FREEZE'
+          echo 'RETROSPECTIVE_CREDIT=0'
+          echo 'ORDERS=0'
+          echo 'REAL_CAPITAL=0'
+
+      - name: Compute append-only M3 prospective signal
+        id: m3
+        if: steps.cutoff.outputs.eligible == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/momentum_m3
+          python tools/gate_btc_momentum_m3_persistence.py \
+            --source-ledger-dir runtime_repo/runtime/ledgers/momentum_m1_m2 \
+            --ledger-dir runtime_repo/runtime/ledgers/momentum_m3 \
+            --cutoff '${{ steps.cutoff.outputs.cutoff }}' \
+            --output artifacts/momentum_m3/MOMENTUM_M3_${{ steps.cutoff.outputs.cutoff }}.json
+
+      - name: Build M3 runtime status
+        if: steps.cutoff.outputs.eligible == 'true' && steps.m3.outcome == 'success'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/momentum_m3')
+          snaps=sorted(p for p in root.glob('*.json') if p.name != 'STATUS.json')
+          if not snaps:
+              raise SystemExit('no M3 prospective snapshot after successful compute')
+          latest=json.loads(snaps[-1].read_text())
+          assert latest['economics_activated'] is False
+          assert latest['retrospective_credit'] == 0
+          assert latest['safety']['engine_feed'] is False
+          assert latest['safety']['orders'] == 0 and latest['safety']['real_capital'] == 0
+          status={
+            'schema':'gate_btc.momentum_m3.status.v1',
+            'candidate_id':'GATE_BTC_MOMENTUM_M3_PERSISTENCE_20260909',
+            'status':'ACTIVE_PROSPECTIVE_SIGNAL_SHADOW',
+            'data_as_of':latest['cutoff'],
+            'observed_snapshots':len(snaps),
+            'latest_snapshot_sha256':latest['snapshot_sha256'],
+            'common_universe_n':latest['common_universe_n'],
+            'economics_status':'NOT_ACTIVATED',
+            'retrospective_credit':0,
+            'research_only':True,
+            'shadow_only':True,
+            'not_approved':True,
+            'engine_feed':False,
+            'orders':0,
+            'real_capital':0,
+            'backfill':False,
+            'late_seal':False,
+            'counter_reset':False,
+            'retune':False,
+          }
+          (root/'STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          Path('artifacts/momentum_m3/STATUS.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(status,sort_keys=True))
+          PY
+
+      - name: Upload M3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-momentum-m3-${{ github.run_id }}
+          path: artifacts/momentum_m3
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Publish M3 append-only runtime ledger
+        if: steps.cutoff.outputs.eligible == 'true' && steps.m3.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git -C runtime_repo config user.name 'gate-btc-actions'
+          git -C runtime_repo config user.email 'gate-btc-actions@users.noreply.github.com'
+          git -C runtime_repo add runtime/ledgers/momentum_m3
+          if git -C runtime_repo diff --cached --quiet; then
+            echo 'M3 runtime already current'
+            exit 0
+          fi
+          git -C runtime_repo commit -m "Update Momentum M3 prospective signal ${{ steps.cutoff.outputs.cutoff }}"
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+              git -C runtime_repo rebase --abort || true
+              exit 1
+            fi
+            if git -C runtime_repo push origin HEAD:gate-btc-runtime; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
