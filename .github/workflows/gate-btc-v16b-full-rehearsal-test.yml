@@ -40,12 +40,14 @@ jobs:
             tools/gate_btc_v16b_preflight_status.py \
             tools/gate_btc_v16b_signal_source.py \
             tools/gate_btc_v16b_feature_panel.py \
+            tools/gate_btc_v16b_source_bound_panel.py \
             tools/gate_btc_v16b_prospective_signal.py \
+            tools/gate_btc_v16b_source_bound_signal.py \
             tools/gate_btc_v16b_prospective_entry.py \
             tools/gate_btc_v16b_prospective_chain.py \
             tools/gate_btc_v16b_rehearsal.py
-      - name: Prove source mapping, cutoff, panel causality and PIT separation
-        run: pytest -q tests/test_gate_btc_v16b_signal_source.py tests/test_gate_btc_v16b_feature_panel.py
+      - name: Prove source mapping, provenance binding, cutoff, panel causality and PIT separation
+        run: pytest -q tests/test_gate_btc_v16b_signal_source.py tests/test_gate_btc_v16b_source_binding.py tests/test_gate_btc_v16b_feature_panel.py
       - name: Assert frozen SIGNAL source contract is resolved
         run: |
           python - <<'PY'
@@ -57,6 +59,8 @@ jobs:
           assert x['signal_market_venue']['quote_asset']=='USDT'
           assert x['daily_price_source']['endpoint']=='https://data-api.binance.vision/api/v3/klines'
           assert x['benchmark_identity']['symbol']=='BTCUSDT'
+          assert x['provenance_contract']['panel_binding']
+          assert x['provenance_contract']['signal_binding']
           assert x['safety']['NO_BACKFILL'] is True
           assert x['safety']['NO_RETUNE'] is True
           print('V16B_SIGNAL_SOURCE_CONTRACT=PASS')
