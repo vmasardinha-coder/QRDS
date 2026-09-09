@@ -1,0 +1,150 @@
+name: GATE BTC Shadow Executive 13 Blocks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-shadow-executive.yml
+      - tools/gate_btc_shadow_executive.py
+      - tests/test_gate_btc_shadow_executive.py
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-shadow-executive-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+
+jobs:
+  contract-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile generator
+        run: python -m py_compile tools/gate_btc_shadow_executive.py
+      - name: Test fixed 13-block contract
+        run: python -m unittest -v tests.test_gate_btc_shadow_executive
+      - name: Assert immutable reporting boundary
+        run: |
+          python - <<'PY'
+          import json, tempfile
+          from pathlib import Path
+          from tools.gate_btc_shadow_executive import write_outputs
+          with tempfile.TemporaryDirectory() as td:
+              root=Path(td)
+              state={
+                'reporting_date_utc':'2026-09-09','reference_data_date':'2026-09-08',
+                'reporting_only':True,'research_only':True,'shadow_only':True,'not_approved':True,
+                'orders_generated':0,'real_capital_used':0,'components':{},'ledger_inventory':{},
+                'executive_track_catalog':{
+                  'ledger_tracks':{},'declared_nonledger_tracks':{},
+                  'required_reporting_references':{
+                    'empiricus_delta':{'track_id':'empiricus_delta','display_name':'Empiricus Delta','canonical_evidence_status':'ABSENT_NOT_INFERRED','scientific_authority':False}
+                  },'summary':{}
+                }
+              }
+              p=root/'state.json'; p.write_text(json.dumps(state),encoding='utf-8')
+              write_outputs(p,root/'executive','2026-09-09')
+              e=json.load(open(root/'executive/SHADOW_EXECUTIVE_LATEST.json',encoding='utf-8'))
+              assert e['fixed_block_count']==13
+              assert e['blocks'][4]['title']=='PRESERVATION'
+              assert e['blocks'][8]['content']['empiricus_delta_required'] is True
+              assert e['blocks'][8]['content']['empiricus_delta']['canonical_evidence_status']=='ABSENT_NOT_INFERRED'
+              assert e['reporting_only'] is True and e['scientific_authority'] is False
+              assert e['engine_feed'] is False and e['orders_generated']==0 and e['real_capital_used']==0
+              assert e['methodology_changes']==0 and e['counter_changes']==0 and e['promotion_allowed'] is False
+          print('SHADOW_EXECUTIVE_BOUNDARY=PASS')
+          PY
+
+  publish-executive:
+    needs: contract-test
+    if: >-
+      github.event_name != 'pull_request' && github.ref_name == 'main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Require canonical reporting state
+        run: |
+          test -f runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json'
+          s=json.load(open(p,encoding='utf-8'))
+          assert s['reporting_only'] is True
+          assert s['research_only'] is True and s['shadow_only'] is True and s['not_approved'] is True
+          assert s['orders_generated']==0 and s['real_capital_used']==0
+          assert 'executive_track_catalog' in s
+          assert 'empiricus_delta' in s['executive_track_catalog']['required_reporting_references']
+          PY
+      - name: Build canonical 13-block executive
+        run: >-
+          python main_repo/tools/gate_btc_shadow_executive.py
+          --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          --output-dir runtime_repo/runtime/executive
+      - name: Validate required blocks and no-inference policy
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path('runtime_repo/runtime/executive/SHADOW_EXECUTIVE_LATEST.json')
+          e=json.load(open(p,encoding='utf-8'))
+          assert e['fixed_block_count']==13
+          assert [b['title'] for b in e['blocks']] == [
+            'PASSADO','LIVE FINANCEIRO','D50','PROXY REAL','PRESERVATION','LIVE ESTRUTURAL',
+            'CLOCKS','FUNDO/REGIME','RADAR EXTERNO','META 2030','LIDERANCA/PUBLICACAO',
+            'GATE BTC 2.0','FACTORY/EXTERNO'
+          ]
+          assert set(e['blocks'][1]['content']['required_fields']) >= {
+            'baseline','current_index','variation','hwm','drawdown','giveback','capital_1m_equivalent',
+            'fees_custody_live','fees_custody_cumulative','sharpe','sortino','calmar','var_95','var_99',
+            'es_95','es_99','payoff','best_day','worst_day','pl_decomposition','deltas','baseline_version',
+            'health_state','health_source'
+          }
+          assert e['blocks'][4]['title']=='PRESERVATION'
+          assert e['blocks'][8]['content']['empiricus_delta_required'] is True
+          assert e['reporting_only'] is True and e['scientific_authority'] is False
+          assert e['engine_feed'] is False and e['orders_generated']==0 and e['real_capital_used']==0
+          assert e['methodology_changes']==0 and e['counter_changes']==0 and e['promotion_allowed'] is False
+          PY
+      - name: Commit executive artifacts only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-reporting-bot
+          git config user.email gate-btc-reporting-bot@users.noreply.github.com
+          git add runtime/executive/
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish 13-block GATE BTC shadow executive"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
