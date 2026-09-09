@@ -1,0 +1,98 @@
+{
+  "schema": "gate_btc.v16b.signal_source_contract.v1",
+  "contract_id": "GATE_BTC_V16B_SIGNAL_SOURCE_CONTRACT_FREEZE_20260909",
+  "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "scientific_decision_issue": 671,
+  "decision_date_utc": "2026-09-09",
+  "status": "FROZEN_EX_ANTE",
+  "effective_scope": "future untouched V16B SIGNAL windows only; never retroactive; no backfill or late seal",
+  "decision_basis": "source/provenance completeness and consistency only; no V16B outcome, ranking, realized PnL, external Delta or future executability used",
+  "signal_market_venue": {
+    "venue": "Binance Spot",
+    "quote_asset": "USDT",
+    "market_data_only_base_url": "https://data-api.binance.vision",
+    "authoritative_exchange_metadata_endpoint": "/api/v3/exchangeInfo",
+    "authoritative_clock_endpoint": "/api/v3/time"
+  },
+  "asset_to_market_identity_policy": {
+    "cmc_identity_fields_preserved": ["id", "symbol", "slug", "cmc_rank"],
+    "mapping_source": "exact Binance Spot exchangeInfo captured for the SIGNAL window",
+    "eligible_exchange_symbol_rule": "status=TRADING AND quoteAsset=USDT AND baseAsset exactly equals the CMC symbol",
+    "cmc_symbol_uniqueness_rule": "CMC symbol must be unique within the exact PIT Top-150 snapshot; duplicate CMC symbols are all unmapped",
+    "exchange_match_uniqueness_rule": "exactly one Binance Spot USDT symbol must match; zero or multiple matches are unmapped",
+    "string_concatenation_forbidden": true,
+    "aliases_or_symbol_transforms": "none; no alias, multiplier, prefix, suffix, rename or heuristic normalization is permitted",
+    "mapping_time": "mapping is determined from exchangeInfo captured after the Thursday daily bar is closed and before SIGNAL_SEAL",
+    "mapping_output_required_fields": ["signal_date", "cmc_id", "cmc_symbol", "cmc_slug", "cmc_rank", "market_symbol", "base_asset", "quote_asset", "mapping_status", "mapping_reason"]
+  },
+  "daily_price_source": {
+    "source": "Binance Spot Market Data Only REST",
+    "endpoint": "https://data-api.binance.vision/api/v3/klines",
+    "interval": "1d",
+    "instrument": "exact frozen mapped Binance Spot USDT symbol",
+    "price_field": "close",
+    "raw_response_preservation_required": true,
+    "third_party_substitution_forbidden": true
+  },
+  "volume_usd_semantics": {
+    "raw_field": "quote asset volume from Binance Spot 1d kline",
+    "quote_asset": "USDT",
+    "derived_volume_usd": "numeric quote asset volume in USDT units; no FX conversion and no synthetic reconstruction",
+    "threshold_interpretation": "the already-frozen 10,000,000/day liquidity threshold is applied to this source-specific USDT quote-volume measure",
+    "missing_or_nonfinite": "feature row fails completeness; no imputation"
+  },
+  "benchmark_identity": {
+    "symbol": "BTCUSDT",
+    "venue": "Binance Spot",
+    "source": "same 1d kline endpoint and same causal cutoff as candidate assets",
+    "substitution": "none"
+  },
+  "cmc_member_without_valid_market_mapping_policy": {
+    "action": "exclude before feature construction",
+    "replacement": "none",
+    "record_reason_required": true,
+    "portfolio_backfill_for_excluded_member": false
+  },
+  "market_available_but_not_in_cmc_pit_policy": {
+    "action": "exclude",
+    "reason": "CMC PIT Top-150 remains the frozen universe authority; exchange listing cannot expand it"
+  },
+  "source_availability_and_cutoff": {
+    "signal_day": "Thursday UTC",
+    "bar_rule": "use only fully closed 1d klines whose closeTime is <= signal_day 23:59:59.999 UTC",
+    "capture_rule": "Binance /api/v3/time must be >= the next UTC midnight before market-data capture is accepted",
+    "seal_rule": "all market-source evidence must be captured and hash-bound after the signal-day bar closes and before SIGNAL_SEAL; SIGNAL_SEAL remains before Friday UTC close",
+    "cmc_rule": "CMC PIT snapshot itself must already satisfy the existing requirement of demonstrable availability by Thursday UTC close",
+    "future_rows": "forbidden",
+    "late_repair": "forbidden"
+  },
+  "provenance_contract": {
+    "preserve_raw": ["CMC snapshot", "CMC evidence manifest", "Binance exchangeInfo response", "Binance serverTime response", "Binance kline response for every mapped symbol including BTCUSDT"],
+    "hash_algorithm": "SHA-256",
+    "required_manifest_bindings": ["contract_sha256", "cmc_snapshot_sha256", "cmc_evidence_sha256", "exchange_info_sha256", "server_time_sha256", "mapping_sha256", "daily_prices_sha256", "weekly_universe_sha256", "raw_kline_sha256_by_symbol", "retrieved_at_utc_by_source"],
+    "panel_binding": "feature-panel manifest must bind the SIGNAL market-source manifest hash for CURRENT_PROSPECTIVE_PIT rows",
+    "signal_binding": "prospective SIGNAL input_data_hashes must include the feature-panel manifest and SIGNAL market-source manifest hashes",
+    "canonicalization": "derived CSV outputs use deterministic sorting and LF line endings",
+    "failure_mode": "missing/mismatched provenance fails closed"
+  },
+  "unchanged_frozen_science": {
+    "features_model_score_liquidity_portfolio_risk_cost_funding_clock": "UNCHANGED_FROM_20260811_PROTOCOL",
+    "entry_contract": "UNCHANGED_BINANCE_SPOT_USDT_LONGS_AND_BINANCE_USD_M_SHORTS",
+    "result_contract": "UNCHANGED_BINANCE_DATA_VISION_EXACT_ENTRY_INSTRUMENTS",
+    "retune": false,
+    "counter_reset": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_RETUNE": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
