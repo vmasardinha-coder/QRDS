@@ -9,8 +9,10 @@ on:
       - migration/reporting/GATE_BTC_DELTA_PAPER_MONITOR_AGENT.md
       - tools/gate_btc_delta_paper_monitor.py
       - tools/gate_btc_delta_paper_report.py
+      - tools/gate_btc_delta_paper_catchup.py
       - tests/test_gate_btc_delta_paper_monitor.py
       - tests/test_gate_btc_delta_paper_report.py
+      - tests/test_gate_btc_delta_paper_catchup.py
   workflow_dispatch:
     inputs:
       run_id:
@@ -20,13 +22,21 @@ on:
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
+  # A rede de seguranca do encadeamento acima. O GitHub nao emite workflow_run
+  # para execucoes disparadas com GITHUB_TOKEN, entao uma retentativa automatica
+  # bem-sucedida nao acorda o monitor. Esta agenda cobre a janela da coleta e
+  # processa o ponteiro publicado quando ha fechamento novo.
+  schedule:
+    - cron: "0 5-15 * * *"
 
 permissions:
   actions: read
   contents: read
 
 concurrency:
-  group: gate-btc-delta-paper-monitor-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  # Sem o event_name na chave: agendado e encadeado escrevem no MESMO ledger e
+  # nao podem rodar em paralelo.
+  group: gate-btc-delta-paper-monitor-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 env:
@@ -58,13 +68,20 @@ jobs:
         run: python -m unittest -v tests.test_gate_btc_delta_paper_monitor
       - name: Test daily executive report rendering
         run: python -m unittest -v tests.test_gate_btc_delta_paper_report
-      - name: Compile paper monitor and reporter
-        run: python -m py_compile tools/gate_btc_delta_paper_monitor.py tools/gate_btc_delta_paper_report.py
+      - name: Test the scheduled catchup decision
+        run: python -m unittest -v tests.test_gate_btc_delta_paper_catchup
+      - name: Compile paper monitor, reporter and catchup
+        run: >-
+          python -m py_compile
+          tools/gate_btc_delta_paper_monitor.py
+          tools/gate_btc_delta_paper_report.py
+          tools/gate_btc_delta_paper_catchup.py
 
   append-paper-monitor:
     needs: contract-tests
     if: >-
       (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'schedule') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     permissions:
       actions: read
@@ -77,6 +94,20 @@ jobs:
         with:
           ref: main
 
+      - name: Read the published pointer and the ledger
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: pointer_repo
+
+      - name: Decide whether a completed close is waiting
+        if: github.event_name == 'schedule'
+        run: >-
+          python tools/gate_btc_delta_paper_catchup.py
+          --pointer pointer_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          --status pointer_repo/runtime/ledgers/delta_paper_monitor/STATUS.json
+
       - name: Resolve exact successful Daily Research source run
         env:
           GH_TOKEN: ${{ github.token }}
@@ -84,7 +115,14 @@ jobs:
           EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
-          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          # Num agendamento sem fechamento novo, o passo anterior gravou a decisao
+          # e nao ha nada a fazer. Sair aqui evita baixar o artefato a toa.
+          if [ "${CATCHUP_DECISION:-}" = "UP_TO_DATE" ] || [ "${CATCHUP_DECISION:-}" = "POINTER_BEHIND_LEDGER" ]; then
+            echo "DELTA_PAPER_MONITOR=NOTHING_TO_BOOK ${CATCHUP_DECISION}"
+            echo "CATCHUP_SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-${CATCHUP_SOURCE_RUN_ID:-$EVENT_RUN_ID}}"
           test -n "$SOURCE_RUN_ID"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
           python - <<'PY'
@@ -98,6 +136,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download exact Daily Research artifact
+        if: env.CATCHUP_SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -111,6 +150,7 @@ jobs:
           test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
 
       - name: Verify source safety boundary
+        if: env.CATCHUP_SKIP != '1'
         run: |
           python - <<'PY'
           import json
@@ -125,6 +165,7 @@ jobs:
           PY
 
       - name: Check out immutable runtime branch
+        if: env.CATCHUP_SKIP != '1'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -132,6 +173,7 @@ jobs:
           fetch-depth: 0
 
       - name: Append exact daily prospective paper observation
+        if: env.CATCHUP_SKIP != '1'
         run: >-
           python tools/gate_btc_delta_paper_monitor.py
           --contract migration/reporting/delta_paper_monitor_contract.json
@@ -140,12 +182,14 @@ jobs:
           --source-run-id "$SOURCE_RUN_ID"
 
       - name: Render daily executive report from the ledger
+        if: env.CATCHUP_SKIP != '1'
         run: >-
           python tools/gate_btc_delta_paper_report.py
           --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor
           --allow-missing
 
       - name: Verify runtime safety state when present
+        if: env.CATCHUP_SKIP != '1'
         run: |
           python - <<'PY'
           import json
@@ -167,6 +211,7 @@ jobs:
           PY
 
       - name: Commit paper-monitor evidence only
+        if: env.CATCHUP_SKIP != '1'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
