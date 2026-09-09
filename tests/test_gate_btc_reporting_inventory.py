@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.gate_btc_reporting_inventory import complete_inventory
 from tools.gate_btc_reporting_operational_overlay import enrich
 
 
@@ -85,6 +86,60 @@ class ReportingLedgerInventoryTest(unittest.TestCase):
             )
             self.assertFalse(state["ledger_inventory"]["d100"]["health_authority"])
             self.assertTrue(state["ledger_inventory"]["d100"]["inventory_only"])
+
+    def test_complete_inventory_adds_directories_without_status_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._write(root, "ledgers/d100/STATUS.json", {
+                **SAFE,
+                "schema": "test.d100.v1",
+                "status": "ACTIVE",
+            })
+            self._write(root, "ledgers/momentum_m1_m2_economics/ECONOMICS_STATUS.json", {
+                "schema": "test.momentum.economics.v1",
+                "status": "RESEARCH_ONLY",
+                "orders_generated": 0,
+                "real_capital_used": 0,
+            })
+            self._write(root, "ledgers/delta_v12_prices/COVERAGE.json", {
+                "schema": "test.delta_v12_prices.coverage.v1",
+                "status": "QUALIFIED_FOR_AUDIT_ONLY",
+            })
+            state = self._base_state()
+            state["components"]["d100"] = {"source": "ledgers/d100/STATUS.json"}
+            state["ledger_inventory"] = {
+                "d100": {
+                    "ledger_id": "d100",
+                    "source": "ledgers/d100/STATUS.json",
+                    "status": "ACTIVE",
+                    "inventory_only": True,
+                    "health_authority": False,
+                }
+            }
+
+            out = complete_inventory(root, state)
+
+            self.assertEqual(
+                set(out["ledger_inventory"]),
+                {"d100", "momentum_m1_m2_economics", "delta_v12_prices"},
+            )
+            self.assertEqual(out["inventory_summary"]["ledger_count"], 3)
+            self.assertTrue(out["inventory_summary"]["complete_directory_enumeration"])
+            self.assertEqual(
+                out["ledger_inventory"]["momentum_m1_m2_economics"]["status_authority_file"],
+                "ECONOMICS_STATUS.json",
+            )
+            self.assertEqual(
+                out["ledger_inventory"]["delta_v12_prices"]["status_authority_file"],
+                "COVERAGE.json",
+            )
+            self.assertEqual(out["inventory_summary"]["represented_ledger_ids"], ["d100"])
+            self.assertEqual(
+                out["inventory_summary"]["unrepresented_ledger_ids"],
+                ["delta_v12_prices", "momentum_m1_m2_economics"],
+            )
+            self.assertTrue(out["delivery_complete"])
+            self.assertEqual(out["status"], "PASS")
 
     def test_newly_discovered_unsafe_ledger_fails_closed(self):
         with tempfile.TemporaryDirectory() as td:
