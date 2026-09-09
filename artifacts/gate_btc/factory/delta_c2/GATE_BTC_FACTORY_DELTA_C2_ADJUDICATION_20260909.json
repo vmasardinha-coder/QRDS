@@ -1,0 +1,40 @@
+{
+  "schema": "qrds.factory.delta_c2_adjudication.v1",
+  "date": "2026-09-09",
+  "issue": 677,
+  "raw_public_run_id": 34407773922,
+  "raw_public_run_head_sha": "742e06c9f1b9d653e3c17268c5a1a4ab22c4cb07",
+  "raw_evaluator_status": "CLOSED_NULL",
+  "canonical_status": "CLOSED_NULL_WITH_DATA_GAPS",
+  "source_qa_precedes_economics": true,
+  "source_gap": {
+    "field": "funding_rate",
+    "canonical_adapter_call_start": "CFG[start_date]",
+    "canonical_adapter_start_date": "2026-05-15",
+    "c2_discovery_end_inclusive": "2026-03-31",
+    "conclusion": "NO_ADMISSIBLE_FUNDING_COVERAGE_IN_DISCOVERY_FOR_FUNDING_DEPENDENT_CELLS"
+  },
+  "decisions": {
+    "DELTA_C2_VOLUME_CONFIRMATION": "REJECTED_DISCOVERY",
+    "DELTA_C2_PRICE_VOLUME_DIVERGENCE": "REJECTED_DISCOVERY",
+    "DELTA_C2_FUNDING_DIVERGENCE": "DATA_BLOCKED_SOURCE_COVERAGE_GAP",
+    "DELTA_C2_FUNDING_EXTREMES": "DATA_BLOCKED_SOURCE_COVERAGE_GAP",
+    "DELTA_C2_FUNDING_VOLUME_CONSENSUS": "DATA_BLOCKED_SOURCE_COVERAGE_GAP"
+  },
+  "survivors_to_freeze": [],
+  "prospective_activation": false,
+  "funding_source_repair_deferred": true,
+  "invalid_funding_economics_must_not_be_used_as_feedback": true,
+  "empiricus_delta_status": "EXTERNAL_BENCHMARK_ONLY",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}
