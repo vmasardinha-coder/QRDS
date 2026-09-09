@@ -1,0 +1,129 @@
+{
+  "schema": "qrds.factory.delta_c2_prereg.v1",
+  "issue": 677,
+  "generated_before_results": true,
+  "group_id": "TREND_MOMENTUM",
+  "version": "DELTA_C2_FUNDING_VOLUME_20260909",
+  "lineage": {
+    "predecessor": "DELTA_C1",
+    "predecessor_result_credit": 0,
+    "reason_for_new_version": "C1 result evidence not canonically persisted; C2 is a fresh materially distinct source/mechanism generation, not a rerun or rescue"
+  },
+  "capital_comparison_brl": 180000,
+  "historical_cutoff_exclusive": "2026-08-10",
+  "discovery_end_inclusive": "2026-03-31",
+  "replication_start_inclusive": "2026-04-01",
+  "source_contract": {
+    "primary_adapter": "migration/canonical/delta/scripts/00_run_delta_v11.py",
+    "provider": "OKX_PUBLIC",
+    "instrument_template": "SYMBOL-USDT-SWAP",
+    "required_fields": ["date", "symbol", "close", "volume", "funding_rate", "funding_time_utc"],
+    "candles": {
+      "endpoint_semantics": "existing canonical confirmed 1Dutc swap candles",
+      "completed_only": true,
+      "volume_semantics": "existing canonical collector volume field from confirmed candle payload"
+    },
+    "funding": {
+      "endpoint_semantics": "existing canonical official funding-rate-history adapter",
+      "event_time_field": "funding_time_utc",
+      "causal_rule": "funding event is eligible for signal date d only if funding_time_utc <= completed signal-day cutoff",
+      "aggregation": "sum eligible events over trailing completed calendar-day window",
+      "interpolation": false,
+      "inference": false
+    },
+    "missing_or_duplicate_identity": "FAIL_CLOSED",
+    "source_substitution": false,
+    "persist_source_hashes": true,
+    "incumbents_read_only": true,
+    "external_delta_not_tuning_target": true,
+    "empiricus_delta_role": "EXTERNAL_BENCHMARK_ONLY"
+  },
+  "execution": {
+    "signal_on_completed_close": true,
+    "return_starts_next_bar": true,
+    "rebalance_days": 3,
+    "fee_bps_per_turnover_unit": 8.0,
+    "top_n": 5,
+    "bottom_n": 5,
+    "btc_tradable": false
+  },
+  "families": {
+    "DELTA_C2_FUNDING_DIVERGENCE": {
+      "central": {"price_lookback": 14, "funding_days": 7, "funding_weight": 1.0},
+      "neighbors": [
+        {"price_lookback": 14, "funding_days": 7, "funding_weight": 0.5},
+        {"price_lookback": 14, "funding_days": 7, "funding_weight": 1.5}
+      ],
+      "score": "z(price_mom14) - funding_weight*z(funding_sum7)"
+    },
+    "DELTA_C2_FUNDING_EXTREMES": {
+      "central": {"price_lookback": 14, "funding_days": 7, "exclusion_quantile": 0.20},
+      "neighbors": [
+        {"price_lookback": 14, "funding_days": 7, "exclusion_quantile": 0.10},
+        {"price_lookback": 14, "funding_days": 7, "exclusion_quantile": 0.30}
+      ],
+      "rule": "rank price momentum; exclude long candidates in highest funding quantile and short candidates in lowest funding quantile; no replacement; flat if fewer than top_n+bottom_n admissible names"
+    },
+    "DELTA_C2_VOLUME_CONFIRMATION": {
+      "central": {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "volume_weight": 0.5},
+      "neighbors": [
+        {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "volume_weight": 0.25},
+        {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "volume_weight": 1.0}
+      ],
+      "score": "z(price_mom14) + volume_weight*z(log(mean_volume7/mean_volume30))"
+    },
+    "DELTA_C2_PRICE_VOLUME_DIVERGENCE": {
+      "central": {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "divergence_penalty": 0.5},
+      "neighbors": [
+        {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "divergence_penalty": 0.25},
+        {"price_lookback": 14, "volume_short_days": 7, "volume_long_days": 30, "divergence_penalty": 1.0}
+      ],
+      "score": "price_z - divergence_penalty*abs(volume_z) only when sign(price_z) != sign(volume_z); otherwise price_z"
+    },
+    "DELTA_C2_FUNDING_VOLUME_CONSENSUS": {
+      "central": {"price_lookback": 14, "funding_days": 7, "volume_short_days": 7, "volume_long_days": 30, "funding_weight": 0.5, "volume_weight": 0.5},
+      "neighbors": [
+        {"price_lookback": 14, "funding_days": 7, "volume_short_days": 7, "volume_long_days": 30, "funding_weight": 0.25, "volume_weight": 0.25},
+        {"price_lookback": 14, "funding_days": 7, "volume_short_days": 7, "volume_long_days": 30, "funding_weight": 1.0, "volume_weight": 1.0}
+      ],
+      "score": "z(price_mom14) - funding_weight*z(funding_sum7) + volume_weight*z(log(mean_volume7/mean_volume30))"
+    }
+  },
+  "gates": {
+    "min_observations_each_block": 60,
+    "min_sharpe": 0.50,
+    "max_drawdown_floor": -0.15,
+    "require_positive_total_return": true,
+    "require_discovery_neighbor": true,
+    "require_central_replication": true,
+    "max_survivors_to_freeze": 2,
+    "overflow_rank_primary": "passing_predeclared_variant_count",
+    "overflow_rank_tiebreak": "central_replication_sharpe"
+  },
+  "forbidden_after_freeze": [
+    "add_family",
+    "add_coefficient",
+    "change_source",
+    "change_cutoff",
+    "change_discovery_replication_split",
+    "change_cost",
+    "change_execution_lag",
+    "use_C1_missing_result_as_feedback",
+    "read_partial_prospective_survivor_economics"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false,
+    "PARTIAL_PROSPECTIVE_ECONOMICS_READ": false
+  }
+}
