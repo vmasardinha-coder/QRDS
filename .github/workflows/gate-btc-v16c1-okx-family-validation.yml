@@ -1,0 +1,47 @@
+name: GATE BTC V16C.1 OKX Family Validation
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc/v16b/GATE_BTC_V16C1_OKX_FAMILY_FREEZE_20260909.json'
+      - 'tools/gate_btc_v16c1_okx_signal.py'
+      - 'tools/gate_btc_v16c1_okx_entry.py'
+      - 'tools/gate_btc_v16c1_okx_result.py'
+      - 'tools/gate_btc_v16c1_chain.py'
+      - 'tests/test_gate_btc_v16c1_okx_family.py'
+      - '.github/workflows/gate-btc-v16c1-okx-family-validation.yml'
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  v16c1-okx-family:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas numpy requests
+      - name: Validate frozen lineage beta-neutrality causality and accounting
+        run: python -m unittest -v tests/test_gate_btc_v16c1_okx_family.py
+      - name: Assert immutable family boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/gate_btc/v16b/GATE_BTC_V16C1_OKX_FAMILY_FREEZE_20260909.json'))
+          assert p['status']=='FROZEN_EX_ANTE'
+          assert p['effective_from_first_eligible_signal_date']=='2026-09-17'
+          assert p['lineage']['canonical_cycle_count_starts_at']==0
+          assert p['lineage']['no_parent_credit_inherited'] is True
+          assert p['structural_hypothesis_unchanged']['target_portfolio_beta']==0.0
+          assert p['structural_hypothesis_unchanged']['beta_tolerance_abs']==0.05
+          assert p['execution_contract_inherited_exactly_from_v16b1']['short_execution']=='OKX USDT-settled SWAP, instType=SWAP, settleCcy=USDT, state=live'
+          assert p['safety']['RESEARCH_ONLY'] and p['safety']['SHADOW_ONLY'] and p['safety']['NOT_APPROVED']
+          assert p['safety']['ENGINE_FEED'] is False and p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0
+          PY
