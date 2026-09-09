@@ -13,8 +13,14 @@ on:
       - tests/test_gate_btc_runtime_delivery_health.py
       - tests/test_gate_btc_collection_health_item1.py
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "GATE BTC Daily Research Collection"
+      - "GATE BTC Momentum M1 M2 Shadow Collection"
+      - "GATE BTC D100 Forward Collection"
+    types: [completed]
   schedule:
-    - cron: "30 3 * * *"
+    - cron: "30 * * * *"
 
 permissions:
   contents: read
@@ -28,6 +34,9 @@ env:
 
 jobs:
   reporting-contract-test:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -94,7 +103,9 @@ jobs:
   publish-reporting-state:
     needs: reporting-contract-test
     if: >-
-      github.event_name != 'pull_request' && github.ref_name == 'main'
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       github.event.workflow_run.head_branch == 'main')
     permissions:
       contents: write
     runs-on: ubuntu-latest
