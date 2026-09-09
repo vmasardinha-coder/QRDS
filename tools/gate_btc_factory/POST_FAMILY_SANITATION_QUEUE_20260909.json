@@ -1,0 +1,107 @@
+{
+  "schema": "gate_btc.factory.post_family_sanitation_queue.v1",
+  "as_of": "2026-09-09",
+  "branch": "factory/continuity-audit-20260909",
+  "ordering_rule": "FAMILIES_FIRST_THEN_FACTORY_SANITATION_THEN_SYSTEM9_HEALTH",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  },
+  "queue": [
+    {
+      "priority": 1,
+      "block": "FAMILY_CONTINUITY",
+      "items": [
+        {
+          "family": "DELTA_C1",
+          "authority": ["issue#165", "pr#169"],
+          "action": "RECOVER_OR_CLASSIFY_ORIGINAL_RESULT_ONLY",
+          "rerun_economics_for_recovery": false
+        },
+        {
+          "family": "CYCLICAL_REGIME_C1",
+          "authority": ["issue#166", "pr#170"],
+          "action": "RECOVER_OR_CLASSIFY_ORIGINAL_RESULT_ONLY",
+          "rerun_economics_for_recovery": false
+        },
+        {
+          "family": "V16C",
+          "action": "PROVE_CANONICAL_LEDGER_AND_WORKFLOW_EXISTENCE_BEFORE_ACTIVATION"
+        },
+        {
+          "family": "GATEWAY_DYNAMICS_CHALLENGERS",
+          "action": "PROVE_EXISTING_CHALLENGER_BEFORE_ANY_NEW_PREREGISTRATION"
+        },
+        {
+          "family": "B3_H2730_PLUS",
+          "canonical_continuation_issue": 291,
+          "action": "RESOLVE_CURRENT_FRONTIER_AUTHORITY_WITHOUT_DUPLICATE_GENERATION"
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "block": "FACTORY_SANITATION_AND_CONFLICT_AUDIT",
+      "items": [
+        {
+          "conflict": "DUPLICATE_H2730_H2739_CONTINUATION_ISSUES",
+          "canonical": "issue#291",
+          "non_authoritative_duplicate": "issue#483",
+          "required_action": "DO_NOT_EXECUTE_OR_SPAWN_FROM_483; preserve as duplicate history; all continuation authority remains #291"
+        },
+        {
+          "conflict": "H2730_FRONTIER_OVERLAPPING_AUTHORITY",
+          "issues": [289, 293, 487],
+          "classification": {
+            "289": "V3_UMBRELLA_PREREG_CONTEXT",
+            "293": "V3B_DATA_COMPATIBLE_SUCCESSOR_AFTER_TICK_SOURCE_DATA_GAP",
+            "487": "OPERATIONAL_FRONTIER_BINDING_BLOCKER"
+          },
+          "required_action": "ESTABLISH_ONE_CURRENT_AUTHORITATIVE_PATH_BEFORE_ANY_H2730_ECONOMICS_OR_NEW_GENERATION; do not merge semantics across contracts"
+        },
+        {
+          "conflict": "INVALIDATED_REQUALIFICATION_CREDIT",
+          "authority": "issue#537",
+          "scope": "512 closures using 2024-overlap gate",
+          "required_action": "REPAIR_AUTHORITATIVE_FACTORY_COUNTERS_AND_GATE_ELIGIBILITY_WITHOUT_DELETING_HISTORY_OR_RETESTING"
+        },
+        {
+          "conflict": "FACTORY_CONTINUITY_AUDIT",
+          "authority": "issue#660",
+          "required_action": "PERSIST_MACHINE_READABLE_CLASSIFICATION_AND CLOSE_ONLY_AFTER FAMILY AUTHORITY/TRANSITIONS ARE UNAMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "priority": 3,
+      "block": "SYSTEM9_HEALTH_AND_EXIT_GATE_AUDIT",
+      "system": "GATE_BTC_2_SYSTEM_9_HFTBACKTEST_MICROSTRUCTURE",
+      "historical_bug": {
+        "issue": 330,
+        "status": "CLOSED_COMPLETED",
+        "fix_pr": 331,
+        "description": "scheduled Bitget captures were previously unable to advance canonical ledger because admission bridge was pinned to the first capture run"
+      },
+      "current_authority": {
+        "exit_gate_pr": 625,
+        "frozen_activation": "2026-09-08T00:00:00Z",
+        "required_N": 168,
+        "earliest_decision_clock": "2026-09-14T23:00:00Z"
+      },
+      "required_action": "AUDIT_CURRENT_POST_ACTIVATION_CAPTURE_ADMISSION_APPEND_COUNTER_AND_EXIT_GATE_HEALTH; do not reopen #330 unless exact regression is proven",
+      "system10_activation_allowed": false
+    }
+  ],
+  "explicit_external_benchmark_preservation": {
+    "EMPIRICUS_DELTA": "MUST_REMAIN_PRESENT_IN_GATE_BTC_QRDS_EXECUTIVE_INVENTORIES_AND_REPORTS"
+  }
+}
