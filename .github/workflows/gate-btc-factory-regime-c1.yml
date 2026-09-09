@@ -41,7 +41,7 @@ jobs:
         run: python -m unittest -v tests/test_gate_btc_factory_regime_c1.py
       - name: Run preregistered generation
         env:
-          REQUESTED_MODE: ${{ inputs.mode || 'fixture' }}
+          REQUESTED_MODE: ${{ inputs.mode || 'public' }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
