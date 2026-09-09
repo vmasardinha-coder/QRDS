@@ -7,6 +7,7 @@ on:
       - .github/workflows/gate-btc-reporting-current-state.yml
       - tools/gate_btc_reporting_current_state.py
       - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_reporting_inventory.py
       - tools/gate_btc_executive_track_catalog.py
       - tools/gate_btc_executive_reporting_requirements.json
       - tools/gate_btc_health_dimensions.py
@@ -15,6 +16,7 @@ on:
       - tests/test_gate_btc_runtime_delivery_health.py
       - tests/test_gate_btc_collection_health_item1.py
       - tests/test_gate_btc_executive_track_catalog.py
+      - tests/test_gate_btc_reporting_inventory.py
   workflow_dispatch:
   schedule:
     - cron: "30 3 * * *"
@@ -43,6 +45,7 @@ jobs:
           python -m py_compile
           tools/gate_btc_reporting_current_state.py
           tools/gate_btc_reporting_operational_overlay.py
+          tools/gate_btc_reporting_inventory.py
           tools/gate_btc_executive_track_catalog.py
           tools/gate_btc_health_dimensions.py
       - name: Test runtime delivery health gates and executive catalog
@@ -51,6 +54,7 @@ jobs:
           tests.test_gate_btc_runtime_delivery_health
           tests.test_gate_btc_collection_health_item1
           tests.test_gate_btc_executive_track_catalog
+          tests.test_gate_btc_reporting_inventory
       - name: Smoke-test stale-counter suppression and operational overlay
         run: |
           python - <<'PY'
@@ -58,6 +62,7 @@ jobs:
           from pathlib import Path
           from tools.gate_btc_reporting_current_state import reconcile
           from tools.gate_btc_reporting_operational_overlay import enrich
+          from tools.gate_btc_reporting_inventory import complete_inventory
           from tools.gate_btc_health_dimensions import build
           safe={"research_only":True,"shadow_only":True,"not_approved":True,"orders_generated":0,"real_capital_used":0}
           with tempfile.TemporaryDirectory() as td:
@@ -74,6 +79,7 @@ jobs:
               w('ledgers/b3_h1/STATUS.json',{**safe,"schema":"gate_btc.b3.h1.runtime_ledger.v1","status":"ACTIVE_STRUCTURAL_COLLECTION","latest_valid_date":"2026-08-12","valid_observation_count":1,"economics_locked":True,"backfill_automatically_created":False})
               w('ledgers/v16b/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"WAITING_NEXT_CANONICAL_WINDOW","canonical_cycle_count":0,"v16b_preflight":"WAITING","v16b_rehearsal":"READY","signal_producer":"WAITING","signal_seal":"WAITING","entry_seal":"WAITING","next_canonical_event":"SIGNAL_2026-08-27"})
               w('ledgers/momentum_m1_m2/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"ACTIVE_PROSPECTIVE_SHADOW","observed_snapshots":1,"methodology_failure":False})
+              w('ledgers/delta_v12_prices/COVERAGE.json',{"schema":"test.coverage.v1","status":"AUDIT_ONLY"})
               out=reconcile(r)
               assert out['components']['d50']['display_current'] is None
               assert out['components']['d50']['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT'
@@ -83,13 +89,16 @@ jobs:
               assert out['components']['bull_replay_live_shadow']['status']=='PENDING_INITIALIZATION'
               assert out['components']['delta_paper_monitor']['status']=='PENDING_INITIALIZATION'
               out=enrich(r,out)
+              out=complete_inventory(r,out)
               assert out['components']['b3_h1']['freshness']=='FRESH'
               assert out['components']['b3_h1']['economics_locked'] is True
               assert out['components']['v16b']['canonical_cycle_count']==0
               assert out['components']['v16b']['next_canonical_event']=='SIGNAL_2026-08-27'
               assert out['components']['momentum_m1_m2']['observed_snapshots']==1
               assert out['components']['momentum_m1_m2']['methodology_failure'] is False
-              assert out['inventory_summary']['ledger_count'] >= 3
+              assert 'delta_v12_prices' in out['ledger_inventory']
+              assert out['ledger_inventory']['delta_v12_prices']['status_authority_file']=='COVERAGE.json'
+              assert out['inventory_summary']['complete_directory_enumeration'] is True
               health=build(out)
               assert health['components']['d50']['collection_health']=='RED_STALE'
               assert health['operational_authorization']=='NOT_APPROVED'
@@ -128,6 +137,11 @@ jobs:
           python main_repo/tools/gate_btc_reporting_operational_overlay.py
           --runtime-root runtime_repo/runtime
           --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+      - name: Complete inventory for ledger directories without STATUS.json
+        run: >-
+          python main_repo/tools/gate_btc_reporting_inventory.py
+          --runtime-root runtime_repo/runtime
+          --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
       - name: Add declared and required executive track catalog
         run: >-
           python main_repo/tools/gate_btc_executive_track_catalog.py
@@ -149,6 +163,7 @@ jobs:
           assert s['real_capital_used'] == 0
           assert {'b3_h1','v16b','momentum_m1_m2'} <= set(s['components'])
           assert s['inventory_summary']['does_not_change_delivery_health'] is True
+          assert s['inventory_summary']['complete_directory_enumeration'] is True
           c=s['executive_track_catalog']
           assert c['reporting_only'] is True and c['scientific_authority'] is False
           assert c['summary']['does_not_change_delivery_health'] is True
