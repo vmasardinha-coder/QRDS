@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Add B3 H1, V16B and Momentum delivery status to current-state reporting.
+"""Add operational status and a complete runtime-ledger inventory to reporting.
 
-Reporting only: no methodology, portfolio, order or capital mutation.
+Reporting only: no methodology, portfolio, scientific gate, order or capital mutation.
+The dynamic inventory is observability-only and never changes delivery health by itself.
 """
 from __future__ import annotations
 
@@ -104,6 +105,81 @@ def component_with_hint(component, hint):
     return component
 
 
+INVENTORY_FIELDS = (
+    "data_as_of",
+    "latest_valid_date",
+    "latest_snapshot_id",
+    "latest_snapshot_date",
+    "latest_source_data_as_of",
+    "valid_snapshot_count",
+    "snapshot_count",
+    "observed_snapshots",
+    "observed_days",
+    "canonical_cycle_count",
+    "economics_locked",
+    "promotion_allowed",
+    "engine_feed",
+    "orders_generated",
+    "real_capital_used",
+)
+
+
+def _normalize_source(value):
+    text = str(value or "").replace("\\", "/")
+    if text.startswith("runtime/"):
+        text = text[len("runtime/"):]
+    return text
+
+
+def discover_ledger_inventory(runtime_root: Path, current: dict) -> None:
+    """Inventory every ledger STATUS without assigning generic scientific freshness/health."""
+    ledgers_root = runtime_root / "ledgers"
+    inventory = {}
+    if ledgers_root.is_dir():
+        for status_path in sorted(ledgers_root.glob("*/STATUS.json"), key=lambda p: p.parent.name):
+            ledger_id = status_path.parent.name
+            obj = load(status_path)
+            if obj is None:
+                continue
+            safe(f"ledger_inventory:{ledger_id}", obj)
+            rel = status_path.relative_to(runtime_root).as_posix()
+            record = {
+                "ledger_id": ledger_id,
+                "status": obj.get("status", "UNKNOWN"),
+                "schema": obj.get("schema"),
+                "source": rel,
+                "sha256": hashlib.sha256(status_path.read_bytes()).hexdigest(),
+                "inventory_only": True,
+                "health_authority": False,
+            }
+            for key in INVENTORY_FIELDS:
+                if key in obj:
+                    record[key] = obj[key]
+            inventory[ledger_id] = record
+
+    represented_sources = {
+        _normalize_source(component.get("source"))
+        for component in current.get("components", {}).values()
+        if isinstance(component, dict) and component.get("source")
+    }
+    represented = sorted(
+        ledger_id
+        for ledger_id, record in inventory.items()
+        if _normalize_source(record["source"]) in represented_sources
+    )
+    unrepresented = sorted(set(inventory) - set(represented))
+    current["ledger_inventory"] = inventory
+    current["inventory_summary"] = {
+        "ledger_count": len(inventory),
+        "ledger_ids": sorted(inventory),
+        "component_count": len(current.get("components", {})),
+        "represented_ledger_ids": represented,
+        "unrepresented_ledger_ids": unrepresented,
+        "inventory_only": True,
+        "does_not_change_delivery_health": True,
+    }
+
+
 def enrich(runtime_root: Path, current: dict) -> dict:
     reference = iso(current.get("reference_data_date"))
     b3p = runtime_root / "ledgers/b3_h1/STATUS.json"
@@ -177,6 +253,10 @@ def enrich(runtime_root: Path, current: dict) -> dict:
     sources["b3_h1"] = source_meta(b3p, b3)
     sources["v16b"] = source_meta(v16p, v16)
     sources["momentum_m1_m2"] = source_meta(momp, mom)
+
+    # Inventory is intentionally calculated after authoritative components so the
+    # summary can expose which runtime ledgers are absent from executive health.
+    discover_ledger_inventory(runtime_root, current)
     return current
 
 
@@ -195,6 +275,7 @@ def main():
         "b3_h1": state["components"]["b3_h1"],
         "v16b": state["components"]["v16b"],
         "momentum_m1_m2": state["components"]["momentum_m1_m2"],
+        "inventory_summary": state["inventory_summary"],
         "orders_generated": 0,
         "real_capital_used": 0,
     }, indent=2, sort_keys=True))

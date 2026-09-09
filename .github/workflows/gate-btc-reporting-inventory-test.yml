@@ -1,0 +1,29 @@
+name: GATE BTC Reporting Ledger Inventory Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_reporting_operational_overlay.py'
+      - 'tests/test_gate_btc_reporting_inventory.py'
+      - '.github/workflows/gate-btc-reporting-inventory-test.yml'
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+
+jobs:
+  reporting-ledger-inventory-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile reporting overlay
+        run: python -m py_compile tools/gate_btc_reporting_operational_overlay.py
+      - name: Verify inventory-only semantics and fail-closed safety
+        run: python -m unittest -v tests.test_gate_btc_reporting_inventory
