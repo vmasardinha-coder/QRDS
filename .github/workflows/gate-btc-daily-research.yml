@@ -130,18 +130,6 @@ jobs:
           --public-data
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
-      - name: Materialize admitted MEXC4 registry amendment
-        run: >-
-          python tools/gate_btc_2_v2a_apply_registry_amendment.py
-          --base tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
-          --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
-          --out artifacts/prospective_v2a_runtime_registry.json
-      - name: Collect registry-driven prospective V2A PIT
-        run: >-
-          python tools/gate_btc_2_v2a_registry_prospective_pit.py
-          --registry artifacts/prospective_v2a_runtime_registry.json
-          --output-dir artifacts/prospective_v2a
-          --run-id "$GITHUB_RUN_ID"
       - name: Freeze exact active-holding LOCK valuation closes
         run: >-
           python tools/gate_btc_lock_valuation_sidecar.py
@@ -214,6 +202,46 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+  prospective-v2a-pit:
+    # Deliberadamente SEM needs: este trabalho nao alimenta o handoff diario e
+    # nao pode mais interromper a coleta do Delta. Ele le fontes externas cuja
+    # disponibilidade oscila (HTTP 403/429); quando cai, cai sozinho.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: migration/canonical/v2a/requirements.txt
+      - name: Install canonical research dependencies
+        run: pip install -r migration/canonical/v2a/requirements.txt
+      - name: Test the prospective PIT collector
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_2_v2a_registry_prospective_pit.py
+      - name: Materialize admitted MEXC4 registry amendment
+        run: >-
+          python tools/gate_btc_2_v2a_apply_registry_amendment.py
+          --base tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
+          --out artifacts/prospective_v2a_runtime_registry.json
+      - name: Collect registry-driven prospective V2A PIT
+        run: >-
+          python tools/gate_btc_2_v2a_registry_prospective_pit.py
+          --registry artifacts/prospective_v2a_runtime_registry.json
+          --output-dir artifacts/prospective_v2a
+          --run-id "$GITHUB_RUN_ID"
+      - name: Upload prospective V2A PIT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-prospective-v2a-pit-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: error
+
   publish-runtime-pointer:
     needs: daily-research-collection
     if: >-
@@ -241,21 +269,67 @@ jobs:
         run: |
           set -euo pipefail
           test -f daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          test -f daily_evidence/prospective_v2a/STATUS.json
-          test -f daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json
           git -C runtime_repo config user.name "gate-btc-actions"
           git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
           mkdir -p runtime_repo/runtime
           cp daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
-          mkdir -p runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots runtime_repo/runtime/data_quality/v2a_registry_pit/archives
-          cp daily_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a_registry_pit/STATUS.json
-          cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
-          cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
-          cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
-          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json runtime/data_quality/v2a_registry_pit
+          git -C runtime_repo add runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
           if git -C runtime_repo diff --cached --quiet; then
-            echo "Runtime pointer and prospective PIT already current"
+            echo "Runtime pointer already current"
           else
-            git -C runtime_repo commit -m "Update GATE BTC runtime pointer and prospective V2A registry PIT"
+            git -C runtime_repo commit -m "Update GATE BTC runtime pointer"
             git -C runtime_repo push origin HEAD:gate-btc-runtime
+          fi
+
+  publish-v2a-registry-pit:
+    # Publica em commit proprio, depois do ponteiro, para nao disputar o push.
+    # Um dia sem PIT nao apaga o ponteiro do dia; a serie do Delta segue.
+    needs: [prospective-v2a-pit, publish-runtime-pointer]
+    if: >-
+      needs.prospective-v2a-pit.result == 'success' &&
+      github.event_name != 'pull_request' &&
+      github.ref_name == 'main'
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download prospective V2A PIT evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-btc-prospective-v2a-pit-${{ github.run_id }}
+          path: pit_evidence
+      - name: Check out runtime branch only
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Publish prospective V2A registry PIT to runtime branch
+        run: |
+          set -euo pipefail
+          test -f pit_evidence/prospective_v2a/STATUS.json
+          test -f pit_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json
+          git -C runtime_repo config user.name "gate-btc-actions"
+          git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
+          mkdir -p runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots runtime_repo/runtime/data_quality/v2a_registry_pit/archives
+          cp pit_evidence/prospective_v2a/STATUS.json runtime_repo/runtime/data_quality/v2a_registry_pit/STATUS.json
+          cp pit_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
+          cp pit_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
+          cp pit_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
+          git -C runtime_repo add runtime/data_quality/v2a_registry_pit
+          if git -C runtime_repo diff --cached --quiet; then
+            echo "Prospective V2A registry PIT already current"
+          else
+            git -C runtime_repo commit -m "Update prospective V2A registry PIT"
+            for attempt in 1 2 3 4 5; do
+              git -C runtime_repo fetch origin gate-btc-runtime
+              if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+                git -C runtime_repo rebase --abort || true; exit 1
+              fi
+              if git -C runtime_repo push origin HEAD:gate-btc-runtime; then exit 0; fi
+              sleep $((attempt * 2))
+            done
+            exit 1
           fi
