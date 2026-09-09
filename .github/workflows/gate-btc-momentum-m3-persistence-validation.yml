@@ -8,6 +8,7 @@ on:
       - 'tools/gate_btc_momentum_m3_persistence.py'
       - 'tests/test_gate_btc_momentum_m3_persistence.py'
       - '.github/workflows/gate-btc-momentum-m3-persistence-validation.yml'
+      - '.github/workflows/gate-btc-momentum-m3-prospective-shadow.yml'
   workflow_dispatch:
 
 permissions:
@@ -51,3 +52,24 @@ jobs:
         run: |
           ! grep -R "momentum_m1_m2_economics" tools/gate_btc_momentum_m3_persistence.py
           ! grep -R "ECONOMICS_STATUS" tools/gate_btc_momentum_m3_persistence.py
+      - name: Validate prospective scheduler safety surface
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/gate-btc-momentum-m3-prospective-shadow.yml').read_text()
+          required=[
+              'GATE BTC Momentum M1 M2 Shadow Collection',
+              'gate-btc-runtime',
+              'data_as_of',
+              '2026-09-09',
+              'economics_activated',
+              'retrospective_credit',
+              "'orders':0",
+              "'real_capital':0",
+              'backfill',
+              'late_seal',
+          ]
+          for token in required:
+              assert token in p, token
+          assert 'schedule:' not in p
+          PY
