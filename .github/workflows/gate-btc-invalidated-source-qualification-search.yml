@@ -11,8 +11,10 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/invalidated_source_qualification_search.py'
+      - 'tools/gate_btc_factory/invalidated_strict_v2_source_search.py'
       - 'tools/gate_btc_factory/factory_activity_status.py'
       - 'tests/test_gate_btc_invalidated_source_qualification_search.py'
+      - 'tests/test_gate_btc_invalidated_strict_v2_source_search.py'
       - 'tests/test_gate_btc_factory_activity_status.py'
       - '.github/workflows/gate-btc-invalidated-source-qualification-search.yml'
       - '.github/workflows/gate-btc-factory-autonomy-supervisor.yml'
@@ -20,9 +22,9 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/invalidated_source_qualification_search.py'
-      - 'tools/gate_btc_factory/factory_activity_status.py'
+      - 'tools/gate_btc_factory/invalidated_strict_v2_source_search.py'
       - 'tests/test_gate_btc_invalidated_source_qualification_search.py'
-      - 'tests/test_gate_btc_factory_activity_status.py'
+      - 'tests/test_gate_btc_invalidated_strict_v2_source_search.py'
       - '.github/workflows/gate-btc-invalidated-source-qualification-search.yml'
 
 permissions:
@@ -56,8 +58,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -q requests pytest
-      - run: python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py tools/gate_btc_factory/factory_activity_status.py
-      - run: pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py tests/test_gate_btc_factory_activity_status.py
+      - run: python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py tools/gate_btc_factory/invalidated_strict_v2_source_search.py tools/gate_btc_factory/factory_activity_status.py
+      - run: pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py tests/test_gate_btc_invalidated_strict_v2_source_search.py tests/test_gate_btc_factory_activity_status.py
 
   search-and-qualify:
     if: >-
@@ -94,34 +96,40 @@ jobs:
           test "$FAIL_CLOSED" = true
           test "$H1_ECONOMICS_READ" = false
 
-      - name: Regression-test source search contract
+      - name: Regression-test strict V2 source search contract
         run: |
           python -m pip install -q requests pytest
           cd main_repo
-          python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py tools/gate_btc_factory/factory_activity_status.py
-          pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py tests/test_gate_btc_factory_activity_status.py
+          python -m py_compile tools/gate_btc_factory/invalidated_source_qualification_search.py tools/gate_btc_factory/invalidated_strict_v2_source_search.py tools/gate_btc_factory/factory_activity_status.py
+          pytest -q tests/test_gate_btc_invalidated_source_qualification_search.py tests/test_gate_btc_invalidated_strict_v2_source_search.py tests/test_gate_btc_factory_activity_status.py
 
-      - name: Search free and official sources and evaluate strict gate
+      - name: Search free and official sources and evaluate strict V2 gate
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test -f runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json
           mkdir -p runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_search_audits
-          python main_repo/tools/gate_btc_factory/invalidated_source_qualification_search.py \
+          PYTHONPATH=main_repo python main_repo/tools/gate_btc_factory/invalidated_strict_v2_source_search.py \
             --root-cause runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
             --gate runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_GATE.json \
             --runtime-root runtime_repo/runtime \
             --mt5-packet runtime_repo/runtime/factory_sources/mt5/SOURCE_PACKET.json \
             --output SOURCE_SEARCH_RUNTIME.json
 
-      - name: Assert fail-closed search safety
+      - name: Assert fail-closed strict V2 search safety
         run: |
           python - <<'PY'
           import json
           d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
           assert d['status'] in {'ACTIVE_SEARCHING_QUALIFICATION','SOURCE_GATE_GREEN'}
           assert d['cadence_hours']==2
+          assert d['frozen_source_contract']['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          assert d['frozen_source_contract']['minimum_sessions_required']==322
+          assert d['frozen_source_contract']['legacy_v1_minimum_161_authoritative'] is False
+          assert d['frozen_source_contract']['legacy_v1_gates_may_authorize_v2'] is False
+          assert d['strict_v2_guard']['v1_161_floor_forbidden'] is True
+          assert d['strict_v2_guard']['contaminated_v1_credit']==0
           assert d['search']['github_query_count'] >= 10
           assert d['search_strategy']['mode']=='PROVENANCE_FIRST_NOT_GENERIC_CSV_HUNT'
           assert d['search_strategy']['generic_search_hit_may_green_gate'] is False
@@ -133,7 +141,7 @@ jobs:
           assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
           assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
           assert s['scientific_change_allowed'] is False
-          print('INVALIDATED_SOURCE_SEARCH_SAFETY=PASS')
+          print('INVALIDATED_STRICT_V2_SOURCE_SEARCH_SAFETY=PASS')
           PY
 
       - name: Persist source-search runtime append-only
@@ -147,7 +155,7 @@ jobs:
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/factory_autonomy/invalidated_requalification
           if ! git diff --cached --quiet; then
-            git commit -m "Factory invalidated source search ${{ github.run_id }}"
+            git commit -m "Factory invalidated strict V2 source search ${{ github.run_id }}"
             for i in 1 2 3 4 5; do
               git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && break
               [ "$i" = 5 ] && exit 1
@@ -161,18 +169,16 @@ jobs:
           import json
           d=json.load(open('SOURCE_SEARCH_RUNTIME.json',encoding='utf-8'))
           mt5=d['search']['mt5_read_only_source_evidence']
-          print('## Factory source qualification')
+          print('## Factory strict V2 source qualification')
           print(f"- Status: **{d['status']}**")
           print(f"- Affected families: **{d['affected_family_count']}**")
+          print(f"- Namespace: **{d['frozen_source_contract']['evaluation_namespace']}**")
+          print(f"- Minimum sessions: **{d['frozen_source_contract']['minimum_sessions_required']}**")
           print(f"- Strict source gate: **{d['source_gate']['reason']}**")
-          print(f"- Search mode: **{d['search_strategy']['mode']}**")
           print(f"- Blocking requirements: **{', '.join(d['blocking_requirements']) or 'NONE'}**")
           print(f"- Reachable official B3 probes: **{d['search']['reachable_official_probe_count']}**")
           print(f"- MT5 provenance evidence: **{mt5['status']}**")
-          print(f"- GitHub queries: **{d['search']['github_query_count']}**")
           print(f"- GitHub candidates inspected: **{d['search']['github_candidate_count']}**")
-          print(f"- Irrelevant identity hits: **{d['search']['irrelevant_identity_candidate_count']}**")
-          print(f"- Independent schema/identity candidates: **{d['search']['schema_identity_candidate_count']}**")
           print('- Cadence: **every 2 hours**')
           PY
 
