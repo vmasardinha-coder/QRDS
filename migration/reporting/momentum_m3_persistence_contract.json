@@ -1,0 +1,86 @@
+{
+  "schema": "gate_btc.momentum_m3_persistence_contract.v1",
+  "candidate_id": "GATE_BTC_MOMENTUM_M3_PERSISTENCE_20260909",
+  "status": "FROZEN_EX_ANTE_NO_ECONOMICS_READ",
+  "freeze_date": "2026-09-09",
+  "authority_issue": 687,
+  "purpose": "Isolated momentum challenger based on persistence of cross-sectional 30-close leadership across strictly historical cutoffs; materially distinct from M1 blended 14/30 momentum and M2 BTC-relative return/volatility momentum.",
+  "design_input_prohibitions": {
+    "m1_m2_economic_ledger_read_for_design": false,
+    "empiricus_delta_may_tune": false,
+    "delta_internal_tracks_may_tune": false,
+    "future_returns_may_tune": false,
+    "retrospective_winner_selection": false
+  },
+  "input_contract": {
+    "source": "canonical append-only Momentum M1/M2 prospective snapshots",
+    "required_row_block": "m1.rows",
+    "required_fields": ["asset", "r30"],
+    "cutoff_semantics": "completed UTC daily close only",
+    "cutoffs": ["t", "t_minus_7_completed_closes", "t_minus_14_completed_closes"],
+    "common_universe_only": true,
+    "minimum_common_assets": 30,
+    "missing_any_required_cutoff_or_r30": "EXCLUDE_ASSET_BEFORE_RANKING",
+    "fewer_than_minimum_common_assets": "FAIL_CLOSED_NO_SIGNAL",
+    "duplicate_asset_at_any_cutoff": "FAIL_CLOSED_NO_SIGNAL",
+    "source_snapshot_hash_mismatch": "FAIL_CLOSED_NO_SIGNAL",
+    "m1_or_m2_score_not_used": true,
+    "m1_m2_economic_ledger_forbidden": true
+  },
+  "formula": {
+    "base_measure": "R30_i_s = P_i_s/P_i_s_minus_30_completed_closes - 1, read only from the already-canonical source snapshot",
+    "cross_sectional_rank": "For each required cutoff s, rank R30 descending over the exact common universe. Ties are broken lexicographically by asset symbol ascending only for deterministic ordinal output.",
+    "percentile": "pct_i_s = 1 - (rank_i_s - 1)/(N - 1), where rank 1 is best and N is exact common-universe size; N must be >=30.",
+    "persistence_mean": "mean_pct_i = arithmetic_mean(pct_i_t, pct_i_t_minus_7, pct_i_t_minus_14)",
+    "persistence_instability": "instability_i = population_standard_deviation(pct_i_t, pct_i_t_minus_7, pct_i_t_minus_14)",
+    "M3": "mean_pct_i - 0.50 * instability_i",
+    "ranking": "M3 descending; exact ties broken lexicographically by asset symbol ascending",
+    "no_display_clip": true
+  },
+  "economic_shadow_contract": {
+    "selection": "TOP_10_M3",
+    "weighting": "EQUAL_WEIGHT",
+    "rebalance": "EVERY_7_COMPLETED_UTC_DAILY_CLOSES_FROM_FIRST_M3_ECONOMIC_ACTIVATION",
+    "execution": "CURRENT_COMPLETED_CLOSE_SHADOW",
+    "between_rebalances": "HOLD",
+    "benchmark": "BTC",
+    "reporting_base_brl": 180000,
+    "cost_policy": "N_D_UNTIL_CANONICAL_COST_MODEL_IS_BOUND; REPORT_GROSS_AND_COST_STATUS_EXPLICITLY",
+    "economics_activation": "FORBIDDEN_UNTIL_IMPLEMENTATION_AND_CAUSALITY_TESTS_PASS_AFTER_THIS_FREEZE"
+  },
+  "prospective_policy": {
+    "D0": "FIRST_COMPLETED_UTC_CLOSE_STRICTLY_AFTER_FREEZE_FOR_WHICH_T_TMINUS7_TMINUS14_CANONICAL_INPUT_SNAPSHOTS_EXIST",
+    "retrospective_credit": 0,
+    "historical_backfill": false,
+    "late_seal": false,
+    "counter_reset": false,
+    "independent_ledger_required": true,
+    "incumbent_m1_m2_ledgers_immutable": true
+  },
+  "required_tests_before_activation": [
+    "determinism_same_inputs_same_bytes",
+    "strict_t_tminus7_tminus14_binding",
+    "anti_lookahead_future_snapshot_rejected",
+    "source_snapshot_hash_integrity",
+    "common_universe_missingness_fail_closed",
+    "duplicate_asset_fail_closed",
+    "m1_m2_economic_ledger_not_read",
+    "empiricus_delta_not_read_for_tuning",
+    "independent_m3_ledger_identity",
+    "zero_orders_zero_real_capital"
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "promotion_eligible": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_late_seal": true,
+    "no_counter_reset": true,
+    "fail_closed": true
+  }
+}
