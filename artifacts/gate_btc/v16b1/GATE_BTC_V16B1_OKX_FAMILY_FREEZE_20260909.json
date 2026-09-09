@@ -23,7 +23,8 @@
     "score": "P(top10pct)-P(bottom10pct)",
     "liquidity": "logvol30 threshold equivalent to USD 10000000/day",
     "portfolio": "Thursday SIGNAL / Friday ENTRY; 10 equal longs + 10 equal shorts; +0.50/-0.50 unscaled gross",
-    "risk": "13-week realized volatility; 20% annualized target; max exposure 1.0",
+    "risk_rule": "13-week realized volatility; 20% annualized target; max exposure 1.0",
+    "risk_history_versioning": "V16B.1 starts with zero inherited realized cycles; only V16B.1 CORE realized cycles after 2026-09-18 may enter its 13-week risk history.",
     "transaction_cost": "15 bps * turnover primary; 30/50 bps stress only",
     "long_execution": "Binance Spot USDT TRADING",
     "clock": "SIGNAL after Thursday UTC close; ENTRY evidence after SIGNAL seal and before Friday UTC close; one-week hold"
@@ -31,21 +32,26 @@
   "okx_short_contract": {
     "official_metadata_endpoint": "https://www.okx.com/api/v5/public/instruments?instType=SWAP",
     "official_time_endpoint": "https://www.okx.com/api/v5/public/time",
+    "official_funding_endpoint": "https://www.okx.com/api/v5/public/funding-rate-history",
+    "official_price_endpoint": "https://www.okx.com/api/v5/market/history-candles",
+    "official_mark_price_endpoint": "https://www.okx.com/api/v5/market/history-mark-price-candles",
     "instrument_type": "SWAP",
     "settle_currency": "USDT",
     "state": "live",
-    "mapping_policy": "Exact asset symbol -> exact OKX baseCcy with quoteCcy=USDT, settleCcy=USDT, instType=SWAP, state=live; exactly one admissible match required; no alias, multiplier or heuristic transformation.",
+    "mapping_policy": "Resolve each frozen SIGNAL Binance Spot symbol to its exact Binance exchangeInfo.baseAsset; the only admissible OKX short identity is the exact canonical instId BASE-USDT-SWAP with instType=SWAP, settleCcy=USDT and state=live. Exactly one admissible match is required. No alias, multiplier, fallback venue or heuristic substitution.",
     "short_selection": "Walk frozen short_ranking_asc in order; select first 10 causally admissible OKX USDT SWAP assets; stop at 10.",
     "missing_policy": "Record absent/non-unique mapping and continue through already-frozen ranking; if fewer than 10 admissible shorts, ENTRY is BLOCKED.",
-    "funding_source": "Official OKX public funding-rate history for each exact sealed short instrument; no third-party substitution.",
-    "price_source": "Official OKX market candles/history for each exact sealed short instrument; no Binance proxy and no third-party substitution.",
+    "funding_source": "Official OKX public funding-rate history for each exact sealed short instrument; use realizedRate when present, otherwise the historical fundingRate field only if the endpoint schema for that event does not expose realizedRate; no third-party substitution.",
+    "funding_formula": "For each short, normalized base quantity = abs(sealed portfolio weight) / sealed entry price. At each funding settlement, normalized short funding contribution = normalized base quantity * official OKX mark price at settlement * realized funding rate. Positive rate is receipt to short; negative rate is payment. Sum all settlements while the position is held.",
+    "price_source": "Official OKX history-candles for exact sealed short instruments; use completed UTC-aligned bars and no Binance proxy/third-party substitution.",
+    "mark_price_source": "Official OKX history-mark-price-candles for exact sealed short instruments around each funding settlement.",
     "provenance": "Persist raw official response bytes/JSON, retrieval timestamp, official server timestamp when available, endpoint/parameters and SHA-256; bind hashes into ENTRY/RESULT artifacts."
   },
   "children": [
     {
       "child_id": "GATE_BTC_V16B1_OKX_CORE",
       "status": "CANONICAL_CHILD",
-      "description": "Parent V16B economics with Binance Spot longs and OKX USDT SWAP shorts; actual OKX funding."
+      "description": "Parent V16B concept with Binance Spot longs and OKX USDT SWAP shorts; actual OKX funding."
     },
     {
       "child_id": "GATE_BTC_V16B1_OKX_COST30_STRESS",
