@@ -1,0 +1,190 @@
+{
+  "schema": "qrds.factory.continuity_audit.v1",
+  "as_of_utc": "2026-09-09T22:46:00Z",
+  "authority_issue": 660,
+  "purpose": "Machine-readable closure of the neglected-family continuity audit. Reporting/governance metadata only; no scientific contract, workflow, ledger, clock, economics or source is mutated by this file.",
+  "classification_enum": [
+    "CLOSED_NULL",
+    "REJECT_FREEZE_COMPLETE",
+    "SURVIVOR_TRANSITION_PENDING",
+    "DATA_BLOCKED",
+    "COLLECTING_AS_DESIGNED",
+    "PREREGISTRATION_MISSING",
+    "EVIDENCE_NOT_CANONICALLY_PERSISTED"
+  ],
+  "families": [
+    {
+      "family": "DELTA_C1",
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": {
+        "issue": 165,
+        "implementation_pr": 169,
+        "schedule_repair_pr": 661,
+        "schedule_repair_merge_sha": "97da56b620b747080ae9861324f5f43632998d6a",
+        "prior_fixture_schedule_run": 33855577873,
+        "prior_fixture_has_scientific_credit": false
+      },
+      "next_safe_action": "WAIT_FOR_NEXT_NATURAL_PUBLIC_SCHEDULE_ONLY; no catch-up, replay, backfill, late seal or retrospective survivor transition"
+    },
+    {
+      "family": "CYCLICAL_REGIME_C1",
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": {
+        "issue": 166,
+        "implementation_pr": 170,
+        "schedule_repair_pr": 661,
+        "schedule_repair_merge_sha": "97da56b620b747080ae9861324f5f43632998d6a",
+        "prior_fixture_schedule_run": 33856475323,
+        "prior_fixture_has_scientific_credit": false
+      },
+      "next_safe_action": "WAIT_FOR_NEXT_NATURAL_PUBLIC_SCHEDULE_ONLY; no catch-up, replay, backfill, late seal or retrospective survivor transition"
+    },
+    {
+      "family": "DELTA_C2",
+      "classification": "DATA_BLOCKED",
+      "evidence": {
+        "economic_rejections": 2,
+        "funding_dependent_data_blocked_families": 3,
+        "source_block_is_not_economic_rejection": true
+      },
+      "next_safe_action": "KEEP_REJECTED_FAMILIES_FROZEN; resume blocked families only with preregistered admissible funding evidence"
+    },
+    {
+      "family": "CYCLICAL_REGIME_C2",
+      "classification": "CLOSED_NULL",
+      "evidence": {
+        "canonical_result_pr": 684,
+        "canonical_result_merge_sha": "128efba70c31346cd5e40a3e275098f429c78755",
+        "assets_loaded": 20,
+        "bars_per_asset": 313,
+        "source_failures": 0,
+        "funding_called": false,
+        "fred_called": false
+      },
+      "next_safe_action": "KEEP_CLOSED_NULL; any new regime family must be a separately preregistered materially distinct mechanism"
+    },
+    {
+      "family": "GATEWAY_DYNAMICS_CHALLENGER",
+      "classification": "PREREGISTRATION_MISSING",
+      "evidence": {
+        "issue": 676,
+        "incumbent_gateway_version": "QOS_V2A1_GATEWAY_SCANNER_0.10",
+        "incumbent_untouched": true,
+        "separate_challenger_authority_found": false
+      },
+      "next_safe_action": "AUTHOR_SEPARATE_PRE_OUTCOME_CHALLENGER_PREREGISTRATION_ONLY_WHEN_A_MATERIALLY_DISTINCT_QUALITY_OR_DYNAMICS_MECHANISM_HAS_SCIENTIFIC_AUTHORITY"
+    },
+    {
+      "family": "V16C_ORIGINAL_AND_V16C1_OKX",
+      "classification": "DATA_BLOCKED",
+      "evidence": {
+        "original_prereg": "artifacts/gate_btc/v16b/GATE_BTC_V16C_STRUCTURAL_PREREG_20260815.json",
+        "successor_issue": 685,
+        "v16c1_implementation_pr": 686,
+        "v16c1_merge_sha": "abf750e3a9dafd8c73fda79527f292e92b31851f",
+        "implementation_validated": true,
+        "source_history_blocker": "NO_CANONICAL_52_WEEK_PIT_WEEKLY_UNIVERSE_HISTORY_AND_CURRENT_CMC_DELIVERY",
+        "prospective_credit": 0,
+        "v16d_v16e_active": false
+      },
+      "next_safe_action": "WAIT_FOR_ADMISSIBLE_FORWARD_SOURCE_HISTORY; no reconstruction/backfill or V16B credit transfer"
+    },
+    {
+      "family": "B3_H2730_PLUS_TICK_V3",
+      "classification": "DATA_BLOCKED",
+      "evidence": {
+        "authority_issue": 293,
+        "tick_transport_adjudication": "INSUFFICIENT_EVIDENCE_FAIL_CLOSED",
+        "bdm_extent": "BLOCKED_PHYSICAL_2020_2024_ARCHIVE_RETRIEVAL_UNPROVEN",
+        "apinegocios_result_pr": 662,
+        "apinegocios_merge_sha": "d5a2c312627a4bb6c0b53e6f31d082b05fd26a0a",
+        "apinegocios_exact_route_recoverable": false,
+        "definitive_universal_data_gap": false,
+        "economics_read": false
+      },
+      "next_safe_action": "PARK_UNTIL_MATERIALLY_NEW_B3_OWNED_FREE_MACHINE_READABLE_HISTORICAL_EVENT_TRANSPORT_EVIDENCE_EXISTS"
+    },
+    {
+      "family": "B3_INVALIDATED_FAMILY_REQUALIFICATION",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": {
+        "invalidated_historical_records_preserved": 768,
+        "original_ids_reusable": false,
+        "same_historical_window_rerun_allowed": false
+      },
+      "next_safe_action": "CONTINUE_ONLY_UNDER_NEW_NAMESPACE_AND_QUALIFIED_FREE_OFFICIAL_SOURCE_WHEN_APPLICABLE; never recycle rejected family IDs"
+    },
+    {
+      "family": "D50_AND_HEDGE_PROTECTION_CHALLENGERS",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": {
+        "activation_due": false,
+        "incumbent_evidence_gates_required_first": true
+      },
+      "next_safe_action": "DO_NOT_ACTIVATE_EARLY; preserve incumbent clocks and open isolated challengers only after their frozen evidence gates resolve"
+    },
+    {
+      "family": "MOMENTUM_M1_M2_AND_M3",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": {
+        "m1_m2_runtime_status": "ACTIVE_PROSPECTIVE_SHADOW",
+        "m1_m2_observed_snapshots_as_of_2026_09_08": 15,
+        "m3_issue": 687,
+        "m3_freeze_commit": "89ca7227ac1ea8e50145ef2f2014e4db60bbccf3",
+        "m3_implementation_pr": 688,
+        "m3_implementation_merge_sha": "f0610122eaa2658e429ef07f5e0eec6c986d97b6",
+        "m3_scheduler_pr": 689,
+        "m3_scheduler_merge_sha": "dd6223ad9381410a5c693823879f8206d469d269",
+        "m3_prospective_count": 0,
+        "m3_economics_activated": false
+      },
+      "next_safe_action": "ALLOW_FIRST_FORWARD_M3_SIGNAL_ONLY_AFTER_2026_09_09_WHEN_EXACT_T_TMINUS7_TMINUS14_CANONICAL_SNAPSHOTS_EXIST"
+    },
+    {
+      "family": "GATE_BTC_2_CORE",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": {
+        "system8_closed_after_immutable_d0": true,
+        "system9_exit_gate_pr": 625,
+        "system9_exit_gate_merge_sha": "54e834f84048693dfe00f2f7a5c67d2b7f7eda0b",
+        "system9_decision": "COLLECT_MORE_FORWARD_EVIDENCE",
+        "system9_current_N": 12,
+        "system9_required_N": 168,
+        "system9_elapsed_hours": 43.609703,
+        "system9_distinct_utc_hours": 12,
+        "system9_required_utc_hours": 24,
+        "system9_distinct_utc_weekdays": 2,
+        "system9_required_utc_weekdays": 7,
+        "system9_earliest_decision_utc": "2026-09-14T23:00:00Z",
+        "system9_complete_marker_present": false,
+        "pre_activation_exit_credit": 0
+      },
+      "next_safe_action": "KEEP_HOURLY_STAGE9_COLLECTION_AND_EXIT_EVALUATION_UNCHANGED; System10 remains dependency-bound until immutable SYSTEM9_COMPLETE"
+    },
+    {
+      "family": "EMPIRICUS_DELTA",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": {
+        "role": "EXTERNAL_MANUAL_BENCHMARK_ONLY",
+        "must_remain_visible_in_executive_inventory": true,
+        "may_tune_internal_families": false,
+        "scientific_equivalence_claimed": false
+      },
+      "next_safe_action": "PRESERVE_EXPLICITLY_IN_ALL_EXECUTIVE_INVENTORIES_AND_REPORTS; never merge into or replace with another Delta track"
+    }
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
