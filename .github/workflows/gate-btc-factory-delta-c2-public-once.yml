@@ -1,0 +1,50 @@
+name: GATE BTC Factory Delta C2 Public Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/gate-btc-factory-delta-c2-public-once.yml"
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  delta-c2-public-once:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests
+      - name: Revalidate frozen contract and causality tests
+        run: python -m unittest -v tests/test_gate_btc_factory_delta_c2.py
+      - name: Run exact preregistered public evaluation once
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/factory_delta_c2_public_once
+          python tools/gate_btc_factory_delta_c2.py --mode public --out artifacts/factory_delta_c2_public_once/RESULT.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/factory_delta_c2_public_once/RESULT.json'))
+          assert p['mode']=='public'
+          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
+          assert p['predecessor_result_credit']==0
+          assert p['h1_economics_read'] is False
+          assert p['partial_prospective_economics_read'] is False
+          assert p['status'] in {'CLOSED_NULL','SURVIVORS_READY_FOR_FREEZE'}
+          assert len(p['survivors_to_freeze']) <= 2
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-factory-delta-c2-public-${{ github.run_id }}
+          path: artifacts/factory_delta_c2_public_once/
+          retention-days: 90
+          if-no-files-found: error
