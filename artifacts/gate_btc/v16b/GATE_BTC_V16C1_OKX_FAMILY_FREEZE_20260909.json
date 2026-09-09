@@ -1,0 +1,92 @@
+{
+  "schema": "gate_btc.v16c1.family_freeze.v1",
+  "family_id": "GATE_BTC_V16C1_OKX_FAMILY_FREEZE_20260909",
+  "issue": 685,
+  "status": "FROZEN_EX_ANTE",
+  "created_utc": "2026-09-09",
+  "effective_from_first_eligible_signal_date": "2026-09-17",
+  "lineage": {
+    "structural_parent": "GATE_BTC_V16C_STRUCTURAL_PREREG_20260815",
+    "structural_parent_blob_sha": "82c5fa07907ee45ce07175906b1d080112be403f",
+    "execution_parent": "GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909",
+    "execution_parent_blob_sha": "12c3a214523a4c171a1100faef7d2830b5989ae1",
+    "original_v16c_remains_frozen_and_blocked": true,
+    "no_parent_credit_inherited": true,
+    "canonical_cycle_count_starts_at": 0
+  },
+  "scientific_change_from_original_v16c": {
+    "scope": "EXECUTION_VENUE_AND_FUNDING_EVIDENCE_FOR_SHORT_LEG_ONLY",
+    "old_short_venue": "Binance USD-M perpetual",
+    "new_short_venue": "OKX USDT-settled SWAP",
+    "reason": "Original V16C inherits the V16B Binance USD-M execution/funding contract, which is unreachable from the proven GitHub-hosted route. The separately frozen V16B.1 OKX contract has already qualified official OKX instruments/time/funding/candles/mark-price semantics prospectively.",
+    "new_version_required": true,
+    "no_claim_of_identity_with_original_v16c": true
+  },
+  "structural_hypothesis_unchanged": {
+    "name": "EX_ANTE_BTC_BETA_NEUTRALIZATION",
+    "selection_unchanged_relative_to_execution_parent_rankings": true,
+    "beta_estimator": "60-day trailing daily return beta versus BTC using only completed data available by SIGNAL close",
+    "target_portfolio_beta": 0.0,
+    "beta_tolerance_abs": 0.05,
+    "gross_exposure_cap": 1.0,
+    "net_notional_target": 0.0,
+    "weight_signs_must_follow_selection": true,
+    "long_short_count": "10 longs and 10 shorts",
+    "no_asset_replacement_for_beta_fit": true,
+    "fail_closed_if_beta_inputs_missing": true
+  },
+  "deterministic_weighting_clarification": {
+    "purpose": "Resolve the original V16C preregistration's underdetermined portfolio-weight solution before any V16C.1 economics.",
+    "starting_signed_weights": "10 longs at +0.05 and 10 shorts at -0.05",
+    "optimization": "Unique minimum-L2-distance projection of the 20 positive weight magnitudes from 0.05 each onto the three affine equalities: sum(long magnitudes)=0.50; sum(short magnitudes)=0.50; sum(sign_i * beta_i * magnitude_i)=0.0.",
+    "solver": "Closed-form Euclidean affine projection x = x0 - A^T (A A^T)^(-1) (A x0 - b); no iterative optimizer and no objective tuning.",
+    "strict_sign_rule": "Every solved magnitude must be strictly >0. Any non-positive or non-finite magnitude blocks ENTRY; no clipping, renormalization, asset deletion or replacement.",
+    "numerical_validation": "After solution, abs(net_notional)<=1e-10, abs(portfolio_beta)<=0.05, gross_exposure<=1.0+1e-10 and all 20 positions present; otherwise fail closed.",
+    "singular_or_ill_conditioned_rule": "If the affine system cannot be solved as an exact full-rank projection, ENTRY is BLOCKED; no fallback solver.",
+    "beta_input": "For each sealed selected asset, beta = covariance(asset daily returns, BTC daily returns) / variance(BTC daily returns) over the exact trailing 60 completed daily observations ending at SIGNAL close, using the frozen SIGNAL market price source; require all 60 paired finite returns and positive BTC variance.",
+    "timing": "Weights are computed only after the frozen SIGNAL ranking and causal OKX short admissibility set are sealed, and before ENTRY seal. No Friday/post-entry price or funding observation may affect weights."
+  },
+  "execution_contract_inherited_exactly_from_v16b1": {
+    "signal_market_source": "Binance Spot USDT frozen source contract",
+    "cmc_universe": "point-in-time CMC Top-150 demonstrably available by Thursday UTC close",
+    "features_model_score_liquidity": "identical to GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909",
+    "clock": "Thursday SIGNAL / Friday ENTRY / one-week hold",
+    "long_execution": "Binance Spot USDT TRADING",
+    "short_execution": "OKX USDT-settled SWAP, instType=SWAP, settleCcy=USDT, state=live",
+    "okx_mapping_policy": "Identical to V16B.1 freeze; exact Binance exchangeInfo.baseAsset -> unique BASE-USDT-SWAP; no alias/multiplier/fallback/heuristic substitution.",
+    "okx_missing_policy": "Identical to V16B.1 freeze: walk already-frozen short ranking and select first 10 causally admissible OKX swaps; fewer than 10 blocks ENTRY.",
+    "funding_source_and_formula": "Identical official OKX funding/mark-price formula frozen in V16B.1.",
+    "transaction_cost": "15 bps * turnover primary; 30/50 bps robustness stresses only",
+    "provenance": "Identical raw official response retention, retrieval/server timestamps, endpoint parameters, SHA-256 and ENTRY/RESULT hash binding as V16B.1."
+  },
+  "prospective_evaluation": {
+    "ledger": "Independent append-only V16C.1 SIGNAL->ENTRY->RESULT chain; no original V16C/V16B/V16B.1 cycle credit inherited.",
+    "primary_comparison": "V16C.1 CORE versus V16B.1 CORE on identical future eligible signal dates only.",
+    "formal_checkpoints_completed_cycles": [13, 26, 52],
+    "metrics": ["net_return","volatility","max_drawdown","BTC_beta","gross_exposure","net_exposure","turnover","fees","funding","Sharpe_when_meaningful","dispersion_capture"],
+    "winner_rule": "NO_SINGLE_METRIC_WINNER; require lower absolute BTC beta without material deterioration in net risk-adjusted performance and evidence integrity.",
+    "historical_use": "RESEARCH_DIAGNOSTIC_ONLY_NO_PROSPECTIVE_CREDIT"
+  },
+  "forbidden": [
+    "retuning the 60-day beta estimator, 0.05 tolerance or weighting rule from any V16B/V16B.1/V16C/V16C.1 outcome",
+    "using Empiricus Delta or any external Delta economics for parameter selection",
+    "changing score model features CMC universe liquidity cadence asset count or primary/stress cost assumptions",
+    "backfilling missed V16C or V16C.1 windows",
+    "late seals or counter reset",
+    "clipping negative projected weights or replacing assets to force feasibility",
+    "engine feed orders real capital or promotion without separate approval"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}
