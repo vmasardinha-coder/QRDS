@@ -1,0 +1,63 @@
+name: GATE BTC B3 V3 ApiNegocios Physical Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-b3-v3-apinegocios-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_NOT_APPROVED: 'true'
+
+jobs:
+  frozen-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+      - name: Probe preregistered official B3 route
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, urllib.request, urllib.error
+          dates=['2020-12-18','2021-12-17','2022-12-16','2023-12-15','2024-12-20']
+          urls=['https://arquivos.b3.com.br/apinegocios/dates']+[f'https://arquivos.b3.com.br/apinegocios/tickercsv/{d}' for d in dates]
+          out=[]
+          for u in urls:
+              req=urllib.request.Request(u,headers={'User-Agent':'QRDS-research-source-qualifier/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r:
+                      b=r.read()
+                      ct=r.headers.get('Content-Type')
+                      status=r.status
+              except urllib.error.HTTPError as e:
+                  b=e.read(); ct=e.headers.get('Content-Type'); status=e.code
+              row={'url':u,'status':status,'content_type':ct,'size_bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'prefix_hex':b[:32].hex()}
+              if b:
+                  text=b[:2000].decode('utf-8','replace')
+                  row['contains_WIN']='WIN' in text
+                  row['contains_WDO']='WDO' in text
+                  row['text_prefix']=text[:300]
+              else:
+                  row['contains_WIN']=False; row['contains_WDO']=False; row['text_prefix']=''
+              out.append(row)
+          print('APINEGOCIOS_PROBE_JSON_BEGIN')
+          print(json.dumps(out,indent=2,ensure_ascii=False))
+          print('APINEGOCIOS_PROBE_JSON_END')
+          assert all(r['status'] in {200,204,404,410} for r in out), out
+          PY
