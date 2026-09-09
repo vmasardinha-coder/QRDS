@@ -1,57 +1,104 @@
-name: V16B Alternative Perp Source Probe
+name: GATE BTC V16B.1 OKX Family Validation
 
 on:
   pull_request:
     branches: [main]
     paths:
       - .github/workflows/v16b-alt-perp-source-probe.yml
+      - artifacts/gate_btc/v16b1/**
+      - tools/gate_btc_v16b1_*.py
+      - tests/test_gate_btc_v16b1_*.py
 
 permissions:
   contents: read
 
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
 jobs:
-  probe:
+  validate-family:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Probe OKX public SWAP instruments and time
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas numpy requests scikit-learn pytest
+      - name: Compile V16B.1 family chain
+        run: |
+          python -m py_compile \
+            tools/gate_btc_v16b1_okx_signal.py \
+            tools/gate_btc_v16b1_okx_entry.py \
+            tools/gate_btc_v16b1_okx_result.py \
+            tools/gate_btc_v16b1_chain.py
+      - name: Validate CORE and stress children end to end
+        run: pytest -q tests/test_gate_btc_v16b1_okx_family.py
+      - name: Validate frozen family contract
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc/v16b1/GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909.json'
+          x=json.load(open(p))
+          assert x['status']=='FROZEN_EX_ANTE'
+          assert x['effective_from_first_eligible_signal_date']=='2026-09-17'
+          assert x['parent_tombstone']['v16b_original_remains_terminal'] is True
+          assert x['parent_tombstone']['v16b1_canonical_cycle_count_starts_at']==0
+          assert x['okx_short_contract']['settle_currency']=='USDT'
+          assert x['okx_short_contract']['state']=='live'
+          ids=[c['child_id'] for c in x['children']]
+          assert ids==['GATE_BTC_V16B1_OKX_CORE','GATE_BTC_V16B1_OKX_COST30_STRESS','GATE_BTC_V16B1_OKX_COST50_STRESS']
+          assert x['child_governance']['core_only_counts_as_prospective_family_cycle'] is True
+          print('V16B1_FAMILY_FREEZE=PASS')
+          PY
+      - name: Prove official OKX route from GitHub-hosted runner
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/probe
-          curl -fsS -D /tmp/probe/okx_headers.txt 'https://www.okx.com/api/v5/public/instruments?instType=SWAP' -o /tmp/probe/okx_swap.json
-          curl -fsS 'https://www.okx.com/api/v5/public/time' -o /tmp/probe/okx_time.json
+          mkdir -p /tmp/v16b1
+          curl -fsS 'https://www.okx.com/api/v5/public/instruments?instType=SWAP' -o /tmp/v16b1/okx_swap.json
+          curl -fsS 'https://www.okx.com/api/v5/public/time' -o /tmp/v16b1/okx_time.json
+          curl -fsS 'https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=5' -o /tmp/v16b1/okx_funding.json
+          curl -fsS 'https://www.okx.com/api/v5/market/history-candles?instId=BTC-USDT-SWAP&bar=1Dutc&limit=5' -o /tmp/v16b1/okx_candles.json
+          curl -fsS 'https://www.okx.com/api/v5/market/history-mark-price-candles?instId=BTC-USDT-SWAP&bar=1H&limit=5' -o /tmp/v16b1/okx_mark.json
           python - <<'PY'
           import json
-          a=json.load(open('/tmp/probe/okx_swap.json'))
-          t=json.load(open('/tmp/probe/okx_time.json'))
-          assert a.get('code')=='0', a
-          assert isinstance(a.get('data'), list) and a['data'], a
-          usdt=[x for x in a['data'] if x.get('instType')=='SWAP' and x.get('settleCcy')=='USDT']
-          live=[x for x in usdt if x.get('state') in ('live','post_only')]
-          assert live, 'no live OKX USDT swaps'
-          assert t.get('code')=='0' and t.get('data'), t
-          print('OKX_PROBE=PASS total',len(a['data']),'usdt',len(usdt),'live',len(live),'sample',[(x.get('instId'),x.get('state')) for x in live[:5]])
+          inst=json.load(open('/tmp/v16b1/okx_swap.json')); tm=json.load(open('/tmp/v16b1/okx_time.json'))
+          fund=json.load(open('/tmp/v16b1/okx_funding.json')); candles=json.load(open('/tmp/v16b1/okx_candles.json')); mark=json.load(open('/tmp/v16b1/okx_mark.json'))
+          for name,x in [('instruments',inst),('time',tm),('funding',fund),('candles',candles),('mark',mark)]:
+              assert x.get('code')=='0' and x.get('data'), (name,x)
+          live=[x for x in inst['data'] if x.get('instType')=='SWAP' and x.get('settleCcy')=='USDT' and x.get('state')=='live']
+          assert len(live)>=20, len(live)
+          btc=[x for x in live if x.get('instId')=='BTC-USDT-SWAP']
+          assert len(btc)==1, btc
+          assert all('fundingTime' in x and ('realizedRate' in x or 'fundingRate' in x) for x in fund['data'])
+          assert all(len(x)>=9 and x[-1] in ('0','1') for x in candles['data'])
+          assert all(len(x)>=6 and x[-1] in ('0','1') for x in mark['data'])
+          print('V16B1_OKX_LIVE_ROUTE=PASS live_usdt_swaps',len(live),'sample',[x['instId'] for x in live[:5]])
           PY
-      - name: Probe Bybit public linear instruments and time
+      - name: Record Bybit comparison without making it a dependency
         shell: bash
         run: |
-          set -euo pipefail
-          curl -fsS -D /tmp/probe/bybit_headers.txt 'https://api.bybit.com/v5/market/instruments-info?category=linear&limit=1000' -o /tmp/probe/bybit_linear.json
-          curl -fsS 'https://api.bybit.com/v5/market/time' -o /tmp/probe/bybit_time.json
-          python - <<'PY'
-          import json
-          a=json.load(open('/tmp/probe/bybit_linear.json'))
-          t=json.load(open('/tmp/probe/bybit_time.json'))
-          assert a.get('retCode')==0, a
-          rows=a.get('result',{}).get('list',[])
-          live=[x for x in rows if x.get('contractType')=='LinearPerpetual' and x.get('quoteCoin')=='USDT' and x.get('status')=='Trading']
-          assert live, 'no live Bybit USDT linear perps'
-          assert t.get('retCode')==0, t
-          print('BYBIT_PROBE=PASS total',len(rows),'live',len(live),'sample',[(x.get('symbol'),x.get('status')) for x in live[:5]])
-          PY
-      - name: Safety
+          set +e
+          code=$(curl -sS -o /tmp/bybit.json -w '%{http_code}' 'https://api.bybit.com/v5/market/instruments-info?category=linear&limit=1000')
+          echo "BYBIT_HTTP=$code"
+          test "$code" = "200" && echo 'BYBIT_ROUTE=AVAILABLE' || echo 'BYBIT_ROUTE=NOT_REQUIRED_OKX_IS_CANONICAL'
+          exit 0
+      - name: Frozen safety invariants
         run: |
-          echo 'READ_ONLY_PROBE=true'
-          echo 'ORDERS=0'
-          echo 'REAL_CAPITAL=0'
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
