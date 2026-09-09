@@ -1,0 +1,128 @@
+{
+  "schema": "qrds.factory.family_continuity_audit.v1",
+  "generated_at_utc": "2026-09-09T21:05:00Z",
+  "issue": 660,
+  "purpose": "Canonical continuity classification for neglected or parallel Factory families without rerunning economics, retuning, backfilling, or inferring missing outcomes.",
+  "classification_enum": [
+    "CLOSED_NULL",
+    "REJECT_FREEZE_COMPLETE",
+    "SURVIVOR_TRANSITION_PENDING",
+    "DATA_BLOCKED",
+    "COLLECTING_AS_DESIGNED",
+    "PREREGISTRATION_MISSING",
+    "EVIDENCE_NOT_CANONICALLY_PERSISTED"
+  ],
+  "families": [
+    {
+      "family": "DELTA_C1",
+      "group_id": "TREND_MOMENTUM",
+      "authority_issue": 165,
+      "implementation_pr": 169,
+      "implementation_merge_sha": "3c7559a3834ec1fe53c258711f5ce7da14d08309",
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": [
+        "PR #169 merged the preregistered isolated Delta C1 runner/workflow.",
+        "The workflow permits only CLOSED_NULL or SURVIVORS_READY_FOR_FREEZE and uploads artifacts/factory_delta_c1/RESULT.json as a GitHub Actions artifact.",
+        "No canonical RESULT.json / freeze / rejection outcome for Delta C1 is present in main under the audited repository authority."
+      ],
+      "next_safe_action": "Recover the latest already-produced scheduled/manual Delta C1 RESULT artifact, if still available, verify it against the merged prereg/code SHA, and persist that exact result canonically. Do not rerun economics merely to obtain a replacement outcome. If recovery is impossible, retain this classification and open a new prospectively versioned C2 rather than manufacturing a C1 result."
+    },
+    {
+      "family": "CYCLICAL_REGIME_C1",
+      "group_id": "CYCLICAL_REGIME",
+      "authority_issue": 166,
+      "implementation_pr": 170,
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": [
+        "Issue #166 defines an isolated causal cyclical/regime C1 generation with null accepted.",
+        "The production-line map continues to classify cyclical/regime challengers as an active isolated evolution line while incumbent QOS arms stay frozen.",
+        "No canonical terminal C1 result / freeze / rejection artifact was located in main during this audit."
+      ],
+      "next_safe_action": "Recover the latest already-produced Regime C1 result from existing Actions evidence if available and persist the exact result canonically. Do not rerun to manufacture a replacement. If no recoverable result exists, keep C1 unresolved-as-evidence and preregister a new version before any fresh economics."
+    },
+    {
+      "family": "GATEWAY_DYNAMICS_CHALLENGERS",
+      "group_id": "DATA_INFRA_ONLY",
+      "classification": "PREREGISTRATION_MISSING",
+      "evidence": [
+        "PRODUCTION_LINE_MAP.v1.json classifies GATEWAY_DYNAMICS as INCUMBENT_PLUS_ISOLATED_CHALLENGERS.",
+        "Repository code search did not locate a separate Gateway challenger preregistration/implementation distinct from the incumbent ledger."
+      ],
+      "next_safe_action": "Create a separate Gateway challenger preregistration only. Preserve the incumbent Gateway clock/ledger untouched and do not read incumbent partial prospective economics as a design input."
+    },
+    {
+      "family": "V16C",
+      "group_id": "ALLOCATION_META",
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": [
+        "PRODUCTION_LINE_MAP.v1.json states V16C is COLLECT_ONLY_FROZEN and describes it as a preregistered challenger pending an independent causal ledger.",
+        "Repository code search did not locate a canonical V16C ledger/workflow/source-bound execution path in main during this audit.",
+        "V16B original is terminal and V16B.1-OKX is a separate successor family; neither supplies V16C prospective credit."
+      ],
+      "next_safe_action": "Locate and restore the exact preregistered V16C authority artifact if it exists outside the searched main authority, then build only the missing independent causal ledger/workflow. If the preregistration itself cannot be recovered, reclassify to PREREGISTRATION_MISSING and do not activate V16C economics until a new ex-ante version is frozen."
+    },
+    {
+      "family": "B3_H60_PLUS_H2730_FRONTIER",
+      "group_id": "CROSS_ASSET_RELATIVE_VALUE",
+      "classification": "DATA_BLOCKED",
+      "evidence": [
+        "PRODUCTION_LINE_MAP.v1.json marks B3_H60_PLUS as FACTORY_ACTIVE_DISCOVERY.",
+        "Issue #487 states the current NextGen chain is not frontier-authoritative for H2730 and forbids silently activating an old unmerged grammar.",
+        "Issues #289/#291/#293 preserve the requirement for a materially distinct preregistered H2730+ frontier and distinguish source DATA_GAP from scientific null."
+      ],
+      "next_safe_action": "Resolve the H2730 frontier-authoritative preregistration/generator boundary under existing issues; do not clone/rename exhausted H170-H2729 identities or read H1/partial survivor economics."
+    },
+    {
+      "family": "D50_CHALLENGERS",
+      "group_id": "SHORT_HORIZON_TACTICAL",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": [
+        "Production-line governance allows isolated D50 challengers only after the incumbent checkpoint/gate and forbids retuning the 30-observation incumbent on the same evidence.",
+        "No continuity defect is established by issue #660 for the current D50 incumbent/forward data path."
+      ],
+      "next_safe_action": "Keep incumbent evidence immutable and open challengers only under their own preregistration after the applicable incumbent gate."
+    },
+    {
+      "family": "HEDGE_PROTECTION_CHALLENGERS",
+      "group_id": "HEDGE_PROTECTION",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": [
+        "LOCK25/LOCK50/NO_LOCK is incumbent-plus-isolated-challengers; PRL50 and ALT_TRAIL40_10 remain frozen collect-only tracks.",
+        "Issue #660 explicitly says D50 and HEDGE/PROTECTION challengers are not overdue until incumbent evidence gates are met."
+      ],
+      "next_safe_action": "Continue incumbent/calendar-gated collection only; do not activate new protection challengers early."
+    },
+    {
+      "family": "V16B1_OKX",
+      "group_id": "ALLOCATION_META",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "evidence": [
+        "Successor family GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909 is frozen ex ante and canonical on main.",
+        "Runtime status is READY_FOR_FIRST_PROSPECTIVE_SIGNAL with cycle_count=0 and no inherited parent credit."
+      ],
+      "next_safe_action": "Leave frozen until its first untouched prospective SIGNAL window; no further research-family mutation is required now."
+    }
+  ],
+  "priority_order_after_audit": [
+    "1_RECOVER_EXISTING_DELTA_C1_AND_REGIME_C1_OUTCOME_EVIDENCE_WITHOUT_RERUN",
+    "2_RESOLVE_OR_REPREREGISTER_V16C_AUTHORITY_AND_INDEPENDENT_LEDGER",
+    "3_OPEN_GATEWAY_CHALLENGER_PREREGISTRATION_IF_NO_AUTHORITY_IS_RECOVERED",
+    "4_RESOLVE_B3_H2730_FRONTIER_AUTHORITY_BLOCK",
+    "5_LEAVE_D50_HEDGE_V16B1_COLLECTIONS_RUNNING_UNCHANGED"
+  ],
+  "empiricus_delta_visibility": "MANDATORY_PRESERVE_AS_EXTERNAL_BENCHMARK_ONLY",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "H1_ECONOMICS_READ": false,
+    "FAIL_CLOSED": true
+  }
+}
