@@ -1,0 +1,52 @@
+{
+  "schema": "gate_btc.b3.v3.apinegocios_physical_result.v1",
+  "as_of_date": "2026-09-08",
+  "generation": "H2730-H2739",
+  "data_dimension": "TICK_MICROSTRUCTURE",
+  "preregistration": "tools/gate_btc_factory/B3_V3_APINEGOCIOS_ROUTE_PREREG_20260908.json",
+  "execution": {
+    "environment": "GitHub Actions ubuntu-24.04",
+    "workflow": "GATE BTC B3 V3 ApiNegocios Physical Probe",
+    "run_id": 34219711370,
+    "user_agent": "QRDS-research-source-qualifier/1.0"
+  },
+  "dates_endpoint": {
+    "url": "https://arquivos.b3.com.br/apinegocios/dates",
+    "http_status": 404,
+    "content_type": null,
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "frozen_probe_results": [
+    {"date":"2020-12-18","url":"https://arquivos.b3.com.br/apinegocios/tickercsv/2020-12-18","http_status":404,"size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","contains_WIN":false,"contains_WDO":false},
+    {"date":"2021-12-17","url":"https://arquivos.b3.com.br/apinegocios/tickercsv/2021-12-17","http_status":404,"size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","contains_WIN":false,"contains_WDO":false},
+    {"date":"2022-12-16","url":"https://arquivos.b3.com.br/apinegocios/tickercsv/2022-12-16","http_status":404,"size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","contains_WIN":false,"contains_WDO":false},
+    {"date":"2023-12-15","url":"https://arquivos.b3.com.br/apinegocios/tickercsv/2023-12-15","http_status":404,"size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","contains_WIN":false,"contains_WDO":false},
+    {"date":"2024-12-20","url":"https://arquivos.b3.com.br/apinegocios/tickercsv/2024-12-20","http_status":404,"size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","contains_WIN":false,"contains_WDO":false}
+  ],
+  "adjudication": {
+    "status": "OFFICIAL_ROUTE_NOT_HISTORICALLY_RECOVERABLE_AT_PREREGISTERED_ENDPOINT",
+    "positive_dates": 0,
+    "total_dates": 5,
+    "source_gate_change": "NONE",
+    "ready_for_economics": false,
+    "economics_read": false,
+    "definitive_data_gap": false,
+    "reason": "The distinct official-B3 apinegocios dates and tickercsv routes returned HTTP 404 with empty bodies for the frozen probe. This rejects this endpoint as a recoverable v3 primary source but does not prove that all free official event-level B3 archives are exhausted.",
+    "next_action": "CONTINUE_MATERIALLY_DISTINCT_OFFICIAL_FREE_ARCHIVE_DISCOVERY_BEFORE_DATA_GAP",
+    "mt5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY"
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
