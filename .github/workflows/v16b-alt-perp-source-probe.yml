@@ -1,0 +1,57 @@
+name: V16B Alternative Perp Source Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/v16b-alt-perp-source-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe OKX public SWAP instruments and time
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/probe
+          curl -fsS -D /tmp/probe/okx_headers.txt 'https://www.okx.com/api/v5/public/instruments?instType=SWAP' -o /tmp/probe/okx_swap.json
+          curl -fsS 'https://www.okx.com/api/v5/public/time' -o /tmp/probe/okx_time.json
+          python - <<'PY'
+          import json
+          a=json.load(open('/tmp/probe/okx_swap.json'))
+          t=json.load(open('/tmp/probe/okx_time.json'))
+          assert a.get('code')=='0', a
+          assert isinstance(a.get('data'), list) and a['data'], a
+          usdt=[x for x in a['data'] if x.get('instType')=='SWAP' and x.get('settleCcy')=='USDT']
+          live=[x for x in usdt if x.get('state') in ('live','post_only')]
+          assert live, 'no live OKX USDT swaps'
+          assert t.get('code')=='0' and t.get('data'), t
+          print('OKX_PROBE=PASS total',len(a['data']),'usdt',len(usdt),'live',len(live),'sample',[(x.get('instId'),x.get('state')) for x in live[:5]])
+          PY
+      - name: Probe Bybit public linear instruments and time
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -D /tmp/probe/bybit_headers.txt 'https://api.bybit.com/v5/market/instruments-info?category=linear&limit=1000' -o /tmp/probe/bybit_linear.json
+          curl -fsS 'https://api.bybit.com/v5/market/time' -o /tmp/probe/bybit_time.json
+          python - <<'PY'
+          import json
+          a=json.load(open('/tmp/probe/bybit_linear.json'))
+          t=json.load(open('/tmp/probe/bybit_time.json'))
+          assert a.get('retCode')==0, a
+          rows=a.get('result',{}).get('list',[])
+          live=[x for x in rows if x.get('contractType')=='LinearPerpetual' and x.get('quoteCoin')=='USDT' and x.get('status')=='Trading']
+          assert live, 'no live Bybit USDT linear perps'
+          assert t.get('retCode')==0, t
+          print('BYBIT_PROBE=PASS total',len(rows),'live',len(live),'sample',[(x.get('symbol'),x.get('status')) for x in live[:5]])
+          PY
+      - name: Safety
+        run: |
+          echo 'READ_ONLY_PROBE=true'
+          echo 'ORDERS=0'
+          echo 'REAL_CAPITAL=0'
