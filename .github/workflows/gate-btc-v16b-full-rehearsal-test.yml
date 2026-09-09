@@ -7,6 +7,7 @@ on:
       - .github/workflows/gate-btc-v16b-full-rehearsal-test.yml
       - tools/gate_btc_v16b_*.py
       - tests/test_gate_btc_v16b_*.py
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B_SIGNAL_SOURCE_CONTRACT_*.json
 
 permissions:
   contents: read
@@ -32,18 +33,34 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pandas numpy requests scikit-learn pytest
-      - name: Compile frozen V16B chain and panel producer
+      - name: Compile frozen V16B chain and producers
         run: |
           python -m py_compile \
             tools/gate_btc_v16b_calendar.py \
             tools/gate_btc_v16b_preflight_status.py \
+            tools/gate_btc_v16b_signal_source.py \
             tools/gate_btc_v16b_feature_panel.py \
             tools/gate_btc_v16b_prospective_signal.py \
             tools/gate_btc_v16b_prospective_entry.py \
             tools/gate_btc_v16b_prospective_chain.py \
             tools/gate_btc_v16b_rehearsal.py
-      - name: Prove panel causality and PIT separation
-        run: pytest -q tests/test_gate_btc_v16b_feature_panel.py
+      - name: Prove source mapping, cutoff, panel causality and PIT separation
+        run: pytest -q tests/test_gate_btc_v16b_signal_source.py tests/test_gate_btc_v16b_feature_panel.py
+      - name: Assert frozen SIGNAL source contract is resolved
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc/v16b/GATE_BTC_V16B_SIGNAL_SOURCE_CONTRACT_FREEZE_20260909.json'
+          x=json.load(open(p))
+          assert x['status']=='FROZEN_EX_ANTE'
+          assert x['signal_market_venue']['venue']=='Binance Spot'
+          assert x['signal_market_venue']['quote_asset']=='USDT'
+          assert x['daily_price_source']['endpoint']=='https://data-api.binance.vision/api/v3/klines'
+          assert x['benchmark_identity']['symbol']=='BTCUSDT'
+          assert x['safety']['NO_BACKFILL'] is True
+          assert x['safety']['NO_RETUNE'] is True
+          print('V16B_SIGNAL_SOURCE_CONTRACT=PASS')
+          PY
       - name: Assert stage-aware preflight and safety
         run: |
           python tools/gate_btc_v16b_preflight_status.py --source-root . --root . --signal-date 2026-09-03 > /tmp/preflight.json
