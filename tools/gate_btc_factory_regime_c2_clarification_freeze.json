@@ -1,0 +1,17 @@
+{
+  "schema": "qrds.factory.regime_c2_clarification_freeze.v1",
+  "issue": 681,
+  "parent_prereg_commit": "3cabdb322233e34a8c13410e14bce8ab721b4187",
+  "generated_before_results": true,
+  "clarifications_only_no_parameter_change": true,
+  "definitions": {
+    "mean_pairwise_correlation": "for each completed date, compute rolling Pearson correlation over corr_window completed daily returns for every unordered pair of non-BTC assets with full window availability; statistic is arithmetic mean of those pair correlations",
+    "lagged_correlation_quantile": "rolling quantile of the correlation statistic shifted by one completed bar before the quantile window, so the current correlation observation is not used to set its own threshold",
+    "relative_strength_breadth": "arithmetic fraction of available non-BTC assets whose exact close-to-close return over return_window completed bars is strictly greater than BTC return over the same bars",
+    "downside_participation": "within the trailing participation_window completed bars, arithmetic mean of daily fractions of available non-BTC assets with negative daily return, restricted to bars where BTC daily return is negative; fewer than minimum_btc_down_observations forces risk_off",
+    "shock_recovery_alt_5d_return": "arithmetic mean across available non-BTC assets of each asset's exact close-to-close return over recovery_window completed bars; no cross-day compounding of the equal-weight basket",
+    "shock_recovery_state_order": "on each completed bar evaluate shock first; a shock sets risk_off even if recovery threshold is simultaneously met; only when no shock is present may the recovery condition switch risk_on"
+  },
+  "missing_asset_rule": "use available assets only if total panel still satisfies minimum_loaded_assets; no replacement, interpolation, symbol substitution or forward filling of prices",
+  "safety_unchanged": true
+}
