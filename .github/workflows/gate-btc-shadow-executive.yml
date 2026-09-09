@@ -7,6 +7,12 @@ on:
       - .github/workflows/gate-btc-shadow-executive.yml
       - tools/gate_btc_shadow_executive.py
       - tests/test_gate_btc_shadow_executive.py
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-shadow-executive.yml
+      - tools/gate_btc_shadow_executive.py
+      - tests/test_gate_btc_shadow_executive.py
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * *"
