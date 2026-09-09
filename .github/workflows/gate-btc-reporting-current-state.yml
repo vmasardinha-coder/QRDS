@@ -7,11 +7,14 @@ on:
       - .github/workflows/gate-btc-reporting-current-state.yml
       - tools/gate_btc_reporting_current_state.py
       - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_executive_track_catalog.py
+      - tools/gate_btc_executive_reporting_requirements.json
       - tools/gate_btc_health_dimensions.py
       - tools/gate_btc_collection_health_item1_closeout_v1.json
       - tools/gate_btc_lock_gap_recovery.py
       - tests/test_gate_btc_runtime_delivery_health.py
       - tests/test_gate_btc_collection_health_item1.py
+      - tests/test_gate_btc_executive_track_catalog.py
   workflow_dispatch:
   schedule:
     - cron: "30 3 * * *"
@@ -40,12 +43,14 @@ jobs:
           python -m py_compile
           tools/gate_btc_reporting_current_state.py
           tools/gate_btc_reporting_operational_overlay.py
+          tools/gate_btc_executive_track_catalog.py
           tools/gate_btc_health_dimensions.py
-      - name: Test runtime delivery health gates
+      - name: Test runtime delivery health gates and executive catalog
         run: >-
           python -m unittest -v
           tests.test_gate_btc_runtime_delivery_health
           tests.test_gate_btc_collection_health_item1
+          tests.test_gate_btc_executive_track_catalog
       - name: Smoke-test stale-counter suppression and operational overlay
         run: |
           python - <<'PY'
@@ -84,6 +89,7 @@ jobs:
               assert out['components']['v16b']['next_canonical_event']=='SIGNAL_2026-08-27'
               assert out['components']['momentum_m1_m2']['observed_snapshots']==1
               assert out['components']['momentum_m1_m2']['methodology_failure'] is False
+              assert out['inventory_summary']['ledger_count'] >= 3
               health=build(out)
               assert health['components']['d50']['collection_health']=='RED_STALE'
               assert health['operational_authorization']=='NOT_APPROVED'
@@ -117,11 +123,17 @@ jobs:
           python main_repo/tools/gate_btc_reporting_current_state.py
           --runtime-root runtime_repo/runtime
           --output runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
-      - name: Add B3 H1, V16B and Momentum operational status
+      - name: Add operational status and dynamic ledger inventory
         run: >-
           python main_repo/tools/gate_btc_reporting_operational_overlay.py
           --runtime-root runtime_repo/runtime
           --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+      - name: Add declared and required executive track catalog
+        run: >-
+          python main_repo/tools/gate_btc_executive_track_catalog.py
+          --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          --artifact-root runtime_repo/artifacts
+          --requirements main_repo/tools/gate_btc_executive_reporting_requirements.json
       - name: Validate reporting-only safety boundary
         run: |
           python - <<'PY'
@@ -136,6 +148,13 @@ jobs:
           assert s['orders_generated'] == 0
           assert s['real_capital_used'] == 0
           assert {'b3_h1','v16b','momentum_m1_m2'} <= set(s['components'])
+          assert s['inventory_summary']['does_not_change_delivery_health'] is True
+          c=s['executive_track_catalog']
+          assert c['reporting_only'] is True and c['scientific_authority'] is False
+          assert c['summary']['does_not_change_delivery_health'] is True
+          assert c['summary']['does_not_authorize_science_or_trading'] is True
+          assert 'empiricus_delta' in c['required_reporting_references']
+          assert c['required_reporting_references']['empiricus_delta']['scientific_authority'] is False
           d50=s['components']['d50']
           if d50['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT':
               assert d50['display_current'] is None
