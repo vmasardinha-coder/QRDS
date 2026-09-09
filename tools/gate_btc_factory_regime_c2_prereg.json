@@ -1,0 +1,95 @@
+{
+  "schema": "qrds.factory.regime_c2_prereg.v1",
+  "issue": 681,
+  "generated_before_results": true,
+  "group_id": "CYCLICAL_REGIME",
+  "predecessor_result_credit": 0,
+  "capital_comparison_brl": 180000,
+  "historical_cutoff_exclusive": "2026-08-10",
+  "discovery_end_inclusive": "2026-03-31",
+  "replication_start_inclusive": "2026-04-01",
+  "minimum_loaded_assets": 12,
+  "families": {
+    "REGIME_C2_CORRELATION_STRUCTURE": {
+      "central": {"corr_window": 20, "btc_trend_window": 30, "quantile_window": 60, "corr_quantile": 0.60},
+      "neighbors": [
+        {"corr_window": 20, "btc_trend_window": 30, "quantile_window": 60, "corr_quantile": 0.50},
+        {"corr_window": 20, "btc_trend_window": 30, "quantile_window": 60, "corr_quantile": 0.70}
+      ]
+    },
+    "REGIME_C2_RELATIVE_STRENGTH_BREADTH": {
+      "central": {"return_window": 20, "breadth_threshold": 0.55},
+      "neighbors": [
+        {"return_window": 20, "breadth_threshold": 0.50},
+        {"return_window": 20, "breadth_threshold": 0.60}
+      ]
+    },
+    "REGIME_C2_DOWNSIDE_PARTICIPATION": {
+      "central": {"participation_window": 30, "minimum_btc_down_observations": 5, "btc_trend_window": 20, "participation_threshold": 0.65},
+      "neighbors": [
+        {"participation_window": 30, "minimum_btc_down_observations": 5, "btc_trend_window": 20, "participation_threshold": 0.60},
+        {"participation_window": 30, "minimum_btc_down_observations": 5, "btc_trend_window": 20, "participation_threshold": 0.70}
+      ]
+    },
+    "REGIME_C2_SHOCK_RECOVERY": {
+      "central": {"shock_window": 5, "shock_threshold": -0.08, "recovery_window": 5, "recovery_threshold": 0.04},
+      "neighbors": [
+        {"shock_window": 5, "shock_threshold": -0.06, "recovery_window": 5, "recovery_threshold": 0.03},
+        {"shock_window": 5, "shock_threshold": -0.10, "recovery_window": 5, "recovery_threshold": 0.05}
+      ]
+    }
+  },
+  "economic_mapping": {
+    "risk_on": "equal_weight_non_BTC_crypto",
+    "risk_off": "50pct_BTC_50pct_cash",
+    "signal_on_completed_close": true,
+    "return_starts_next_bar": true,
+    "switch_cost_bps": 10.0
+  },
+  "gates": {
+    "min_observations_each_block": 60,
+    "min_sharpe": 0.40,
+    "max_drawdown_floor": -0.20,
+    "require_positive_total_return": true,
+    "require_discovery_neighbor": true,
+    "require_central_replication": true,
+    "max_survivors_to_freeze": 2,
+    "overflow_rank_primary": "number_of_passing_predeclared_variants",
+    "overflow_rank_tiebreak": "central_replication_sharpe"
+  },
+  "source_contract": {
+    "crypto_primary": "canonical Delta public OHLC collector only",
+    "required_identity": ["date", "symbol"],
+    "completed_bars_only": true,
+    "duplicate_identity_fails_closed": true,
+    "funding_forbidden": true,
+    "fred_macro_forbidden": true,
+    "new_external_sources_forbidden": true,
+    "empiricus_delta": "external_read_only_benchmark_not_input"
+  },
+  "ordering": [
+    "SOURCE_QA",
+    "PREREGISTER",
+    "IMPLEMENT_AND_TEST",
+    "DISCOVERY",
+    "CAUSALITY_LEAKAGE_QA",
+    "INDEPENDENT_REPLICATION",
+    "REJECT_OR_FREEZE",
+    "SEPARATE_PROSPECTIVE_D0_FOR_SURVIVORS_ONLY"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_FEEDBACK_FORBIDDEN": true,
+    "PARTIAL_PROSPECTIVE_FEEDBACK_FORBIDDEN": true
+  }
+}
