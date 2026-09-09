@@ -1,0 +1,16 @@
+{
+  "schema": "gate_btc.momentum_m3_persistence_clarification.v1",
+  "candidate_id": "GATE_BTC_MOMENTUM_M3_PERSISTENCE_20260909",
+  "status": "EX_ANTE_CLARIFICATION_BEFORE_IMPLEMENTATION_AND_ECONOMICS",
+  "parent_contract": "migration/reporting/momentum_m3_persistence_contract.json",
+  "clarification": {
+    "t_minus_7_completed_closes": "exact UTC cutoff date t minus 7 calendar days because the canonical crypto source clock is one completed UTC close per calendar day",
+    "t_minus_14_completed_closes": "exact UTC cutoff date t minus 14 calendar days",
+    "missing_exact_required_snapshot": "FAIL_CLOSED_NO_SIGNAL; never substitute the nearest available snapshot",
+    "future_snapshots": "must never be read or used; their presence outside the exact three required paths cannot change output"
+  },
+  "methodology_change": false,
+  "economics_read": false,
+  "backfill": false,
+  "retune": false
+}
