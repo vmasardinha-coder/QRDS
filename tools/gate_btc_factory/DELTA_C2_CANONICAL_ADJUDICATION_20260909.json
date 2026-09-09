@@ -1,0 +1,73 @@
+{
+  "schema": "qrds.factory.delta_c2_canonical_adjudication.v1",
+  "as_of": "2026-09-09",
+  "issue": 677,
+  "implementation_pr": 678,
+  "one_shot_pr": 679,
+  "public_run_id": 34407773922,
+  "public_run_head_sha": "742e06c9f1b9d653e3c17268c5a1a4ab22c4cb07",
+  "artifact": {
+    "id": 10126056146,
+    "name": "gate-btc-factory-delta-c2-public-34407773922",
+    "zip_digest": "sha256:12c578480254d0ca10c92952806b45c0d4d340d14e80f020e0bfb63a02493c7a",
+    "result_source_sha256": "d28c976b6e4f05e2e3d347afe7558925888c1985ed4313afab5e782566eaabad",
+    "raw_result_path": "tools/gate_btc_factory/DELTA_C2_PUBLIC_RESULT_RAW_20260909.json"
+  },
+  "raw_result_reported_status": "CLOSED_NULL",
+  "raw_result_is_canonical_final_decision": false,
+  "adjudication_reason": "PREDECLARED_SOURCE_QA_PRECEDES_ECONOMICS. THE EXISTING CANONICAL DELTA ADAPTER CALLS OKX FUNDING HISTORY WITH CFG.start_date=2026-05-15, WHILE DELTA C2 DISCOVERY ENDS 2026-03-31. THEREFORE FUNDING-DEPENDENT DISCOVERY ECONOMICS ARE STRUCTURALLY UNOBSERVABLE UNDER THE CURRENT ADAPTER AND CANNOT RECEIVE SCIENTIFIC REJECTION CREDIT. THE EXACT RAW RESULT IS PRESERVED AS INVALID_FOR_FINAL_FUNDING_DECISION, NOT DELETED OR REWRITTEN.",
+  "source_contract_evidence": {
+    "canonical_adapter": "migration/canonical/delta/scripts/00_run_delta_v11.py",
+    "funding_fetch_call_start_expression": "pd.Timestamp(CFG[\"start_date\"])",
+    "canonical_config_start_date": "2026-05-15",
+    "c2_discovery_end_inclusive": "2026-03-31",
+    "coverage_relation": "FUNDING_FETCH_START_IS_AFTER_DISCOVERY_END",
+    "result_symptom": "ALL_FUNDING_DEPENDENT_VARIANTS_HAVE_DISCOVERY_TOTAL_RETURN=0.0, SHARPE=0.0, MAX_DRAWDOWN=0.0"
+  },
+  "family_decisions": {
+    "DELTA_C2_VOLUME_CONFIRMATION": {
+      "decision": "REJECTED_DISCOVERY",
+      "scientific_credit": "VALID_REJECTION",
+      "reason": "VOLUME IS AVAILABLE FROM THE CANDLE PANEL ACROSS THE REQUIRED DISCOVERY WINDOW AND ALL PREDECLARED VARIANTS FAIL DISCOVERY GATES"
+    },
+    "DELTA_C2_PRICE_VOLUME_DIVERGENCE": {
+      "decision": "REJECTED_DISCOVERY",
+      "scientific_credit": "VALID_REJECTION",
+      "reason": "VOLUME IS AVAILABLE FROM THE CANDLE PANEL ACROSS THE REQUIRED DISCOVERY WINDOW AND ALL PREDECLARED VARIANTS FAIL DISCOVERY GATES"
+    },
+    "DELTA_C2_FUNDING_DIVERGENCE": {
+      "decision": "DATA_BLOCKED_SOURCE_COVERAGE_GAP",
+      "scientific_credit": "NO_REJECTION_CREDIT",
+      "reason": "CURRENT CANONICAL FUNDING ADAPTER DOES NOT COVER THE DISCOVERY WINDOW"
+    },
+    "DELTA_C2_FUNDING_EXTREMES": {
+      "decision": "DATA_BLOCKED_SOURCE_COVERAGE_GAP",
+      "scientific_credit": "NO_REJECTION_CREDIT",
+      "reason": "CURRENT CANONICAL FUNDING ADAPTER DOES NOT COVER THE DISCOVERY WINDOW"
+    },
+    "DELTA_C2_FUNDING_VOLUME_CONSENSUS": {
+      "decision": "DATA_BLOCKED_SOURCE_COVERAGE_GAP",
+      "scientific_credit": "NO_REJECTION_CREDIT",
+      "reason": "CURRENT CANONICAL FUNDING ADAPTER DOES NOT COVER THE DISCOVERY WINDOW"
+    }
+  },
+  "generation_status": "PARTIAL_REJECT_WITH_FUNDING_SOURCE_DATA_GAP",
+  "survivors_ready_for_freeze": [],
+  "prospective_activation_allowed": false,
+  "next_safe_action": "DO_NOT RERUN OR RETUNE DELTA C2 NOW. PRESERVE THE THREE FUNDING-DEPENDENT CELLS AS DATA_GAP_REVISITABLE FOR A LATER SOURCE-ONLY AUDIT; CONTINUE TO THE NEXT INDEPENDENT FAMILY GENERATION. ANY FUTURE SOURCE REPAIR MUST BE DECIDED WITHOUT USING THESE INVALID FUNDING ECONOMICS AS FEEDBACK.",
+  "empiricus_delta_role": "EXTERNAL_BENCHMARK_ONLY",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "PREDECESSOR_C1_RESULT_CREDIT": 0
+  }
+}
