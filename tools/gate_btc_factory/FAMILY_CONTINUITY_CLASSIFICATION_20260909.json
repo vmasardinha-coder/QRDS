@@ -1,0 +1,103 @@
+{
+  "schema": "gate_btc.factory.family_continuity_classification.v1",
+  "as_of": "2026-09-09",
+  "authority_issue": 660,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  },
+  "families": [
+    {
+      "family": "DELTA_C1",
+      "authority": ["issue#165", "pr#169"],
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": {
+        "implementation_merged": true,
+        "merge_sha": "3c7559a3834ec1fe53c258711f5ce7da14d08309",
+        "workflow_result_contract": "SURVIVORS_READY_FOR_FREEZE_OR_NULL_RESULT",
+        "canonical_result_file_located": false,
+        "canonical_survivor_freeze_or_D0_transition_located": false
+      },
+      "next_safe_action": "RECOVER_ORIGINAL_ACTIONS_ARTIFACT_IF_EXACT_RUN_ID_CAN_BE_PROVEN; OTHERWISE DO_NOT RERUN ECONOMICS TO MANUFACTURE HISTORY; OPEN A FRESH VERSIONED C2 ONLY UNDER NEW PREREGISTRATION"
+    },
+    {
+      "family": "CYCLICAL_REGIME_C1",
+      "authority": ["issue#166", "pr#170"],
+      "classification": "EVIDENCE_NOT_CANONICALLY_PERSISTED",
+      "evidence": {
+        "implementation_merged": true,
+        "merge_sha": "4ab7e2c09d3d3e8a252a3eeb9caf79b710b7350d",
+        "workflow_result_contract": "SURVIVORS_READY_FOR_FREEZE_OR_NULL_OR_DATA_GAP",
+        "canonical_result_file_located": false,
+        "canonical_survivor_freeze_or_D0_transition_located": false
+      },
+      "next_safe_action": "RECOVER_ORIGINAL_ACTIONS_ARTIFACT_IF_EXACT_RUN_ID_CAN_BE_PROVEN; OTHERWISE DO_NOT RERUN ECONOMICS TO MANUFACTURE HISTORY; OPEN A FRESH VERSIONED C2 ONLY UNDER NEW PREREGISTRATION"
+    },
+    {
+      "family": "V16C",
+      "authority": ["PRODUCTION_LINE_MAP.v1.json", "issue#675"],
+      "classification": "PREREGISTRATION_MISSING",
+      "evidence": {
+        "production_map_claims_collect_only_frozen": true,
+        "canonical_preregistration_located": false,
+        "canonical_workflow_located": false,
+        "canonical_independent_ledger_located": false
+      },
+      "next_safe_action": "ISSUE#675: RECOVER OLD FROZEN CONTRACT IF IT EXISTS; ELSE CREATE A FRESH EXPLICITLY VERSIONED PROSPECTIVE PREREGISTRATION BEFORE ECONOMICS"
+    },
+    {
+      "family": "GATEWAY_DYNAMICS_CHALLENGERS",
+      "authority": ["PRODUCTION_LINE_MAP.v1.json", "issue#676"],
+      "classification": "PREREGISTRATION_MISSING",
+      "evidence": {
+        "incumbent_exists": true,
+        "production_map_allows_isolated_challengers": true,
+        "separate_challenger_preregistration_located": false,
+        "separate_challenger_implementation_located": false
+      },
+      "next_safe_action": "ISSUE#676: PROVE EXISTING CHALLENGER OR PREREGISTER A MATERIALLY DISTINCT ISOLATED CHALLENGER; DO NOT MODIFY INCUMBENT CLOCK/LEDGER"
+    },
+    {
+      "family": "B3_H2730_PLUS",
+      "authority": ["issue#289", "issue#291", "issue#293", "issue#487"],
+      "classification": "DATA_BLOCKED",
+      "evidence": {
+        "issue_291_role": "CANONICAL_FACTORY_CONTINUATION_UMBRELLA",
+        "issue_483": "CLOSED_DUPLICATE",
+        "issue_289_role": "V3_MATERIALLY_DISTINCT_FRONTIER_PREREGISTRATION_UMBRELLA",
+        "h2730_h2889": "SOURCE_DATA_GAP_UNDER_FROZEN_TICK_MICROSTRUCTURE_V3",
+        "issue_293_role": "CURRENT_SCIENTIFIC_SUCCESSOR_V3B_SOURCE_QUALIFICATION",
+        "stage_b_family_ids_or_economics_authorized": false,
+        "issue_487_role": "FRONTIER_BINDING_BLOCKER_UNTIL_PREREGISTERED_GENERATOR_IS_AUTHORITATIVE"
+      },
+      "next_safe_action": "CONTINUE ISSUE#293 SOURCE QUALIFICATION; DO NOT SPAWN H2730 PARALLEL CONTRACTS; BIND THE NEXT AUTHORIZED DETERMINISTIC GENERATOR THROUGH #291/#487 ONLY AFTER ITS OWN PREREGISTRATION AND SOURCE GATES PASS"
+    },
+    {
+      "family": "D50_CHALLENGERS",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "next_safe_action": "DO_NOT ACTIVATE CHALLENGERS BEFORE INCUMBENT EVIDENCE GATE"
+    },
+    {
+      "family": "HEDGE_PROTECTION_CHALLENGERS",
+      "classification": "COLLECTING_AS_DESIGNED",
+      "next_safe_action": "DO_NOT ACTIVATE NEW CHALLENGERS BEFORE CURRENT LOCK_PRL_ALT CLOCKS PROVIDE SUFFICIENT EVIDENCE"
+    }
+  ],
+  "external_benchmark_preservation": {
+    "EMPIRICUS_DELTA": "PRESERVE_AS_BENCHMARK_ONLY_AND_KEEP_VISIBLE_IN_EXECUTIVE_INVENTORIES"
+  },
+  "deferred_until_family_block_complete": [
+    "issue#537 invalidated 512 requalification closures/counters",
+    "Factory infrastructure sanitation beyond direct family authority",
+    "Gate BTC 2 System 9 current health/exit-gate audit"
+  ]
+}
