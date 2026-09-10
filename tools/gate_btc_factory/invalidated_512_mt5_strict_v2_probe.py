@@ -11,7 +11,7 @@ START="2025-01-01"; DISC_END="2025-12-31"; REPL_START="2026-01-01"; END="2026-08
 MIN_TOTAL=322; MIN_PART=161; NAMESPACE="RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
 WIN_RE=re.compile(r"^WIN[FGHJKMNQUVXZ]\d{2}$")
 TIME_MODES=("UTC_EPOCH","BROKER_LOCAL_EPOCH")
-MAX_BARS_PER_CONTRACT=100000
+MAX_BARS_PER_CONTRACT=10000
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"MT5_READ_ONLY":True,"NO_ORDER_SEND":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_LATE_SEAL":True,"NO_COUNTER_RESET":True,"NO_RETUNE":True,"FAIL_CLOSED":True,"H1_ECONOMICS_READ":False}
 
 def cbytes(x): return (json.dumps(x,sort_keys=True,separators=(",",":"),ensure_ascii=False)+"\n").encode()
@@ -92,9 +92,6 @@ def main():
             if mt5.symbol_select(m["symbol"],True): active.append(m["symbol"])
         selected_mode,time_evidence=detect_mode_optional(mt5,active)
 
-        # Capture is deliberately independent of datetime/timezone admission.
-        # Position-based reads preserve the terminal's raw epoch values and avoid
-        # using a timestamp interpretation to decide what may be downloaded.
         raw={}; errors=[]; queries=[]
         for m in metas:
             s=m["symbol"]
