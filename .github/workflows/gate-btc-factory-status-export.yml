@@ -48,6 +48,12 @@ jobs:
           assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
           assert s['NO_BACKFILL'] and s['NO_RETUNE'] and s['NO_COUNTER_RESET']
           assert d['methodology_changed'] is False
+          d100=d['tracks']['d100']
+          assert d100['exists'] is True
+          if d100['data'].get('status') == 'ACTIVE_FORWARD_COLLECTION':
+              assert d100['data'].get('collection_mode') == 'FORWARD_ONLY_DATA_FEED'
+              assert d100['data'].get('backfill_performed') is False
+              assert 'D100_ACTIVE_FORWARD_COLLECTION_OVERRIDES_FROZEN_DORMANT_LEGACY_HINT' in d['reporting_corrections']
           PY
       - name: Persist status only
         if: github.event_name != 'pull_request'
