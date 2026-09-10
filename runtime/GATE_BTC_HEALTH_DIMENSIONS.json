@@ -1,5 +1,7 @@
 {
-  "amber_collection_components": [],
+  "amber_collection_components": [
+    "v16b"
+  ],
   "collection_delivery": "RED_INCOMPLETE_DELIVERY",
   "components": {
     "alt_trail": {
@@ -39,9 +41,9 @@
       "source_status": "ACTIVE"
     },
     "delta_paper_monitor": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
       "source_status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "gateway": {
@@ -75,13 +77,13 @@
       "source_status": "ACTIVE_CALENDAR_GATED"
     },
     "v16b": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "SCIENTIFIC_BLOCK"
+      "collection_health": "AMBER_BLOCKED",
+      "freshness": "FRESH",
+      "scientific_state": "DEPENDENCY_BLOCKED_NOT_YET_EVALUABLE",
+      "source_status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     }
   },
-  "generated_at_utc": "2026-09-09T08:21:11.011568+00:00",
+  "generated_at_utc": "2026-09-10T08:21:19.905442+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -93,16 +95,14 @@
     "bull_replay_live_shadow",
     "d50",
     "delta",
-    "delta_paper_monitor",
     "lock25_50",
     "momentum_m1_m2",
-    "prl50",
-    "v16b"
+    "prl50"
   ],
-  "reference_data_date": "2026-09-08",
+  "reference_data_date": "2026-09-09",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "93a2270a3e61fef5b37ca95b0ff9d14ffcd14f3f260886cb3f5d69b2164cfb40"
+  "status_sha256": "36a71f1a1dcf6ae27636b4ab1032d5567be5246ed8dfcaf3e5d6bf065f3f7eea"
 }
