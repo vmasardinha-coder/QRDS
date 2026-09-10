@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse, hashlib, json, re
 from collections import defaultdict
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -11,6 +11,7 @@ START="2025-01-01"; DISC_END="2025-12-31"; REPL_START="2026-01-01"; END="2026-08
 MIN_TOTAL=322; MIN_PART=161; NAMESPACE="RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
 WIN_RE=re.compile(r"^WIN[FGHJKMNQUVXZ]\d{2}$")
 TIME_MODES=("UTC_EPOCH","BROKER_LOCAL_EPOCH")
+MAX_BARS_PER_CONTRACT=100000
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"MT5_READ_ONLY":True,"NO_ORDER_SEND":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_LATE_SEAL":True,"NO_COUNTER_RESET":True,"NO_RETUNE":True,"FAIL_CLOSED":True,"H1_ECONOMICS_READ":False}
 
 def cbytes(x): return (json.dumps(x,sort_keys=True,separators=(",",":"),ensure_ascii=False)+"\n").encode()
@@ -91,19 +92,21 @@ def main():
             if mt5.symbol_select(m["symbol"],True): active.append(m["symbol"])
         selected_mode,time_evidence=detect_mode_optional(mt5,active)
 
-        # Capture is deliberately independent of timezone admission. Query a UTC envelope
-        # wider than the frozen local window so either plausible epoch interpretation can
-        # be evaluated from the same immutable raw bars without a second data pull.
-        qstart=datetime.fromisoformat(START+"T00:00:00+00:00")-timedelta(days=1)
-        qend=datetime.fromisoformat(END+"T23:59:59+00:00")+timedelta(days=1)
-        raw={}; errors=[]
+        # Capture is deliberately independent of datetime/timezone admission.
+        # Position-based reads preserve the terminal's raw epoch values and avoid
+        # using a timestamp interpretation to decide what may be downloaded.
+        raw={}; errors=[]; queries=[]
         for m in metas:
             s=m["symbol"]
-            if not mt5.symbol_select(s,True): raw[s]=[]; errors.append({"symbol":s,"error":"SYMBOL_SELECT_FAILED"}); continue
-            rr=mt5.copy_rates_range(s,mt5.TIMEFRAME_M5,qstart,qend); err=mt5.last_error(); raw[s]=[raw_row(r) for r in ([] if rr is None else list(rr))]
+            if not mt5.symbol_select(s,True):
+                raw[s]=[]; errors.append({"symbol":s,"error":"SYMBOL_SELECT_FAILED"}); continue
+            rr=mt5.copy_rates_from_pos(s,mt5.TIMEFRAME_M5,0,MAX_BARS_PER_CONTRACT); err=mt5.last_error()
+            rows=[raw_row(r) for r in ([] if rr is None else list(rr))]
+            raw[s]=rows
+            queries.append({"symbol":s,"method":"copy_rates_from_pos","start_pos":0,"requested_count":MAX_BARS_PER_CONTRACT,"returned_count":len(rows),"last_error":str(err)})
             if rr is None: errors.append({"symbol":s,"error":str(err)})
 
-        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v2","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"capture_window_utc":{"start":qstart.isoformat(),"end":qend.isoformat()},"frozen_local_window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_evidence":time_evidence,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}
+        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v3","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"capture_method":{"name":"copy_rates_from_pos","start_pos":0,"max_bars_per_contract":MAX_BARS_PER_CONTRACT,"timezone_independent":True},"frozen_local_window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_evidence":time_evidence,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_queries":queries,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}
         rh=digest(packet); packet["raw_capture_sha256"]=rh; (a.out_dir/"RAW_CAPTURE.json").write_bytes(cbytes(packet))
 
         mode_results={}
@@ -117,7 +120,7 @@ def main():
         capacity_all_modes=all(mode_results[m]["capacity_qa"] for m in TIME_MODES)
         gates={"identity_qa":True,"schema_qa":True,"timezone_qa":selected_mode is not None,"chronology_qa":True,"capacity_qa":capacity_all_modes,"publication_semantics_proven":False,"revision_semantics_proven":False,"point_in_time_validity_proven":False,"independent_unseen_window_proven":True}
         green=all(gates.values())
-        result={"schema":"qrds.factory.invalidated_512.mt5_strict_v2_source_result.v2","authority_issue":693,"evaluation_namespace":NAMESPACE,"status":"SOURCE_GATE_GREEN" if green else "MT5_SOURCE_QUALIFICATION_FAIL_CLOSED","capture_completed":True,"timezone_admission_pass":selected_mode is not None,"selected_time_mode":selected_mode,"raw_capture_sha256":rh,"enumerated_exact_win_contract_count":len(metas),"raw_bar_count":sum(len(v) for v in raw.values()),"capacity_by_time_mode":mode_results,"valid_session_counts":conservative,"minimum_required":{"total":MIN_TOTAL,"discovery":MIN_PART,"replication":MIN_PART},"source_gates":gates,"capture_errors":errors,"source_admission_pass":green,"requalification_economics_allowed":green,"scientific_family_credit":0,"prospective_credit":0,"historical_backfill_credit":0,"safety":SAFETY}; result["result_sha256"]=digest(result)
-        (a.out_dir/"RESULT.json").write_bytes(cbytes(result)); print(json.dumps({"status":result["status"],"capture_completed":True,"timezone_admission_pass":result["timezone_admission_pass"],"raw_bar_count":result["raw_bar_count"],"capacity_by_time_mode":mode_results,"conservative_valid_session_counts":conservative,"source_admission_pass":green},sort_keys=True)); return 0
+        result={"schema":"qrds.factory.invalidated_512.mt5_strict_v2_source_result.v3","authority_issue":693,"evaluation_namespace":NAMESPACE,"status":"SOURCE_GATE_GREEN" if green else "MT5_SOURCE_QUALIFICATION_FAIL_CLOSED","capture_completed":True,"timezone_admission_pass":selected_mode is not None,"selected_time_mode":selected_mode,"raw_capture_sha256":rh,"enumerated_exact_win_contract_count":len(metas),"raw_bar_count":sum(len(v) for v in raw.values()),"capacity_by_time_mode":mode_results,"valid_session_counts":conservative,"minimum_required":{"total":MIN_TOTAL,"discovery":MIN_PART,"replication":MIN_PART},"source_gates":gates,"capture_queries":queries,"capture_errors":errors,"source_admission_pass":green,"requalification_economics_allowed":green,"scientific_family_credit":0,"prospective_credit":0,"historical_backfill_credit":0,"safety":SAFETY}; result["result_sha256"]=digest(result)
+        (a.out_dir/"RESULT.json").write_bytes(cbytes(result)); print(json.dumps({"status":result["status"],"capture_completed":True,"timezone_admission_pass":result["timezone_admission_pass"],"raw_bar_count":result["raw_bar_count"],"capacity_by_time_mode":mode_results,"conservative_valid_session_counts":conservative,"source_admission_pass":green,"capture_queries":queries},sort_keys=True)); return 0
     finally: mt5.shutdown()
 if __name__=="__main__": raise SystemExit(main())
