@@ -133,6 +133,52 @@ def ledger_excerpt(state: dict[str, Any], ids: list[str]) -> dict[str, Any]:
     return {i: inv[i] for i in ids if i in inv}
 
 
+def semantic_projection(state: dict[str, Any]) -> dict[str, Any]:
+    """Project selected runtime ledgers into stable executive meanings without reinterpreting them."""
+    catalog = track_catalog(state)
+    ledgers = catalog.get("ledger_tracks") or state.get("ledger_inventory") or {}
+    declared = catalog.get("declared_nonledger_tracks") or {}
+    specs = {
+        "d100": {"display_name": "D100", "ledger_ids": ["d100"]},
+        "momentum_m3": {"display_name": "M3", "ledger_ids": ["momentum_m3"]},
+        "v16b1": {"display_name": "V16B.1", "ledger_ids": ["v16b1", "v16b_1"], "parent_track_id": "v16b", "parent_reporting_role": "TERMINAL_PARENT_NOT_REOPENED"},
+        "v16c1": {"display_name": "V16C.1", "ledger_ids": ["v16c1", "v16c_1"], "parent_track_id": "v16c", "parent_reporting_role": "FROZEN_BLOCKED_PARENT"},
+        "v12": {"display_name": "V12", "ledger_ids": ["delta_v12_engine", "delta_v12_prices"]},
+        "qos": {"display_name": "QOS", "ledger_ids": ["qos_three_track"]},
+    }
+    out: dict[str, Any] = {}
+    for semantic_id, spec in specs.items():
+        matched = {ledger_id: ledgers[ledger_id] for ledger_id in spec["ledger_ids"] if ledger_id in ledgers}
+        entry: dict[str, Any] = {
+            "semantic_id": semantic_id,
+            "display_name": spec["display_name"],
+            "representation_status": "PRESENT_RUNTIME_LEDGER" if matched else "ABSENT_NOT_INFERRED",
+            "ledger_ids_expected": list(spec["ledger_ids"]),
+            "records": matched,
+            "inventory_only": True,
+            "scientific_authority": False,
+            "health_authority": False,
+            "promotion_authority": False,
+            "economics_authority": False,
+        }
+        parent_id = spec.get("parent_track_id")
+        if parent_id:
+            parent = ledgers.get(parent_id) or declared.get(parent_id)
+            entry["parent"] = {
+                "track_id": parent_id,
+                "reporting_role": spec["parent_reporting_role"],
+                "record": parent if isinstance(parent, dict) else nd(f"{parent_id} parent absent"),
+                "source_status_preserved": True,
+            }
+        out[semantic_id] = entry
+    qos_component = component(state, "qos_monthly")
+    if qos_component:
+        out["qos"]["component"] = qos_component
+        if out["qos"]["representation_status"] == "ABSENT_NOT_INFERRED":
+            out["qos"]["representation_status"] = "PRESENT_COMPONENT_NO_RUNTIME_LEDGER"
+    return out
+
+
 def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     catalog = track_catalog(state)
     ledgers = catalog.get("ledger_tracks") or state.get("ledger_inventory") or {}
@@ -155,6 +201,7 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     qos = component(state, "qos_monthly")
     v16b = component(state, "v16b")
     momentum = component(state, "momentum_m1_m2")
+    semantic = semantic_projection(state)
 
     blocks: list[dict[str, Any]] = []
     payloads: dict[str, dict[str, Any]] = {
@@ -185,7 +232,9 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
         },
         "06_live_estrutural": {
             "v16b": v16b or ledgers.get("v16b") or nd("v16b absent"),
+            "v16b1": semantic["v16b1"],
             "v16c": declared.get("v16c") or nd("V16C declaration/prereg absent"),
+            "v16c1": semantic["v16c1"],
             "v16d": declared.get("v16d") or nd("V16D declaration absent"),
             "v16e": declared.get("v16e") or nd("V16E declaration absent"),
             "b3_h1": component(state, "b3_h1") or ledgers.get("b3_h1") or nd("b3_h1 absent"),
@@ -224,6 +273,12 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
         },
         "12_gate_btc_2": {
             "source_discovery": ledger_excerpt(state, ["delta_v12_engine", "delta_v12_prices", "d100"]),
+            "semantic_projection": {
+                "d100": semantic["d100"],
+                "momentum_m3": semantic["momentum_m3"],
+                "v12": semantic["v12"],
+                "qos": semantic["qos"],
+            },
             "momentum": momentum or ledgers.get("momentum_m1_m2") or nd("momentum absent"),
             "declared_tracks": declared,
             "scientific_authority": False,
