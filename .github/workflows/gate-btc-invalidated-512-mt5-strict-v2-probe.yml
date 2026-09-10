@@ -46,7 +46,7 @@ jobs:
       - name: Validate source qualification implementation only
         shell: powershell
         run: |
-          python -m pip install -q pytest
+          python -m pip install -q pytest tzdata
           python -m py_compile tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py
           pytest -q tests/test_gate_btc_invalidated_512_mt5_strict_v2_probe.py
       - name: Assert preregistration and immutable safety
@@ -86,8 +86,8 @@ jobs:
           if ($env:MT5_READ_ONLY -ne 'true' -or $env:NO_ORDER_SEND -ne 'true') { throw 'MT5_READ_ONLY_BOUNDARY' }
           if ($env:ENGINE_FEED -ne 'false' -or $env:ORDERS -ne '0' -or $env:REAL_CAPITAL -ne '0') { throw 'TRADING_BOUNDARY' }
           if ($env:NO_BACKFILL -ne 'true' -or $env:NO_RETUNE -ne 'true' -or $env:NO_COUNTER_RESET -ne 'true') { throw 'SCIENTIFIC_BOUNDARY' }
-          python -m pip install -q MetaTrader5
-          python -c "import MetaTrader5 as mt5; print('MT5_MODULE=READY')"
+          python -m pip install -q MetaTrader5 tzdata
+          python -c "import MetaTrader5 as mt5; from zoneinfo import ZoneInfo; print('MT5_MODULE=READY', ZoneInfo('America/Sao_Paulo'))"
       - name: Execute preregistered physical source probe only
         shell: powershell
         working-directory: main_repo
