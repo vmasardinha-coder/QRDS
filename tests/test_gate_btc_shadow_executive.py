@@ -29,7 +29,13 @@ class ShadowExecutiveContractTest(unittest.TestCase):
             "warnings": {"stale_components": ["delta", "d50"]},
             "ledger_inventory": {
                 "d50": {"status": "ACTIVE", "source": "ledgers/d50/STATUS.json"},
-                "v16b": {"status": "SCIENTIFIC_BLOCK", "source": "ledgers/v16b/STATUS.json"},
+                "d100": {"status": "ACTIVE", "source": "ledgers/d100/STATUS.json"},
+                "momentum_m3": {"status": "ACTIVE_PROSPECTIVE", "source": "ledgers/momentum_m3/STATUS.json"},
+                "qos_three_track": {"status": "ACTIVE_CALENDAR_GATED", "source": "ledgers/qos_three_track/STATUS.json"},
+                "v16b": {"status": "TERMINAL_BLOCKED_NOT_PROMOTABLE", "source": "ledgers/v16b/STATUS.json"},
+                "v16b1": {"status": "FROZEN_EX_ANTE", "source": "ledgers/v16b1/STATUS.json"},
+                "v16c1": {"status": "FROZEN_EX_ANTE", "source": "ledgers/v16c1/STATUS.json"},
+                "delta_v12_engine": {"status": "ACTIVE_PROSPECTIVE", "source": "ledgers/delta_v12_engine/STATUS.json"},
                 "delta_v12_prices": {"status": "AUDIT_ONLY", "source": "ledgers/delta_v12_prices/COVERAGE.json"},
             },
             "inventory_summary": {"ledger_count": 3, "does_not_change_delivery_health": True},
@@ -38,7 +44,13 @@ class ShadowExecutiveContractTest(unittest.TestCase):
                 "scientific_authority": False,
                 "ledger_tracks": {
                     "d50": {"status": "ACTIVE"},
-                    "v16b": {"status": "SCIENTIFIC_BLOCK"},
+                    "d100": {"status": "ACTIVE"},
+                    "momentum_m3": {"status": "ACTIVE_PROSPECTIVE"},
+                    "qos_three_track": {"status": "ACTIVE_CALENDAR_GATED"},
+                    "v16b": {"status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"},
+                    "v16b1": {"status": "FROZEN_EX_ANTE"},
+                    "v16c1": {"status": "FROZEN_EX_ANTE"},
+                    "delta_v12_engine": {"status": "ACTIVE_PROSPECTIVE"},
                     "delta_v12_prices": {"status": "AUDIT_ONLY"},
                 },
                 "declared_nonledger_tracks": {
@@ -81,6 +93,27 @@ class ShadowExecutiveContractTest(unittest.TestCase):
         self.assertTrue(radar["empiricus_delta_required"])
         self.assertEqual(radar["empiricus_delta"]["canonical_evidence_status"], "ABSENT_NOT_INFERRED")
         self.assertTrue(report["completeness"]["empiricus_delta_canonical_evidence_missing"])
+
+    def test_newer_runtime_ledgers_have_reporting_only_semantic_projection(self):
+        report = build(self._state(), "2026-09-09")
+        structural = report["blocks"][5]["content"]
+        gate2 = report["blocks"][11]["content"]["semantic_projection"]
+        self.assertEqual(structural["v16b1"]["representation_status"], "PRESENT_RUNTIME_LEDGER")
+        self.assertEqual(structural["v16b1"]["records"]["v16b1"]["status"], "FROZEN_EX_ANTE")
+        self.assertEqual(structural["v16b1"]["parent"]["reporting_role"], "TERMINAL_PARENT_NOT_REOPENED")
+        self.assertEqual(structural["v16b1"]["parent"]["record"]["status"], "TERMINAL_BLOCKED_NOT_PROMOTABLE")
+        self.assertEqual(structural["v16c1"]["representation_status"], "PRESENT_RUNTIME_LEDGER")
+        self.assertEqual(structural["v16c1"]["parent"]["reporting_role"], "FROZEN_BLOCKED_PARENT")
+        self.assertEqual(gate2["d100"]["records"]["d100"]["status"], "ACTIVE")
+        self.assertEqual(gate2["momentum_m3"]["records"]["momentum_m3"]["status"], "ACTIVE_PROSPECTIVE")
+        self.assertEqual(set(gate2["v12"]["records"]), {"delta_v12_engine", "delta_v12_prices"})
+        self.assertEqual(gate2["qos"]["records"]["qos_three_track"]["status"], "ACTIVE_CALENDAR_GATED")
+        for entry in [structural["v16b1"], structural["v16c1"], *gate2.values()]:
+            self.assertTrue(entry["inventory_only"])
+            self.assertFalse(entry["scientific_authority"])
+            self.assertFalse(entry["health_authority"])
+            self.assertFalse(entry["promotion_authority"])
+            self.assertFalse(entry["economics_authority"])
 
     def test_reporting_boundary_cannot_authorize_trading_or_science(self):
         report = build(self._state(), "2026-09-09")
