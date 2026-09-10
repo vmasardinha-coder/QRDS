@@ -20,6 +20,31 @@ def sha256(path: Path):
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
 
 
+SEMANTIC_REPORTING_LEDGER_IDS = {
+    "d100",
+    "delta_v12_engine",
+    "delta_v12_prices",
+    "qos_three_track",
+    "v16b1",
+}
+
+
+def reconcile_unrepresented_warning(state: dict, catalog: dict) -> None:
+    """Reclassify only the reporting warning; preserve raw inventory observability unchanged."""
+    warnings = state.setdefault("warnings", {})
+    raw = list(warnings.get("unrepresented_runtime_ledgers") or [])
+    ledger_tracks = catalog.get("ledger_tracks") or {}
+    semantic_present = sorted(
+        ledger_id for ledger_id in SEMANTIC_REPORTING_LEDGER_IDS
+        if ledger_id in ledger_tracks
+    )
+    warnings["unrepresented_runtime_ledgers_component_only"] = raw
+    warnings["semantic_projection_ledger_ids"] = semantic_present
+    warnings["unrepresented_runtime_ledgers"] = [
+        ledger_id for ledger_id in raw if ledger_id not in semantic_present
+    ]
+
+
 def build(state: dict, artifact_root: Path | None, requirements_path: Path) -> dict:
     ledger_inventory = state.get("ledger_inventory", {})
     catalog = {
@@ -122,6 +147,7 @@ def main():
         raise SystemExit("reporting state missing")
     catalog = build(state, args.artifact_root, args.requirements)
     state["executive_track_catalog"] = catalog
+    reconcile_unrepresented_warning(state, catalog)
     args.state.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(catalog["summary"], indent=2, sort_keys=True))
     return 0

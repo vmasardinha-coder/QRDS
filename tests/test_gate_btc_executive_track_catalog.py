@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.gate_btc_executive_track_catalog import build
+from tools.gate_btc_executive_track_catalog import build, reconcile_unrepresented_warning
 
 
 class ExecutiveTrackCatalogTest(unittest.TestCase):
@@ -59,6 +59,35 @@ class ExecutiveTrackCatalogTest(unittest.TestCase):
             self.assertIn("empiricus_delta", out["summary"]["missing_canonical_reference_ids"])
             self.assertTrue(out["summary"]["does_not_change_delivery_health"])
             self.assertTrue(out["summary"]["does_not_authorize_science_or_trading"])
+
+    def test_semantic_warning_reconciliation_preserves_raw_inventory_gap(self):
+        state = {
+            "warnings": {
+                "unrepresented_runtime_ledgers": [
+                    "d100", "delta_v12_engine", "delta_v12_prices", "qos_three_track",
+                    "v16b1", "v16c", "b3_h31_prospective",
+                ]
+            }
+        }
+        catalog = {
+            "ledger_tracks": {
+                "d100": {}, "delta_v12_engine": {}, "delta_v12_prices": {},
+                "qos_three_track": {}, "v16b1": {}, "v16c": {}, "b3_h31_prospective": {},
+            }
+        }
+        reconcile_unrepresented_warning(state, catalog)
+        self.assertEqual(
+            state["warnings"]["unrepresented_runtime_ledgers_component_only"],
+            ["d100", "delta_v12_engine", "delta_v12_prices", "qos_three_track", "v16b1", "v16c", "b3_h31_prospective"],
+        )
+        self.assertEqual(
+            state["warnings"]["semantic_projection_ledger_ids"],
+            ["d100", "delta_v12_engine", "delta_v12_prices", "qos_three_track", "v16b1"],
+        )
+        self.assertEqual(
+            state["warnings"]["unrepresented_runtime_ledgers"],
+            ["v16c", "b3_h31_prospective"],
+        )
 
     def test_required_reference_detects_named_artifact_without_interpreting_it(self):
         with tempfile.TemporaryDirectory() as td:
