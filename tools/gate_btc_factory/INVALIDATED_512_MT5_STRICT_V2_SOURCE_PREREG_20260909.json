@@ -1,0 +1,125 @@
+{
+  "schema": "qrds.factory.invalidated_512.mt5_strict_v2_source_prereg.v1",
+  "authority_issue": 693,
+  "frozen_at_utc": "2026-09-09T23:50:00Z",
+  "status": "PREREGISTERED_SOURCE_QUALIFICATION_ONLY",
+  "purpose": "Qualify one materially distinct read-only MT5 broker-terminal source for the 512 unresolved invalidated-family rows before any strict-V2 requalification economics are read.",
+  "evaluation_namespace": "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2",
+  "affected_rows": 512,
+  "untouched_valid_rows": 256,
+  "source_class": "READ_ONLY_MT5_BROKER_TERMINAL_EXACT_B3_WIN_CONTRACTS",
+  "interval": "M5",
+  "window": {
+    "start_inclusive": "2025-01-01",
+    "end_inclusive": "2026-08-09",
+    "cutoff_exclusive": "2026-08-10"
+  },
+  "capacity": {
+    "minimum_structurally_valid_sessions_total": 322,
+    "minimum_discovery_sessions": 161,
+    "minimum_replication_sessions": 161,
+    "legacy_v1_minimum_161_total_authoritative": false,
+    "prior_248_session_source_may_be_extended_to_rescue_itself": false
+  },
+  "instrument_identity": {
+    "required_root": "WIN",
+    "required_description_semantics": "IBOVESPA MINI",
+    "required_market_path_semantics": "B3_OR_BVMF_DERIVATIVES",
+    "exact_delivery_contracts_only": true,
+    "continuous_or_synthetic_symbol_allowed": false,
+    "all_matching_symbols_must_be_enumerated_before_bar_capture": true,
+    "outcome_based_symbol_selection_forbidden": true
+  },
+  "contract_chronology": {
+    "metadata_basis_only": [
+      "symbol_name_delivery_month_year_identity",
+      "broker_symbol_expiration_time_when_available"
+    ],
+    "price_based_roll_forbidden": true,
+    "volume_based_roll_forbidden": true,
+    "open_interest_based_roll_forbidden": true,
+    "post_result_roll_change_forbidden": true,
+    "session_contract_rule": "For each B3 session date, among exact enumerated WIN delivery contracts whose explicit broker expiration timestamp is not earlier than that session close, retain the contract with the earliest expiration timestamp. Ties resolve by lexical symbol. If expiration metadata is absent, contradictory, or cannot establish a unique chronology, source qualification fails closed; do not infer expiry from observed prices or volumes.",
+    "overlap_conflict_rule": "Rows from non-selected overlapping contracts are preserved in raw evidence but excluded from the candidate canonical M5 series before any family evaluation.",
+    "gap_fill_across_contracts_forbidden": true
+  },
+  "time_semantics": {
+    "target_session_timezone": "America/Sao_Paulo",
+    "broker_epoch_mapping_must_be_mechanically_proven": true,
+    "ambiguous_timezone_fails_closed": true,
+    "duplicate_timestamp_fails_closed": true,
+    "conflicting_row_fails_closed": true
+  },
+  "session_validity": {
+    "minimum_unique_m5_bars": 40,
+    "required_consecutive_spacing_seconds": 300,
+    "spacing_rule": "All consecutive retained bars inside a claimed structurally valid session must be exactly 300 seconds apart; any internal gap invalidates that session rather than being interpolated.",
+    "interpolation_forbidden": true,
+    "synthetic_bar_creation_forbidden": true
+  },
+  "raw_evidence": {
+    "capture_api": "MetaTrader5.copy_rates_range",
+    "capture_range_must_equal_frozen_window": true,
+    "preserve_full_symbol_enumeration": true,
+    "preserve_symbol_info_identity_and_expiration": true,
+    "preserve_broker_terminal_and_server_metadata": true,
+    "preserve_capture_timestamp": true,
+    "preserve_raw_records_before_normalization": true,
+    "sha256_required": true,
+    "normalized_dataset_sha256_required": true
+  },
+  "source_gate_requirements": {
+    "exact_namespace_required": true,
+    "dataset_hash_bound": true,
+    "identity_qa": true,
+    "schema_qa": true,
+    "publication_semantics_proven": true,
+    "revision_semantics_proven": true,
+    "point_in_time_validity_proven": true,
+    "independent_unseen_window_proven": true,
+    "twelve_contaminated_v1_gates_may_authorize": false
+  },
+  "decision_order": [
+    "PREREGISTRATION",
+    "PHYSICAL_CAPTURE",
+    "IDENTITY_TIME_ROLL_SCHEMA_QA",
+    "CAPACITY_QA",
+    "SOURCE_GATE_ADJUDICATION",
+    "ONLY_IF_GREEN_MATERIALIZE_STRICT_V2_GATES",
+    "ONLY_AFTER_GATE_GREEN_REQUALIFICATION_ECONOMICS"
+  ],
+  "fail_closed": {
+    "less_than_322_valid_sessions": "SOURCE_CAPACITY_FAIL",
+    "less_than_161_discovery_or_replication": "PARTITION_CAPACITY_FAIL",
+    "identity_or_expiry_ambiguity": "SOURCE_IDENTITY_CHRONOLOGY_FAIL",
+    "timezone_ambiguity": "SOURCE_TIME_SEMANTICS_FAIL",
+    "publication_revision_or_pit_unproven": "SOURCE_PROVENANCE_FAIL",
+    "source_failure_may_change_thresholds": false,
+    "source_failure_may_change_window": false,
+    "source_failure_may_change_roll_rule": false,
+    "source_failure_may_change_family_methodology": false
+  },
+  "credit": {
+    "source_probe_scientific_family_credit": 0,
+    "prospective_credit": 0,
+    "historical_backfill_credit": 0,
+    "prior_mt5_discovery_packet_credit": 0,
+    "prior_contaminated_v1_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "MT5_READ_ONLY": true,
+    "NO_ORDER_SEND": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}
