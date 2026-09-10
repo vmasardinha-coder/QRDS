@@ -31,17 +31,37 @@ def qtime(dt,mode):
     if mode=="UTC_EPOCH": return dt.astimezone(UTC)
     if mode=="BROKER_LOCAL_EPOCH": return dt.replace(tzinfo=None).replace(tzinfo=UTC)
     raise RuntimeError("UNKNOWN_TIME_MODE")
-def detect_mode(mt5,symbols):
-    now=datetime.now(TZ); ev=[]
+def tick_mode_evidence(mt5,symbols,now,scope):
+    ev=[]
     for s in symbols:
         t=mt5.symbol_info_tick(s); e=int(getattr(t,"time",0) or 0) if t else 0
         if e<=0: continue
         u=datetime.fromtimestamp(e,tz=UTC).astimezone(TZ); l=datetime.fromtimestamp(e,tz=UTC).replace(tzinfo=None).replace(tzinfo=TZ)
         du=abs((now-u).total_seconds()); dl=abs((now-l).total_seconds()); mode="UTC_EPOCH" if du<=dl else "BROKER_LOCAL_EPOCH"
-        ev.append({"symbol":s,"mode":mode,"delta_seconds":min(du,dl),"raw_tick_epoch":e})
-    fresh=[x for x in ev if x["delta_seconds"]<=900]; modes=sorted({x["mode"] for x in fresh})
-    if len(modes)!=1: raise RuntimeError(f"AMBIGUOUS_MT5_TIME_MODE:{modes}:fresh={len(fresh)}")
-    return modes[0],{"selected_mode":modes[0],"current_tick_evidence":ev}
+        ev.append({"symbol":s,"scope":scope,"mode":mode,"delta_seconds":min(du,dl),"raw_tick_epoch":e})
+    return ev
+def detect_mode(mt5,symbols):
+    now=datetime.now(TZ)
+    ev=tick_mode_evidence(mt5,symbols,now,"EXACT_WIN_CONTRACTS")
+    fresh=[x for x in ev if x["delta_seconds"]<=900]
+    evidence_scope="EXACT_WIN_CONTRACTS"
+    if not fresh:
+        fallback=[]
+        winset=set(symbols)
+        for i in list(mt5.symbols_get() or []):
+            s=str(getattr(i,"name",""))
+            if not s or s in winset: continue
+            x=tick_mode_evidence(mt5,[s],now,"SAME_MT5_TERMINAL_FALLBACK")
+            if x:
+                ev.extend(x)
+                if x[0]["delta_seconds"]<=900:
+                    fallback.append(x[0])
+                    if len(fallback)>=64: break
+        fresh=fallback
+        evidence_scope="SAME_MT5_TERMINAL_FALLBACK"
+    modes=sorted({x["mode"] for x in fresh})
+    if len(modes)!=1: raise RuntimeError(f"AMBIGUOUS_MT5_TIME_MODE:{modes}:fresh={len(fresh)}:scope={evidence_scope}")
+    return modes[0],{"selected_mode":modes[0],"evidence_scope":evidence_scope,"fresh_evidence_count":len(fresh),"current_tick_evidence":ev}
 def norm(rows,symbol,mode):
     out=[]
     for r in ([] if rows is None else list(rows)):
