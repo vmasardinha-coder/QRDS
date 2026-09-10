@@ -52,20 +52,7 @@ jobs:
       - name: Assert preregistration and immutable safety
         shell: powershell
         run: |
-          python - <<'PY'
-          import json
-          p=json.load(open('tools/gate_btc_factory/INVALIDATED_512_MT5_STRICT_V2_SOURCE_PREREG_20260909.json',encoding='utf-8'))
-          assert p['status']=='PREREGISTERED_SOURCE_QUALIFICATION_ONLY'
-          assert p['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
-          assert p['capacity']['minimum_structurally_valid_sessions_total']==322
-          assert p['capacity']['minimum_discovery_sessions']==161
-          assert p['capacity']['minimum_replication_sessions']==161
-          assert p['credit']['source_probe_scientific_family_credit']==0
-          assert p['credit']['historical_backfill_credit']==0
-          s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
-          assert s['MT5_READ_ONLY'] and s['NO_ORDER_SEND']; assert s['ENGINE_FEED'] is False
-          assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['NO_RETUNE'] and s['NO_BACKFILL']
-          PY
+          python -c "import json; p=json.load(open('tools/gate_btc_factory/INVALIDATED_512_MT5_STRICT_V2_SOURCE_PREREG_20260909.json',encoding='utf-8')); assert p['status']=='PREREGISTERED_SOURCE_QUALIFICATION_ONLY'; assert p['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'; assert p['capacity']['minimum_structurally_valid_sessions_total']==322; assert p['capacity']['minimum_discovery_sessions']==161; assert p['capacity']['minimum_replication_sessions']==161; assert p['credit']['source_probe_scientific_family_credit']==0; assert p['credit']['historical_backfill_credit']==0; s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']; assert s['MT5_READ_ONLY'] and s['NO_ORDER_SEND']; assert s['ENGINE_FEED'] is False; assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['NO_RETUNE'] and s['NO_BACKFILL']"
       - name: Assert no economics or order path in probe
         shell: powershell
         run: |
@@ -109,19 +96,7 @@ jobs:
       - name: Assert result cannot silently run family economics
         shell: powershell
         run: |
-          python - <<'PY'
-          import json
-          p='mt5_512_out/RESULT.json'
-          d=json.load(open(p,encoding='utf-8'))
-          assert d['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
-          assert d['minimum_required']=={'total':322,'discovery':161,'replication':161}
-          assert d['scientific_family_credit']==0 and d['prospective_credit']==0 and d['historical_backfill_credit']==0
-          assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0 and d['safety']['ENGINE_FEED'] is False
-          if not d['source_admission_pass']:
-              assert d['requalification_economics_allowed'] is False
-          print('FACTORY_512_MT5_SOURCE_STATUS='+d['status'])
-          print('FACTORY_512_MT5_VALID_SESSIONS='+str(d['valid_session_counts']))
-          PY
+          python -c "import json; d=json.load(open('mt5_512_out/RESULT.json',encoding='utf-8')); assert d['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'; assert d['minimum_required']=={'total':322,'discovery':161,'replication':161}; assert d['scientific_family_credit']==0 and d['prospective_credit']==0 and d['historical_backfill_credit']==0; assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0 and d['safety']['ENGINE_FEED'] is False; assert d['source_admission_pass'] or d['requalification_economics_allowed'] is False; print('FACTORY_512_MT5_SOURCE_STATUS='+d['status']); print('FACTORY_512_MT5_VALID_SESSIONS='+str(d['valid_session_counts']))"
       - name: Persist compact canonical source qualification evidence
         shell: powershell
         run: |
@@ -131,7 +106,8 @@ jobs:
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
           git -C runtime_repo add runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SOURCE_RESULT.json runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SESSION_QA.json
-          if (git -C runtime_repo diff --cached --quiet) { exit 0 }
+          git -C runtime_repo diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { exit 0 }
           git -C runtime_repo commit -m "Factory 512 MT5 strict V2 source qualification ${{ github.run_id }}"
           for ($i=1; $i -le 5; $i++) {
             git -C runtime_repo pull --rebase origin gate-btc-runtime
