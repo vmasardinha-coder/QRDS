@@ -26,8 +26,13 @@ on:
   # para execucoes disparadas com GITHUB_TOKEN, entao uma retentativa automatica
   # bem-sucedida nao acorda o monitor. Esta agenda cobre a janela da coleta e
   # processa o ponteiro publicado quando ha fechamento novo.
+  #
+  # A janela comeca as 03:00 e nao as 05:00 por medicao, nao por estimativa: em
+  # 2026-09-10 o primeiro tique de "0 5-15" so executou as 09:24, quatro horas e
+  # meia depois do horario marcado, ja depois da entrega diaria. O agendador
+  # deste repositorio atrasa muito, entao a janela abre com folga.
   schedule:
-    - cron: "0 5-15 * * *"
+    - cron: "0 3-15 * * *"
 
 permissions:
   actions: read
