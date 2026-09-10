@@ -4,7 +4,8 @@
 Reporting/integration only. This module never creates D50 observations, edits economic
 rows, backfills history, changes strategy parameters, places orders, or uses capital.
 It only mirrors D50 sections that have already passed the independent reconciliation
-contract in GATE_BTC_MEASUREMENT_STATUS.json.
+contract in GATE_BTC_MEASUREMENT_STATUS.json and are contemporaneous according to the
+reporting current-state reconciler.
 """
 from __future__ import annotations
 
@@ -47,8 +48,41 @@ def require_safe(obj: dict[str, Any], label: str) -> None:
         raise RuntimeError(f"{label}: promotion is forbidden")
 
 
-def build(measurement: dict[str, Any], current: dict[str, Any] | None) -> dict[str, Any]:
+def require_contemporary_reporting(
+    reporting: dict[str, Any], measurement: dict[str, Any]
+) -> None:
+    """Fail closed if reporting has already classified the D50 source as stale.
+
+    This is publication governance only: it does not create observations, alter counters,
+    retune thresholds, or infer missing local evidence.
+    """
+    require_safe(reporting, "reporting_state")
+    d50 = (reporting.get("components") or {}).get("d50") or {}
+    freshness = str(d50.get("freshness") or "")
+    authority = str(d50.get("authority") or "")
+    if freshness != "FRESH":
+        raise RuntimeError(
+            f"refusing to publish stale D50 authority: reporting freshness={freshness or 'MISSING'}"
+        )
+    if authority != "LOCAL_RECONCILED_MEASUREMENT":
+        raise RuntimeError(
+            f"refusing to mirror measurement without contemporary reconciled authority: authority={authority or 'MISSING'}"
+        )
+    ledger = measurement.get("d50_prospective_immutable_ledger") or {}
+    if d50.get("display_current") != ledger.get("current"):
+        raise RuntimeError("reporting/measurement D50 counter mismatch")
+    qual = measurement.get("d50_data_qualification") or {}
+    if d50.get("data_qualification_snapshot_count_total") != qual.get("snapshot_count_total"):
+        raise RuntimeError("reporting/measurement D50 qualification chain mismatch")
+
+
+def build(
+    measurement: dict[str, Any],
+    current: dict[str, Any] | None,
+    reporting: dict[str, Any],
+) -> dict[str, Any]:
     require_safe(measurement, "measurement")
+    require_contemporary_reporting(reporting, measurement)
     ledger = deepcopy(measurement.get("d50_prospective_immutable_ledger") or {})
     qual = deepcopy(measurement.get("d50_data_qualification") or {})
     audit = deepcopy(measurement.get("d50_reconciliation") or {})
@@ -109,11 +143,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--measurement", type=Path, required=True)
     ap.add_argument("--current", type=Path)
+    ap.add_argument("--reporting-state", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
     args = ap.parse_args()
     measurement = load(args.measurement)
     current = load(args.current) if args.current and args.current.is_file() else None
-    payload = build(measurement, current)
+    reporting = load(args.reporting_state)
+    payload = build(measurement, current, reporting)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("D50_RUNTIME_AUTHORITY_STATUS=PASS")
