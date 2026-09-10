@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-10T09:34:35.140841+00:00",
+  "generated_at_utc": "2026-09-10T14:16:10.340521+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -9,6 +9,7 @@
     "zero_eligible_observations_is_not_equivalent_to_not_started": true
   },
   "reporting_corrections": [
+    "M1_M2_ACTIVE_STATUS_OVERRIDES_STALE_RED_REPORTING_HINT",
     "H31_ACTIVE_PROSPECTIVE_VISIBLE_EVEN_WITH_ZERO_ELIGIBLE_OBSERVATIONS",
     "ALT_TRAIL_EXISTS_DO_NOT_REPORT_AS_MISSING",
     "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING"
@@ -537,29 +538,54 @@
     },
     "m1_m2": {
       "data": {
-        "allocation_weight": 0,
-        "automatic_tuning": false,
-        "backfill_allowed": false,
-        "data_as_of": "2026-09-08",
+        "data_as_of": "2026-09-09",
         "engine_feed": false,
-        "last_run_state": "NO_NEW_SNAPSHOT_CUTOFF_NOT_PUBLISHED",
-        "methodology_failure": false,
+        "latest_snapshot_sha256": "a60dabf1e28f4242721f5045d78da074939293dd5d4bbb21bb2bd94934975a5c",
+        "m1_summary": {
+          "breadth_pct_m1_gt_zero": 34.44444444444444,
+          "cross_sectional_dispersion_m1": 0.7771929235009811,
+          "cutoff": "2026-09-09",
+          "delta_breadth_pct_points": -2.2222222222222214,
+          "engine_feed": false,
+          "lookback_14_date": "2026-08-26",
+          "lookback_30_date": "2026-08-10",
+          "median_m1": -0.16652035511996702,
+          "negative_median_distance_to_zero": 0.39830752620197607,
+          "orders": 0,
+          "real_capital": 0,
+          "status": "SHADOW_ONLY_NOT_APPROVED",
+          "universe_n": 90
+        },
+        "m2_summary": {
+          "breadth_pct_m2_gt_zero": 22.22222222222222,
+          "cross_sectional_dispersion_m2": 3.172969794729294,
+          "cutoff": "2026-09-09",
+          "delta_breadth_pct_points": -18.888888888888893,
+          "engine_feed": false,
+          "excluded_incomplete_history": 2,
+          "median_m2": -1.8823701745153736,
+          "orders": 0,
+          "real_capital": 0,
+          "reference_calendar": "BTC_COMPLETED_UTC_DAILY_BARS",
+          "reference_window_bars": 31,
+          "reference_window_end": "2026-09-09",
+          "reference_window_start": "2026-08-10",
+          "status": "PROSPECTIVE_SHADOW_ONLY_NOT_APPROVED",
+          "universe_n": 90
+        },
         "not_approved": true,
-        "observed_snapshots": 15,
+        "observed_snapshots": 16,
         "orders_generated": 0,
         "promotion_allowed": false,
-        "prospective_freeze_date": "2026-08-21",
         "real_capital_used": 0,
-        "repair_scope": "ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
-        "requested_cutoff": "2026-09-09",
         "research_only": true,
         "schema": "gate_btc.momentum_m1_m2.status.v1",
         "shadow_only": true,
-        "status": "WAIT_SOURCE_PUBLICATION"
+        "status": "ACTIVE_PROSPECTIVE_SHADOW"
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_m1_m2/STATUS.json",
-      "sha256": "56a0760e2b0b662fd4cf82258fda93bb7ff925b009aa863f6cf710f64359e0ad"
+      "sha256": "5572b94ad8301b3f143941b01329611edf44627909868aa3a32ec5b28395f561"
     },
     "measurement": {
       "data": {
