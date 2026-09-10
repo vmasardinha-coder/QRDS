@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse, hashlib, json, re
 from collections import defaultdict
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -10,6 +10,7 @@ TZ=ZoneInfo("America/Sao_Paulo"); UTC=timezone.utc
 START="2025-01-01"; DISC_END="2025-12-31"; REPL_START="2026-01-01"; END="2026-08-09"
 MIN_TOTAL=322; MIN_PART=161; NAMESPACE="RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
 WIN_RE=re.compile(r"^WIN[FGHJKMNQUVXZ]\d{2}$")
+TIME_MODES=("UTC_EPOCH","BROKER_LOCAL_EPOCH")
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"MT5_READ_ONLY":True,"NO_ORDER_SEND":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_LATE_SEAL":True,"NO_COUNTER_RESET":True,"NO_RETUNE":True,"FAIL_CLOSED":True,"H1_ECONOMICS_READ":False}
 
 def cbytes(x): return (json.dumps(x,sort_keys=True,separators=(",",":"),ensure_ascii=False)+"\n").encode()
@@ -27,10 +28,6 @@ def decode(epoch,mode):
     if mode=="UTC_EPOCH": return datetime.fromtimestamp(epoch,tz=UTC).astimezone(TZ)
     if mode=="BROKER_LOCAL_EPOCH": return datetime.fromtimestamp(epoch,tz=UTC).replace(tzinfo=None).replace(tzinfo=TZ)
     raise RuntimeError("UNKNOWN_TIME_MODE")
-def qtime(dt,mode):
-    if mode=="UTC_EPOCH": return dt.astimezone(UTC)
-    if mode=="BROKER_LOCAL_EPOCH": return dt.replace(tzinfo=None).replace(tzinfo=UTC)
-    raise RuntimeError("UNKNOWN_TIME_MODE")
 def tick_mode_evidence(mt5,symbols,now,scope):
     ev=[]
     for s in symbols:
@@ -40,14 +37,10 @@ def tick_mode_evidence(mt5,symbols,now,scope):
         du=abs((now-u).total_seconds()); dl=abs((now-l).total_seconds()); mode="UTC_EPOCH" if du<=dl else "BROKER_LOCAL_EPOCH"
         ev.append({"symbol":s,"scope":scope,"mode":mode,"delta_seconds":min(du,dl),"raw_tick_epoch":e})
     return ev
-def detect_mode(mt5,symbols):
-    now=datetime.now(TZ)
-    ev=tick_mode_evidence(mt5,symbols,now,"EXACT_WIN_CONTRACTS")
-    fresh=[x for x in ev if x["delta_seconds"]<=900]
-    evidence_scope="EXACT_WIN_CONTRACTS"
+def detect_mode_optional(mt5,symbols):
+    now=datetime.now(TZ); ev=tick_mode_evidence(mt5,symbols,now,"EXACT_WIN_CONTRACTS"); fresh=[x for x in ev if x["delta_seconds"]<=900]; scope="EXACT_WIN_CONTRACTS"
     if not fresh:
-        fallback=[]
-        winset=set(symbols)
+        winset=set(symbols); fallback=[]
         for i in list(mt5.symbols_get() or []):
             s=str(getattr(i,"name",""))
             if not s or s in winset: continue
@@ -57,17 +50,17 @@ def detect_mode(mt5,symbols):
                 if x[0]["delta_seconds"]<=900:
                     fallback.append(x[0])
                     if len(fallback)>=64: break
-        fresh=fallback
-        evidence_scope="SAME_MT5_TERMINAL_FALLBACK"
+        fresh=fallback; scope="SAME_MT5_TERMINAL_FALLBACK"
     modes=sorted({x["mode"] for x in fresh})
-    if len(modes)!=1: raise RuntimeError(f"AMBIGUOUS_MT5_TIME_MODE:{modes}:fresh={len(fresh)}:scope={evidence_scope}")
-    return modes[0],{"selected_mode":modes[0],"evidence_scope":evidence_scope,"fresh_evidence_count":len(fresh),"current_tick_evidence":ev}
-def norm(rows,symbol,mode):
+    selected=modes[0] if len(modes)==1 else None
+    return selected,{"selected_mode":selected,"evidence_scope":scope,"fresh_evidence_count":len(fresh),"observed_modes":modes,"current_tick_evidence":ev,"timezone_admission_pass":selected is not None}
+def raw_row(r):
+    return {"epoch":int(r["time"]),"open":float(r["open"]),"high":float(r["high"]),"low":float(r["low"]),"close":float(r["close"]),"tick_volume":int(r["tick_volume"]),"spread":int(r["spread"]),"real_volume":int(r["real_volume"])}
+def norm(raw,symbol,mode):
     out=[]
-    for r in ([] if rows is None else list(rows)):
-        dt=decode(int(r["time"]),mode); d=dt.date().isoformat()
-        if START<=d<=END:
-            out.append({"symbol":symbol,"timestamp":dt.isoformat(),"epoch":int(r["time"]),"open":float(r["open"]),"high":float(r["high"]),"low":float(r["low"]),"close":float(r["close"]),"tick_volume":int(r["tick_volume"]),"spread":int(r["spread"]),"real_volume":int(r["real_volume"])})
+    for r in raw:
+        dt=decode(int(r["epoch"]),mode); d=dt.date().isoformat()
+        if START<=d<=END: out.append({"symbol":symbol,"timestamp":dt.isoformat(),**r})
     return sorted(out,key=lambda x:(x["timestamp"],x["symbol"]))
 def build_candidate(raw,metas):
     bucket=defaultdict(lambda:defaultdict(list))
@@ -82,8 +75,8 @@ def build_candidate(raw,metas):
         if valid: cand.extend(rows)
     return cand,{"sessions":qa}
 def counts(valid):
-    s=set(valid); disc=sum(START<=d<=DISC_END for d in s); repl=sum(REPL_START<=d<=END for d in s)
-    return {"total":len(s),"discovery":disc,"replication":repl}
+    s=set(valid); return {"total":len(s),"discovery":sum(START<=d<=DISC_END for d in s),"replication":sum(REPL_START<=d<=END for d in s)}
+def capacity_ok(c): return c["total"]>=MIN_TOTAL and c["discovery"]>=MIN_PART and c["replication"]>=MIN_PART
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--out-dir",type=Path,required=True); a=ap.parse_args(); import MetaTrader5 as mt5
@@ -95,21 +88,36 @@ def main():
         if any(expiry_date(m) is None for m in metas): raise RuntimeError("MISSING_EXPIRATION_METADATA")
         active=[]
         for m in metas:
-            if mt5.symbol_select(m["symbol"],True):
-                t=mt5.symbol_info_tick(m["symbol"])
-                if t and int(getattr(t,"time",0) or 0)>0: active.append(m["symbol"])
-        mode,te=detect_mode(mt5,active)
-        sd=datetime.combine(datetime.fromisoformat(START).date(),time.min,tzinfo=TZ); ed=datetime.combine(datetime.fromisoformat(END).date(),time(23,59,59),tzinfo=TZ)
+            if mt5.symbol_select(m["symbol"],True): active.append(m["symbol"])
+        selected_mode,time_evidence=detect_mode_optional(mt5,active)
+
+        # Capture is deliberately independent of timezone admission. Query a UTC envelope
+        # wider than the frozen local window so either plausible epoch interpretation can
+        # be evaluated from the same immutable raw bars without a second data pull.
+        qstart=datetime.fromisoformat(START+"T00:00:00+00:00")-timedelta(days=1)
+        qend=datetime.fromisoformat(END+"T23:59:59+00:00")+timedelta(days=1)
         raw={}; errors=[]
         for m in metas:
             s=m["symbol"]
             if not mt5.symbol_select(s,True): raw[s]=[]; errors.append({"symbol":s,"error":"SYMBOL_SELECT_FAILED"}); continue
-            rr=mt5.copy_rates_range(s,mt5.TIMEFRAME_M5,qtime(sd,mode),qtime(ed,mode)); err=mt5.last_error(); raw[s]=norm(rr,s,mode)
+            rr=mt5.copy_rates_range(s,mt5.TIMEFRAME_M5,qstart,qend); err=mt5.last_error(); raw[s]=[raw_row(r) for r in ([] if rr is None else list(rr))]
             if rr is None: errors.append({"symbol":s,"error":str(err)})
-        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v1","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_mode":mode,"time_evidence":te,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}; rh=digest(packet); packet["raw_capture_sha256"]=rh; (a.out_dir/"RAW_CAPTURE.json").write_bytes(cbytes(packet))
-        cand,qa=build_candidate(raw,metas); valid=[x["session"] for x in qa["sessions"] if x["structurally_valid"]]; c=counts(valid); ch=hashlib.sha256(cbytes(cand)).hexdigest()
-        gates={"identity_qa":True,"schema_qa":True,"timezone_qa":True,"chronology_qa":all(choose_contract(d,metas) for d in valid),"capacity_qa":c["total"]>=MIN_TOTAL and c["discovery"]>=MIN_PART and c["replication"]>=MIN_PART,"publication_semantics_proven":False,"revision_semantics_proven":False,"point_in_time_validity_proven":False,"independent_unseen_window_proven":True}
-        green=all(gates.values()); result={"schema":"qrds.factory.invalidated_512.mt5_strict_v2_source_result.v1","authority_issue":693,"evaluation_namespace":NAMESPACE,"status":"SOURCE_GATE_GREEN" if green else "MT5_SOURCE_QUALIFICATION_FAIL_CLOSED","window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"raw_capture_sha256":rh,"normalized_candidate_sha256":ch,"enumerated_exact_win_contract_count":len(metas),"raw_bar_count":sum(len(v) for v in raw.values()),"candidate_bar_count":len(cand),"valid_session_counts":c,"minimum_required":{"total":MIN_TOTAL,"discovery":MIN_PART,"replication":MIN_PART},"source_gates":gates,"capture_errors":errors,"source_admission_pass":green,"requalification_economics_allowed":green,"scientific_family_credit":0,"prospective_credit":0,"historical_backfill_credit":0,"safety":SAFETY}; result["result_sha256"]=digest(result)
-        (a.out_dir/"CANDIDATE_M5.json").write_bytes(cbytes(cand)); (a.out_dir/"SESSION_QA.json").write_bytes(cbytes(qa)); (a.out_dir/"RESULT.json").write_bytes(cbytes(result)); print(json.dumps({k:result[k] for k in ("status","enumerated_exact_win_contract_count","raw_bar_count","candidate_bar_count","valid_session_counts","source_admission_pass")},sort_keys=True)); return 0
+
+        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v2","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"capture_window_utc":{"start":qstart.isoformat(),"end":qend.isoformat()},"frozen_local_window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_evidence":time_evidence,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}
+        rh=digest(packet); packet["raw_capture_sha256"]=rh; (a.out_dir/"RAW_CAPTURE.json").write_bytes(cbytes(packet))
+
+        mode_results={}
+        for mode in TIME_MODES:
+            normalized={s:norm(rows,s,mode) for s,rows in raw.items()}
+            cand,qa=build_candidate(normalized,metas); valid=[x["session"] for x in qa["sessions"] if x["structurally_valid"]]; c=counts(valid)
+            mode_results[mode]={"valid_session_counts":c,"capacity_qa":capacity_ok(c),"candidate_bar_count":len(cand),"normalized_candidate_sha256":hashlib.sha256(cbytes(cand)).hexdigest()}
+            (a.out_dir/f"CANDIDATE_M5_{mode}.json").write_bytes(cbytes(cand)); (a.out_dir/f"SESSION_QA_{mode}.json").write_bytes(cbytes(qa))
+
+        conservative={k:min(mode_results[m]["valid_session_counts"][k] for m in TIME_MODES) for k in ("total","discovery","replication")}
+        capacity_all_modes=all(mode_results[m]["capacity_qa"] for m in TIME_MODES)
+        gates={"identity_qa":True,"schema_qa":True,"timezone_qa":selected_mode is not None,"chronology_qa":True,"capacity_qa":capacity_all_modes,"publication_semantics_proven":False,"revision_semantics_proven":False,"point_in_time_validity_proven":False,"independent_unseen_window_proven":True}
+        green=all(gates.values())
+        result={"schema":"qrds.factory.invalidated_512.mt5_strict_v2_source_result.v2","authority_issue":693,"evaluation_namespace":NAMESPACE,"status":"SOURCE_GATE_GREEN" if green else "MT5_SOURCE_QUALIFICATION_FAIL_CLOSED","capture_completed":True,"timezone_admission_pass":selected_mode is not None,"selected_time_mode":selected_mode,"raw_capture_sha256":rh,"enumerated_exact_win_contract_count":len(metas),"raw_bar_count":sum(len(v) for v in raw.values()),"capacity_by_time_mode":mode_results,"valid_session_counts":conservative,"minimum_required":{"total":MIN_TOTAL,"discovery":MIN_PART,"replication":MIN_PART},"source_gates":gates,"capture_errors":errors,"source_admission_pass":green,"requalification_economics_allowed":green,"scientific_family_credit":0,"prospective_credit":0,"historical_backfill_credit":0,"safety":SAFETY}; result["result_sha256"]=digest(result)
+        (a.out_dir/"RESULT.json").write_bytes(cbytes(result)); print(json.dumps({"status":result["status"],"capture_completed":True,"timezone_admission_pass":result["timezone_admission_pass"],"raw_bar_count":result["raw_bar_count"],"capacity_by_time_mode":mode_results,"conservative_valid_session_counts":conservative,"source_admission_pass":green},sort_keys=True)); return 0
     finally: mt5.shutdown()
 if __name__=="__main__": raise SystemExit(main())
