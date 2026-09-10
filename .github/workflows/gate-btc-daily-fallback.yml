@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "15 2 * * *"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-daily-fallback.yml
+      - tools/gate_btc_daily_fallback_wake.py
+      - tests/test_gate_btc_daily_fallback_wake.py
 
 permissions:
   actions: write
@@ -14,16 +20,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  recover-missing-primary-run:
+  wake-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test the monitor wake policy
+        run: python -m unittest -v tests.test_gate_btc_daily_fallback_wake
+      - name: Compile the wake tool
+        run: python -m py_compile tools/gate_btc_daily_fallback_wake.py
+
+  recover-missing-primary-run:
+    # Nunca recupera nada a partir de um pull request: so no agendado ou manual.
+    if: github.event_name != 'pull_request'
+    needs: wake-tests
+    runs-on: ubuntu-latest
+    # A coleta leva cerca de nove minutos e este trabalho agora espera por ela
+    # antes de acordar o monitor.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Dispatch primary workflow only when today's schedule is absent or failed
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           PRIMARY_WORKFLOW: gate-btc-daily-research.yml
         run: |
+          echo "DISPATCH_MARK=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           python - <<'PY'
           import json
           import os
@@ -70,3 +99,14 @@ jobs:
           failed_ids = [str(run.get("id")) for run in today_runs if run.get("status") == "completed"]
           print(f"FALLBACK_STATUS=DISPATCHED data_cutoff={cutoff} prior_completed_run_ids={','.join(failed_ids) or 'NONE'}")
           PY
+
+      - name: Wake the paper monitor for the collection this run recovered
+        # Um disparo com GITHUB_TOKEN nao emite workflow_run, entao a coleta
+        # recuperada acima nunca acordaria o monitor sozinha. Quem abre o buraco
+        # e quem o fecha. A ferramenta decide: sem coleta disparada depois da
+        # marca, ou com ela vermelha, nao acorda ninguem.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python tools/gate_btc_daily_fallback_wake.py
+          --after "${DISPATCH_MARK}"
