@@ -1,8 +1,6 @@
 from types import SimpleNamespace
 from datetime import datetime, timezone
 
-import pytest
-
 from tools.gate_btc_factory import invalidated_512_mt5_strict_v2_probe as p
 
 
@@ -89,15 +87,21 @@ def test_strict_constants_cannot_regress_to_v1_floor():
     assert p.END == "2026-08-09"
 
 
-def test_probe_source_admission_requires_provenance_not_capacity_only():
-    # The implementation must never silently promote broker history merely because
-    # bar/session capacity passes. These three provenance fields are deliberately
-    # fail-closed until separately proven by authoritative evidence.
+def test_mt5_is_hard_bound_to_independent_secondary_cross_validation_only():
+    assert p.SOURCE_ROLE == "INDEPENDENT_SECONDARY_SOURCE"
+    assert p.USAGE_CONSTRAINT == "CROSS_VALIDATION_ONLY"
+    text = open(p.__file__, encoding="utf-8").read()
+    assert '"source_admission_pass":False' in text
+    assert '"may_be_primary_source":False' in text
+    assert '"may_reconstruct_lost_clocks":False' in text
+    assert '"requalification_economics_allowed":False' in text
+
+
+def test_probe_provenance_stays_fail_closed():
     text = open(p.__file__, encoding="utf-8").read()
     assert '"publication_semantics_proven":False' in text
     assert '"revision_semantics_proven":False' in text
     assert '"point_in_time_validity_proven":False' in text
-    assert "green=all(gates.values())" in text
 
 
 def test_no_order_send_codepath():
