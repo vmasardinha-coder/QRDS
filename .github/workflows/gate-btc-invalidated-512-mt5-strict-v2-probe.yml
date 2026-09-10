@@ -1,0 +1,148 @@
+name: Factory 512 MT5 Strict V2 Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/INVALIDATED_512_MT5_STRICT_V2_SOURCE_PREREG_20260909.json'
+      - 'tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py'
+      - 'tests/test_gate_btc_invalidated_512_mt5_strict_v2_probe.py'
+      - '.github/workflows/gate-btc-invalidated-512-mt5-strict-v2-probe.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-invalidated-512-mt5-strict-v2-probe.yml'
+  workflow_dispatch:
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  MT5_READ_ONLY: 'true'
+  NO_ORDER_SEND: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('factory-512-mt5-v2-pr-{0}', github.event.pull_request.number) || 'factory-512-mt5-v2-physical-once' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate source qualification implementation only
+        shell: powershell
+        run: |
+          python -m pip install -q pytest
+          python -m py_compile tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py
+          pytest -q tests/test_gate_btc_invalidated_512_mt5_strict_v2_probe.py
+      - name: Assert preregistration and immutable safety
+        shell: powershell
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('tools/gate_btc_factory/INVALIDATED_512_MT5_STRICT_V2_SOURCE_PREREG_20260909.json',encoding='utf-8'))
+          assert p['status']=='PREREGISTERED_SOURCE_QUALIFICATION_ONLY'
+          assert p['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          assert p['capacity']['minimum_structurally_valid_sessions_total']==322
+          assert p['capacity']['minimum_discovery_sessions']==161
+          assert p['capacity']['minimum_replication_sessions']==161
+          assert p['credit']['source_probe_scientific_family_credit']==0
+          assert p['credit']['historical_backfill_credit']==0
+          s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['MT5_READ_ONLY'] and s['NO_ORDER_SEND']; assert s['ENGINE_FEED'] is False
+          assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['NO_RETUNE'] and s['NO_BACKFILL']
+          PY
+      - name: Assert no economics or order path in probe
+        shell: powershell
+        run: |
+          $t=Get-Content tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py -Raw
+          if ($t -match 'order_send\s*\(') { throw 'ORDER_SEND_FORBIDDEN' }
+          if ($t -match 'invalidated_family_requalification_runner') { throw 'FAMILY_ECONOMICS_FORBIDDEN_IN_SOURCE_PROBE' }
+
+  physical-source-qualification:
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - name: Check out runtime evidence branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Assert physical runner safety and MT5 availability
+        shell: powershell
+        run: |
+          if ($env:RESEARCH_ONLY -ne 'true' -or $env:SHADOW_ONLY -ne 'true' -or $env:NOT_APPROVED -ne 'true') { throw 'RESEARCH_BOUNDARY' }
+          if ($env:MT5_READ_ONLY -ne 'true' -or $env:NO_ORDER_SEND -ne 'true') { throw 'MT5_READ_ONLY_BOUNDARY' }
+          if ($env:ENGINE_FEED -ne 'false' -or $env:ORDERS -ne '0' -or $env:REAL_CAPITAL -ne '0') { throw 'TRADING_BOUNDARY' }
+          if ($env:NO_BACKFILL -ne 'true' -or $env:NO_RETUNE -ne 'true' -or $env:NO_COUNTER_RESET -ne 'true') { throw 'SCIENTIFIC_BOUNDARY' }
+          python -m pip install -q MetaTrader5
+          python -c "import MetaTrader5 as mt5; print('MT5_MODULE=READY')"
+      - name: Execute preregistered physical source probe only
+        shell: powershell
+        working-directory: main_repo
+        run: |
+          python tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py --out-dir ..\mt5_512_out
+      - name: Assert result cannot silently run family economics
+        shell: powershell
+        run: |
+          python - <<'PY'
+          import json
+          p='mt5_512_out/RESULT.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          assert d['minimum_required']=={'total':322,'discovery':161,'replication':161}
+          assert d['scientific_family_credit']==0 and d['prospective_credit']==0 and d['historical_backfill_credit']==0
+          assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0 and d['safety']['ENGINE_FEED'] is False
+          if not d['source_admission_pass']:
+              assert d['requalification_economics_allowed'] is False
+          print('FACTORY_512_MT5_SOURCE_STATUS='+d['status'])
+          print('FACTORY_512_MT5_VALID_SESSIONS='+str(d['valid_session_counts']))
+          PY
+      - name: Persist compact canonical source qualification evidence
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits | Out-Null
+          Copy-Item mt5_512_out\RESULT.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SOURCE_RESULT.json -Force
+          Copy-Item mt5_512_out\SESSION_QA.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SESSION_QA.json -Force
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SOURCE_RESULT.json runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SESSION_QA.json
+          if (git -C runtime_repo diff --cached --quiet) { exit 0 }
+          git -C runtime_repo commit -m "Factory 512 MT5 strict V2 source qualification ${{ github.run_id }}"
+          for ($i=1; $i -le 5; $i++) {
+            git -C runtime_repo pull --rebase origin gate-btc-runtime
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($i -eq 5) { throw 'RUNTIME_PUSH_FAILED' }
+            Start-Sleep -Seconds ($i*2)
+          }
+      - name: Upload immutable physical evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-512-mt5-strict-v2-${{ github.run_id }}
+          path: mt5_512_out/
+          retention-days: 90
