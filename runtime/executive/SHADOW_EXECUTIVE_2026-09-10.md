@@ -594,6 +594,13 @@
     "blocked_dependency_components": [],
     "failed_delivery_components": [],
     "missing_or_undated_components": [],
+    "semantic_projection_ledger_ids": [
+      "d100",
+      "delta_v12_engine",
+      "delta_v12_prices",
+      "qos_three_track",
+      "v16b1"
+    ],
     "stale_components": [
       "delta",
       "lock25_50",
@@ -601,10 +608,20 @@
       "prl50",
       "alt_trail",
       "bull_replay_live_shadow",
-      "b3_h1",
-      "momentum_m1_m2"
+      "b3_h1"
     ],
     "unrepresented_runtime_ledgers": [
+      "b3_h1_inspired_challengers",
+      "b3_h31_prospective",
+      "b3_h31_shadow_paper",
+      "b3_win_wdo_univariate",
+      "momentum_m1_m2_economics",
+      "v16_family",
+      "v16c",
+      "v16d",
+      "v16e"
+    ],
+    "unrepresented_runtime_ledgers_component_only": [
       "b3_h1_inspired_challengers",
       "b3_h31_prospective",
       "b3_h31_shadow_paper",
@@ -633,14 +650,44 @@
 {
   "declared_tracks": {},
   "momentum": {
-    "freshness": "STALE",
-    "last_run_state": "NO_NEW_SNAPSHOT_CUTOFF_NOT_PUBLISHED",
-    "m1_summary": null,
-    "m2_summary": null,
-    "methodology_failure": false,
-    "observed_snapshots": 15,
+    "freshness": "FRESH",
+    "last_run_state": null,
+    "m1_summary": {
+      "breadth_pct_m1_gt_zero": 34.44444444444444,
+      "cross_sectional_dispersion_m1": 0.7771929235009811,
+      "cutoff": "2026-09-09",
+      "delta_breadth_pct_points": -2.2222222222222214,
+      "engine_feed": false,
+      "lookback_14_date": "2026-08-26",
+      "lookback_30_date": "2026-08-10",
+      "median_m1": -0.16652035511996702,
+      "negative_median_distance_to_zero": 0.39830752620197607,
+      "orders": 0,
+      "real_capital": 0,
+      "status": "SHADOW_ONLY_NOT_APPROVED",
+      "universe_n": 90
+    },
+    "m2_summary": {
+      "breadth_pct_m2_gt_zero": 22.22222222222222,
+      "cross_sectional_dispersion_m2": 3.172969794729294,
+      "cutoff": "2026-09-09",
+      "delta_breadth_pct_points": -18.888888888888893,
+      "engine_feed": false,
+      "excluded_incomplete_history": 2,
+      "median_m2": -1.8823701745153736,
+      "orders": 0,
+      "real_capital": 0,
+      "reference_calendar": "BTC_COMPLETED_UTC_DAILY_BARS",
+      "reference_window_bars": 31,
+      "reference_window_end": "2026-09-09",
+      "reference_window_start": "2026-08-10",
+      "status": "PROSPECTIVE_SHADOW_ONLY_NOT_APPROVED",
+      "universe_n": 90
+    },
+    "methodology_failure": null,
+    "observed_snapshots": 16,
     "source": "ledgers/momentum_m1_m2/STATUS.json",
-    "status": "WAIT_SOURCE_PUBLICATION"
+    "status": "ACTIVE_PROSPECTIVE_SHADOW"
   },
   "scientific_authority": false,
   "semantic_projection": {
@@ -659,7 +706,7 @@
           "inventory_only": true,
           "ledger_id": "d100",
           "schema": "qrds.d100.forward_collection.v1",
-          "sha256": "23d3895e805bb993abe38844bfabd50e842f732bede3d149a37a967d8a4393d3",
+          "sha256": "ae957abf314bcd96e547f7381f2d77c785684100c053e300cdfce9f616a65bd8",
           "source": "ledgers/d100/STATUS.json",
           "status": "ACTIVE_FORWARD_COLLECTION"
         }
@@ -775,7 +822,7 @@
       "inventory_only": true,
       "ledger_id": "d100",
       "schema": "qrds.d100.forward_collection.v1",
-      "sha256": "23d3895e805bb993abe38844bfabd50e842f732bede3d149a37a967d8a4393d3",
+      "sha256": "ae957abf314bcd96e547f7381f2d77c785684100c053e300cdfce9f616a65bd8",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_FORWARD_COLLECTION"
     },
