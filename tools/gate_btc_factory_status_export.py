@@ -16,6 +16,7 @@ TRACKS = {
     "bull_replay": "runtime/ledgers/bull_replay_live_shadow/STATUS.json",
     "delta_paper": "runtime/ledgers/delta_paper_monitor/STATUS.json",
     "h1": "runtime/ledgers/b3_h1/STATUS.json",
+    "d100": "runtime/ledgers/d100/STATUS.json",
     "reporting_state": "runtime/GATE_BTC_REPORTING_CURRENT_STATE.json",
     "measurement": "runtime/GATE_BTC_MEASUREMENT_STATUS.json",
 }
@@ -68,6 +69,10 @@ def main():
     prl = tracks["prl50"]
     if prl.get("exists") and isinstance(prl.get("data"), dict) and prl["data"].get("snapshot_count", 0) > 0:
         corrections.append("PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING")
+    d100 = tracks["d100"]
+    if d100.get("exists") and isinstance(d100.get("data"), dict):
+        if d100["data"].get("status") == "ACTIVE_FORWARD_COLLECTION":
+            corrections.append("D100_CANONICAL_RUNTIME_OVERRIDES_STALE_FROZEN_DORMANT_HINT")
 
     out = {
         "schema": "gate_btc.factory_status_export.v1",
