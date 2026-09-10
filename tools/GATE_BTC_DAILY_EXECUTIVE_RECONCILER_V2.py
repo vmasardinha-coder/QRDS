@@ -74,45 +74,76 @@ def rex(s: str, pat: str, cast=lambda x: x):
         return None
 
 
-def sync_qmaster_from_runtime() -> tuple[Path | None, str]:
-    """Prefer a local canonical QMASTER; otherwise pull exact runtime bytes via gh.
+def _validated_local_qmaster() -> tuple[Path | None, str]:
+    """Return a safe local QMASTER only as an explicit fallback.
 
-    The fetch is reporting-only. Failure is fail-closed: no synthetic QMASTER is
-    generated and the Executive remains WARN_INPUT_GAP.
+    A local file is a cache/snapshot, never higher-precedence than the canonical
+    runtime branch.  It remains useful when GitHub CLI/network is unavailable,
+    but is labelled as fallback so reporting cannot silently promote it to
+    canonical authority.
     """
     local = newest("GATE_BTC_QMASTER_LATEST.txt")
-    if local:
-        return local, "LOCAL_CANONICAL"
+    if not local:
+        return None, "LOCAL_QMASTER_NOT_FOUND"
+    try:
+        payload = json.loads(text(local))
+    except json.JSONDecodeError:
+        return None, "LOCAL_QMASTER_PARSE_FAILED"
+    if payload.get("status") != "PASS":
+        return None, "LOCAL_QMASTER_NOT_PASS"
+    if payload.get("research_only") is not True or payload.get("operational_status") != "NOT_APPROVED":
+        return None, "LOCAL_QMASTER_SAFETY_MISMATCH"
+    if payload.get("orders_generated") != 0 or payload.get("real_capital_used") != 0:
+        return None, "LOCAL_QMASTER_OPERATIONAL_MISMATCH"
+    return local, "LOCAL_FALLBACK_SNAPSHOT"
 
+
+def sync_qmaster_from_runtime() -> tuple[Path | None, str]:
+    """Prefer exact canonical runtime QMASTER bytes; use local only as fallback.
+
+    Precedence is deliberately runtime-first.  This prevents a stale local
+    QMASTER snapshot from overriding a newer canonical state on
+    ``gate-btc-runtime``.  The fetch is reporting-only and preserves fail-closed
+    safety validation.  If runtime is unreachable, a validated local snapshot
+    may be displayed but is explicitly labelled non-canonical fallback.
+    """
     gh = shutil.which("gh")
-    if not gh:
-        return None, "GH_NOT_AVAILABLE"
-    endpoint = f"repos/{REPO}/contents/runtime/GATE_BTC_QMASTER_LATEST.txt?ref={RUNTIME_REF}"
-    try:
-        cp = subprocess.run(
-            [gh, "api", "-H", "Accept: application/vnd.github.raw+json", endpoint],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except Exception as exc:
-        return None, f"GH_FETCH_EXCEPTION:{type(exc).__name__}"
-    if cp.returncode != 0 or not cp.stdout.strip():
-        msg = (cp.stderr or "gh api failed").strip().replace("\n", " ")[:240]
-        return None, f"GH_FETCH_FAILED:{msg}"
-    try:
-        payload = json.loads(cp.stdout)
-        if payload.get("status") != "PASS":
-            return None, "REMOTE_QMASTER_NOT_PASS"
-        if payload.get("research_only") is not True or payload.get("operational_status") != "NOT_APPROVED":
-            return None, "REMOTE_QMASTER_SAFETY_MISMATCH"
-        if payload.get("orders_generated") != 0 or payload.get("real_capital_used") != 0:
-            return None, "REMOTE_QMASTER_OPERATIONAL_MISMATCH"
-        QMASTER_CACHE.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        return QMASTER_CACHE, "REMOTE_RUNTIME_SYNCED"
-    except Exception as exc:
-        return None, f"REMOTE_QMASTER_PARSE_FAILED:{type(exc).__name__}"
+    remote_failure = "GH_NOT_AVAILABLE"
+    if gh:
+        endpoint = f"repos/{REPO}/contents/runtime/GATE_BTC_QMASTER_LATEST.txt?ref={RUNTIME_REF}"
+        try:
+            cp = subprocess.run(
+                [gh, "api", "-H", "Accept: application/vnd.github.raw+json", endpoint],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+        except Exception as exc:
+            remote_failure = f"GH_FETCH_EXCEPTION:{type(exc).__name__}"
+        else:
+            if cp.returncode != 0 or not cp.stdout.strip():
+                msg = (cp.stderr or "gh api failed").strip().replace("\n", " ")[:240]
+                remote_failure = f"GH_FETCH_FAILED:{msg}"
+            else:
+                try:
+                    payload = json.loads(cp.stdout)
+                    if payload.get("status") != "PASS":
+                        remote_failure = "REMOTE_QMASTER_NOT_PASS"
+                    elif payload.get("research_only") is not True or payload.get("operational_status") != "NOT_APPROVED":
+                        remote_failure = "REMOTE_QMASTER_SAFETY_MISMATCH"
+                    elif payload.get("orders_generated") != 0 or payload.get("real_capital_used") != 0:
+                        remote_failure = "REMOTE_QMASTER_OPERATIONAL_MISMATCH"
+                    else:
+                        QMASTER_CACHE.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                        return QMASTER_CACHE, "REMOTE_RUNTIME_SYNCED"
+                except Exception as exc:
+                    remote_failure = f"REMOTE_QMASTER_PARSE_FAILED:{type(exc).__name__}"
+
+    local, local_status = _validated_local_qmaster()
+    if local:
+        return local, f"{local_status};REMOTE_UNAVAILABLE={remote_failure}"
+    return None, remote_failure
 
 
 def load_state() -> dict:
