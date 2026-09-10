@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   github-hosted-control:
@@ -19,6 +20,20 @@ jobs:
         run: |
           echo "GITHUB_HOSTED_CONTROL=PASS"
           echo "RUN_ID=${GITHUB_RUN_ID}"
+      - name: Inspect repository-visible self-hosted runners
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runners" > /tmp/runners.json 2>/tmp/runners.err
+          rc=$?
+          echo "RUNNER_API_RC=$rc"
+          if [ "$rc" -eq 0 ]; then
+            jq '{total_count, runners: [.runners[] | {id,name,os,status,busy,labels:[.labels[].name]}]}' /tmp/runners.json
+          else
+            cat /tmp/runners.err
+          fi
+          exit 0
 
   self-hosted-default-label:
     runs-on: self-hosted
