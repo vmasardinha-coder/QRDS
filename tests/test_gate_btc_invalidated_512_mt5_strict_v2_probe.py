@@ -89,10 +89,15 @@ def test_strict_constants_cannot_regress_to_v1_floor():
     assert p.END == "2026-08-09"
 
 
+def test_time_mode_can_fallback_to_same_terminal_but_stays_fail_closed():
+    text = open(p.__file__, encoding="utf-8").read()
+    assert 'SAME_MT5_TERMINAL_FALLBACK' in text
+    assert 'mt5.symbols_get()' in text
+    assert 'AMBIGUOUS_MT5_TIME_MODE' in text
+    assert 'len(modes)!=1' in text
+
+
 def test_probe_source_admission_requires_provenance_not_capacity_only():
-    # The implementation must never silently promote broker history merely because
-    # bar/session capacity passes. These three provenance fields are deliberately
-    # fail-closed until separately proven by authoritative evidence.
     text = open(p.__file__, encoding="utf-8").read()
     assert '"publication_semantics_proven":False' in text
     assert '"revision_semantics_proven":False' in text
