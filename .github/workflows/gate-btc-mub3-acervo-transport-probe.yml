@@ -264,6 +264,100 @@ jobs:
                   row['error']=f'{type(exc).__name__}: {exc}'
               report['bdi_2025_search_probes'].append(row)
 
+          # Resolve and fetch one exact public BDI physical sample from 2025.
+          report['bdi_2025_physical_sample']={}
+          exact_key='4a2eebb2c1f949909f1a80af9f0abcf5'
+          try:
+              # Re-query exact record to obtain FilesFull deterministically.
+              state={
+                  'currentPage':0,'itemsPerPage':8,'orderBy':4,'nextPage':False,
+                  'totalPage':1,'totalItems':8,
+                  'searchTerm':'Boletim Diário de Informações Unificado - 02/01/2025',
+                  'selectedAttribute':None,'startDate':None,'endDate':None,
+                  'loadAttributes':True,'blocked':False,'loading':False,
+                  'error':None,'selectedDocument':None,
+              }
+              payload={'pageName':'Acervo','searchParams':state,'selectedDocumentType':None}
+              data=json.dumps(payload,separators=(',',':')).encode()
+              req=urllib.request.Request(
+                  urllib.parse.urljoin(ROOT,'/api/search'),
+                  data=data,
+                  headers={'User-Agent':UA,'Accept':'application/json','Content-Type':'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  obj=json.loads(r.read().decode('utf-8'))
+              rec=next((x for x in (obj.get('Collection') or []) if str(x.get('Key'))==exact_key),None)
+              if rec is None:
+                  raise RuntimeError('EXACT_2025_BDI_RECORD_NOT_FOUND')
+              files=json.loads(rec.get('FilesFull') or '[]')
+              if not files:
+                  raise RuntimeError('EXACT_2025_BDI_NO_FILES')
+              file0=files[0]
+              webdav=str(file0.get('urlWebDav') or '')
+              if not webdav:
+                  raise RuntimeError('EXACT_2025_BDI_NO_WEBDAV_URL')
+              resolve_url=urllib.parse.urljoin(ROOT,webdav)
+              rq=urllib.request.Request(resolve_url,headers={'User-Agent':UA,'Accept':'application/json,*/*'})
+              with urllib.request.urlopen(rq,timeout=30) as rr:
+                  rraw=rr.read()
+                  rct=str(rr.headers.get('Content-Type',''))
+                  rfinal=rr.geturl()
+              resolve_text=rraw.decode('utf-8','replace')
+              try:
+                  resolved_obj=json.loads(resolve_text)
+              except Exception:
+                  resolved_obj=None
+
+              candidates=[]
+              def walk(x):
+                  if isinstance(x,dict):
+                      for v in x.values(): walk(v)
+                  elif isinstance(x,list):
+                      for v in x: walk(v)
+                  elif isinstance(x,str) and x.startswith(('http://','https://')):
+                      candidates.append(x)
+              if resolved_obj is not None:
+                  walk(resolved_obj)
+              else:
+                  candidates.extend(re.findall(r'https?://[^"\\\s]+',resolve_text))
+
+              sample={
+                  'record_key':exact_key,
+                  'title':rec.get('Title'),
+                  'publish_date':rec.get('PublishDate'),
+                  'last_updated_date':rec.get('LastUpdatedDate'),
+                  'created_date':rec.get('CreatedDate'),
+                  'file_name':file0.get('name'),
+                  'file_key':file0.get('key'),
+                  'url_webdav':webdav,
+                  'resolve_url':resolve_url,
+                  'resolve_status':200,
+                  'resolve_content_type':rct,
+                  'resolve_final_url':rfinal,
+                  'resolve_bytes':len(rraw),
+                  'resolve_sha256':hashlib.sha256(rraw).hexdigest(),
+                  'resolved_candidates':candidates[:20],
+              }
+
+              if candidates:
+                  furl=candidates[0]
+                  fq=urllib.request.Request(furl,headers={'User-Agent':UA,'Accept':'application/pdf,*/*'})
+                  with urllib.request.urlopen(fq,timeout=90) as fr:
+                      praw=fr.read()
+                      sample.update({
+                          'physical_url':furl,
+                          'physical_final_url':fr.geturl(),
+                          'physical_status':getattr(fr,'status',200),
+                          'physical_content_type':str(fr.headers.get('Content-Type','')),
+                          'physical_bytes':len(praw),
+                          'physical_sha256':hashlib.sha256(praw).hexdigest(),
+                          'pdf_signature':praw.startswith(b'%PDF-'),
+                      })
+              report['bdi_2025_physical_sample']=sample
+          except Exception as exc:
+              report['bdi_2025_physical_sample']={'error':f'{type(exc).__name__}: {exc}'}
+
           report['adjudication']='PUBLIC_MACHINE_RETRIEVAL_CONTRACT_DISCOVERED' if report['candidate_endpoints'] else 'PUBLIC_UI_REACHABLE_MACHINE_RETRIEVAL_CONTRACT_NOT_EXPOSED'
           with open('MUB3_ACERVO_TRANSPORT_PROBE.json','w',encoding='utf-8') as f:
               json.dump(report,f,ensure_ascii=False,indent=2,sort_keys=True)
