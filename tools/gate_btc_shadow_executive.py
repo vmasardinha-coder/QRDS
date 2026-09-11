@@ -179,6 +179,219 @@ def semantic_projection(state: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+
+def _required_ref(required: dict[str, Any], track_id: str, display_name: str) -> dict[str, Any]:
+    obj = required.get(track_id)
+    if isinstance(obj, dict):
+        return obj
+    return {
+        "track_id": track_id,
+        "display_name": display_name,
+        "canonical_evidence_status": "ABSENT_NOT_INFERRED",
+        "inventory_only": True,
+        "scientific_authority": False,
+        "engine_feed": False,
+        "orders_generated": 0,
+        "real_capital_used": 0,
+    }
+
+
+def _status_of(obj: Any, default: str = "N/D") -> str:
+    if not isinstance(obj, dict):
+        return default
+    return str(obj.get("status") or obj.get("representation_status") or obj.get("canonical_evidence_status") or default)
+
+
+def build_full_master_v2(
+    state: dict[str, Any],
+    payloads: dict[str, dict[str, Any]],
+    semantic: dict[str, Any],
+    required: dict[str, Any],
+    ledgers: dict[str, Any],
+    declared: dict[str, Any],
+) -> dict[str, Any]:
+    """Single executive model: technical/scientific + economic/decision inventory.
+
+    Reporting-only. External tracks are surfaced as explicit references and remain
+    N/D/ABSENT_NOT_INFERRED unless canonical evidence is actually present.
+    """
+    d50 = component(state, "d50")
+    delta = component(state, "delta")
+    gateway = component(state, "gateway")
+    momentum = component(state, "momentum_m1_m2")
+    qos = component(state, "qos_monthly")
+    bull = component(state, "bull_replay_live_shadow")
+
+    externals = {
+        "portal_btc": _required_ref(required, "portal_btc", "Portal BTC"),
+        "portal_watchlist": _required_ref(required, "portal_watchlist", "Portal BTC Watchlist"),
+        "macro_quant": _required_ref(required, "macro_quant", "Macro Quant"),
+        "agent_trader": _required_ref(required, "agent_trader", "Agent Trader"),
+        "proxy_real": _required_ref(required, "proxy_real", "Proxy Real / Victor Real"),
+        "empiricus_delta": _required_ref(required, "empiricus_delta", "Empiricus Delta"),
+        "cloud_delta": _required_ref(required, "cloud_delta", "Cloud / Anthropic Delta"),
+        "delta_external_historical": _required_ref(required, "delta_external_historical", "Delta External Historical"),
+        "atlas_manual": _required_ref(required, "atlas_manual", "Atlas / Manual"),
+    }
+
+    technical_radar = [
+        {"track": "D50", "status": _status_of(d50), "current": d50.get("display_current") if d50 else None, "target": d50.get("target") if d50 else None, "freshness": d50.get("freshness") if d50 else None, "authority": d50.get("authority") if d50 else None},
+        {"track": "Delta walk-forward", "status": _status_of(delta), "current": delta.get("observations") if delta else None, "target": delta.get("targets") if delta else None},
+        {"track": "Gateway", "status": _status_of(gateway), "current": gateway.get("valid_snapshot_count") if gateway else None, "target": gateway.get("target") if gateway else None},
+        {"track": "Momentum M1/M2", "status": _status_of(momentum), "snapshots": momentum.get("observed_snapshots") if momentum else None},
+        {"track": "QOS", "status": _status_of(qos), "current": qos.get("current") if qos else None, "target": qos.get("target") if qos else None},
+        {"track": "D100", "status": _status_of(semantic.get("d100"))},
+        {"track": "V12", "status": _status_of(semantic.get("v12"))},
+        {"track": "V16B.1", "status": _status_of(semantic.get("v16b1"))},
+        {"track": "B3 H1", "status": _status_of(component(state, "b3_h1") or ledgers.get("b3_h1"))},
+        {"track": "B3 H31", "status": _status_of(ledgers.get("b3_h31_prospective"))},
+    ]
+
+    return {
+        "schema": "gate_btc.shadow_executive.full_master_v2.v1",
+        "model_name": "FULL MASTER v2 — technical + scientific + economic + decision",
+        "single_model": True,
+        "reporting_only": True,
+        "scientific_authority": False,
+        "promotion_authority": False,
+        "economic_authority": False,
+        "governance": {
+            "research_only": True,
+            "shadow_only": True,
+            "not_approved": True,
+            "engine_feed": False,
+            "orders": 0,
+            "real_capital": 0,
+            "no_backfill": True,
+            "no_late_seal": True,
+            "no_counter_reset": True,
+            "no_retune": True,
+            "fail_closed": True,
+        },
+        "technical_radar": technical_radar,
+        "cycle_allocation": {
+            "qos": semantic.get("qos"),
+            "bull_replay_proxy_synthetic": bull or nd("bull replay absent"),
+            "proxy_real": externals["proxy_real"],
+            "meta_2030": payloads["10_meta_2030"],
+            "decision_question": "WHAT SHOULD BE ALLOCATED, IF AND ONLY IF SCIENTIFIC GATES EVENTUALLY ALLOW IT?",
+        },
+        "alpha_robots": {
+            "d50": d50 or nd("d50 absent"),
+            "delta_walk_forward": delta or nd("delta absent"),
+            "delta_v12": semantic.get("v12"),
+            "empiricus_delta": externals["empiricus_delta"],
+            "cloud_delta": externals["cloud_delta"],
+            "delta_external_historical": externals["delta_external_historical"],
+            "macro_quant": externals["macro_quant"],
+            "portal_btc": externals["portal_btc"],
+            "agent_trader": externals["agent_trader"],
+        },
+        "regime_context": {
+            "momentum_m1_m2": momentum or nd("momentum absent"),
+            "momentum_m3": semantic.get("momentum_m3"),
+            "gateway": gateway or nd("gateway absent"),
+            "portal_btc": externals["portal_btc"],
+            "macro_quant": externals["macro_quant"],
+            "bull_replay": bull or nd("bull replay absent"),
+            "decision_question": "WHAT TYPE OF RISK IS THE CURRENT REGIME SUPPORTING?",
+        },
+        "preservation": {
+            "canonical_block": payloads["05_preservation"],
+            "d50": d50 or nd("d50 absent"),
+            "delta_v12": semantic.get("v12"),
+            "macro_quant": externals["macro_quant"],
+            "ledger_tracks": ledger_excerpt(state, ["lock25_50", "prl50_position", "alt_trail40_10"]),
+            "decision_question": "HOW MUCH PROFIT CAN BE RETAINED WITHOUT DESTROYING THE EDGE?",
+        },
+        "delta_full_inventory": {
+            "v11_walk_forward": delta or nd("delta absent"),
+            "v12": semantic.get("v12"),
+            "bull_replay": bull or nd("bull replay absent"),
+            "empiricus_delta": externals["empiricus_delta"],
+            "cloud_delta": externals["cloud_delta"],
+            "external_historical": externals["delta_external_historical"],
+            "claim_boundary": "DO_NOT_RANK_NONCOMPARABLE_WINDOWS_OR_INFER PROPRIETARY MECHANISM",
+        },
+        "portal_btc_full": {
+            "core": externals["portal_btc"],
+            "watchlist": externals["portal_watchlist"],
+            "required_subviews": [
+                "A/B/C/D/G/H Top100 and Top300",
+                "Watchlist institutional",
+                "ex-PONS attribution",
+                "ex-Top3 attribution",
+                "Top1/Top3/Top5 concentration",
+                "Momentum",
+                "Reversal",
+                "Sector rotation",
+                "price sanity/quarantine",
+                "stopped/extreme trades",
+            ],
+            "systematic_alpha_claim_allowed": False,
+        },
+        "proxy": {
+            "synthetic": {
+                "series": "Victor_proxy",
+                "source": bull.get("source") if bull else None,
+                "claim_boundary": "SYNTHETIC_BENCHMARK_NOT_REAL_ACCOUNT",
+            },
+            "real": externals["proxy_real"],
+            "must_never_conflate": True,
+        },
+        "macro_quant": {
+            "external_track": externals["macro_quant"],
+            "required_subviews": ["Production 90d", "Dynamic 60d", "Ref 50/50", "Score30/R30", "Score45/R45", "Score30/R90", "H1", "H2", "H3", "H4", "tripwires"],
+            "real_small_capital_external_to_qrds": True,
+        },
+        "agent_trader": {
+            "external_track": externals["agent_trader"],
+            "required_books": ["US", "Crypto", "B3", "Structured B3"],
+        },
+        "b3_local_mt5": {
+            "h1": component(state, "b3_h1") or ledgers.get("b3_h1") or nd("b3_h1 absent"),
+            "h31": ledgers.get("b3_h31_prospective") or nd("b3_h31 prospective absent"),
+            "mt5_role": "READ_ONLY_AUXILIARY_DISCOVERY_OR_CROSS_VALIDATION_ONLY",
+            "h1_economics_read": False,
+        },
+        "gate_btc_2_factory": {
+            "d100": semantic.get("d100"),
+            "v16b1": semantic.get("v16b1"),
+            "v16c1": semantic.get("v16c1"),
+            "declared_tracks": declared,
+            "runtime_ledger_count": len(ledgers),
+            "factory_economics_feedback_allowed": False,
+        },
+        "external_controls": externals,
+        "economic_decision_board": {
+            "capital_reference_brl": 180000,
+            "windows": ["HISTORICAL", "POST_PIT", "LIVE_PROSPECTIVE", "EXTERNAL_PARALLEL", "FUTURE_BASELINE"],
+            "historical_values": nd("historical R$180k comparison not canonical in current runtime state"),
+            "post_pit_values": nd("post-PIT economic comparison not canonical in current runtime state"),
+            "live_internal": {
+                "d50": d50 or nd("d50 absent"),
+                "delta": delta or nd("delta absent"),
+                "v12": semantic.get("v12"),
+            },
+            "live_external": {
+                "portal_btc": externals["portal_btc"],
+                "macro_quant": externals["macro_quant"],
+                "agent_trader": externals["agent_trader"],
+            },
+            "future_baseline": nd("META 2030 / Monte Carlo baseline not canonical in current runtime state"),
+            "no_cross_window_race": True,
+        },
+        "pending_actions": {
+            "reporting_delivery": state.get("warnings", {}),
+            "required_external_missing": sorted(
+                k for k, v in externals.items()
+                if v.get("canonical_evidence_status") != "PRESENT"
+            ),
+            "policy": "COLLECT_VALIDATE_DO_NOT_RETUNE",
+        },
+    }
+
+
 def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     catalog = track_catalog(state)
     ledgers = catalog.get("ledger_tracks") or state.get("ledger_inventory") or {}
@@ -308,7 +521,7 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     report_status = "COMPLETE_WITH_EXPLICIT_ND" if (finance_missing or preservation_missing or empiricus_missing) else "COMPLETE"
 
     return {
-        "schema": "gate_btc.shadow_executive.v1",
+        "schema": "gate_btc.shadow_executive.v2",
         "contract_issue": 297,
         "reporting_date": reporting_date,
         "reference_data_date": state.get("reference_data_date"),
@@ -334,6 +547,7 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
             "omission_policy": "NEVER_OMIT_REQUIRED_BLOCK_OR_FIELD; USE_ND_WITH_REASON",
         },
         "source_reporting_state_sha256": None,
+        "full_master_v2": build_full_master_v2(state, payloads, semantic, required, ledgers, declared),
     }
 
 
