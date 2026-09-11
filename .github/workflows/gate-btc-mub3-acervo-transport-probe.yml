@@ -120,6 +120,25 @@ jobs:
               report['scripts'].append(row)
 
           report['candidate_endpoints']=list(dict.fromkeys(report['candidate_endpoints']))
+
+          # Capture public bundle context around the discovered MUB3 search API
+          report['api_search_contexts']=[]
+          for row in report['scripts']:
+              if 'candidate_hits' not in row or 'https://mub3.org.br/api/search' not in row.get('candidate_hits',[]):
+                  continue
+              try:
+                  obj=fetch(row['url']); text=obj.pop('raw').decode('utf-8','replace')
+                  for m in re.finditer(r'/api/search',text,re.I):
+                      a=max(0,m.start()-1800); b=min(len(text),m.end()+2600)
+                      snippet=text[a:b]
+                      report['api_search_contexts'].append({
+                          'script_url':row['url'],
+                          'snippet_sha256':hashlib.sha256(snippet.encode('utf-8','replace')).hexdigest(),
+                          'snippet':snippet,
+                      })
+              except Exception as exc:
+                  report['api_search_contexts'].append({'script_url':row['url'],'error':f'{type(exc).__name__}: {exc}'})
+
           report['adjudication']='PUBLIC_MACHINE_RETRIEVAL_CONTRACT_DISCOVERED' if report['candidate_endpoints'] else 'PUBLIC_UI_REACHABLE_MACHINE_RETRIEVAL_CONTRACT_NOT_EXPOSED'
           with open('MUB3_ACERVO_TRANSPORT_PROBE.json','w',encoding='utf-8') as f:
               json.dump(report,f,ensure_ascii=False,indent=2,sort_keys=True)
