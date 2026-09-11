@@ -93,8 +93,8 @@ def test_time_mode_can_fallback_to_same_terminal_but_stays_fail_closed():
     text = open(p.__file__, encoding="utf-8").read()
     assert 'SAME_MT5_TERMINAL_FALLBACK' in text
     assert 'mt5.symbols_get()' in text
-    assert 'AMBIGUOUS_MT5_TIME_MODE' in text
-    assert 'len(modes)!=1' in text
+    assert 'selected=modes[0] if len(modes)==1 else None' in text
+    assert '"timezone_admission_pass":selected is not None' in text
 
 
 def test_probe_source_admission_requires_provenance_not_capacity_only():

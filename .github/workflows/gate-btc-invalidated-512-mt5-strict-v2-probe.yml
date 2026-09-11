@@ -14,6 +14,7 @@ on:
       - '.github/workflows/gate-btc-invalidated-512-mt5-strict-v2-probe.yml'
   workflow_dispatch:
 
+# Isolated source-qualification rerun; must not read or mutate H1/H31 state.
 env:
   RESEARCH_ONLY: 'true'
   SHADOW_ONLY: 'true'
