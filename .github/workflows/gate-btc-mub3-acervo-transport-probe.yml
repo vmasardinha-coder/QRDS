@@ -349,20 +349,47 @@ jobs:
                   'resolved_candidates':candidates[:20],
               }
 
-              if candidates:
-                  furl=candidates[0]
-                  fq=urllib.request.Request(furl,headers={'User-Agent':UA,'Accept':'application/pdf,*/*'})
-                  with urllib.request.urlopen(fq,timeout=90) as fr:
-                      praw=fr.read()
-                      sample.update({
-                          'physical_url':furl,
-                          'physical_final_url':fr.geturl(),
-                          'physical_status':getattr(fr,'status',200),
-                          'physical_content_type':str(fr.headers.get('Content-Type','')),
-                          'physical_bytes':len(praw),
-                          'physical_sha256':hashlib.sha256(praw).hexdigest(),
-                          'pdf_signature':praw.startswith(b'%PDF-'),
-                      })
+              physical_candidates=[]
+              physical_candidates.extend(candidates[:20])
+              thumb=str(file0.get('url') or '').replace('\\\\','/')
+              if thumb:
+                  direct=thumb
+                  if direct.lower().endswith('thumbnail.png'):
+                      direct=direct[:-len('thumbnail.png')]+str(file0.get('extension') or '.pdf')
+                  direct=urllib.parse.urljoin(ROOT,urllib.parse.quote(direct,safe='/:?=&%'))
+                  physical_candidates.append(direct)
+              physical_candidates=list(dict.fromkeys(x for x in physical_candidates if x))
+              sample['physical_candidates']=physical_candidates[:20]
+              sample['physical_attempts']=[]
+              for furl in physical_candidates[:20]:
+                  attempt={'url':furl}
+                  try:
+                      fq=urllib.request.Request(furl,headers={'User-Agent':UA,'Accept':'application/pdf,*/*'})
+                      with urllib.request.urlopen(fq,timeout=90) as fr:
+                          praw=fr.read()
+                          attempt.update({
+                              'final_url':fr.geturl(),
+                              'status':getattr(fr,'status',200),
+                              'content_type':str(fr.headers.get('Content-Type','')),
+                              'bytes':len(praw),
+                              'sha256':hashlib.sha256(praw).hexdigest(),
+                              'pdf_signature':praw.startswith(b'%PDF-'),
+                          })
+                          if attempt['pdf_signature']:
+                              sample['physical_url']=furl
+                              sample['physical_final_url']=fr.geturl()
+                              sample['physical_status']=attempt['status']
+                              sample['physical_content_type']=attempt['content_type']
+                              sample['physical_bytes']=attempt['bytes']
+                              sample['physical_sha256']=attempt['sha256']
+                              sample['pdf_signature']=True
+                              with open('BDI_2025_01_02_SAMPLE.pdf','wb') as pf:
+                                  pf.write(praw)
+                  except Exception as exc:
+                      attempt['error']=f'{type(exc).__name__}: {exc}'
+                  sample['physical_attempts'].append(attempt)
+                  if sample.get('pdf_signature'):
+                      break
               report['bdi_2025_physical_sample']=sample
           except Exception as exc:
               report['bdi_2025_physical_sample']={'error':f'{type(exc).__name__}: {exc}'}
@@ -401,6 +428,8 @@ jobs:
         if: always()
         with:
           name: mub3-acervo-transport-probe-${{ github.run_id }}
-          path: MUB3_ACERVO_TRANSPORT_PROBE.json
+          path: |
+            MUB3_ACERVO_TRANSPORT_PROBE.json
+            BDI_2025_01_02_SAMPLE.pdf
           if-no-files-found: error
           retention-days: 30
