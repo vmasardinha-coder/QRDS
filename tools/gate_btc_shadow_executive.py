@@ -639,12 +639,17 @@ def write_outputs(state_path: Path, output_dir: Path, reporting_date: str | None
     md_path = output_dir / f"SHADOW_EXECUTIVE_{rdate}.md"
     latest_path = output_dir / "SHADOW_EXECUTIVE_LATEST.json"
     latest_md = output_dir / "SHADOW_EXECUTIVE_LATEST.md"
+    html_path = output_dir / f"SHADOW_EXECUTIVE_{rdate}.html"
+    latest_html = output_dir / "SHADOW_EXECUTIVE_LATEST.html"
     raw = json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     json_path.write_text(raw, encoding="utf-8")
     latest_path.write_text(raw, encoding="utf-8")
     md = render_markdown(report)
     md_path.write_text(md, encoding="utf-8")
     latest_md.write_text(md, encoding="utf-8")
+    visual = render_html(report)
+    html_path.write_text(visual, encoding="utf-8")
+    latest_html.write_text(visual, encoding="utf-8")
     return json_path, md_path, latest_path
 
 
