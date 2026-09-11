@@ -7,6 +7,10 @@ on:
       - .github/workflows/gate-btc-2-stage9-bitget-ledger-bridge.yml
       - tools/gate_btc_2_stage9_bitget_ledger_bridge.py
       - tools/gate_btc_2_stage9_bitget_admission_review.py
+      # imported by gate_btc_2_stage9_bitget_admission_review.py
+      - tools/gate_btc_2_stage9_source_preregistration.py
+      # imported transitively by admission review / source preregistration
+      - tools/gate_btc_2_microstructure_shadow_contract.py
       - tools/gate_btc_2_stage9_admission_ledger.py
       - tools/gate_btc_2_prospective_counter_bridge.py
       - tests/test_gate_btc_2_stage9_bitget_ledger_bridge.py
