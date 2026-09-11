@@ -125,22 +125,17 @@ jobs:
           report['api_search_contexts']=[]
           report['webdav_contexts']=[]
           for row in report['scripts']:
-              if 'candidate_hits' not in row or 'https://mub3.org.br/api/search' not in row.get('candidate_hits',[]):
-                  continue
               try:
                   obj=fetch(row['url']); text=obj.pop('raw').decode('utf-8','replace')
-                  for m in re.finditer(r'/api/search',text,re.I):
-                      a=max(0,m.start()-1800); b=min(len(text),m.end()+2600)
-                      snippet=text[a:b]
-                      report['api_search_contexts'].append({
-                          'script_url':row['url'],
-                          'snippet_sha256':hashlib.sha256(snippet.encode('utf-8','replace')).hexdigest(),
-                          'snippet':snippet,
-                      })
-              except Exception as exc:
-                  report['api_search_contexts'].append({'script_url':row['url'],'error':f'{type(exc).__name__}: {exc}'})
-              try:
-                  obj=fetch(row['url']); text=obj.pop('raw').decode('utf-8','replace')
+                  if 'https://mub3.org.br/api/search' in row.get('candidate_hits',[]):
+                      for m in re.finditer(r'/api/search',text,re.I):
+                          a=max(0,m.start()-1800); b=min(len(text),m.end()+2600)
+                          snippet=text[a:b]
+                          report['api_search_contexts'].append({
+                              'script_url':row['url'],
+                              'snippet_sha256':hashlib.sha256(snippet.encode('utf-8','replace')).hexdigest(),
+                              'snippet':snippet,
+                          })
                   for pat in (r'GetWebDavUrl', r'/api/File/', r'urlWebDav'):
                       for m in re.finditer(pat,text,re.I):
                           a=max(0,m.start()-2200); b=min(len(text),m.end()+3200)
