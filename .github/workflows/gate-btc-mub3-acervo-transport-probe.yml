@@ -307,30 +307,7 @@ jobs:
               if not webdav:
                   raise RuntimeError('EXACT_2025_BDI_NO_WEBDAV_URL')
               resolve_url=urllib.parse.urljoin(ROOT,urllib.parse.quote(webdav,safe='/:?=&%'))
-              rq=urllib.request.Request(resolve_url,headers={'User-Agent':UA,'Accept':'application/json,*/*'})
-              with urllib.request.urlopen(rq,timeout=30) as rr:
-                  rraw=rr.read()
-                  rct=str(rr.headers.get('Content-Type',''))
-                  rfinal=rr.geturl()
-              resolve_text=rraw.decode('utf-8','replace')
-              try:
-                  resolved_obj=json.loads(resolve_text)
-              except Exception:
-                  resolved_obj=None
-
               candidates=[]
-              def walk(x):
-                  if isinstance(x,dict):
-                      for v in x.values(): walk(v)
-                  elif isinstance(x,list):
-                      for v in x: walk(v)
-                  elif isinstance(x,str) and x.startswith(('http://','https://')):
-                      candidates.append(x)
-              if resolved_obj is not None:
-                  walk(resolved_obj)
-              else:
-                  candidates.extend(re.findall(r'https?://[^"\\\s]+',resolve_text))
-
               sample={
                   'record_key':exact_key,
                   'title':rec.get('Title'),
@@ -341,13 +318,39 @@ jobs:
                   'file_key':file0.get('key'),
                   'url_webdav':webdav,
                   'resolve_url':resolve_url,
-                  'resolve_status':200,
-                  'resolve_content_type':rct,
-                  'resolve_final_url':rfinal,
-                  'resolve_bytes':len(rraw),
-                  'resolve_sha256':hashlib.sha256(rraw).hexdigest(),
-                  'resolved_candidates':candidates[:20],
               }
+              try:
+                  rq=urllib.request.Request(resolve_url,headers={'User-Agent':UA,'Accept':'application/json,*/*'})
+                  with urllib.request.urlopen(rq,timeout=30) as rr:
+                      rraw=rr.read()
+                      rct=str(rr.headers.get('Content-Type',''))
+                      rfinal=rr.geturl()
+                  resolve_text=rraw.decode('utf-8','replace')
+                  try:
+                      resolved_obj=json.loads(resolve_text)
+                  except Exception:
+                      resolved_obj=None
+                  def walk(x):
+                      if isinstance(x,dict):
+                          for v in x.values(): walk(v)
+                      elif isinstance(x,list):
+                          for v in x: walk(v)
+                      elif isinstance(x,str) and x.startswith(('http://','https://')):
+                          candidates.append(x)
+                  if resolved_obj is not None:
+                      walk(resolved_obj)
+                  else:
+                      candidates.extend(re.findall(r'https?://[^"\\\s]+',resolve_text))
+                  sample.update({
+                      'resolve_status':200,
+                      'resolve_content_type':rct,
+                      'resolve_final_url':rfinal,
+                      'resolve_bytes':len(rraw),
+                      'resolve_sha256':hashlib.sha256(rraw).hexdigest(),
+                  })
+              except Exception as exc:
+                  sample['resolve_error']=f'{type(exc).__name__}: {exc}'
+              sample['resolved_candidates']=candidates[:20]
 
               physical_candidates=[]
               physical_candidates.extend(candidates[:20])
