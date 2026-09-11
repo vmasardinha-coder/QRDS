@@ -28,15 +28,6 @@ ROOT = Path(__file__).resolve().parents[1]
 # None of these sit on the Delta critical path — the two that did, in
 # gate-btc-delta-v12-engine.yml and gate-btc-daily-research.yml, are fixed.
 KNOWN_GAPS = frozenset({
-    ('gate-btc-2-stage9-bitget-ledger-bridge.yml',
-     'tools/gate_btc_2_stage9_bitget_admission_review.py',
-     'tools/gate_btc_2_microstructure_shadow_contract.py'),
-    ('gate-btc-2-stage9-bitget-ledger-bridge.yml',
-     'tools/gate_btc_2_stage9_bitget_admission_review.py',
-     'tools/gate_btc_2_stage9_source_preregistration.py'),
-    ('gate-btc-2-stage9-bitget-ledger-bridge.yml',
-     'tools/gate_btc_2_stage9_source_preregistration.py',
-     'tools/gate_btc_2_microstructure_shadow_contract.py'),
     ('gate-btc-2-stage9-counter-bridge.yml',
      'tools/gate_btc_2_microstructure_shadow_manifest.py',
      'tools/gate_btc_2_microstructure_shadow_contract.py'),
