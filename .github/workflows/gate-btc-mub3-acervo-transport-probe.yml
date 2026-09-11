@@ -1,0 +1,159 @@
+name: GATE BTC MUB3 Acervo Transport Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-mub3-acervo-transport-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+  H1_ECONOMICS_READ: 'false'
+
+jobs:
+  probe-public-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+
+      - name: Probe public MUB3 Acervo transport contract only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, re, urllib.parse, urllib.request
+          from datetime import datetime, timezone
+
+          ROOT='https://mub3.org.br/centro-referencia/acervo'
+          UA='QRDS-research-source-transport-probe/1.0'
+
+          def fetch(url):
+              req=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':'*/*'})
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read()
+                  return {
+                      'url':url,
+                      'final_url':r.geturl(),
+                      'status':getattr(r,'status',200),
+                      'content_type':str(r.headers.get('Content-Type','')),
+                      'bytes':len(raw),
+                      'sha256':hashlib.sha256(raw).hexdigest(),
+                      'raw':raw,
+                  }
+
+          report={
+              'schema':'qrds.factory.mub3_acervo_transport_probe.v1',
+              'generated_at_utc':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+              'purpose':'REVERSE_ENGINEER_PUBLIC_MUB3_ARCHIVE_SEARCH_DOWNLOAD_TRANSPORT_ONLY',
+              'source_gate_change':'NONE',
+              'scientific_credit':0,
+              'historical_backfill_credit':0,
+              'economics_read':False,
+              'safety':{
+                  'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,
+                  'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,
+                  'NO_RETUNE':True,'NO_BACKFILL':True,'NO_LATE_SEAL':True,
+                  'NO_COUNTER_RESET':True,'FAIL_CLOSED':True,'H1_ECONOMICS_READ':False,
+              },
+              'page':{},
+              'scripts':[],
+              'candidate_endpoints':[],
+          }
+
+          page=fetch(ROOT)
+          html=page.pop('raw').decode('utf-8','replace')
+          report['page']=page
+          srcs=re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',html,re.I)
+          srcs=list(dict.fromkeys(urllib.parse.urljoin(ROOT,s) for s in srcs))
+
+          patterns=[
+              r'https?://[^"\'\s)]+',
+              r'["\'](/[^"\']*(?:api|acervo|search|download|arquivo|document|record|item)[^"\']*)["\']',
+          ]
+          seen=set()
+          for src in srcs[:40]:
+              row={'url':src}
+              try:
+                  obj=fetch(src); raw=obj.pop('raw'); text=raw.decode('utf-8','replace')
+                  row.update(obj)
+                  hits=[]
+                  for pat in patterns:
+                      for m in re.findall(pat,text,re.I):
+                          val=m if isinstance(m,str) else ''.join(m)
+                          if not val: continue
+                          u=urllib.parse.urljoin(src,val)
+                          if 'mub3.org.br' not in u and not any(k in u.lower() for k in ('api','acervo','search','download')):
+                              continue
+                          if u not in seen:
+                              seen.add(u); hits.append(u)
+                  row['candidate_hits']=hits[:200]
+                  report['candidate_endpoints'].extend(hits[:200])
+              except Exception as exc:
+                  row['error']=f'{type(exc).__name__}: {exc}'
+              report['scripts'].append(row)
+
+          report['candidate_endpoints']=list(dict.fromkeys(report['candidate_endpoints']))
+          report['adjudication']='PUBLIC_MACHINE_RETRIEVAL_CONTRACT_DISCOVERED' if report['candidate_endpoints'] else 'PUBLIC_UI_REACHABLE_MACHINE_RETRIEVAL_CONTRACT_NOT_EXPOSED'
+          with open('MUB3_ACERVO_TRANSPORT_PROBE.json','w',encoding='utf-8') as f:
+              json.dump(report,f,ensure_ascii=False,indent=2,sort_keys=True)
+              f.write('\n')
+          print(json.dumps({
+              'adjudication':report['adjudication'],
+              'page_status':report['page'].get('status'),
+              'script_count':len(report['scripts']),
+              'candidate_endpoint_count':len(report['candidate_endpoints']),
+          },sort_keys=True))
+          PY
+
+      - name: Assert transport-only safety
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('MUB3_ACERVO_TRANSPORT_PROBE.json',encoding='utf-8'))
+          assert d['source_gate_change']=='NONE'
+          assert d['scientific_credit']==0
+          assert d['historical_backfill_credit']==0
+          assert d['economics_read'] is False
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_LATE_SEAL']
+          assert s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          assert s['H1_ECONOMICS_READ'] is False
+          print('MUB3_ACERVO_TRANSPORT_SAFETY=PASS')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mub3-acervo-transport-probe-${{ github.run_id }}
+          path: MUB3_ACERVO_TRANSPORT_PROBE.json
+          if-no-files-found: error
+          retention-days: 30
