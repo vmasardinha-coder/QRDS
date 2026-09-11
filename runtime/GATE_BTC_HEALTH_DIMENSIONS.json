@@ -29,10 +29,10 @@
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "CURRENT"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "LATE_MISSING_OR_INVALID"
     },
     "delta": {
       "collection_health": "RED_STALE",
@@ -62,7 +62,7 @@
       "collection_health": "GREEN",
       "freshness": "FRESH",
       "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ACTIVE_PROSPECTIVE_SHADOW"
+      "source_status": "WAIT_SOURCE_PUBLICATION"
     },
     "prl50": {
       "collection_health": "RED_STALE",
@@ -83,7 +83,7 @@
       "source_status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     }
   },
-  "generated_at_utc": "2026-09-10T18:26:02.163029+00:00",
+  "generated_at_utc": "2026-09-11T08:16:30.612518+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -94,6 +94,7 @@
     "b3_h1",
     "bull_replay_live_shadow",
     "d50",
+    "daily_delivery_pointer",
     "delta",
     "lock25_50",
     "prl50"
@@ -103,5 +104,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "bb127da82f8b36fbdd06c225fa331400d359e4fa612a3c59cc3129b37b4aa9e0"
+  "status_sha256": "806147074ea1445abfb20995d39880ce930143e1a066470156cfcb23fef5f161"
 }
