@@ -14,6 +14,7 @@ that has been closed fails the second until its exception is deleted.
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -75,10 +76,24 @@ class ParserTests(unittest.TestCase):
         found = coverage.tool_imports(ROOT / "tools" / "gate_btc_delta_v12_report.py")
         self.assertIn("tools/gate_btc_delta_paper_report.py", found)
 
-    def test_the_scan_is_not_vacuous(self):
-        # If the parser silently broke, this set would empty out and every
-        # coverage test would pass while protecting nothing.
-        self.assertTrue(observed())
+    def test_the_scan_detects_a_synthetic_gap_even_when_the_real_backlog_is_empty(self):
+        # Once the real backlog reaches zero, observed() being empty is success.
+        # Prove the scanner itself is still live with a tiny synthetic repository.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / "tools").mkdir()
+            (root / "tools" / "a.py").write_text("from tools.b import value\n", encoding="utf-8")
+            (root / "tools" / "b.py").write_text("value = 1\n", encoding="utf-8")
+            (root / ".github" / "workflows" / "synthetic.yml").write_text(
+                "on:\n  pull_request:\n    paths:\n      - tools/a.py\n"
+                "jobs:\n  test:\n    runs-on: ubuntu-latest\n    steps: []\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                coverage.scan(root),
+                [{"workflow": "synthetic.yml", "listed": "tools/a.py", "missing": "tools/b.py"}],
+            )
 
 
 class CoverageTests(unittest.TestCase):
