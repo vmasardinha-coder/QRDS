@@ -38,6 +38,14 @@ jobs:
           python -m unittest -v
           tests/test_gate_btc_daily_research.py
           tests/test_gate_btc_shadow_delivery.py
+      # This workflow has no paths: filter, so it runs on EVERY pull request.
+      # That is exactly what the coverage test needs: any pull request can add a
+      # workflow, a tool, or an import that leaves a module unwatched, so the
+      # check cannot itself be gated on which files changed.
+      - name: Every workflow must watch the modules its tools import
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_workflow_path_coverage.py
       - name: Validate frozen reporting contract
         run: |
           python - <<'PY'
