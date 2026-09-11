@@ -8,6 +8,10 @@ on:
     paths:
       - .github/workflows/gate-btc-2-stage9-exit-gate.yml
       - tools/gate_btc_2_stage9_exit_gate.py
+      # imported by gate_btc_2_stage9_exit_gate.py
+      - tools/gate_btc_2_stage9_admission_ledger.py
+      # imported transitively by gate_btc_2_stage9_admission_ledger.py
+      - tools/gate_btc_2_prospective_counter_bridge.py
       - tools/gate_btc_2_stage9_exit_segment_v1.json
       - tests/test_gate_btc_2_stage9_exit_gate.py
       - tools/gate_btc_2_master_plan_16_systems.md
