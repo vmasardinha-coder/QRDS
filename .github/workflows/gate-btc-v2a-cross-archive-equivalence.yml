@@ -34,6 +34,7 @@ jobs:
         run: python -m unittest -v tests/test_gate_btc_binance_spot_cross_archive_equivalence.py
 
       - name: Resolve latest successful source-probe evidence for branch
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -52,6 +53,7 @@ jobs:
           echo "SOURCE_PROBE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
 
       - name: Run candidate-specific daily-vs-monthly equivalence audit
+        if: github.event_name != 'pull_request'
         run: >-
           python tools/gate_btc_binance_spot_cross_archive_equivalence.py
           --history-report source_probe/binance_spot_v2a_history_depth.json
@@ -60,6 +62,7 @@ jobs:
           --output artifacts/cross_archive/binance_spot_candidate_cross_archive_equivalence.json
 
       - name: Verify audit cannot change frozen engine
+        if: github.event_name != 'pull_request'
         run: |
           python - <<'PY'
           import json
@@ -83,7 +86,7 @@ jobs:
           PY
 
       - name: Upload candidate equivalence evidence
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-v2a-cross-archive-${{ github.run_id }}
