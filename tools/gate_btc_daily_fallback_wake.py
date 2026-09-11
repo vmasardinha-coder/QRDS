@@ -1,20 +1,32 @@
 #!/usr/bin/env python3
-"""Wake the Delta paper monitor for a collection the fallback itself dispatched.
+"""Wake every chained consumer of a collection the fallback itself dispatched.
 
 The daily fallback recovers a missed or failed Daily Research collection by
 dispatching it through the API with GITHUB_TOKEN. That recovery works, and it is
-also what breaks the monitor: GitHub does not emit `workflow_run` for a run
-dispatched with GITHUB_TOKEN, so the collection succeeds and nothing downstream
-ever hears about it. On 2026-09-09 and again on 2026-09-10 the V11 series stalled
-for exactly this reason and a person had to dispatch the monitor by hand.
+also what breaks everything downstream: GitHub does not emit `workflow_run` for a
+run dispatched with GITHUB_TOKEN, so the collection succeeds and no chained
+workflow ever hears about it. On 2026-09-09 and again on 2026-09-10 the V11
+series stalled for exactly this reason and a person had to dispatch by hand.
 
-The entity that opens the hole is the one that closes it: after dispatching the
-collection, the fallback waits for it and, only if it succeeded, wakes the
-monitor with that run id.
+The first version of this tool woke the Delta paper monitor and nothing else,
+which fixed one symptom and left the cause in place. On 2026-09-10 the recovered
+collection succeeded and GATE BTC Prospective Ledgers — chained the same way —
+never ran, so the LOCK valuation snapshot for that close was never published. The
+next day the valuation sidecar demanded a close the ledger did not have and
+failed the whole collection, which is a deadlock that widens by one day per day.
 
-Waking is all this does. Whether the close may be appended stays the monitor's
-judgement — it verifies a repeated day against the recorded row hashes and
-refuses a gap outright, and neither rule is duplicated or softened here.
+So the wake is not monitor-specific: it delivers the event GitHub withheld to
+every workflow chained on the collection that can accept it.
+
+Waking is all this does. Whether a close may be appended stays each consumer's
+own judgement — the monitor verifies a repeated day against the recorded row
+hashes and refuses a gap outright, and no such rule is duplicated or softened
+here. A consumer is woken only when the collection actually succeeded.
+
+Known gap, deliberately not papered over: gate-btc-2-prospective-pit-publish.yml
+is chained on the collection but exposes no workflow_dispatch trigger, so it
+cannot be woken this way and is not listed below. Giving it a run_id input is the
+prerequisite for covering it.
 
 The HTTP call is injected so the policy is testable without a network.
 """
@@ -29,10 +41,23 @@ from typing import Any, Callable
 
 SCHEMA = "gate_btc.daily_fallback_wake.v1"
 
-MONITOR_WORKFLOW = "gate-btc-delta-paper-monitor.yml"
 COLLECTION_WORKFLOW = "gate-btc-daily-research.yml"
 
-WOKE = "WOKE_MONITOR"
+# Every workflow chained on the collection through `workflow_run` that also
+# accepts a run_id through workflow_dispatch. Kept explicit rather than
+# discovered at runtime: waking a workflow is an action, and which ones get
+# woken is a decision that belongs in review, not in a search result.
+CHAINED_WORKFLOWS = (
+    "gate-btc-prospective-ledgers.yml",
+    "gate-btc-delta-paper-monitor.yml",
+    "gate-btc-qmaster-publish.yml",
+    "gate-btc-qos-three-track-shadow.yml",
+    "gate-btc-alt-trail40-10-shadow.yml",
+    "gate-btc-bull-replay-live-shadow.yml",
+    "gate-btc-prl50-position-shadow.yml",
+)
+
+WOKE = "WOKE_CONSUMERS"
 NOT_SUCCESSFUL = "COLLECTION_NOT_SUCCESSFUL"
 NO_RUN_FOUND = "NO_DISPATCHED_RUN_FOUND"
 STILL_RUNNING = "COLLECTION_STILL_RUNNING_AT_DEADLINE"
@@ -107,13 +132,33 @@ def wait_for_run(api: Callable[..., Any], repository: str, after: str,
     return run
 
 
-def wake(api: Callable[..., Any], repository: str, run_id: int) -> None:
+def wake(api: Callable[..., Any], repository: str, workflow: str, run_id: int) -> None:
     url = (f"https://api.github.com/repos/{repository}/actions/workflows/"
-           f"{MONITOR_WORKFLOW}/dispatches")
+           f"{workflow}/dispatches")
     api("POST", url, {"ref": "main", "inputs": {"run_id": str(run_id)}})
 
 
-def run(api: Callable[..., Any], repository: str, after: str, **kw: Any) -> dict[str, Any]:
+def wake_all(api: Callable[..., Any], repository: str, run_id: int,
+             workflows: tuple[str, ...] = CHAINED_WORKFLOWS) -> dict[str, str]:
+    """Wake each consumer, and let one broken consumer not silence the rest.
+
+    A dispatch that fails is recorded by name and the loop continues, so a single
+    unreachable workflow cannot strand the whole chain the way the missing
+    `workflow_run` already did. main() turns any such entry into a red run.
+    """
+    woken: dict[str, str] = {}
+    for workflow in workflows:
+        try:
+            wake(api, repository, workflow, run_id)
+        except Exception as exc:  # noqa: BLE001 - reported verbatim below
+            woken[workflow] = f"FAILED: {exc}"
+        else:
+            woken[workflow] = "DISPATCHED"
+    return woken
+
+
+def run(api: Callable[..., Any], repository: str, after: str,
+        workflows: tuple[str, ...] = CHAINED_WORKFLOWS, **kw: Any) -> dict[str, Any]:
     collection = wait_for_run(api, repository, after, **kw)
     ok, status = should_wake(collection)
     result = {
@@ -121,9 +166,10 @@ def run(api: Callable[..., Any], repository: str, after: str, **kw: Any) -> dict
         "status": status,
         "collection_run_id": collection.get("id") if collection else None,
         "collection_conclusion": collection.get("conclusion") if collection else None,
+        "woken": {},
     }
     if ok:
-        wake(api, repository, int(collection["id"]))
+        result["woken"] = wake_all(api, repository, int(collection["id"]), workflows)
     return result
 
 
@@ -147,6 +193,12 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps(result, indent=2, sort_keys=True))
     # A collection that failed is not this tool's failure: the fallback already
     # reported the dispatch, and the collection's own run carries the red.
+    # A consumer we could not wake IS this tool's failure — that is the silence
+    # the whole tool exists to prevent, so it must not pass as a green run.
+    unreachable = sorted(name for name, state in result["woken"].items()
+                         if state != "DISPATCHED")
+    if unreachable:
+        raise WakeError(f"could not wake: {', '.join(unreachable)}")
     return 0
 
 
