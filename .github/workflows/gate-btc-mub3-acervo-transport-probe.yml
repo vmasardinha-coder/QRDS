@@ -297,7 +297,7 @@ jobs:
               webdav=str(file0.get('urlWebDav') or '')
               if not webdav:
                   raise RuntimeError('EXACT_2025_BDI_NO_WEBDAV_URL')
-              resolve_url=urllib.parse.urljoin(ROOT,webdav)
+              resolve_url=urllib.parse.urljoin(ROOT,urllib.parse.quote(webdav,safe='/:?=&%'))
               rq=urllib.request.Request(resolve_url,headers={'User-Agent':UA,'Accept':'application/json,*/*'})
               with urllib.request.urlopen(rq,timeout=30) as rr:
                   rraw=rr.read()
