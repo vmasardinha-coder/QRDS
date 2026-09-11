@@ -139,6 +139,47 @@ jobs:
               except Exception as exc:
                   report['api_search_contexts'].append({'script_url':row['url'],'error':f'{type(exc).__name__}: {exc}'})
 
+          # Probe the public API contract with only UI-derived candidate page names.
+          report['api_contract_probes']=[]
+          for page_name in ('Acervo','Museu','Depoimentos'):
+              base_state={
+                  'currentPage':0,'itemsPerPage':8,'orderBy':4,'nextPage':False,
+                  'totalPage':1,'totalItems':8,'searchTerm':'','selectedAttribute':None,
+                  'startDate':None,'endDate':None,'loadAttributes':True,
+                  'blocked':False,'loading':False,'error':None,'selectedDocument':None,
+              }
+              payload={'pageName':page_name,'searchParams':base_state,'selectedDocumentType':None}
+              data=json.dumps(payload,separators=(',',':')).encode()
+              req=urllib.request.Request(
+                  urllib.parse.urljoin(ROOT,'/api/search'),
+                  data=data,
+                  headers={'User-Agent':UA,'Accept':'application/json','Content-Type':'application/json'},
+                  method='POST',
+              )
+              row={'pageName':page_name,'request_sha256':hashlib.sha256(data).hexdigest()}
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r:
+                      raw=r.read()
+                      row.update({
+                          'status':getattr(r,'status',200),
+                          'content_type':str(r.headers.get('Content-Type','')),
+                          'bytes':len(raw),
+                          'sha256':hashlib.sha256(raw).hexdigest(),
+                          'json_keys':sorted((json.loads(raw.decode('utf-8')) or {}).keys()) if raw else [],
+                          'sample':raw[:2000].decode('utf-8','replace'),
+                      })
+              except urllib.error.HTTPError as exc:
+                  raw=exc.read()
+                  row.update({
+                      'status':exc.code,
+                      'bytes':len(raw),
+                      'sha256':hashlib.sha256(raw).hexdigest() if raw else None,
+                      'sample':raw[:2000].decode('utf-8','replace'),
+                  })
+              except Exception as exc:
+                  row['error']=f'{type(exc).__name__}: {exc}'
+              report['api_contract_probes'].append(row)
+
           report['adjudication']='PUBLIC_MACHINE_RETRIEVAL_CONTRACT_DISCOVERED' if report['candidate_endpoints'] else 'PUBLIC_UI_REACHABLE_MACHINE_RETRIEVAL_CONTRACT_NOT_EXPOSED'
           with open('MUB3_ACERVO_TRANSPORT_PROBE.json','w',encoding='utf-8') as f:
               json.dump(report,f,ensure_ascii=False,indent=2,sort_keys=True)
