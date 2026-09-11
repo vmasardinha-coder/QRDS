@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'tools/gate_btc_2_system10_event_envelope.py'
+      # imported by gate_btc_2_system10_event_envelope.py
+      - 'tools/gate_btc_2_stage9_admission_ledger.py'
+      # imported transitively by gate_btc_2_stage9_admission_ledger.py
+      - 'tools/gate_btc_2_prospective_counter_bridge.py'
       - 'tools/gate_btc_2_system10_adapter_contract.py'
       - 'tests/test_gate_btc_2_system10_adapter_contract.py'
       - '.github/workflows/gate-btc-2-system10-adapter-contract.yml'
