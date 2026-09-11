@@ -23,6 +23,13 @@ on:
       - 'tests/test_gate_btc_delta_v12_funding.py'
       - 'tools/gate_btc_delta_v12_report.py'
       - 'tests/test_gate_btc_delta_v12_report.py'
+      # gate_btc_delta_v12_report.py imports ReportError, STYLE, line_chart,
+      # bar_chart, nav_series and a dozen more names from the V11 report module.
+      # Without this path a change to that module alone can break the V12 report
+      # with no CI signal at all -- the same gap that let PR #643 reach main
+      # untested. The V11 report imports nothing from V12, so the dependency is
+      # one-directional and this single entry closes it.
+      - 'tools/gate_btc_delta_paper_report.py'
       - 'migration/reporting/delta_v12_engine_contract.json'
 
 permissions:
