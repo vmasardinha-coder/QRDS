@@ -31,6 +31,11 @@ on:
       # the collection. Without this path a change to it reaches main with no
       # PR CI on this workflow at all.
       - tools/gate_btc_measurement_common.py
+      # measurement_common imports append_gateway from prospective_ledgers,
+      # which imports measurement_status. The dependency is transitive, so
+      # watching only the first level leaves the deeper two unwatched.
+      - tools/gate_btc_prospective_ledgers.py
+      - tools/gate_btc_measurement_status.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_upstream_equivalence_v3.py
@@ -62,6 +67,11 @@ on:
       # the collection. Without this path a change to it reaches main with no
       # PR CI on this workflow at all.
       - tools/gate_btc_measurement_common.py
+      # measurement_common imports append_gateway from prospective_ledgers,
+      # which imports measurement_status. The dependency is transitive, so
+      # watching only the first level leaves the deeper two unwatched.
+      - tools/gate_btc_prospective_ledgers.py
+      - tools/gate_btc_measurement_status.py
       - tools/gateway_upstream_equivalence.py
       - tools/gateway_upstream_equivalence_v2.py
       - tools/gateway_upstream_equivalence_v3.py
