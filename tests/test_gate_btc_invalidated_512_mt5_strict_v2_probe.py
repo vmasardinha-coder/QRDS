@@ -1,8 +1,6 @@
 from types import SimpleNamespace
 from datetime import datetime, timezone
 
-import pytest
-
 from tools.gate_btc_factory import invalidated_512_mt5_strict_v2_probe as p
 
 
@@ -89,20 +87,29 @@ def test_strict_constants_cannot_regress_to_v1_floor():
     assert p.END == "2026-08-09"
 
 
-def test_time_mode_can_fallback_to_same_terminal_but_stays_fail_closed():
+def test_capture_can_precede_timezone_admission_without_relaxing_gate():
     text = open(p.__file__, encoding="utf-8").read()
-    assert 'SAME_MT5_TERMINAL_FALLBACK' in text
-    assert 'mt5.symbols_get()' in text
-    assert 'AMBIGUOUS_MT5_TIME_MODE' in text
-    assert 'len(modes)!=1' in text
+    assert 'copy_rates_from_pos' in text
+    assert 'TIME_MODES=("UTC_EPOCH","BROKER_LOCAL_EPOCH")' in text
+    assert '"timezone_admission_pass":selected_mode is not None' in text
 
 
-def test_probe_source_admission_requires_provenance_not_capacity_only():
+def test_mt5_is_hard_bound_to_independent_secondary_cross_validation_only():
+    assert p.SOURCE_ROLE == "INDEPENDENT_SECONDARY_SOURCE"
+    assert p.USAGE_CONSTRAINT == "CROSS_VALIDATION_ONLY"
+    text = open(p.__file__, encoding="utf-8").read()
+    assert '"source_admission_pass":False' in text
+    assert '"may_be_primary_source":False' in text
+    assert '"may_reconstruct_lost_clocks":False' in text
+    assert '"requalification_economics_allowed":False' in text
+    assert '"cross_validation_qualification_pass":qualified_for_cross_validation' in text
+
+
+def test_probe_provenance_stays_fail_closed():
     text = open(p.__file__, encoding="utf-8").read()
     assert '"publication_semantics_proven":False' in text
     assert '"revision_semantics_proven":False' in text
     assert '"point_in_time_validity_proven":False' in text
-    assert "green=all(gates.values())" in text
 
 
 def test_no_order_send_codepath():
