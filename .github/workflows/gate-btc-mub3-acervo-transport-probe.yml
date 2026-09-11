@@ -180,6 +180,90 @@ jobs:
                   row['error']=f'{type(exc).__name__}: {exc}'
               report['api_contract_probes'].append(row)
 
+          # Qualify Acervo document types and representative 2025 BDI metadata.
+          report['acervo_document_types']={}
+          try:
+              req=urllib.request.Request(
+                  urllib.parse.urljoin(ROOT,'/api/document-type?pageName=Acervo'),
+                  headers={'User-Agent':UA,'Accept':'application/json'},
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read()
+                  report['acervo_document_types']={
+                      'status':getattr(r,'status',200),
+                      'content_type':str(r.headers.get('Content-Type','')),
+                      'bytes':len(raw),
+                      'sha256':hashlib.sha256(raw).hexdigest(),
+                      'sample':raw[:8000].decode('utf-8','replace'),
+                  }
+          except Exception as exc:
+              report['acervo_document_types']={'error':f'{type(exc).__name__}: {exc}'}
+
+          report['bdi_2025_search_probes']=[]
+          for term in (
+              'Boletim Diário de Informações Unificado - 02/01/2025',
+              '02/01/2025',
+              'Boletim Diário de Informações Unificado',
+          ):
+              state={
+                  'currentPage':0,'itemsPerPage':64,'orderBy':4,'nextPage':False,
+                  'totalPage':1,'totalItems':64,'searchTerm':term,'selectedAttribute':None,
+                  'startDate':None,'endDate':None,'loadAttributes':True,
+                  'blocked':False,'loading':False,'error':None,'selectedDocument':None,
+              }
+              payload={'pageName':'Acervo','searchParams':state,'selectedDocumentType':None}
+              data=json.dumps(payload,separators=(',',':')).encode()
+              req=urllib.request.Request(
+                  urllib.parse.urljoin(ROOT,'/api/search'),
+                  data=data,
+                  headers={'User-Agent':UA,'Accept':'application/json','Content-Type':'application/json'},
+                  method='POST',
+              )
+              row={'searchTerm':term,'request_sha256':hashlib.sha256(data).hexdigest()}
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r:
+                      raw=r.read(); obj=json.loads(raw.decode('utf-8')) if raw else {}
+                      coll=obj.get('Collection') or []
+                      row.update({
+                          'status':getattr(r,'status',200),
+                          'content_type':str(r.headers.get('Content-Type','')),
+                          'bytes':len(raw),
+                          'sha256':hashlib.sha256(raw).hexdigest(),
+                          'total':obj.get('Total'),
+                          'matches':[{
+                              'Key':x.get('Key'),'EntityId':x.get('EntityId'),'Title':x.get('Title'),
+                              'PublishDate':x.get('PublishDate'),'CreatedDate':x.get('CreatedDate'),
+                              'LastUpdatedDate':x.get('LastUpdatedDate'),'Files':x.get('Files'),
+                              'FilesId':x.get('FilesId'),'FilesFull':x.get('FilesFull'),
+                              'DocumentType':x.get('DocumentType'),'Storage':x.get('Storage'),
+                          } for x in coll[:20]],
+                      })
+                      # Fetch public document metadata for exact/2025-looking matches only.
+                      row['document_metadata']=[]
+                      for x in coll[:20]:
+                          title=str(x.get('Title') or '')
+                          if '2025' not in title and '02/01/2025' not in title:
+                              continue
+                          key=str(x.get('Key') or '')
+                          if not key:
+                              continue
+                          u=urllib.parse.urljoin(ROOT,'/api/document/?key='+urllib.parse.quote(key))
+                          try:
+                              rq=urllib.request.Request(u,headers={'User-Agent':UA,'Accept':'application/json'})
+                              with urllib.request.urlopen(rq,timeout=30) as dr:
+                                  draw=dr.read()
+                                  row['document_metadata'].append({
+                                      'key':key,'url':u,'status':getattr(dr,'status',200),
+                                      'content_type':str(dr.headers.get('Content-Type','')),
+                                      'bytes':len(draw),'sha256':hashlib.sha256(draw).hexdigest(),
+                                      'sample':draw[:12000].decode('utf-8','replace'),
+                                  })
+                          except Exception as exc:
+                              row['document_metadata'].append({'key':key,'url':u,'error':f'{type(exc).__name__}: {exc}'})
+              except Exception as exc:
+                  row['error']=f'{type(exc).__name__}: {exc}'
+              report['bdi_2025_search_probes'].append(row)
+
           report['adjudication']='PUBLIC_MACHINE_RETRIEVAL_CONTRACT_DISCOVERED' if report['candidate_endpoints'] else 'PUBLIC_UI_REACHABLE_MACHINE_RETRIEVAL_CONTRACT_NOT_EXPOSED'
           with open('MUB3_ACERVO_TRANSPORT_PROBE.json','w',encoding='utf-8') as f:
               json.dump(report,f,ensure_ascii=False,indent=2,sort_keys=True)
