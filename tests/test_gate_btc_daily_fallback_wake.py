@@ -107,21 +107,30 @@ class PollingTests(unittest.TestCase):
 
 class EndToEndTests(unittest.TestCase):
 
-    def test_a_recovered_collection_wakes_the_monitor_with_its_run_id(self):
+    def test_a_recovered_collection_wakes_every_chained_consumer(self):
         api = FakeApi([collection()])
         result = wake.run(api, REPO, AFTER, attempts=1, delay=0, sleep=lambda _: None)
         self.assertEqual(result["status"], wake.WOKE)
-        self.assertEqual(len(api.dispatches), 1)
-        method, url, payload = api.dispatches[0]
-        self.assertIn(wake.MONITOR_WORKFLOW, url)
-        self.assertEqual(payload["inputs"]["run_id"], "34449199835")
-        self.assertEqual(payload["ref"], "main")
+        self.assertEqual(len(api.dispatches), len(wake.CHAINED_WORKFLOWS))
+        for (method, url, payload), workflow in zip(api.dispatches, wake.CHAINED_WORKFLOWS):
+            self.assertIn(workflow, url)
+            self.assertEqual(payload["inputs"]["run_id"], "34449199835")
+            self.assertEqual(payload["ref"], "main")
+        self.assertEqual(set(result["woken"].values()), {"DISPATCHED"})
+
+    def test_the_ledger_publisher_is_woken_not_only_the_monitor(self):
+        # The 2026-09-10 stall: the recovered collection succeeded, only the
+        # monitor was woken, GATE BTC Prospective Ledgers never ran, and the LOCK
+        # valuation snapshot it publishes was missing the next day.
+        self.assertIn("gate-btc-prospective-ledgers.yml", wake.CHAINED_WORKFLOWS)
+        self.assertIn("gate-btc-delta-paper-monitor.yml", wake.CHAINED_WORKFLOWS)
 
     def test_a_failed_collection_dispatches_nothing(self):
         api = FakeApi([collection(conclusion="failure")])
         result = wake.run(api, REPO, AFTER, attempts=1, delay=0, sleep=lambda _: None)
         self.assertEqual(result["status"], wake.NOT_SUCCESSFUL)
         self.assertEqual(api.dispatches, [])
+        self.assertEqual(result["woken"], {})
 
     def test_nothing_found_dispatches_nothing(self):
         api = FakeApi([])
@@ -129,6 +138,69 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(result["status"], wake.NO_RUN_FOUND)
         self.assertEqual(api.dispatches, [])
         self.assertIsNone(result["collection_run_id"])
+
+
+class BrokenConsumerTests(unittest.TestCase):
+    """One unreachable consumer must not silence the others, nor pass as green."""
+
+    class RefusingApi(FakeApi):
+        def __init__(self, refuse, *listings):
+            super().__init__(*listings)
+            self.refuse = refuse
+
+        def __call__(self, method, url, payload=None):
+            if method == "POST" and self.refuse in url:
+                self.calls.append((method, url, payload))
+                raise RuntimeError("dispatch refused")
+            return super().__call__(method, url, payload)
+
+    def test_the_remaining_consumers_are_still_woken(self):
+        broken = wake.CHAINED_WORKFLOWS[0]
+        api = self.RefusingApi(broken, [collection()])
+        result = wake.run(api, REPO, AFTER, attempts=1, delay=0, sleep=lambda _: None)
+        self.assertEqual(len(api.dispatches), len(wake.CHAINED_WORKFLOWS))
+        self.assertTrue(result["woken"][broken].startswith("FAILED:"))
+        for workflow in wake.CHAINED_WORKFLOWS[1:]:
+            self.assertEqual(result["woken"][workflow], "DISPATCHED")
+
+    def test_an_unreachable_consumer_fails_the_step(self):
+        import os
+        from unittest import mock
+        broken = wake.CHAINED_WORKFLOWS[0]
+        api = self.RefusingApi(broken, [collection()])
+        with mock.patch.dict(os.environ, {"GH_TOKEN": "x"}, clear=True):
+            with mock.patch.object(wake, "github", lambda _token: api):
+                with self.assertRaises(wake.WakeError) as raised:
+                    wake.main(["--after", AFTER, "--repository", REPO,
+                               "--attempts", "1", "--delay", "0"])
+        self.assertIn(broken, str(raised.exception))
+
+
+class ChainedWorkflowTests(unittest.TestCase):
+    """A name in the list that does not match a real file is a 404 at 07:16."""
+
+    def workflows_dir(self):
+        return Path(wake.__file__).resolve().parents[1] / ".github" / "workflows"
+
+    def test_every_listed_workflow_file_exists(self):
+        for workflow in wake.CHAINED_WORKFLOWS:
+            with self.subTest(workflow=workflow):
+                self.assertTrue((self.workflows_dir() / workflow).is_file())
+
+    def test_every_listed_workflow_accepts_a_run_id_dispatch(self):
+        for workflow in wake.CHAINED_WORKFLOWS:
+            with self.subTest(workflow=workflow):
+                text = (self.workflows_dir() / workflow).read_text(encoding="utf-8")
+                self.assertIn("workflow_dispatch:", text)
+                self.assertIn("run_id:", text)
+
+    def test_every_listed_workflow_is_actually_chained_on_the_collection(self):
+        # Waking something the collection does not feed would be dispatching a
+        # workflow for a run it never consumes.
+        for workflow in wake.CHAINED_WORKFLOWS:
+            with self.subTest(workflow=workflow):
+                text = (self.workflows_dir() / workflow).read_text(encoding="utf-8")
+                self.assertIn('workflows: ["GATE BTC Daily Research Collection"]', text)
 
 
 class CommandLineTests(unittest.TestCase):
