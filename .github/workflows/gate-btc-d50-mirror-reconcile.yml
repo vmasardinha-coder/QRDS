@@ -11,6 +11,12 @@ on:
       - "tools/gate_btc_d50_mirror_reconcile.py"
       - "tools/gate_btc_d50_checkpoint_pack.py"
       - "tools/gate_btc_d50_status_align.py"
+      # imported transitively by gate_btc_d50_status_align.py
+      - "tools/gate_btc_measurement_common.py"
+      # imported transitively by gate_btc_measurement_common.py
+      - "tools/gate_btc_prospective_ledgers.py"
+      # imported transitively by gate_btc_prospective_ledgers.py
+      - "tools/gate_btc_measurement_status.py"
       - "tests/test_gate_btc_d50_mirror_reconcile.py"
       - "tests/test_gate_btc_d50_checkpoint_pack.py"
       - "tests/test_gate_btc_d50_status_align.py"
