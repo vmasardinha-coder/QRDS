@@ -354,7 +354,7 @@ jobs:
 
               physical_candidates=[]
               physical_candidates.extend(candidates[:20])
-              thumb=str(file0.get('url') or '').replace('\\\\','/')
+              thumb=str(file0.get('url') or '').replace(chr(92),'/')
               if thumb:
                   direct=thumb
                   if direct.lower().endswith('thumbnail.png'):
