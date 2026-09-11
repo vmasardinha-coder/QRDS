@@ -105,7 +105,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p evidence previous
-          PREV_RUN="$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-2-stage9-bitget-ledger-bridge.yml --branch main --event workflow_run --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          PREV_RUN=""
+          while read -r CANDIDATE; do
+            [ -n "$CANDIDATE" ] || continue
+            EXPECTED="gate-btc-stage9-bitget-ledger-${CANDIDATE}"
+            HAS_ARTIFACT="$(gh api "repos/${{ github.repository }}/actions/runs/${CANDIDATE}/artifacts" --jq "[.artifacts[] | select(.name == \"${EXPECTED}\" and .expired == false)] | length")"
+            if [ "$HAS_ARTIFACT" -gt 0 ]; then
+              PREV_RUN="$CANDIDATE"
+              break
+            fi
+          done < <(gh run list --repo "${{ github.repository }}" --workflow gate-btc-2-stage9-bitget-ledger-bridge.yml --branch main --event workflow_run --status success --limit 50 --json databaseId --jq '.[].databaseId')
           if [ -n "$PREV_RUN" ]; then
             gh run download "$PREV_RUN" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${PREV_RUN}" --dir previous
           else
