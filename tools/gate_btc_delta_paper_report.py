@@ -22,8 +22,16 @@ SCHEMA = "gate_btc.delta_paper_report.v1"
 # published numbers, so they are constants, not options.
 ANNUALIZATION_DAYS = 365
 RISK_FREE_ANNUAL = 0.045
-# The frozen evidence gate needs this many observations before any Sharpe read is
-# admissible as evidence. Below it the figures are descriptive only.
+# The frozen evidence gate's observation threshold. Two counters carry this name
+# and they are NOT the same thing:
+#
+#   - the shadow's observed_days, counted from the paper anchor (2026-08-13);
+#   - the engine's walk-forward observations, counted from D0 (2026-05-15),
+#     which is what build_evidence_gate() in 00_run_delta_v11.py actually tests.
+#
+# The gate verdict this report prints is the engine's, decided on the engine's
+# window. The shadow counter never feeds it. Every label below has to say which
+# of the two it is talking about, or the reader infers a link that is not there.
 EVIDENCE_GATE_MIN_OBSERVATIONS = 60
 
 # Categorical slots 1-4 of the validated reference palette, light and dark steps.
@@ -110,7 +118,9 @@ def risk_metrics(net_returns: list[float]) -> dict[str, Any]:
         "annualized_volatility": None,
         "sharpe_rf0": None,
         "sharpe_rf_frozen": None,
-        "evidence_gate_admissible": count >= EVIDENCE_GATE_MIN_OBSERVATIONS,
+        # Named for what it measures: the SHADOW sample has reached the size the
+        # gate asks for on its own window. It does not mean the gate consulted it.
+        "shadow_sample_at_gate_size": count >= EVIDENCE_GATE_MIN_OBSERVATIONS,
     }
     if count < 2:
         return metrics
@@ -345,12 +355,43 @@ def table_body(headers: list[str], rows: list[list[str]], empty_message: str) ->
     return f"<div class='table-scroll'><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>"
 
 
-def table(caption: str, headers: list[str], rows: list[list[str]], empty_message: str) -> str:
+def table(caption: str, headers: list[str], rows: list[list[str]], empty_message: str,
+          caveat: str = "") -> str:
+    note = f"<p class='caveat'>{esc(caveat)}</p>" if caveat else ""
     return (
         f"<section class='panel'><h2 class='panel-title'>{esc(caption)}</h2>"
+        + note
         + table_body(headers, rows, empty_message)
         + "</section>"
     )
+
+
+def gate_window_note(summary: dict[str, Any], strategies: list[str]) -> str:
+    """Describe the window the gate verdict was decided on, in its own words.
+
+    The verdict comes from the upstream engine, which evaluates its expanding
+    walk-forward window, not this shadow's observed days. The monitor carries the
+    window, its end and its observation count through, so the label can name them.
+    Older ledgers predate those fields; then the window is named without numbers
+    rather than guessed at.
+    """
+    windows = {str(summary.get(name, {}).get("evidence_window") or "") for name in strategies}
+    windows.discard("")
+    counts = {int(as_float(summary.get(name, {}).get("evidence_observations"))) for name in strategies}
+    counts.discard(0)
+    ends = {str(summary.get(name, {}).get("evidence_window_end") or "") for name in strategies}
+    ends.discard("")
+    base = ("Veredito do PORTAO abaixo: decidido pelo motor congelado na janela dele, "
+            "NAO na amostra prospectiva desta sombra. Sao dois contadores distintos.")
+    if not windows or not counts:
+        return base + (" Esta linha do ledger e anterior ao registro da janela, entao "
+                       "os numeros dela nao estao disponiveis aqui.")
+    window = "/".join(sorted(windows))
+    count = "/".join(str(c) for c in sorted(counts))
+    ending = "/".join(sorted(ends)) if ends else "nao registrado"
+    return (base + f" Janela do motor: {window}, {count} observacao(oes), ate {ending}. "
+            f"O limite de {EVIDENCE_GATE_MIN_OBSERVATIONS} observacoes do portao e medido "
+            "nessa janela e ja esta satisfeito por ela.")
 
 
 def pick(row: dict[str, str], names: list[str], default: str = "") -> str:
@@ -514,9 +555,14 @@ def build_html(runtime: Path) -> str:
         ])
     body.append(table(
         "Decomposicao economica do dia (tabela de apoio dos graficos)",
-        ["Carteira", "Bruto", "Custo", "Funding", "Liquido", "Turnover", "Kill switch", "Evidence gate", "NAV"],
+        ["Carteira", "Bruto", "Custo (-)", "Funding (em Bruto)", "Liquido", "Turnover",
+         "Kill switch", "Portao do motor", "NAV"],
         decomposition,
         "Sem linhas economicas aceitas ainda.",
+        caveat=("Liquido = Bruto - Custo. O funding NAO e subtraido de novo: ele ja e "
+                "componente do Bruto (gross_return = overnight + intraday + funding_return, "
+                "00_run_delta_v11.py), e a coluna o mostra so para decompor o Bruto. "
+                + gate_window_note(summary, strategies)),
     ))
 
     risk_rows = []
@@ -525,7 +571,7 @@ def build_html(runtime: Path) -> str:
     for name in strategies:
         metrics = risk_metrics([point["net_return"] for point in series.get(name, [])])
         observations = max(observations, metrics["observations"])
-        admissible = admissible or metrics["evidence_gate_admissible"]
+        admissible = admissible or metrics["shadow_sample_at_gate_size"]
         fmt = lambda value, places=2: "—" if value is None else f"{value:.{places}f}"
         risk_rows.append([
             name,
@@ -536,10 +582,16 @@ def build_html(runtime: Path) -> str:
             fmt(metrics["sharpe_rf_frozen"]),
         ])
     caveat = (
-        f"Amostra prospectiva de {observations} observacao(oes); o portao de evidencia congelado exige "
-        f"{EVIDENCE_GATE_MIN_OBSERVATIONS}. "
-        + ("Amostra suficiente para leitura formal do portao." if admissible else
-           "Numeros abaixo sao DESCRITIVOS e nao suportam inferencia, ranking ou promocao.")
+        f"Os numeros desta tabela sao da SOMBRA: {observations} observacao(oes) desde a ancora do "
+        "paper monitor, calculados aqui a partir do ledger append-only. "
+        + ("Amostra ja no tamanho que o portao exige na janela dele; ainda assim o veredito do "
+           "portao continua sendo do motor, na janela do motor."
+           if admissible else
+           "NAO sao a base do portao de evidencia e NAO devem ser lidos como tal: o portao e "
+           "decidido pelo motor na janela expansivel dele, que e outra serie e ja passa das "
+           f"{EVIDENCE_GATE_MIN_OBSERVATIONS} observacoes exigidas. Uma carteira pode aparecer "
+           "como elegivel aqui ao lado com poucas observacoes de sombra sem nenhuma contradicao. "
+           "Estes numeros sao DESCRITIVOS e nao suportam inferencia, ranking ou promocao.")
         + f" Anualizacao {ANNUALIZATION_DAYS} dias; Sharpe rf=0 e a convencao publicada pelo motor, "
         f"rf={RISK_FREE_ANNUAL:.1%} e a premissa congelada."
     )
