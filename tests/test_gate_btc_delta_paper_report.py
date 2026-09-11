@@ -66,7 +66,7 @@ class TestDeltaPaperReport(unittest.TestCase):
             self.assertIsNone(m['sharpe_rf0'], series)
             self.assertIsNone(m['sharpe_rf_frozen'], series)
             self.assertIsNone(m['annualized_volatility'], series)
-            self.assertFalse(m['evidence_gate_admissible'])
+            self.assertFalse(m['shadow_sample_at_gate_size'])
 
     def test_risk_metrics_match_frozen_annualization(self):
         series = [0.01, -0.005, 0.02, -0.01]
@@ -112,3 +112,70 @@ class TestDeltaPaperReport(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestGateWindowIsNamedNotImplied(unittest.TestCase):
+    """The audit of 2026-09-11: the report showed 'elegivel' beside a 28-day
+    shadow and a caveat about needing 60, with nothing saying the gate verdict
+    was decided on the engine's 119-observation window. Both figures were
+    correct; the juxtaposition was not. These tests pin the labels."""
+
+    def render(self, days=(('2026-08-13', 0.0), ('2026-08-14', 0.01))):
+        td = tempfile.mkdtemp()
+        runtime = build_ledger(Path(td), days)
+        return rep.render(runtime).read_text(encoding='utf-8')
+
+    def test_the_gate_column_names_the_engine_window_and_its_count(self):
+        page = self.render()
+        self.assertIn('Portao do motor', page)
+        self.assertIn('EXPANDING_FROM_D0', page)
+        # 90 engine observations from the fixture, beside 1 shadow observation.
+        self.assertIn('90 observacao(oes)', page)
+
+    def test_the_gate_column_says_it_is_not_the_shadow_sample(self):
+        page = self.render()
+        self.assertIn('NAO na amostra prospectiva desta sombra', page)
+        self.assertIn('dois contadores distintos', page)
+
+    def test_the_risk_caveat_no_longer_implies_the_shadow_feeds_the_gate(self):
+        page = self.render()
+        self.assertIn('Os numeros desta tabela sao da SOMBRA', page)
+        self.assertIn('NAO sao a base do portao de evidencia', page)
+        # The sentence that made the contradiction readable must be gone.
+        self.assertNotIn('Amostra prospectiva de 1 observacao(oes); o portao', page)
+
+    def test_a_ledger_without_the_window_fields_says_so_instead_of_guessing(self):
+        td = tempfile.mkdtemp()
+        runtime = Path(td) / 'rt'
+        for index, (day, ret) in enumerate((('2026-08-13', 0.0), ('2026-08-14', 0.01))):
+            source = Path(td) / f'{day}.zip'
+            fixture(source, day, ret, gate_window=False)
+            mon.process(CONTRACT, source, runtime, str(700 + index))
+        page = rep.render(runtime).read_text(encoding='utf-8')
+        self.assertIn('anterior ao registro da janela', page)
+        self.assertNotIn('EXPANDING_FROM_D0', page)
+
+
+class TestFundingIsNotPresentedAsAdditive(unittest.TestCase):
+    """net = gross - cost, with funding already inside gross. The four-column
+    layout invited the reading that funding had been dropped from the net."""
+
+    def test_the_header_and_caveat_state_the_convention(self):
+        td = tempfile.mkdtemp()
+        runtime = build_ledger(Path(td), (('2026-08-13', 0.0), ('2026-08-14', 0.01)))
+        page = rep.render(runtime).read_text(encoding='utf-8')
+        self.assertIn('Funding (em Bruto)', page)
+        self.assertIn('Liquido = Bruto - Custo', page)
+        self.assertIn('NAO e subtraido de novo', page)
+
+    def test_the_rendered_numbers_still_satisfy_net_equals_gross_minus_cost(self):
+        # The label must describe the ledger, not replace checking it.
+        td = tempfile.mkdtemp()
+        runtime = build_ledger(Path(td), (('2026-08-13', 0.0), ('2026-08-14', 0.01)))
+        import csv as _csv
+        with (runtime / 'DAILY_NAV.csv').open() as handle:
+            for row in _csv.DictReader(handle):
+                gross = float(row['gross_return'])
+                cost = float(row['trading_cost_return'])
+                net = float(row['net_return'])
+                self.assertAlmostEqual(net, gross - cost, 12)

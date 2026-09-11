@@ -101,7 +101,12 @@ def process(contract:Path,source_zip:Path,runtime:Path,run_id:str):
         r={**e,"normalized_nav":n,"drawdown":dd,"source_run_id":str(run_id),"source_zip_sha256":src["zip_sha"],"source_economic_row_sha256":h(cj(e)),"prev_chain_sha256":prev}
         r["chain_sha256"]=h(prev.encode()+cj(r)); prev=r["chain_sha256"]; new.append(r)
         q=ev.get(s,{})
-        summary[s]={"normalized_nav":n,"drawdown":dd,"latest_net_return":e["net_return"],"latest_gross_return":e["gross_return"],"latest_trading_cost_return":e["trading_cost_return"],"latest_funding_return":e["funding_return"],"latest_turnover":e["turnover"],"trade_events_today":sum(x.get("strategy")==s for x in trades),"positions_today":sum(x.get("strategy")==s for x in poss),"evidence_eligible":b(q.get("evidence_eligible")),"evidence_rejection_reasons":q.get("rejection_reasons","")}
+        # The gate verdict is the upstream engine's, evaluated on the engine's own
+        # walk-forward window, NOT on this shadow's observed_days. Carrying the
+        # window through is what lets a reader tell the two counters apart: without
+        # it the report shows "eligible" beside a 28-day shadow and invites the
+        # reading that 28 satisfied a gate that asks for 60.
+        summary[s]={"normalized_nav":n,"drawdown":dd,"latest_net_return":e["net_return"],"latest_gross_return":e["gross_return"],"latest_trading_cost_return":e["trading_cost_return"],"latest_funding_return":e["funding_return"],"latest_turnover":e["turnover"],"trade_events_today":sum(x.get("strategy")==s for x in trades),"positions_today":sum(x.get("strategy")==s for x in poss),"evidence_eligible":b(q.get("evidence_eligible")),"evidence_rejection_reasons":q.get("rejection_reasons",""),"evidence_window":q.get("window",""),"evidence_window_end":q.get("end",""),"evidence_observations":int(f(q.get("observations")))}
     fields=["date","strategy","gross_return","trading_cost_return","funding_return","net_return","turnover","kill_switch_active","normalized_nav","drawdown","source_run_id","source_zip_sha256","source_economic_row_sha256","prev_chain_sha256","chain_sha256"]
     write_csv(nav_p,nav+new,fields)
     for name,rs,datefield in (("TRADE_EVENTS.csv",trades,"date"),("POSITIONS_HISTORY.csv",poss,"date"),("SELECTIONS_HISTORY.csv",sels,"execution_date")):

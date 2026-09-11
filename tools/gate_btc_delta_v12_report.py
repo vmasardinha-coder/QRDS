@@ -250,10 +250,14 @@ def build_html(runtime: Path) -> str:
         ])
     body.append(table(
         f"Decomposicao economica do dia ({as_of})" if as_of else "Decomposicao economica do dia",
-        ["Carteira", "Bruto", "Custo", "Funding", "Liquido", "Turnover",
+        ["Carteira", "Bruto", "Custo (-)", "Funding (em Bruto)", "Liquido", "Turnover",
          "Bruto comprado", "Bruto vendido", "Exposicao liquida", "Posicoes", "Kill switch"],
         decomposition,
         "Nenhum dia contabilizado nesta data.",
+        caveat=("Liquido = Bruto - Custo. O funding NAO e subtraido de novo: ele ja e componente "
+                "do Bruto (gross_return = overnight + intraday + funding_return, "
+                "gate_btc_delta_v12_engine.py), e a coluna o mostra so para decompor o Bruto. "
+                "Mesma convencao do V11."),
     ))
 
     # Read, never recompute: these are the engine's own published figures.
@@ -276,6 +280,15 @@ def build_html(runtime: Path) -> str:
         + ("Amostra suficiente para leitura formal do portao." if observed >= int(minimum) else
            "Os numeros abaixo sao DESCRITIVOS e nao suportam inferencia, ranking ou promocao.")
         + " Valores lidos diretamente do STATUS que o motor publica; este relatorio nao recalcula nenhum deles."
+        # The same sentence in the V11 report would be false: there the gate is
+        # decided on the engine's expanding window, not on the shadow sample. Here
+        # the two are the same series, and saying so is what keeps "elegivel" from
+        # meaning two different things across the two reports.
+        + " No V12 a janela do portao E esta mesma serie prospectiva, contada desde a ancora: "
+        "o contador acima e o mesmo que o portao testa. No V11 nao e assim — la o portao e "
+        "decidido pelo motor congelado numa janela propria, anterior a ancora da sombra. "
+        "Por isso 'elegivel' nos dois relatorios nao significa a mesma coisa, e as duas series "
+        "seguem nao comparaveis."
     )
     body.append(
         "<section class='panel'><h2 class='panel-title'>Metricas de risco desde a ancora</h2>"

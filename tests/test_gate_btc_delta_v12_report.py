@@ -53,6 +53,31 @@ class ReportTests(EngineRunMixin, unittest.TestCase):
         self.assertIn("Portao de evidencia", document)
         self.assertIn(status["data_as_of"], document)
 
+    def test_funding_is_labelled_as_a_component_of_gross_not_a_fourth_term(self):
+        # net = gross - cost, funding already inside gross. Same convention as
+        # V11; the old four-column header invited the opposite reading.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.run_engine(root, price_panel(days=70))
+            self.advance(root, 71, 75)
+            document, _ = self.render(root)
+        self.assertIn("Funding (em Bruto)", document)
+        self.assertIn("Liquido = Bruto - Custo", document)
+        self.assertIn("NAO e subtraido de novo", document)
+
+    def test_the_report_says_the_v12_gate_window_is_this_same_prospective_series(self):
+        # In V11 the gate is decided on the engine's own window, which is not the
+        # shadow sample. In V12 the two are the same series. Saying so is what
+        # stops "elegivel" from meaning two different things across the reports.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.run_engine(root, price_panel(days=70))
+            self.advance(root, 71, 75)
+            document, _ = self.render(root)
+        self.assertIn("No V12 a janela do portao E esta mesma serie prospectiva", document)
+        self.assertIn("No V11 nao e assim", document)
+        self.assertIn("nao comparaveis", document)
+
     def test_risk_figures_are_the_engine_numbers_not_a_second_calculation(self):
         # The report must never restate the ledger. Every figure it prints for a
         # book has to be the one STATUS carries.
