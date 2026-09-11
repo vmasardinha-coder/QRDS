@@ -129,6 +129,32 @@ class ShadowExecutiveContractTest(unittest.TestCase):
         self.assertEqual(report["counter_changes"], 0)
         self.assertFalse(report["promotion_allowed"])
 
+
+    def test_full_master_v2_is_single_model_and_keeps_boundaries(self):
+        report = build(self._state(), "2026-09-09")
+        master = report["full_master_v2"]
+        self.assertTrue(master["single_model"])
+        self.assertFalse(master["scientific_authority"])
+        self.assertFalse(master["promotion_authority"])
+        self.assertFalse(master["economic_authority"])
+        self.assertEqual(master["economic_decision_board"]["capital_reference_brl"], 180000)
+        self.assertTrue(master["proxy"]["must_never_conflate"])
+        self.assertEqual(master["proxy"]["synthetic"]["series"], "Victor_proxy")
+        self.assertIn("portal_btc_full", master)
+        self.assertIn("delta_full_inventory", master)
+        self.assertIn("macro_quant", master)
+        self.assertIn("agent_trader", master)
+        self.assertIn("gate_btc_2_factory", master)
+
+    def test_full_master_v2_never_infers_missing_external_economics(self):
+        report = build(self._state(), "2026-09-09")
+        ext = report["full_master_v2"]["external_controls"]
+        self.assertEqual(ext["empiricus_delta"]["canonical_evidence_status"], "ABSENT_NOT_INFERRED")
+        for track in ("portal_btc", "portal_watchlist", "macro_quant", "agent_trader", "proxy_real", "cloud_delta", "delta_external_historical", "atlas_manual"):
+            self.assertEqual(ext[track]["canonical_evidence_status"], "ABSENT_NOT_INFERRED")
+            self.assertFalse(ext[track]["scientific_authority"])
+
+
     def test_writes_dated_and_latest_json_and_markdown(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -140,9 +166,12 @@ class ShadowExecutiveContractTest(unittest.TestCase):
             self.assertTrue((out / "SHADOW_EXECUTIVE_2026-09-09.md").is_file())
             self.assertTrue((out / "SHADOW_EXECUTIVE_LATEST.json").is_file())
             self.assertTrue((out / "SHADOW_EXECUTIVE_LATEST.md").is_file())
+            self.assertTrue((out / "SHADOW_EXECUTIVE_2026-09-09.html").is_file())
+            self.assertTrue((out / "SHADOW_EXECUTIVE_LATEST.html").is_file())
             latest = json.loads((out / "SHADOW_EXECUTIVE_LATEST.json").read_text(encoding="utf-8"))
             self.assertEqual(latest["fixed_block_count"], 13)
             self.assertEqual(latest["reporting_date"], "2026-09-09")
+            self.assertTrue(latest["full_master_v2"]["single_model"])
 
 
 if __name__ == "__main__":
