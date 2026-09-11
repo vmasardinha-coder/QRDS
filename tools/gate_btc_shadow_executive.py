@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 from datetime import date
 from pathlib import Path
@@ -551,19 +552,79 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     }
 
 
+def _radar_symbol(row: dict[str, Any]) -> str:
+    status = str(row.get("status") or "").upper()
+    freshness = str(row.get("freshness") or "").upper()
+    if "STALE" in freshness or "BLOCK" in status or "FAIL" in status:
+        return "🔴"
+    if any(token in status for token in ("WAIT", "READY", "ACTIVE_PROSPECTIVE", "COLLECT")):
+        return "🟡"
+    if any(token in status for token in ("ACTIVE", "PASS", "FRESH", "PRESENT")):
+        return "🟢"
+    return "⚪"
+
+
 def render_markdown(report: dict[str, Any]) -> str:
+    master = report["full_master_v2"]
     lines = [
-        f"# GATE BTC — Shadow Executive — {report['reporting_date']}",
+        f"# GATE BTC / QRDS — FULL MASTER v2 — {report['reporting_date']}",
         "",
         f"**Status:** {report['status']}  ",
         f"**Reference data:** {report.get('reference_data_date') or ND}  ",
-        "**Boundary:** RESEARCH_ONLY / SHADOW_ONLY / NOT_APPROVED / ORDERS=0 / REAL_CAPITAL=0",
+        "**Boundary:** RESEARCH_ONLY / SHADOW_ONLY / NOT_APPROVED / ENGINE_FEED=false / ORDERS=0 / REAL_CAPITAL=0",
         "",
+        "> Modelo único diário: técnico + científico + econômico + decisão. Fontes ausentes permanecem N/D; nada é inferido.",
+        "",
+        "## 🚦 Radar técnico",
+        "",
+        "| Farol | Track | Status | Clock | Freshness / authority |",
+        "|---|---|---|---|---|",
     ]
+    for row in master["technical_radar"]:
+        current = row.get("current")
+        target = row.get("target")
+        clock = f"{current}/{target}" if current is not None and target is not None else str(row.get("snapshots") or ND)
+        fa = " / ".join(str(v) for v in (row.get("freshness"), row.get("authority")) if v)
+        lines.append(f"| {_radar_symbol(row)} | {row['track']} | {row.get('status') or ND} | {clock} | {fa or ND} |")
+    lines += [
+        "",
+        "## 🧭 Modelo executivo único",
+        "",
+        "CICLO/ALOCAÇÃO → ALPHA/ROBÔS → REGIME/CONTEXTO → PRESERVATION → DELTA FULL → PORTAL BTC FULL → PROXY → MACRO/AGENTS → B3/MT5 → GATE BTC 2/FACTORY → ECONOMIC DECISION BOARD",
+        "",
+        "## 💰 Economic Decision Board",
+        "",
+        f"**Capital de referência:** R$ {master['economic_decision_board']['capital_reference_brl']:,}".replace(",", "."),
+        "",
+        "| Janela | Estado |",
+        "|---|---|",
+    ]
+    board = master["economic_decision_board"]
+    for key, label in (("historical_values","HISTORICAL"),("post_pit_values","POST-PIT"),("live_internal","LIVE / INTERNAL"),("live_external","LIVE / EXTERNAL"),("future_baseline","FUTURE BASELINE")):
+        obj = board[key]
+        state_text = "N/D — " + str(obj.get("reason")) if isinstance(obj, dict) and obj.get("status") == "NOT_AVAILABLE_NOT_INFERRED" else "PRESENT / INVENTORY"
+        lines.append(f"| {label} | {state_text} |")
+    lines += ["", "## 🌐 External / parallel evidence", "", "| Track | Evidence status | Boundary |", "|---|---|---|"]
+    for key, obj in master["external_controls"].items():
+        lines.append(f"| {obj.get('display_name', key)} | {obj.get('canonical_evidence_status', ND)} | inventory-only / no scientific authority |")
+    lines += ["", "## 🔬 FULL MASTER v2 — structured payload", ""]
+    lines.append("    " + json.dumps(master, sort_keys=True, ensure_ascii=False))
+    lines += ["", "## 🧱 Canonical 13-block compatibility appendix", ""]
     for block in report["blocks"]:
-        lines += [f"## {block['position']}. {block['title']}", "", "```json", json.dumps(block["content"], indent=2, sort_keys=True, ensure_ascii=False), "```", ""]
+        lines += [f"### {block['position']}. {block['title']}", "", "    " + json.dumps(block["content"], sort_keys=True, ensure_ascii=False), ""]
     lines += ["---", "Generated from canonical reporting state. Missing evidence is explicitly N/D and never inferred.", ""]
     return "\n".join(lines)
+
+
+def render_html(report: dict[str, Any]) -> str:
+    master = report["full_master_v2"]
+    cards = []
+    for row in master["technical_radar"]:
+        cards.append("<article class='card'><div class='light'>" + html.escape(_radar_symbol(row)) + "</div><h3>" + html.escape(str(row['track'])) + "</h3><p>" + html.escape(str(row.get('status') or ND)) + "</p><small>" + html.escape(str(row.get('freshness') or row.get('authority') or '')) + "</small></article>")
+    ext_rows = "".join("<tr><td>" + html.escape(str(v.get('display_name', k))) + "</td><td>" + html.escape(str(v.get('canonical_evidence_status', ND))) + "</td><td>inventory-only</td></tr>" for k, v in master["external_controls"].items())
+    sections = "".join("<details><summary>" + html.escape(k.replace('_',' ').title()) + "</summary><pre>" + html.escape(json.dumps(v, indent=2, sort_keys=True, ensure_ascii=False)) + "</pre></details>" for k, v in master.items() if k not in {"technical_radar", "external_controls"})
+    css = "body{margin:0;background:#0d1117;color:#f0f6fc;font-family:system-ui,sans-serif}.wrap{max-width:1280px;margin:auto;padding:24px}.sub,small{color:#8b949e}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0}.card,details,.panel{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:10px}.card h3{font-size:.95rem;margin:4px 0}.card p{font-size:.8rem;color:#8b949e;min-height:36px}.light{font-size:1.3rem}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #30363d;text-align:left;font-size:.85rem}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:#c9d1d9;font-size:.76rem}.badge{display:inline-block;border:1px solid #30363d;border-radius:999px;padding:4px 9px;margin-right:6px;font-size:.75rem}"
+    return "<!doctype html><html lang='pt-BR'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>GATE BTC / QRDS — FULL MASTER v2</title><style>" + css + "</style></head><body><main class='wrap'><h1>GATE BTC / QRDS — FULL MASTER v2</h1><p class='sub'>" + html.escape(report['reporting_date']) + " · reference " + html.escape(str(report.get('reference_data_date') or ND)) + "</p><p><span class='badge'>RESEARCH_ONLY</span><span class='badge'>SHADOW_ONLY</span><span class='badge'>NOT_APPROVED</span><span class='badge'>ORDERS=0</span><span class='badge'>REAL_CAPITAL=0</span></p><h2>🚦 Radar técnico</h2><section class='grid'>" + "".join(cards) + "</section><section class='panel'><h2>🌐 External / parallel evidence</h2><table><thead><tr><th>Track</th><th>Evidence</th><th>Boundary</th></tr></thead><tbody>" + ext_rows + "</tbody></table></section><h2>🧭 FULL MASTER v2</h2>" + sections + "</main></body></html>"
 
 
 def write_outputs(state_path: Path, output_dir: Path, reporting_date: str | None = None) -> tuple[Path, Path, Path]:
