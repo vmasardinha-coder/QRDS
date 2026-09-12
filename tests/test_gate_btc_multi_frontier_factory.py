@@ -12,11 +12,11 @@ def test_crypto_queue_is_waiting_source_and_isolated():
     m=load(Path("tools/gate_btc_factory/generate_crypto_family_queue.py"),"cg")
     c=json.loads((ROOT/"tools/gate_btc_factory/CRYPTO_FAMILY_FACTORY_CONTRACT.v1.json").read_text())
     q=m.build_queue(c)
-    assert q["family_count"]==8
-    assert q["counts"]=={"WAITING_SOURCE":8}
+    assert q["family_count"]==16
+    assert q["counts"]=={"WAITING_SOURCE":16}
     assert q["economics_read"] is False
     assert q["promotion_allowed"] is False
-    assert all(x["id"].startswith(("CRBF","CRCV")) for x in q["families"])
+    assert all(x["id"].startswith(("CRBF","CRCV","COKBF","COCV")) for x in q["families"])
 
 def test_router_preserves_512_and_redirects_capacity():
     m=load(Path("tools/gate_btc_factory/multi_frontier_router.py"),"r")
