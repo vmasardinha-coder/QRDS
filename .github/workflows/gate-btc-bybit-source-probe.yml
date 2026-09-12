@@ -1,0 +1,30 @@
+name: GATE BTC Bybit Source Probe
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/bybit_source_probe.py'
+      - '.github/workflows/gate-btc-bybit-source-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python tools/gate_btc_factory/bybit_source_probe.py
+      - run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('out/BYBIT_SOURCE_PROBE.json'))
+          assert x['scientific_credit']==0 and x['economics_read'] is False
+          assert x['status']=='PASS',x
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bybit-source-probe-${{ github.run_id }}
+          path: out/BYBIT_SOURCE_PROBE.json
+          if-no-files-found: error
