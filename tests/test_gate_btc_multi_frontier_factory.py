@@ -26,7 +26,7 @@ def test_router_preserves_512_and_redirects_capacity():
     assert out["b3_win_source_gate_green"] is False
     assert out["economics_read_from_blocked_frontiers"] is False
     assert out["scientific_credit_transfer"] is False
-    assert out["primary_capacity_target"]=="CRYPTO_FORWARD_UNSEEN_V1"
+    assert out["primary_capacity_target"]=="CRYPTO_ACCESSIBLE_FORWARD_V1"
 
 def test_b3_daily_is_materially_distinct_and_pre_economics():
     c=json.loads((ROOT/"tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_PREREG.v1.json").read_text())
