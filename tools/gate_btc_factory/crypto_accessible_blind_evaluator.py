@@ -44,11 +44,15 @@ def main():
     ledger={"schema":"qrds.factory.crypto_accessible_blind_ledger.v1","frontier":"CRYPTO_ACCESSIBLE_FORWARD_V1","source_admitted":adm.get("source_admitted_forward_only",False),"admitted_at_utc":adm.get("admitted_at_utc"),"observations":[],"checkpoint_economics":{},"partial_aggregate_economics_visible":False,"orders":0,"real_capital":0}
     if not ledger["source_admitted"]:
         Path(a.out).write_text(json.dumps(ledger,indent=2)+"\n");print(json.dumps({"status":"WAITING_SOURCE","observations":0}));return
+    activation="2026-09-14T00:00:00Z"
+    eligible_start=max(adm["admitted_at_utc"],activation)
+    ledger["activation_not_before_utc"]=activation
+    ledger["evaluation_start_not_before_utc"]=eligible_start
     files=[]
     for p in Path(a.audit_dir).glob("*.json"):
         try:x=json.loads(p.read_text())
         except Exception:continue
-        if x.get("captured_at_utc") and x["captured_at_utc"]>=adm["admitted_at_utc"]:
+        if x.get("captured_at_utc") and x["captured_at_utc"]>=eligible_start:
             req={("OKX",z,m) for z in ("BTC","ETH") for m in ("SPOT","PERPETUAL","FUNDING")}|{("COINBASE",z,"SPOT") for z in ("BTC","ETH")}
             got={key(r) for r in x.get("records",[])}
             if req.issubset(got):files.append((x["captured_at_utc"],x))
