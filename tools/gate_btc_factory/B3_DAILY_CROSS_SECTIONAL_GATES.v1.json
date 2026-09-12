@@ -1,0 +1,11 @@
+{
+  "schema":"qrds.factory.b3_daily_cross_sectional_gates.v1",
+  "frontier":"B3_DAILY_FRONTIER_V1",
+  "stage":"PREREGISTER_GATES",
+  "economics_read_before_gate_freeze":false,
+  "discovery_gate":{"window":["2022-01-01","2024-12-31"],"minimum_active_days":200,"primary_net_mean_daily_gt":0.0,"primary_annualized_sharpe_gte":0.50,"minimum_positive_calendar_years":2,"max_drawdown_lte":0.25,"month_concentration_lte":0.50},
+  "robustness_gate":{"cost_40bps_net_mean_daily_gt":0.0,"cost_40bps_annualized_sharpe_gte":0.25,"delayed_t_plus_2_primary_net_mean_daily_gt":0.0,"delayed_t_plus_2_primary_annualized_sharpe_gte":0.0,"delayed_t_plus_2_minimum_active_days":150},
+  "replication_gate":{"window":["2020-01-01","2021-12-31"],"evaluated_only_for_discovery_and_robustness_passers":true,"minimum_active_days":120,"primary_net_mean_daily_gt":0.0,"primary_annualized_sharpe_gte":0.25,"minimum_positive_calendar_years":1,"max_drawdown_lte":0.30,"month_concentration_lte":0.60},
+  "survivor_policy":{"requires_all_gates":true,"prospective_candidate_cap":2,"null_is_valid":true,"no_result_guided_rule_change":true,"no_result_guided_threshold_change":true},
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"FAIL_CLOSED":true}
+}
