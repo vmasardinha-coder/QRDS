@@ -134,9 +134,26 @@ def equity_decision(universe: dict[str, Series],
 
 
 def b3_decision(universe: dict[str, Series], benchmark_closes: list[float],
-                cdi_window_return: float | None) -> dict:
-    """Decisao da carteira B3. O obstaculo e o MAIOR entre Ibovespa e CDI."""
-    regime = equity_regime(benchmark_closes)
+                cdi_window_return: float | None,
+                regime_closes: list[float] | None = None,
+                regime_fonte: str | None = None) -> dict:
+    """Decisao da carteira B3. O obstaculo e o MAIOR entre Ibovespa e CDI.
+
+    O regime pode ser avaliado sobre outra serie que nao o indice. Isso existe
+    porque nenhuma fonte alcancavel da o Ibovespa longo — medido a 2026-09-02:
+    brapi so serve 3mo (64 pregoes), Yahoo responde 429, Stooq bloqueia, o SGS
+    nao tem a serie, e o MT5 da corretora nao carrega o IBOV a vista. Sem os
+    200 pregoes o filtro nao corria, e cair em 'risco ligado' por omissao era
+    fail-open num sistema fail-closed em todo o resto.
+
+    O que passa a ser avaliado por proxy e SO o regime. O obstaculo, o
+    benchmark e o alfa continuam a sair do indice verdadeiro: um substituto
+    responde bem a pergunta direccional do filtro, mas nao e o mandato contra
+    o qual esta carteira e julgada.
+    """
+    serie_regime = (benchmark_closes if regime_closes is None
+                    else regime_closes)
+    regime = equity_regime(serie_regime)
     exposure = 1.0 if regime == "risk_on" else config.B3_RISK_OFF_EXPOSURE
     ibov_score = equity_momentum_score(benchmark_closes)
 
@@ -154,7 +171,8 @@ def b3_decision(universe: dict[str, Series], benchmark_closes: list[float],
                              config.MAX_ACTIVE_POSITION_WEIGHT)
     return _decision(weights, regime, hurdle, ranked, rejected, note,
                      hurdle=hurdle_name,
-                     regime_avaliado=regime_avaliavel(benchmark_closes))
+                     regime_avaliado=regime_avaliavel(serie_regime),
+                     regime_fonte=regime_fonte)
 
 
 def crypto_momentum_score(closes: list[float]) -> float | None:
@@ -226,12 +244,15 @@ def crypto_decision(universe: dict[str, Series]) -> dict:
 
 def _decision(weights: dict[str, float], regime: str, hurdle_score: float | None,
               ranked: list[tuple[str, float]], rejected: list[dict],
-              note: str, hurdle: str, regime_avaliado: bool = True) -> dict:
+              note: str, hurdle: str, regime_avaliado: bool = True,
+              regime_fonte: str | None = None) -> dict:
     scores = dict(ranked)
     return {
         "weights": weights,
         "regime": regime,
         "regime_avaliado": regime_avaliado,
+        # De que serie saiu a SMA 200. None = a do proprio benchmark.
+        "regime_fonte": regime_fonte,
         "hurdle": hurdle,
         "hurdle_score": hurdle_score,
         "eligible_count": len(ranked),

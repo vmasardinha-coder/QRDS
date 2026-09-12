@@ -516,6 +516,84 @@ def probe_brapi_ranges(tickers: list[str] | None = None) -> str:
     return "\n" + "\n".join(out)
 
 
+def probe_proxy_bova11() -> str:
+    """O BOVA11 serve de substituto ao indice no filtro de regime?
+
+    Decidido pelo mandante a 2026-09-02, depois de esgotadas as fontes do
+    indice a vista: brapi so da 3mo, Yahoo 429, Stooq bloqueia, SGS nao tem, e
+    o MT5 da Hantec nao carrega historico do IBOV (so do IBOV11, que negoceia
+    uma vez por mes e desvia ate 1.07%).
+
+    Isto e mudanca de metodologia, nao troca de fonte, por isso mede-se antes:
+      1. o arquivo tem os 200 pregoes que a SMA precisa?
+      2. quao perto andam os retornos diarios do BOVA11 e do indice nos dias em
+         que temos os dois? E ai que aparece a taxa e o erro de seguicao.
+      3. que regime o BOVA11 diz hoje?
+
+    O ponto 2 e o que decide. Um ETF que siga o indice de perto responde a
+    pergunta do filtro — o mercado esta acima ou abaixo da sua media longa? —
+    quase sempre da mesma maneira. 'Quase sempre' nao e 'sempre', e perto do
+    limiar os dois podem discordar; o numero medido aqui e o que permite dizer
+    quanto isso e provavel, em vez de a esperar que nao aconteca.
+    """
+    from trading_agent import config, cotahist, data_sources, strategy
+
+    series = cotahist.load([config.B3S_UNDERLYING])
+    bova = series.get(config.B3S_UNDERLYING) or []
+    if len(bova) < 2:
+        return f"COTAHIST nao devolveu {config.B3S_UNDERLYING}"
+    fechos = [c for _, c, _ in bova]
+    linhas = [f"\n    {config.B3S_UNDERLYING}: {len(bova)} pregoes "
+              f"({bova[0][0]} -> {bova[-1][0]})"]
+
+    media = strategy.sma(fechos, config.SMA_REGIME_DAYS)
+    if media is None:
+        linhas.append(f"\n    SMA {config.SMA_REGIME_DAYS}: NAO calculavel "
+                      f"— {len(fechos)} pregoes, faltam "
+                      f"{config.SMA_REGIME_DAYS - len(fechos)}")
+    else:
+        regime = "risco ligado" if fechos[-1] >= media else "risco reduzido"
+        linhas.append(f"\n    SMA {config.SMA_REGIME_DAYS} = {media:,.2f} · "
+                      f"ultimo fecho {fechos[-1]:,.2f} · regime hoje: {regime}"
+                      f"\n        distancia ao limiar: "
+                      f"{(fechos[-1]/media - 1)*100:+.2f}%")
+
+    guardado = dict((d, c) for d, c, _ in
+                    data_sources._load_index_cache(config.B3_BENCHMARK))
+    proxy = dict((d, c) for d, c, _ in bova)
+    comuns = sorted(set(guardado) & set(proxy))
+    if len(comuns) < 3:
+        linhas.append(f"\n    so {len(comuns)} datas em comum com o indice: "
+                      f"nao da para medir o erro de seguicao")
+        return "".join(linhas)
+
+    ri, rp = [], []
+    for anterior, hoje in zip(comuns, comuns[1:]):
+        if guardado[anterior] > 0 and proxy[anterior] > 0:
+            ri.append(guardado[hoje] / guardado[anterior] - 1.0)
+            rp.append(proxy[hoje] / proxy[anterior] - 1.0)
+    n = len(ri)
+    mi, mp = sum(ri) / n, sum(rp) / n
+    cov = sum((a - mi) * (b - mp) for a, b in zip(ri, rp))
+    vi = sum((a - mi) ** 2 for a in ri) ** 0.5
+    vp = sum((b - mp) ** 2 for b in rp) ** 0.5
+    correl = cov / (vi * vp) if vi and vp else float("nan")
+    pior = max(abs(a - b) for a, b in zip(ri, rp))
+    acum_i = 1.0
+    acum_p = 1.0
+    for a, b in zip(ri, rp):
+        acum_i *= 1 + a
+        acum_p *= 1 + b
+    linhas.append(
+        f"\n    seguicao sobre {n} retornos diarios em comum:"
+        f"\n        correlacao: {correl:.4f}"
+        f"\n        pior diferenca num dia: {pior*100:.2f} pp"
+        f"\n        deriva acumulada na janela: "
+        f"{(acum_p - acum_i)*100:+.2f} pp "
+        f"(indice {(acum_i-1)*100:+.2f}%, proxy {(acum_p-1)*100:+.2f}%)")
+    return "".join(linhas)
+
+
 def probe_cotahist() -> str:
     """Serie historica oficial da B3 (COTAHIST): um ficheiro anual com todos
     os pregoes de todos os papeis.
@@ -684,6 +762,13 @@ def main(argv: list[str] | None = None) -> int:
                probe_cotahist)
         report("TradingView scanner — B3 (retrato, muda a metodologia)",
                probe_tradingview_b3)
+        print("\nFim da sonda.")
+        return 0
+
+    if argv and argv[0] == "b3proxy":
+        # O BOVA11 serve de substituto ao indice no filtro de regime?
+        report("BOVA11 como proxy do regime — medicao antes de decidir",
+               probe_proxy_bova11)
         print("\nFim da sonda.")
         return 0
 

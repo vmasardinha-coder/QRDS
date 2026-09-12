@@ -46,8 +46,13 @@ gráficos. A rotina diária do Claude apenas **lê e entrega** — não escreve.
   50%, escolhidas entre 149 altcoins. Sem alts qualificadas → 100% BTC. Se o BTC fechar abaixo da SMA 200,
   exposição cai para 50%.
 - **Ações B3** — mesmo momentum 12-1 sobre 49 ações líquidas da B3
-  (série oficial COTAHIST), top 8 em pesos iguais; filtro de regime Ibovespa vs
-  SMA 200. A caixa em BRL rende CDI diariamente (série SGS 12 do Banco
+  (série oficial COTAHIST), top 8 em pesos iguais. Filtro de regime: SMA 200
+  sobre o **BOVA11**, não sobre o índice — nenhuma fonte alcançável entrega o
+  Ibovespa longo, e o ETF vem do mesmo arquivo com 417 pregões (correlação
+  0.9894 nos retornos diários). Só o regime usa o proxy; obstáculo, benchmark
+  e alfa saem do Ibovespa real, e o relatório declara isso em cada ciclo —
+  detalhe e custo medido em [`CARTA_DE_OPERACAO.md`](CARTA_DE_OPERACAO.md).
+  A caixa em BRL rende CDI diariamente (série SGS 12 do Banco
   Central). Benchmarks: Ibovespa e CDI acumulado.
 - **Estruturadas B3** — financiamento coberto (covered call) em BOVA11:
   carteira 100% comprada, venda mensal de call ~3% OTM com prazo de 30 dias

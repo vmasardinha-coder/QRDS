@@ -1618,3 +1618,80 @@ class TestRegimeIsDeclaredNotAssumed(unittest.TestCase):
                                            "risk_on", regime_avaliado=True)
         regime = [ln for ln in linhas if "Regime" in ln]
         self.assertNotIn("NAO avaliado", regime[0])
+
+
+class TestB3RegimeProxy(unittest.TestCase):
+    """O regime da B3 sai do BOVA11; o obstaculo e o alfa saem do indice.
+
+    Nenhuma fonte alcancavel da o Ibovespa longo (medido no runner a
+    2026-09-02), por isso a SMA 200 passa a ser calculada sobre o ETF, que vem
+    do mesmo arquivo COTAHIST e tem 417 pregoes. A separacao e o ponto: um
+    substituto responde bem a pergunta direccional do filtro, mas nao e o
+    mandato contra o qual a carteira e julgada.
+    """
+
+    def _indice_curto(self):
+        # 75 pregoes: o que o cache tem hoje, longe dos 200 da SMA.
+        return flat_series(100.0, 75)
+
+    def test_regime_comes_from_the_proxy_not_the_index(self):
+        # O proxy esta claramente abaixo da sua propria SMA 200. Se ele fosse
+        # ignorado, o indice curto daria 'risk_on' por falta de historico — e
+        # era exactamente esse o fail-open que isto veio corrigir.
+        proxy = trending_series(200.0, -0.002, 260)
+        decisao = strategy.b3_decision({}, self._indice_curto(), None,
+                                       regime_closes=proxy,
+                                       regime_fonte="BOVA11")
+        self.assertEqual(decisao["regime"], "risk_off")
+        self.assertTrue(decisao["regime_avaliado"])
+        self.assertEqual(decisao["regime_fonte"], "BOVA11")
+
+    def test_the_index_still_decides_the_hurdle(self):
+        # O proxy nao pode contaminar a forca relativa: o obstaculo tem de sair
+        # do indice verdadeiro, que e o mandato desta carteira.
+        indice = trending_series(100.0, 0.001, 300)
+        proxy = flat_series(50.0, 260)
+        decisao = strategy.b3_decision({}, indice, None,
+                                       regime_closes=proxy,
+                                       regime_fonte="BOVA11")
+        self.assertEqual(decisao["hurdle"], "IBOV")
+        self.assertAlmostEqual(decisao["hurdle_score"],
+                               strategy.equity_momentum_score(indice))
+
+    def test_without_a_proxy_it_falls_back_to_the_index(self):
+        # Sem proxy o comportamento e o anterior: indice curto, filtro por
+        # avaliar. Degradar para 'nao avaliado' e honesto.
+        decisao = strategy.b3_decision({}, self._indice_curto(), None)
+        self.assertFalse(decisao["regime_avaliado"])
+        self.assertIsNone(decisao["regime_fonte"])
+
+    def _linhas(self, **kwargs):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", **kwargs)
+        return [ln for ln in linhas if "Regime" in ln][0]
+
+    def test_report_declares_the_proxy(self):
+        linha = self._linhas(regime_avaliado=True, regime_fonte="BOVA11")
+        self.assertIn("proxy (BOVA11)", linha)
+
+    def test_report_does_not_call_the_index_a_proxy_of_itself(self):
+        # No caminho de recurso a fonte volta a ser a do benchmark, e ai nao ha
+        # proxy nenhum a declarar.
+        linha = self._linhas(regime_avaliado=True, regime_fonte=None)
+        self.assertNotIn("proxy", linha)
+
+    def test_not_evaluated_wins_over_the_proxy_note(self):
+        # Serie curta e serie de outra origem sao coisas diferentes, e a
+        # primeira e a que importa dizer.
+        linha = self._linhas(regime_avaliado=False, regime_fonte="BOVA11")
+        self.assertIn("NAO avaliado", linha)
+        self.assertNotIn("proxy", linha)
+
+    def test_the_proxy_is_the_etf_already_downloaded_for_the_structured_sleeve(self):
+        # Se divergissem, o ciclo passaria a descarregar um papel a mais sem
+        # que ninguem tivesse decidido isso.
+        self.assertEqual(config.B3_REGIME_PROXY, config.B3S_UNDERLYING)

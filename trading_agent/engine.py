@@ -112,6 +112,7 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
     portfolio.log_decision(state, log_entry)
     return {"trades": trades, "decision": decision, "regime": regime,
             "regime_avaliado": decision.get("regime_avaliado", True),
+            "regime_fonte": decision.get("regime_fonte"),
             "log": log_entry, "targets": targets}
 
 
@@ -205,9 +206,26 @@ def run_b3(today: str) -> dict:
         cdi_window -= 1.0
 
     bench_closes = _closes(bench_series)
+
+    # A SMA 200 do regime sai do proxy, nao do indice: ver config.B3_REGIME_PROXY.
+    # Se o proxy faltar, volta-se ao indice — que nao tem os 200 pregoes e por
+    # isso deixa o filtro por avaliar, declarado no relatorio. Degradar para
+    # 'nao avaliado' e honesto; inventar um regime nao seria.
+    regime_closes, regime_fonte = None, config.B3_REGIME_PROXY
+    try:
+        regime_closes = _closes(
+            data_sources.fetch_b3_daily(config.B3_REGIME_PROXY))
+    except data_sources.DataSourceError as err:
+        data_sources._note_failure("regime_proxy", err)
+        # None significa 'a serie do proprio benchmark' — sem isto o relatorio
+        # rotularia o proprio indice como proxy de si mesmo.
+        regime_fonte = None
+
     outcome = _run_directional(
         "b3", today, universe, failed, prices, bench_series,
-        lambda eligible: strategy.b3_decision(eligible, bench_closes, cdi_window),
+        lambda eligible: strategy.b3_decision(eligible, bench_closes,
+                                              cdi_window, regime_closes,
+                                              regime_fonte),
         state, config.B3_SLIPPAGE_BPS)
 
     cdi_factor = data_sources.cdi_factor_since(cdi_rates,
