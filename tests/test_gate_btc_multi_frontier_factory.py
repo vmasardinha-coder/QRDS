@@ -56,7 +56,7 @@ def test_accessible_source_requires_three_complete_packets(tmp_path):
     (tmp_path/"2.json").write_text(json.dumps(_accessible_packet("2026-09-14T00:10:00Z",601000)))
     x=m.evaluate(tmp_path,None,3)
     assert x["source_admitted_forward_only"] is True
-    assert x["family_state"]=="READY_FORWARD"
+    assert x["family_state"]=="SOURCE_ADMITTED_PENDING_PREREG_ACTIVATION"
     assert x["economics_read"] is False
 
 def test_accessible_prereg_freezes_no_partial_feedback():
