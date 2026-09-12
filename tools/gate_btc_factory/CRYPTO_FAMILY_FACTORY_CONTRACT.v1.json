@@ -1,26 +1,154 @@
 {
-  "schema":"qrds.factory.crypto_family_factory_contract.v1",
-  "frontier":"CRYPTO_FORWARD_UNSEEN_V1",
-  "stage":"FAMILY_GENERATION_WAITING_SOURCE_FREEZE",
-  "prerequisites":[
+  "schema": "qrds.factory.crypto_family_factory_contract.v1",
+  "frontier": "CRYPTO_FORWARD_UNSEEN_V1",
+  "stage": "FAMILY_GENERATION_WAITING_SOURCE_FREEZE",
+  "prerequisites": [
     "CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json",
-    "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY_PREREG.v1.json"
+    "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY_PREREG.v1.json",
+    "CRYPTO_ACCESSIBLE_FORWARD_PREREG.v1.json"
   ],
-  "id_allocation_policy":"IDs may be allocated only after mechanism preregistration is merged; allocation itself has zero scientific credit.",
-  "family_states":["PREREGISTERED","WAITING_SOURCE","READY_FORWARD","EVALUATED","REJECTED","SURVIVOR"],
-  "families":[
-    {"id":"CRBF01","mechanism":"BASIS_SIGN_CONTINUATION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction follows sign of causally-known instantaneous basis"},
-    {"id":"CRBF02","mechanism":"BASIS_SIGN_REVERSION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction opposes sign of causally-known instantaneous basis"},
-    {"id":"CRBF03","mechanism":"FUNDING_SIGN_CONTINUATION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction follows sign of currently-known official funding rate"},
-    {"id":"CRBF04","mechanism":"FUNDING_SIGN_REVERSION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction opposes sign of currently-known official funding rate"},
-    {"id":"CRCV01","mechanism":"VENUE_LEAD_CONTINUATION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"target venue direction follows causally-prior source-venue signed completed-bucket return"},
-    {"id":"CRCV02","mechanism":"VENUE_LEAD_REVERSION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"target venue direction opposes causally-prior source-venue signed completed-bucket return"},
-    {"id":"CRCV03","mechanism":"DISLOCATION_CONVERGENCE","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"direction targets convergence of causally-known venue mid versus median qualified venues"},
-    {"id":"CRCV04","mechanism":"DISLOCATION_CONTINUATION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"direction follows causally-known venue dislocation"}
+  "id_allocation_policy": "IDs may be allocated only after mechanism preregistration is merged; allocation itself has zero scientific credit.",
+  "family_states": [
+    "PREREGISTERED",
+    "WAITING_SOURCE",
+    "READY_FORWARD",
+    "EVALUATED",
+    "REJECTED",
+    "SURVIVOR"
   ],
-  "source_freeze_required_before_ready_forward":["exact venue endpoints","symbol mapping","bucket size","decision clock","entry/exit/hold","cost/slippage model","missing-data rule","dataset/stream version binding","hash/manifest semantics"],
-  "economics_read_allowed":false,
-  "family_generation_is_evidence":false,
-  "scientific_credit":0,
-  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+  "families": [
+    {
+      "id": "CRBF01",
+      "mechanism": "BASIS_SIGN_CONTINUATION",
+      "channel": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "state": "WAITING_SOURCE",
+      "rule": "direction follows sign of causally-known instantaneous basis"
+    },
+    {
+      "id": "CRBF02",
+      "mechanism": "BASIS_SIGN_REVERSION",
+      "channel": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "state": "WAITING_SOURCE",
+      "rule": "direction opposes sign of causally-known instantaneous basis"
+    },
+    {
+      "id": "CRBF03",
+      "mechanism": "FUNDING_SIGN_CONTINUATION",
+      "channel": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "state": "WAITING_SOURCE",
+      "rule": "direction follows sign of currently-known official funding rate"
+    },
+    {
+      "id": "CRBF04",
+      "mechanism": "FUNDING_SIGN_REVERSION",
+      "channel": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "state": "WAITING_SOURCE",
+      "rule": "direction opposes sign of currently-known official funding rate"
+    },
+    {
+      "id": "CRCV01",
+      "mechanism": "VENUE_LEAD_CONTINUATION",
+      "channel": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "state": "WAITING_SOURCE",
+      "rule": "target venue direction follows causally-prior source-venue signed completed-bucket return"
+    },
+    {
+      "id": "CRCV02",
+      "mechanism": "VENUE_LEAD_REVERSION",
+      "channel": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "state": "WAITING_SOURCE",
+      "rule": "target venue direction opposes causally-prior source-venue signed completed-bucket return"
+    },
+    {
+      "id": "CRCV03",
+      "mechanism": "DISLOCATION_CONVERGENCE",
+      "channel": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "state": "WAITING_SOURCE",
+      "rule": "direction targets convergence of causally-known venue mid versus median qualified venues"
+    },
+    {
+      "id": "CRCV04",
+      "mechanism": "DISLOCATION_CONTINUATION",
+      "channel": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "state": "WAITING_SOURCE",
+      "rule": "direction follows causally-known venue dislocation"
+    },
+    {
+      "id": "COKBF01",
+      "mechanism": "OKX_BASIS_CONTINUATION",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "signed completed 5m OKX perp-vs-spot close basis"
+    },
+    {
+      "id": "COKBF02",
+      "mechanism": "OKX_BASIS_REVERSION",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "opposite signed completed 5m OKX perp-vs-spot close basis"
+    },
+    {
+      "id": "COKBF03",
+      "mechanism": "OKX_FUNDING_CONTINUATION",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "signed causally captured OKX funding state"
+    },
+    {
+      "id": "COKBF04",
+      "mechanism": "OKX_FUNDING_REVERSION",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "opposite signed causally captured OKX funding state"
+    },
+    {
+      "id": "COCV01",
+      "mechanism": "OKX_LEADS_COINBASE",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "Coinbase next bucket follows completed OKX spot bucket return"
+    },
+    {
+      "id": "COCV02",
+      "mechanism": "COINBASE_LEADS_OKX",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "OKX next bucket follows completed Coinbase spot bucket return"
+    },
+    {
+      "id": "COCV03",
+      "mechanism": "SPOT_DISLOCATION_CONVERGENCE",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "OKX/Coinbase spot close dislocation converges next bucket"
+    },
+    {
+      "id": "COCV04",
+      "mechanism": "SPOT_DISLOCATION_CONTINUATION",
+      "channel": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "state": "WAITING_SOURCE",
+      "rule": "OKX/Coinbase spot close dislocation continues next bucket"
+    }
+  ],
+  "source_freeze_required_before_ready_forward": [
+    "three consecutive complete physically captured packets under the family's own source contract",
+    "immutable packet hashes",
+    "causal activation timestamp",
+    "fixed clock/hold/cost/missing-data rules"
+  ],
+  "economics_read_allowed": false,
+  "family_generation_is_evidence": false,
+  "scientific_credit": 0,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
 }
