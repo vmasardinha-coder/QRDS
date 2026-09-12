@@ -1,0 +1,44 @@
+{
+  "schema":"qrds.factory.b3_daily_cross_sectional_prereg.v1",
+  "stage":"PREREGISTER",
+  "frontier":"B3_DAILY_FRONTIER_V1",
+  "source_contract":"tools/gate_btc_factory/B3_COTAHIST_DATA_SOURCE.v1.json",
+  "source_status_required":"OFFICIAL_PRIMARY_SOURCE_PHYSICAL_CAPTURE_QUALIFIED",
+  "prior_failed_block":"B3_BLUECHIPS_UNIVARIATE",
+  "material_difference":"Cross-sectional relative ranking across contemporaneously eligible instruments; prior EQB block used own-instrument absolute univariate states.",
+  "economics_read_for_this_family_block":false,
+  "family_count":6,
+  "family_ids":["B3D01","B3D02","B3D03","B3D04","B3D05","B3D06"],
+  "windows":{"independent_replication":["2020-01-01","2021-12-31"],"discovery":["2022-01-01","2024-12-31"],"cutoff_exclusive":"2026-08-10"},
+  "instrument_filter":{
+    "market_type":"010_SPOT",
+    "bdi_code":"02_STANDARD_LOT",
+    "identity":"trading_code+isin+market_type+security_specification",
+    "eligibility_lookback_sessions":60,
+    "eligibility_min_observations":45,
+    "eligibility_median_traded_value_brl":20000000,
+    "eligibility_median_trade_count":500,
+    "pit_rule":"eligibility computed only from each instrument's causally-prior observations"
+  },
+  "same_day_features":{
+    "body":"(close-open)/open",
+    "intraday_range":"(high-low)/open",
+    "close_location":"(close-low)/(high-low) when high>low",
+    "volume_shock":"traded_value/median(traded_value prior 20 eligible observations)"
+  },
+  "cross_sectional_rule":"At completed day t, rank only eligible instruments using feature_t; top and bottom terciles are determined from that day's eligible cross-section with deterministic trading_code tie-break. Decision after t close; execute t+1 open to t+1 close.",
+  "families":[
+    {"id":"B3D01","mechanism":"CS_BODY_CONTINUATION","rule":"long top tercile body_t; short bottom tercile"},
+    {"id":"B3D02","mechanism":"CS_BODY_REVERSAL","rule":"short top tercile body_t; long bottom tercile"},
+    {"id":"B3D03","mechanism":"CS_RANGE_CONTINUATION","rule":"long top tercile intraday_range_t; short bottom tercile"},
+    {"id":"B3D04","mechanism":"CS_RANGE_REVERSAL","rule":"short top tercile intraday_range_t; long bottom tercile"},
+    {"id":"B3D05","mechanism":"CS_VOLUME_SHOCK_CONTINUATION","rule":"long top tercile volume_shock_t; short bottom tercile"},
+    {"id":"B3D06","mechanism":"CS_VOLUME_SHOCK_REVERSAL","rule":"short top tercile volume_shock_t; long bottom tercile"}
+  ],
+  "portfolio":"equal notional long leg + equal notional short leg, gross exposure 1.0, market-neutral by construction when both legs exist",
+  "fixed_cost_model":{"primary_round_trip_bps":30,"robustness_round_trip_bps":[20,30,40],"retune_allowed":false},
+  "gates_ref":"tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_GATES.v1.json",
+  "anti_leakage":{"current_constituents_forbidden":true,"overnight_price_ratio_used":false,"cross_date_adjusted_returns_used":false,"eqb_outcomes_used_for_threshold_selection":false},
+  "economics_read_allowed_after_prereg_and_gate_freeze":true,
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}
