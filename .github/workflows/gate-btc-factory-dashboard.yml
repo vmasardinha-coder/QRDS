@@ -1,0 +1,25 @@
+name: GATE BTC Factory Dashboard Validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/FACTORY_DASHBOARD_LATEST.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_RESULT_SUMMARY.v1.json'
+      - 'tests/test_gate_btc_factory_dashboard.py'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/FACTORY_DASHBOARD_LATEST.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_RESULT_SUMMARY.v1.json'
+      - 'tests/test_gate_btc_factory_dashboard.py'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install --disable-pip-version-check --no-input pytest
+      - run: python -m pytest -q tests/test_gate_btc_factory_dashboard.py
