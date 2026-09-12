@@ -1,0 +1,71 @@
+{
+  "schema": "qrds.factory.crypto_basis_funding_prereg.v1",
+  "stage": "PREREGISTER_MECHANISM_ONLY",
+  "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+  "created_date": "2026-09-12",
+  "activation_not_before_utc": "2026-09-14T00:00:00Z",
+  "purpose": "Freeze causal data semantics and falsifiable hypotheses for a new crypto spot/perpetual basis+funding challenger before any economics are read.",
+  "scientific_credit_inherited": 0,
+  "family_ids_allocated": false,
+  "economics_read_before_prereg": false,
+  "incumbents_read_only": ["DELTA","QOS","MOMENTUM","GATEWAY","V16"],
+  "source_contract": {
+    "venues": ["BINANCE","OKX"],
+    "market_types": ["SPOT","PERPETUAL"],
+    "assets": ["BTC","ETH"],
+    "required_fields": ["timestamp_utc","venue","asset","market_type","symbol","bid","ask","last","volume"],
+    "additional_perpetual_fields": ["funding_rate","funding_timestamp","open_interest_if_available"],
+    "timestamp_policy": "UTC only; exchange event timestamps preserved; ingestion timestamp stored separately",
+    "symbol_mapping_policy": "Explicit immutable venue-symbol mapping required before evaluation",
+    "source_qualification_required": true,
+    "dataset_hash_required": true
+  },
+  "feature_definitions": {
+    "spot_mid": "(best_bid+best_ask)/2",
+    "perp_mid": "(best_bid+best_ask)/2",
+    "instantaneous_basis": "(perp_mid/spot_mid)-1",
+    "funding_rate": "official exchange funding rate applicable at the decision timestamp",
+    "funding_basis_state": "ordered pair (instantaneous_basis, funding_rate); no thresholding at prereg stage"
+  },
+  "causality": {
+    "lookahead_forbidden": true,
+    "future_funding_forbidden": true,
+    "revised_history_for_selection_forbidden": true,
+    "decision_inputs": "Only observations with exchange event timestamp <= decision timestamp",
+    "late_or_missing_observation_policy": "FAIL_CLOSED_NO_SIGNAL"
+  },
+  "falsifiable_hypotheses": [
+    {
+      "hypothesis_id": "BF_H1",
+      "statement": "The signed spot-perpetual basis and currently-known funding state contains forward information about subsequent spot-versus-perpetual relative returns."
+    },
+    {
+      "hypothesis_id": "BF_H2",
+      "statement": "The predictive content, if any, remains directionally stable across BTC and ETH and across Binance and OKX under identical feature definitions."
+    }
+  ],
+  "evaluation_policy": {
+    "forward_or_independent_unseen_only": true,
+    "historical_threshold_mining": false,
+    "threshold_grid_allowed": false,
+    "direction_flip_after_results": false,
+    "hold_change_after_results": false,
+    "cost_change_after_results": false,
+    "promotion_allowed_at_this_stage": false,
+    "economics_feedback_allowed_at_this_stage": false
+  },
+  "mortality": ["SOURCE_QA_FAIL","CLOCK_MISMATCH","SYMBOL_MAPPING_FAIL","DATA_GAP","HYPOTHESIS_NOT_SUPPORTED"],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  },
+  "next_action": "QUALIFY_AND_HASH_FORWARD_DATA_SOURCES_THEN_FREEZE_EXECUTION_CLOCK_AND_COST_MODEL_BEFORE_ANY_ECONOMICS"
+}

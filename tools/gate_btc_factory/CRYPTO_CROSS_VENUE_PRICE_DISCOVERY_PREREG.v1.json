@@ -1,0 +1,76 @@
+{
+  "schema": "qrds.factory.crypto_cross_venue_price_discovery_prereg.v1",
+  "stage": "PREREGISTER_MECHANISM_ONLY",
+  "channel_id": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+  "created_date": "2026-09-12",
+  "activation_not_before_utc": "2026-09-14T00:00:00Z",
+  "purpose": "Freeze synchronized multi-venue data semantics and falsifiable lead-lag hypotheses before any economics are read.",
+  "scientific_credit_inherited": 0,
+  "family_ids_allocated": false,
+  "economics_read_before_prereg": false,
+  "incumbents_read_only": ["DELTA","QOS","MOMENTUM","GATEWAY","V16"],
+  "source_contract": {
+    "venues": ["BINANCE","OKX","COINBASE"],
+    "market_type": "SPOT",
+    "assets": ["BTC","ETH"],
+    "required_fields": ["timestamp_utc","venue","asset","symbol","bid","ask","last","volume"],
+    "timestamp_policy": "UTC only; exchange event timestamps preserved; ingestion timestamp stored separately",
+    "clock_alignment": "No interpolation across missing venue observations; comparisons require all participating venues to have causally available observations for the same completed clock bucket",
+    "symbol_mapping_policy": "Explicit immutable venue-symbol mapping required before evaluation",
+    "source_qualification_required": true,
+    "dataset_hash_required": true
+  },
+  "feature_definitions": {
+    "mid": "(best_bid+best_ask)/2",
+    "completed_bucket_return": "mid_close(bucket_t)/mid_close(bucket_t-1)-1",
+    "cross_venue_dislocation": "venue_A_mid/median(mid of other qualified venues)-1",
+    "lead_lag_input": "Only completed bucket_t observations; bucket_t+1 is never read at decision time",
+    "threshold_policy": "No optimized threshold; non-zero signed return/dislocation states only at prereg stage"
+  },
+  "causality": {
+    "lookahead_forbidden": true,
+    "future_bucket_forbidden": true,
+    "asynchronous_quote_peeking_forbidden": true,
+    "revised_history_for_selection_forbidden": true,
+    "late_or_missing_observation_policy": "FAIL_CLOSED_NO_SIGNAL"
+  },
+  "falsifiable_hypotheses": [
+    {
+      "hypothesis_id": "CV_H1",
+      "statement": "A causally prior signed return on one venue contains forward information about the next synchronized return on another venue."
+    },
+    {
+      "hypothesis_id": "CV_H2",
+      "statement": "A causally prior cross-venue price dislocation contains forward information about convergence in the following synchronized bucket."
+    },
+    {
+      "hypothesis_id": "CV_H3",
+      "statement": "Any detected lead-lag relation must replicate across BTC and ETH without venue-specific threshold retuning."
+    }
+  ],
+  "evaluation_policy": {
+    "forward_or_independent_unseen_only": true,
+    "historical_leader_selection_forbidden": true,
+    "historical_threshold_mining": false,
+    "threshold_grid_allowed": false,
+    "direction_flip_after_results": false,
+    "hold_change_after_results": false,
+    "cost_change_after_results": false,
+    "promotion_allowed_at_this_stage": false,
+    "economics_feedback_allowed_at_this_stage": false
+  },
+  "mortality": ["SOURCE_QA_FAIL","CLOCK_MISMATCH","SYMBOL_MAPPING_FAIL","DATA_GAP","HYPOTHESIS_NOT_SUPPORTED"],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  },
+  "next_action": "QUALIFY_AND_HASH_FORWARD_MULTI_VENUE_DATA_THEN_FREEZE_BUCKET_SIZE_EXECUTION_CLOCK_AND_COST_MODEL_BEFORE_ANY_ECONOMICS"
+}
