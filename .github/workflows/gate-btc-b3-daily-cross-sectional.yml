@@ -1,0 +1,71 @@
+name: GATE BTC B3 Daily Cross Sectional
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_GATES.v1.json'
+      - 'tools/gate_btc_factory/b3_daily_cross_sectional_execute.py'
+      - '.github/workflows/gate-btc-b3-daily-cross-sectional.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_GATES.v1.json'
+      - 'tools/gate_btc_factory/b3_daily_cross_sectional_execute.py'
+      - '.github/workflows/gate-btc-b3-daily-cross-sectional.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prereg-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m py_compile tools/gate_btc_factory/b3_daily_cross_sectional_execute.py
+      - run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_PREREG.v1.json'))
+          g=json.load(open('tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_GATES.v1.json'))
+          assert p['economics_read_for_this_family_block'] is False
+          assert g['economics_read_before_gate_freeze'] is False
+          assert p['family_ids']==[f'B3D{i:02d}' for i in range(1,7)]
+          assert p['anti_leakage']['eqb_outcomes_used_for_threshold_selection'] is False
+          print('B3_DAILY_PREREG_FREEZE=PASS')
+          PY
+  execute-after-merge:
+    if: github.event_name != 'pull_request'
+    needs: prereg-validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Capture frozen official COTAHIST
+        run: python tools/gate_btc_factory/b3_cotahist_capture.py --years 2020-2026 --out artifacts/cotahist
+      - name: Execute frozen cross-sectional family block
+        run: python tools/gate_btc_factory/b3_daily_cross_sectional_execute.py --capture-dir artifacts/cotahist --out artifacts/b3_daily/RESULT.json
+      - name: Assert isolation
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/b3_daily/RESULT.json'))
+          assert x['family_count']==6
+          assert x['prospective_activation_performed'] is False
+          assert x['economics_feedback_to_other_frontiers'] is False
+          s=x['safety'];assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['ENGINE_FEED'] is False
+          print('B3_DAILY_EXECUTION_SAFETY=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b3-daily-cross-sectional-result-${{ github.run_id }}
+          path: artifacts/b3_daily/RESULT.json
+          if-no-files-found: error
+          retention-days: 90
