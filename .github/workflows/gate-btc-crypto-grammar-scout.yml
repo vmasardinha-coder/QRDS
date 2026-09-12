@@ -1,6 +1,12 @@
 name: GATE BTC Crypto Grammar Scout
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/**'
+      - '.github/workflows/gate-btc-crypto-grammar-scout.yml'
+      - '.github/workflows/gate-btc-invalidated-512-partial-triage.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 12 * * *'
