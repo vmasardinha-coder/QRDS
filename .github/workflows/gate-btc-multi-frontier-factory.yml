@@ -49,5 +49,7 @@ jobs:
           assert r['orders']==0 and r['real_capital']==0
           print('MULTI_FRONTIER_SAFETY=PASS')
           PY
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check --no-input pytest
       - name: Unit tests
         run: python -m pytest -q tests/test_gate_btc_multi_frontier_factory.py
