@@ -1,0 +1,37 @@
+{
+  "schema": "qrds.factory.invalidated_partial_triage_contract.v1",
+  "purpose": "Use partial source evidence only for structural triage and prioritization. Never promote, reject economically, or satisfy Strict V2.",
+  "strict_v2_unchanged": true,
+  "strict_v2": {
+    "namespace": "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2",
+    "minimum_sessions_total": 322,
+    "minimum_discovery_sessions": 161,
+    "minimum_replication_sessions": 161
+  },
+  "allowed_outputs": [
+    "STRUCTURAL_DUPLICATE",
+    "STRUCTURAL_CONTRACT_ERROR",
+    "NOT_TRIAGEABLE_PARTIAL_CAPACITY",
+    "PARTIAL_TRIAGE_ELIGIBLE_NO_SCIENTIFIC_CREDIT"
+  ],
+  "forbidden_outputs": [
+    "SCIENTIFIC_SURVIVOR",
+    "SCIENTIFIC_REJECTION_FROM_PARTIAL_PERFORMANCE",
+    "PROMOTION",
+    "ECONOMICS_FEEDBACK"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  }
+}

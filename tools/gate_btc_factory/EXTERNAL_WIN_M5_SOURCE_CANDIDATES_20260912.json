@@ -1,0 +1,103 @@
+{
+  "schema": "qrds.factory.external_win_m5_source_candidates.v1",
+  "generated_date": "2026-09-12",
+  "strict_v2_namespace": "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2",
+  "required_contract": {
+    "instrument": "WIN B3 Mini Index Futures",
+    "bar_interval": "M5_or_tick_convertible_deterministically_to_M5",
+    "window_start": "2025-01-01",
+    "window_end": "2026-08-09",
+    "minimum_sessions_total": 322,
+    "minimum_discovery_sessions": 161,
+    "minimum_replication_sessions": 161,
+    "must_prove": [
+      "exact_contract_identity",
+      "timezone_and_session_semantics",
+      "publication_semantics",
+      "revision_semantics",
+      "point_in_time_validity",
+      "independent_unseen_evaluation",
+      "hash_bound_dataset"
+    ]
+  },
+  "candidates": [
+    {
+      "provider": "Nelogica",
+      "product": "Base Historica de Dados / historical CSV-sFTP",
+      "priority": "P0_VENDOR_CONFIRMATION",
+      "public_documentation_claim": "Intraday and Tick-by-Tick historical coverage for WINFUT/WDOFUT since 2012-05-01; sFTP delivery available.",
+      "potential_fit": "HIGH",
+      "not_yet_proven": [
+        "exact individual-contract identity vs continuous series",
+        "5-minute native or deterministic tick aggregation layout",
+        "timezone",
+        "publication timestamps",
+        "revision policy",
+        "PIT semantics",
+        "full requested 2025-01-01/2026-08-09 deliverability",
+        "commercial terms"
+      ],
+      "source_urls": [
+        "https://ajuda.nelogica.com.br/hc/pt-br/articles/11169188636443-Disponibilidade-de-Dados-Hist%C3%B3ricos-para-exporta%C3%A7%C3%A3o-em-CSV",
+        "https://ajuda.nelogica.com.br/hc/pt-br/articles/11169074066715-Introdu%C3%A7%C3%A3o-ao-produto-Base-Hist%C3%B3rica-de-Dados"
+      ]
+    },
+    {
+      "provider": "Cedro Technologies",
+      "product": "Market Data Cedro / historical B3/BM&F",
+      "priority": "P0_VENDOR_CONFIRMATION",
+      "public_documentation_claim": "Cedro states it provides historical series for B3 futures and historical BMF data back to 2007; Tick-by-Tick service is delivered by FTP with intraday trade updates.",
+      "potential_fit": "HIGH_BUT_GRANULARITY_AND_PIT_REQUIRE_VENDOR_CONFIRMATION",
+      "not_yet_proven": [
+        "exact WIN individual-contract historical coverage for 2025-01-01/2026-08-09",
+        "native M5 vs tick historical retrieval semantics",
+        "timezone/session boundaries",
+        "publication timing",
+        "revision/version policy",
+        "point-in-time reproducibility",
+        "dataset hash/versioning",
+        "commercial terms"
+      ],
+      "source_urls": [
+        "https://cedrotech.com/blog/api-market-data-b3-acoes-e-futuros/",
+        "https://cedrotech.com/produtos/market-data-cedro/",
+        "https://ajuda.cedrotech.com/market-data/quais-sao-as-apis-do-market-data-cedro/"
+      ]
+    },
+    {
+      "provider": "brapi",
+      "product": "Futures historical API",
+      "priority": "CROSSCHECK_ONLY",
+      "public_documentation_claim": "Futures historical endpoint is daily/EOD and about one year of coverage.",
+      "potential_fit": "INSUFFICIENT_FOR_STRICT_V2_M5",
+      "useful_for": [
+        "contract metadata",
+        "expiration dates",
+        "EOD cross-check"
+      ],
+      "source_urls": [
+        "https://brapi.dev/docs/futuros",
+        "https://brapi.dev/docs/futuros/historico"
+      ]
+    },
+    {
+      "provider": "B3",
+      "product": "UP2DATA",
+      "priority": "REFERENCE_OR_VENDOR_PATH",
+      "public_documentation_claim": "UP2DATA is primarily EOD/reference; B3 FAQ directs users seeking historical products not exposed on the site to authorized distributors.",
+      "potential_fit": "NOT_DIRECTLY_PROVEN_FOR_STRICT_V2_M5",
+      "source_urls": [
+        "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/central-de-ajuda/",
+        "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/dados-disponiveis/"
+      ]
+    }
+  ],
+  "decision": "DO_NOT_CHANGE_STRICT_V2. PRIORITIZE NELOGICA AND CEDRO VENDOR CONFIRMATION FOR RAW HISTORICAL WIN DATA; USE BRAPI ONLY AS METADATA/EOD CROSSCHECK.",
+  "safety": {
+    "scientific_contract_changed": false,
+    "economics_read": false,
+    "promotion_allowed": false,
+    "orders": 0,
+    "real_capital": 0
+  }
+}

@@ -1,0 +1,97 @@
+name: GATE BTC Crypto Grammar Scout
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 12 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/autonomous_crypto_grammar_scout.py'
+      - 'tests/test_gate_btc_autonomous_crypto_grammar_scout.py'
+      - '.github/workflows/gate-btc-crypto-grammar-scout.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-crypto-grammar-scout-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test isolated scout boundary
+        run: |
+          python -m pip install -q requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/autonomous_crypto_grammar_scout.py
+          pytest -q tests/test_gate_btc_autonomous_crypto_grammar_scout.py
+      - name: Scout new crypto mechanisms
+        if: github.event_name != 'pull_request'
+        run: |
+          python source_repo/tools/gate_btc_factory/autonomous_crypto_grammar_scout.py \
+            --existing-dir runtime_repo/runtime/factory_autonomy/crypto_grammar_scout_audits \
+            --output CRYPTO_GRAMMAR_SCOUT_RUNTIME.json
+      - name: Assert no economics or incumbent mutation
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('CRYPTO_GRAMMAR_SCOUT_RUNTIME.json'))
+          assert d['mode']=='IDEATION_ONLY_NO_ECONOMICS'
+          assert d['history_used_for_selection'] is False
+          for p in d['proposals']:
+              assert p['economics_read'] is False
+              assert p['may_allocate_family_id'] is False
+              assert p['may_modify_incumbent'] is False
+          PY
+      - name: Persist append-only crypto scout ledger
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy/crypto_grammar_scout_audits
+          cp CRYPTO_GRAMMAR_SCOUT_RUNTIME.json "runtime_repo/runtime/factory_autonomy/crypto_grammar_scout_audits/${{ github.run_id }}.json"
+          cp CRYPTO_GRAMMAR_SCOUT_RUNTIME.json runtime_repo/runtime/factory_autonomy/CRYPTO_GRAMMAR_SCOUT_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/crypto_grammar_scout_audits runtime/factory_autonomy/CRYPTO_GRAMMAR_SCOUT_RUNTIME.json
+          git commit -m "Factory crypto grammar scout ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-crypto-grammar-scout-${{ github.run_id }}
+          path: CRYPTO_GRAMMAR_SCOUT_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
