@@ -1,0 +1,26 @@
+{
+  "schema":"qrds.factory.crypto_family_factory_contract.v1",
+  "frontier":"CRYPTO_FORWARD_UNSEEN_V1",
+  "stage":"FAMILY_GENERATION_WAITING_SOURCE_FREEZE",
+  "prerequisites":[
+    "CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json",
+    "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY_PREREG.v1.json"
+  ],
+  "id_allocation_policy":"IDs may be allocated only after mechanism preregistration is merged; allocation itself has zero scientific credit.",
+  "family_states":["PREREGISTERED","WAITING_SOURCE","READY_FORWARD","EVALUATED","REJECTED","SURVIVOR"],
+  "families":[
+    {"id":"CRBF01","mechanism":"BASIS_SIGN_CONTINUATION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction follows sign of causally-known instantaneous basis"},
+    {"id":"CRBF02","mechanism":"BASIS_SIGN_REVERSION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction opposes sign of causally-known instantaneous basis"},
+    {"id":"CRBF03","mechanism":"FUNDING_SIGN_CONTINUATION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction follows sign of currently-known official funding rate"},
+    {"id":"CRBF04","mechanism":"FUNDING_SIGN_REVERSION","channel":"CRYPTO_SPOT_PERP_BASIS_FUNDING","state":"WAITING_SOURCE","rule":"direction opposes sign of currently-known official funding rate"},
+    {"id":"CRCV01","mechanism":"VENUE_LEAD_CONTINUATION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"target venue direction follows causally-prior source-venue signed completed-bucket return"},
+    {"id":"CRCV02","mechanism":"VENUE_LEAD_REVERSION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"target venue direction opposes causally-prior source-venue signed completed-bucket return"},
+    {"id":"CRCV03","mechanism":"DISLOCATION_CONVERGENCE","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"direction targets convergence of causally-known venue mid versus median qualified venues"},
+    {"id":"CRCV04","mechanism":"DISLOCATION_CONTINUATION","channel":"CRYPTO_CROSS_VENUE_PRICE_DISCOVERY","state":"WAITING_SOURCE","rule":"direction follows causally-known venue dislocation"}
+  ],
+  "source_freeze_required_before_ready_forward":["exact venue endpoints","symbol mapping","bucket size","decision clock","entry/exit/hold","cost/slippage model","missing-data rule","dataset/stream version binding","hash/manifest semantics"],
+  "economics_read_allowed":false,
+  "family_generation_is_evidence":false,
+  "scientific_credit":0,
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}

@@ -1,0 +1,99 @@
+name: GATE BTC Crypto Forward Public Capture
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/crypto_forward_public_capture.py'
+      - 'tools/gate_btc_factory/crypto_forward_source_admission.py'
+      - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/crypto_forward_public_capture.py'
+      - 'tools/gate_btc_factory/crypto_forward_source_admission.py'
+      - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
+  schedule:
+    - cron: '2-57/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crypto-forward-public-capture
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m py_compile tools/gate_btc_factory/crypto_forward_public_capture.py
+          python -m py_compile tools/gate_btc_factory/crypto_forward_source_admission.py
+      - run: |
+          python - <<'PY'
+          import json
+          c=json.load(open('tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'))
+          assert c['status']=='QUALIFIED_FOR_PROSPECTIVE_CAPTURE_ONLY'
+          assert c['historical_scientific_credit']==0 and c['backfill_credit']==0
+          assert c['admission']['required_complete_consecutive_packets']==3
+          s=c['safety'];assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['ENGINE_FEED'] is False
+          print('CRYPTO_FORWARD_SOURCE_CONTRACT=PASS')
+          PY
+  capture:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Capture one immutable prospective packet
+        run: python tools/gate_btc_factory/crypto_forward_public_capture.py --out out/PACKET.json
+      - name: Assert no authority
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('out/PACKET.json'))
+          assert p['scientific_credit']==0 and p['historical_backfill_credit']==0
+          assert p['economics_feedback_allowed'] is False
+          assert p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0
+          PY
+      - name: Publish append-only runtime packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gate-btc-runtime
+          git worktree add runtime-tree origin/gate-btc-runtime
+          mkdir -p runtime-tree/runtime/factory_sources/crypto_forward/audits
+          cp out/PACKET.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
+          cp out/PACKET.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}.json"
+          python tools/gate_btc_factory/crypto_forward_source_admission.py \
+            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
+            --out runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json
+          cd runtime-tree
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_sources/crypto_forward
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Append crypto forward public capture ${GITHUB_RUN_ID}"
+          for n in 1 2 3 4; do
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime
+            sleep $((n*2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crypto-forward-public-capture-${{ github.run_id }}
+          path: out/PACKET.json
+          if-no-files-found: warn
+          retention-days: 30

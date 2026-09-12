@@ -1,0 +1,16 @@
+{
+  "schema":"qrds.factory.crypto_forward_public_source.v1",
+  "frontier":"CRYPTO_FORWARD_UNSEEN_V1",
+  "status":"QUALIFIED_FOR_PROSPECTIVE_CAPTURE_ONLY",
+  "historical_scientific_credit":0,
+  "backfill_credit":0,
+  "venues":{
+    "BINANCE":{"spot_symbols":{"BTC":"BTCUSDT","ETH":"ETHUSDT"},"perp_symbols":{"BTC":"BTCUSDT","ETH":"ETHUSDT"},"spot_5m":"https://api.binance.com/api/v3/klines","perp_5m":"https://fapi.binance.com/fapi/v1/klines","funding_state":"https://fapi.binance.com/fapi/v1/premiumIndex"},
+    "OKX":{"spot_symbols":{"BTC":"BTC-USDT","ETH":"ETH-USDT"},"perp_symbols":{"BTC":"BTC-USDT-SWAP","ETH":"ETH-USDT-SWAP"},"spot_perp_5m":"https://www.okx.com/api/v5/market/candles","funding_state":"https://www.okx.com/api/v5/public/funding-rate"},
+    "COINBASE":{"spot_symbols":{"BTC":"BTC-USD","ETH":"ETH-USD"},"spot_5m":"https://api.exchange.coinbase.com/products/{product_id}/candles","market_data_authentication":"NONE"}
+  },
+  "capture_semantics":{"bar_size":"5m","only_completed_bars":true,"capture_delay_after_bucket_close_seconds":120,"exchange_timestamp_preserved":true,"ingestion_timestamp_utc_stored":true,"raw_response_sha256_stored":true,"packet_sha256_stored":true,"append_only_audit_required":true,"missing_any_required_venue_asset":"PACKET_INCOMPLETE_FAIL_CLOSED","revision_policy":"captured bytes are immutable point-in-time evidence; later endpoint revisions never overwrite an admitted packet"},
+  "admission":{"required_complete_consecutive_packets":3,"all_required":["BINANCE_BTC_ETH_SPOT_PERP","OKX_BTC_ETH_SPOT_PERP","COINBASE_BTC_ETH_SPOT","BINANCE_OKX_FUNDING_BTC_ETH"],"family_state_before_admission":"WAITING_SOURCE","family_state_after_admission":"READY_FORWARD","economics_before_admission":false},
+  "execution_freeze":{"bucket":"5m","decision":"after completed bucket t is causally available from all required inputs","entry_reference":"next completed 5m bucket open on target market","exit_reference":"same next 5m bucket close","hold_minutes":5,"late_packet":"NO_SIGNAL_NO_BACKFILL","cost_model_bps_round_trip":{"spot":10,"perpetual":10},"cost_robustness_bps_round_trip":[10,20,30],"retune_allowed":false},
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}
