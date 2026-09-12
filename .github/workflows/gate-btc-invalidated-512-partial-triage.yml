@@ -1,0 +1,63 @@
+name: GATE BTC Invalidated 512 Partial Triage
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/invalidated_partial_triage.py'
+      - 'tools/gate_btc_factory/INVALIDATED_PARTIAL_TRIAGE_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/INVALIDATED_PARTIAL_SOURCE_EVIDENCE_20260911.json'
+      - 'tests/test_gate_btc_invalidated_partial_triage.py'
+      - '.github/workflows/gate-btc-invalidated-512-partial-triage.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      NOT_APPROVED: 'true'
+      ENGINE_FEED: 'false'
+      ORDERS: '0'
+      REAL_CAPITAL: '0'
+      NO_BACKFILL: 'true'
+      NO_LATE_SEAL: 'true'
+      NO_COUNTER_RESET: 'true'
+      NO_RETUNE: 'true'
+      FAIL_CLOSED: 'true'
+      H1_ECONOMICS_READ: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test immutable partial-triage boundary
+        run: python -m pytest -q tests/test_gate_btc_invalidated_partial_triage.py
+      - name: Run structural/priority triage only
+        run: |
+          python tools/gate_btc_factory/invalidated_partial_triage.py \
+            --queue runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json \
+            --evidence tools/gate_btc_factory/INVALIDATED_PARTIAL_SOURCE_EVIDENCE_20260911.json \
+            --output INVALIDATED_512_PARTIAL_TRIAGE_RESULT.json
+      - name: Assert no scientific authority
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('INVALIDATED_512_PARTIAL_TRIAGE_RESULT.json'))
+          assert d['strict_v2_unchanged'] is True
+          assert d['source_admission_pass'] is False
+          assert d['economics_feedback_allowed'] is False
+          assert d['promotion_allowed'] is False
+          assert d['scientific_rejection_from_partial_performance_allowed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: invalidated-512-partial-triage-${{ github.run_id }}
+          path: INVALIDATED_512_PARTIAL_TRIAGE_RESULT.json
