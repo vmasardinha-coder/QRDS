@@ -1,0 +1,53 @@
+name: GATE BTC Multi Frontier Factory
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/MULTI_FRONTIER_ROUTING_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/CRYPTO_FAMILY_FACTORY_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/generate_crypto_family_queue.py'
+      - 'tools/gate_btc_factory/multi_frontier_router.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/MULTI_FRONTIER_ROUTING_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/CRYPTO_FAMILY_FACTORY_CONTRACT.v1.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_PREREG.v1.json'
+      - 'tools/gate_btc_factory/B3_DAILY_CROSS_SECTIONAL_GATES.v1.json'
+      - 'tools/gate_btc_factory/generate_crypto_family_queue.py'
+      - 'tools/gate_btc_factory/multi_frontier_router.py'
+      - 'tests/test_gate_btc_multi_frontier_factory.py'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Generate isolated crypto queue
+        run: python tools/gate_btc_factory/generate_crypto_family_queue.py
+      - name: Route research capacity
+        run: python tools/gate_btc_factory/multi_frontier_router.py
+      - name: Assert zero economics and frozen WIN blocker
+        run: |
+          python - <<'PY'
+          import json
+          q=json.load(open('tools/gate_btc_factory/CRYPTO_FAMILY_QUEUE_RUNTIME.json'))
+          r=json.load(open('tools/gate_btc_factory/MULTI_FRONTIER_ROUTING_RUNTIME.json'))
+          assert q['economics_read'] is False and q['promotion_allowed'] is False
+          assert r['b3_win_waiting_families']==512 and r['b3_win_source_gate_green'] is False
+          assert r['economics_read_from_blocked_frontiers'] is False
+          assert r['orders']==0 and r['real_capital']==0
+          print('MULTI_FRONTIER_SAFETY=PASS')
+          PY
+      - name: Unit tests
+        run: python -m pytest -q tests/test_gate_btc_multi_frontier_factory.py
