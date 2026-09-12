@@ -1,0 +1,75 @@
+{
+  "schema":"qrds.factory.crypto_accessible_forward_prereg.v1",
+  "stage":"PREREGISTER_FORWARD_FAMILIES",
+  "frontier":"CRYPTO_ACCESSIBLE_FORWARD_V1",
+  "created_at_utc":"2026-09-12T14:00:00Z",
+  "activation_not_before_utc":"2026-09-14T00:00:00Z",
+  "purpose":"Create a distinct forward-only crypto generation using only public venues physically reachable from the hosted collector before any economics are read.",
+  "source_evidence":{
+    "physical_capture_run_id":34697817092,
+    "packet_sha256":"ab6316feedb22ce11034cffae3af6aa30ec824d2b8d8aa370a9335f74fef25d3",
+    "qualified_transport_subset":["OKX_BTC_ETH_SPOT_PERPETUAL_FUNDING","COINBASE_BTC_ETH_SPOT"],
+    "excluded_transport":["BINANCE_HTTP_451","BYBIT_HTTP_403"],
+    "exclusion_is_economic_result_guided":false
+  },
+  "source_contract":{
+    "venues":["OKX","COINBASE"],
+    "assets":["BTC","ETH"],
+    "bar_interval":"5m",
+    "completed_bars_only":true,
+    "required_records_per_packet":8,
+    "required_complete_consecutive_packets_before_admission":3,
+    "timestamp_policy":"exchange timestamps preserved in UTC; ingestion timestamp stored separately",
+    "missing_required_record":"PACKET_INCOMPLETE_FAIL_CLOSED",
+    "late_packet":"NO_SIGNAL_NO_BACKFILL",
+    "raw_response_hash_required":true,
+    "packet_hash_required":true,
+    "append_only_audits_required":true
+  },
+  "signal_clock":{
+    "feature_bucket":"completed 5m bucket t",
+    "decision":"only after all required t records are causally captured",
+    "outcome_bucket":"exactly t+1 completed 5m bucket",
+    "entry_reference":"t+1 open",
+    "exit_reference":"t+1 close",
+    "hold_minutes":5,
+    "gap_policy":"if t+1 is not exactly +300 seconds, no observation"
+  },
+  "features":{
+    "okx_basis_close":"OKX_perpetual_close_t / OKX_spot_close_t - 1",
+    "known_okx_funding":"fundingRate returned by OKX and physically captured at decision time; future values never reconstructed",
+    "okx_bar_return":"OKX_spot_close_t / OKX_spot_open_t - 1",
+    "coinbase_bar_return":"COINBASE_spot_close_t / COINBASE_spot_open_t - 1",
+    "spot_dislocation":"OKX_spot_close_t / COINBASE_spot_close_t - 1"
+  },
+  "families":[
+    {"id":"COKBF01","mechanism":"OKX_BASIS_CONTINUATION","signal":"sign(okx_basis_close)","outcome":"OKX perp t+1 open-close return minus OKX spot t+1 open-close return"},
+    {"id":"COKBF02","mechanism":"OKX_BASIS_REVERSION","signal":"-sign(okx_basis_close)","outcome":"OKX perp t+1 open-close return minus OKX spot t+1 open-close return"},
+    {"id":"COKBF03","mechanism":"OKX_FUNDING_CONTINUATION","signal":"sign(known_okx_funding)","outcome":"OKX perp t+1 open-close return minus OKX spot t+1 open-close return"},
+    {"id":"COKBF04","mechanism":"OKX_FUNDING_REVERSION","signal":"-sign(known_okx_funding)","outcome":"OKX perp t+1 open-close return minus OKX spot t+1 open-close return"},
+    {"id":"COCV01","mechanism":"OKX_LEADS_COINBASE","signal":"sign(okx_bar_return)","outcome":"COINBASE spot t+1 open-close return"},
+    {"id":"COCV02","mechanism":"COINBASE_LEADS_OKX","signal":"sign(coinbase_bar_return)","outcome":"OKX spot t+1 open-close return"},
+    {"id":"COCV03","mechanism":"SPOT_DISLOCATION_CONVERGENCE","signal":"-sign(spot_dislocation)","outcome":"OKX spot t+1 return minus COINBASE spot t+1 return"},
+    {"id":"COCV04","mechanism":"SPOT_DISLOCATION_CONTINUATION","signal":"sign(spot_dislocation)","outcome":"OKX spot t+1 return minus COINBASE spot t+1 return"}
+  ],
+  "cost_model":{
+    "single_leg_round_trip_bps":10,
+    "relative_value_two_leg_round_trip_bps":20,
+    "robustness_single_leg_bps":[10,20,30],
+    "robustness_two_leg_bps":[20,40,60],
+    "retune_allowed":false
+  },
+  "blind_evaluation":{
+    "minimum_observations_before_aggregate_economics":60,
+    "partial_aggregate_economics_visible":false,
+    "raw_append_only_outcomes_allowed_after_source_admission":true,
+    "result_guided_changes_forbidden":true,
+    "checkpoint_rule":"first aggregate report exactly at 60 valid observations per family; subsequent checkpoints every 60"
+  },
+  "family_count":8,
+  "economics_read_before_prereg":false,
+  "scientific_credit_inherited":0,
+  "promotion_allowed_before_checkpoint":false,
+  "incumbents_read_only":["DELTA","QOS","MOMENTUM","GATEWAY","V16"],
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_LATE_SEAL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}

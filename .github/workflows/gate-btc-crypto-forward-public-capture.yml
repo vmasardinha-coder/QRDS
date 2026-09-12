@@ -7,6 +7,10 @@ on:
       - 'tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'
       - 'tools/gate_btc_factory/crypto_forward_public_capture.py'
       - 'tools/gate_btc_factory/crypto_forward_source_admission.py'
+      - 'tools/gate_btc_factory/CRYPTO_ACCESSIBLE_FORWARD_PREREG.v1.json'
+      - 'tools/gate_btc_factory/crypto_accessible_source_admission.py'
+      - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
+      - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   push:
     branches: [main]
@@ -36,6 +40,9 @@ jobs:
       - run: |
           python -m py_compile tools/gate_btc_factory/crypto_forward_public_capture.py
           python -m py_compile tools/gate_btc_factory/crypto_forward_source_admission.py
+          python -m py_compile tools/gate_btc_factory/crypto_accessible_source_admission.py
+          python -m py_compile tools/gate_btc_factory/crypto_family_state_runtime.py
+          python -m py_compile tools/gate_btc_factory/crypto_accessible_blind_evaluator.py
       - run: |
           python - <<'PY'
           import json
@@ -77,6 +84,18 @@ jobs:
           python tools/gate_btc_factory/crypto_forward_source_admission.py \
             --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
             --out runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json
+          python tools/gate_btc_factory/crypto_accessible_source_admission.py \
+            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
+            --previous runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+            --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json
+          python tools/gate_btc_factory/crypto_family_state_runtime.py \
+            --original-admission runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json \
+            --accessible-admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+            --out runtime-tree/runtime/factory_sources/crypto_forward/FAMILY_STATES.json
+          python tools/gate_btc_factory/crypto_accessible_blind_evaluator.py \
+            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
+            --admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+            --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_BLIND_LEDGER.json
           cd runtime-tree
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
