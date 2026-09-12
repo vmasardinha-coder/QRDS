@@ -1,47 +1,85 @@
 {
-  "schema":"qrds.factory.multi_frontier_routing.v1",
-  "mode":"AUTONOMOUS_CAPACITY_REDIRECTION_WITH_SCIENTIFIC_ISOLATION",
-  "frontiers":[
+  "schema": "qrds.factory.multi_frontier_routing.v1",
+  "mode": "AUTONOMOUS_CAPACITY_REDIRECTION_WITH_SCIENTIFIC_ISOLATION",
+  "frontiers": [
     {
-      "id":"B3_WIN_STRICT_V2",
-      "status":"WAITING_SOURCE_QUALIFICATION",
-      "namespace":"RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2",
-      "waiting_families":512,
-      "source_gate_green":false,
-      "capacity_weight_when_blocked":0,
-      "blocked_work_may_continue":["source_qualification","prospective_raw_capture","vendor_evidence"],
-      "economics_read":false
+      "id": "B3_WIN_STRICT_V2",
+      "status": "WAITING_SOURCE_QUALIFICATION",
+      "namespace": "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2",
+      "waiting_families": 512,
+      "source_gate_green": false,
+      "capacity_weight_when_blocked": 0,
+      "blocked_work_may_continue": [
+        "source_qualification",
+        "prospective_raw_capture",
+        "vendor_evidence"
+      ],
+      "economics_read": false
     },
     {
-      "id":"B3_DAILY_FRONTIER_V1",
-      "status":"ACTIVE_DISCOVERY_PRE_ECONOMICS",
-      "source":"B3_COTAHIST_DATA_SOURCE.v1.json",
-      "source_gate_green":true,
-      "capacity_weight_when_available":1,
-      "economics_read":false
+      "id": "B3_DAILY_FRONTIER_V1",
+      "status": "ACTIVE_DISCOVERY_PRE_ECONOMICS",
+      "source": "B3_COTAHIST_DATA_SOURCE.v1.json",
+      "source_gate_green": true,
+      "capacity_weight_when_available": 1,
+      "economics_read": false
     },
     {
-      "id":"CRYPTO_FORWARD_UNSEEN_V1",
-      "status":"ACTIVE_PRE_SOURCE_FREEZE",
-      "source_gate_green":false,
-      "capacity_weight_when_available":2,
-      "economics_read":false
+      "id": "CRYPTO_FORWARD_UNSEEN_V1",
+      "status": "WAITING_SOURCE_TRANSPORT",
+      "source_gate_green": false,
+      "capacity_weight_when_available": 0,
+      "economics_read": false,
+      "waiting_families": 8,
+      "blocked_work_may_continue": [
+        "source_transport",
+        "binance_or_equivalent_venue_qualification"
+      ]
     },
     {
-      "id":"MECHANISM_SCOUT",
-      "status":"ACTIVE_IDEATION_ONLY",
-      "capacity_weight_when_available":1,
-      "economics_read":false
+      "id": "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "status": "ACCUMULATING_SOURCE_ADMISSION_PRE_ACTIVATION",
+      "source": "CRYPTO_ACCESSIBLE_FORWARD_PREREG.v1.json",
+      "waiting_families": 8,
+      "source_gate_green": false,
+      "source_admission_rule": "3_DISTINCT_CONSECUTIVE_M5_BUCKETS",
+      "activation_not_before_utc": "2026-09-14T00:00:00Z",
+      "capacity_weight_when_available": 3,
+      "economics_read": false
+    },
+    {
+      "id": "MECHANISM_SCOUT",
+      "status": "ACTIVE_IDEATION_ONLY",
+      "capacity_weight_when_available": 1,
+      "economics_read": false
     }
   ],
-  "routing_policy":{
-    "if_frontier_blocked_by_source":"REDIRECT_RESEARCH_CAPACITY_ONLY",
-    "never_relax_blocked_frontier_contract":true,
-    "never_transfer_scientific_credit_between_frontiers":true,
-    "never_share_counters_between_frontiers":true,
-    "never_use_partial_economics_for_routing":true,
-    "priority_order":["CRYPTO_FORWARD_UNSEEN_V1","B3_DAILY_FRONTIER_V1","MECHANISM_SCOUT","B3_WIN_STRICT_V2"],
-    "blocked_frontier_remains_live_for_source_work":true
+  "routing_policy": {
+    "if_frontier_blocked_by_source": "REDIRECT_RESEARCH_CAPACITY_ONLY",
+    "never_relax_blocked_frontier_contract": true,
+    "never_transfer_scientific_credit_between_frontiers": true,
+    "never_share_counters_between_frontiers": true,
+    "never_use_partial_economics_for_routing": true,
+    "priority_order": [
+      "CRYPTO_ACCESSIBLE_FORWARD_V1",
+      "B3_DAILY_FRONTIER_V1",
+      "MECHANISM_SCOUT",
+      "CRYPTO_FORWARD_UNSEEN_V1",
+      "B3_WIN_STRICT_V2"
+    ],
+    "blocked_frontier_remains_live_for_source_work": true
   },
-  "global_safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_LATE_SEAL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+  "global_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
 }
