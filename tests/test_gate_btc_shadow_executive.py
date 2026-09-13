@@ -70,6 +70,8 @@ class ShadowExecutiveContractTest(unittest.TestCase):
 
     def test_exact_fixed_order_and_required_blocks(self):
         report = build(self._state(), "2026-09-09")
+        self.assertEqual(report["schema"], "gate_btc.shadow_executive.v1")
+        self.assertEqual(report["contract_issue"], 297)
         self.assertEqual(report["fixed_block_count"], 13)
         self.assertEqual([b["block_id"] for b in report["blocks"]], [x[0] for x in BLOCK_ORDER])
         titles = [b["title"] for b in report["blocks"]]
