@@ -1,0 +1,1379 @@
+{
+  "schema": "gate_btc.b3.autonomous_generation_result.v1",
+  "generation": "H830-H839",
+  "status": "CLOSED_NO_H830_H839_SURVIVOR",
+  "survivors": [],
+  "families": [
+    {
+      "family_id": "H830",
+      "contract": {
+        "family_id": "H830",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 30,
+        "abs_z_threshold": 0.75,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": -1.2198628623663037,
+              "net3": -2.2198628623663033,
+              "delayed_net2": -4.759107990402173,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 4.510911478704148
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -6.568585580698725
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": -1.2198628623663037
+                }
+              },
+              "top5_positive_share": 0.6482357332833006,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": 2.8236804531515687,
+              "net3": 1.82368045315157,
+              "delayed_net2": -2.604193320147273,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 10.580214976048442
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -4.415751768218844
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": 2.8236804531515687
+                }
+              },
+              "top5_positive_share": 0.5903728155661809,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": -0.3044743011019611,
+              "net3": -1.304474301101961,
+              "delayed_net2": -4.246458124629076,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 9.709547212225514
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -9.650894380207605
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": -0.3044743011019611
+                }
+              },
+              "top5_positive_share": 0.6717877536537562,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H831",
+      "contract": {
+        "family_id": "H831",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 30,
+        "abs_z_threshold": 1.0,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": -1.2198628623663037,
+              "net3": -2.2198628623663033,
+              "delayed_net2": -4.759107990402173,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 4.510911478704148
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -6.568585580698725
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": -1.2198628623663037
+                }
+              },
+              "top5_positive_share": 0.6482357332833006,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": 2.8236804531515687,
+              "net3": 1.82368045315157,
+              "delayed_net2": -2.604193320147273,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 10.580214976048442
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -4.415751768218844
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": 2.8236804531515687
+                }
+              },
+              "top5_positive_share": 0.5903728155661809,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 29,
+              "net2": -0.3044743011019611,
+              "net3": -1.304474301101961,
+              "delayed_net2": -4.246458124629076,
+              "side_metrics": {
+                "-1": {
+                  "trades": 14,
+                  "net2": 9.709547212225514
+                },
+                "1": {
+                  "trades": 15,
+                  "net2": -9.650894380207605
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 29,
+                  "net2": -0.3044743011019611
+                }
+              },
+              "top5_positive_share": 0.6717877536537562,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H832",
+      "contract": {
+        "family_id": "H832",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 30,
+        "abs_z_threshold": 1.25,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 24,
+              "net2": -2.3376504054387426,
+              "net3": -3.3376504054387426,
+              "delayed_net2": -7.601436356363344,
+              "side_metrics": {
+                "-1": {
+                  "trades": 11,
+                  "net2": 4.428309316880938
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -8.062693247401548
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 24,
+                  "net2": -2.3376504054387426
+                }
+              },
+              "top5_positive_share": 0.780385518623051,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 24,
+              "net2": 0.09196260443083097,
+              "net3": -0.9080373955691691,
+              "delayed_net2": -6.003595430305817,
+              "side_metrics": {
+                "-1": {
+                  "trades": 11,
+                  "net2": 6.259876198318503
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -5.127041205781814
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 24,
+                  "net2": 0.09196260443083097
+                }
+              },
+              "top5_positive_share": 0.6885071525783073,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 24,
+              "net2": -6.574473010913091,
+              "net3": -7.574473010913091,
+              "delayed_net2": -10.648726433305766,
+              "side_metrics": {
+                "-1": {
+                  "trades": 11,
+                  "net2": 1.0402335966323515
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -13.017686294220773
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 24,
+                  "net2": -6.574473010913091
+                }
+              },
+              "top5_positive_share": 0.7612998880656434,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H833",
+      "contract": {
+        "family_id": "H833",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 30,
+        "abs_z_threshold": 1.5,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 2,
+              "net2": -1.0300164278439476,
+              "net3": -2.0300164278439476,
+              "delayed_net2": -10.039961546529863,
+              "side_metrics": {
+                "-1": {
+                  "trades": 1,
+                  "net2": 0.7166003686818208
+                },
+                "1": {
+                  "trades": 1,
+                  "net2": -2.776633224369716
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 2,
+                  "net2": -1.0300164278439476
+                }
+              },
+              "top5_positive_share": 1.0,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 2,
+              "net2": 2.3760021932459647,
+              "net3": 1.3760021932459647,
+              "delayed_net2": -3.4406018156765104,
+              "side_metrics": {
+                "-1": {
+                  "trades": 1,
+                  "net2": 2.6570292034542327
+                },
+                "1": {
+                  "trades": 1,
+                  "net2": 2.094975183037697
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 2,
+                  "net2": 2.3760021932459647
+                }
+              },
+              "top5_positive_share": 1.0,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 2,
+              "net2": 39.22438618588353,
+              "net3": 38.22438618588353,
+              "delayed_net2": 21.80595556730203,
+              "side_metrics": {
+                "-1": {
+                  "trades": 1,
+                  "net2": 63.71585653762813
+                },
+                "1": {
+                  "trades": 1,
+                  "net2": 14.73291583413894
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 2,
+                  "net2": 39.22438618588353
+                }
+              },
+              "top5_positive_share": 1.0,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H834",
+      "contract": {
+        "family_id": "H834",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 60,
+        "abs_z_threshold": 0.75,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 45,
+              "net2": -1.3368118873167365,
+              "net3": -2.3368118873167365,
+              "delayed_net2": -3.6238375138794128,
+              "side_metrics": {
+                "-1": {
+                  "trades": 31,
+                  "net2": 1.080646048178179
+                },
+                "1": {
+                  "trades": 14,
+                  "net2": -6.689754458769768
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 45,
+                  "net2": -1.3368118873167365
+                }
+              },
+              "top5_positive_share": 0.575719532530653,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 45,
+              "net2": -2.1446510310056692,
+              "net3": -3.144651031005668,
+              "delayed_net2": -3.8413341114198936,
+              "side_metrics": {
+                "-1": {
+                  "trades": 31,
+                  "net2": 0.11653101861696322
+                },
+                "1": {
+                  "trades": 14,
+                  "net2": -7.151554140884356
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 45,
+                  "net2": -2.1446510310056692
+                }
+              },
+              "top5_positive_share": 0.5414266511824442,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 45,
+              "net2": -2.8822480911992394,
+              "net3": -3.8822480911992394,
+              "delayed_net2": -4.019123801461026,
+              "side_metrics": {
+                "-1": {
+                  "trades": 31,
+                  "net2": 0.1882254059125295
+                },
+                "1": {
+                  "trades": 14,
+                  "net2": -9.681153691946728
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 45,
+                  "net2": -2.8822480911992394
+                }
+              },
+              "top5_positive_share": 0.4898809666824643,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H835",
+      "contract": {
+        "family_id": "H835",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 60,
+        "abs_z_threshold": 1.0,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 39,
+              "net2": -0.8912657670283065,
+              "net3": -1.8912657670283066,
+              "delayed_net2": -2.8363318028193367,
+              "side_metrics": {
+                "-1": {
+                  "trades": 26,
+                  "net2": 1.8070720719717543
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -6.287941445028429
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 39,
+                  "net2": -0.8912657670283065
+                }
+              },
+              "top5_positive_share": 0.6346992448980415,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 39,
+              "net2": -0.8406414071027078,
+              "net3": -1.8406414071027082,
+              "delayed_net2": -2.757792131795632,
+              "side_metrics": {
+                "-1": {
+                  "trades": 26,
+                  "net2": 2.382513188601185
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -7.2869505985104945
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 39,
+                  "net2": -0.8406414071027078
+                }
+              },
+              "top5_positive_share": 0.5941890459992333,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 39,
+              "net2": -1.1790166642543984,
+              "net3": -2.1790166642543984,
+              "delayed_net2": -2.9153293843812165,
+              "side_metrics": {
+                "-1": {
+                  "trades": 26,
+                  "net2": 4.175195972167909
+                },
+                "1": {
+                  "trades": 13,
+                  "net2": -11.887441937099016
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 39,
+                  "net2": -1.1790166642543984
+                }
+              },
+              "top5_positive_share": 0.5241828308777089,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H836",
+      "contract": {
+        "family_id": "H836",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 60,
+        "abs_z_threshold": 1.25,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 27,
+              "net2": -0.7964942108436075,
+              "net3": -1.7964942108436075,
+              "delayed_net2": -2.8976333505529825,
+              "side_metrics": {
+                "-1": {
+                  "trades": 20,
+                  "net2": 1.4937795582259394
+                },
+                "1": {
+                  "trades": 7,
+                  "net2": -7.340133551042316
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 27,
+                  "net2": -0.7964942108436075
+                }
+              },
+              "top5_positive_share": 0.8754411987702923,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 27,
+              "net2": 2.9327201949688906,
+              "net3": 1.9327201949688904,
+              "delayed_net2": -2.547526495924102,
+              "side_metrics": {
+                "-1": {
+                  "trades": 20,
+                  "net2": 2.3986183846436715
+                },
+                "1": {
+                  "trades": 7,
+                  "net2": 4.458725367326659
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 27,
+                  "net2": 2.9327201949688906
+                }
+              },
+              "top5_positive_share": 0.6691010308003928,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 27,
+              "net2": 2.1783364135821675,
+              "net3": 1.1783364135821675,
+              "delayed_net2": -0.9064848143980078,
+              "side_metrics": {
+                "-1": {
+                  "trades": 20,
+                  "net2": 4.531413002347218
+                },
+                "1": {
+                  "trades": 7,
+                  "net2": -4.54473955431798
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 27,
+                  "net2": 2.1783364135821675
+                }
+              },
+              "top5_positive_share": 0.6296768852995976,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H837",
+      "contract": {
+        "family_id": "H837",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 60,
+        "abs_z_threshold": 1.5,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 15,
+              "net2": -1.789220743348898,
+              "net3": -2.789220743348898,
+              "delayed_net2": -3.322622695778986,
+              "side_metrics": {
+                "-1": {
+                  "trades": 13,
+                  "net2": -1.1875832966713702
+                },
+                "1": {
+                  "trades": 2,
+                  "net2": -5.699864146752829
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 15,
+                  "net2": -1.789220743348898
+                }
+              },
+              "top5_positive_share": 0.9565996098302822,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 15,
+              "net2": 5.902695343094957,
+              "net3": 4.902695343094957,
+              "delayed_net2": -2.9746454194119463,
+              "side_metrics": {
+                "-1": {
+                  "trades": 13,
+                  "net2": 8.268113695602706
+                },
+                "1": {
+                  "trades": 2,
+                  "net2": -9.472523948205412
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 15,
+                  "net2": 5.902695343094957
+                }
+              },
+              "top5_positive_share": 0.8124229471929928,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 15,
+              "net2": 5.403010325494137,
+              "net3": 4.403010325494137,
+              "delayed_net2": 3.2694746644080444,
+              "side_metrics": {
+                "-1": {
+                  "trades": 13,
+                  "net2": 14.604569990349596
+                },
+                "1": {
+                  "trades": 2,
+                  "net2": -54.40712749606635
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 15,
+                  "net2": 5.403010325494137
+                }
+              },
+              "top5_positive_share": 0.8347653939384033,
+              "reasons": [
+                "MIN_TRADES",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H838",
+      "contract": {
+        "family_id": "H838",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 90,
+        "abs_z_threshold": 0.75,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 50,
+              "net2": -4.457603918564643,
+              "net3": -5.457603918564643,
+              "delayed_net2": -3.8691687590125743,
+              "side_metrics": {
+                "-1": {
+                  "trades": 27,
+                  "net2": -4.072297995307895
+                },
+                "1": {
+                  "trades": 23,
+                  "net2": -4.909919567605176
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 50,
+                  "net2": -4.457603918564643
+                }
+              },
+              "top5_positive_share": 0.6173350755867175,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 50,
+              "net2": -4.9187448805972025,
+              "net3": -5.918744880597202,
+              "delayed_net2": -2.905629349164715,
+              "side_metrics": {
+                "-1": {
+                  "trades": 27,
+                  "net2": -1.7376497864623563
+                },
+                "1": {
+                  "trades": 23,
+                  "net2": -8.653073904146805
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 50,
+                  "net2": -4.9187448805972025
+                }
+              },
+              "top5_positive_share": 0.5505163462223003,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 50,
+              "net2": -3.464387283227286,
+              "net3": -4.4643872832272855,
+              "delayed_net2": -2.04267727712819,
+              "side_metrics": {
+                "-1": {
+                  "trades": 27,
+                  "net2": -1.5112290162477162
+                },
+                "1": {
+                  "trades": 23,
+                  "net2": -5.757225248812
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 50,
+                  "net2": -3.464387283227286
+                }
+              },
+              "top5_positive_share": 0.518446088150468,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    },
+    {
+      "family_id": "H839",
+      "contract": {
+        "family_id": "H839",
+        "feature": "BAR_IMBALANCE",
+        "direction": "REVERSION",
+        "decision_window_minutes": 90,
+        "abs_z_threshold": 1.0,
+        "holding_horizons_minutes": [
+          30,
+          60,
+          120
+        ],
+        "standardization_lookback_sessions": 30,
+        "causal_standardization": "ROLLING_30_PRIOR_SESSIONS_MEDIAN_MAD"
+      },
+      "discovery": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [
+          {
+            "horizon": 30,
+            "qualified": false,
+            "metrics": {
+              "trades": 38,
+              "net2": -3.7510033756692294,
+              "net3": -4.751003375669231,
+              "delayed_net2": -3.777018452172888,
+              "side_metrics": {
+                "-1": {
+                  "trades": 21,
+                  "net2": -0.758559137350413
+                },
+                "1": {
+                  "trades": 17,
+                  "net2": -7.447552140651298
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 38,
+                  "net2": -3.7510033756692294
+                }
+              },
+              "top5_positive_share": 0.6672199665790144,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 60,
+            "qualified": false,
+            "metrics": {
+              "trades": 38,
+              "net2": -2.7572263422339627,
+              "net3": -3.7572263422339622,
+              "delayed_net2": -1.8706050221068027,
+              "side_metrics": {
+                "-1": {
+                  "trades": 21,
+                  "net2": 2.3685426888961403
+                },
+                "1": {
+                  "trades": 17,
+                  "net2": -9.089058674806447
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 38,
+                  "net2": -2.7572263422339627
+                }
+              },
+              "top5_positive_share": 0.5999214535350829,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          },
+          {
+            "horizon": 120,
+            "qualified": false,
+            "metrics": {
+              "trades": 38,
+              "net2": -4.241063457242345,
+              "net3": -5.241063457242346,
+              "delayed_net2": -2.955681976370054,
+              "side_metrics": {
+                "-1": {
+                  "trades": 21,
+                  "net2": -1.1135889788182058
+                },
+                "1": {
+                  "trades": 17,
+                  "net2": -8.10441428353099
+                }
+              },
+              "half_metrics": {
+                "2024H2": {
+                  "trades": 38,
+                  "net2": -4.241063457242345
+                }
+              },
+              "top5_positive_share": 0.5527856958841538,
+              "reasons": [
+                "MIN_TRADES",
+                "REFERENCE_COST_EDGE",
+                "STRESS_COST",
+                "DELAYED_ENTRY",
+                "SIDE_STABILITY",
+                "CALENDAR_HALF_STABILITY",
+                "CONCENTRATION"
+              ]
+            }
+          }
+        ]
+      },
+      "replication": {
+        "qualified_cells": 0,
+        "survives": false,
+        "cells": [],
+        "not_run_reason": "DISCOVERY_REJECTED"
+      },
+      "replicated": false
+    }
+  ],
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "orders": 0,
+  "real_capital": 0,
+  "engine_feed": false,
+  "h1_economics_read": false
+}
