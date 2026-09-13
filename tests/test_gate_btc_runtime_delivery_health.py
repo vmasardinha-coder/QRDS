@@ -209,6 +209,53 @@ class DeliveryHealthTest(unittest.TestCase):
             self.assertFalse(result["delivery_complete"])
             self.assertIn("delta", result["warnings"]["stale_components"])
 
+    def test_stale_verified_d50_reconciliation_is_audit_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "ledgers" / "d50").mkdir(parents=True)
+            (root / "GATE_BTC_LATEST_ELIGIBLE_RUN.json").write_text(
+                '{"data_cutoff":"2026-09-10","research_only":true,'
+                '"orders_generated":0,"real_capital_used":0}', encoding="utf-8"
+            )
+            (root / "GATE_BTC_MEASUREMENT_STATUS.json").write_text(json.dumps({
+                "data_as_of": "2026-09-10",
+                "research_only": True,
+                "orders_generated": 0,
+                "real_capital_used": 0,
+                "reconciliation_note": "verified local evidence through 2026-08-22",
+                "d50_prospective_immutable_ledger": {
+                    "current": 21, "target": 30, "status": "ACTIVE",
+                    "latest_prospective_date": "2026-08-22",
+                    "user_action_required": False,
+                },
+                "d50_data_qualification": {
+                    "current": 7, "target": 7, "snapshot_count_total": 22,
+                    "hash_chain_valid": True, "user_action_required": False,
+                },
+            }), encoding="utf-8")
+            (root / "ledgers" / "d50" / "STATUS.json").write_text(json.dumps({
+                "data_as_of": "2026-08-22",
+                "research_only": True,
+                "orders_generated": 0,
+                "real_capital_used": 0,
+                "prospective_immutable_ledger": {
+                    "current": 21, "target": 30, "status": "ACTIVE",
+                    "latest_prospective_date": "2026-08-22",
+                },
+                "data_qualification": {
+                    "current": 7, "target": 7, "snapshot_count_total": 22,
+                },
+            }), encoding="utf-8")
+            result = reconcile(root, date(2026, 9, 11))
+            d50 = result["components"]["d50"]
+            self.assertEqual(d50["freshness"], "STALE")
+            self.assertIsNone(d50["display_current"])
+            self.assertEqual(d50["raw_remote_current_for_audit_only"], 21)
+            self.assertEqual(
+                d50["authority"],
+                "VERIFIED_RECONCILIATION_STALE_EXTERNAL_EVIDENCE_REQUIRED",
+            )
+
     def test_verified_local_d50_reconciliation_becomes_display_authority(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

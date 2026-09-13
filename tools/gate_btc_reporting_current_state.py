@@ -229,8 +229,17 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
             or iso_date(measurement.get("data_as_of")),
             reference_date,
         )
-        d50_display_current = d50_ledger.get("current")
-        d50_authority = "LOCAL_RECONCILED_MEASUREMENT"
+        if d50_freshness == "FRESH":
+            d50_display_current = d50_ledger.get("current")
+            d50_authority = "LOCAL_RECONCILED_MEASUREMENT"
+        else:
+            # A once-verified local reconciliation remains valid historical
+            # evidence, but it must never be rendered as the current D50 counter
+            # after the project reference clock has advanced beyond its tip.
+            # Keep the old value audit-only until a newer independently verified
+            # local evidence package is ingested.
+            d50_display_current = None
+            d50_authority = "VERIFIED_RECONCILIATION_STALE_EXTERNAL_EVIDENCE_REQUIRED"
     elif d50_remote_blocked:
         d50_freshness = "STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT"
         d50_display_current = None
