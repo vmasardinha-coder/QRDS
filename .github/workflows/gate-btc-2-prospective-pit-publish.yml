@@ -5,6 +5,12 @@ on:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful GATE BTC Daily Research Collection run id"
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -26,13 +32,20 @@ jobs:
   publish-prospective-pit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      SOURCE_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.run_id || github.event.workflow_run.id }}
     steps:
+      - name: Require explicit successful-source run id
+        run: |
+          test -n "$SOURCE_RUN_ID"
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID"
+
       - name: Download source Daily artifact
         uses: actions/download-artifact@v4
         with:
-          name: gate-btc-daily-research-${{ github.event.workflow_run.id }}
+          name: gate-btc-daily-research-${{ env.SOURCE_RUN_ID }}
           path: daily_evidence
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
 
