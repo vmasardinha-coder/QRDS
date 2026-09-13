@@ -24,13 +24,19 @@ env:
 
 jobs:
   publish-prospective-pit:
+    # The PIT collector is an isolated job in the Daily workflow and uploads
+    # its own artifact. The generic daily-research artifact intentionally does
+    # not contain prospective_v2a, so consuming it here creates a false red.
+    # Only run after a successful upstream workflow; absence/ineligibility is
+    # already handled by the upstream fail-closed collector/publisher chain.
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Download source Daily artifact
+      - name: Download isolated prospective PIT artifact
         uses: actions/download-artifact@v4
         with:
-          name: gate-btc-daily-research-${{ github.event.workflow_run.id }}
+          name: gate-btc-prospective-v2a-pit-${{ github.event.workflow_run.id }}
           path: daily_evidence
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
@@ -144,5 +150,14 @@ jobs:
             echo "Prospective PIT already current"
           else
             git -C runtime_repo commit -m "Update prospective V2A registry PIT evidence"
-            git -C runtime_repo push origin HEAD:gate-btc-runtime
+            for attempt in 1 2 3 4 5; do
+              git -C runtime_repo fetch origin gate-btc-runtime
+              if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+                git -C runtime_repo rebase --abort || true
+                exit 1
+              fi
+              if git -C runtime_repo push origin HEAD:gate-btc-runtime; then exit 0; fi
+              sleep $((attempt * 2))
+            done
+            exit 1
           fi
