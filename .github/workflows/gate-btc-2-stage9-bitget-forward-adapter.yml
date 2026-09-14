@@ -2,7 +2,7 @@ name: GATE BTC 2 Stage 9 Bitget Forward Adapter
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "17 * * * *"
   pull_request:
     branches: [main]
     paths:
@@ -57,7 +57,7 @@ jobs:
           assert d['stage_id']==9 and d['provider']=='BITGET_PUBLIC_V2' and d['venue']=='BITGET' and d['instrument']=='BTCUSDT'
           assert d['authorization']['human_authorized'] is True
           c=d['clock']
-          assert c['cadence_minutes']==60 and c['cron_utc']=='0 * * * *'
+          assert c['cadence_minutes']==60 and c['cron_utc']=='17 * * * *'
           assert c['first_scheduled_capture_must_postdate_clock_merge'] is True
           assert c['missed_runs_backfilled'] is False and c['schedule_delay_does_not_trigger_timestamp_repair'] is True
           b=d['scientific_boundary']
