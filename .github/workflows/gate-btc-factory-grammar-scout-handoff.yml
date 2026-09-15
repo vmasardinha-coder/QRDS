@@ -1,0 +1,89 @@
+name: GATE BTC Factory Grammar Scout Handoff
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 12 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_scout_handoff.py'
+      - 'tests/test_gate_btc_grammar_scout_handoff.py'
+      - '.github/workflows/gate-btc-factory-grammar-scout-handoff.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-factory-grammar-scout-handoff-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression tests
+        run: |
+          python -m pip install -q pytest
+          cd source_repo
+          pytest -q tests/test_gate_btc_grammar_scout_handoff.py
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Materialize outcome-blind preregistration queue
+        if: github.event_name != 'pull_request'
+        run: |
+          test -f runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json
+          mkdir -p runtime_repo/runtime/factory_autonomy/grammar_handoff_audits
+          python source_repo/tools/gate_btc_factory/grammar_scout_handoff.py \
+            --scout runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json \
+            --ledger-dir runtime_repo/runtime/factory_autonomy/grammar_handoff_audits \
+            --output GRAMMAR_HANDOFF_RUNTIME.json
+          python - <<'PY'
+          import json
+          d=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json'))
+          assert d['mode']=='OUTCOME_BLIND_HANDOFF_ONLY'
+          s=d['safety']; assert s['h1_h31_untouched'] and s['no_retune'] and s['no_backfill'] and s['fail_closed']
+          for r in d['requests']:
+              assert r['economics_read'] is False
+              assert r['may_allocate_existing_h_id'] is False
+              assert r['may_modify_existing_grammar'] is False
+              assert r['next_gate']=='SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ'
+          PY
+      - name: Persist append-only handoff queue
+        if: github.event_name != 'pull_request'
+        run: |
+          cp GRAMMAR_HANDOFF_RUNTIME.json "runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/${{ github.run_id }}.json"
+          cp GRAMMAR_HANDOFF_RUNTIME.json runtime_repo/runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json
+          git commit -m "Factory grammar handoff ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
