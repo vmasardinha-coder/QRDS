@@ -1,0 +1,17 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_conditioned_model.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "base_signal": "STATIC_INVERSE_STATE",
+  "allowed_regime_gates": [
+    "lagged_rolling_correlation_state",
+    "lagged_WIN_realized_volatility_tercile",
+    "lagged_WDO_realized_volatility_tercile",
+    "lagged_joint_volatility_state",
+    "lagged_relative_momentum_sign"
+  ],
+  "all_features_ex_ante": true,
+  "discovery_may_select_at_most_one_gate_combination": true,
+  "validation_feature_changes": false,
+  "holdout_feature_changes": false,
+  "objective": "Test whether ex-ante regime conditioning improves subsequent net expectation versus the static benchmark; not to maximize in-sample fit."
+}

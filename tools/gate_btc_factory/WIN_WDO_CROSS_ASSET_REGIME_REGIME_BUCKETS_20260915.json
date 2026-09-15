@@ -1,0 +1,14 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_buckets.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "bucket_construction_scope": "DISCOVERY_ONLY",
+  "correlation_state": "terciles of lagged rolling correlation within discovery, then frozen numeric cutpoints",
+  "WIN_volatility_state": "terciles of lagged realized WIN volatility within discovery, then frozen numeric cutpoints",
+  "WDO_volatility_state": "terciles of lagged realized WDO volatility within discovery, then frozen numeric cutpoints",
+  "joint_volatility_state": "deterministic pair of frozen WIN/WDO volatility states",
+  "relative_momentum_state": "sign of lagged WIN return minus negative WDO return under synchronized return normalization",
+  "validation_rebucket": false,
+  "holdout_rebucket": false,
+  "prospective_rebucket": false,
+  "future_information_in_bucket": false
+}

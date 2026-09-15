@@ -1,0 +1,14 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_partition_policy.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "eligible_history_only": true,
+  "ordering": "chronological",
+  "discovery_fraction": 0.50,
+  "validation_fraction": 0.30,
+  "holdout_fraction": 0.20,
+  "rounding": "deterministic floor for discovery and validation; remainder to holdout after embargo exclusions",
+  "embargo": "maximum tested prediction horizon between partitions",
+  "partition_boundaries_computed_before_outcome_read": true,
+  "partition_rebalancing_after_results": false,
+  "random_cross_validation": false
+}

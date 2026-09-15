@@ -1,0 +1,15 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_bias_guard.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "guards": {
+    "lookahead": true,
+    "survivorship": true,
+    "data_snooping": true,
+    "validation_reuse": true,
+    "holdout_reuse": true,
+    "outcome_based_regime_labeling": true,
+    "outcome_based_source_selection": true,
+    "retroactive_prospective_credit": true
+  },
+  "meaning": "Each true value denotes that the corresponding bias is explicitly prohibited and must fail closed if detected."
+}

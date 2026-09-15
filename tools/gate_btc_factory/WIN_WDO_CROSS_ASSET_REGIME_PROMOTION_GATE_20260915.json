@@ -1,0 +1,19 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_promotion_gate.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "historical_survivor_requires_all": [
+    "source_and_cost_applicability_proven",
+    "nonzero_lead_lag_predictive_power_in_untouched_validation",
+    "same_direction_predictive_power_in_untouched_historical_holdout",
+    "positive_net_economic_expectation_after_frozen_costs_in_validation_and_holdout",
+    "no_single_short_regime_concentration",
+    "explicit_regime_break_analysis_passes_long_horizon_robustness",
+    "regime_conditioned_candidate_robustly_improves_on_static_inverse_benchmark"
+  ],
+  "contemporaneous_correlation_can_promote": false,
+  "discovery_only_success_can_promote": false,
+  "partial_validation_can_promote": false,
+  "failure_action": "REJECT_FAMILY_APPEND_LEDGER_NO_RETUNE",
+  "survival_action": "SEPARATE_PROSPECTIVE_ACTIVATION_PREREG_REQUIRED",
+  "existing_counter_credit": 0
+}

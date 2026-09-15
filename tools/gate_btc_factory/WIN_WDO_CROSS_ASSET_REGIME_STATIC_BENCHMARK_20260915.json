@@ -1,0 +1,16 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_static_benchmark.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "benchmark": "STATIC_INVERSE_STATE",
+  "state_definition": {
+    "A": "WIN_lag_return > 0 AND WDO_lag_return < 0",
+    "B": "WIN_lag_return < 0 AND WDO_lag_return > 0",
+    "otherwise": "NO_SIGNAL"
+  },
+  "regime_filter": "NONE",
+  "uses_only_lagged_information": true,
+  "same_bar_future_information": false,
+  "economic_target": "subsequent returns only",
+  "threshold_optimization": "NONE",
+  "role": "mandatory comparator; not presumed profitable"
+}

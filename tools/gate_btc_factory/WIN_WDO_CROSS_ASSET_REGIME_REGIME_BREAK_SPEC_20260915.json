@@ -1,0 +1,18 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_break_spec.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "purpose": "Make relationship instability a first-class falsification target rather than an after-the-fact explanation.",
+  "required_break_views": [
+    "rolling_correlation_sign_persistence",
+    "rolling_correlation_magnitude_dispersion",
+    "lead_lag_sign_stability",
+    "conditional_expectation_by_lagged_joint_volatility_state",
+    "conditional_expectation_by_lagged_correlation_state",
+    "discovery_validation_holdout_effect_sign_consistency",
+    "static_vs_conditioned_net_economic_expectation_by_regime"
+  ],
+  "break_definition": "A material sign reversal, disappearance of subsequent predictive expectation, or net-economic collapse in a materially distinct contiguous regime is reported as a break; it cannot be removed by retuning the regime definition after validation.",
+  "single_regime_survival_sufficient": false,
+  "post_validation_regime_redefinition_allowed": false,
+  "family_reject_if_long_horizon_regime_robustness_fails": true
+}

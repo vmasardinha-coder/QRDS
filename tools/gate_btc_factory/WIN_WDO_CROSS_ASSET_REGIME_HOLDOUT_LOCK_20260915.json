@@ -1,0 +1,14 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_holdout_lock.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "locked": true,
+  "outcomes_read": false,
+  "unlock_requires": [
+    "source_and_cost_gates_pass",
+    "discovery_candidate_freeze_exists",
+    "untouched_validation_passes_without_reselection_or_retune"
+  ],
+  "if_validation_fails": "REJECT_WITHOUT_HOLDOUT_READ",
+  "if_holdout_fails": "REJECT_NO_RETUNE",
+  "prospective_before_holdout_survival": false
+}
