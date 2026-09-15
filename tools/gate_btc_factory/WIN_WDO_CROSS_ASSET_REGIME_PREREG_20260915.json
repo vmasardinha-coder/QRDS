@@ -1,0 +1,81 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_prereg.v1",
+  "preregistered_at": "2026-09-15T11:52:00-03:00",
+  "family_name": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "scientific_role": "NEW_INDEPENDENT_FAMILY",
+  "research_question": "Does an ex-ante observable WIN/WDO cross-asset state provide stable out-of-sample economic expectation after costs, and does regime conditioning improve materially over a static inverse-correlation rule?",
+  "hard_isolation": {
+    "H1_modified": false,
+    "H31_modified": false,
+    "existing_family_counter_credit": 0,
+    "retroactive_prospective_credit": 0,
+    "backfill_causal_credit": 0,
+    "partial_results_feedback_to_existing_families": false
+  },
+  "hypotheses": {
+    "H_static": "A static inverse WIN/WDO relationship has subsequent predictive economic value beyond contemporaneous correlation.",
+    "H_regime": "The inverse relationship is regime-dependent and ex-ante observable regime conditioning improves out-of-sample economic performance versus the static rule.",
+    "H_break": "The inverse relationship breaks or reverses in identifiable regimes; failure to survive long horizons and distinct regimes rejects the family."
+  },
+  "required_analyses": [
+    "multi_horizon_historical_stability",
+    "rolling_correlation",
+    "lead_lag",
+    "conditional_dependence",
+    "out_of_sample_predictive_power",
+    "explicit_regime_break_tests",
+    "economic_expectation_after_frozen_costs",
+    "static_inverse_rule_vs_regime_conditioned_model"
+  ],
+  "regime_features_policy": {
+    "must_be_observable_ex_ante": true,
+    "candidate_classes": [
+      "lagged_WIN_return_and_realized_volatility",
+      "lagged_WDO_return_and_realized_volatility",
+      "lagged_WIN_WDO_rolling_correlation",
+      "lagged_cross_asset_spread_or_relative_momentum",
+      "calendar_or_session_state_if_known_before_decision_time"
+    ],
+    "forbidden": [
+      "future_returns",
+      "same_horizon_future_realized_regime_labels",
+      "post_event_manual_labels",
+      "threshold_retuning_after_validation_results"
+    ]
+  },
+  "evaluation_design": {
+    "phases": ["DISCOVERY", "VALIDATION", "PROSPECTIVE"],
+    "discovery_validation_separation_required": true,
+    "prospective_append_only_blind": true,
+    "no_partial_result_feedback": true,
+    "multiple_horizons_required": true,
+    "distinct_regimes_required": true,
+    "lead_lag_must_precede_promotion": true,
+    "contemporaneous_correlation_alone_never_promotes": true,
+    "costs_required_before_economic_survival": true,
+    "static_rule_is_mandatory_benchmark": true
+  },
+  "promotion_rule": "Promotion requires stable predictive power outside discovery, after costs, across materially distinct historical horizons/regimes, with a pre-specified ex-ante regime rule outperforming the static inverse benchmark without causal backfill. Otherwise reject.",
+  "rejection_rule": "Reject if predictive power is absent out of sample, economics fail after costs, dependence is only contemporaneous, results are concentrated in one short regime/horizon, regime identification is not ex-ante observable, or regime-conditioned performance is not robustly superior to the static benchmark.",
+  "data_and_source_boundary": {
+    "reuse_existing_qualified_WIN_WDO_data_only_if_semantics_match": true,
+    "new_source_requires_provenance_hash_schema_timezone_coverage": true,
+    "MT5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY",
+    "MT5_may_be_primary": false,
+    "MT5_may_reconstruct_lost_clocks": false
+  },
+  "frozen_safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_ECONOMICS_READ": false
+  },
+  "next_step_after_merge": "Audit existing qualified WIN/WDO artifacts and frozen cost convention, then freeze exact horizons/splits/features/tests before reading this family's economic outcomes."
+}
