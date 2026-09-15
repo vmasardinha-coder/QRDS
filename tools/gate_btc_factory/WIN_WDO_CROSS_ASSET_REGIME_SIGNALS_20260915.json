@@ -1,0 +1,13 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_signals.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "signals": {
+    "WIN_UP_WDO_DOWN": "lagged synchronized WIN return > 0 and lagged synchronized WDO return < 0",
+    "WIN_DOWN_WDO_UP": "lagged synchronized WIN return < 0 and lagged synchronized WDO return > 0"
+  },
+  "zero_return_policy": "NO_SIGNAL",
+  "same_direction_policy": "NO_SIGNAL_FOR_INVERSE_RULE",
+  "magnitude_threshold": "NONE_IN_STATIC_BENCHMARK",
+  "target_starts_after_signal_timestamp": true,
+  "no_posthoc_signal_redefinition": true
+}
