@@ -1,0 +1,25 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_discovery_spec.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "selection_objective": "Select at most one static and one regime-conditioned candidate using discovery only; validation and holdout are untouched until selection is frozen.",
+  "signal_semantics": {
+    "inverse_state_up_down": "WIN return > 0 and WDO return < 0 at decision horizon",
+    "inverse_state_down_up": "WIN return < 0 and WDO return > 0 at decision horizon",
+    "prediction": "subsequent return after the decision timestamp, never the contemporaneous move used to define state"
+  },
+  "candidate_scoring_order": [
+    "nonzero subsequent directional expectation",
+    "net expectation after applicable frozen costs",
+    "stability across discovery subperiods",
+    "parsimony"
+  ],
+  "tie_break": "simpler specification, then shorter lag set, then lexical deterministic order",
+  "maximum_selected_for_validation": {
+    "static": 1,
+    "regime_conditioned": 1
+  },
+  "validation_reselection_allowed": false,
+  "holdout_reselection_allowed": false,
+  "correlation_zero_lag_can_select": false,
+  "regime_break_must_be_reported_even_if_candidate_survives": true
+}
