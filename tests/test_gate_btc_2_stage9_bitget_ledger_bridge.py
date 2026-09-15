@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.gate_btc_2_stage9_bitget_ledger_bridge import build_canonical_admission
+from tools.gate_btc_2_stage9_bitget_ledger_bridge import build_canonical_admission, hour_already_admitted, utc_hour_bucket
 from tools.gate_btc_2_prospective_counter_bridge import validate_admission
 
 
@@ -68,6 +68,16 @@ class BitgetLedgerBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             cap, adm=self._fixture(Path(td)); d=json.loads((cap/"capture_decision.json").read_text()); d["economics_changes"]=1; (cap/"capture_decision.json").write_text(json.dumps(d))
             with self.assertRaises(RuntimeError): build_canonical_admission(cap, adm, 33321729143)
+
+    def test_retry_in_same_utc_hour_is_non_credit(self):
+        records=[{"captured_at_utc":"2026-08-30T17:00:08Z"}]
+        self.assertTrue(hour_already_admitted(records, "2026-08-30T17:53:59Z"))
+        self.assertFalse(hour_already_admitted(records, "2026-08-30T18:00:00Z"))
+        self.assertEqual(utc_hour_bucket("2026-08-30T17:59:59+00:00"), "2026-08-30T17")
+
+    def test_invalid_retry_timestamp_fails_closed(self):
+        with self.assertRaises(RuntimeError):
+            utc_hour_bucket("not-a-timestamp")
 
 
 if __name__ == "__main__": unittest.main()
