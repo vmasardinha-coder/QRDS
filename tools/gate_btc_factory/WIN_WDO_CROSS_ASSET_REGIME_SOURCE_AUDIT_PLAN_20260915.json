@@ -1,0 +1,24 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_source_audit_plan.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "purpose": "Reuse only already-qualified canonical WIN/WDO artifacts whose identity, chronology, timezone, coverage and cost semantics satisfy this independent family's analysis; otherwise fail closed and qualify a new official/free source before economics.",
+  "required_checks": [
+    "locate canonical WIN/WDO qualified coverage artifacts from closed funnel",
+    "verify exact instrument identity and continuous/front-contract semantics",
+    "verify synchronized timestamp and timezone semantics",
+    "verify historical coverage supports frozen long-horizon split and embargo",
+    "verify missing-session/calendar treatment",
+    "verify canonical cost convention applicability to both legs and tested holding horizons",
+    "record provenance and hashes of every reused physical artifact"
+  ],
+  "prohibitions": [
+    "no economic outcome read before source audit and analysis freeze are canonical",
+    "no causal backfill",
+    "no reconstruction of missing clocks from MT5",
+    "no source substitution based on favorable outcomes",
+    "no H1/H31 state mutation",
+    "no existing family counter credit"
+  ],
+  "MT5_role": "INDEPENDENT_SECONDARY_SOURCE/CROSS_VALIDATION_ONLY",
+  "fail_closed": true
+}
