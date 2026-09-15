@@ -219,10 +219,54 @@ menos de 1%; se nao batem, e outra escala ou outro indice, e colar fabricaria
 um salto de retorno inexistente — recomeca-se do vivo, pelo mesmo motivo que
 nao se emendam series de tickers sucedidos.
 
-Enquanto o cache nao chegar aos 200 pregoes, o relatorio declara
-`filtro NAO avaliado`, em vez de deixar passar por aprovacao. **Fica em aberto**
-para decisao do mandante que exposicao usar nesse intervalo: hoje mantem-se a
-de risco ligado, que e o comportamento anterior.
+Enquanto a serie do regime nao chegar aos 200 pregoes, o relatorio declara
+`filtro NAO avaliado`, em vez de deixar passar por aprovacao.
+
+### O regime da B3 passa a ser avaliado sobre o BOVA11
+
+O cache acumulava um pregao por dia e so chegaria a 200 em Fevereiro. Antes de
+aceitar essa espera, procurou-se serie longa do indice em todo o lado, e todas
+as portas estao fechadas (medido no runner, 2026-08-17 e 2026-09-02):
+
+| Candidata | Resposta |
+|---|---|
+| brapi `^BVSP` 2y / 1y / 6mo | HTTP 400 |
+| brapi `^BVSP` 3mo | 200 — mas so **64 pregoes** |
+| brapi `/available` | so conhece `^BVSP`; nao ha simbolo alternativo |
+| Yahoo `^BVSP` (query1 e query2) | HTTP 429 |
+| Stooq `^bvsp`/`bvsp`, `.com` e `.pl` | HTTP 200 com pagina anti-robo |
+| BCB SGS 7832 | HTTP 404 — a serie nao existe |
+| MT5 da corretora, `IBOV` a vista | sem historico diario no terminal |
+| MT5 da corretora, `IBOV11` | 258 pregoes, mas **um por mes** em 2022-2024 e desvio ate 1.07% |
+
+O `IBOV11` foi o caso instrutivo: tinha o nome certo, a escala certa e mais
+pontos do que os 200 necessarios. Foi recusado pela conferencia contra os
+pregoes ja recolhidos — sem ela, teria entrado como se fosse o indice.
+
+Decisao (mandante, 2026-09-02): a SMA 200 passa a ser calculada sobre o
+**BOVA11** (`config.B3_REGIME_PROXY`), o ETF do Ibovespa que ja vem do mesmo
+arquivo COTAHIST que serve as 49 acoes. Medicao que suportou a decisao:
+
+    BOVA11: 417 pregoes (2025-01-02 -> 2026-09-01)
+    correlacao dos retornos diarios com o indice: 0.9894
+    pior discordancia num dia: 0.38 pp
+    deriva acumulada em 73 pregoes: +0.48 pp (indice +1.33%, proxy +1.81%)
+
+**Isto e mudanca de metodologia, nao troca de fonte**, e por isso esta aqui e
+nao so no codigo. So o regime muda de serie: o obstaculo, o benchmark e o alfa
+continuam a sair do `^BVSP` verdadeiro, ha teste a fixar essa separacao, e o
+relatorio escreve `avaliado por proxy (BOVA11)` em todos os ciclos — quem le
+nunca fica a pensar que o numero do regime e o do alfa vem do mesmo sitio.
+
+**O custo conhecido, medido e nao resolvido:** a deriva de +0.48 pp em 73
+pregoes e sistematica, nao ruido. Ao ano acumula 1.5 a 2 pontos de diferenca
+de nivel, e a SMA 200 e uma media de nivel. Perto do limiar o proxy pode dizer
+'risco ligado' onde o indice diria o contrario. A 2026-09-02 a folga era de
++3.13%, mas isso e a circunstancia do dia, nao uma propriedade do desenho.
+
+Se o BOVA11 faltar num ciclo, volta-se ao indice — que nao tem os 200 pregoes
+e por isso deixa o filtro por avaliar, declarado. Degradar para 'nao avaliado'
+e honesto; inventar um regime nao seria.
 
 ### Segredos
 
