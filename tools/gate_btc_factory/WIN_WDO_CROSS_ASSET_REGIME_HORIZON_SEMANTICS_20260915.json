@@ -1,0 +1,13 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_horizon_semantics.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "principle": "Horizon labels are evaluated only where the qualified data frequency and session semantics physically support them; unsupported horizons fail closed rather than being synthetically reconstructed.",
+  "intraday_bar": "one native synchronized qualified bar",
+  "one_session": "next eligible session close relative to decision timestamp",
+  "five_sessions": "fifth subsequent eligible session",
+  "twenty_sessions": "twentieth subsequent eligible session",
+  "sixty_sessions": "sixtieth subsequent eligible session",
+  "weekend_holiday_handling": "advance by qualified eligible trading sessions, never calendar interpolation",
+  "missing_clock_reconstruction": false,
+  "MT5_fill_missing_clock": false
+}
