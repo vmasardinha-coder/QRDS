@@ -16,7 +16,11 @@ class Stage9BitgetCollectionClockTests(unittest.TestCase):
         self.assertEqual((d["provider"], d["venue"], d["instrument"]), ("BITGET_PUBLIC_V2", "BITGET", "BTCUSDT"))
         self.assertTrue(d["authorization"]["human_authorized"])
         self.assertEqual(d["clock"]["cadence_minutes"], 60)
-        self.assertEqual(d["clock"]["cron_utc"], "0 * * * *")
+        self.assertEqual(d["clock"]["cron_utc"], "17 * * * *")
+        self.assertEqual(d["clock"]["operational_retry_crons_utc"], ["37 * * * *", "53 * * * *"])
+        self.assertEqual(d["clock"]["canonical_credit_max_per_utc_hour"], 1)
+        self.assertTrue(d["clock"]["retry_attempts_are_non_credit_when_hour_already_admitted"])
+        self.assertTrue(d["clock"]["retry_attempts_do_not_change_cadence_minutes"])
         self.assertFalse(d["clock"]["missed_runs_backfilled"])
         self.assertTrue(d["clock"]["first_scheduled_capture_must_postdate_clock_merge"])
         self.assertFalse(d["scientific_boundary"]["required_n_changed"])
@@ -32,7 +36,9 @@ class Stage9BitgetCollectionClockTests(unittest.TestCase):
 
     def test_workflow_schedule_matches_preregistered_clock(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn('cron: "0 * * * *"', workflow)
+        self.assertIn('cron: "17 * * * *"', workflow)
+        self.assertIn('cron: "37 * * * *"', workflow)
+        self.assertIn('cron: "53 * * * *"', workflow)
         self.assertIn('GATE_BTC_STAGE9_CAPTURE_CADENCE_MINUTES: "60"', workflow)
         self.assertIn('gate_btc_2_stage9_bitget_collection_clock_v1.json', workflow)
 
