@@ -11,6 +11,7 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/grammar_scout_handoff.py'
+      - 'tools/gate_btc_factory/grammar_scout_prereg_transport.py'
       - 'tests/test_gate_btc_grammar_scout_handoff.py'
       - '.github/workflows/gate-btc-factory-grammar-scout-handoff.yml'
 
@@ -50,38 +51,37 @@ jobs:
           python -m pip install -q pytest
           cd source_repo
           pytest -q tests/test_gate_btc_grammar_scout_handoff.py
+          python -m py_compile tools/gate_btc_factory/grammar_scout_prereg_transport.py
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Materialize outcome-blind preregistration queue
+      - name: Materialize outcome-blind handoff and separate preregistration envelopes
         if: github.event_name != 'pull_request'
         run: |
           test -f runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json
-          mkdir -p runtime_repo/runtime/factory_autonomy/grammar_handoff_audits
+          mkdir -p runtime_repo/runtime/factory_autonomy/grammar_handoff_audits runtime_repo/runtime/factory_autonomy/grammar_preregistrations
           python source_repo/tools/gate_btc_factory/grammar_scout_handoff.py --scout runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json --ledger-dir runtime_repo/runtime/factory_autonomy/grammar_handoff_audits --output GRAMMAR_HANDOFF_RUNTIME.json
+          python source_repo/tools/gate_btc_factory/grammar_scout_prereg_transport.py --handoff GRAMMAR_HANDOFF_RUNTIME.json --ledger-dir runtime_repo/runtime/factory_autonomy/grammar_preregistrations --output GRAMMAR_PREREG_TRANSPORT_RUNTIME.json
           python - <<'PY'
           import json
-          d=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json'))
-          assert d['mode']=='OUTCOME_BLIND_HANDOFF_ONLY'
-          s=d['safety']; assert s['h1_h31_untouched'] and s['no_retune'] and s['no_backfill'] and s['fail_closed']
-          for r in d['requests']:
-              assert r['economics_read'] is False
-              assert r['may_allocate_existing_h_id'] is False
-              assert r['may_modify_existing_grammar'] is False
-              assert r['next_gate']=='SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ'
+          h=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json')); p=json.load(open('GRAMMAR_PREREG_TRANSPORT_RUNTIME.json'))
+          assert h['mode']=='OUTCOME_BLIND_HANDOFF_ONLY'
+          assert p['safety']['H1_H31_UNTOUCHED'] and p['safety']['NO_RETUNE'] and p['safety']['NO_BACKFILL']
+          for f in p['families']: assert f['status']=='PREREGISTERED_AWAITING_SOURCE_COST_QUALIFICATION'
           PY
-      - name: Persist append-only handoff queue
+      - name: Persist append-only handoff and preregistration transport
         if: github.event_name != 'pull_request'
         run: |
           cp GRAMMAR_HANDOFF_RUNTIME.json "runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/${{ github.run_id }}.json"
           cp GRAMMAR_HANDOFF_RUNTIME.json runtime_repo/runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json
+          cp GRAMMAR_PREREG_TRANSPORT_RUNTIME.json runtime_repo/runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json
           cd runtime_repo
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json
-          git commit -m "Factory grammar handoff ${{ github.run_id }}" || exit 0
+          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/grammar_preregistrations runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json
+          git commit -m "Factory grammar handoff and prereg transport ${{ github.run_id }}" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
           exit 1
