@@ -1,0 +1,17 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_no_trades_audit_boundary.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "trigger": "If mass NO_TRADES or zero-signal states occur during execution",
+  "classification_order": [
+    "verify synchronized source rows exist for both WIN and WDO",
+    "verify calendar/session eligibility",
+    "verify signal grammar can fire on observed pre-outcome features",
+    "verify costs/filters are not being applied before signal-count diagnostics",
+    "classify legitimate rarity only after data and plumbing checks pass"
+  ],
+  "threshold_retune_allowed": false,
+  "grammar_retune_allowed": false,
+  "mechanical_bug_fix_allowed": true,
+  "bug_fix_may_receive_retroactive_credit": false,
+  "fail_closed": true
+}
