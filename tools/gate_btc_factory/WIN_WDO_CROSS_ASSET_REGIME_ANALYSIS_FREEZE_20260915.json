@@ -1,0 +1,67 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_analysis_freeze.v1",
+  "frozen_at": "2026-09-15T11:52:00-03:00",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "outcomes_read_before_freeze": false,
+  "unit": "synchronized qualified WIN/WDO bars under already-admitted source semantics",
+  "return_definition": "log close-to-close return on synchronized bars; signals use only data timestamped no later than decision time",
+  "historical_horizons": ["intraday_bar", "1_session", "5_sessions", "20_sessions", "60_sessions"],
+  "rolling_dependence_windows_sessions": [20, 60, 120, 252],
+  "lead_lag_steps": [-12, -6, -3, -1, 0, 1, 3, 6, 12],
+  "conditional_dependence": ["Pearson", "Spearman", "sign_concordance", "tail_quadrant_frequency"],
+  "regime_rule_candidates_frozen": [
+    "lagged_rolling_correlation_sign_and_magnitude_bucket",
+    "lagged_WIN_realized_volatility_tercile",
+    "lagged_WDO_realized_volatility_tercile",
+    "lagged_joint_volatility_state",
+    "lagged_relative_momentum_sign"
+  ],
+  "model_classes": {
+    "static_benchmark": "inverse-direction rule without regime filter",
+    "conditioned": "same inverse-direction rule gated only by frozen ex-ante regime states",
+    "complexity_limit": "no post-validation feature additions or threshold optimization"
+  },
+  "temporal_split_policy": {
+    "discovery": "earliest contiguous 50% of eligible synchronized history",
+    "validation": "next contiguous 30%",
+    "historical_holdout": "final contiguous 20% ending at the pre-prereg cutoff",
+    "prospective": "strictly post-prereg observations only after separate prospective activation",
+    "embargo": "one maximum tested prediction horizon between adjacent historical partitions"
+  },
+  "predictive_targets": ["next_bar_WIN", "next_bar_WDO", "next_session_WIN", "next_session_WDO"],
+  "required_comparisons": [
+    "static_vs_zero_signal",
+    "regime_conditioned_vs_zero_signal",
+    "regime_conditioned_vs_static",
+    "discovery_vs_validation_vs_historical_holdout",
+    "low_vs_mid_vs_high_volatility_regimes",
+    "negative_vs_neutral_vs_positive_lagged_correlation_regimes"
+  ],
+  "economics": {
+    "cost_schedule": "reuse the already-preregistered canonical WIN/WDO cost convention only; if exact applicability cannot be proven, fail closed before economics",
+    "gross_and_net_required": true,
+    "no_cost_reoptimization": true
+  },
+  "survival_conditions": [
+    "predictive direction is not explained solely by lag zero contemporaneous correlation",
+    "validation and historical holdout retain same directional economic expectation after costs",
+    "effect is not concentrated in a single short historical regime",
+    "regime variables are observable ex ante",
+    "conditioned model improves on static benchmark in validation and holdout without post-hoc retuning"
+  ],
+  "automatic_rejection_conditions": [
+    "no out-of-sample predictive power",
+    "net economics non-positive under applicable frozen costs",
+    "only contemporaneous dependence survives",
+    "sign or economics collapse across long horizons or distinct regimes",
+    "regime-conditioned model fails to improve robustly on static benchmark",
+    "source semantics or synchronization cannot be proven without causal backfill"
+  ],
+  "multiple_testing_policy": "All listed horizons, lags and regime candidates are one frozen family search space; discovery selects at most one static specification and one conditioned specification for untouched validation. No validation-driven reselection.",
+  "prospective_credit": {
+    "retroactive": 0,
+    "requires_separate_activation_after_historical_survival": true,
+    "append_only": true,
+    "blind": true
+  }
+}
