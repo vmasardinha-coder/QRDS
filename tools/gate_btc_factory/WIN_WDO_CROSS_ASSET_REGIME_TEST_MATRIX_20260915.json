@@ -1,0 +1,30 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_test_matrix.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "descriptive": {
+    "rolling_correlation": [20, 60, 120, 252],
+    "rank_correlation": true,
+    "sign_concordance": true,
+    "tail_quadrants": true
+  },
+  "lead_lag": {
+    "steps": [-12, -6, -3, -1, 0, 1, 3, 6, 12],
+    "report_zero_lag_separately": true,
+    "promotion_requires_nonzero_lag": true
+  },
+  "prediction": {
+    "targets": ["next_bar_WIN", "next_bar_WDO", "next_session_WIN", "next_session_WDO"],
+    "report_directional_mean": true,
+    "report_hit_rate": true,
+    "report_net_after_cost": true
+  },
+  "regime_break": {
+    "lagged_correlation_state": true,
+    "WIN_volatility_tercile": true,
+    "WDO_volatility_tercile": true,
+    "joint_volatility_state": true,
+    "relative_momentum_sign": true
+  },
+  "benchmarks": ["ZERO_SIGNAL", "STATIC_INVERSE_STATE", "REGIME_CONDITIONED_INVERSE_STATE"],
+  "no_post_validation_matrix_expansion": true
+}
