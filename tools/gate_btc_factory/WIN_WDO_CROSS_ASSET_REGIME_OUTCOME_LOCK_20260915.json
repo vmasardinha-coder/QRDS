@@ -1,0 +1,17 @@
+{
+  "schema": "gate_btc.factory.win_wdo_cross_asset_regime_outcome_lock.v1",
+  "family": "WIN_WDO_CROSS_ASSET_REGIME_INDEPENDENT",
+  "locked": true,
+  "unlock_requires": [
+    "preregistration_bundle_merged_to_main_with_applicable_CI_green",
+    "source_audit_completed_without_outcome_based_selection",
+    "cost_applicability_proven_or_separately_preregistered"
+  ],
+  "while_locked_forbidden": [
+    "historical_economic_outcome_read",
+    "discovery_candidate_scoring",
+    "validation_read",
+    "holdout_read",
+    "prospective_credit"
+  ]
+}
