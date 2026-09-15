@@ -1,0 +1,2 @@
+# WIN/WDO + Grammar autonomy implementation
+Operational-only wiring; scientific gates remain frozen. XAWINWDO_REGIME_001 has an isolated scheduled/push source-cost runner. Grammar Scout handoff chains from successful scout completion. H1/H31 untouched; zero counter/retroactive credit; no retune/backfill; no engine feed/orders/capital. Outcomes remain sealed until source and cost semantics are explicitly proven.
