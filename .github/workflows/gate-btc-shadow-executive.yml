@@ -1,4 +1,4 @@
-name: GATE BTC Shadow Executive 13 Blocks
+name: GATE BTC Shadow Executive FULL MASTER v2
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
       - .github/workflows/gate-btc-shadow-executive.yml
       - tools/gate_btc_shadow_executive.py
       - tests/test_gate_btc_shadow_executive.py
+      - tools/gate_btc_executive_reporting_requirements.json
   push:
     branches: [main]
     paths:
@@ -38,7 +39,7 @@ jobs:
           python-version: "3.12"
       - name: Compile generator
         run: python -m py_compile tools/gate_btc_shadow_executive.py
-      - name: Test fixed 13-block contract
+      - name: Test FULL MASTER v2 plus fixed 13-block compatibility
         run: python -m unittest -v tests.test_gate_btc_shadow_executive
       - name: Assert immutable reporting boundary
         run: |
@@ -63,12 +64,21 @@ jobs:
               write_outputs(p,root/'executive','2026-09-09')
               e=json.load(open(root/'executive/SHADOW_EXECUTIVE_LATEST.json',encoding='utf-8'))
               assert e['fixed_block_count']==13
+          assert e['schema']=='gate_btc.shadow_executive.v2'
+          assert e['full_master_v2']['single_model'] is True
+          assert e['full_master_v2']['proxy']['must_never_conflate'] is True
+          assert e['full_master_v2']['economic_decision_board']['capital_reference_brl']==180000
+          assert set(e['full_master_v2']['external_controls']) >= {
+            'portal_btc','portal_watchlist','macro_quant','agent_trader','proxy_real',
+            'empiricus_delta','cloud_delta','delta_external_historical','atlas_manual'
+          }
               assert e['blocks'][4]['title']=='PRESERVATION'
               assert e['blocks'][8]['content']['empiricus_delta_required'] is True
               assert e['blocks'][8]['content']['empiricus_delta']['canonical_evidence_status']=='ABSENT_NOT_INFERRED'
               assert e['reporting_only'] is True and e['scientific_authority'] is False
               assert e['engine_feed'] is False and e['orders_generated']==0 and e['real_capital_used']==0
               assert e['methodology_changes']==0 and e['counter_changes']==0 and e['promotion_allowed'] is False
+          assert pathlib.Path('runtime_repo/runtime/executive/SHADOW_EXECUTIVE_LATEST.html').is_file()
           print('SHADOW_EXECUTIVE_BOUNDARY=PASS')
           PY
 
@@ -106,7 +116,7 @@ jobs:
           assert 'executive_track_catalog' in s
           assert 'empiricus_delta' in s['executive_track_catalog']['required_reporting_references']
           PY
-      - name: Build canonical 13-block executive
+      - name: Build FULL MASTER v2 executive
         run: >-
           python main_repo/tools/gate_btc_shadow_executive.py
           --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
@@ -143,7 +153,7 @@ jobs:
           git config user.email gate-btc-reporting-bot@users.noreply.github.com
           git add runtime/executive/
           git diff --cached --quiet && exit 0
-          git commit -m "Publish 13-block GATE BTC shadow executive"
+          git commit -m "Publish GATE BTC FULL MASTER v2 shadow executive"
           for attempt in 1 2 3 4 5; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then
