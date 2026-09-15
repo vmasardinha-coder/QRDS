@@ -1,0 +1,24 @@
+name: GATE BTC WIN WDO Cross Asset Regime Horizon Semantics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/WIN_WDO_CROSS_ASSET_REGIME_HORIZON_SEMANTICS_20260915.json'
+      - 'tools/gate_btc_factory/test_win_wdo_cross_asset_regime_horizon_semantics.py'
+      - '.github/workflows/gate-btc-win-wdo-cross-asset-regime-horizon-semantics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  horizon-semantics-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate horizon semantics
+        run: python -m pytest -q tools/gate_btc_factory/test_win_wdo_cross_asset_regime_horizon_semantics.py
