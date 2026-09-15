@@ -1,0 +1,83 @@
+name: GATE BTC WIN WDO Independent Runner
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/win_wdo_independent_runner.py'
+      - '.github/workflows/gate-btc-win-wdo-independent-runner.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/win_wdo_independent_runner.py'
+      - 'tests/test_gate_btc_win_wdo_independent_runner.py'
+      - '.github/workflows/gate-btc-win-wdo-independent-runner.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-win-wdo-independent-runner-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression tests
+        run: |
+          python -m pip install -q pytest
+          cd source_repo
+          pytest -q tests/test_gate_btc_win_wdo_independent_runner.py
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Run isolated source-cost gate
+        if: github.event_name != 'pull_request'
+        run: python source_repo/tools/gate_btc_factory/win_wdo_independent_runner.py --repo source_repo --runtime runtime_repo/runtime/factory_autonomy/WIN_WDO_INDEPENDENT_RUNTIME.json
+      - name: Validate isolation
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('runtime_repo/runtime/factory_autonomy/WIN_WDO_INDEPENDENT_RUNTIME.json'))
+          assert d['family']=='XAWINWDO_REGIME_001'
+          assert d['safety']['h1_h31_untouched'] is True
+          assert d['safety']['economics_opened_without_gates'] is False
+          assert d['safety']['existing_counter_credit']==0
+          PY
+      - name: Persist runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/WIN_WDO_INDEPENDENT_RUNTIME.json
+          git commit -m "WIN WDO independent runtime ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
