@@ -65,6 +65,9 @@ jobs:
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: gate-btc-2-stage9-ledger-runtime
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -123,7 +126,7 @@ jobs:
           LEDGER="$(find previous -name stage9_admission_ledger.jsonl -type f -print -quit)"
           test -n "$LEDGER"
           cp "$LEDGER" evidence/stage9_admission_ledger.jsonl
-      - name: Append scheduled capture exactly once
+      - name: Append at most one canonical capture per UTC hour
         run: |
           set -euo pipefail
           BEFORE="$(wc -l < evidence/stage9_admission_ledger.jsonl)"
@@ -135,18 +138,29 @@ jobs:
             --canonical-admission-out evidence/bitget_canonical_admission.json \
             --counter-out evidence/stage9_counter.json
           AFTER="$(wc -l < evidence/stage9_admission_ledger.jsonl)"
-          test "$AFTER" -eq "$((BEFORE + 1))"
+          export BEFORE AFTER
           python - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
+          before=int(os.environ['BEFORE']); after=int(os.environ['AFTER'])
+          assert after in {before, before+1}
           c=json.loads(Path('evidence/stage9_counter.json').read_text())
+          candidate=json.loads(Path('evidence/bitget_canonical_admission.json').read_text())
+          rows=[json.loads(x) for x in Path('evidence/stage9_admission_ledger.jsonl').read_text().splitlines() if x.strip()]
+          if after == before:
+              bucket=candidate['captured_at_utc'][:13]
+              assert any(r['captured_at_utc'][:13] == bucket for r in rows)
+              assert c['canonical_counter']==before
+              print('BITGET_STAGE9_SCHEDULED_RETRY=NO_NEW_CREDIT_DUPLICATE_UTC_HOUR')
+          else:
+              assert c['canonical_counter']==before+1
+              print('BITGET_STAGE9_SCHEDULED_CANONICAL_APPEND=PASS')
           assert c['prospective_credit_from_backfill']==0
           assert c['safety']['RESEARCH_ONLY'] is True
           assert c['safety']['SHADOW_ONLY'] is True
           assert c['safety']['NOT_APPROVED'] is True
           assert c['safety']['ENGINE_FEED'] is False
           assert c['safety']['ORDERS']==0 and c['safety']['REAL_CAPITAL']==0
-          print('BITGET_STAGE9_SCHEDULED_CANONICAL_APPEND=PASS')
           PY
       - name: Preserve updated canonical ledger and admission evidence
         uses: actions/upload-artifact@v4

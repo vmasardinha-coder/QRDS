@@ -2,7 +2,10 @@ name: GATE BTC 2 Stage 9 Bitget Forward Adapter
 
 on:
   schedule:
+    # Primary hourly slot plus prospective reliability retries. Canonical credit remains max 1 per UTC hour.
     - cron: "17 * * * *"
+    - cron: "37 * * * *"
+    - cron: "53 * * * *"
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +18,7 @@ on:
       - tools/gate_btc_2_stage9_bitget_collection_clock_v1.json
       - tools/gate_btc_2_microstructure_shadow_contract_v1.json
       - tests/test_gate_btc_2_stage9_bitget_forward_capture.py
+      - tests/test_gate_btc_2_stage9_bitget_collection_clock.py
   workflow_dispatch:
 
 permissions:
@@ -58,6 +62,10 @@ jobs:
           assert d['authorization']['human_authorized'] is True
           c=d['clock']
           assert c['cadence_minutes']==60 and c['cron_utc']=='17 * * * *'
+          assert c['operational_retry_crons_utc']==['37 * * * *','53 * * * *']
+          assert c['canonical_credit_max_per_utc_hour']==1
+          assert c['retry_attempts_are_non_credit_when_hour_already_admitted'] is True
+          assert c['retry_attempts_do_not_change_cadence_minutes'] is True
           assert c['first_scheduled_capture_must_postdate_clock_merge'] is True
           assert c['missed_runs_backfilled'] is False and c['schedule_delay_does_not_trigger_timestamp_repair'] is True
           b=d['scientific_boundary']

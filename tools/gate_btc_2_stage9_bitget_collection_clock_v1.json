@@ -16,7 +16,14 @@
     "first_scheduled_capture_must_postdate_clock_merge": true,
     "missed_runs_backfilled": false,
     "schedule_delay_does_not_trigger_timestamp_repair": true,
-    "capture_timestamp_remains_observed_runtime_timestamp": true
+    "capture_timestamp_remains_observed_runtime_timestamp": true,
+    "operational_retry_crons_utc": [
+      "37 * * * *",
+      "53 * * * *"
+    ],
+    "canonical_credit_max_per_utc_hour": 1,
+    "retry_attempts_are_non_credit_when_hour_already_admitted": true,
+    "retry_attempts_do_not_change_cadence_minutes": true
   },
   "scientific_boundary": {
     "required_n_changed": false,
