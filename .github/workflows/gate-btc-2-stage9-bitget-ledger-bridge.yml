@@ -40,9 +40,6 @@ jobs:
   contract-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    concurrency:
-      group: gate-btc-2-stage9-ledger-runtime
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -68,6 +65,9 @@ jobs:
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: gate-btc-2-stage9-ledger-runtime
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
