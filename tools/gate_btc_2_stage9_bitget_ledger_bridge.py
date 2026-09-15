@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +40,21 @@ def file_sha256(path: Path) -> str:
 
 def canonical_hash(payload: Any) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def utc_hour_bucket(value: str) -> str:
+    require(isinstance(value, str) and value, "captured_at_utc missing")
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise RuntimeError("captured_at_utc invalid") from exc
+    require(dt.tzinfo is not None, "captured_at_utc must be timezone-aware")
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
+
+
+def hour_already_admitted(records: list[dict[str, Any]], captured_at_utc: str) -> bool:
+    target = utc_hour_bucket(captured_at_utc)
+    return any(utc_hour_bucket(record["captured_at_utc"]) == target for record in records)
 
 
 def build_canonical_admission(capture_dir: Path, admission_dir: Path, run_id: int) -> dict[str, Any]:
@@ -131,6 +147,17 @@ def main() -> int:
     admission = build_canonical_admission(args.capture_dir, args.admission_dir, args.run_id)
     args.canonical_admission_out.parent.mkdir(parents=True, exist_ok=True)
     args.canonical_admission_out.write_text(json.dumps(admission, indent=2, sort_keys=True) + "\n")
+    if hour_already_admitted(before, admission["captured_at_utc"]):
+        counter = counter_from_ledger(before)
+        args.counter_out.parent.mkdir(parents=True, exist_ok=True)
+        args.counter_out.write_text(json.dumps(counter, indent=2, sort_keys=True) + "\n")
+        require(counter["canonical_counter"] == len(before), "duplicate-hour retry mutated canonical counter")
+        require(counter["prospective_credit_from_backfill"] == 0, "backfill credit must remain zero")
+        print("BITGET_STAGE9_LEDGER_APPEND=SKIP_DUPLICATE_UTC_HOUR")
+        print(f"STAGE9_CAPTURE_RUN_ID={args.run_id}")
+        print(f"STAGE9_CANONICAL_COUNTER={counter['canonical_counter']}")
+        print("STAGE9_COMPLETE=false ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0")
+        return 0
     record = append_admission(args.ledger, admission)
     counter = counter_from_ledger(parse_ledger(args.ledger))
     args.counter_out.parent.mkdir(parents=True, exist_ok=True)
