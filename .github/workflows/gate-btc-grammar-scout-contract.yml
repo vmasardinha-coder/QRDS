@@ -1,0 +1,20 @@
+name: GATE BTC Grammar Scout Contract
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_scout_traversal_contract.v1.json'
+      - 'tests/test_gate_btc_grammar_scout_contract.py'
+      - '.github/workflows/gate-btc-grammar-scout-contract.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_grammar_scout_contract.py
