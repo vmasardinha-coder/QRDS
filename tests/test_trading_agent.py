@@ -1447,18 +1447,89 @@ class TestCotahistDownloadResilience(unittest.TestCase):
     """
 
     def test_a_cut_transfer_resumes_instead_of_starting_over(self):
+        # O corpo tem de ser um ZIP a serio: '_download' passou a so dar por
+        # bom o que abre, e um punhado de bytes nunca abriria.
+        blob = _cotahist_zip([_cotahist_record()])
+        corte = len(blob) // 2
         pedidos = []
 
         def falso_pedaco(url, desde, timeout):
             pedidos.append(desde)
             if desde == 0:
-                return b"a" * 10, 25        # corta a meio
-            return b"b" * 15, 25
+                return blob[:corte], len(blob)   # corta a meio
+            return blob[desde:], len(blob)
 
         with mock.patch.object(cotahist, "_pedaco", falso_pedaco):
             dados = cotahist._download(2026)
-        self.assertEqual(pedidos, [0, 10])   # retomou, nao recomecou
-        self.assertEqual(len(dados), 25)
+        self.assertEqual(pedidos, [0, corte])    # retomou, nao recomecou
+        self.assertEqual(dados, blob)
+
+    def test_a_short_body_the_server_called_complete_is_refused(self):
+        """O estrago de 2026-09-15.
+
+        O servidor nao declarou tamanho e respondeu curto. Sem verificacao o
+        blob passava por completo, rebentava no parse com 'ZIP ilegivel', e o
+        ciclo ja nao tinha como voltar a tentar: as 51 series foram para a
+        brapi com historico truncado, sobraram 2 candidatos contra um piso de
+        4, e so nao houve liquidacao porque nenhum gatilho disparou.
+        """
+        blob = _cotahist_zip([_cotahist_record()])
+        respostas = [(blob[:len(blob) // 3], None), (blob, None)]
+        pedidos = []
+
+        def falso_pedaco(url, desde, timeout):
+            pedidos.append(desde)
+            return respostas[min(len(pedidos) - 1, len(respostas) - 1)]
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            dados = cotahist._download(2026)
+        self.assertEqual(dados, blob)
+        # Recomecou do zero em vez de pedir 'a partir de onde ficou': um corpo
+        # que o servidor deu por inteiro nao se retoma.
+        self.assertEqual(pedidos, [0, 0])
+
+    def test_it_gives_up_with_a_reason_when_every_body_is_unreadable(self):
+        tentativas = []
+
+        def sempre_lixo(url, desde, timeout):
+            tentativas.append(desde)
+            return b"nao sou um zip", None
+
+        with mock.patch.object(cotahist, "_pedaco", sempre_lixo), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError) as caught:
+                cotahist._download(2026)
+        self.assertIn("ilegivel", str(caught.exception))
+        self.assertEqual(len(tentativas), cotahist.TENTATIVAS)
+
+    def test_an_empty_archive_is_refused_while_there_is_still_time_to_retry(self):
+        # Um ZIP que abre mas nao traz nada e tao inutil como um que nao abre.
+        # A diferenca esta em ONDE se descobre: aqui ainda ha tentativas; no
+        # parse ja nao ha, e o ciclo inteiro cai para a fonte truncada.
+        import io as _io
+        import zipfile as _zipfile
+        buffer = _io.BytesIO()
+        with _zipfile.ZipFile(buffer, "w"):
+            pass
+        vazio = buffer.getvalue()
+        tentativas = []
+
+        def falso_pedaco(url, desde, timeout):
+            tentativas.append(desde)
+            return vazio, len(vazio)
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError):
+                cotahist._download(2026)
+        self.assertEqual(len(tentativas), cotahist.TENTATIVAS)
+
+    def test_a_valid_archive_is_returned_untouched(self):
+        blob = _cotahist_zip([_cotahist_record()])
+        with mock.patch.object(cotahist, "_pedaco",
+                               lambda url, desde, timeout: (blob, len(blob))):
+            self.assertEqual(cotahist._download(2026), blob)
 
     def test_it_gives_up_with_a_reason_instead_of_looping_forever(self):
         with mock.patch.object(cotahist, "_pedaco",

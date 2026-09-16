@@ -105,6 +105,35 @@ uma página anti-robô a partir destes IPs, enquanto a Nasdaq serve 549 pregões
 e aguenta pedidos seguidos. A sonda pode voltar a correr sempre que uma fonte
 falhar, e é assim que a próxima troca deve ser decidida.
 
+### O arquivo da B3 e verificado antes de ser dado por bom
+
+O COTAHIST e a fonte primaria das 49 acoes e do BOVA11. Quando falha, a
+cascata serve a carteira com historico truncado da brapi, e o momentum 12-1
+rejeita quase tudo por historico insuficiente — o que leva ao piso de
+diversificacao e a 100% caixa. **Uma falha de rede vira uma decisao de
+carteira**, e isso ja aconteceu duas vezes por caminhos diferentes:
+
+| Data | Como falhou | Consequencia |
+|---|---|---|
+| 2026-08-14 | `IncompleteRead` nos 62 MB | 51 series para a brapi |
+| 2026-09-15 | servidor sem tamanho declarado respondeu curto; `COTAHIST: ZIP ilegivel` | 47 de 49 nomes rejeitados, **2 elegiveis contra um piso de 4** |
+
+A 15/09 a carteira B3 so escapou a liquidacao porque nenhum gatilho de
+rebalanceio disparou nesse dia. Ficou de pe por sorte de calendario, nao por
+o sistema a ter protegido. O mesmo corte apanhou o BOVA11 e devolveu o filtro
+de regime a `NAO avaliado` depois de dez dias a funcionar.
+
+A correccao de Agosto cobriu a ligacao a cair a meio; nao cobria o servidor a
+responder pouco e bem. `_download` passa agora a **verificar que o corpo abre
+como ZIP e traz conteudo antes de o devolver**. Um blob ilegivel conta como
+tentativa falhada e e pedido outra vez — recomecando do zero, porque um corpo
+que o servidor deu por inteiro nao se retoma. Sao 4 tentativas com espera
+crescente; esgotadas, a falha e declarada e a cascata segue como sempre.
+
+O ponto do desenho: a verificacao vive onde **ainda ha tentativas**. Descobrir
+no parse que o ZIP nao abre e descobrir tarde demais — o ciclo ja nao tem como
+voltar a pedir, e as 51 series ja foram para a fonte truncada.
+
 Uma falha da fonte (bloqueio, 5xx) é distinta de o ativo não existir nela: só
 a primeira faz desistir da fonte para o resto do ciclo (`SourceUnavailable`).
 Sem essa distinção, três tickers desconhecidos na Stooq mandavam as 100 ações
