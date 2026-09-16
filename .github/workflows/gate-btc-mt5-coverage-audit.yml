@@ -1,0 +1,20 @@
+name: GATE BTC MT5 Coverage Audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/mt5_packet_coverage.py'
+      - 'tests/test_gate_btc_mt5_packet_coverage.py'
+      - '.github/workflows/gate-btc-mt5-coverage-audit.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_mt5_packet_coverage.py
