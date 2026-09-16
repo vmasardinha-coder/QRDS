@@ -1,0 +1,20 @@
+name: GATE BTC Grammar Scout Traversal Proof
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_scout_status.py'
+      - 'tests/test_gate_btc_grammar_scout_status.py'
+      - '.github/workflows/gate-btc-grammar-scout-traversal-proof.yml'
+permissions:
+  contents: read
+jobs:
+  traversal-semantics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_grammar_scout_status.py
