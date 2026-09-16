@@ -60,21 +60,21 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $58,137.60 |
-| Retorno do dia | -0.42% |
-| Retorno desde inicio (2026-08-06) | +16.28% |
-| Benchmark BTC | +17.32% |
-| **Alfa vs BTC** | **-1.05%** |
+| NAV | $58,547.00 |
+| Retorno do dia | +0.28% |
+| Retorno desde inicio (2026-08-06) | +17.09% |
+| Benchmark BTC | +17.85% |
+| **Alfa vs BTC** | **-0.76%** |
 | Caixa | $2,942.06 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.383252 | $75,576.79 | $28,964.94 | 49.8% |
-| UNI | 1401.65 | $6.27 | $8,784.40 | 15.1% |
-| ZEC | 7.90515 | $1,105.89 | $8,742.22 | 15.0% |
-| ENA | 62349.5 | $0.14 | $8,703.99 | 15.0% |
+| BTC | 0.383252 | $75,917.51 | $29,095.52 | 49.7% |
+| ZEC | 7.90515 | $1,123.84 | $8,884.12 | 15.2% |
+| UNI | 1401.65 | $6.32 | $8,858.97 | 15.1% |
+| ENA | 62349.5 | $0.14 | $8,766.34 | 15.0% |
 
 _Sem movimentacoes hoje._
 
@@ -82,7 +82,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +18.7% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de +19.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 10
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
@@ -91,8 +91,8 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.0M < 1M) |
-| ADA | nao bate o benchmark (+14.4% <= +18.7%) |
-| ALGO | nao bate o benchmark (+2.3% <= +18.7%) |
+| ADA | nao bate o benchmark (+15.3% <= +19.2%) |
+| ALGO | nao bate o benchmark (+3.0% <= +19.2%) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.1M < 1M) |
 | ANKR | liquidez baixa (0.1M < 1M) |
