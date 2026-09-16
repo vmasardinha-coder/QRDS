@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json,re,sys
+import argparse,hashlib,json,re,sys,time
 from datetime import date,timedelta
 from pathlib import Path
+from xml.etree import ElementTree as ET
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import b3_win_wdo_coverage_block as b3
 
@@ -14,29 +15,37 @@ def expiry_key(ticker,day):
  if not m:return (10**9,ticker)
  y=2000+int(m.group(3)); mo=MONTH[m.group(2)]; d=date.fromisoformat(day); delta=(y-d.year)*12+mo-d.month
  return (delta if delta>=0 else 10000+abs(delta),ticker)
+def fetch_parse_day(d):
+ token=d.strftime('%y%m%d'); url=f'https://www.b3.com.br/pesquisapregao/download?filelist=PR{token}.zip'; last_error=None
+ for attempt in range(1,4):
+  status,headers,z=b3.fetch(url); dayrows=[]; leaves=[]
+  if status!=200:return status,url,dayrows,leaves
+  try:
+   for n,xb in b3.leaf_xmls(z):
+    s=h(xb); leaves.append({'name':n,'sha256':s})
+    _t,_g,_ok,mrows=b3.parse_xml(xb,n,s)
+    for r in mrows:
+     t=r['ticker_symbol']
+     if re.fullmatch(r'(WIN|WDO)[FGHJKMNQUVXZ]\d{2}',t) and r.get('close') is not None and r.get('volume_or_traded_quantity') is not None:
+      dayrows.append({'date':d.isoformat(),'ticker':t,'root':t[:3],'close':r['close'],'liquidity':r['volume_or_traded_quantity'],'liquidity_field':r.get('volume_field'),'leaf_sha256':s})
+   return status,url,dayrows,leaves
+  except ET.ParseError as e:
+   last_error=e
+   if attempt<3:
+    time.sleep(2*attempt)
+    continue
+   raise SystemExit(f'FAIL_CLOSED: parse {d} after 3 independent downloads: {type(e).__name__}: {e}')
+ raise SystemExit(f'FAIL_CLOSED: parse {d}: {last_error}')
 def qualified_rows(start,end):
  raw=[]; manifest=[]; missing=[]; d=start
  while d<=end:
   if d.weekday()<5:
-   token=d.strftime('%y%m%d'); url=f'https://www.b3.com.br/pesquisapregao/download?filelist=PR{token}.zip'; status,headers,z=b3.fetch(url); dayrows=[]; leaves=[]
-   if status==200:
-    for n,xb in b3.leaf_xmls(z):
-     s=h(xb); leaves.append({'name':n,'sha256':s})
-     try:_t,_g,_ok,mrows=b3.parse_xml(xb,n,s)
-     except Exception as e:raise SystemExit(f'FAIL_CLOSED: parse {d}: {type(e).__name__}: {e}')
-     for r in mrows:
-      t=r['ticker_symbol']
-      if re.fullmatch(r'(WIN|WDO)[FGHJKMNQUVXZ]\d{2}',t) and r.get('close') is not None and r.get('volume_or_traded_quantity') is not None:
-       dayrows.append({'date':d.isoformat(),'ticker':t,'root':t[:3],'close':r['close'],'liquidity':r['volume_or_traded_quantity'],'liquidity_field':r.get('volume_field'),'leaf_sha256':s})
+   status,url,dayrows,leaves=fetch_parse_day(d)
    if dayrows:
     raw.extend(dayrows); manifest.append({'date':d.isoformat(),'url':url,'leaves':leaves,'rows':len(dayrows)})
    elif d.isoformat()!=GAP and status==599:
     raise SystemExit(f'FAIL_CLOSED: transport failure on {d}')
    else:
-    # A weekday probe with no qualified rows may be a B3 non-session/holiday.
-    # It is not silently accepted: the frozen full-period official-session count
-    # below is the fail-closed coverage gate. Any missing real session makes the
-    # 2020-2024 run fail deterministically.
     missing.append({'date':d.isoformat(),'http_status':status,'classification':'NON_SESSION_OR_KNOWN_GAP_PROBE'})
   d+=timedelta(days=1)
  qualified_dates=sorted({r['date'] for r in raw})
