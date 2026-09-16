@@ -1,0 +1,16 @@
+name: GATE BTC XAWINWDO MT5 Finally PR
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  finally:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_xawinwdo_mt5_pr_finally.py
