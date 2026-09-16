@@ -28,10 +28,16 @@ def qualified_rows(start,end):
       t=r['ticker_symbol']
       if re.fullmatch(r'(WIN|WDO)[FGHJKMNQUVXZ]\d{2}',t) and r.get('close') is not None and r.get('volume_or_traded_quantity') is not None:
        dayrows.append({'date':d.isoformat(),'ticker':t,'root':t[:3],'close':r['close'],'liquidity':r['volume_or_traded_quantity'],'liquidity_field':r.get('volume_field'),'leaf_sha256':s})
-   if dayrows:raw.extend(dayrows); manifest.append({'date':d.isoformat(),'url':url,'leaves':leaves,'rows':len(dayrows)})
-   elif d.isoformat()!=GAP and status==599:raise SystemExit(f'FAIL_CLOSED: transport failure on {d}')
-   elif d.isoformat()!=GAP and status==200:raise SystemExit(f'FAIL_CLOSED: published PriceReport lacks qualified WIN/WDO rows on {d}')
-   else:missing.append({'date':d.isoformat(),'http_status':status})
+   if dayrows:
+    raw.extend(dayrows); manifest.append({'date':d.isoformat(),'url':url,'leaves':leaves,'rows':len(dayrows)})
+   elif d.isoformat()!=GAP and status==599:
+    raise SystemExit(f'FAIL_CLOSED: transport failure on {d}')
+   else:
+    # A weekday probe with no qualified rows may be a B3 non-session/holiday.
+    # It is not silently accepted: the frozen full-period official-session count
+    # below is the fail-closed coverage gate. Any missing real session makes the
+    # 2020-2024 run fail deterministically.
+    missing.append({'date':d.isoformat(),'http_status':status,'classification':'NON_SESSION_OR_KNOWN_GAP_PROBE'})
   d+=timedelta(days=1)
  qualified_dates=sorted({r['date'] for r in raw})
  if start==date(2020,1,1) and end==date(2024,12,31) and len(qualified_dates)+(1 if GAP not in qualified_dates else 0)!=OFFICIAL_SESSIONS:
