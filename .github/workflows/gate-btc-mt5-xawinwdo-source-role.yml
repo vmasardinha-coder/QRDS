@@ -1,0 +1,20 @@
+name: GATE BTC MT5 XAWINWDO Source Role
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/MT5_XAWINWDO_SOURCE_ROLE.v1.json'
+      - 'tests/test_gate_btc_mt5_xawinwdo_source_role.py'
+      - '.github/workflows/gate-btc-mt5-xawinwdo-source-role.yml'
+permissions:
+  contents: read
+jobs:
+  role:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_mt5_xawinwdo_source_role.py
