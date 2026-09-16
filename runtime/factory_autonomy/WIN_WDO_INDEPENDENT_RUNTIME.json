@@ -1,28 +1,18 @@
 {
-  "cost_applicability_proven": false,
-  "cost_evidence": [
-    {
-      "path": "tools/gate_btc_factory/test_win_wdo_cross_asset_regime_cost_boundary.py",
-      "sha256": "a6111606d37de262bc1102169473ca9d9324e2311756f2af85dfd58e04e70dd6"
-    },
-    {
-      "path": "tools/gate_btc_factory/B3_WIN_WDO_COST_SCHEDULE_BLOCKER_20260904.v1.json",
-      "sha256": "4f3e2a25bbe048e8998e8aabf0e33d847b74d14818c34a77593439a18c2fab6c"
-    },
-    {
-      "path": "tools/gate_btc_factory/WIN_WDO_CROSS_ASSET_REGIME_COST_BOUNDARY_20260915.json",
-      "sha256": "a2cb05d987e012b2ec7fc43a0764041f61a4051b661a4b44cd0015e1c4785021"
-    },
-    {
-      "path": "tools/gate_btc_factory/B3_WIN_WDO_COST_PREREG.v1.json",
-      "sha256": "037269a60f27e442efefbd27c73316a7c35cc08e430660d394a5965ff437c1b3"
-    }
-  ],
+  "cost_applicability_proven": true,
+  "cost_contract": {
+    "WDO": 2.12,
+    "WIN": 0.5,
+    "path": "tools/gate_btc_factory/B3_WIN_WDO_COST_PREREG.v1.json",
+    "result_conditioned": false,
+    "sha256": "037269a60f27e442efefbd27c73316a7c35cc08e430660d394a5965ff437c1b3",
+    "unit": "BRL_PER_CONTRACT_ROUND_TRIP"
+  },
   "economics_opened": false,
   "family": "XAWINWDO_REGIME_001",
-  "generated_at_utc": "2026-09-15T21:35:24.382079+00:00",
+  "generated_at_utc": "2026-09-16T02:23:08.674952+00:00",
   "historical_testing_started": false,
-  "next_step": "VERIFY_IDENTITY_TIMEZONE_COVERAGE_COST_SEMANTICS_BEFORE_OUTCOMES",
+  "next_step": "MATERIALIZE_FROZEN_50_30_20_SPLITS_THEN_DISCOVERY",
   "safety": {
     "economics_opened_without_gates": false,
     "existing_counter_credit": 0,
@@ -31,37 +21,20 @@
     "no_retune": true,
     "retroactive_credit": 0
   },
-  "schema": "qrds.factory.win_wdo_independent_runtime.v1",
-  "source_audit_complete": false,
-  "source_evidence": [
-    {
-      "path": "tools/gate_btc_factory/WIN_WDO_CROSS_ASSET_REGIME_MANIFEST_20260915.json",
-      "sha256": "b51a51bad531572e400e8e27bf9695ec8f228366682661613c8d11b4287e938e"
-    },
-    {
-      "path": "tools/gate_btc_factory/test_win_wdo_cross_asset_regime_manifest.py",
-      "sha256": "5df10e6c9261474280ddb404386d88de2e08408cce3f4d9c0b3f1f123c7ed027"
-    },
-    {
-      "path": "tools/gate_btc_factory/b3_win_wdo_official_source_probe.py",
-      "sha256": "1a58a7efd0a5b4b9f075563501ad378fbc2443ee5d0e14bcbf6026ec421cd762"
-    },
-    {
-      "path": "tools/gate_btc_factory/B3_WIN_WDO_OFFICIAL_SOURCE_CONTRACT.v1.json",
-      "sha256": "60ed8d29a05802b4e4c4dbd2ca5168f39747b637758b5d4f2f3dfbfd71613d94"
-    },
-    {
-      "path": "tools/gate_btc_factory/test_win_wdo_cross_asset_regime_source_audit_plan.py",
-      "sha256": "091a7858e4cf77f0990a48f55b2d64a9f35b3e7debca27120968f2dcadae5981"
-    },
-    {
-      "path": "tools/gate_btc_factory/b3_win_wdo_coverage_block.py",
-      "sha256": "49f66a8908cc835ffcaa69169e86f1eb72ab257d221815e27b5e33e0dcf94df0"
-    },
-    {
-      "path": ".github/workflows/gate-btc-factory-win-wdo-coverage-2025-2026.yml",
-      "sha256": "010eb97cec5e168ba8205f122d17e3e8e165bc37e7aeb6f1217a764fa7a59e58"
-    }
-  ],
-  "status": "SOURCE_COST_EVIDENCE_LOCATED_REQUIRES_EXPLICIT_SEMANTIC_AUDIT"
+  "schema": "qrds.factory.win_wdo_independent_runtime.v2",
+  "source_audit_complete": true,
+  "source_contract": {
+    "coverage_horizon": [
+      "2020-01-01",
+      "2024-12-31"
+    ],
+    "cross_asset_reuse_boundary": "PHYSICAL_SOURCE_EVIDENCE_ONLY_NO_OLD_FAMILY_OUTCOMES",
+    "known_gap_policy": "DROP_SESSION_FROM_ELIGIBLE_OBSERVATIONS_ONLY; NO_RECONSTRUCTION; NO_INTERPOLATION; NO_BACKFILL; NO_SCIENTIFIC_OR_PROSPECTIVE_CREDIT",
+    "owner": "B3",
+    "path": "tools/gate_btc_factory/B3_WIN_WDO_OFFICIAL_SOURCE_CONTRACT.v1.json",
+    "report": "BVBG.086.01 PriceReport",
+    "sha256": "60ed8d29a05802b4e4c4dbd2ca5168f39747b637758b5d4f2f3dfbfd71613d94",
+    "timezone": "America/Sao_Paulo"
+  },
+  "status": "SOURCE_COST_AUDIT_PASSED_CROSS_ASSET_FAMILY_READY_FOR_DISCOVERY"
 }
