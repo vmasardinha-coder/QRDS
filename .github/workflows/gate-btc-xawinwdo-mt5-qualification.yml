@@ -1,0 +1,31 @@
+name: GATE BTC XAWINWDO MT5 Qualification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/XAWINWDO_MT5_PRIMARY_EXPERIMENT.v1.json'
+      - 'tools/gate_btc_factory/win_wdo_mt5_qualify.py'
+      - 'tests/test_gate_btc_win_wdo_mt5_qualify.py'
+      - '.github/workflows/gate-btc-xawinwdo-mt5-qualification.yml'
+permissions:
+  contents: read
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+jobs:
+  qualify-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          pytest -q tests/test_gate_btc_win_wdo_mt5_qualify.py
