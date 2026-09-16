@@ -1,0 +1,16 @@
+name: GATE BTC XAWINWDO MT5 Full Suite
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  full-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          python -m pip install -q pytest
+          $(cat tools/gate_btc_factory/xawinwdo_mt5_ci_suite.txt)
