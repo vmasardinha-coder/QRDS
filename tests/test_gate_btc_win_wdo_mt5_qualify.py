@@ -1,0 +1,5 @@
+import json,subprocess,sys
+def test_qualify(tmp_path):
+ b=[{'timestamp_utc':'2022-01-01T10:00:00Z','open':1,'high':2,'low':1,'close':2,'tick_volume':3}]; p={'source':'MT5_TERMINAL','readiness':'READY_SHADOW_DATA_ONLY','records':[{'symbol':'WINF22','bars':b},{'symbol':'WDOF22','bars':b}]}; f=tmp_path/'p'; o=tmp_path/'o'; f.write_text(json.dumps(p)); subprocess.run([sys.executable,'tools/gate_btc_factory/win_wdo_mt5_qualify.py','--packet',str(f),'--out',str(o)],check=True); d=json.loads(o.read_text()); assert d['roots']==['WDO','WIN']; assert d['scientific_credit']==0; assert d['safety']['NO_BACKFILL']
+def test_fail_closed_missing_root(tmp_path):
+ b=[{'timestamp_utc':'2022-01-01T10:00:00Z','open':1,'high':2,'low':1,'close':2,'tick_volume':3}]; p={'source':'MT5_TERMINAL','readiness':'READY_SHADOW_DATA_ONLY','records':[{'symbol':'WINF22','bars':b}]}; f=tmp_path/'p'; o=tmp_path/'o'; f.write_text(json.dumps(p)); r=subprocess.run([sys.executable,'tools/gate_btc_factory/win_wdo_mt5_qualify.py','--packet',str(f),'--out',str(o)]); assert r.returncode!=0
