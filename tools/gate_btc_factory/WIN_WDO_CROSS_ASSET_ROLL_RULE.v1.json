@@ -1,0 +1,45 @@
+{
+  "schema": "qrds.factory.win_wdo_cross_asset_roll_rule.v1",
+  "family": "XAWINWDO_REGIME_001",
+  "status": "FROZEN_BEFORE_ECONOMICS",
+  "approved_utc_date": "2026-09-16",
+  "scope": ["WIN", "WDO"],
+  "selection_rule": {
+    "decision_information": "SESSION_T_MINUS_1_ONLY",
+    "primary_metric": "traded_volume_or_trade_count_as_physically_available_in_qualified_B3_PriceReport",
+    "rule": "For each instrument independently, select for session t the eligible expiry contract with the greatest liquidity metric observed in session t-1.",
+    "effective_switch": "T_PLUS_1_ONLY",
+    "tie_break": "NEAREST_EXPIRY",
+    "no_same_session_selection": true,
+    "no_future_information": true
+  },
+  "price_series": {
+    "back_adjustment": false,
+    "ratio_adjustment": false,
+    "splice_price_reconstruction": false,
+    "contract_code_preserved_in_audit": true,
+    "roll_transition_return_policy": "Do not compute a synthetic close-to-close return across two different expiry contracts. The first return after a contract switch requires two consecutive eligible sessions on the newly selected contract; otherwise that return is missing.",
+    "missing_return_policy": "DROP_OBSERVATION_ONLY_NO_RECONSTRUCTION_NO_INTERPOLATION_NO_BACKFILL"
+  },
+  "cross_asset_alignment": {
+    "WIN_and_WDO_selected_independently": true,
+    "session_alignment": "OFFICIAL_B3_SESSION_DATE",
+    "known_primary_gap_2021_06_10": "DROP_SESSION_FROM_ELIGIBLE_OBSERVATIONS_ONLY"
+  },
+  "scientific_boundary": {
+    "frozen_before_outcome_read": true,
+    "result_conditioned": false,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "H1_H31_untouched": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "FAIL_CLOSED": true
+  },
+  "next_stage": "MATERIALIZE_ELIGIBLE_SESSION_SERIES_AND_FROZEN_50_30_20_PARTITIONS"
+}
