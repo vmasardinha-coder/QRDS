@@ -9,6 +9,7 @@ on:
     paths:
       - 'tools/gate_btc_factory/win_wdo_mt5_qualify.py'
       - 'tools/gate_btc_factory/win_wdo_mt5_materialize.py'
+      - 'tools/gate_btc_factory/win_wdo_regime_002_materialize.py'
       - '.github/workflows/gate-btc-win-wdo-independent-runner.yml'
   pull_request:
     branches: [main]
@@ -53,7 +54,7 @@ jobs:
         run: |
           python -m pip install -q pytest
           cd source_repo
-          python -m py_compile tools/gate_btc_factory/win_wdo_mt5_qualify.py tools/gate_btc_factory/win_wdo_mt5_materialize.py
+          python -m py_compile tools/gate_btc_factory/win_wdo_mt5_qualify.py tools/gate_btc_factory/win_wdo_mt5_materialize.py tools/gate_btc_factory/win_wdo_regime_002_materialize.py
           pytest -q tests/test_gate_btc_win_wdo_mt5_qualify.py
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
@@ -80,6 +81,26 @@ jobs:
           print('XAWINWDO_MT5_QUALIFICATION=PASS')
           print('XAWINWDO_NEXT_STAGE='+m['next_stage'])
           print('XAWINWDO_SPLIT_COUNTS='+json.dumps(m['split_counts'],sort_keys=True))
+          PY
+      - name: Materialize preregistered XAWINWDO_REGIME_002
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          PACKET=runtime_repo/runtime/factory_sources/mt5/xawinwdo/XAWINWDO_REGIME_002_DEEP_HISTORY_PACKET.json
+          test -f "$PACKET"
+          mkdir -p runtime_repo/runtime/factory_autonomy/win_wdo/regime_002
+          python source_repo/tools/gate_btc_factory/win_wdo_regime_002_materialize.py --packet "$PACKET" --out runtime_repo/runtime/factory_autonomy/win_wdo/regime_002/WIN_WDO_MATERIALIZED_SPLITS.json
+          python - <<'PY'
+          import json
+          m=json.load(open('runtime_repo/runtime/factory_autonomy/win_wdo/regime_002/WIN_WDO_MATERIALIZED_SPLITS.json'))
+          assert m['family_id']=='XAWINWDO_REGIME_002'
+          assert m['split_rule']=='50_30_20_chronological' and m['embargo_sessions']==60
+          assert m['roll_rule']=='t_minus_1_liquidity'
+          assert m['safety']['NO_RETUNE'] and m['safety']['NO_BACKFILL'] and m['safety']['NO_COUNTER_RESET'] and m['safety']['FAIL_CLOSED']
+          assert m['safety']['ORDERS']==0 and m['safety']['REAL_CAPITAL']==0 and m['safety']['ENGINE_FEED'] is False
+          print('XAWINWDO_REGIME_002_MATERIALIZATION=PASS')
+          print('XAWINWDO_REGIME_002_NEXT_STAGE='+m['next_stage'])
+          print('XAWINWDO_REGIME_002_SPLIT_COUNTS='+json.dumps(m['split_counts'],sort_keys=True))
           PY
       - name: Persist runtime
         if: github.event_name != 'pull_request'
