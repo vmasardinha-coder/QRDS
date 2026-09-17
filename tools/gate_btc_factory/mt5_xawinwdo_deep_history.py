@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from tools.gate_btc_factory.mt5_shared_family_source import build_packet
+from tools.gate_btc_factory.mt5_shared_family_source import build_packet, canon_hash, validate_packet
 
 FAMILY = "XAWINWDO_REGIME_001"
 PAT = re.compile(r"^(WIN|WDO)[FGHJKMNQUVXZ]\d{2}$")
@@ -54,6 +54,9 @@ def collect(mt5_module=None) -> dict[str, Any]:
         p["capture_window_utc"] = [START.isoformat().replace("+00:00", "Z"), END.isoformat().replace("+00:00", "Z")]
         p["capture_semantics"] = "PHYSICALLY_RETRIEVED_EXPIRY_CONTRACT_M5_NO_SYNTHETIC_BACKFILL"
         p["scientific_credit"] = 0
+        p.pop("packet_sha256", None)
+        p["packet_sha256"] = canon_hash(p)
+        validate_packet(p)
         return p
     finally:
         mt5.shutdown()
