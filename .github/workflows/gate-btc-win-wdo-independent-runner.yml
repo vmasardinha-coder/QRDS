@@ -68,13 +68,13 @@ jobs:
           PACKET=runtime_repo/runtime/factory_sources/mt5/xawinwdo/DEEP_HISTORY_PACKET.json
           test -f "$PACKET"
           mkdir -p runtime_repo/runtime/factory_autonomy/win_wdo
-          python source_repo/tools/gate_btc_factory/win_wdo_mt5_qualify.py --packet "$PACKET" --output runtime_repo/runtime/factory_autonomy/win_wdo/MT5_QUALIFICATION.json
+          python source_repo/tools/gate_btc_factory/win_wdo_mt5_qualify.py --packet "$PACKET" --out runtime_repo/runtime/factory_autonomy/win_wdo/MT5_QUALIFICATION.json
           python source_repo/tools/gate_btc_factory/win_wdo_mt5_materialize.py --packet "$PACKET" --out runtime_repo/runtime/factory_autonomy/win_wdo/WIN_WDO_MATERIALIZED_SPLITS.json
           python - <<'PY'
           import json
           q=json.load(open('runtime_repo/runtime/factory_autonomy/win_wdo/MT5_QUALIFICATION.json'))
           m=json.load(open('runtime_repo/runtime/factory_autonomy/win_wdo/WIN_WDO_MATERIALIZED_SPLITS.json'))
-          assert q['family']=='XAWINWDO_REGIME_001' and q['qualified'] is True
+          assert q['family']=='XAWINWDO_REGIME_001' and q['status']=='QUALIFIED_FOR_XAWINWDO_PRIMARY_EXPERIMENT_ONLY'
           assert m['family_id']=='XAWINWDO_REGIME_001'
           assert m['safety']['ORDERS']==0 and m['safety']['REAL_CAPITAL']==0 and m['safety']['ENGINE_FEED'] is False
           print('XAWINWDO_MT5_QUALIFICATION=PASS')
