@@ -1,3 +1,4 @@
+from tools.gate_btc_factory.mt5_shared_family_source import validate_packet
 from tools.gate_btc_factory.mt5_xawinwdo_deep_history import collect
 
 class S:
@@ -18,3 +19,4 @@ def test_only_expiry_futures_and_no_credit():
     assert p['capture_semantics']=='PHYSICALLY_RETRIEVED_EXPIRY_CONTRACT_M5_NO_SYNTHETIC_BACKFILL'
     assert p['historical_backfill_credit']==0 and p['scientific_credit']==0
     assert p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0 and p['safety']['ENGINE_FEED'] is False
+    validate_packet(p)
