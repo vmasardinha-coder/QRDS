@@ -1,8 +1,36 @@
 {
-  "schema": "qrds.factory.activity_status.v1",
-  "generated_at_utc": "2026-09-17T17:08:24.103853Z",
+  "schema": "qrds.factory.activity_status.v2",
+  "generated_at_utc": "2026-09-17T17:13:22.345025Z",
   "overall_status": "ACTIVE",
   "monitor_cadence_minutes": 15,
+  "executive_counters": {
+    "xawinwdo_correlation": {
+      "qualified": false,
+      "qualification_status": "WAITING_FIRST_RUNTIME",
+      "mt5_record_count": 0,
+      "materialization_next_stage": "WAITING_FIRST_RUNTIME",
+      "aligned_session_count": 0,
+      "usable_return_count": 0,
+      "split_counts": {}
+    },
+    "grammar_pipeline": {
+      "scout_proposals_current": 9,
+      "scouted_not_preregistered_current": 0,
+      "duplicate_suppressed_current": 9,
+      "insufficient_evidence_current": 0,
+      "handoff_new_current": 0,
+      "handoff_unique_cumulative": 3,
+      "preregistered_unique_cumulative": 3,
+      "transported_current": 0
+    },
+    "legacy_requalification": {
+      "affected": 768,
+      "completed": 256,
+      "remaining": 512,
+      "survivors": 0,
+      "source_gate_green": false
+    }
+  },
   "cadence_policy": {
     "grammar_scout_hours": 24,
     "source_qualification_search_hours": 2,
@@ -14,7 +42,7 @@
       "name": "grammar_scout",
       "active": true,
       "freshness": "FRESH",
-      "age_hours": 1.51,
+      "age_hours": 1.59,
       "status": "IDEATION_ONLY_NO_ECONOMICS",
       "path": "runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json"
     },
@@ -22,7 +50,7 @@
       "name": "source_qualification_search",
       "active": true,
       "freshness": "FRESH",
-      "age_hours": 0.24,
+      "age_hours": 0.33,
       "status": "ACTIVE_SEARCHING_QUALIFICATION",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json"
     },
@@ -30,7 +58,7 @@
       "name": "invalidated_family_requalification",
       "active": true,
       "freshness": "FRESH",
-      "age_hours": 0.02,
+      "age_hours": 0.1,
       "status": "SOURCE_GATE_NOT_GREEN:qualified",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json",
       "affected_family_count": 768,
