@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
-FAMILY="XAWINWDO_REGIME_004"; PAT=re.compile(r"^(WIN|WDO)[FGHJKMNQUVXZ]\\d{2}$"); TZ=ZoneInfo("America/Sao_Paulo"); EMBARGO=60; MAX_LOOKBACK=60
+FAMILY="XAWINWDO_REGIME_004"; PAT=re.compile(r"^(WIN|WDO)[FGHJKMNQUVXZ]\d{2}$"); TZ=ZoneInfo("America/Sao_Paulo"); EMBARGO=60; MAX_LOOKBACK=60
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":True,"NO_BACKFILL":True,"NO_COUNTER_RESET":True,"FAIL_CLOSED":True}
 def sessions(packet):
  d=defaultdict(lambda:defaultdict(int))
