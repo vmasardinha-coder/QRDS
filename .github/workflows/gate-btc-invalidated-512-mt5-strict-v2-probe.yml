@@ -6,6 +6,7 @@ on:
     paths:
       - 'tools/gate_btc_factory/INVALIDATED_512_MT5_STRICT_V2_SOURCE_PREREG_20260909.json'
       - 'tools/gate_btc_factory/invalidated_512_mt5_strict_v2_probe.py'
+      - '.github/workflows/gate-btc-invalidated-512-mt5-strict-v2-probe.yml'
       - 'tests/test_gate_btc_invalidated_512_mt5_strict_v2_probe.py'
       - '.github/workflows/gate-btc-invalidated-512-mt5-strict-v2-probe.yml'
   push:
@@ -103,10 +104,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits | Out-Null
           Copy-Item mt5_512_out\RESULT.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SOURCE_RESULT.json -Force
-          Copy-Item mt5_512_out\SESSION_QA.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SESSION_QA.json -Force
+          Copy-Item mt5_512_out\SESSION_QA_UTC_EPOCH.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SESSION_QA_UTC_EPOCH.json -Force
+          Copy-Item mt5_512_out\SESSION_QA_BROKER_LOCAL_EPOCH.json runtime_repo\runtime\factory_autonomy\invalidated_requalification\source_search_audits\MT5_STRICT_V2_SESSION_QA_BROKER_LOCAL_EPOCH.json -Force
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
-          git -C runtime_repo add runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SOURCE_RESULT.json runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SESSION_QA.json
+          git -C runtime_repo add runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SOURCE_RESULT.json runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SESSION_QA_UTC_EPOCH.json runtime/factory_autonomy/invalidated_requalification/source_search_audits/MT5_STRICT_V2_SESSION_QA_BROKER_LOCAL_EPOCH.json
           git -C runtime_repo diff --cached --quiet
           if ($LASTEXITCODE -eq 0) { exit 0 }
           git -C runtime_repo commit -m "Factory 512 MT5 strict V2 source qualification ${{ github.run_id }}"
