@@ -1,0 +1,44 @@
+{
+  "schema": "qrds.factory.xawinwdo_regime_003.prereg.v1",
+  "family_id": "XAWINWDO_REGIME_003",
+  "status": "PREREGISTERED_COVERAGE_FIRST_NO_ECONOMICS",
+  "purpose": "Test the frozen WIN/WDO cross-asset regime grammar only on a physically retrieved MT5 contiguous-overlap block, independently of 001/002 outcomes.",
+  "source": "MT5_TERMINAL_AUTHORIZED_EXPERIMENTAL_XAWINWDO_ONLY",
+  "source_selection": {
+    "physical_m5_only": true,
+    "exact_expiry_contracts_only": true,
+    "synthetic_or_continuous_forbidden": true,
+    "no_interpolation": true,
+    "no_backfill": true,
+    "coverage_block_selection": "largest contiguous synchronized WIN_WDO physical-session block; ties choose earliest block",
+    "coverage_selection_may_not_read_returns_or_economic_outcomes": true
+  },
+  "scientific_contract": {
+    "contract_selection": "t_minus_1_liquidity",
+    "same_day_liquidity_forbidden": true,
+    "return_rule": "log_close_to_close_no_synthetic_returns_across_rolls",
+    "known_gap_policy": "drop_only",
+    "synchronize_win_wdo": true,
+    "horizons": ["intraday_bar","1_session","5_sessions","20_sessions","60_sessions"],
+    "rolling_dependence_windows": [20,60,120,252],
+    "lead_lag_steps": [-12,-6,-3,-1,0,1,3,6,12],
+    "metrics": ["Pearson","Spearman","sign_concordance","tail_quadrant_frequency"],
+    "targets": ["next_bar_WIN","next_bar_WDO","next_session_WIN","next_session_WDO"],
+    "split": "50_30_20_chronological",
+    "embargo_sessions": 60,
+    "candidate_freeze_before_validation": true,
+    "discovery_only_in_discovery_partition": true,
+    "validation_untouched_until_candidate_freeze": true,
+    "holdout_only_if_validation_passes": true,
+    "rejection_ends_without_retune": true,
+    "survivor_to_separate_blinded_prospective_only": true,
+    "retroactive_prospective_credit": 0
+  },
+  "admission": {
+    "pre_economics_capacity_rule": "After coverage-only block selection, all frozen rolling windows, 60-session embargoes, and all three chronological partitions must be non-empty and computable; otherwise reject 003 for insufficient physical capacity without reading economics.",
+    "minimum_n_not_retuned_from_001_or_002": true,
+    "outcome_based_window_selection_forbidden": true
+  },
+  "credit": {"scientific_credit_before_validation":0,"prospective_credit":0,"historical_backfill_credit":0},
+  "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}
