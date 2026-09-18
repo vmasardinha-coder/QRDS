@@ -11,7 +11,8 @@ START="2025-01-01"; DISC_END="2025-12-31"; REPL_START="2026-01-01"; END="2026-08
 MIN_TOTAL=322; MIN_PART=161; NAMESPACE="RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
 WIN_RE=re.compile(r"^WIN[FGHJKMNQUVXZ]\d{2}$")
 TIME_MODES=("UTC_EPOCH","BROKER_LOCAL_EPOCH")
-MAX_BARS_PER_CONTRACT=10000
+PAGE_SIZE=512
+MAX_BARS_PER_CONTRACT=250000
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"MT5_READ_ONLY":True,"NO_ORDER_SEND":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_LATE_SEAL":True,"NO_COUNTER_RESET":True,"NO_RETUNE":True,"FAIL_CLOSED":True,"H1_ECONOMICS_READ":False}
 
 def cbytes(x): return (json.dumps(x,sort_keys=True,separators=(",",":"),ensure_ascii=False)+"\n").encode()
@@ -97,13 +98,29 @@ def main():
             s=m["symbol"]
             if not mt5.symbol_select(s,True):
                 raw[s]=[]; errors.append({"symbol":s,"error":"SYMBOL_SELECT_FAILED"}); continue
-            rr=mt5.copy_rates_from_pos(s,mt5.TIMEFRAME_M5,0,MAX_BARS_PER_CONTRACT); err=mt5.last_error()
-            rows=[raw_row(r) for r in ([] if rr is None else list(rr))]
+            by_epoch={}; pos=0; pages=0; err=(0,"Success")
+            while pos < MAX_BARS_PER_CONTRACT:
+                rr=mt5.copy_rates_from_pos(s,mt5.TIMEFRAME_M5,pos,PAGE_SIZE); err=mt5.last_error()
+                if rr is None or len(rr)==0: break
+                pages+=1
+                oldest=None
+                for r in list(rr):
+                    row=raw_row(r); e=row["epoch"]; by_epoch[e]=row
+                    oldest=e if oldest is None else min(oldest,e)
+                got=len(rr)
+                if got < PAGE_SIZE: break
+                if oldest is not None:
+                    # Mechanical stop only after physical history has crossed the
+                    # frozen local-window lower bound under both admissible epoch
+                    # interpretations. No observations are synthesized.
+                    if all(decode(oldest,m).date().isoformat() < START for m in TIME_MODES): break
+                pos+=got
+            rows=[by_epoch[k] for k in sorted(by_epoch)]
             raw[s]=rows
-            queries.append({"symbol":s,"method":"copy_rates_from_pos","start_pos":0,"requested_count":MAX_BARS_PER_CONTRACT,"returned_count":len(rows),"last_error":str(err)})
-            if rr is None: errors.append({"symbol":s,"error":str(err)})
+            queries.append({"symbol":s,"method":"copy_rates_from_pos_paged","page_size":PAGE_SIZE,"pages_requested":pages,"last_position":pos,"max_bars_per_contract":MAX_BARS_PER_CONTRACT,"returned_count":len(rows),"last_error":str(err)})
+            if not rows and err[0] != 0: errors.append({"symbol":s,"error":str(err)})
 
-        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v3","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"capture_method":{"name":"copy_rates_from_pos","start_pos":0,"max_bars_per_contract":MAX_BARS_PER_CONTRACT,"timezone_independent":True},"frozen_local_window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_evidence":time_evidence,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_queries":queries,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}
+        packet={"schema":"qrds.factory.invalidated_512.mt5_raw_capture.v3","namespace":NAMESPACE,"captured_at_utc":datetime.now(UTC).isoformat(),"capture_method":{"name":"copy_rates_from_pos_paged","start_pos":0,"page_size":PAGE_SIZE,"max_bars_per_contract":MAX_BARS_PER_CONTRACT,"timezone_independent":True,"physical_only":True,"synthetic_backfill":False},"frozen_local_window":{"discovery":{"start":START,"end":DISC_END},"replication":{"start":REPL_START,"end":END}},"time_evidence":time_evidence,"terminal":{"name":str(getattr(term,"name","")),"company":str(getattr(term,"company","")),"connected":bool(getattr(term,"connected",False))},"account_server":str(getattr(acct,"server","")),"symbols":metas,"capture_queries":queries,"capture_errors":errors,"records_by_symbol":raw,"safety":SAFETY}
         rh=digest(packet); packet["raw_capture_sha256"]=rh; (a.out_dir/"RAW_CAPTURE.json").write_bytes(cbytes(packet))
 
         mode_results={}
