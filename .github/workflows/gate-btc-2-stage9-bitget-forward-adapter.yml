@@ -3,6 +3,7 @@ name: GATE BTC 2 Stage 9 Bitget Forward Adapter
 on:
   schedule:
     # Primary hourly slot plus prospective reliability retries. Canonical credit remains max 1 per UTC hour.
+    # Mechanical schedule re-registration after observed delivery stall; scientific clock unchanged.
     - cron: "17 * * * *"
     - cron: "37 * * * *"
     - cron: "53 * * * *"
