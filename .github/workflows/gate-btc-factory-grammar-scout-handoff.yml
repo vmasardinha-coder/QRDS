@@ -12,6 +12,7 @@ on:
       - 'tools/gate_btc_factory/grammar_pipeline_status.py'
       - 'tools/gate_btc_factory/grammar_scout_handoff.py'
       - 'tools/gate_btc_factory/grammar_scout_prereg_transport.py'
+      - 'tools/gate_btc_factory/grammar_source_cost_intake.py'
       - '.github/workflows/gate-btc-factory-grammar-scout-handoff.yml'
   pull_request:
     branches: [main]
@@ -19,7 +20,9 @@ on:
       - 'tools/gate_btc_factory/grammar_pipeline_status.py'
       - 'tools/gate_btc_factory/grammar_scout_handoff.py'
       - 'tools/gate_btc_factory/grammar_scout_prereg_transport.py'
+      - 'tools/gate_btc_factory/grammar_source_cost_intake.py'
       - 'tests/test_gate_btc_grammar_scout_handoff.py'
+      - 'tests/test_gate_btc_grammar_source_cost_intake.py'
       - '.github/workflows/gate-btc-factory-grammar-scout-handoff.yml'
 permissions:
   contents: write
@@ -51,15 +54,15 @@ jobs:
         run: |
           python -m pip install -q pytest
           cd source_repo
-          pytest -q tests/test_gate_btc_grammar_scout_handoff.py
-          python -m py_compile tools/gate_btc_factory/grammar_scout_prereg_transport.py tools/gate_btc_factory/grammar_pipeline_status.py
+          pytest -q tests/test_gate_btc_grammar_scout_handoff.py tests/test_gate_btc_grammar_source_cost_intake.py
+          python -m py_compile tools/gate_btc_factory/grammar_scout_prereg_transport.py tools/gate_btc_factory/grammar_source_cost_intake.py tools/gate_btc_factory/grammar_pipeline_status.py
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Handoff, separate preregistration and counters
+      - name: Handoff, preregistration, cumulative source-cost intake and counters
         if: github.event_name != 'pull_request'
         run: |
           set -euo pipefail
@@ -68,23 +71,30 @@ jobs:
           mkdir -p "$ROOT/grammar_handoff_audits" "$ROOT/grammar_preregistrations"
           python source_repo/tools/gate_btc_factory/grammar_scout_handoff.py --scout "$ROOT/GRAMMAR_SCOUT_RUNTIME.json" --ledger-dir "$ROOT/grammar_handoff_audits" --output GRAMMAR_HANDOFF_RUNTIME.json
           python source_repo/tools/gate_btc_factory/grammar_scout_prereg_transport.py --handoff GRAMMAR_HANDOFF_RUNTIME.json --ledger-dir "$ROOT/grammar_preregistrations" --output GRAMMAR_PREREG_TRANSPORT_RUNTIME.json
+          python source_repo/tools/gate_btc_factory/grammar_source_cost_intake.py --prereg-dir "$ROOT/grammar_preregistrations" --output GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json
           cp GRAMMAR_HANDOFF_RUNTIME.json "$ROOT/grammar_handoff_audits/${{ github.run_id }}.json"
           cp GRAMMAR_HANDOFF_RUNTIME.json "$ROOT/GRAMMAR_HANDOFF_RUNTIME.json"
           cp GRAMMAR_PREREG_TRANSPORT_RUNTIME.json "$ROOT/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json"
+          cp GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json"
           python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
           python - <<'PY'
           import json
-          h=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json')); p=json.load(open('GRAMMAR_PREREG_TRANSPORT_RUNTIME.json'))
+          h=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json')); p=json.load(open('GRAMMAR_PREREG_TRANSPORT_RUNTIME.json')); q=json.load(open('GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json'))
           assert h['mode']=='OUTCOME_BLIND_HANDOFF_ONLY'
           assert p['safety']['H1_H31_UNTOUCHED'] and p['safety']['NO_RETUNE'] and p['safety']['NO_BACKFILL']
-          for f in p['families']: assert f['status']=='PREREGISTERED_AWAITING_SOURCE_COST_QUALIFICATION'
+          assert q['mode']=='CUMULATIVE_PREREG_TO_SOURCE_COST_GATE_ONLY'
+          assert q['safety']['H1_H31_UNTOUCHED'] and q['safety']['NO_RETUNE'] and q['safety']['NO_BACKFILL']
+          for f in q['families']:
+              assert f['status']=='QUEUED_FOR_SOURCE_COST_QUALIFICATION'
+              assert f['source_qualified'] is False and f['cost_applicability_proven'] is False
+              assert f['economics_read'] is False and f['historical_testing_started'] is False
           PY
       - name: Persist append-only pipeline
         if: github.event_name != 'pull_request'
         run: |
           cd runtime_repo
           git config user.name gate-btc-research-bot; git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/grammar_preregistrations runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
+          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/grammar_preregistrations runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json runtime/factory_autonomy/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
           git commit -m "Factory grammar autonomous pipeline ${{ github.run_id }}" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
           exit 1
