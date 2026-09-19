@@ -1,0 +1,92 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 3,
+  "requests": [
+    {
+      "channel_id": "B3_ADR_CROSS_LISTING_PRICE_DISCOVERY",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "846e1256675729b65cee6498f109dded1970e086210a8173d8e4c921ad906759",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Cross-listed Brazilian shares and US ADRs can transmit information across distinct market clocks.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3",
+        "CVM",
+        "SEC EDGAR",
+        "BCB"
+      ],
+      "required_new_data": [
+        "B3 underlying",
+        "US ADR",
+        "FX timing",
+        "exchange calendars"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "8caf61e121a192ed4cf390b173636b3500b054efe3a5e0d9c280887ebc4664f3",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Index futures and cash may incorporate common information at different speeds.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3",
+        "CVM"
+      ],
+      "required_new_data": [
+        "B3 index futures",
+        "B3 cash index",
+        "auction/calendar metadata"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "12fcbcb3731a5ee40c2b1066b8e2627a9bb2ddb69bca9c827e01130e0237a141",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Brazilian equities, BRL and commodity-linked assets may exhibit clock-respecting information transmission.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3",
+        "BCB",
+        "CFTC",
+        "EIA",
+        "FRED"
+      ],
+      "required_new_data": [
+        "B3 equities/futures",
+        "BRL",
+        "commodity reference"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}
