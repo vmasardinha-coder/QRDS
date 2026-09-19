@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-v16b1-okx-family-validation.yml
+      - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
       - artifacts/gate_btc/v16b/GATE_BTC_V16B1_*.json
       - artifacts/gate_btc/v16b/GATE_BTC_V16B1_*.md
       - tools/gate_btc_v16b1_*.py
@@ -21,6 +22,8 @@ env:
   ORDERS: '0'
   REAL_CAPITAL: '0'
   NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
   NO_RETUNE: 'true'
   FAIL_CLOSED: 'true'
 
@@ -39,9 +42,10 @@ jobs:
             tools/gate_btc_v16b1_okx_signal.py \
             tools/gate_btc_v16b1_okx_entry.py \
             tools/gate_btc_v16b1_okx_result.py \
-            tools/gate_btc_v16b1_chain.py
-      - name: Validate CORE and stress children end to end
-        run: pytest -q tests/test_gate_btc_v16b1_okx_family.py
+            tools/gate_btc_v16b1_chain.py \
+            tools/gate_btc_v16b1_operational_orchestrator.py
+      - name: Validate CORE, stress children, and operational rollover
+        run: pytest -q tests/test_gate_btc_v16b1_okx_family.py tests/test_gate_btc_v16b1_operational_orchestrator.py
       - name: Validate frozen family contract
         run: |
           python - <<'PY'
@@ -101,5 +105,7 @@ jobs:
           test "$ORDERS" = 0
           test "$REAL_CAPITAL" = 0
           test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
           test "$NO_RETUNE" = true
           test "$FAIL_CLOSED" = true
