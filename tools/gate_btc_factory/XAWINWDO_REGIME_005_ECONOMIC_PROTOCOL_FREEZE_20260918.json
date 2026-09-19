@@ -1,0 +1,105 @@
+{
+  "schema": "qrds.factory.xawinwdo_regime_005.economic_protocol_freeze.v1",
+  "family_id": "XAWINWDO_REGIME_005",
+  "status": "ECONOMIC_PROTOCOL_FROZEN_AFTER_CAPACITY_PASS_BEFORE_ECONOMIC_READ",
+  "purpose": "Freeze the complete economic protocol for independent family 005 after capacity-only admission and before any economic read; inherit unchanged causal/source/horizon/metric/target rules from 004, with only the already-preregistered 005 capacity design changes.",
+  "source": "MT5_TERMINAL_AUTHORIZED_EXPERIMENTAL_XAWINWDO_ONLY",
+  "source_selection": {
+    "physical_m5_only": true,
+    "exact_expiry_contracts_only": true,
+    "synthetic_or_continuous_forbidden": true,
+    "no_interpolation": true,
+    "no_backfill": true,
+    "coverage_block_selection": "largest contiguous synchronized WIN_WDO physical-session block; ties choose earliest block",
+    "coverage_selection_may_not_read_returns_or_economic_outcomes": true
+  },
+  "scientific_contract": {
+    "contract_selection": "t_minus_1_liquidity",
+    "same_day_liquidity_forbidden": true,
+    "return_rule": "log_close_to_close_no_synthetic_returns_across_rolls",
+    "known_gap_policy": "drop_only",
+    "synchronize_win_wdo": true,
+    "horizons": [
+      "intraday_bar",
+      "1_session",
+      "5_sessions",
+      "20_sessions",
+      "60_sessions"
+    ],
+    "rolling_dependence_windows": [
+      20,
+      60
+    ],
+    "lead_lag_steps": [
+      -12,
+      -6,
+      -3,
+      -1,
+      0,
+      1,
+      3,
+      6,
+      12
+    ],
+    "metrics": [
+      "Pearson",
+      "Spearman",
+      "sign_concordance",
+      "tail_quadrant_frequency"
+    ],
+    "targets": [
+      "next_bar_WIN",
+      "next_bar_WDO",
+      "next_session_WIN",
+      "next_session_WDO"
+    ],
+    "split": "50_30_20_chronological",
+    "embargo_sessions": 20,
+    "candidate_freeze_before_validation": true,
+    "discovery_only_in_discovery_partition": true,
+    "validation_untouched_until_candidate_freeze": true,
+    "holdout_only_if_validation_passes": true,
+    "rejection_ends_without_retune": true,
+    "survivor_to_separate_blinded_prospective_only": true,
+    "retroactive_prospective_credit": 0
+  },
+  "independence": {
+    "prior_family_economic_outcomes_may_not_select_005_candidates": true,
+    "design_change_authorized_by_human": "2026-09-18",
+    "design_change": "capacity-only independent family retains 20/60 rolling windows and uses preregistered 20-session embargo",
+    "no_credit_transfer_from_001_002_003_004": true,
+    "economic_outcomes_read_before_this_freeze": false
+  },
+  "admission": {
+    "capacity_first_before_economics": true,
+    "outcome_based_window_selection_forbidden": true
+  },
+  "credit": {
+    "scientific_credit_before_validation": 0,
+    "prospective_credit": 0,
+    "historical_backfill_credit": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true
+  },
+  "capacity_admission": {
+    "synchronized_sessions_all": 402,
+    "largest_contiguous_block_sessions": 168,
+    "post_embargo_split_capacity": {
+      "discovery": 64,
+      "validation": 10,
+      "holdout": 14
+    },
+    "capacity_pass": true
+  }
+}
