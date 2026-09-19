@@ -124,6 +124,7 @@ def ingest(packet: dict):
 
 
 def select_tminus1(data):
+    """Exact 005 mechanical order: choose the T-1-liquidity contract before evaluator eligibility filtering."""
     days = sorted(data)
     selected = {}
     for i, day in enumerate(days):
@@ -137,16 +138,17 @@ def select_tminus1(data):
         if not eligible:
             continue
         _, symbol = max(eligible, key=lambda item: (item[0], item[1]))
-        bars = data[day][symbol]
-        if len(bars) < 40:
-            continue
-        if not all(
-            (datetime.fromisoformat(b["timestamp"]) - datetime.fromisoformat(a["timestamp"])).total_seconds() == 300
-            for a, b in zip(bars, bars[1:])
-        ):
-            continue
-        selected[day] = {"symbol": symbol, "selection_from_session": previous, "bars": bars}
+        selected[day] = {"symbol": symbol, "selection_from_session": previous, "bars": data[day][symbol]}
     return selected
+
+
+def evaluator_eligible(bars: list[dict]) -> bool:
+    if len(bars) < 40:
+        return False
+    return all(
+        (datetime.fromisoformat(b["timestamp"]) - datetime.fromisoformat(a["timestamp"])).total_seconds() == 300
+        for a, b in zip(bars, bars[1:])
+    )
 
 
 def largest_contiguous(days: list[str]) -> list[str]:
@@ -172,17 +174,28 @@ def largest_contiguous(days: list[str]) -> list[str]:
 
 def physical_block(packet: dict):
     selected = select_tminus1(ingest(packet))
+    # Proven 005 ordering: form largest contiguous physical block first. The original
+    # family evaluator then applies its frozen >=40/exact-M5 eligibility rule per session.
     block = largest_contiguous(sorted(selected))
     if not block:
         raise RuntimeError("NO_VALID_PHYSICAL_WIN_BLOCK")
     years = defaultdict(list)
+    eligible_years = defaultdict(list)
     for day in block:
         years[day[:4]].append(day)
+        if evaluator_eligible(selected[day]["bars"]):
+            eligible_years[day[:4]].append(day)
     discovery = years.get("2025", [])
     replication = years.get("2026", [])
+    eligible_discovery = eligible_years.get("2025", [])
+    eligible_replication = eligible_years.get("2026", [])
     if not discovery or not replication:
         raise RuntimeError(f"PHYSICAL_BLOCK_DOES_NOT_SPAN_DISCOVERY_REPLICATION:{block[0]}:{block[-1]}")
-    return selected, block, discovery, replication
+    if not eligible_discovery or not eligible_replication:
+        raise RuntimeError(
+            f"NO_EVALUATOR_ELIGIBLE_SESSIONS_IN_BOTH_WINDOWS:{len(eligible_discovery)}:{len(eligible_replication)}"
+        )
+    return selected, block, discovery, replication, eligible_discovery, eligible_replication
 
 
 def main() -> int:
@@ -197,7 +210,7 @@ def main() -> int:
     family_ids = unresolved_family_ids(args.queue)
     packet = json.loads(args.packet.read_text(encoding="utf-8-sig"))
     source_schema = validate_packet(packet)
-    selected, block, discovery, replication = physical_block(packet)
+    selected, block, discovery, replication, eligible_discovery, eligible_replication = physical_block(packet)
     audit = {
         "source_schema": source_schema,
         "unresolved_family_count": len(family_ids),
@@ -207,6 +220,8 @@ def main() -> int:
             "sessions": len(block),
             "discovery_sessions": len(discovery),
             "replication_sessions": len(replication),
+            "evaluator_eligible_discovery_sessions": len(eligible_discovery),
+            "evaluator_eligible_replication_sessions": len(eligible_replication),
         },
     }
     print(json.dumps(audit, sort_keys=True))
@@ -245,6 +260,7 @@ def main() -> int:
         },
         "physical_block": audit["physical_block"],
         "roll_rule": "t_minus_1_liquidity",
+        "session_eligibility": "ORIGINAL_AUTONOMOUS_FAMILY_EVALUATOR_GE40_EXACT_M5_AFTER_BLOCK_FORMATION",
         "synthetic_backfill": False,
         "interpolation": False,
         "volume_semantics": "MT5_TICK_VOLUME_COPIED_VERBATIM",
