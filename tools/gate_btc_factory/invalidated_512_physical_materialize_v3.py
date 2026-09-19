@@ -58,7 +58,7 @@ def largest_contiguous(ds):
     return min((b for b in blocks if len(b)==m),key=lambda b:b[0])
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--packet',type=Path,required=True);ap.add_argument('--csv',type=Path,required=True);ap.add_argument('--gate',type=Path,required=True)
+    ap=argparse.ArgumentParser();ap.add_argument('--packet',type=Path,required=True);ap.add_argument('--csv',type=Path,required=True);ap.add_argument('--gate',type=Path,required=True);ap.add_argument('--queue',type=Path,required=True)
     a=ap.parse_args();p=json.loads(a.packet.read_text());s=p.get('safety') or {}
     assert p.get('readiness')=='READY_SHADOW_DATA_ONLY'
     assert 'PHYSICALLY_RETRIEVED' in str(p.get('capture_semantics','')) and 'NO_SYNTHETIC_BACKFILL' in str(p.get('capture_semantics',''))
@@ -79,7 +79,7 @@ def main():
       'schema':'qrds.factory.invalidated_512.physical_materialization_source_gate.v1',
       'source_gate_id':'WIN_M5_PHYSICAL_MATERIALIZATION_V3',
       'evaluation_namespace':'RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3',
-      'family_ids':[],
+      'family_ids':ids,
       'qualified':True,'free_or_official_auditable':True,
       'publication_semantics_proven':True,'revision_semantics_proven':True,
       'identity_qa_pass':True,'schema_qa_pass':True,'point_in_time_valid':True,
