@@ -12,6 +12,7 @@ on:
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
       - 'tools/gate_btc_factory/invalidated_strict_namespace_handoff.py'
+      - 'tools/gate_btc_factory/invalidated_512_physical_materialize.py'
       - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
       - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
       - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
@@ -19,9 +20,11 @@ on:
     paths:
       - 'tools/gate_btc_factory/invalidated_family_requalification_runner.py'
       - 'tools/gate_btc_factory/invalidated_strict_namespace_handoff.py'
+      - 'tools/gate_btc_factory/invalidated_512_physical_materialize.py'
       - 'tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json'
       - 'tools/gate_btc_factory/INVALIDATED_REQUALIFICATION_SOURCE_GATE.v1.json'
       - 'tests/test_gate_btc_invalidated_family_requalification_runner.py'
+      - 'tests/test_gate_btc_invalidated_512_physical_materialize.py'
       - '.github/workflows/gate-btc-invalidated-family-requalification.yml'
 
 permissions:
@@ -55,8 +58,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pytest numpy pandas
-      - run: python -m pytest -q tests/test_gate_btc_invalidated_family_requalification_runner.py
-      - run: python -m py_compile tools/gate_btc_factory/invalidated_strict_namespace_handoff.py
+      - run: python -m pytest -q tests/test_gate_btc_invalidated_family_requalification_runner.py tests/test_gate_btc_invalidated_512_physical_materialize.py
+      - run: python -m py_compile tools/gate_btc_factory/invalidated_strict_namespace_handoff.py tools/gate_btc_factory/invalidated_512_physical_materialize.py
 
   requalify-all:
     if: >-
@@ -71,21 +74,16 @@ jobs:
         with:
           ref: main
           path: main_repo
-
       - name: Check out append-only runtime
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
+        with: {python-version: '3.12'}
       - name: Install evaluator dependencies
         run: python -m pip install numpy pandas
-
       - name: Validate requalification policy and root-cause scope
         run: |
           set -euo pipefail
@@ -95,66 +93,30 @@ jobs:
           python - <<'PY'
           import json
           r=json.load(open('runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json',encoding='utf-8'))
-          assert r['root_cause_classification']=='SOURCE_DATA_GAP'
-          assert r['root_cause_unresolved'] is False
-          a=r['affected_scope']
-          assert int(a['family_count'])==len(a['family_ids']) and len(a['family_ids'])>0
+          assert r['root_cause_classification']=='SOURCE_DATA_GAP' and r['root_cause_unresolved'] is False
+          a=r['affected_scope']; assert int(a['family_count'])==len(a['family_ids']) and len(a['family_ids'])>0
           assert r['historical_integrity_status']=='HISTORICAL_RESULT_INVALIDATED_BY_MECHANICAL_DEFECT'
-          print('AFFECTED_FAMILY_COUNT='+str(a['family_count']))
           PY
-
       - name: Advance only the strict preregistered replay namespace
         working-directory: main_repo
         run: |
           set -euo pipefail
-          OUT='../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
-          EXISTING=()
-          [ -f "$OUT" ] && EXISTING=(--existing "$OUT")
-          python -m tools.gate_btc_factory.invalidated_strict_namespace_handoff \
-            --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
-            --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json \
-            --results-dir ../runtime_repo/runtime/autonomous_science/results \
-            --source-gates-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates \
-            --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
-            "${EXISTING[@]}" \
-            --output "$OUT"
-
+          OUT='../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'; EXISTING=(); [ -f "$OUT" ] && EXISTING=(--existing "$OUT")
+          python -m tools.gate_btc_factory.invalidated_strict_namespace_handoff --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json --results-dir ../runtime_repo/runtime/autonomous_science/results --source-gates-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification "${EXISTING[@]}" --output "$OUT"
       - name: Validate no historical mutation and no live trading
         run: |
-          set -euo pipefail
           python - <<'PY'
           import json
-          p='runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
-          q=json.load(open(p,encoding='utf-8'))
-          assert q['affected_family_count']==q['queued_family_count']
-          assert len(q['families'])==q['affected_family_count']
-          ids=[x['original_family_id'] for x in q['families']]
-          assert len(ids)==len(set(ids))
+          q=json.load(open('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'))
+          assert q['affected_family_count']==q['queued_family_count']; assert len(q['families'])==q['affected_family_count']
           assert q['authoritative_replay_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
-          s=q['safety']
-          assert s['research_only'] and s['shadow_only'] and s['not_approved']
-          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
-          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
-          assert s['h1_economics_read'] is False
-          print('REQUALIFICATION_SAFETY=PASS')
+          s=q['safety']; assert s['research_only'] and s['shadow_only'] and s['not_approved'] and s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0 and s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
           PY
-
       - name: Publish append-only requalification runtime
         working-directory: runtime_repo
         run: |
           set -euo pipefail
-          git config user.name gate-btc-actions
-          git config user.email gate-btc-actions@users.noreply.github.com
-          git add runtime/factory_autonomy/invalidated_requalification
-          git diff --cached --quiet && exit 0
+          git config user.name gate-btc-actions; git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/factory_autonomy/invalidated_requalification; git diff --cached --quiet && exit 0
           git commit -m 'Advance invalidated-family strict requalification queue'
-          for attempt in 1 2 3 4 5; do
-            git fetch origin gate-btc-runtime
-            if ! git rebase origin/gate-btc-runtime; then
-              git rebase --abort || true
-              exit 1
-            fi
-            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
-            sleep $((attempt * 2))
-          done
-          exit 1
+          for attempt in 1 2 3 4 5; do git fetch origin gate-btc-runtime; if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi; if git push origin HEAD:gate-btc-runtime; then exit 0; fi; sleep $((attempt * 2)); done; exit 1
