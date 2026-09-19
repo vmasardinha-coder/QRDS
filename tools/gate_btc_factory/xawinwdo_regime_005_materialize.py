@@ -39,7 +39,18 @@ def materialize(path):
  p=json.loads(path.read_text()); s=p.get('safety') or {}
  assert p.get('family_scope')=='XAWINWDO_REGIME_002' and p.get('readiness')=='READY_SHADOW_DATA_ONLY'
  assert s.get('MT5_READ_ONLY') is True and s.get('NO_ORDER_SEND') is True and s.get('ORDERS')==0 and s.get('REAL_CAPITAL')==0 and s.get('ENGINE_FEED') is False and s.get('NO_RETUNE') is True and s.get('NO_BACKFILL') is True
- x=ingest(p); w=choose(x,'WIN'); q=choose(x,'WDO'); ds=sorted(set(w)&set(q)); parts=split_dates(ds)
+ x=ingest(p); w=choose(x,'WIN'); q=choose(x,'WDO'); all_ds=sorted(set(w)&set(q))
+ # Frozen protocol: select the largest contiguous synchronized physical-session block,
+ # breaking ties by the earliest block. Weekend-only gaps remain contiguous trading sessions.
+ blocks=[]; cur=[]
+ for d in all_ds:
+  if not cur: cur=[d]; continue
+  a=datetime.fromisoformat(cur[-1]).date(); b=datetime.fromisoformat(d).date(); gap=(b-a).days
+  if gap<=3: cur.append(d)
+  else: blocks.append(cur); cur=[d]
+ if cur: blocks.append(cur)
+ ds=min((z for z in blocks if len(z)==max(map(len,blocks))), key=lambda z:z[0])
+ parts=split_dates(ds)
  outparts={k:[] for k in parts}
  for d in ds:
   part=next((k for k,z in parts.items() if d in z),None)
