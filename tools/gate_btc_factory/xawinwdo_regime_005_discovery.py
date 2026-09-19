@@ -41,6 +41,28 @@ def series(rows,horizon):
  closes=[(r["WIN_close"],r["WDO_close"]) for r in rows if r["WIN_close"] and r["WDO_close"]]; h={"1_session":1,"5_sessions":5,"20_sessions":20,"60_sessions":60}[horizon];z=[]
  for i in range(h,len(closes)):z.append((math.log(closes[i][0]/closes[i-h][0]),math.log(closes[i][1]/closes[i-h][1])))
  return z
+def aligned_metric(rows,horizon,w,lag,metric,target):
+ s=series(rows,horizon); out=[]
+ target_root=0 if target.endswith("_WIN") else 1
+ for i in range(w-1,len(s)-1):
+  # Frozen semantics: score dependence history against the actual forward target magnitude.
+  # lag shifts the target clock relative to the feature clock; unavailable causal rows drop.
+  ti=i+1+lag
+  if not (0<=ti<len(s)): continue
+  hist=s[i-w+1:i+1]
+  feat=[z[1-target_root] for z in hist]
+  # actual target series, aligned one-for-one with feature history and shifted by lag+1
+  targ=[]
+  f2=[]
+  for j,z in enumerate(hist):
+   gi=i-w+1+j; tj=gi+1+lag
+   if 0<=tj<len(s):
+    f2.append(z[1-target_root]); targ.append(s[tj][target_root])
+  if len(f2)<3: continue
+  v=dep(metric,f2,targ)
+  if v is not None: out.append(v)
+ return out
+
 def main():
  ap=argparse.ArgumentParser();ap.add_argument("--splits",required=True);ap.add_argument("--rule",required=True);ap.add_argument("--semantics",required=True);ap.add_argument("--out",required=True);a=ap.parse_args()
  m=json.loads(Path(a.splits).read_text());rule=json.loads(Path(a.rule).read_text());sem=json.loads(Path(a.semantics).read_text())
@@ -52,16 +74,8 @@ def main():
   for w in windows:
    for lag in lags:
     for met in metrics:
-     vals=[]
-     for i in range(w-1,len(s)-1):
-      a0=[x[0] for x in s[i-w+1:i+1]];b0=[x[1] for x in s[i-w+1:i+1]];v=dep(met,a0,b0)
-      if v is None:continue
-      for target in targets:
-       # Frozen target identity is retained; causal forward target availability gates score rows without using target magnitude for ranking.
-       ti=i+1+lag
-       if 0<=ti<len(s):vals.append((target,v))
      for target in targets:
-      x=[v for t,v in vals if t==target]
+      x=aligned_metric(rows,h,w,lag,met,target)
       if len(x)>1 and sd(x)>0:
        score=mean(x)/sd(x);cand.append({"target":target,"horizon":h,"rolling_window":w,"lead_lag":lag,"metric":met,"discovery_metric":mean(x),"standardized_metric":score,"sign":1 if mean(x)>0 else -1 if mean(x)<0 else 0,"n":len(x)})
  def lagkey(x):return (abs(x),0 if x<0 else 1 if x==0 else 2)
