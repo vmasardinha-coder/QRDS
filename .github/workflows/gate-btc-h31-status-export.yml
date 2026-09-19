@@ -1,0 +1,89 @@
+name: GATE BTC H31 Status Export
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '10 4 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_h31_status_export.py
+      - tests/test_gate_btc_h31_status_export.py
+      - .github/workflows/gate-btc-h31-status-export.yml
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m py_compile tools/gate_btc_h31_status_export.py
+      - run: python -m unittest -v tests.test_gate_btc_h31_status_export
+      - name: Safety boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+
+  publish:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref_name == 'main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build H31 monitoring artifacts
+        run: >-
+          python main_repo/tools/gate_btc_h31_status_export.py
+          --prospective runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json
+          --paper runtime_repo/runtime/ledgers/b3_h31_shadow_paper/STATUS.json
+          --output-json runtime_repo/runtime/executive/GATE_BTC_H31_STATUS_LATEST.json
+          --output-md runtime_repo/runtime/executive/GATE_BTC_H31_STATUS_LATEST.md
+      - name: Publish reporting artifacts only
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-reporting-bot
+          git config user.email gate-btc-reporting-bot@users.noreply.github.com
+          git add runtime/executive/GATE_BTC_H31_STATUS_LATEST.json runtime/executive/GATE_BTC_H31_STATUS_LATEST.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Publish H31 executive status'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime || { git rebase --abort || true; exit 1; }
+            git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
