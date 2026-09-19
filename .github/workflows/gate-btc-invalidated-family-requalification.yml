@@ -79,14 +79,59 @@ jobs:
           path: runtime_repo
           fetch-depth: 0
 
+      - name: Guard historical Strict-V2 namespace
+        id: namespace_guard
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json')
+          q=json.loads(p.read_text(encoding='utf-8'))
+          ns=q.get('authoritative_replay_namespace')
+          if ns == 'RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2':
+              print('advance=true')
+              print('mode=STRICT_V2_ACTIVE')
+          elif ns == 'RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3':
+              if q.get('completed_family_count') != 768 or q.get('waiting_source_count') != 0:
+                  raise SystemExit('V3_NAMESPACE_INCOMPLETE_FAIL_CLOSED')
+              print('advance=false')
+              print('mode=STRICT_V2_HISTORICAL_NOOP')
+          else:
+              raise SystemExit(f'UNKNOWN_REQUALIFICATION_NAMESPACE_FAIL_CLOSED:{ns}')
+          PY
+
+      - name: Confirm historical no-op after V3 completion
+        if: steps.namespace_guard.outputs.advance == 'false'
+        run: |
+          set -euo pipefail
+          echo "${{ steps.namespace_guard.outputs.mode }}"
+          python - <<'PY'
+          import json
+          q=json.load(open('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json',encoding='utf-8'))
+          assert q['authoritative_replay_namespace']=='RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3'
+          assert q['previous_authoritative_replay_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          assert q['completed_family_count']==768
+          assert q['waiting_source_count']==0
+          s=q['safety']
+          assert s['research_only'] and s['shadow_only'] and s['not_approved']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+          assert s['h1_economics_read'] is False
+          print('STRICT_V2_HISTORICAL_NOOP=PASS')
+          PY
+
       - uses: actions/setup-python@v5
+        if: steps.namespace_guard.outputs.advance == 'true'
         with:
           python-version: '3.12'
 
       - name: Install evaluator dependencies
+        if: steps.namespace_guard.outputs.advance == 'true'
         run: python -m pip install numpy pandas
 
       - name: Validate requalification policy and root-cause scope
+        if: steps.namespace_guard.outputs.advance == 'true'
         run: |
           set -euo pipefail
           test -f main_repo/tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json
@@ -104,6 +149,7 @@ jobs:
           PY
 
       - name: Advance only the strict preregistered replay namespace
+        if: steps.namespace_guard.outputs.advance == 'true'
         working-directory: main_repo
         run: |
           set -euo pipefail
@@ -120,6 +166,7 @@ jobs:
             --output "$OUT"
 
       - name: Validate no historical mutation and no live trading
+        if: steps.namespace_guard.outputs.advance == 'true'
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -140,6 +187,7 @@ jobs:
           PY
 
       - name: Publish append-only requalification runtime
+        if: steps.namespace_guard.outputs.advance == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
