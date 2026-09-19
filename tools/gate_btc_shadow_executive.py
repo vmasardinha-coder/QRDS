@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 from datetime import date
 from pathlib import Path
@@ -179,6 +180,219 @@ def semantic_projection(state: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+
+def _required_ref(required: dict[str, Any], track_id: str, display_name: str) -> dict[str, Any]:
+    obj = required.get(track_id)
+    if isinstance(obj, dict):
+        return obj
+    return {
+        "track_id": track_id,
+        "display_name": display_name,
+        "canonical_evidence_status": "ABSENT_NOT_INFERRED",
+        "inventory_only": True,
+        "scientific_authority": False,
+        "engine_feed": False,
+        "orders_generated": 0,
+        "real_capital_used": 0,
+    }
+
+
+def _status_of(obj: Any, default: str = "N/D") -> str:
+    if not isinstance(obj, dict):
+        return default
+    return str(obj.get("status") or obj.get("representation_status") or obj.get("canonical_evidence_status") or default)
+
+
+def build_full_master_v2(
+    state: dict[str, Any],
+    payloads: dict[str, dict[str, Any]],
+    semantic: dict[str, Any],
+    required: dict[str, Any],
+    ledgers: dict[str, Any],
+    declared: dict[str, Any],
+) -> dict[str, Any]:
+    """Single executive model: technical/scientific + economic/decision inventory.
+
+    Reporting-only. External tracks are surfaced as explicit references and remain
+    N/D/ABSENT_NOT_INFERRED unless canonical evidence is actually present.
+    """
+    d50 = component(state, "d50")
+    delta = component(state, "delta")
+    gateway = component(state, "gateway")
+    momentum = component(state, "momentum_m1_m2")
+    qos = component(state, "qos_monthly")
+    bull = component(state, "bull_replay_live_shadow")
+
+    externals = {
+        "portal_btc": _required_ref(required, "portal_btc", "Portal BTC"),
+        "portal_watchlist": _required_ref(required, "portal_watchlist", "Portal BTC Watchlist"),
+        "macro_quant": _required_ref(required, "macro_quant", "Macro Quant"),
+        "agent_trader": _required_ref(required, "agent_trader", "Agent Trader"),
+        "proxy_real": _required_ref(required, "proxy_real", "Proxy Real / Victor Real"),
+        "empiricus_delta": _required_ref(required, "empiricus_delta", "Empiricus Delta"),
+        "cloud_delta": _required_ref(required, "cloud_delta", "Cloud / Anthropic Delta"),
+        "delta_external_historical": _required_ref(required, "delta_external_historical", "Delta External Historical"),
+        "atlas_manual": _required_ref(required, "atlas_manual", "Atlas / Manual"),
+    }
+
+    technical_radar = [
+        {"track": "D50", "status": _status_of(d50), "current": d50.get("display_current") if d50 else None, "target": d50.get("target") if d50 else None, "freshness": d50.get("freshness") if d50 else None, "authority": d50.get("authority") if d50 else None},
+        {"track": "Delta walk-forward", "status": _status_of(delta), "current": delta.get("observations") if delta else None, "target": delta.get("targets") if delta else None},
+        {"track": "Gateway", "status": _status_of(gateway), "current": gateway.get("valid_snapshot_count") if gateway else None, "target": gateway.get("target") if gateway else None},
+        {"track": "Momentum M1/M2", "status": _status_of(momentum), "snapshots": momentum.get("observed_snapshots") if momentum else None},
+        {"track": "QOS", "status": _status_of(qos), "current": qos.get("current") if qos else None, "target": qos.get("target") if qos else None},
+        {"track": "D100", "status": _status_of(semantic.get("d100"))},
+        {"track": "V12", "status": _status_of(semantic.get("v12"))},
+        {"track": "V16B.1", "status": _status_of(semantic.get("v16b1"))},
+        {"track": "B3 H1", "status": _status_of(component(state, "b3_h1") or ledgers.get("b3_h1"))},
+        {"track": "B3 H31", "status": _status_of(ledgers.get("b3_h31_prospective"))},
+    ]
+
+    return {
+        "schema": "gate_btc.shadow_executive.full_master_v2.v1",
+        "model_name": "FULL MASTER v2 — technical + scientific + economic + decision",
+        "single_model": True,
+        "reporting_only": True,
+        "scientific_authority": False,
+        "promotion_authority": False,
+        "economic_authority": False,
+        "governance": {
+            "research_only": True,
+            "shadow_only": True,
+            "not_approved": True,
+            "engine_feed": False,
+            "orders": 0,
+            "real_capital": 0,
+            "no_backfill": True,
+            "no_late_seal": True,
+            "no_counter_reset": True,
+            "no_retune": True,
+            "fail_closed": True,
+        },
+        "technical_radar": technical_radar,
+        "cycle_allocation": {
+            "qos": semantic.get("qos"),
+            "bull_replay_proxy_synthetic": bull or nd("bull replay absent"),
+            "proxy_real": externals["proxy_real"],
+            "meta_2030": payloads["10_meta_2030"],
+            "decision_question": "WHAT SHOULD BE ALLOCATED, IF AND ONLY IF SCIENTIFIC GATES EVENTUALLY ALLOW IT?",
+        },
+        "alpha_robots": {
+            "d50": d50 or nd("d50 absent"),
+            "delta_walk_forward": delta or nd("delta absent"),
+            "delta_v12": semantic.get("v12"),
+            "empiricus_delta": externals["empiricus_delta"],
+            "cloud_delta": externals["cloud_delta"],
+            "delta_external_historical": externals["delta_external_historical"],
+            "macro_quant": externals["macro_quant"],
+            "portal_btc": externals["portal_btc"],
+            "agent_trader": externals["agent_trader"],
+        },
+        "regime_context": {
+            "momentum_m1_m2": momentum or nd("momentum absent"),
+            "momentum_m3": semantic.get("momentum_m3"),
+            "gateway": gateway or nd("gateway absent"),
+            "portal_btc": externals["portal_btc"],
+            "macro_quant": externals["macro_quant"],
+            "bull_replay": bull or nd("bull replay absent"),
+            "decision_question": "WHAT TYPE OF RISK IS THE CURRENT REGIME SUPPORTING?",
+        },
+        "preservation": {
+            "canonical_block": payloads["05_preservation"],
+            "d50": d50 or nd("d50 absent"),
+            "delta_v12": semantic.get("v12"),
+            "macro_quant": externals["macro_quant"],
+            "ledger_tracks": ledger_excerpt(state, ["lock25_50", "prl50_position", "alt_trail40_10"]),
+            "decision_question": "HOW MUCH PROFIT CAN BE RETAINED WITHOUT DESTROYING THE EDGE?",
+        },
+        "delta_full_inventory": {
+            "v11_walk_forward": delta or nd("delta absent"),
+            "v12": semantic.get("v12"),
+            "bull_replay": bull or nd("bull replay absent"),
+            "empiricus_delta": externals["empiricus_delta"],
+            "cloud_delta": externals["cloud_delta"],
+            "external_historical": externals["delta_external_historical"],
+            "claim_boundary": "DO_NOT_RANK_NONCOMPARABLE_WINDOWS_OR_INFER PROPRIETARY MECHANISM",
+        },
+        "portal_btc_full": {
+            "core": externals["portal_btc"],
+            "watchlist": externals["portal_watchlist"],
+            "required_subviews": [
+                "A/B/C/D/G/H Top100 and Top300",
+                "Watchlist institutional",
+                "ex-PONS attribution",
+                "ex-Top3 attribution",
+                "Top1/Top3/Top5 concentration",
+                "Momentum",
+                "Reversal",
+                "Sector rotation",
+                "price sanity/quarantine",
+                "stopped/extreme trades",
+            ],
+            "systematic_alpha_claim_allowed": False,
+        },
+        "proxy": {
+            "synthetic": {
+                "series": "Victor_proxy",
+                "source": bull.get("source") if bull else None,
+                "claim_boundary": "SYNTHETIC_BENCHMARK_NOT_REAL_ACCOUNT",
+            },
+            "real": externals["proxy_real"],
+            "must_never_conflate": True,
+        },
+        "macro_quant": {
+            "external_track": externals["macro_quant"],
+            "required_subviews": ["Production 90d", "Dynamic 60d", "Ref 50/50", "Score30/R30", "Score45/R45", "Score30/R90", "H1", "H2", "H3", "H4", "tripwires"],
+            "real_small_capital_external_to_qrds": True,
+        },
+        "agent_trader": {
+            "external_track": externals["agent_trader"],
+            "required_books": ["US", "Crypto", "B3", "Structured B3"],
+        },
+        "b3_local_mt5": {
+            "h1": component(state, "b3_h1") or ledgers.get("b3_h1") or nd("b3_h1 absent"),
+            "h31": ledgers.get("b3_h31_prospective") or nd("b3_h31 prospective absent"),
+            "mt5_role": "READ_ONLY_AUXILIARY_DISCOVERY_OR_CROSS_VALIDATION_ONLY",
+            "h1_economics_read": False,
+        },
+        "gate_btc_2_factory": {
+            "d100": semantic.get("d100"),
+            "v16b1": semantic.get("v16b1"),
+            "v16c1": semantic.get("v16c1"),
+            "declared_tracks": declared,
+            "runtime_ledger_count": len(ledgers),
+            "factory_economics_feedback_allowed": False,
+        },
+        "external_controls": externals,
+        "economic_decision_board": {
+            "capital_reference_brl": 180000,
+            "windows": ["HISTORICAL", "POST_PIT", "LIVE_PROSPECTIVE", "EXTERNAL_PARALLEL", "FUTURE_BASELINE"],
+            "historical_values": nd("historical R$180k comparison not canonical in current runtime state"),
+            "post_pit_values": nd("post-PIT economic comparison not canonical in current runtime state"),
+            "live_internal": {
+                "d50": d50 or nd("d50 absent"),
+                "delta": delta or nd("delta absent"),
+                "v12": semantic.get("v12"),
+            },
+            "live_external": {
+                "portal_btc": externals["portal_btc"],
+                "macro_quant": externals["macro_quant"],
+                "agent_trader": externals["agent_trader"],
+            },
+            "future_baseline": nd("META 2030 / Monte Carlo baseline not canonical in current runtime state"),
+            "no_cross_window_race": True,
+        },
+        "pending_actions": {
+            "reporting_delivery": state.get("warnings", {}),
+            "required_external_missing": sorted(
+                k for k, v in externals.items()
+                if v.get("canonical_evidence_status") != "PRESENT"
+            ),
+            "policy": "COLLECT_VALIDATE_DO_NOT_RETUNE",
+        },
+    }
+
+
 def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     catalog = track_catalog(state)
     ledgers = catalog.get("ledger_tracks") or state.get("ledger_inventory") or {}
@@ -308,7 +522,7 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
     report_status = "COMPLETE_WITH_EXPLICIT_ND" if (finance_missing or preservation_missing or empiricus_missing) else "COMPLETE"
 
     return {
-        "schema": "gate_btc.shadow_executive.v1",
+        "schema": "gate_btc.shadow_executive.v2",
         "contract_issue": 297,
         "reporting_date": reporting_date,
         "reference_data_date": state.get("reference_data_date"),
@@ -334,22 +548,83 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
             "omission_policy": "NEVER_OMIT_REQUIRED_BLOCK_OR_FIELD; USE_ND_WITH_REASON",
         },
         "source_reporting_state_sha256": None,
+        "full_master_v2": build_full_master_v2(state, payloads, semantic, required, ledgers, declared),
     }
 
 
+def _radar_symbol(row: dict[str, Any]) -> str:
+    status = str(row.get("status") or "").upper()
+    freshness = str(row.get("freshness") or "").upper()
+    if "STALE" in freshness or "BLOCK" in status or "FAIL" in status:
+        return "🔴"
+    if any(token in status for token in ("WAIT", "READY", "ACTIVE_PROSPECTIVE", "COLLECT")):
+        return "🟡"
+    if any(token in status for token in ("ACTIVE", "PASS", "FRESH", "PRESENT")):
+        return "🟢"
+    return "⚪"
+
+
 def render_markdown(report: dict[str, Any]) -> str:
+    master = report["full_master_v2"]
     lines = [
-        f"# GATE BTC — Shadow Executive — {report['reporting_date']}",
+        f"# GATE BTC / QRDS — FULL MASTER v2 — {report['reporting_date']}",
         "",
         f"**Status:** {report['status']}  ",
         f"**Reference data:** {report.get('reference_data_date') or ND}  ",
-        "**Boundary:** RESEARCH_ONLY / SHADOW_ONLY / NOT_APPROVED / ORDERS=0 / REAL_CAPITAL=0",
+        "**Boundary:** RESEARCH_ONLY / SHADOW_ONLY / NOT_APPROVED / ENGINE_FEED=false / ORDERS=0 / REAL_CAPITAL=0",
         "",
+        "> Modelo único diário: técnico + científico + econômico + decisão. Fontes ausentes permanecem N/D; nada é inferido.",
+        "",
+        "## 🚦 Radar técnico",
+        "",
+        "| Farol | Track | Status | Clock | Freshness / authority |",
+        "|---|---|---|---|---|",
     ]
+    for row in master["technical_radar"]:
+        current = row.get("current")
+        target = row.get("target")
+        clock = f"{current}/{target}" if current is not None and target is not None else str(row.get("snapshots") or ND)
+        fa = " / ".join(str(v) for v in (row.get("freshness"), row.get("authority")) if v)
+        lines.append(f"| {_radar_symbol(row)} | {row['track']} | {row.get('status') or ND} | {clock} | {fa or ND} |")
+    lines += [
+        "",
+        "## 🧭 Modelo executivo único",
+        "",
+        "CICLO/ALOCAÇÃO → ALPHA/ROBÔS → REGIME/CONTEXTO → PRESERVATION → DELTA FULL → PORTAL BTC FULL → PROXY → MACRO/AGENTS → B3/MT5 → GATE BTC 2/FACTORY → ECONOMIC DECISION BOARD",
+        "",
+        "## 💰 Economic Decision Board",
+        "",
+        f"**Capital de referência:** R$ {master['economic_decision_board']['capital_reference_brl']:,}".replace(",", "."),
+        "",
+        "| Janela | Estado |",
+        "|---|---|",
+    ]
+    board = master["economic_decision_board"]
+    for key, label in (("historical_values","HISTORICAL"),("post_pit_values","POST-PIT"),("live_internal","LIVE / INTERNAL"),("live_external","LIVE / EXTERNAL"),("future_baseline","FUTURE BASELINE")):
+        obj = board[key]
+        state_text = "N/D — " + str(obj.get("reason")) if isinstance(obj, dict) and obj.get("status") == "NOT_AVAILABLE_NOT_INFERRED" else "PRESENT / INVENTORY"
+        lines.append(f"| {label} | {state_text} |")
+    lines += ["", "## 🌐 External / parallel evidence", "", "| Track | Evidence status | Boundary |", "|---|---|---|"]
+    for key, obj in master["external_controls"].items():
+        lines.append(f"| {obj.get('display_name', key)} | {obj.get('canonical_evidence_status', ND)} | inventory-only / no scientific authority |")
+    lines += ["", "## 🔬 FULL MASTER v2 — structured payload", ""]
+    lines.append("    " + json.dumps(master, sort_keys=True, ensure_ascii=False))
+    lines += ["", "## 🧱 Canonical 13-block compatibility appendix", ""]
     for block in report["blocks"]:
-        lines += [f"## {block['position']}. {block['title']}", "", "```json", json.dumps(block["content"], indent=2, sort_keys=True, ensure_ascii=False), "```", ""]
+        lines += [f"### {block['position']}. {block['title']}", "", "    " + json.dumps(block["content"], sort_keys=True, ensure_ascii=False), ""]
     lines += ["---", "Generated from canonical reporting state. Missing evidence is explicitly N/D and never inferred.", ""]
     return "\n".join(lines)
+
+
+def render_html(report: dict[str, Any]) -> str:
+    master = report["full_master_v2"]
+    cards = []
+    for row in master["technical_radar"]:
+        cards.append("<article class='card'><div class='light'>" + html.escape(_radar_symbol(row)) + "</div><h3>" + html.escape(str(row['track'])) + "</h3><p>" + html.escape(str(row.get('status') or ND)) + "</p><small>" + html.escape(str(row.get('freshness') or row.get('authority') or '')) + "</small></article>")
+    ext_rows = "".join("<tr><td>" + html.escape(str(v.get('display_name', k))) + "</td><td>" + html.escape(str(v.get('canonical_evidence_status', ND))) + "</td><td>inventory-only</td></tr>" for k, v in master["external_controls"].items())
+    sections = "".join("<details><summary>" + html.escape(k.replace('_',' ').title()) + "</summary><pre>" + html.escape(json.dumps(v, indent=2, sort_keys=True, ensure_ascii=False)) + "</pre></details>" for k, v in master.items() if k not in {"technical_radar", "external_controls"})
+    css = "body{margin:0;background:#0d1117;color:#f0f6fc;font-family:system-ui,sans-serif}.wrap{max-width:1280px;margin:auto;padding:24px}.sub,small{color:#8b949e}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0}.card,details,.panel{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:10px}.card h3{font-size:.95rem;margin:4px 0}.card p{font-size:.8rem;color:#8b949e;min-height:36px}.light{font-size:1.3rem}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #30363d;text-align:left;font-size:.85rem}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:#c9d1d9;font-size:.76rem}.badge{display:inline-block;border:1px solid #30363d;border-radius:999px;padding:4px 9px;margin-right:6px;font-size:.75rem}"
+    return "<!doctype html><html lang='pt-BR'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>GATE BTC / QRDS — FULL MASTER v2</title><style>" + css + "</style></head><body><main class='wrap'><h1>GATE BTC / QRDS — FULL MASTER v2</h1><p class='sub'>" + html.escape(report['reporting_date']) + " · reference " + html.escape(str(report.get('reference_data_date') or ND)) + "</p><p><span class='badge'>RESEARCH_ONLY</span><span class='badge'>SHADOW_ONLY</span><span class='badge'>NOT_APPROVED</span><span class='badge'>ORDERS=0</span><span class='badge'>REAL_CAPITAL=0</span></p><h2>🚦 Radar técnico</h2><section class='grid'>" + "".join(cards) + "</section><section class='panel'><h2>🌐 External / parallel evidence</h2><table><thead><tr><th>Track</th><th>Evidence</th><th>Boundary</th></tr></thead><tbody>" + ext_rows + "</tbody></table></section><h2>🧭 FULL MASTER v2</h2>" + sections + "</main></body></html>"
 
 
 def write_outputs(state_path: Path, output_dir: Path, reporting_date: str | None = None) -> tuple[Path, Path, Path]:
@@ -364,12 +639,17 @@ def write_outputs(state_path: Path, output_dir: Path, reporting_date: str | None
     md_path = output_dir / f"SHADOW_EXECUTIVE_{rdate}.md"
     latest_path = output_dir / "SHADOW_EXECUTIVE_LATEST.json"
     latest_md = output_dir / "SHADOW_EXECUTIVE_LATEST.md"
+    html_path = output_dir / f"SHADOW_EXECUTIVE_{rdate}.html"
+    latest_html = output_dir / "SHADOW_EXECUTIVE_LATEST.html"
     raw = json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     json_path.write_text(raw, encoding="utf-8")
     latest_path.write_text(raw, encoding="utf-8")
     md = render_markdown(report)
     md_path.write_text(md, encoding="utf-8")
     latest_md.write_text(md, encoding="utf-8")
+    visual = render_html(report)
+    html_path.write_text(visual, encoding="utf-8")
+    latest_html.write_text(visual, encoding="utf-8")
     return json_path, md_path, latest_path
 
 
