@@ -62,7 +62,7 @@ jobs:
           STATUS="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/STATUS.json"
           LEDGER="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
           touch "$LEDGER"
-          python tools/gate_btc_v16b1_operational_orchestrator.py \
+          python -m tools.gate_btc_v16b1_operational_orchestrator \
             --status "$STATUS" \
             --ledger "$LEDGER" \
             --write | tee "$RUNNER_TEMP/v16b1-orchestrator.json"
