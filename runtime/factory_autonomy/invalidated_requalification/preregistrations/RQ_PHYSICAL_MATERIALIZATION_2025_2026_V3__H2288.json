@@ -1,0 +1,49 @@
+{
+  "dataset_sha256": "99a42b2677f4e26c9de1e19ed0631f6eee805b2152aeb45a80e51ec49f4e6b8c",
+  "economics_read_before_freeze": false,
+  "grammar_contract": {
+    "abs_z_threshold": 1.25,
+    "causal_standardization": "ROLLING_200_PRIOR_SESSIONS_MEDIAN_MAD",
+    "decision_window_minutes": 30,
+    "direction": "CONTINUATION",
+    "family_id": "H2288",
+    "feature": "REALIZED_VOL",
+    "holding_horizons_minutes": [
+      30,
+      60,
+      120
+    ],
+    "standardization_lookback_sessions": 200
+  },
+  "grammar_contract_mode": "EXACT_FROZEN_ORIGINAL",
+  "historical_family_mutated": false,
+  "historical_observations_credited": 0,
+  "namespace": "RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3::H2288",
+  "original_family_id": "H2288",
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_economics_read": false,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "same_historical_window_rerun": false,
+  "schema": "qrds.factory.invalidated_family_rerun_prereg.v1",
+  "source_gate_id": "WIN_M5_PHYSICAL_MATERIALIZATION_V3",
+  "windows": {
+    "discovery": {
+      "end": "2025-12-30",
+      "start": "2025-04-22"
+    },
+    "replication": {
+      "end": "2026-02-13",
+      "start": "2026-01-02"
+    }
+  }
+}
