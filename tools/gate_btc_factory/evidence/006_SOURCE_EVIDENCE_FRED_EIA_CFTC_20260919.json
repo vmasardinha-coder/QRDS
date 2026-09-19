@@ -1,0 +1,52 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_external_evidence.v1",
+  "collected_at_utc": "2026-09-19T22:40:00Z",
+  "outcome_blind": true,
+  "economics_read": false,
+  "evidence": [
+    {
+      "source": "FRED",
+      "official_url": "https://fred.stlouisfed.org/docs/api/fred/",
+      "facts": [
+        "Official Federal Reserve Bank of St. Louis FRED API provides programmatic access to economic data and release metadata."
+      ],
+      "limitations": [
+        "API availability alone does not prove that a preregistered commodity reference has the frozen frequency/timestamp semantics required by the grammar."
+      ]
+    },
+    {
+      "source": "EIA",
+      "official_url": "https://www.eia.gov/opendata/",
+      "facts": [
+        "Official U.S. EIA Open Data API exposes energy datasets and metadata."
+      ],
+      "limitations": [
+        "Dataset-specific frequency and publication-time semantics must be proven before use as the commodity reference."
+      ]
+    },
+    {
+      "source": "CFTC",
+      "official_url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/HistoricalViewable/index.htm",
+      "facts": [
+        "Official CFTC historical Commitments of Traders reports are publicly available."
+      ],
+      "limitations": [
+        "COT report reference dates and release dates are distinct; the historical-report page alone does not establish a commodity price reference at the frozen granularity."
+      ]
+    }
+  ],
+  "decision": "SOURCE_CAPABILITY_EVIDENCE_ONLY_NO_FAMILY_QUALIFICATION",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
