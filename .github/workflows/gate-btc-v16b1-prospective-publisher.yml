@@ -2,6 +2,11 @@ name: GATE BTC V16B.1 Prospective Publisher
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
+      - tools/gate_btc_v16b1_operational_orchestrator.py
   schedule:
     # Hourly gives the causal state machine repeated opportunities without
     # changing the frozen Thu/Fri clock enforced by gate_btc_v16b1_chain.py.
