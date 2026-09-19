@@ -108,6 +108,20 @@ def _pedaco(url: str, desde: int, timeout: float) -> tuple[bytes, int | None]:
         return b"".join(blocos), total
 
 
+def _zip_utilizavel(blob: bytes) -> bool:
+    """O que veio abre como ZIP e tem conteudo?
+
+    A directoria central de um ZIP fica no fim do ficheiro, por isso basta
+    abri-lo para apanhar um corpo truncado — e e barato, ao contrario de
+    verificar o CRC de 500 MB descomprimidos.
+    """
+    try:
+        with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+            return bool(zf.namelist())
+    except (zipfile.BadZipFile, OSError):
+        return False
+
+
 def _download(ano: int, timeout: float = 240.0) -> bytes:
     """Traz o ficheiro anual, retomando quando a ligacao corta.
 
@@ -116,6 +130,17 @@ def _download(ano: int, timeout: float = 240.0) -> bytes:
     grande e fragil, e a queda mandou as 51 series para a brapi, que so
     entrega historico truncado. Num dia de rebalanceio isso teria liquidado a
     carteira por causa da rede, e nao por causa do sinal.
+
+    A 2026-09-15 o mesmo estrago aconteceu por outro caminho: o servidor nao
+    declarou tamanho e respondeu curto, o corpo passou por completo, e so
+    rebentou no parse com 'ZIP ilegivel' — ja sem volta a dar. As 51 series
+    foram para a brapi outra vez, sobraram 2 candidatos elegiveis contra um
+    piso de 4, e a carteira B3 so escapou a liquidacao porque nenhum gatilho
+    disparou nesse dia.
+
+    Por isso o que vem e verificado aqui, antes de ser dado por bom: um blob
+    que nao abre como ZIP conta como tentativa falhada e volta a ser pedido,
+    em vez de seguir para o parse e morrer la.
     """
     url = URL.format(ano=ano)
     dados = b""
@@ -127,7 +152,13 @@ def _download(ano: int, timeout: float = 240.0) -> bytes:
             if not pedaco:
                 ultimo = "resposta vazia"
             elif total is None or len(dados) >= total:
-                return dados
+                if _zip_utilizavel(dados):
+                    return dados
+                # Completo a olho, ilegivel na pratica. Recomecar do zero: um
+                # corpo curto que o servidor deu por inteiro nao se retoma —
+                # pedir 'a partir de onde ficou' devolveria o mesmo nada.
+                ultimo = f"ZIP ilegivel ({len(dados)} bytes)"
+                dados = b""
             else:
                 ultimo = f"curto ({len(dados)}/{total} bytes)"
         except urllib.error.HTTPError as err:

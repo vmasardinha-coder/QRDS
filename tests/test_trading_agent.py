@@ -1447,18 +1447,89 @@ class TestCotahistDownloadResilience(unittest.TestCase):
     """
 
     def test_a_cut_transfer_resumes_instead_of_starting_over(self):
+        # O corpo tem de ser um ZIP a serio: '_download' passou a so dar por
+        # bom o que abre, e um punhado de bytes nunca abriria.
+        blob = _cotahist_zip([_cotahist_record()])
+        corte = len(blob) // 2
         pedidos = []
 
         def falso_pedaco(url, desde, timeout):
             pedidos.append(desde)
             if desde == 0:
-                return b"a" * 10, 25        # corta a meio
-            return b"b" * 15, 25
+                return blob[:corte], len(blob)   # corta a meio
+            return blob[desde:], len(blob)
 
         with mock.patch.object(cotahist, "_pedaco", falso_pedaco):
             dados = cotahist._download(2026)
-        self.assertEqual(pedidos, [0, 10])   # retomou, nao recomecou
-        self.assertEqual(len(dados), 25)
+        self.assertEqual(pedidos, [0, corte])    # retomou, nao recomecou
+        self.assertEqual(dados, blob)
+
+    def test_a_short_body_the_server_called_complete_is_refused(self):
+        """O estrago de 2026-09-15.
+
+        O servidor nao declarou tamanho e respondeu curto. Sem verificacao o
+        blob passava por completo, rebentava no parse com 'ZIP ilegivel', e o
+        ciclo ja nao tinha como voltar a tentar: as 51 series foram para a
+        brapi com historico truncado, sobraram 2 candidatos contra um piso de
+        4, e so nao houve liquidacao porque nenhum gatilho disparou.
+        """
+        blob = _cotahist_zip([_cotahist_record()])
+        respostas = [(blob[:len(blob) // 3], None), (blob, None)]
+        pedidos = []
+
+        def falso_pedaco(url, desde, timeout):
+            pedidos.append(desde)
+            return respostas[min(len(pedidos) - 1, len(respostas) - 1)]
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            dados = cotahist._download(2026)
+        self.assertEqual(dados, blob)
+        # Recomecou do zero em vez de pedir 'a partir de onde ficou': um corpo
+        # que o servidor deu por inteiro nao se retoma.
+        self.assertEqual(pedidos, [0, 0])
+
+    def test_it_gives_up_with_a_reason_when_every_body_is_unreadable(self):
+        tentativas = []
+
+        def sempre_lixo(url, desde, timeout):
+            tentativas.append(desde)
+            return b"nao sou um zip", None
+
+        with mock.patch.object(cotahist, "_pedaco", sempre_lixo), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError) as caught:
+                cotahist._download(2026)
+        self.assertIn("ilegivel", str(caught.exception))
+        self.assertEqual(len(tentativas), cotahist.TENTATIVAS)
+
+    def test_an_empty_archive_is_refused_while_there_is_still_time_to_retry(self):
+        # Um ZIP que abre mas nao traz nada e tao inutil como um que nao abre.
+        # A diferenca esta em ONDE se descobre: aqui ainda ha tentativas; no
+        # parse ja nao ha, e o ciclo inteiro cai para a fonte truncada.
+        import io as _io
+        import zipfile as _zipfile
+        buffer = _io.BytesIO()
+        with _zipfile.ZipFile(buffer, "w"):
+            pass
+        vazio = buffer.getvalue()
+        tentativas = []
+
+        def falso_pedaco(url, desde, timeout):
+            tentativas.append(desde)
+            return vazio, len(vazio)
+
+        with mock.patch.object(cotahist, "_pedaco", falso_pedaco), \
+             mock.patch.object(cotahist.time, "sleep", lambda s: None):
+            with self.assertRaises(cotahist.CotahistError):
+                cotahist._download(2026)
+        self.assertEqual(len(tentativas), cotahist.TENTATIVAS)
+
+    def test_a_valid_archive_is_returned_untouched(self):
+        blob = _cotahist_zip([_cotahist_record()])
+        with mock.patch.object(cotahist, "_pedaco",
+                               lambda url, desde, timeout: (blob, len(blob))):
+            self.assertEqual(cotahist._download(2026), blob)
 
     def test_it_gives_up_with_a_reason_instead_of_looping_forever(self):
         with mock.patch.object(cotahist, "_pedaco",
@@ -1618,3 +1689,80 @@ class TestRegimeIsDeclaredNotAssumed(unittest.TestCase):
                                            "risk_on", regime_avaliado=True)
         regime = [ln for ln in linhas if "Regime" in ln]
         self.assertNotIn("NAO avaliado", regime[0])
+
+
+class TestB3RegimeProxy(unittest.TestCase):
+    """O regime da B3 sai do BOVA11; o obstaculo e o alfa saem do indice.
+
+    Nenhuma fonte alcancavel da o Ibovespa longo (medido no runner a
+    2026-09-02), por isso a SMA 200 passa a ser calculada sobre o ETF, que vem
+    do mesmo arquivo COTAHIST e tem 417 pregoes. A separacao e o ponto: um
+    substituto responde bem a pergunta direccional do filtro, mas nao e o
+    mandato contra o qual a carteira e julgada.
+    """
+
+    def _indice_curto(self):
+        # 75 pregoes: o que o cache tem hoje, longe dos 200 da SMA.
+        return flat_series(100.0, 75)
+
+    def test_regime_comes_from_the_proxy_not_the_index(self):
+        # O proxy esta claramente abaixo da sua propria SMA 200. Se ele fosse
+        # ignorado, o indice curto daria 'risk_on' por falta de historico — e
+        # era exactamente esse o fail-open que isto veio corrigir.
+        proxy = trending_series(200.0, -0.002, 260)
+        decisao = strategy.b3_decision({}, self._indice_curto(), None,
+                                       regime_closes=proxy,
+                                       regime_fonte="BOVA11")
+        self.assertEqual(decisao["regime"], "risk_off")
+        self.assertTrue(decisao["regime_avaliado"])
+        self.assertEqual(decisao["regime_fonte"], "BOVA11")
+
+    def test_the_index_still_decides_the_hurdle(self):
+        # O proxy nao pode contaminar a forca relativa: o obstaculo tem de sair
+        # do indice verdadeiro, que e o mandato desta carteira.
+        indice = trending_series(100.0, 0.001, 300)
+        proxy = flat_series(50.0, 260)
+        decisao = strategy.b3_decision({}, indice, None,
+                                       regime_closes=proxy,
+                                       regime_fonte="BOVA11")
+        self.assertEqual(decisao["hurdle"], "IBOV")
+        self.assertAlmostEqual(decisao["hurdle_score"],
+                               strategy.equity_momentum_score(indice))
+
+    def test_without_a_proxy_it_falls_back_to_the_index(self):
+        # Sem proxy o comportamento e o anterior: indice curto, filtro por
+        # avaliar. Degradar para 'nao avaliado' e honesto.
+        decisao = strategy.b3_decision({}, self._indice_curto(), None)
+        self.assertFalse(decisao["regime_avaliado"])
+        self.assertIsNone(decisao["regime_fonte"])
+
+    def _linhas(self, **kwargs):
+        estado = {"currency": "BRL", "initial_capital": 1000.0, "cash": 10.0,
+                  "inception_date": "2026-01-02",
+                  "history": [{"nav": 1000.0, "benchmark_nav": 1000.0}]}
+        entry = {"nav": 1000.0, "benchmark_nav": 1000.0}
+        linhas = report._performance_table(estado, entry, "IBOV", None,
+                                           "risk_on", **kwargs)
+        return [ln for ln in linhas if "Regime" in ln][0]
+
+    def test_report_declares_the_proxy(self):
+        linha = self._linhas(regime_avaliado=True, regime_fonte="BOVA11")
+        self.assertIn("proxy (BOVA11)", linha)
+
+    def test_report_does_not_call_the_index_a_proxy_of_itself(self):
+        # No caminho de recurso a fonte volta a ser a do benchmark, e ai nao ha
+        # proxy nenhum a declarar.
+        linha = self._linhas(regime_avaliado=True, regime_fonte=None)
+        self.assertNotIn("proxy", linha)
+
+    def test_not_evaluated_wins_over_the_proxy_note(self):
+        # Serie curta e serie de outra origem sao coisas diferentes, e a
+        # primeira e a que importa dizer.
+        linha = self._linhas(regime_avaliado=False, regime_fonte="BOVA11")
+        self.assertIn("NAO avaliado", linha)
+        self.assertNotIn("proxy", linha)
+
+    def test_the_proxy_is_the_etf_already_downloaded_for_the_structured_sleeve(self):
+        # Se divergissem, o ciclo passaria a descarregar um papel a mais sem
+        # que ninguem tivesse decidido isso.
+        self.assertEqual(config.B3_REGIME_PROXY, config.B3S_UNDERLYING)

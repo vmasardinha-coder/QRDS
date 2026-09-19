@@ -205,6 +205,24 @@ CRYPTO_RISK_OFF_EXPOSURE = 0.5   # exposicao quando BTC < SMA 200
 # --- Carteira de acoes B3 (Brasil) ---
 B3_INITIAL_CAPITAL_BRL = 50_000.0
 B3_BENCHMARK = "^BVSP"           # Ibovespa
+
+# Serie sobre a qual a SMA 200 do filtro de regime da B3 e calculada.
+#
+# Nao e o indice porque nenhuma fonte alcancavel o da longo — medido no runner
+# a 2026-09-02: brapi so serve range=3mo do ^BVSP (64 pregoes), Yahoo responde
+# 429, Stooq devolve pagina anti-robo, o SGS nao tem a serie, e o MT5 da
+# corretora carrega o IBOV11 (um papel que negoceia uma vez por mes) mas nao o
+# IBOV a vista. O cache acumula um pregao por dia e so chegaria a 200 em
+# Fevereiro; ate la o filtro nao corria de todo.
+#
+# O BOVA11 vem do mesmo arquivo COTAHIST que ja serve as 49 acoes, tem 417
+# pregoes hoje, e segue o indice com correlacao de 0.9894 nos retornos
+# diarios (pior discordancia num dia: 0.38 pp). Substitui o indice APENAS
+# aqui: obstaculo, benchmark e alfa continuam a sair do ^BVSP verdadeiro.
+#
+# Decidido pelo mandante a 2026-09-02. E mudanca de metodologia (Carta seccao
+# 6), nao troca de fonte, e o relatorio declara-a em todos os ciclos.
+B3_REGIME_PROXY = "BOVA11"
 B3_BENCHMARK2 = "CDI"            # indice acumulado do CDI (BCB SGS 12)
 
 # Universo liquido da B3 (sufixo .SA no Yahoo Finance)
