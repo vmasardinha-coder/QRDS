@@ -1,0 +1,42 @@
+{
+  "schema": "qrds.factory.invalidated_512.physical_materialization_requalification.v1",
+  "frozen_at_utc": "2026-09-19T16:54:00Z",
+  "status": "PREREGISTERED_BEFORE_V3_ECONOMIC_READ",
+  "authority": "USER_AUTHORIZED_REQUALIFICATION_WITH_PROVEN_005_MATERIALIZATION_MECHANISM",
+  "evaluation_namespace": "RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3",
+  "scope": {"remaining_rows": 512, "previously_completed_rows_immutable": 256, "historical_records": "APPEND_ONLY_IMMUTABLE"},
+  "source": {
+    "packet": "runtime/factory_sources/mt5/xawinwdo/XAWINWDO_REGIME_002_DEEP_HISTORY_PACKET.json",
+    "class": "READ_ONLY_MT5_PHYSICAL_EXACT_EXPIRY_WIN_M5",
+    "reuse": "PHYSICAL_SOURCE_AND_MATERIALIZATION_MECHANISM_ONLY",
+    "xawinwdo_005_economic_grammar_reused": false
+  },
+  "materialization": {
+    "instrument": "WIN",
+    "exact_expiry_only": true,
+    "synthetic_or_continuous_forbidden": true,
+    "interpolation_forbidden": true,
+    "roll_rule": "t_minus_1_liquidity",
+    "same_day_liquidity_forbidden": true,
+    "session_rule": "physical M5 bars only; require >=40 bars and exact 300-second internal spacing",
+    "coverage_rule": "largest contiguous physical-session block; weekend-only gaps remain contiguous; ties earliest",
+    "timezone": "America/Sao_Paulo",
+    "cutoff_exclusive": "2026-08-10"
+  },
+  "family_science": {
+    "grammar_contract": "EXACT_FROZEN_ORIGINAL",
+    "threshold": "UNCHANGED",
+    "direction": "UNCHANGED",
+    "cost": "UNCHANGED",
+    "hold": "UNCHANGED",
+    "d0": "UNCHANGED",
+    "pit": "UNCHANGED",
+    "standardization": "UNCHANGED",
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "retroactive_credit": 0
+  },
+  "decision_order": ["PREREGISTRATION","PHYSICAL_MATERIALIZATION","SOURCE_GATE","NEW_NAMESPACE_PREREGISTER_PER_FAMILY","DISCOVERY","INDEPENDENT_REPLICATION_IF_DISCOVERY_SURVIVES","REJECT_OR_HISTORICAL_SURVIVOR","SEPARATE_FORWARD_ONLY_PROSPECTIVE_IF_SURVIVOR"],
+  "safety": {"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true,"H1_H31_ISOLATED":true}
+}
