@@ -26,11 +26,15 @@ def dep(name,a,b):
  if name=="sign_concordance":
   z=[1. if x*y>0 else -1. for x,y in zip(a,b) if x and y];return mean(z) if z else None
  if name=="tail_quadrant_frequency":
-  if len(a)<5:return None
-  aa=sorted(a[:-1]);bb=sorted(b[:-1]);ix=lambda z,p:z[int(p*(len(z)-1))]
-  al,ah,bl,bh=ix(aa,.2),ix(aa,.8),ix(bb,.2),ix(bb,.8);z=[]
-  for x,y in zip(a,b):z.append(1. if ((x<=al and y<=bl) or (x>=ah and y>=bh)) else -1. if ((x<=al and y>=bh) or (x>=ah and y<=bl)) else 0.)
-  return mean(z)
+  # Frozen semantics: every scored observation uses 20/80 thresholds estimated
+  # strictly from observations prior to that scored observation.
+  z=[]
+  for k,(x,y) in enumerate(zip(a,b)):
+   if k<5: continue
+   aa=sorted(a[:k]);bb=sorted(b[:k]);ix=lambda q,p:q[int(p*(len(q)-1))]
+   al,ah,bl,bh=ix(aa,.2),ix(aa,.8),ix(bb,.2),ix(bb,.8)
+   z.append(1. if ((x<=al and y<=bl) or (x>=ah and y>=bh)) else -1. if ((x<=al and y>=bh) or (x>=ah and y<=bl)) else 0.)
+  return mean(z) if z else None
 def series(rows,horizon):
  if horizon=="intraday_bar":
   z=[]
@@ -45,21 +49,17 @@ def aligned_metric(rows,horizon,w,lag,metric,target):
  s=series(rows,horizon); out=[]
  target_root=0 if target.endswith("_WIN") else 1
  for i in range(w-1,len(s)-1):
-  # Frozen semantics: score dependence history against the actual forward target magnitude.
-  # lag shifts the target clock relative to the feature clock; unavailable causal rows drop.
-  ti=i+1+lag
+  # Frozen sign convention: negative lag => feature precedes target;
+  # zero => contemporaneous feature to forward target; positive => target clock precedes feature.
+  ti=i+1-lag
   if not (0<=ti<len(s)): continue
-  hist=s[i-w+1:i+1]
-  feat=[z[1-target_root] for z in hist]
-  # actual target series, aligned one-for-one with feature history and shifted by lag+1
-  targ=[]
-  f2=[]
+  hist=s[i-w+1:i+1]; targ=[]; feat=[]
   for j,z in enumerate(hist):
-   gi=i-w+1+j; tj=gi+1+lag
+   gi=i-w+1+j; tj=gi+1-lag
    if 0<=tj<len(s):
-    f2.append(z[1-target_root]); targ.append(s[tj][target_root])
-  if len(f2)<3: continue
-  v=dep(metric,f2,targ)
+    feat.append(z[1-target_root]); targ.append(s[tj][target_root])
+  if len(feat)<3: continue
+  v=dep(metric,feat,targ)
   if v is not None: out.append(v)
  return out
 
@@ -67,10 +67,9 @@ def main():
  ap=argparse.ArgumentParser();ap.add_argument("--splits",required=True);ap.add_argument("--rule",required=True);ap.add_argument("--semantics",required=True);ap.add_argument("--out",required=True);a=ap.parse_args()
  m=json.loads(Path(a.splits).read_text());rule=json.loads(Path(a.rule).read_text());sem=json.loads(Path(a.semantics).read_text())
  assert m["family_id"]==rule["family_id"]==sem["family_id"]==FAMILY and m["next_stage"]=="DISCOVERY_ONLY_VALIDATION_HOLDOUT_SEALED"
- rows=m["splits"]["discovery"] # validation/holdout intentionally never bound or read below
+ rows=m["splits"]["discovery"]
  targets=["next_bar_WIN","next_bar_WDO","next_session_WIN","next_session_WDO"]; horizons=["intraday_bar","1_session","5_sessions","20_sessions","60_sessions"]; windows=[20,60]; lags=[-12,-6,-3,-1,0,1,3,6,12]; metrics=["Pearson","Spearman","sign_concordance","tail_quadrant_frequency"];cand=[]
  for h in horizons:
-  s=series(rows,h)
   for w in windows:
    for lag in lags:
     for met in metrics:
