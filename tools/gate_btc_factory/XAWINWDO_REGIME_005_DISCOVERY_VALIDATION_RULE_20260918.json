@@ -1,0 +1,56 @@
+{
+  "schema": "qrds.factory.xawinwdo_regime_005.discovery_validation_rule.v1",
+  "family_id": "XAWINWDO_REGIME_005",
+  "status": "FROZEN_BEFORE_ANY_ECONOMIC_READ",
+  "human_authorization_date": "2026-09-18",
+  "rule_basis": "single_ex_ante_objective_rule_within_already_frozen_candidate_space",
+  "discovery_candidate_rule": {
+    "eligible_candidates": "all combinations already frozen by the economic protocol: target x horizon x rolling_window x lead_lag x metric",
+    "direction": "absolute_effect; retain observed sign for validation",
+    "ranking": "largest absolute standardized metric value on discovery",
+    "tie_break": [
+      "smaller rolling_window",
+      "smaller absolute lead_lag",
+      "negative lead_lag before zero before positive",
+      "lexicographic target",
+      "lexicographic horizon",
+      "lexicographic metric"
+    ],
+    "candidate_count": 1
+  },
+  "validation_rule": {
+    "pass_if_all": [
+      "candidate metric has same sign as discovery",
+      "absolute validation metric >= 0.50 * absolute discovery metric",
+      "validation metric is computable on the sealed validation partition"
+    ],
+    "otherwise": "REJECT_NO_RETUNE"
+  },
+  "holdout_rule": {
+    "read_only_if_validation_passes": true,
+    "pass_if_all": [
+      "candidate metric has same sign as discovery",
+      "absolute holdout metric >= 0.50 * absolute discovery metric",
+      "holdout metric is computable on the sealed holdout partition"
+    ],
+    "otherwise": "REJECT_NO_RETUNE",
+    "survivor_destination": "SEPARATE_BLINDED_PROSPECTIVE_ZERO_RETROACTIVE_CREDIT"
+  },
+  "immutability": [
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_COUNTER_RESET",
+    "candidate freeze before validation",
+    "holdout only if validation passes"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true
+  }
+}
