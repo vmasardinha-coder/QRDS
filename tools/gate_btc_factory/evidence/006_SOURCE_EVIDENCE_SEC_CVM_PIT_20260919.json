@@ -1,0 +1,52 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_external_evidence.v1",
+  "collected_at_utc": "2026-09-19T22:35:00Z",
+  "outcome_blind": true,
+  "economics_read": false,
+  "evidence": [
+    {
+      "source": "SEC EDGAR",
+      "official_url": "https://www.sec.gov/search-filings/edgar-application-programming-interfaces",
+      "facts": [
+        "Official data.sec.gov APIs require no authentication or API keys.",
+        "Submissions API exposes public filing history and is updated in real time as filings are disseminated, typically with processing delay under one second."
+      ],
+      "pit_assessment": "SUPPORTS_AUDITABLE_DISSEMINATION_ORDER_WITH_LIMITATION"
+    },
+    {
+      "source": "SEC EDGAR",
+      "official_url": "https://www.sec.gov/about/webmaster-frequently-asked-questions",
+      "facts": [
+        "EDGAR complete-submission headers expose ACCEPTANCE-DATETIME with acceptance date and EST acceptance time."
+      ],
+      "limitations": [
+        "SEC states there is no timestamp indicating when filing content is first available on sec.gov; acceptance time must not be misrepresented as exact first-public-availability time."
+      ]
+    },
+    {
+      "source": "CVM",
+      "official_url": "https://dados.cvm.gov.br/dataset/cia_aberta-doc-ipe",
+      "facts": [
+        "Official IPE open dataset contains periodic/eventual company documents including Fato Relevante and groups files by delivery year.",
+        "Current and prior-year files are updated weekly; history extends to 2003."
+      ],
+      "limitations": [
+        "Dataset publication cadence is weekly and the dataset page does not itself establish an exact public dissemination timestamp suitable for intraday event-time PIT."
+      ]
+    }
+  ],
+  "decision": "PARTIAL_PIT_EVIDENCE_ONLY_NO_FAMILY_QUALIFICATION",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
