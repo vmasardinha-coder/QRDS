@@ -1,0 +1,52 @@
+{
+  "schema": "qrds.factory.xawinwdo_regime_005.intraday_semantics_authorization.v1",
+  "family_id": "XAWINWDO_REGIME_005",
+  "status": "HUMAN_AUTHORIZED_BEFORE_DISCOVERY_EXECUTION",
+  "authorization_date": "2026-09-18",
+  "authorization_context": "Human explicitly authorized defining the previously unspecified intraday semantics after the ambiguity was surfaced and before discovery/validation outcome access.",
+  "semantics": {
+    "bar_clock": "physical MT5 M5 bars; America/Sao_Paulo session-date mapping; exact expiry contracts only",
+    "contract_selection": "t_minus_1_session_liquidity; same-day liquidity forbidden",
+    "synchronization": "inner join WIN and WDO on identical physical M5 timestamps for the selected contracts; no interpolation",
+    "bar_return": "log close-to-close on consecutive synchronized physical M5 bars only; no synthetic return across contract rolls, session gaps, or missing bars",
+    "horizon_intraday_bar": "one synchronized M5 bar",
+    "horizon_1_session": "one physical synchronized session",
+    "horizon_5_sessions": "five physical synchronized sessions",
+    "horizon_20_sessions": "twenty physical synchronized sessions",
+    "horizon_60_sessions": "sixty physical synchronized sessions",
+    "next_bar_WIN": "forward WIN log return over one synchronized M5 bar",
+    "next_bar_WDO": "forward WDO log return over one synchronized M5 bar",
+    "next_session_WIN": "forward WIN session-close log return over one physical synchronized session",
+    "next_session_WDO": "forward WDO session-close log return over one physical synchronized session",
+    "lead_lag": "integer steps in the native clock of the selected horizon; negative means dependence feature precedes target, zero contemporaneous feature-to-forward-target alignment, positive means target clock precedes feature; all shifts causal and rows lacking required history are dropped",
+    "rolling_windows": "20 or 60 observations in the native clock of the selected horizon",
+    "Pearson": "rolling Pearson correlation between aligned WIN and WDO returns",
+    "Spearman": "rolling Spearman rank correlation between aligned WIN and WDO returns",
+    "sign_concordance": "rolling mean of +1 for equal nonzero return signs and -1 for opposite signs; zero-return pairs dropped",
+    "tail_quadrant_frequency": "rolling signed frequency of joint same-tail minus opposite-tail observations, with tails defined ex ante by the 20th/80th empirical quantiles estimated using only observations strictly prior to the scored observation within the same discovery-side causal history",
+    "standardization": "candidate score is the discovery-only mean metric divided by its discovery-only sample standard deviation; noncomputable/zero-variance candidates are ineligible",
+    "partition_boundary": "features/targets scored in discovery may use only causal history from discovery; no validation or holdout rows may be read, joined, ranked, standardized, or used for thresholds before candidate freeze"
+  },
+  "immutability": [
+    "50_30_20_chronological",
+    "embargo_20",
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_COUNTER_RESET",
+    "candidate freeze before validation",
+    "holdout only if validation passes"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true
+  }
+}
