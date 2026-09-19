@@ -1,0 +1,150 @@
+name: GATE BTC Invalidated 512 Physical Requalification V3
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['tools/gate_btc_factory/invalidated_512_physical_materialize_v3.py','tools/gate_btc_factory/INVALIDATED_512_PHYSICAL_MATERIALIZATION_V3_PREREG_20260919.json','.github/workflows/gate-btc-invalidated-512-physical-v3.yml']
+  pull_request:
+    paths: ['tools/gate_btc_factory/invalidated_512_physical_materialize_v3.py','tools/gate_btc_factory/INVALIDATED_512_PHYSICAL_MATERIALIZATION_V3_PREREG_20260919.json','.github/workflows/gate-btc-invalidated-512-physical-v3.yml']
+permissions: {contents: write}
+concurrency: {group: gate-btc-invalidated-512-physical-v3, cancel-in-progress: false}
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+jobs:
+  requalify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source_repo}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Mechanical prereg and compile audit
+        run: |
+          set -euo pipefail
+          python -m py_compile source_repo/tools/gate_btc_factory/invalidated_512_physical_materialize_v3.py
+          python - <<'PY'
+          import json
+          p=json.load(open('source_repo/tools/gate_btc_factory/INVALIDATED_512_PHYSICAL_MATERIALIZATION_V3_PREREG_20260919.json'))
+          assert p['status']=='PREREGISTERED_BEFORE_V3_ECONOMIC_READ'
+          assert p['scope']['remaining_rows']==512 and p['scope']['previously_completed_rows_immutable']==256
+          assert p['family_science']['grammar_contract']=='EXACT_FROZEN_ORIGINAL'
+          assert p['source']['class']=='READ_ONLY_MT5_PHYSICAL_EXACT_EXPIRY_WIN_M5'
+          assert p['source']['xawinwdo_005_economic_grammar_reused'] is False
+          s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['NO_COUNTER_RESET'] and s['FAIL_CLOSED']
+          PY
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - name: Audit canonical packet and unresolved scope before economics
+        run: |
+          set -euo pipefail
+          python source_repo/tools/gate_btc_factory/invalidated_512_physical_materialize_v3.py \
+            --packet runtime_repo/runtime/factory_sources/mt5/xawinwdo/XAWINWDO_REGIME_002_DEEP_HISTORY_PACKET.json \
+            --queue runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json \
+            --audit-only | tee v3_source_audit.jsonl
+      - name: Snapshot immutable historical terminal rows
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          q=json.load(open('runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'))
+          terminal={'SCIENTIFIC_REJECTION','VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE'}
+          rows=sorted((x for x in q['families'] if x['status'] in terminal), key=lambda x:x['original_family_id'])
+          assert len(rows)==256 and q['completed_family_count']==256
+          json.dump(rows,open('/tmp/v3_terminal_before.json','w'),sort_keys=True)
+          PY
+      - name: Install evaluator dependencies
+        if: github.event_name != 'pull_request'
+        run: python -m pip install -q numpy pandas
+      - name: Materialize physical WIN source
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p v3_gate runtime_repo/runtime/factory_autonomy/invalidated_requalification/datasets
+          python source_repo/tools/gate_btc_factory/invalidated_512_physical_materialize_v3.py \
+            --packet runtime_repo/runtime/factory_sources/mt5/xawinwdo/XAWINWDO_REGIME_002_DEEP_HISTORY_PACKET.json \
+            --queue runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json \
+            --csv runtime_repo/runtime/factory_autonomy/invalidated_requalification/datasets/WIN_M5_PHYSICAL_V3.csv \
+            --gate v3_gate/WIN_M5_PHYSICAL_MATERIALIZATION_V3.json
+      - name: Requalify unresolved 512 under frozen original grammars
+        if: github.event_name != 'pull_request'
+        working-directory: source_repo
+        run: |
+          set -euo pipefail
+          OUT=../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json
+          python -m tools.gate_btc_factory.invalidated_family_requalification_runner \
+            --root-cause ../runtime_repo/runtime/factory_autonomy/ROOT_CAUSE_RUNTIME.json \
+            --policy tools/gate_btc_factory/INVALIDATED_FAMILY_REQUALIFICATION.v1.json \
+            --results-dir ../runtime_repo/runtime/autonomous_science/results \
+            --source-gates-dir ../v3_gate \
+            --runtime-dir ../runtime_repo/runtime/factory_autonomy/invalidated_requalification \
+            --existing "$OUT" --output "$OUT"
+          python - <<'PY'
+          import json
+          p='../runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json'
+          q=json.load(open(p))
+          q['authoritative_replay_namespace']='RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3'
+          q['previous_authoritative_replay_namespace']='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          q['v3_scope_authorized']=512
+          with open(p,'w') as f: json.dump(q,f,indent=2,sort_keys=True); f.write('\n')
+          assert q['affected_family_count']==768 and q['completed_family_count']>=256
+          assert q['safety']['orders']==0 and q['safety']['real_capital']==0 and q['safety']['engine_feed'] is False
+          print('V3_COMPLETED='+str(q['completed_family_count']))
+          print('V3_SURVIVORS='+str(q['survivor_count']))
+          print('V3_WAITING='+str(q['waiting_source_count']))
+          PY
+      - name: Audit immutable grammar and historical rows
+        if: github.event_name != 'pull_request'
+        working-directory: source_repo
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from tools.gate_btc_factory.invalidated_family_requalification_runner import family_contracts
+          runtime=Path('../runtime_repo/runtime/factory_autonomy/invalidated_requalification')
+          q=json.load(open(runtime/'QUEUE.json'))
+          before=json.load(open('/tmp/v3_terminal_before.json'))
+          terminal={'SCIENTIFIC_REJECTION','VALID_SURVIVOR_READY_FOR_SEPARATE_PROSPECTIVE'}
+          before_ids={x['original_family_id'] for x in before}
+          after_old=sorted((x for x in q['families'] if x['original_family_id'] in before_ids),key=lambda x:x['original_family_id'])
+          assert after_old==before, 'HISTORICAL_TERMINAL_ROWS_MUTATED'
+          contracts=family_contracts(Path('../runtime_repo/runtime/autonomous_science/results'))
+          new_rows=[x for x in q['families'] if x['original_family_id'] not in before_ids and x.get('new_namespace','').startswith('RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3::')]
+          for row in new_rows:
+              fid=row['original_family_id']
+              path=runtime/'preregistrations'/f"RQ_PHYSICAL_MATERIALIZATION_2025_2026_V3__{fid}.json"
+              prereg=json.load(open(path))
+              assert prereg['grammar_contract_mode']=='EXACT_FROZEN_ORIGINAL'
+              assert prereg['grammar_contract']==contracts[fid]
+              assert prereg['economics_read_before_freeze'] is False
+              assert prereg['historical_observations_credited']==0
+              s=prereg['safety']
+              assert s['no_retune'] and s['no_backfill'] and s['no_counter_reset'] and s['fail_closed']
+              assert s['orders']==0 and s['real_capital']==0 and s['engine_feed'] is False
+          print('V3_GRAMMAR_EXACT_ROWS='+str(len(new_rows)))
+          PY
+      - name: Persist V3 source gate and append-only runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates
+          cp v3_gate/WIN_M5_PHYSICAL_MATERIALIZATION_V3.json runtime_repo/runtime/factory_autonomy/invalidated_requalification/source_gates/
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/invalidated_requalification
+          git commit -m "Run invalidated 512 physical requalification V3" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
