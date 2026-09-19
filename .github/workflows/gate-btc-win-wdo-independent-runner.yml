@@ -164,17 +164,24 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           set -euo pipefail
+          VALIDATION=runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/VALIDATION.json
+          HOLDOUT=runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/HOLDOUT.json
+          if ! python -c "import json; d=json.load(open('$VALIDATION')); raise SystemExit(0 if d.get('validation_pass') is True and d.get('status')=='VALIDATION_PASS_HOLDOUT_ALLOWED' else 1)"; then
+            rm -f "$HOLDOUT"
+            echo 'XAWINWDO_REGIME_005_HOLDOUT=SEALED_VALIDATION_REJECTED'
+            exit 0
+          fi
           python source_repo/tools/gate_btc_factory/xawinwdo_regime_005_holdout.py \
             --splits runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/MATERIALIZED_SPLITS.json \
-            --validation runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/VALIDATION.json \
-            --out runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/HOLDOUT.json
-          python -c "import json; d=json.load(open('runtime_repo/runtime/factory_autonomy/win_wdo/regime_005/HOLDOUT.json')); assert d['retroactive_credit']==0 and d['safety']['NO_RETUNE'] and d['safety']['ORDERS']==0; print('XAWINWDO_REGIME_005_HOLDOUT='+d['status'])"
+            --validation "$VALIDATION" \
+            --out "$HOLDOUT"
+          python -c "import json; d=json.load(open('$HOLDOUT')); assert d['retroactive_credit']==0 and d['safety']['NO_RETUNE'] and d['safety']['ORDERS']==0; print('XAWINWDO_REGIME_005_HOLDOUT='+d['status'])"
       - name: Persist runtime
         if: github.event_name != 'pull_request'
         run: |
           cd runtime_repo
           git config user.name gate-btc-research-bot; git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/factory_autonomy/win_wdo
+          git add -A runtime/factory_autonomy/win_wdo
           git commit -m "Activate XAWINWDO MT5 materialization ${{ github.run_id }}" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
           exit 1
