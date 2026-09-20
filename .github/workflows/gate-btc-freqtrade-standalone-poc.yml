@@ -1,0 +1,155 @@
+name: GATE BTC Freqtrade standalone POC
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_poc/**"
+      - ".github/workflows/gate-btc-freqtrade-standalone-poc.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  FREQTRADE_TIMERANGE: "20250922-20260920"
+
+jobs:
+  standalone-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare output directories
+        run: |
+          mkdir -p artifacts/gate_btc_2/freqtrade_poc/user_data/data
+          mkdir -p artifacts/gate_btc_2/freqtrade_poc/user_data/backtest_results
+          mkdir -p artifacts/gate_btc_2/freqtrade_poc/results
+
+      - name: Pull pinned Freqtrade channel
+        run: docker pull freqtradeorg/freqtrade:stable
+
+      - name: Show engine version
+        run: |
+          set -o pipefail
+          docker run --rm freqtradeorg/freqtrade:stable --version 2>&1 \
+            | tee artifacts/gate_btc_2/freqtrade_poc/results/version.txt
+
+      - name: Download public OKX BTC/USDT 1h data
+        run: |
+          set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/download-data.txt
+          docker run --rm \
+            -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            download-data \
+            --config user_data/config.json \
+            --exchange okx \
+            --pairs BTC/USDT \
+            -t 1h \
+            --days 365 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+
+      - name: Run standalone backtest
+        run: |
+          set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt
+          docker run --rm \
+            -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            backtesting \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --cache none \
+            --export trades 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+          grep -q 'BACKTESTING REPORT' "$OUT"
+
+      - name: Run lookahead analysis
+        run: |
+          set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt
+          docker run --rm \
+            -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            lookahead-analysis \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --minimum-trade-amount 5 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+
+      - name: Run recursive analysis
+        run: |
+          set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt
+          docker run --rm \
+            -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            recursive-analysis \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            -p BTC/USDT \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --startup-candle 60 100 200 500 1000 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+
+      - name: Capture result inventory
+        if: always()
+        run: |
+          find artifacts/gate_btc_2/freqtrade_poc/user_data/backtest_results -maxdepth 2 -type f -print \
+            | sort \
+            | tee artifacts/gate_btc_2/freqtrade_poc/results/backtest-files.txt
+
+      - name: Upload reproducible POC artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-freqtrade-standalone-poc
+          path: |
+            artifacts/gate_btc_2/freqtrade_poc/results/
+            artifacts/gate_btc_2/freqtrade_poc/user_data/backtest_results/
+            artifacts/gate_btc_2/freqtrade_poc/user_data/strategies/StandaloneEmaReference.py
+            artifacts/gate_btc_2/freqtrade_poc/user_data/config.json
+          if-no-files-found: warn
+
+      - name: Publish concise result on PR
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo '## Freqtrade standalone POC — executed result'
+            echo
+            echo "**Frozen timerange:** $FREQTRADE_TIMERANGE"
+            echo
+            echo '**Engine**'
+            echo '```text'
+            cat artifacts/gate_btc_2/freqtrade_poc/results/version.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Backtest (tail)**'
+            echo '```text'
+            tail -n 100 artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Lookahead analysis (tail)**'
+            echo '```text'
+            tail -n 80 artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Recursive analysis (tail)**'
+            echo '```text'
+            tail -n 80 artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt 2>/dev/null || true
+            echo '```'
+          } > /tmp/freqtrade-pr-comment.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/freqtrade-pr-comment.md
