@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "generated_utc": "2026-09-20T22:40:00Z",
+  "source_repository": "freqtrade/freqtrade-strategies",
+  "source_branch": "main",
+  "policy": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "import_external_performance_claims": false,
+    "auto_promote_to_qrds_family": false,
+    "require_independent_qrds_validation": true,
+    "required_validation_path": [
+      "source_audit",
+      "hypothesis_abstraction",
+      "pit_backtest",
+      "leakage_audit",
+      "walk_forward",
+      "costs",
+      "robustness",
+      "shadow",
+      "incremental_comparison"
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "FT-HYP-001",
+      "source_file": "user_data/strategies/AlmgrenChrissStrategy.py",
+      "source_sha": "70dc625c479e0f88e97c3fedf4c2f544bc8e8775",
+      "source_url": "https://github.com/freqtrade/freqtrade-strategies/blob/main/user_data/strategies/AlmgrenChrissStrategy.py",
+      "candidate_family": "adaptive_execution_slicing",
+      "hypothesis": "Volatility- and liquidity-aware staged execution can reduce execution-risk concentration versus one-shot fills while preserving the upstream alpha decision.",
+      "qrds_role": "execution_overlay",
+      "alpha_imported": false,
+      "notable_mechanics": ["TWAP-like slices", "volatility-sensitive kappa", "position adjustment", "partial exits"],
+      "status": "candidate_only"
+    },
+    {
+      "candidate_id": "FT-HYP-002",
+      "source_file": "user_data/strategies/Bandtastic.py",
+      "source_sha": "f7710c76ae1e4ac7aff90857a647e4c2143baf9f",
+      "source_url": "https://github.com/freqtrade/freqtrade-strategies/blob/main/user_data/strategies/Bandtastic.py",
+      "candidate_family": "volatility_band_mean_reversion",
+      "hypothesis": "Extreme deviations below multi-width volatility bands, optionally gated by momentum and flow indicators, may define a mean-reversion family whose edge varies by regime.",
+      "qrds_role": "alpha_family_seed",
+      "alpha_imported": false,
+      "notable_mechanics": ["multi-width Bollinger bands", "RSI/MFI guards", "EMA guard", "separate exit trigger"],
+      "status": "candidate_only"
+    },
+    {
+      "candidate_id": "FT-HYP-003",
+      "source_file": "user_data/strategies/PatternRecognition.py",
+      "source_sha": "c4c9d2e925a56eba39c9cff31ba532c446818f5d",
+      "source_url": "https://github.com/freqtrade/freqtrade-strategies/blob/main/user_data/strategies/PatternRecognition.py",
+      "candidate_family": "candlestick_pattern_event",
+      "hypothesis": "Discrete candlestick-pattern events may have conditional predictive value when tested as event features and segmented by market regime instead of accepted as standalone folklore.",
+      "qrds_role": "feature_family_seed",
+      "alpha_imported": false,
+      "notable_mechanics": ["TA-Lib pattern library", "categorical pattern selection", "event-driven entry"],
+      "status": "candidate_only"
+    },
+    {
+      "candidate_id": "FT-HYP-004",
+      "source_file": "user_data/strategies/MultiMa.py",
+      "source_sha": "dd398f7f54ddf921678d63329c8612450d2b4bcf",
+      "source_url": "https://github.com/freqtrade/freqtrade-strategies/blob/main/user_data/strategies/MultiMa.py",
+      "candidate_family": "multi_horizon_ma_lattice",
+      "hypothesis": "The ordering and spacing of multiple moving-average horizons may encode trend structure more robustly than a single fast/slow crossover.",
+      "qrds_role": "alpha_family_seed",
+      "alpha_imported": false,
+      "notable_mechanics": ["TEMA horizon lattice", "ordered multi-MA conditions", "separate entry/exit lattice"],
+      "status": "candidate_only"
+    }
+  ]
+}
