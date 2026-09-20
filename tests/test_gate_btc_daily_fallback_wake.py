@@ -125,6 +125,9 @@ class EndToEndTests(unittest.TestCase):
         self.assertIn("gate-btc-prospective-ledgers.yml", wake.CHAINED_WORKFLOWS)
         self.assertIn("gate-btc-delta-paper-monitor.yml", wake.CHAINED_WORKFLOWS)
 
+    def test_the_prospective_pit_publisher_is_also_woken(self):
+        self.assertIn("gate-btc-2-prospective-pit-publish.yml", wake.CHAINED_WORKFLOWS)
+
     def test_a_failed_collection_dispatches_nothing(self):
         api = FakeApi([collection(conclusion="failure")])
         result = wake.run(api, REPO, AFTER, attempts=1, delay=0, sleep=lambda _: None)
