@@ -103,6 +103,7 @@ jobs:
           PY
           echo "SOURCE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
       - name: Download immutable Daily Research artifact
+        id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -112,13 +113,22 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > daily.zip
           unzip -t daily.zip >/dev/null
           echo "SOURCE_ARTIFACT_ID=$artifact_id" >> "$GITHUB_ENV"
+          if ! unzip -Z1 daily.zip | grep -Fxq 'daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json'; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "DELTA_V12=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
       - name: Run V12 offline structural audit
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python tools/gate_btc_delta_v12_structural_audit.py \
             --source-artifact daily.zip \
             --contract migration/reporting/delta_v12_structural_audit_contract.json \
             --out-dir artifacts/delta_v12
       - name: Enforce no execution path
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -129,9 +139,11 @@ jobs:
           assert s['status']=='PASS_RESEARCH_AUDIT'
           PY
       - name: Preserve source binding
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           printf 'source_run_id=%s\nsource_artifact_id=%s\nRESEARCH_ONLY=true\nSHADOW_ONLY=true\nNOT_APPROVED=true\nENGINE_FEED=false\nORDERS=0\nREAL_CAPITAL=0\n' "$SOURCE_RUN_ID" "$SOURCE_ARTIFACT_ID" > artifacts/delta_v12/SOURCE_BINDING.txt
       - uses: actions/upload-artifact@v4
+        if: steps.daily_source.outputs.eligible == 'true'
         with:
           name: gate-btc-delta-v12-structural-audit-${{ github.run_id }}
           path: artifacts/delta_v12

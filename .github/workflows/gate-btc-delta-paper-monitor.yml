@@ -165,7 +165,12 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > source_artifact.zip
           mkdir -p source_artifact
           unzip -q source_artifact.zip -d source_artifact
-          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
+            echo "DELTA_PAPER_MONITOR=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            echo "CATCHUP_SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
           test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
 
       - name: Verify source safety boundary

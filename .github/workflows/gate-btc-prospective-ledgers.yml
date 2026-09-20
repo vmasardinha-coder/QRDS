@@ -22,8 +22,6 @@ permissions:
   actions: read
   contents: read
 
-# This workflow retries a fetch/rebase/push sequence before publishing, so a
-# concurrent runtime writer cannot silently lose an otherwise valid update.
 concurrency:
   group: gate-btc-prospective-ledgers-${{ github.event_name }}-${{ github.ref || github.run_id }}
   cancel-in-progress: false
@@ -118,6 +116,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download and expand eligible daily artifact
+        id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -127,7 +126,13 @@ jobs:
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
-          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "PROSPECTIVE_LEDGERS=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
           test -f source_artifact/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
           test -f source_artifact/gateway_daily/linux_offline_replay_outputs.zip
           test -f source_artifact/qos_daily/qos_v2a_outputs.zip
@@ -138,6 +143,7 @@ jobs:
           unzip -q source_artifact/qos_daily/delta_walk_forward_outputs.zip -d extracted/delta
 
       - name: Validate fail-closed daily handoff
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -154,6 +160,7 @@ jobs:
           PY
 
       - name: Resolve canonical prospective inputs
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           set -euo pipefail
           test -f extracted/gateway/outputs/v2a1_run_manifest.json
@@ -178,6 +185,7 @@ jobs:
           echo "V2A_DATA_SNAPSHOT_ID=$V2A_DATA_SNAPSHOT_ID" >> "$GITHUB_ENV"
 
       - name: Check out immutable runtime branch
+        if: steps.daily_source.outputs.eligible == 'true'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -185,6 +193,7 @@ jobs:
           fetch-depth: 0
 
       - name: Preserve immutable V2A point-in-time data quality
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_v2a_data_ledger.py append
           --manifest extracted/v2a/outputs/v2a_run_manifest.json
@@ -196,6 +205,7 @@ jobs:
           --ledger-dir runtime_repo/runtime/data_quality/v2a
 
       - name: Build advisory V2A failure diagnostic
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_v2a_failure_diagnostic.py
           --manifest extracted/v2a/outputs/v2a_run_manifest.json
@@ -206,6 +216,7 @@ jobs:
           --output "runtime_repo/runtime/data_quality/v2a/diagnostics/${V2A_DATA_SNAPSHOT_ID}.json"
 
       - name: Preserve immutable Gateway point-in-time universe
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_universe_ledger.py append
           --raw-csv extracted/gateway/outputs/scanner_top500_raw.csv
@@ -216,6 +227,7 @@ jobs:
           --ledger-dir runtime_repo/runtime/universe_snapshots/gateway
 
       - name: Append Gateway Dynamics snapshot
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_measurement_ledgers.py append-gateway-safe
           --manifest extracted/gateway/outputs/v2a1_run_manifest.json
@@ -226,6 +238,7 @@ jobs:
           --ledger-dir runtime_repo/runtime/ledgers/gateway_dynamics
 
       - name: Initialize frozen LOCK25/50 cycle
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_measurement_ledgers.py initialize-lock
           --contract config/lock25_50_shadow_contract_v1.json
@@ -234,12 +247,14 @@ jobs:
           --ledger-dir runtime_repo/runtime/ledgers/lock25_50
 
       - name: Validate frozen LOCK source anchor
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           test -f runtime_repo/runtime/ledgers/lock25_50/ANCHOR.json
           test -f runtime_repo/runtime/ledgers/lock25_50/SOURCE_ANCHOR.json
           test -f runtime_repo/runtime/ledgers/lock25_50/SERIES_HISTORY.json
 
       - name: Recover any missing LOCK closes from exact immutable artifacts
+        if: steps.daily_source.outputs.eligible == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
@@ -258,6 +273,7 @@ jobs:
           --source-run-id 31857524889
 
       - name: Append current LOCK25/50 eligible close
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_measurement_ledgers.py append-lock
           --contract config/lock25_50_shadow_contract_v1.json
@@ -269,6 +285,7 @@ jobs:
           --ledger-dir runtime_repo/runtime/ledgers/lock25_50
 
       - name: Rebuild canonical measurement status
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           set -euo pipefail
           d50_args=()
@@ -281,6 +298,7 @@ jobs:
             --output runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
 
       - name: Commit runtime evidence with fail-closed rebase/retry
+        if: steps.daily_source.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail

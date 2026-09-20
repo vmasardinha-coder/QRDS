@@ -137,6 +137,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download V2A daily evidence
+        id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -147,7 +148,13 @@ jobs:
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
-          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "ALT_TRAIL40_10=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
           test -f source_artifact/qos_daily/qos_v2a_outputs.zip
           unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
           test -f extracted/v2a/outputs/v2a_run_manifest.json
@@ -155,6 +162,7 @@ jobs:
           test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
 
       - name: Verify Daily Research safety and resolve snapshot
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -177,6 +185,7 @@ jobs:
           echo "ALT_TRAIL_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
 
       - name: Check out immutable runtime branch
+        if: steps.daily_source.outputs.eligible == 'true'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -184,12 +193,14 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize immutable ALT trail archive
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_alt_trail40_10_shadow_archive.py initialize
           --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
           --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
 
       - name: Append exact prospective daily path
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_alt_trail40_10_shadow_archive.py append
           --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
@@ -200,6 +211,7 @@ jobs:
           --source-run-id "$SOURCE_RUN_ID"
 
       - name: Preserve prior-cycle assets through executable monthly exit
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_alt_trail40_10_rollover_guard.py
           --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
@@ -207,12 +219,14 @@ jobs:
           --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
 
       - name: Evaluate frozen shadow rule deterministically
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_alt_trail40_10_shadow_evaluator.py
           --contract tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
           --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
 
       - name: Verify archive and evaluation safety state
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -241,6 +255,7 @@ jobs:
           PY
 
       - name: Commit ALT trail runtime evidence only
+        if: steps.daily_source.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
