@@ -107,8 +107,8 @@ def zip_schema(rec: dict[str, Any]) -> dict[str, Any]:
 
 
 def bcb_query(indicator: str) -> str:
-    params = {"$format": "json", "$filter": f"Indicador eq '{indicator}'", "$top": "5"}
-    return BCB_ANNUAL + "?" + urllib.parse.urlencode(params)
+    encoded_filter = urllib.parse.quote(f"Indicador eq '{indicator}'", safe="")
+    return f"{BCB_ANNUAL}?$format=json&$top=5&$filter={encoded_filter}"
 
 
 def parse_bcb(rec: dict[str, Any]) -> dict[str, Any]:
