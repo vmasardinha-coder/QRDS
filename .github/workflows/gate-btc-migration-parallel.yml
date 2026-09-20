@@ -4,6 +4,30 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/gate-btc-migration-parallel.yml
+      - tools/gate_btc_migration_runner.py
+      - tools/qos_orchestrator.py
+      - tools/v2a_frozen_replay.py
+      - tools/compare_v2a_outputs.py
+      - tools/delta_frozen_replay.py
+      - tools/compare_delta_outputs.py
+      - tools/compare_cross_platform_outputs.py
+      - tools/validate_gateway_output_contract.py
+      - tools/compare_qos_runs.py
+      - windows_local_verifier/**
+      - tests/test_gate_btc_migration_runner.py
+      - tests/test_qos_orchestrator.py
+      - tests/test_v2a_frozen_replay.py
+      - tests/test_compare_v2a_outputs.py
+      - tests/test_delta_frozen_replay.py
+      - tests/test_compare_delta_outputs.py
+      - tests/test_compare_cross_platform_outputs.py
+      - tests/test_windows_local_verifier_bundle.py
+      - tests/test_gateway_output_contract.py
+      - tests/test_compare_qos_runs.py
+      - migration/canonical/**
+      - migration/gateway/**
   push:
     branches: [agent/gate-btc-actions-migration]
     paths:
