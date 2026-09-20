@@ -1,0 +1,63 @@
+{
+  "schema": "qrds.factory.grammar_007.availability_authority_registry.v1",
+  "evidence_mode": "MANUALLY_AUDITED_OFFICIAL_SOURCE_FACTS_PLUS_RUNTIME_REACHABILITY",
+  "coverage": {
+    "start": "2024-02-05",
+    "end": "2026-09-20",
+    "reason": "Bounded to B3 regimes with directly audited official schedule/calendar authorities; earlier dates remain ineligible rather than inferred."
+  },
+  "bcb_focus": {
+    "official_authority_url": "https://www.bcb.gov.br/controleinflacao/expectativasmercado",
+    "publication_rule": "Focus - Relatorio de Mercado is published every Monday between 08:25 and 08:30 local Sao Paulo time.",
+    "causal_eligibility_rule": "Use a Focus observation only when its Data is Monday and that Monday is an eligible B3 regular session in the frozen calendar. If Monday is not a session, the week is ineligible; do not infer the timestamp of a shifted publication.",
+    "release_window_start": "08:25",
+    "release_window_end": "08:30",
+    "timezone": "America/Sao_Paulo",
+    "missing_rule": "INELIGIBLE_NO_IMPUTATION"
+  },
+  "b3": {
+    "regular_cash_market_open": "10:00",
+    "special_open": {
+      "2024-02-14": "13:00",
+      "2025-03-05": "13:00",
+      "2026-02-18": "13:00"
+    },
+    "closed_dates": [
+      "2024-02-12", "2024-02-13", "2024-03-29", "2024-05-01", "2024-05-30", "2024-09-07", "2024-10-12", "2024-11-02", "2024-11-15", "2024-11-20", "2024-12-24", "2024-12-25", "2024-12-31",
+      "2025-01-01", "2025-03-03", "2025-03-04", "2025-04-18", "2025-04-21", "2025-05-01", "2025-06-19", "2025-09-07", "2025-10-12", "2025-11-02", "2025-11-15", "2025-11-20", "2025-12-24", "2025-12-25", "2025-12-31",
+      "2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03", "2026-04-21", "2026-05-01", "2026-06-04", "2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15", "2026-11-20", "2026-12-24", "2026-12-25", "2026-12-31"
+    ],
+    "authority_urls": [
+      "https://www.b3.com.br/data/files/51/B7/F3/56/1F8FC8103152D4C8AC094EA8/OC%20001-2024-VNC%20Novos%20Hor%C3%A1rios%20Exerc%C3%ADcio%20Op%C3%A7%C3%B5es%20Jan-24_PT.pdf",
+      "https://www.b3.com.br/data/files/86/B4/A7/07/4D2CE810C54843E8DC0D8AA8/OC%20048-2024%20PRE%20%20Retificacao%20do%20Calendario%20de%20Feriados%202024%20%20%28PT%29.pdf",
+      "https://www.b3.com.br/pt_br/noticias/calendario-de-feriados-2025.htm",
+      "https://www.b3.com.br/data/files/63/C3/B3/53/16A1591029BEEC39AC094EA8/OC%20014-2025%20PRE%20Novos%20Horarios%20de%20Negociacao%202025%20vf%20%28PT%29.pdf",
+      "https://www.b3.com.br/data/files/A5/90/2C/43/244E9910F5D34899AC094EA8/OC%20040-2025-VNC%20NOVOS%20HORARIOS%20DE%20NEGOCIACAO_PT.pdf",
+      "https://www.b3.com.br/pt_br/noticias/calendario-de-negociacao-da-b3-confira-o-funcionamento-da-bolsa-em-2026.htm",
+      "https://www.b3.com.br/data/files/E3/B2/C2/12/BC09C910F37907C9AC094EA8/OC%20005-2026%20PRE%20NOVOS%20HORARIOS%20DE%20NEGOCIACAO_PT.pdf"
+    ],
+    "target_source_url": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2025.ZIP"
+  },
+  "cvm": {
+    "delivery_url_template": "https://dados.cvm.gov.br/dados/FI/DOC/ENTREGA/DADOS/fi_entrega_documento_{yyyymm}.zip",
+    "inf_diario_url_template": "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_{yyyymm}.zip",
+    "availability_timestamp": "Data_Hora_Entrega",
+    "version_key": "ID_Documento",
+    "presentation_type": "Tipo_Apresentacao",
+    "active_flag": "Ativo",
+    "missing_rule": "INELIGIBLE_NO_IMPUTATION"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}
