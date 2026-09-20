@@ -27,14 +27,10 @@ def head(url: str) -> dict[str, Any]:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             length = r.headers.get("Content-Length")
             return {
-                "url": url,
-                "reachable": True,
-                "http_status": int(r.status),
+                "url": url, "reachable": True, "http_status": int(r.status),
                 "content_type": r.headers.get("Content-Type"),
                 "content_length": int(length) if length and length.isdigit() else None,
-                "last_modified": r.headers.get("Last-Modified"),
-                "etag": r.headers.get("ETag"),
-                "body_read": False,
+                "last_modified": r.headers.get("Last-Modified"), "etag": r.headers.get("ETag"), "body_read": False,
             }
     except urllib.error.HTTPError as exc:
         return {"url": url, "reachable": False, "http_status": int(exc.code), "error": f"HTTPError:{exc.code}", "body_read": False}
@@ -60,6 +56,20 @@ def sessions(start: date, end: date, closed: set[date], special: dict[date, str]
         if d.weekday() < 5 and d not in closed:
             out.append({"date": d.isoformat(), "open": special.get(d, regular_open), "weekday": d.strftime("%A")})
         d += timedelta(days=1)
+    return out
+
+
+def delivery_authority_urls(reg: dict[str, Any], yms: list[str]) -> list[dict[str, str]]:
+    monthly_start = reg["cvm"]["delivery_monthly_start"].replace("-", "")
+    annual_years = sorted({ym[:4] for ym in yms if ym < monthly_start})
+    out = [
+        {"coverage_unit": year, "mode": "HISTORICAL_ANNUAL", "url": reg["cvm"]["delivery_historical_annual_url_template"].format(yyyy=year)}
+        for year in annual_years
+    ]
+    out.extend(
+        {"coverage_unit": ym, "mode": "CURRENT_MONTHLY", "url": reg["cvm"]["delivery_monthly_url_template"].format(yyyymm=ym)}
+        for ym in yms if ym >= monthly_start
+    )
     return out
 
 
@@ -96,15 +106,16 @@ def main() -> int:
     with ThreadPoolExecutor(max_workers=8) as ex:
         authority_probes = list(ex.map(head, authority_urls))
     authority_reachable = all(x.get("reachable") is True for x in authority_probes)
-
     target_probe = head(reg["b3"]["target_source_url"])
 
     ym = months(start, end)
-    delivery_urls = [reg["cvm"]["delivery_url_template"].format(yyyymm=x) for x in ym]
+    delivery_authorities = delivery_authority_urls(reg, ym)
+    delivery_urls = [x["url"] for x in delivery_authorities]
     inf_urls = [reg["cvm"]["inf_diario_url_template"].format(yyyymm=x) for x in ym]
     with ThreadPoolExecutor(max_workers=12) as ex:
-        delivery_probes = list(ex.map(head, delivery_urls))
+        delivery_probe_values = list(ex.map(head, delivery_urls))
         inf_probes = list(ex.map(head, inf_urls))
+    delivery_probes = [{**meta, **probe} for meta, probe in zip(delivery_authorities, delivery_probe_values)]
     cvm_missing_delivery = [x["url"] for x in delivery_probes if not x.get("reachable")]
     cvm_missing_inf = [x["url"] for x in inf_probes if not x.get("reachable")]
     cvm_archive_coverage_pass = not cvm_missing_delivery and not cvm_missing_inf
@@ -117,7 +128,7 @@ def main() -> int:
     if not authority_reachable:
         blockers.append("OFFICIAL_AUTHORITY_REACHABILITY_GAP")
     if not cvm_archive_coverage_pass:
-        blockers.append("CVM_MONTHLY_ARCHIVE_COVERAGE_GAP")
+        blockers.append("CVM_ARCHIVE_COVERAGE_GAP")
     if not target_probe.get("reachable"):
         blockers.append("B3_COTAHIST_TARGET_AUTHORITY_REACHABILITY_GAP")
 
@@ -129,51 +140,39 @@ def main() -> int:
         "coverage": reg["coverage"],
         "official_authority_probes": authority_probes,
         "B3": {
-            "bounded_calendar_pass": b3_bounded_calendar_pass,
-            "session_count": len(sess),
-            "sessions": sess,
-            "target_source_probe": target_probe,
-            "target_bytes_read": False,
-            "target_bytes_parsed": False,
-            "target_outcomes_read": False,
-            "outside_coverage_rule": "INELIGIBLE_NO_IMPUTATION",
+            "bounded_calendar_pass": b3_bounded_calendar_pass, "session_count": len(sess), "sessions": sess,
+            "target_source_probe": target_probe, "target_bytes_read": False, "target_bytes_parsed": False,
+            "target_outcomes_read": False, "outside_coverage_rule": "INELIGIBLE_NO_IMPUTATION",
         },
         "BCB": {
             "bounded_pit_admission_pass": bcb_bounded_pit_pass,
             "publication_window": [reg["bcb_focus"]["release_window_start"], reg["bcb_focus"]["release_window_end"]],
-            "eligible_monday_publications": focus_eligible,
-            "eligible_count": len(focus_eligible),
-            "non_session_mondays_ineligible": non_session_mondays,
-            "shifted_release_timestamp_inferred": False,
+            "eligible_monday_publications": focus_eligible, "eligible_count": len(focus_eligible),
+            "non_session_mondays_ineligible": non_session_mondays, "shifted_release_timestamp_inferred": False,
             "outside_or_shifted_rule": "INELIGIBLE_NO_IMPUTATION",
         },
         "CVM": {
-            "archive_coverage_pass": cvm_archive_coverage_pass,
-            "months_expected": ym,
-            "delivery_archives_reachable": sum(1 for x in delivery_probes if x.get("reachable")),
+            "archive_coverage_pass": cvm_archive_coverage_pass, "months_expected": ym,
+            "delivery_authorities": delivery_probes,
+            "delivery_coverage_units_reachable": sum(1 for x in delivery_probes if x.get("reachable")),
+            "delivery_months_covered": len(ym) if not cvm_missing_delivery else None,
             "inf_diario_archives_reachable": sum(1 for x in inf_probes if x.get("reachable")),
-            "missing_delivery_urls": cvm_missing_delivery,
-            "missing_inf_diario_urls": cvm_missing_inf,
-            "availability_timestamp": reg["cvm"]["availability_timestamp"],
-            "version_key": reg["cvm"]["version_key"],
+            "missing_delivery_urls": cvm_missing_delivery, "missing_inf_diario_urls": cvm_missing_inf,
+            "availability_timestamp": reg["cvm"]["availability_timestamp"], "version_key": reg["cvm"]["version_key"],
+            "historical_delivery_mode": "ANNUAL_HIST_ARCHIVE_BEFORE_2025_01_THEN_MONTHLY",
             "missing_rule": "INELIGIBLE_NO_IMPUTATION",
         },
         "blockers": blockers,
         "next_gate": "CAUSAL_FEATURE_MATERIALIZATION_OUTCOME_BLIND" if bounded_pass else "RESOLVE_AUTHORITY_COVERAGE_GAPS",
-        "historical_testing_started": False,
-        "features_materialized": False,
-        "candidate_ranked": False,
-        "outcomes_read": False,
-        "economics_read": False,
-        "scientific_credit": 0,
-        "prospective_credit": 0,
-        "historical_backfill_credit": 0,
-        "safety": reg["safety"],
+        "historical_testing_started": False, "features_materialized": False, "candidate_ranked": False,
+        "outcomes_read": False, "economics_read": False, "scientific_credit": 0, "prospective_credit": 0,
+        "historical_backfill_credit": 0, "safety": reg["safety"],
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": result["status"], "sessions": len(sess), "focus_eligible": len(focus_eligible),
-                      "cvm_months": len(ym), "authority_reachable": authority_reachable, "outcomes_read": False}, sort_keys=True))
+                      "cvm_months": len(ym), "cvm_delivery_units": len(delivery_probes),
+                      "authority_reachable": authority_reachable, "outcomes_read": False}, sort_keys=True))
     return 0
 
 
