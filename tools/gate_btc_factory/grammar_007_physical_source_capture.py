@@ -62,6 +62,7 @@ def get(url: str) -> dict[str, Any]:
     except urllib.error.HTTPError as exc:
         body = exc.read() if getattr(exc, "fp", None) else b""
         return {"url": url, "reachable": False, "http_status": int(exc.code), "error": f"HTTPError:{exc.code}",
+                "error_text": body[:512].decode("utf-8", errors="replace"),
                 "byte_count": len(body), "sha256": sha256(body) if body else None, "body": body}
     except Exception as exc:
         return {"url": url, "reachable": False, "http_status": None, "error": f"{type(exc).__name__}:{exc}",
@@ -106,9 +107,6 @@ def zip_schema(rec: dict[str, Any]) -> dict[str, Any]:
 
 
 def bcb_query(indicator: str) -> str:
-    # Olinda's ExpectativasMercadoAnuais rejects $orderby on this endpoint (HTTP 400).
-    # Physical capture needs only a schema-bearing official sample; chronology is
-    # reconstructed later from Data under the frozen PIT gate, so no ordering is needed here.
     params = {"$format": "json", "$filter": f"Indicador eq '{indicator}'", "$top": "5"}
     return BCB_ANNUAL + "?" + urllib.parse.urlencode(params)
 
