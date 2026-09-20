@@ -108,9 +108,18 @@ jobs:
           raise SystemExit(1 if qualified else 0)
           PY
           then
+            set +e
             python tools/gate_btc_b3_gap_classifier.py h1 \
               --status "$STATUS" \
               --out artifacts/b3_h1_daily/H1_OPERATIONAL_GAP.json
+            rc=$?
+            set -e
+            if [ "$rc" -eq 2 ]; then
+              echo "H1_STRUCTURAL=UNQUALIFIED_TRUE_PROCESSING_OR_CONTRACT_FAILURE"
+              echo "SCIENTIFIC_CREDIT=0"
+            elif [ "$rc" -ne 0 ]; then
+              exit "$rc"
+            fi
           else
             echo "H1_STRUCTURAL_QUALIFIED=true; operational gap not required"
           fi
