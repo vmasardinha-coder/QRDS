@@ -1,0 +1,23 @@
+name: GATE BTC Factory 007 Historical Intake
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_historical_intake.py'
+      - 'tests/test_gate_btc_grammar_007_historical_intake.py'
+      - '.github/workflows/gate-btc-factory-007-historical-intake.yml'
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: pytest -q tests/test_gate_btc_grammar_007_historical_intake.py
+      - name: Smoke intake against canonical qualification fixture
+        run: |
+          python tools/gate_btc_factory/grammar_007_historical_intake.py \
+            --qualification tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_ADJUDICATION.v1.json \
+            --out /tmp/grammar_007_historical_intake.json
