@@ -36,6 +36,7 @@ jobs:
       - name: Download public OKX BTC/USDT 1h data
         run: |
           set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/download-data.txt
           docker run --rm \
             -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -44,12 +45,13 @@ jobs:
             --exchange okx \
             --pairs BTC/USDT \
             -t 1h \
-            --days 365 2>&1 \
-            | tee artifacts/gate_btc_2/freqtrade_poc/results/download-data.txt
+            --days 365 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
       - name: Run standalone backtest
         run: |
           set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt
           docker run --rm \
             -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -59,12 +61,14 @@ jobs:
             --strategy-path user_data/strategies \
             -i 1h \
             --cache none \
-            --export trades 2>&1 \
-            | tee artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt
+            --export trades 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+          grep -q 'BACKTESTING REPORT' "$OUT"
 
       - name: Run lookahead analysis
         run: |
           set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt
           docker run --rm \
             -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -73,12 +77,13 @@ jobs:
             --strategy StandaloneEmaReference \
             --strategy-path user_data/strategies \
             -i 1h \
-            --minimum-trade-amount 5 2>&1 \
-            | tee artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt
+            --minimum-trade-amount 5 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
       - name: Run recursive analysis
         run: |
           set -o pipefail
+          OUT=artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt
           docker run --rm \
             -v "$PWD/artifacts/gate_btc_2/freqtrade_poc/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -88,8 +93,8 @@ jobs:
             --strategy-path user_data/strategies \
             -i 1h \
             -p BTC/USDT \
-            --startup-candle 60 100 200 500 1000 2>&1 \
-            | tee artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt
+            --startup-candle 60 100 200 500 1000 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
       - name: Capture result inventory
         if: always()
@@ -126,17 +131,17 @@ jobs:
             echo
             echo '**Backtest (tail)**'
             echo '```text'
-            tail -n 80 artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt 2>/dev/null || true
+            tail -n 100 artifacts/gate_btc_2/freqtrade_poc/results/backtest.txt 2>/dev/null || true
             echo '```'
             echo
             echo '**Lookahead analysis (tail)**'
             echo '```text'
-            tail -n 60 artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt 2>/dev/null || true
+            tail -n 80 artifacts/gate_btc_2/freqtrade_poc/results/lookahead-analysis.txt 2>/dev/null || true
             echo '```'
             echo
             echo '**Recursive analysis (tail)**'
             echo '```text'
-            tail -n 60 artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt 2>/dev/null || true
+            tail -n 80 artifacts/gate_btc_2/freqtrade_poc/results/recursive-analysis.txt 2>/dev/null || true
             echo '```'
           } > /tmp/freqtrade-pr-comment.md
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/freqtrade-pr-comment.md
