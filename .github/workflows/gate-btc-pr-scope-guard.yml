@@ -33,6 +33,7 @@ jobs:
           files=[line.strip() for line in Path('changed_files.txt').read_text(encoding='utf-8').splitlines() if line.strip()]
           head_ref=os.environ.get('HEAD_REF', '')
           exact={
+              'tests/fixtures/grammar_007_historical_intake.json',
               '.github/workflows/00-victor-action-required.yml',
               'ops/workflow_operations_registry.json',
               'tools/victor_action_supervisor.py',
