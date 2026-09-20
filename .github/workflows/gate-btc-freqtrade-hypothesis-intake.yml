@@ -1,0 +1,33 @@
+name: GATE BTC Freqtrade hypothesis intake
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_integration/**"
+      - ".github/workflows/gate-btc-freqtrade-hypothesis-intake.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate fail-closed manifest
+        run: python artifacts/gate_btc_2/freqtrade_integration/validate_manifest.py
+      - name: Emit canonical intake snapshot
+        run: |
+          mkdir -p artifacts/gate_btc_2/freqtrade_integration/runtime
+          cp artifacts/gate_btc_2/freqtrade_integration/hypothesis_seed_manifest.json \
+             artifacts/gate_btc_2/freqtrade_integration/runtime/canonical_hypothesis_intake.json
+          python artifacts/gate_btc_2/freqtrade_integration/validate_manifest.py \
+            | tee artifacts/gate_btc_2/freqtrade_integration/runtime/validation.txt
+      - name: Upload intake artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-freqtrade-hypothesis-intake
+          path: artifacts/gate_btc_2/freqtrade_integration/runtime/
+          if-no-files-found: error
