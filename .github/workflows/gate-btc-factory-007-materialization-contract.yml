@@ -5,18 +5,26 @@ name: GATE BTC Factory 007 Materialization Contract
       - 'tools/gate_btc_factory/grammar_007_causal_materializer_contract.py'
       - 'tests/test_gate_btc_grammar_007_historical_intake_fixture.json'
       - '.github/workflows/gate-btc-factory-007-materialization-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_causal_materializer_contract.py'
+      - 'tests/test_gate_btc_grammar_007_historical_intake_fixture.json'
+      - '.github/workflows/gate-btc-factory-007-materialization-contract.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: source_repo
       - name: Build frozen contract from canonical intake fixture
         run: |
-          python tools/gate_btc_factory/grammar_007_causal_materializer_contract.py \
-            --intake tests/test_gate_btc_grammar_007_historical_intake_fixture.json \
+          python source_repo/tools/gate_btc_factory/grammar_007_causal_materializer_contract.py \
+            --intake source_repo/tests/test_gate_btc_grammar_007_historical_intake_fixture.json \
             --out /tmp/grammar_007_materializer_contract.json
           python - <<'PY'
           import json
@@ -25,5 +33,46 @@ jobs:
           assert x['embargo_sessions']==60
           assert x['partition_contract']=='50_30_20_CHRONOLOGICAL'
           assert x['outcomes_read'] is False and x['economics_read'] is False
+          assert x['historical_testing_started'] is False
           assert len(x['families'])==2
           PY
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Persist canonical Grammar 007 materialization contract
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          test -f "$ROOT/GRAMMAR_007_HISTORICAL_INTAKE_RUNTIME.json"
+          python source_repo/tools/gate_btc_factory/grammar_007_causal_materializer_contract.py \
+            --intake "$ROOT/GRAMMAR_007_HISTORICAL_INTAKE_RUNTIME.json" \
+            --out "$ROOT/GRAMMAR_007_MATERIALIZER_CONTRACT_RUNTIME.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_autonomy/GRAMMAR_007_MATERIALIZER_CONTRACT_RUNTIME.json'
+          x=json.load(open(p))
+          assert x['status']=='READY_FOR_PHYSICAL_SOURCE_CAPTURE'
+          assert x['embargo_sessions']==60
+          assert x['partition_contract']=='50_30_20_CHRONOLOGICAL'
+          assert x['outcomes_read'] is False and x['economics_read'] is False
+          assert x['historical_testing_started'] is False
+          assert len(x['families'])==2
+          assert all(f['status']=='CAUSAL_MATERIALIZER_CONTRACT_FROZEN' for f in x['families'])
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_007_MATERIALIZER_CONTRACT_RUNTIME.json
+          git commit -m "Factory 007 materialization contract ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((i*2))
+          done
+          exit 1
