@@ -83,11 +83,20 @@ jobs:
           set -e
           if [ "$rc" -ne 0 ]; then
             mkdir -p runtime_repo/runtime/ledgers/b3_h31_prospective/gaps
+            set +e
             python tools/gate_btc_b3_gap_classifier.py log \
               --log /tmp/h31-collect.log \
               --stream H31 \
               --date "${{ steps.target.outputs.date }}" \
               --out "runtime_repo/runtime/ledgers/b3_h31_prospective/gaps/${{ steps.target.outputs.date }}.json"
+            gap_rc=$?
+            set -e
+            if [ "$gap_rc" -eq 2 ]; then
+              echo "H31_PROSPECTIVE=UNQUALIFIED_TRUE_PROCESSING_OR_CONTRACT_FAILURE"
+              echo "SCIENTIFIC_CREDIT=0"
+            elif [ "$gap_rc" -ne 0 ]; then
+              exit "$gap_rc"
+            fi
             if [ ! -f runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json ]; then
               python - <<'PY'
           import json
