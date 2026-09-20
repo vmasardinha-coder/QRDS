@@ -1,8 +1,6 @@
 from types import SimpleNamespace
 from datetime import datetime, timezone
 
-import pytest
-
 from tools.gate_btc_factory import invalidated_512_mt5_strict_v2_probe as p
 
 
@@ -79,7 +77,7 @@ def test_missing_expiry_cannot_select_contract():
     assert p.choose_contract("2025-06-02", [m]) is None
 
 
-def test_strict_constants_cannot_regress_to_v1_floor():
+def test_strict_constants_and_paged_capture_cannot_regress():
     assert p.NAMESPACE == "RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2"
     assert p.MIN_TOTAL == 322
     assert p.MIN_PART == 161
@@ -87,6 +85,8 @@ def test_strict_constants_cannot_regress_to_v1_floor():
     assert p.DISC_END == "2025-12-31"
     assert p.REPL_START == "2026-01-01"
     assert p.END == "2026-08-09"
+    assert p.PAGE_SIZE == 512
+    assert p.MAX_BARS_PER_CONTRACT == 250000
 
 
 def test_time_mode_can_fallback_to_same_terminal_but_stays_fail_closed():
@@ -95,14 +95,27 @@ def test_time_mode_can_fallback_to_same_terminal_but_stays_fail_closed():
     assert 'mt5.symbols_get()' in text
     assert 'selected=modes[0] if len(modes)==1 else None' in text
     assert '"timezone_admission_pass":selected is not None' in text
+    assert 'copy_rates_from_pos' in text
 
 
-def test_probe_source_admission_requires_provenance_not_capacity_only():
+def test_mt5_is_hard_bound_to_independent_secondary_cross_validation_only():
+    assert p.SOURCE_ROLE == "INDEPENDENT_SECONDARY_SOURCE"
+    assert p.USAGE_CONSTRAINT == "CROSS_VALIDATION_ONLY"
+    text = open(p.__file__, encoding="utf-8").read()
+    assert 'qualified_for_cross_validation=all(gates.values())' in text
+    assert '"source_admission_pass":False' in text
+    assert '"may_be_primary_source":False' in text
+    assert '"may_open_primary_source_gate":False' in text
+    assert '"may_reconstruct_lost_clocks":False' in text
+    assert '"requalification_economics_allowed":False' in text
+    assert '"cross_validation_qualification_pass":qualified_for_cross_validation' in text
+
+
+def test_probe_provenance_stays_fail_closed():
     text = open(p.__file__, encoding="utf-8").read()
     assert '"publication_semantics_proven":False' in text
     assert '"revision_semantics_proven":False' in text
     assert '"point_in_time_validity_proven":False' in text
-    assert "green=all(gates.values())" in text
 
 
 def test_no_order_send_codepath():
