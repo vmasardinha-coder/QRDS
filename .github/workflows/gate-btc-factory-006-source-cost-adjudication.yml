@@ -1,0 +1,102 @@
+name: GATE BTC Factory 006 Source Cost Adjudication
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json'
+      - 'tools/gate_btc_factory/grammar_source_cost_adjudication.py'
+      - '.github/workflows/gate-btc-factory-006-source-cost-adjudication.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json'
+      - 'tools/gate_btc_factory/grammar_source_cost_adjudication.py'
+      - '.github/workflows/gate-btc-factory-006-source-cost-adjudication.yml'
+permissions:
+  contents: write
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+jobs:
+  adjudicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source_repo}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate adjudication contract
+        run: |
+          set -euo pipefail
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/grammar_source_cost_adjudication.py tools/gate_btc_factory/grammar_source_cost_qualifier.py
+          python - <<'PY'
+          import json
+          a=json.load(open('tools/gate_btc_factory/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json'))
+          assert a['schema']=='qrds.factory.grammar_source_cost_adjudication.v1'
+          assert a['outcomes_read'] is False and a['economics_read'] is False and a['retune'] is False
+          assert len(a['families'])==6
+          assert all(x['decision']=='REJECT_SOURCE_COST_FAIL_CLOSED' for x in a['families'])
+          assert all(x['outcomes_read'] is False and x['economics_read'] is False for x in a['families'])
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Materialize canonical family evidence and qualify
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          test -f "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json"
+          test -f "$ROOT/GRAMMAR_006_SEMANTIC_PREREG.v1.json"
+          mkdir -p "$ROOT/grammar_source_cost_evidence"
+          python source_repo/tools/gate_btc_factory/grammar_source_cost_adjudication.py \
+            --intake "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json" \
+            --adjudication source_repo/tools/gate_btc_factory/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json \
+            --output-dir "$ROOT/grammar_source_cost_evidence"
+          cp source_repo/tools/gate_btc_factory/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json "$ROOT/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json"
+          python source_repo/tools/gate_btc_factory/grammar_source_cost_qualifier.py \
+            --intake "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json" \
+            --protocol source_repo/tools/gate_btc_factory/GRAMMAR_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json \
+            --evidence-dir "$ROOT/grammar_source_cost_evidence" \
+            --output "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json"
+          python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
+          python - <<'PY'
+          import json
+          root='runtime_repo/runtime/factory_autonomy'
+          q=json.load(open(root+'/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json'))
+          assert q['qualified_count']==0
+          assert q['waiting_count']==0
+          assert q['blocked_semantics_count']==0
+          assert q['rejected_count']==6
+          for f in q['families']:
+              assert f['status']=='REJECT_SOURCE_COST_FAIL_CLOSED'
+              assert f['source_qualified'] is False
+              assert f['cost_applicability_proven'] is False
+              assert f['economics_read'] is False
+              assert f['historical_testing_started'] is False
+          PY
+      - name: Persist canonical adjudication
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_006_SOURCE_COST_ADJUDICATION.v1.json runtime/factory_autonomy/grammar_source_cost_evidence runtime/factory_autonomy/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
+          git commit -m "Factory 006 source-cost adjudication ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
