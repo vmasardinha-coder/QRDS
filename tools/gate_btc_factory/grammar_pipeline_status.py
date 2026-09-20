@@ -13,12 +13,26 @@ def build(root):
  hand=load(root/'GRAMMAR_HANDOFF_RUNTIME.json')
  trans=load(root/'GRAMMAR_PREREG_TRANSPORT_RUNTIME.json')
  intake=load(root/'GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json')
+ qual=load(root/'GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json')
  st=Counter(x.get('status','UNKNOWN') for x in scout.get('proposals',[]))
  sigs=set()
  for p in (root/'grammar_handoff_audits').glob('*.json') if (root/'grammar_handoff_audits').exists() else []:
   sigs.update(x.get('grammar_signature') for x in load(p).get('requests',[]) if x.get('grammar_signature'))
  prereg=list((root/'grammar_preregistrations').glob('XAGRAMMAR_*.json')) if (root/'grammar_preregistrations').exists() else []
  transported=int(intake.get('transported_count',0) or 0)
+ qualified=int(qual.get('qualified_count',0) or 0)
+ waiting=int(qual.get('waiting_count',0) or 0)
+ blocked=int(qual.get('blocked_semantics_count',0) or 0)
+ rejected=int(qual.get('rejected_count',0) or 0)
+ adjudicated=qualified+waiting+blocked+rejected
+ if qualified:
+  next_stage='EXISTING_FACTORY_FOR_SOURCE_COST_QUALIFIED_FAMILIES'
+ elif transported and rejected==transported and adjudicated==transported:
+  next_stage='AUTONOMOUS_SCOUT_FOR_NEW_PREREGISTRATIONS'
+ elif transported:
+  next_stage='SOURCE_COST_QUALIFICATION_THEN_EXISTING_FACTORY'
+ else:
+  next_stage='AUTONOMOUS_SCOUT_HANDOFF_PREREG_SOURCE_COST_GATE'
  return {
   'schema':'qrds.factory.grammar_pipeline_status.v1',
   'generated_at_utc':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
@@ -33,8 +47,12 @@ def build(root):
    'preregistered_unique_cumulative':len(prereg),
    'transported_current':transported,
    'transported_incremental_last_handoff':int(trans.get('transported_count',0) or 0),
+   'source_cost_qualified_current':qualified,
+   'source_cost_waiting_current':waiting,
+   'source_cost_blocked_semantics_current':blocked,
+   'source_cost_rejected_current':rejected,
   },
-  'next_stage':'SOURCE_COST_QUALIFICATION_THEN_EXISTING_FACTORY' if transported else 'AUTONOMOUS_SCOUT_HANDOFF_PREREG_SOURCE_COST_GATE',
+  'next_stage':next_stage,
   'safety':{'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
  }
 
