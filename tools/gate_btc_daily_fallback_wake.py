@@ -23,10 +23,9 @@ own judgement — the monitor verifies a repeated day against the recorded row
 hashes and refuses a gap outright, and no such rule is duplicated or softened
 here. A consumer is woken only when the collection actually succeeded.
 
-Known gap, deliberately not papered over: gate-btc-2-prospective-pit-publish.yml
-is chained on the collection but exposes no workflow_dispatch trigger, so it
-cannot be woken this way and is not listed below. Giving it a run_id input is the
-prerequisite for covering it.
+The V2A prospective PIT publisher is included as a chained consumer once it
+accepts the same explicit run_id dispatch contract. No consumer is silently
+excluded from fallback wake coverage.
 
 The HTTP call is injected so the policy is testable without a network.
 """
@@ -55,6 +54,7 @@ CHAINED_WORKFLOWS = (
     "gate-btc-alt-trail40-10-shadow.yml",
     "gate-btc-bull-replay-live-shadow.yml",
     "gate-btc-prl50-position-shadow.yml",
+    "gate-btc-2-prospective-pit-publish.yml",
 )
 
 WOKE = "WOKE_CONSUMERS"

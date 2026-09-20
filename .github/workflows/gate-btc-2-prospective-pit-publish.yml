@@ -5,6 +5,12 @@ on:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful GATE BTC Daily Research Collection run id"
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -27,18 +33,28 @@ jobs:
     # The PIT collector is an isolated job in the Daily workflow and uploads
     # its own artifact. The generic daily-research artifact intentionally does
     # not contain prospective_v2a, so consuming it here creates a false red.
-    # Only run after a successful upstream workflow; absence/ineligibility is
-    # handled fail-closed below and never earns scientific credit.
-    if: github.event.workflow_run.conclusion == 'success'
+    # Only run after a successful upstream workflow; workflow_dispatch is used
+    # solely by the fallback wake after that same successful source run.
+    # Absence/ineligibility is handled fail-closed below and earns zero credit.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      SOURCE_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.run_id || github.event.workflow_run.id }}
     steps:
+      - name: Require explicit successful-source run id
+        run: |
+          test -n "$SOURCE_RUN_ID"
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID"
+
       - name: Download isolated prospective PIT artifact
         uses: actions/download-artifact@v4
         with:
-          name: gate-btc-prospective-v2a-pit-${{ github.event.workflow_run.id }}
+          name: gate-btc-prospective-v2a-pit-${{ env.SOURCE_RUN_ID }}
           path: daily_evidence
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
 
