@@ -1,0 +1,129 @@
+name: GATE BTC Factory 007 Availability Authorities
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'research/b3_h/grammar_007_availability_authority_registry.json'
+      - 'tools/gate_btc_factory/grammar_007_availability_authority_materializer.py'
+      - 'tests/test_gate_btc_grammar_007_availability_authority_materializer.py'
+      - '.github/workflows/gate-btc-factory-007-availability-authorities.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'research/b3_h/grammar_007_availability_authority_registry.json'
+      - 'tools/gate_btc_factory/grammar_007_availability_authority_materializer.py'
+      - 'tests/test_gate_btc_grammar_007_availability_authority_materializer.py'
+      - '.github/workflows/gate-btc-factory-007-availability-authorities.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-availability-authorities-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+
+      - name: Run static boundary tests
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_availability_authority_materializer.py
+
+      - name: Materialize bounded authorities outcome-blind
+        run: |
+          mkdir -p artifacts/factory_007_availability_authorities
+          python source_repo/tools/gate_btc_factory/grammar_007_availability_authority_materializer.py \
+            --registry source_repo/research/b3_h/grammar_007_availability_authority_registry.json \
+            --out artifacts/factory_007_availability_authorities/RESULT.json
+          python - <<'PY'
+          import json
+          p='artifacts/factory_007_availability_authorities/RESULT.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['historical_testing_started'] is False
+          assert x['features_materialized'] is False
+          assert x['candidate_ranked'] is False
+          assert x['outcomes_read'] is False
+          assert x['economics_read'] is False
+          assert x['scientific_credit'] == 0
+          assert x['B3']['target_bytes_read'] is False
+          assert x['B3']['target_bytes_parsed'] is False
+          assert x['B3']['target_outcomes_read'] is False
+          print('GRAMMAR_007_AVAILABILITY_STATUS='+x['status'])
+          print('BCB_ELIGIBLE='+str(x['BCB']['eligible_count']))
+          print('B3_SESSIONS='+str(x['B3']['session_count']))
+          print('CVM_ARCHIVE_COVERAGE='+str(x['CVM']['archive_coverage_pass']).lower())
+          print('NEXT_GATE='+x['next_gate'])
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grammar-007-availability-authorities-${{ github.run_id }}
+          path: artifacts/factory_007_availability_authorities/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Persist canonical bounded authority evidence
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          DEST=runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json
+          mkdir -p "$(dirname "$DEST")"
+          cp artifacts/factory_007_availability_authorities/RESULT.json "$DEST"
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json
+          git commit -m "Factory 007 availability authorities ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((i*2))
+          done
+          exit 1
