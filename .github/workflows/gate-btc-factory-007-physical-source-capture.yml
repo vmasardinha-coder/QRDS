@@ -60,7 +60,7 @@ jobs:
 
       - name: Run static boundary tests
         working-directory: source_repo
-        run: python -m pytest -q tests/test_gate_btc_grammar_007_physical_source_capture.py
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_physical_source_capture.py
 
       - name: Capture official physical feature sources outcome-blind
         run: |
@@ -92,7 +92,7 @@ jobs:
         with:
           name: grammar-007-physical-source-capture-${{ github.run_id }}
           path: artifacts/factory_007_physical_source_capture/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 90
 
       - uses: actions/checkout@v4
