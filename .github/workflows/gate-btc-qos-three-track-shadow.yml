@@ -105,6 +105,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download untouched V2A daily evidence
+        id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -115,13 +116,20 @@ jobs:
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
-          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "QOS_THREE_TRACK=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
           test -f source_artifact/qos_daily/qos_v2a_outputs.zip
           unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
           test -f extracted/v2a/outputs/v2a_run_manifest.json
           test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
 
       - name: Verify source safety and resolve snapshot date
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -139,6 +147,7 @@ jobs:
           echo "QOS_THREE_TRACK_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
 
       - name: Check out immutable runtime branch
+        if: steps.daily_source.outputs.eligible == 'true'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -146,6 +155,7 @@ jobs:
           fetch-depth: 0
 
       - name: Process prospective three-track signal and daily path
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_qos_prospective_three_track_idempotent.py
           --contract migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
@@ -155,6 +165,7 @@ jobs:
           --source-run-id "$SOURCE_RUN_ID"
 
       - name: Verify runtime safety state when active
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -172,6 +183,7 @@ jobs:
           PY
 
       - name: Commit prospective QOS evidence only
+        if: steps.daily_source.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
