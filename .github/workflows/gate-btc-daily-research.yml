@@ -248,11 +248,32 @@ jobs:
           --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
           --out artifacts/prospective_v2a_runtime_registry.json
       - name: Collect registry-driven prospective V2A PIT
+        id: pit
+        continue-on-error: true
         run: >-
           python tools/gate_btc_2_v2a_registry_prospective_pit.py
           --registry artifacts/prospective_v2a_runtime_registry.json
           --output-dir artifacts/prospective_v2a
           --run-id "$GITHUB_RUN_ID"
+      - name: Classify prospective PIT outcome
+        if: always()
+        run: |
+          set -euo pipefail
+          test -f artifacts/prospective_v2a/SUMMARY.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/prospective_v2a/SUMMARY.json',encoding='utf-8'))
+          assert p['attempted'] == 137
+          assert p['research_only'] is True and p['shadow_only'] is True
+          assert p['not_approved'] is True and p['engine_feed'] is False
+          assert p['orders'] == 0 and p['real_capital_brl'] == 0
+          assert p['no_retune'] is True and p['no_backfill'] is True
+          if p['cutover_input_pass']:
+              print('V2A_PIT=QUALIFIED_COMPLETE')
+          else:
+              print(f"V2A_PIT=ORDINARY_INCOMPLETE_SOURCE_COVERAGE loaded={p['loaded']} failed={p['failed']}")
+              print('SCIENTIFIC_CREDIT=0')
+          PY
       - name: Upload prospective V2A PIT evidence
         if: always()
         uses: actions/upload-artifact@v4
