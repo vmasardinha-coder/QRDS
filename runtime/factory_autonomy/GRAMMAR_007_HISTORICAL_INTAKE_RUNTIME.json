@@ -1,0 +1,60 @@
+{
+  "economics_read": false,
+  "families": [
+    {
+      "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
+      "family_id": "XAGRAMMAR_62943307741A",
+      "frozen_semantics": {
+        "feature": "Aggregate net flow for CVM-classified equity funds on the latest official report date available before the target B3 session, defined mechanically as total subscriptions minus total redemptions divided by the prior officially reported aggregate net asset value for the same eligible fund set; no fund ranking, threshold or performance-based subset selection.",
+        "lookback": "Exactly one latest eligible official flow report plus the immediately prior officially reported aggregate net asset value needed for scaling; missing required fields make the date ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the fund-flow feature is officially observable.",
+        "window": "Use only CVM fund-report data whose official availability timestamp is strictly before the target B3 regular-session open; later reports roll prospectively to the next eligible session."
+      },
+      "grammar_signature": "62943307741a3db2ca63d7491bd42988fb5fc34c4f5f10790b022259fb7fdc86",
+      "next_stage": "CAUSAL_SOURCE_MATERIALIZATION_BEFORE_DISCOVERY",
+      "qualified_sources": [
+        "B3",
+        "CVM"
+      ],
+      "semantic_prereg_sha256": "ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98",
+      "status": "MATERIALIZATION_REQUIRED_OUTCOME_BLIND"
+    },
+    {
+      "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
+      "family_id": "XAGRAMMAR_728DC88D691B",
+      "frozen_semantics": {
+        "feature": "Two-component revision vector from the latest officially published BCB Focus survey available before the target B3 session: change versus the immediately preceding Focus publication in the median IPCA expectation for the current calendar year and change in the median Selic expectation for the end of the current calendar year; no thresholding, reweighting, component selection or outcome-based transformation.",
+        "lookback": "Exactly two consecutive official Focus publications are required to compute the publication-to-publication revisions; missing either required series makes the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the revised Focus vector is officially observable.",
+        "window": "Only the latest completed official BCB Focus publication whose publication timestamp precedes the target B3 regular-session open; publications at or after the open roll prospectively to the next eligible session."
+      },
+      "grammar_signature": "728dc88d691b573e87a0f150881d7ab1de5b58e1f4527b360334c0387fe74b1c",
+      "next_stage": "CAUSAL_SOURCE_MATERIALIZATION_BEFORE_DISCOVERY",
+      "qualified_sources": [
+        "B3",
+        "BCB"
+      ],
+      "semantic_prereg_sha256": "ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98",
+      "status": "MATERIALIZATION_REQUIRED_OUTCOME_BLIND"
+    }
+  ],
+  "historical_testing_started": false,
+  "outcomes_read": false,
+  "qualification_sha256": "735dafeb7e9d8defb2c549ee08dd1aaae643ec56f05d8983b2e5564ddbaee2f2",
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.historical_intake.v1",
+  "split_contract": "50_30_20_CHRONOLOGICAL_WITH_FROZEN_EMBARGO_BEFORE_ANY_DISCOVERY",
+  "status": "READY_FOR_CAUSAL_SOURCE_MATERIALIZATION"
+}
