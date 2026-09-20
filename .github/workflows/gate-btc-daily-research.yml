@@ -347,7 +347,18 @@ jobs:
             echo "Runtime pointer already current"
           else
             git -C runtime_repo commit -m "Update GATE BTC runtime pointer"
-            git -C runtime_repo push origin HEAD:gate-btc-runtime
+            for attempt in 1 2 3 4 5; do
+              git -C runtime_repo fetch origin gate-btc-runtime
+              if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+                git -C runtime_repo rebase --abort || true
+                exit 1
+              fi
+              if git -C runtime_repo push origin HEAD:gate-btc-runtime; then
+                exit 0
+              fi
+              sleep $((attempt * 2))
+            done
+            exit 1
           fi
 
   publish-v2a-registry-pit:
