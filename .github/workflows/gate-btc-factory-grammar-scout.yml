@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '37 11 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/autonomous_grammar_scout.py'
+      - 'tools/gate_btc_factory/mt5_shared_family_source.py'
+      - '.github/workflows/gate-btc-factory-grammar-scout.yml'
   pull_request:
     branches: [main]
     paths:
