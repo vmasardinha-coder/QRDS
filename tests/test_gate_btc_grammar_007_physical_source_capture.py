@@ -16,18 +16,18 @@ class Grammar007PhysicalSourceCaptureTests(unittest.TestCase):
 
     def test_b3_target_is_never_parsed_in_capture_stage(self):
         text = Path(p.__file__).read_text(encoding="utf-8")
-        self.assertIn('"target_bytes_parsed": False', text)
-        self.assertIn('"target_outcomes_read": False', text)
-        self.assertIn('"outcomes_read": False', text)
-        self.assertIn('"economics_read": False', text)
-        self.assertIn('"features_materialized": False', text)
-        self.assertIn('"candidate_ranked": False', text)
+        self.assertIn('"target_bytes_parsed":False', text)
+        self.assertIn('"target_outcomes_read":False', text)
+        self.assertIn('"outcomes_read":False', text)
+        self.assertIn('"economics_read":False', text)
+        self.assertIn('"features_materialized":False', text)
+        self.assertIn('"candidate_ranked":False', text)
 
     def test_pit_is_fail_closed_until_semantics_are_materialized(self):
         text = Path(p.__file__).read_text(encoding="utf-8")
-        self.assertIn('"exact_historical_intraday_publication_timestamp_proven": False', text)
-        self.assertIn('"availability_mapping_requires_delivery_join": True', text)
-        self.assertGreaterEqual(text.count('"pit_admission_pass": False'), 3)
+        self.assertIn('"exact_historical_intraday_publication_timestamp_proven":False', text)
+        self.assertIn('"availability_mapping_requires_delivery_join":True', text)
+        self.assertGreaterEqual(text.count('"pit_admission_pass":False'), 3)
 
     def test_scientific_credit_stays_zero(self):
         self.assertTrue(p.SAFETY["RESEARCH_ONLY"])
