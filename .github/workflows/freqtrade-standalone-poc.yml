@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   standalone-benchmark:
@@ -103,3 +104,34 @@ jobs:
             external_benchmarks/freqtrade/user_data/strategies/StandaloneEmaReference.py
             external_benchmarks/freqtrade/user_data/config.json
           if-no-files-found: warn
+
+      - name: Publish concise result on PR
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo '## Freqtrade standalone POC — executed result'
+            echo
+            echo '**Engine**'
+            echo '```text'
+            cat external_benchmarks/freqtrade/results/version.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Backtest (tail)**'
+            echo '```text'
+            tail -n 80 external_benchmarks/freqtrade/results/backtest.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Lookahead analysis (tail)**'
+            echo '```text'
+            tail -n 60 external_benchmarks/freqtrade/results/lookahead-analysis.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '**Recursive analysis (tail)**'
+            echo '```text'
+            tail -n 60 external_benchmarks/freqtrade/results/recursive-analysis.txt 2>/dev/null || true
+            echo '```'
+          } > /tmp/freqtrade-pr-comment.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/freqtrade-pr-comment.md
