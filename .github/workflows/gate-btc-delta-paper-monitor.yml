@@ -22,6 +22,15 @@ on:
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
+  # A rede de seguranca do encadeamento acima. O GitHub nao emite workflow_run
+  # para execucoes disparadas com GITHUB_TOKEN, entao uma retentativa automatica
+  # bem-sucedida nao acorda o monitor. Esta agenda cobre a janela da coleta e
+  # processa o ponteiro publicado quando ha fechamento novo.
+  #
+  # A janela comeca as 03:00 e nao as 05:00 por medicao, nao por estimativa: em
+  # 2026-09-10 o primeiro tique de "0 5-15" so executou as 09:24, quatro horas e
+  # meia depois do horario marcado, ja depois da entrega diaria. O agendador
+  # deste repositorio atrasa muito, entao a janela abre com folga.
   schedule:
     - cron: "0 3-15 * * *"
 
@@ -30,6 +39,8 @@ permissions:
   contents: read
 
 concurrency:
+  # Sem o event_name na chave: agendado e encadeado escrevem no MESMO ledger e
+  # nao podem rodar em paralelo.
   group: gate-btc-delta-paper-monitor-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
@@ -109,6 +120,8 @@ jobs:
           EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
+          # Num agendamento sem fechamento novo, o passo anterior gravou a decisao
+          # e nao ha nada a fazer. Sair aqui evita baixar o artefato a toa.
           if [ "${CATCHUP_DECISION:-}" = "UP_TO_DATE" ] || [ "${CATCHUP_DECISION:-}" = "POINTER_BEHIND_LEDGER" ]; then
             echo "DELTA_PAPER_MONITOR=NOTHING_TO_BOOK ${CATCHUP_DECISION}"
             echo "CATCHUP_SKIP=1" >> "$GITHUB_ENV"
@@ -124,6 +137,15 @@ jobs:
           assert run['name'] == 'GATE BTC Daily Research Collection'
           assert run['head_branch'] == 'main'
           assert run['status'] == 'completed'
+
+          # O artefato que esta sombra consome e gate-btc-daily-research-<run_id>,
+          # produzido exclusivamente pelo job daily-research-collection. A conclusao
+          # da run inteira tambem carrega jobs irmaos com outros datasets --
+          # prospective-v2a-pit, por exemplo, que esta sombra nunca le. Exigir a run
+          # verde acoplava o V11 a falhas de dados que nao entram no ledger dele.
+          # O portao continua fechado sobre o job que de fato produz o dado, e os
+          # passos seguintes seguem verificando manifesto, research_only e
+          # NOT_APPROVED dentro do proprio artefato.
           jobs=json.load(open('source_jobs.json', encoding='utf-8'))['jobs']
           producer=[j for j in jobs if j['name'] == 'daily-research-collection']
           assert len(producer) == 1, f"expected exactly one producer job, got {len(producer)}"
