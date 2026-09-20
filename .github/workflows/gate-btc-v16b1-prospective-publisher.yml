@@ -138,6 +138,73 @@ jobs:
           python -m tools.gate_btc_v16b1_okx_signal             --panel "$OUT/panel.csv" --panel-manifest "$OUT/panel_manifest.json"             --signal-market-source-manifest "$OUT/signal_market_source_manifest.json"             --v16b1-shortability "$SHORT" --signal-date "$SIGNAL_DATE"             --universe-snapshot "$RAW" --universe-snapshot-evidence "$EV"             --code-commit "$(git rev-parse HEAD)" --output "$OUT/signal_input.json"
           python -m tools.gate_btc_v16b1_chain seal-signal             --input "$OUT/signal_input.json"             --ledger "$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
 
+      - name: Resolve causal V16B.1 ENTRY inputs fail closed
+        if: github.event_name != 'pull_request'
+        working-directory: source
+        run: |
+          set -euo pipefail
+          LEDGER="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
+          STATUS="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/STATUS.json"
+          touch "$LEDGER"
+          read SIGNAL_DATE ENTRY_DATE HAS_SIGNAL HAS_ENTRY <<<"$(python - <<'PY'
+          import json,os
+          from tools import gate_btc_v16b1_chain as c
+          s=json.load(open(os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))
+          ev=c.load_events(__import__('pathlib').Path(os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl'))
+          sd=s['signal_date']; ed=s['entry_date']
+          print(sd,ed,int(any(x.get('event_type')=='V16B1_SIGNAL_SEAL' and x.get('signal_date_utc')==sd for x in ev)),int(any(x.get('event_type')=='V16B1_ENTRY_SEAL' and x.get('signal_date_utc')==sd for x in ev)))
+          PY
+          )"
+          [ "$HAS_SIGNAL" = 1 ] || { echo "V16B1_ENTRY=WAITING_VALID_SIGNAL"; exit 0; }
+          [ "$HAS_ENTRY" = 0 ] || { echo "V16B1_ENTRY=ALREADY_SEALED"; exit 0; }
+          NOW="$(date -u +%s)"; CLOSE="$(date -u -d "$ENTRY_DATE + 1 day" +%s)"
+          [ "$NOW" -lt "$CLOSE" ] || { echo "V16B1_ENTRY=WINDOW_MISSED_FAIL_CLOSED"; exit 0; }
+          OUT="$RUNNER_TEMP/v16b1-entry"; mkdir -p "$OUT"
+          curl -fsS 'https://www.okx.com/api/v5/public/instruments?instType=SWAP' -o "$OUT/okx_instruments.json"
+          curl -fsS 'https://www.okx.com/api/v5/public/time' -o "$OUT/okx_time.json"
+          curl -fsS 'https://api.binance.com/api/v3/exchangeInfo' -o "$OUT/binance_exchangeInfo.json"
+          curl -fsS 'https://api.binance.com/api/v3/time' -o "$OUT/binance_time.json"
+          python - <<'PY'
+          import json,os,pathlib
+          from tools import gate_btc_v16b1_chain as c
+          root=pathlib.Path(os.environ['GITHUB_WORKSPACE'])
+          ev=c.load_events(root/'canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl')
+          sd=json.load(open(root/'canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))['signal_date']
+          sig=[x for x in ev if x.get('event_type')=='V16B1_SIGNAL_SEAL' and x.get('signal_date_utc')==sd]
+          assert len(sig)==1
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'v16b1-entry/signal_event.json'
+          p.write_text(json.dumps(sig[0],sort_keys=True)+'\n')
+          PY
+          python -m tools.gate_btc_v16b1_okx_entry --signal-event "$OUT/signal_event.json" --okx-instruments "$OUT/okx_instruments.json" --okx-time "$OUT/okx_time.json" --binance-spot-exchange-info "$OUT/binance_exchangeInfo.json" --binance-time "$OUT/binance_time.json" --output "$OUT/entry_input.json"
+          python -m tools.gate_btc_v16b1_chain seal-entry --input "$OUT/entry_input.json" --ledger "$LEDGER"
+          mkdir -p "$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/evidence/$SIGNAL_DATE/entry"
+          cp "$OUT"/*.json "$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/evidence/$SIGNAL_DATE/entry/"
+
+      - name: Guard RESULT until official post-exit evidence is complete
+        if: github.event_name != 'pull_request'
+        working-directory: source
+        run: |
+          set -euo pipefail
+          LEDGER="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
+          STATUS="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/STATUS.json"
+          touch "$LEDGER"
+          python - <<'PY'
+          import json,os,pathlib,datetime as dt
+          from tools import gate_btc_v16b1_chain as c
+          root=pathlib.Path(os.environ['GITHUB_WORKSPACE'])
+          s=json.load(open(root/'canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))
+          ev=c.load_events(root/'canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl')
+          sd=s['signal_date']
+          entries=[x for x in ev if x.get('event_type')=='V16B1_ENTRY_SEAL' and x.get('signal_date_utc')==sd]
+          results=[x for x in ev if x.get('event_type')=='V16B1_RESULT_SEAL' and x.get('signal_date_utc')==sd]
+          if results: print('V16B1_RESULT=ALREADY_SEALED')
+          elif not entries: print('V16B1_RESULT=WAITING_VALID_ENTRY')
+          else:
+              exit_date=dt.date.fromisoformat(entries[0]['entry_date_utc'])+dt.timedelta(days=7)
+              close=dt.datetime.combine(exit_date+dt.timedelta(days=1),dt.time.min,tzinfo=dt.timezone.utc)
+              print('V16B1_RESULT=EVIDENCE_CAPTURE_REQUIRED_AFTER_EXIT_CLOSE' if dt.datetime.now(dt.timezone.utc)>=close else 'V16B1_RESULT=WAITING_EXIT_CLOSE', exit_date.isoformat())
+          PY
+
       - name: Reconcile causal clock fail closed
         working-directory: source
         run: |
