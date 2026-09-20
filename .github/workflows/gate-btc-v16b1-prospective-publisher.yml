@@ -114,6 +114,8 @@ jobs:
           print('V16B1_CMC_INPUT=PASS',e['snapshot_id'])
           PY
           HIST="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY.csv"
+          # This file is an authoritative frozen model-training input only. Never
+          # reconstruct it from missed prospective windows or current snapshots.
           if [ ! -f "$HIST" ]; then
             echo "FAIL_CLOSED_MISSING_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY"
             exit 2
