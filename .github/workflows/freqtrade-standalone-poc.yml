@@ -1,0 +1,105 @@
+name: Freqtrade standalone POC
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "external_benchmarks/freqtrade/**"
+      - ".github/workflows/freqtrade-standalone-poc.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  standalone-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare output directories
+        run: |
+          mkdir -p external_benchmarks/freqtrade/user_data/data
+          mkdir -p external_benchmarks/freqtrade/user_data/backtest_results
+          mkdir -p external_benchmarks/freqtrade/results
+
+      - name: Pull pinned Freqtrade channel
+        run: docker pull freqtradeorg/freqtrade:stable
+
+      - name: Show engine version
+        run: |
+          docker run --rm freqtradeorg/freqtrade:stable --version \
+            | tee external_benchmarks/freqtrade/results/version.txt
+
+      - name: Download public OKX BTC/USDT 1h data
+        run: |
+          docker run --rm \
+            -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            download-data \
+            --config user_data/config.json \
+            --exchange okx \
+            --pairs BTC/USDT \
+            -t 1h \
+            --days 365 \
+            | tee external_benchmarks/freqtrade/results/download-data.txt
+
+      - name: Run standalone backtest
+        run: |
+          docker run --rm \
+            -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            backtesting \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --cache none \
+            --export trades \
+            | tee external_benchmarks/freqtrade/results/backtest.txt
+
+      - name: Run lookahead analysis
+        run: |
+          docker run --rm \
+            -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            lookahead-analysis \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --minimum-trade-amount 5 \
+            | tee external_benchmarks/freqtrade/results/lookahead-analysis.txt
+
+      - name: Run recursive analysis
+        run: |
+          docker run --rm \
+            -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            recursive-analysis \
+            --config user_data/config.json \
+            --strategy StandaloneEmaReference \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            -p BTC/USDT \
+            --startup-candle 60 100 200 500 1000 \
+            | tee external_benchmarks/freqtrade/results/recursive-analysis.txt
+
+      - name: Capture result inventory
+        if: always()
+        run: |
+          find external_benchmarks/freqtrade/user_data/backtest_results -maxdepth 2 -type f -print \
+            | sort \
+            | tee external_benchmarks/freqtrade/results/backtest-files.txt
+
+      - name: Upload reproducible POC artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: freqtrade-standalone-poc
+          path: |
+            external_benchmarks/freqtrade/results/
+            external_benchmarks/freqtrade/user_data/backtest_results/
+            external_benchmarks/freqtrade/user_data/strategies/StandaloneEmaReference.py
+            external_benchmarks/freqtrade/user_data/config.json
+          if-no-files-found: warn
