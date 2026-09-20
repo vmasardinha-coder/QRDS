@@ -174,13 +174,13 @@ jobs:
         working-directory: canonical-runtime
         run: |
           set -euo pipefail
-          if git diff --quiet -- runtime/ledgers/v16b1/STATUS.json runtime/ledgers/v16b1/CHAIN.jsonl; then
+          if git diff --quiet -- runtime/ledgers/v16b1; then
             echo "No canonical runtime change."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add runtime/ledgers/v16b1/STATUS.json runtime/ledgers/v16b1/CHAIN.jsonl
+          git add runtime/ledgers/v16b1
           git commit -m "runtime(v16b1): causal prospective publisher tick"
           git push origin HEAD:gate-btc-runtime
 
