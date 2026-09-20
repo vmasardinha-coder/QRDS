@@ -111,6 +111,23 @@ def test_separate_outcome_blind_semantic_prereg_unblocks_legacy_family(tmp_path)
     assert row['semantic_prereg_sha256']
 
 
+def test_cumulative_generation_files_are_discovered_with_per_source_provenance(tmp_path):
+    d=tmp_path/'preregs'; d.mkdir()
+    a='a'*64; b='b'*64
+    (d/'XAGRAMMAR_AAAAAAAAAAAA.json').write_text(json.dumps(prereg(a,channel='CHANNEL_A')),encoding='utf-8')
+    (d/'XAGRAMMAR_BBBBBBBBBBBB.json').write_text(json.dumps(prereg(b,channel='CHANNEL_B')),encoding='utf-8')
+    s=tmp_path/'semantic'; s.mkdir()
+    p6=s/'GRAMMAR_006_SEMANTIC_PREREG.v1.json'; p7=s/'GRAMMAR_007_SEMANTIC_PREREG.v1.json'
+    p6.write_text(json.dumps(semantic_freeze(a,'CHANNEL_A')),encoding='utf-8')
+    p7.write_text(json.dumps(semantic_freeze(b,'CHANNEL_B')),encoding='utf-8')
+    out=build(d,p6)
+    assert out['semantic_ready_count']==2 and out['semantic_prereg_applied_count']==2 and out['blocked_semantics_count']==0
+    rows={x['family_id']:x for x in out['families']}
+    assert rows['XAGRAMMAR_AAAAAAAAAAAA']['semantic_prereg_path'].endswith('GRAMMAR_006_SEMANTIC_PREREG.v1.json')
+    assert rows['XAGRAMMAR_BBBBBBBBBBBB']['semantic_prereg_path'].endswith('GRAMMAR_007_SEMANTIC_PREREG.v1.json')
+    assert rows['XAGRAMMAR_AAAAAAAAAAAA']['semantic_prereg_sha256'] != rows['XAGRAMMAR_BBBBBBBBBBBB']['semantic_prereg_sha256']
+
+
 def test_fail_closed_on_semantic_identity_mismatch(tmp_path):
     d=tmp_path/'preregs'; d.mkdir()
     (d/'XAGRAMMAR_AAAAAAAAAAAA.json').write_text(json.dumps(prereg()),encoding='utf-8')
