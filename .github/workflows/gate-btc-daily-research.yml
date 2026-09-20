@@ -192,6 +192,7 @@ jobs:
           python tools/gateway_frozen_replay.py
           --output-dir artifacts/gateway_reference_check
       - name: Build fail-closed daily handoff
+        if: steps.lock_valuation.outcome == 'success'
         run: >-
           python tools/gate_btc_daily_research.py
           --qos-dir artifacts/qos_daily
@@ -200,11 +201,13 @@ jobs:
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/daily_handoff
       - name: Bind immutable Shadow delivery request to this run
+        if: steps.lock_valuation.outcome == 'success'
         run: >-
           python tools/gate_btc_shadow_delivery.py request
           --handoff-dir artifacts/daily_handoff
           --output artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
       - name: Build deterministic latest-run pointer
+        if: steps.lock_valuation.outcome == 'success'
         run: |
           python - <<'PY'
           import hashlib
