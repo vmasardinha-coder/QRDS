@@ -337,7 +337,11 @@ jobs:
       - name: Publish deterministic pointer and prospective PIT to runtime branch
         run: |
           set -euo pipefail
-          test -f daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+          if [[ ! -f daily_evidence/runtime_pointer/GATE_BTC_LATEST_ELIGIBLE_RUN.json ]]; then
+            echo "Runtime pointer absent: expected fail-closed publication no-op"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
           git -C runtime_repo config user.name "gate-btc-actions"
           git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
           mkdir -p runtime_repo/runtime
