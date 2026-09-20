@@ -1,0 +1,42 @@
+name: GATE BTC Factory 007 Historical Intake
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_historical_intake.py'
+      - 'tests/test_gate_btc_grammar_007_historical_intake.py'
+      - '.github/workflows/gate-btc-factory-007-historical-intake.yml'
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: pytest -q tests/test_gate_btc_grammar_007_historical_intake.py
+      - name: Smoke intake with outcome-blind qualified-family fixture
+        run: |
+          python - <<'PY'
+          import json
+          families=[]
+          for fid,ch,sources in [
+            ("XAGRAMMAR_728DC88D691B","BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",["BCB","B3"]),
+            ("XAGRAMMAR_62943307741A","CVM_FUND_FLOW_B3_TRANSMISSION",["CVM","B3"])]:
+            families.append({"family_id":fid,"channel_id":ch,"grammar_signature":fid,
+              "frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},
+              "qualified_sources":sources,"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED",
+              "source_qualified":True,"cost_applicability_proven":True,"economics_read":False,"historical_testing_started":False})
+          json.dump({"families":families},open("/tmp/grammar_007_qualification.json","w"))
+          PY
+          python tools/gate_btc_factory/grammar_007_historical_intake.py \
+            --qualification /tmp/grammar_007_qualification.json \
+            --out /tmp/grammar_007_historical_intake.json
+          python - <<'PY'
+          import json
+          z=json.load(open('/tmp/grammar_007_historical_intake.json'))
+          assert z['status']=='READY_FOR_CAUSAL_SOURCE_MATERIALIZATION'
+          assert z['economics_read'] is False and z['outcomes_read'] is False
+          assert z['historical_testing_started'] is False
+          PY
