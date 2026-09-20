@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: gate-btc-v16b1-prospective-publisher
@@ -54,6 +55,79 @@ jobs:
       - name: Install runtime dependencies
         working-directory: source
         run: python -m pip install --disable-pip-version-check pandas
+
+      - name: Resolve authoritative V16B.1 SIGNAL inputs fail closed
+        if: github.event_name != 'pull_request'
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          STATUS="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/STATUS.json"
+          SIGNAL_DATE="$(python -c "import json; print(json.load(open('$STATUS'))['signal_date'])")"
+          NOW_EPOCH="$(date -u +%s)"
+          OPEN_EPOCH="$(date -u -d "$SIGNAL_DATE + 1 day" +%s)"
+          CLOSE_EPOCH="$(date -u -d "$SIGNAL_DATE + 2 days" +%s)"
+          if [ "$NOW_EPOCH" -lt "$OPEN_EPOCH" ] || [ "$NOW_EPOCH" -ge "$CLOSE_EPOCH" ]; then
+            echo "V16B1_SIGNAL_INPUT_RESOLUTION=NOT_IN_SIGNAL_WINDOW signal_date=$SIGNAL_DATE"
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/v16b1-inputs/cmc"
+          python - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          signal_date=json.load(open(os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))['signal_date']
+          repo=os.environ['REPO']
+          runs=json.loads(subprocess.check_output([
+              'gh','api',f'repos/{repo}/actions/runs','-f','per_page=100'
+          ], text=True))
+          candidates=[]
+          for r in runs.get('workflow_runs', []):
+              if r.get('name')!='GATE BTC V16B CMC Prospective Snapshot' or r.get('conclusion')!='success' or r.get('event') not in ('schedule','workflow_dispatch'):
+                  continue
+              created=str(r.get('created_at',''))
+              if created[:10] != signal_date:
+                  continue
+              candidates.append((created, int(r['id'])))
+          if not candidates:
+              raise SystemExit('FAIL_CLOSED_NO_SAME_DAY_CMC_SNAPSHOT')
+          run_id=sorted(candidates)[-1][1]
+          arts=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/{run_id}/artifacts'], text=True)).get('artifacts',[])
+          arts=[a for a in arts if a.get('name')==f'gate-btc-v16b-cmc-snapshot-{run_id}' and not a.get('expired')]
+          if len(arts)!=1:
+              raise SystemExit('FAIL_CLOSED_CMC_ARTIFACT_NOT_UNIQUE')
+          pathlib.Path(os.environ['RUNNER_TEMP']+'/v16b1-cmc-run-id').write_text(str(run_id))
+          pathlib.Path(os.environ['RUNNER_TEMP']+'/v16b1-cmc-artifact-id').write_text(str(arts[0]['id']))
+          PY
+          ART_ID="$(cat "$RUNNER_TEMP/v16b1-cmc-artifact-id")"
+          gh api "repos/$REPO/actions/artifacts/$ART_ID/zip" > "$RUNNER_TEMP/v16b1-cmc.zip"
+          unzip -q "$RUNNER_TEMP/v16b1-cmc.zip" -d "$RUNNER_TEMP/v16b1-inputs/cmc"
+          RAW="$(find "$RUNNER_TEMP/v16b1-inputs/cmc" -type f -name '*.raw.json' | head -1)"
+          EV="$(find "$RUNNER_TEMP/v16b1-inputs/cmc" -type f -name '*.evidence.json' | head -1)"
+          test -n "$RAW" && test -n "$EV"
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'v16b1-inputs/cmc'
+          raw=next(root.rglob('*.raw.json')); ev=next(root.rglob('*.evidence.json'))
+          e=json.load(open(ev)); assert hashlib.sha256(raw.read_bytes()).hexdigest()==e['raw_snapshot_sha256']
+          assert e['snapshot_date']==json.load(open(os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))['signal_date']
+          print('V16B1_CMC_INPUT=PASS',e['snapshot_id'])
+          PY
+          HIST="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY.csv"
+          if [ ! -f "$HIST" ]; then
+            echo "FAIL_CLOSED_MISSING_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY"
+            exit 2
+          fi
+          SHORT="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/SHORTABILITY_HISTORY.csv"
+          if [ ! -f "$SHORT" ]; then
+            printf 'friday_utc,asset\n' > "$RUNNER_TEMP/v16b1-shortability.csv"
+            SHORT="$RUNNER_TEMP/v16b1-shortability.csv"
+          fi
+          OUT="$RUNNER_TEMP/v16b1-inputs/source"
+          python -m tools.gate_btc_v16b_signal_source             --cmc-snapshot "$RAW" --cmc-evidence "$EV" --signal-date "$SIGNAL_DATE"             --historical-weekly-universe "$HIST" --out-dir "$OUT"
+          python -m tools.gate_btc_v16b_source_bound_panel             --daily-prices "$OUT/daily_prices.csv" --weekly-universe "$OUT/weekly_universe.csv"             --signal-market-source-manifest "$OUT/signal_market_source_manifest.json"             --output "$OUT/panel.csv" --manifest "$OUT/panel_manifest.json"
+          python -m tools.gate_btc_v16b1_okx_signal             --panel "$OUT/panel.csv" --panel-manifest "$OUT/panel_manifest.json"             --signal-market-source-manifest "$OUT/signal_market_source_manifest.json"             --v16b1-shortability "$SHORT" --signal-date "$SIGNAL_DATE"             --universe-snapshot "$RAW" --universe-snapshot-evidence "$EV"             --code-commit "$(git rev-parse HEAD)" --output "$OUT/signal_input.json"
+          python -m tools.gate_btc_v16b1_chain seal-signal             --input "$OUT/signal_input.json"             --ledger "$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
 
       - name: Reconcile causal clock fail closed
         working-directory: source
