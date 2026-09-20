@@ -31,6 +31,14 @@ class Grammar007AvailabilityAuthorityTests(unittest.TestCase):
         for day in ("2024-12-24", "2025-03-03", "2026-09-07"):
             self.assertIn(day, self.reg["b3"]["closed_dates"])
 
+    def test_cvm_delivery_resolver_uses_annual_history_then_monthly(self):
+        urls = m.delivery_authority_urls(self.reg, ["202402", "202412", "202501", "202609"])
+        historical = [x for x in urls if x["mode"] == "HISTORICAL_ANNUAL"]
+        monthly = [x for x in urls if x["mode"] == "CURRENT_MONTHLY"]
+        self.assertEqual(len(historical), 1)
+        self.assertTrue(historical[0]["url"].endswith("/HIST/fi_entrega_documento_2024.zip"))
+        self.assertEqual([x["coverage_unit"] for x in monthly], ["202501", "202609"])
+
     def test_target_never_gets_body_read(self):
         text = Path(m.__file__).read_text(encoding="utf-8")
         self.assertIn('target_probe = head(reg["b3"]["target_source_url"])', text)
