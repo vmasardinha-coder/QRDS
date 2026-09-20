@@ -29,11 +29,13 @@ jobs:
 
       - name: Show engine version
         run: |
-          docker run --rm freqtradeorg/freqtrade:stable --version \
+          set -o pipefail
+          docker run --rm freqtradeorg/freqtrade:stable --version 2>&1 \
             | tee external_benchmarks/freqtrade/results/version.txt
 
       - name: Download public OKX BTC/USDT 1h data
         run: |
+          set -o pipefail
           docker run --rm \
             -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -42,11 +44,12 @@ jobs:
             --exchange okx \
             --pairs BTC/USDT \
             -t 1h \
-            --days 365 \
+            --days 365 2>&1 \
             | tee external_benchmarks/freqtrade/results/download-data.txt
 
       - name: Run standalone backtest
         run: |
+          set -o pipefail
           docker run --rm \
             -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -56,11 +59,12 @@ jobs:
             --strategy-path user_data/strategies \
             -i 1h \
             --cache none \
-            --export trades \
+            --export trades 2>&1 \
             | tee external_benchmarks/freqtrade/results/backtest.txt
 
       - name: Run lookahead analysis
         run: |
+          set -o pipefail
           docker run --rm \
             -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -69,11 +73,12 @@ jobs:
             --strategy StandaloneEmaReference \
             --strategy-path user_data/strategies \
             -i 1h \
-            --minimum-trade-amount 5 \
+            --minimum-trade-amount 5 2>&1 \
             | tee external_benchmarks/freqtrade/results/lookahead-analysis.txt
 
       - name: Run recursive analysis
         run: |
+          set -o pipefail
           docker run --rm \
             -v "$PWD/external_benchmarks/freqtrade/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -83,7 +88,7 @@ jobs:
             --strategy-path user_data/strategies \
             -i 1h \
             -p BTC/USDT \
-            --startup-candle 60 100 200 500 1000 \
+            --startup-candle 60 100 200 500 1000 2>&1 \
             | tee external_benchmarks/freqtrade/results/recursive-analysis.txt
 
       - name: Capture result inventory
