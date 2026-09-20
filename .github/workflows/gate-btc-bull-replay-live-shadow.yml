@@ -93,6 +93,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download exact Daily Research artifact
+        id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -102,11 +103,18 @@ jobs:
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > source_artifact.zip
           mkdir -p source_artifact
           unzip -q source_artifact.zip -d source_artifact
-          test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json
+          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "BULL_REPLAY_LIVE_SHADOW=EXPECTED_FAIL_CLOSED_DAILY_NOOP"
+            echo "SCIENTIFIC_CREDIT=0"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
           test -f source_artifact/qos_daily/qos_v2a_outputs.zip
           test -f source_artifact/qos_daily/delta_walk_forward_outputs.zip
 
       - name: Verify source safety boundary
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -122,6 +130,7 @@ jobs:
           PY
 
       - name: Check out immutable runtime branch
+        if: steps.daily_source.outputs.eligible == 'true'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -129,6 +138,7 @@ jobs:
           fetch-depth: 0
 
       - name: Append exact daily live-shadow observation
+        if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_bull_replay_live_shadow.py
           --contract migration/reporting/bull_replay_contract.json
@@ -138,6 +148,7 @@ jobs:
           --source-run-id "$SOURCE_RUN_ID"
 
       - name: Verify runtime safety state when present
+        if: steps.daily_source.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -155,6 +166,7 @@ jobs:
           PY
 
       - name: Commit live-shadow evidence only
+        if: steps.daily_source.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
