@@ -16,8 +16,18 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install pytest
       - run: pytest -q tests/test_gate_btc_grammar_007_historical_intake.py
-      - name: Smoke intake against canonical qualification fixture
+      - name: Smoke intake with outcome-blind qualified-family fixture
         run: |
+          cat > /tmp/grammar_007_qualification.json <<'JSON'
+          {"families":[{"family_id":"XAGRAMMAR_728DC88D691B","channel_id":"BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION","grammar_signature":"728dc88d691b","frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},"qualified_sources":["BCB","B3"],"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED","source_qualified":true,"cost_applicability_proven":true,"economics_read":false,"historical_testing_started":false},{"family_id":"XAGRAMMAR_62943307741A","channel_id":"CVM_FUND_FLOW_B3_TRANSMISSION","grammar_signature":"62943307741a","frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},"qualified_sources":["CVM","B3"],"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED","source_qualified":true,"cost_applicability_proven":true,"economics_read":false,"historical_testing_started":false}]}
+          JSON
           python tools/gate_btc_factory/grammar_007_historical_intake.py \
-            --qualification tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_ADJUDICATION.v1.json \
+            --qualification /tmp/grammar_007_qualification.json \
             --out /tmp/grammar_007_historical_intake.json
+          python - <<'PY'
+          import json
+          z=json.load(open('/tmp/grammar_007_historical_intake.json'))
+          assert z['status']=='READY_FOR_CAUSAL_SOURCE_MATERIALIZATION'
+          assert z['economics_read'] is False and z['outcomes_read'] is False
+          assert z['historical_testing_started'] is False
+          PY
