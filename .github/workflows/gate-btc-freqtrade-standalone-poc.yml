@@ -11,6 +11,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  FREQTRADE_TIMERANGE: "20250922-20260920"
+
 jobs:
   standalone-benchmark:
     runs-on: ubuntu-latest
@@ -60,6 +63,7 @@ jobs:
             --strategy StandaloneEmaReference \
             --strategy-path user_data/strategies \
             -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
             --cache none \
             --export trades 2>&1 | tee "$OUT"
           ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
@@ -77,6 +81,7 @@ jobs:
             --strategy StandaloneEmaReference \
             --strategy-path user_data/strategies \
             -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
             --minimum-trade-amount 5 2>&1 | tee "$OUT"
           ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
@@ -93,6 +98,7 @@ jobs:
             --strategy-path user_data/strategies \
             -i 1h \
             -p BTC/USDT \
+            --timerange "$FREQTRADE_TIMERANGE" \
             --startup-candle 60 100 200 500 1000 2>&1 | tee "$OUT"
           ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
@@ -123,6 +129,8 @@ jobs:
         run: |
           {
             echo '## Freqtrade standalone POC — executed result'
+            echo
+            echo "**Frozen timerange:** $FREQTRADE_TIMERANGE"
             echo
             echo '**Engine**'
             echo '```text'
