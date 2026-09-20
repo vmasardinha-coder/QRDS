@@ -1,0 +1,47 @@
+{
+  "schema": "qrds.factory.grammar_007.discovery_validation_rule.v1",
+  "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+  "status": "FROZEN_BEFORE_FIRST_OUTCOME_READ",
+  "human_authorization": "USER_OK_AUTORIZADO_2026-09-20",
+  "rule_basis": "explicit_human_authorization_to_reuse_005_objective_rule_before_any_007_outcome_read",
+  "discovery_candidate_rule": {
+    "eligible_candidates": "only candidates mechanically implied by each already-frozen Grammar 007 semantic preregistration; no threshold/window/lookback/target grid and no performance-based source selection",
+    "direction": "absolute standardized effect; retain observed sign for validation",
+    "ranking": "largest absolute standardized effect on the sealed discovery partition",
+    "tie_break": ["lexicographic family_id", "lexicographic frozen component representation"],
+    "candidate_count": 1
+  },
+  "validation_rule": {
+    "pass_if_all": [
+      "candidate effect has same sign as discovery",
+      "absolute validation effect >= 0.50 * absolute discovery effect",
+      "validation effect is computable on the sealed validation partition"
+    ],
+    "otherwise": "REJECT_NO_RETUNE"
+  },
+  "holdout_rule": {
+    "read_only_if_validation_passes": true,
+    "pass_if_all": [
+      "candidate effect has same sign as discovery",
+      "absolute holdout effect >= 0.50 * absolute discovery effect",
+      "holdout effect is computable on the sealed holdout partition"
+    ],
+    "otherwise": "REJECT_NO_RETUNE",
+    "survivor_destination": "SEPARATE_BLINDED_PROSPECTIVE_ZERO_RETROACTIVE_CREDIT"
+  },
+  "partition_contract": "50_30_20_CHRONOLOGICAL",
+  "embargo_sessions": 60,
+  "immutability": ["NO_RETUNE", "NO_BACKFILL", "NO_COUNTER_RESET", "candidate freeze before validation", "holdout only if validation passes"],
+  "outcome_read_before_this_freeze": false,
+  "economics_read_before_this_freeze": false,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true
+  }
+}
