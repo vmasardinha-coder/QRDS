@@ -14,6 +14,11 @@ class Grammar007PhysicalSourceCaptureTests(unittest.TestCase):
         self.assertTrue(p.CVM_CLASS_REGISTRY.startswith("https://dados.cvm.gov.br/"))
         self.assertTrue(all(url.startswith("https://bvmf.bmfbovespa.com.br/") for url in p.B3_COTAHIST_CANDIDATES))
 
+    def test_bcb_capture_query_is_schema_only_and_unordered(self):
+        self.assertNotIn("%24orderby", p.bcb_query("IPCA"))
+        self.assertNotIn("$orderby", p.bcb_query("IPCA"))
+        self.assertIn("Indicador", p.bcb_query("IPCA"))
+
     def test_b3_target_is_never_parsed_in_capture_stage(self):
         text = Path(p.__file__).read_text(encoding="utf-8")
         self.assertIn('"target_bytes_parsed":False', text)
