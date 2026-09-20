@@ -27,10 +27,10 @@
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "CURRENT"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "LATE_MISSING_OR_INVALID"
     },
     "delta": {
       "collection_health": "RED_STALE",
@@ -39,9 +39,9 @@
       "source_status": "ACTIVE"
     },
     "delta_paper_monitor": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
       "source_status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "gateway": {
@@ -57,10 +57,10 @@
       "source_status": "ACTIVE"
     },
     "momentum_m1_m2": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "WAIT_SOURCE_PUBLICATION"
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
     "prl50": {
       "collection_health": "RED_STALE",
@@ -81,7 +81,7 @@
       "source_status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     }
   },
-  "generated_at_utc": "2026-09-19T08:15:30.073264+00:00",
+  "generated_at_utc": "2026-09-20T08:47:13.240585+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -92,10 +92,9 @@
     "b3_h1",
     "bull_replay_live_shadow",
     "d50",
+    "daily_delivery_pointer",
     "delta",
-    "delta_paper_monitor",
     "lock25_50",
-    "momentum_m1_m2",
     "prl50",
     "v16b"
   ],
@@ -104,5 +103,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "ca5b5820ec8e5973b303756d1e96703f1a3bebb10d4e460248e75d558fd6f343"
+  "status_sha256": "74aafcf55bda900118d6e0d5301e075ef35b28a3842e37786a87628d3a076d63"
 }
