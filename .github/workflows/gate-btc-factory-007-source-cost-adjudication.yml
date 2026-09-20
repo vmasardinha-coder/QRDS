@@ -1,0 +1,151 @@
+name: GATE BTC Factory 007 Source Cost Adjudication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json'
+      - 'tools/gate_btc_factory/evidence/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json'
+      - 'tools/gate_btc_factory/evidence/007_family_packets/**'
+      - '.github/workflows/gate-btc-factory-007-source-cost-adjudication.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json'
+      - 'tools/gate_btc_factory/evidence/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json'
+      - 'tools/gate_btc_factory/evidence/007_family_packets/**'
+      - 'tools/gate_btc_factory/grammar_source_cost_qualifier.py'
+      - 'tools/gate_btc_factory/grammar_pipeline_status.py'
+      - '.github/workflows/gate-btc-factory-007-source-cost-adjudication.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  NO_COUNTER_RESET: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-factory-007-source-cost-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  adjudicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen 007 protocol and evidence packets
+        run: |
+          set -euo pipefail
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/grammar_source_cost_qualifier.py tools/gate_btc_factory/grammar_pipeline_status.py
+          python - <<'PY'
+          import json, pathlib
+          proto=json.load(open('tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json'))
+          assert proto['schema']=='qrds.factory.grammar_source_cost_qualification_protocol.v1'
+          assert proto['frozen_before_outcomes'] is True
+          assert proto['scope']=='XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY'
+          s=proto['safety']
+          assert s=={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True,'H1_H31_UNTOUCHED':True}
+          semantic_sha='ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98'
+          expected={
+            'XAGRAMMAR_728DC88D691B':'SOURCE_COST_QUALIFIED',
+            'XAGRAMMAR_62943307741A':'SOURCE_COST_QUALIFIED',
+            'XAGRAMMAR_DD9F1F0501B3':'REJECT_SOURCE_COST_FAIL_CLOSED',
+          }
+          files=sorted(pathlib.Path('tools/gate_btc_factory/evidence/007_family_packets').glob('XAGRAMMAR_*.json'))
+          assert len(files)==3
+          for p in files:
+              d=json.load(open(p))
+              assert d['schema']=='qrds.factory.grammar_source_cost_family_evidence.v1'
+              assert d['family_id'] in expected and d['adjudication_decision']==expected[d['family_id']]
+              assert d['semantic_prereg_sha256']==semantic_sha
+              assert d['outcomes_read'] is False and d['economics_read'] is False
+              assert d['safety']==s
+              checks=d['source_checks']; req=['official_public_free','required_data_covered','pit_timestamps','granularity_sufficient','calendar_causal','reproducible_auditable']
+              cost=d['cost_checks']; cost_ok=cost['data_acquisition_zero'] and cost['frozen_execution_cost_contract_preserved'] and cost['no_new_economic_assumption']
+              source_ok=all(checks[k] is True for k in req)
+              assert cost_ok
+              assert source_ok == (d['adjudication_decision']=='SOURCE_COST_QUALIFIED')
+          ev=json.load(open('tools/gate_btc_factory/evidence/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json'))
+          assert ev['outcome_blind'] is True and ev['economics_read'] is False
+          print('FACTORY_007_SOURCE_COST_STATIC_VALIDATION=PASS')
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Materialize 007 evidence and qualify cumulative intake
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          test -f "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json"
+          mkdir -p "$ROOT/grammar_source_cost_evidence"
+          cp source_repo/tools/gate_btc_factory/evidence/007_family_packets/XAGRAMMAR_*.json "$ROOT/grammar_source_cost_evidence/"
+          cp source_repo/tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json "$ROOT/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json"
+          cp source_repo/tools/gate_btc_factory/evidence/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json "$ROOT/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json"
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('runtime_repo/runtime/factory_autonomy')
+          intake=json.load(open(root/'GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json'))
+          rows={x['family_id']:x for x in intake['families']}
+          expected={'XAGRAMMAR_728DC88D691B','XAGRAMMAR_62943307741A','XAGRAMMAR_DD9F1F0501B3'}
+          assert len(rows)==9 and intake['semantic_ready_count']==9 and intake['blocked_semantics_count']==0
+          for fid in expected:
+              r=rows[fid]
+              assert r['semantic_preregistration_complete'] is True
+              assert r['semantic_prereg_sha256']=='ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98'
+              p=json.load(open(root/'grammar_source_cost_evidence'/f'{fid}.json'))
+              assert p['grammar_signature']==r['grammar_signature']
+              assert p['semantic_prereg_sha256']==r['semantic_prereg_sha256']
+              assert set(p['qualified_sources']).issubset(set(r['official_free_source_candidates']))
+              assert p['outcomes_read'] is False and p['economics_read'] is False
+          PY
+          python source_repo/tools/gate_btc_factory/grammar_source_cost_qualifier.py \
+            --intake "$ROOT/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json" \
+            --protocol source_repo/tools/gate_btc_factory/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json \
+            --evidence-dir "$ROOT/grammar_source_cost_evidence" \
+            --output "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json"
+          python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
+          python - <<'PY'
+          import json
+          root='runtime_repo/runtime/factory_autonomy/'
+          q=json.load(open(root+'GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json'))
+          assert q['qualified_count']==2 and q['waiting_count']==0 and q['blocked_semantics_count']==0 and q['rejected_count']==7
+          rows={x['family_id']:x for x in q['families']}
+          assert rows['XAGRAMMAR_728DC88D691B']['status']=='SOURCE_COST_QUALIFIED'
+          assert rows['XAGRAMMAR_62943307741A']['status']=='SOURCE_COST_QUALIFIED'
+          assert rows['XAGRAMMAR_DD9F1F0501B3']['status']=='REJECT_SOURCE_COST_FAIL_CLOSED'
+          for fid in ['XAGRAMMAR_12FCBCB3731A','XAGRAMMAR_3823D2BDF6CD','XAGRAMMAR_62FFE168F205','XAGRAMMAR_846E12566757','XAGRAMMAR_8CAF61E121A1','XAGRAMMAR_F587F5854A51']:
+              assert rows[fid]['status']=='REJECT_SOURCE_COST_FAIL_CLOSED'
+          assert all(x['economics_read'] is False and x['historical_testing_started'] is False for x in q['families'])
+          print('FACTORY_007_SOURCE_COST_RUNTIME_VALIDATION=PASS')
+          PY
+      - name: Persist canonical runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/grammar_source_cost_evidence runtime/factory_autonomy/GRAMMAR_007_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json runtime/factory_autonomy/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json runtime/factory_autonomy/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
+          git commit -m "Factory 007 source-cost adjudication ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
