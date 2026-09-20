@@ -1,0 +1,28 @@
+name: GATE BTC Factory 007 Materialization Contract
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_causal_materializer_contract.py'
+      - '.github/workflows/gate-btc-factory-007-materialization-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frozen contract from canonical intake fixture
+        run: |
+          python tools/gate_btc_factory/grammar_007_causal_materializer_contract.py \
+            --intake tests/fixtures/grammar_007_historical_intake.json \
+            --out /tmp/grammar_007_materializer_contract.json
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/grammar_007_materializer_contract.json'))
+          assert x['status']=='READY_FOR_PHYSICAL_SOURCE_CAPTURE'
+          assert x['embargo_sessions']==60
+          assert x['partition_contract']=='50_30_20_CHRONOLOGICAL'
+          assert x['outcomes_read'] is False and x['economics_read'] is False
+          assert len(x['families'])==2
+          PY
