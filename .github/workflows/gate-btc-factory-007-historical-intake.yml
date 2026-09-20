@@ -18,9 +18,18 @@ jobs:
       - run: pytest -q tests/test_gate_btc_grammar_007_historical_intake.py
       - name: Smoke intake with outcome-blind qualified-family fixture
         run: |
-          cat > /tmp/grammar_007_qualification.json <<'JSON'
-          {"families":[{"family_id":"XAGRAMMAR_728DC88D691B","channel_id":"BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION","grammar_signature":"728dc88d691b","frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},"qualified_sources":["BCB","B3"],"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED","source_qualified":true,"cost_applicability_proven":true,"economics_read":false,"historical_testing_started":false},{"family_id":"XAGRAMMAR_62943307741A","channel_id":"CVM_FUND_FLOW_B3_TRANSMISSION","grammar_signature":"62943307741a","frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},"qualified_sources":["CVM","B3"],"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED","source_qualified":true,"cost_applicability_proven":true,"economics_read":false,"historical_testing_started":false}]}
-          JSON
+          python - <<'PY'
+          import json
+          families=[]
+          for fid,ch,sources in [
+            ("XAGRAMMAR_728DC88D691B","BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",["BCB","B3"]),
+            ("XAGRAMMAR_62943307741A","CVM_FUND_FLOW_B3_TRANSMISSION",["CVM","B3"])]:
+            families.append({"family_id":fid,"channel_id":ch,"grammar_signature":fid,
+              "frozen_semantics":{"feature":"frozen","window":"frozen","lookback":"frozen","target":"frozen"},
+              "qualified_sources":sources,"semantic_prereg_sha256":"ca80c0b9","status":"SOURCE_COST_QUALIFIED",
+              "source_qualified":True,"cost_applicability_proven":True,"economics_read":False,"historical_testing_started":False})
+          json.dump({"families":families},open("/tmp/grammar_007_qualification.json","w"))
+          PY
           python tools/gate_btc_factory/grammar_007_historical_intake.py \
             --qualification /tmp/grammar_007_qualification.json \
             --out /tmp/grammar_007_historical_intake.json
