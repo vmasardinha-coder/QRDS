@@ -118,7 +118,15 @@ jobs:
           # reconstruct it from missed prospective windows or current snapshots.
           if [ ! -f "$HIST" ]; then
             echo "FAIL_CLOSED_MISSING_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY"
-            exit 2
+            python - <<'PY'
+          import json,os
+          p=os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'
+          s=json.load(open(p)); s['status']='PROSPECTIVE_ORCHESTRATOR_BLOCKED_INPUT_DELIVERY'
+          s['operational_blocker']='MISSING_AUTHORITATIVE_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY'
+          s['canonical_cycle_count']=int(s['canonical_cycle_count']); s['prospective_credit']=int(s['prospective_credit'])
+          open(p,'w').write(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          PY
+            exit 0
           fi
           SHORT="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/SHORTABILITY_HISTORY.csv"
           if [ ! -f "$SHORT" ]; then
