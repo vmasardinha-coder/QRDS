@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Transport immutable Grammar Scout preregistrations into source/cost qualification intake.
 
-A separate semantic preregistration may supply feature/window/lookback/target for legacy
-preregistrations, but only when identity matches exactly and the semantic artifact proves
+Separate semantic preregistrations may supply feature/window/lookback/target for legacy
+preregistrations, but only when identity matches exactly and each semantic artifact proves
 it was frozen outcome-blind before Source/Cost qualification. No outcomes/economics are read.
 """
 from __future__ import annotations
@@ -29,6 +29,7 @@ SAFETY = {
 
 REQUIRED_FROZEN_SEMANTICS = ("feature", "window", "lookback", "target")
 SEMANTIC_SCHEMA = "qrds.factory.grammar_semantic_prereg.v1"
+SEMANTIC_GLOB = "GRAMMAR_*_SEMANTIC_PREREG.v1.json"
 
 
 def load(path: Path) -> dict:
@@ -49,30 +50,45 @@ def _has_complete_frozen_semantics(d: dict) -> bool:
     return _has_complete_frozen_semantics_value(d.get("frozen_semantics"))
 
 
-def _semantic_index(path: Path | None) -> dict[str, dict]:
+def _semantic_paths(path: Path | None) -> list[Path]:
     if path is None:
-        return {}
-    d = load(path)
-    if d.get("schema") != SEMANTIC_SCHEMA:
-        raise ValueError("FAIL_CLOSED: unexpected semantic prereg schema")
-    if d.get("frozen_before_source_cost") is not True or d.get("outcome_blind") is not True:
-        raise ValueError("FAIL_CLOSED: semantic prereg not frozen outcome-blind before source/cost")
-    if d.get("economics_read") is not False or d.get("historical_testing_started") is not False:
-        raise ValueError("FAIL_CLOSED: semantic prereg already opened economics/history")
-    safety = d.get("safety")
-    if not isinstance(safety, dict) or any(safety.get(k) != v for k, v in SAFETY.items()):
-        raise ValueError("FAIL_CLOSED: semantic prereg safety mismatch")
+        return []
+    if path.match(SEMANTIC_GLOB):
+        siblings = sorted(path.parent.glob(SEMANTIC_GLOB))
+        if path not in siblings:
+            siblings.append(path)
+            siblings.sort()
+        return siblings
+    return [path]
+
+
+def _semantic_index(path: Path | None) -> dict[str, dict]:
     rows: dict[str, dict] = {}
     seen_signatures: set[str] = set()
-    for row in d.get("families", []):
-        fid = row.get("family_id")
-        sig = row.get("grammar_signature")
-        if not fid or not sig or fid in rows or sig in seen_signatures:
-            raise ValueError("FAIL_CLOSED: missing/duplicate semantic prereg identity")
-        if not _has_complete_frozen_semantics(row):
-            raise ValueError(f"FAIL_CLOSED: incomplete semantic prereg: {fid}")
-        rows[fid] = row
-        seen_signatures.add(sig)
+    for semantic_path in _semantic_paths(path):
+        d = load(semantic_path)
+        if d.get("schema") != SEMANTIC_SCHEMA:
+            raise ValueError("FAIL_CLOSED: unexpected semantic prereg schema")
+        if d.get("frozen_before_source_cost") is not True or d.get("outcome_blind") is not True:
+            raise ValueError("FAIL_CLOSED: semantic prereg not frozen outcome-blind before source/cost")
+        if d.get("economics_read") is not False or d.get("historical_testing_started") is not False:
+            raise ValueError("FAIL_CLOSED: semantic prereg already opened economics/history")
+        safety = d.get("safety")
+        if not isinstance(safety, dict) or any(safety.get(k) != v for k, v in SAFETY.items()):
+            raise ValueError("FAIL_CLOSED: semantic prereg safety mismatch")
+        semantic_sha = sha256(semantic_path)
+        for raw in d.get("families", []):
+            row = dict(raw)
+            fid = row.get("family_id")
+            sig = row.get("grammar_signature")
+            if not fid or not sig or fid in rows or sig in seen_signatures:
+                raise ValueError("FAIL_CLOSED: missing/duplicate semantic prereg identity")
+            if not _has_complete_frozen_semantics(row):
+                raise ValueError(f"FAIL_CLOSED: incomplete semantic prereg: {fid}")
+            row["_semantic_prereg_path"] = str(semantic_path)
+            row["_semantic_prereg_sha256"] = semantic_sha
+            rows[fid] = row
+            seen_signatures.add(sig)
     return rows
 
 
@@ -81,7 +97,6 @@ def build(prereg_dir: Path, semantic_prereg: Path | None = None) -> dict:
     seen_signatures = set()
     seen_family_ids = set()
     semantic_rows = _semantic_index(semantic_prereg)
-    semantic_sha = sha256(semantic_prereg) if semantic_prereg is not None else None
     if prereg_dir.exists():
         for path in sorted(prereg_dir.glob("XAGRAMMAR_*.json")):
             d = load(path)
@@ -140,9 +155,9 @@ def build(prereg_dir: Path, semantic_prereg: Path | None = None) -> dict:
             if semantics_ready:
                 row["frozen_semantics"] = semantics
                 row["semantic_source"] = semantic_source
-                if semantic_prereg is not None and semantic_source == "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1":
-                    row["semantic_prereg_path"] = str(semantic_prereg)
-                    row["semantic_prereg_sha256"] = semantic_sha
+                if semantic_row is not None and semantic_source == "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1":
+                    row["semantic_prereg_path"] = semantic_row["_semantic_prereg_path"]
+                    row["semantic_prereg_sha256"] = semantic_row["_semantic_prereg_sha256"]
             else:
                 row["blocker_reason"] = "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET"
             rows.append(row)
