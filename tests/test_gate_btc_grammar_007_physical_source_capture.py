@@ -2,6 +2,8 @@ from pathlib import Path
 
 from tools.gate_btc_factory import grammar_007_physical_source_capture as p
 
+# This suite is deliberately outcome-blind: source reachability/provenance only.
+
 
 def test_source_contract_is_exact_and_official_only():
     assert p.BCB_ANNUAL.startswith("https://olinda.bcb.gov.br/")
