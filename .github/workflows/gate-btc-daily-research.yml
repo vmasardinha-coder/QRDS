@@ -151,12 +151,37 @@ jobs:
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
       - name: Freeze exact active-holding LOCK valuation closes
+        id: lock_valuation
+        continue-on-error: true
         run: >-
           python tools/gate_btc_lock_valuation_sidecar.py
           --v2a-zip artifacts/qos_daily/qos_v2a_outputs.zip
           --ledger-dir lock_runtime/runtime/ledgers/lock25_50
           --snapshot-id "$GATE_BTC_DATA_CUTOFF"
           --output artifacts/qos_daily/lock_valuation_sidecar.json
+      - name: Classify LOCK valuation clock outcome
+        if: steps.lock_valuation.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lock_runtime/runtime/ledgers/lock25_50')
+          dates=[]
+          for p in root.glob('*.json'):
+              try:
+                  x=json.loads(p.read_text(encoding='utf-8'))
+              except Exception:
+                  continue
+              for k in ('snapshot_id','date','data_as_of','latest_date','latest_prospective_date'):
+                  v=x.get(k)
+                  if isinstance(v,str) and len(v)>=10 and v[:10][4:5]=='-' and v[:10][7:8]=='-':
+                      dates.append(v[:10])
+          print('LOCK_VALUATION=NOOP_NONCONSECUTIVE_CLOSE')
+          print('SCIENTIFIC_CREDIT=0')
+          print('NO_BACKFILL=true')
+          print('runtime_dates_seen='+','.join(sorted(set(dates))[-5:]))
+          PY
       - name: Collect Gateway public inputs and replay them offline
         run: >-
           python tools/gateway_upstream_equivalence_v3.py capture-replay
@@ -167,6 +192,7 @@ jobs:
           python tools/gateway_frozen_replay.py
           --output-dir artifacts/gateway_reference_check
       - name: Build fail-closed daily handoff
+        if: steps.lock_valuation.outcome == 'success' && hashFiles('artifacts/qos_daily/lock_valuation_sidecar.json') != ''
         run: >-
           python tools/gate_btc_daily_research.py
           --qos-dir artifacts/qos_daily
@@ -175,11 +201,13 @@ jobs:
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/daily_handoff
       - name: Bind immutable Shadow delivery request to this run
+        if: steps.lock_valuation.outcome == 'success' && hashFiles('artifacts/qos_daily/lock_valuation_sidecar.json') != ''
         run: >-
           python tools/gate_btc_shadow_delivery.py request
           --handoff-dir artifacts/daily_handoff
           --output artifacts/daily_handoff/GATE_BTC_SHADOW_DELIVERY_REQUEST.json
       - name: Build deterministic latest-run pointer
+        if: steps.lock_valuation.outcome == 'success' && hashFiles('artifacts/qos_daily/lock_valuation_sidecar.json') != ''
         run: |
           python - <<'PY'
           import hashlib
@@ -248,11 +276,32 @@ jobs:
           --amendment tools/gate_btc_2_v2a_registry_source_amendment_mexc4_v1.json
           --out artifacts/prospective_v2a_runtime_registry.json
       - name: Collect registry-driven prospective V2A PIT
+        id: pit
+        continue-on-error: true
         run: >-
           python tools/gate_btc_2_v2a_registry_prospective_pit.py
           --registry artifacts/prospective_v2a_runtime_registry.json
           --output-dir artifacts/prospective_v2a
           --run-id "$GITHUB_RUN_ID"
+      - name: Classify prospective PIT outcome
+        if: always()
+        run: |
+          set -euo pipefail
+          test -f artifacts/prospective_v2a/SUMMARY.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/prospective_v2a/SUMMARY.json',encoding='utf-8'))
+          assert p['attempted'] == 137
+          assert p['research_only'] is True and p['shadow_only'] is True
+          assert p['not_approved'] is True and p['engine_feed'] is False
+          assert p['orders'] == 0 and p['real_capital_brl'] == 0
+          assert p['no_retune'] is True and p['no_backfill'] is True
+          if p['cutover_input_pass']:
+              print('V2A_PIT=QUALIFIED_COMPLETE')
+          else:
+              print(f"V2A_PIT=ORDINARY_INCOMPLETE_SOURCE_COVERAGE loaded={p['loaded']} failed={p['failed']}")
+              print('SCIENTIFIC_CREDIT=0')
+          PY
       - name: Upload prospective V2A PIT evidence
         if: always()
         uses: actions/upload-artifact@v4

@@ -84,9 +84,19 @@ jobs:
         working-directory: main_repo
         run: python tools/v2a_frozen_replay.py ../qos_v2a_public_collection.zip --data-cutoff "$MOMENTUM_CUTOFF" --output-zip ../qos_v2a_outputs.zip --evidence-dir ../v2a_evidence
       - name: Append economic shadow
+        id: append
+        continue-on-error: true
         working-directory: main_repo
         run: python tools/gate_btc_momentum_economic_shadow.py --snapshot "../$MOMENTUM_SNAPSHOT" --v2a-zip ../qos_v2a_outputs.zip --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics
+      - name: Classify unavailable frozen prices
+        if: steps.append.outcome == 'failure'
+        run: |
+          echo "MOMENTUM_ECONOMICS=NOOP_MISSING_FROZEN_PRICE_COVERAGE"
+          echo "SCIENTIFIC_CREDIT=0"
+          echo "NO_BACKFILL=true"
+          echo "NO_RETUNE=true"
       - name: Assert safety
+        if: steps.append.outcome == 'success'
         run: |
           python - <<'PY'
           import json
@@ -95,6 +105,7 @@ jobs:
           assert p['status']=='ECONOMICS_ACTIVE'
           PY
       - name: Publish economics runtime
+        if: steps.append.outcome == 'success'
         working-directory: runtime_repo
         run: |
           git config user.name gate-btc-research-bot

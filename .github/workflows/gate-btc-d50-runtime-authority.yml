@@ -44,7 +44,22 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Check D50 publication eligibility
+        id: eligibility
+        run: |
+          python - <<'PY'
+          import json, os
+          r=json.load(open('runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json',encoding='utf-8'))
+          d=(r.get('components') or {}).get('d50') or {}
+          eligible=d.get('freshness') == 'FRESH' and d.get('authority') == 'LOCAL_RECONCILED_MEASUREMENT'
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as h:
+              h.write(f"eligible={'true' if eligible else 'false'}\n")
+          if not eligible:
+              print(f"D50_PUBLICATION=INELIGIBLE_NOOP freshness={d.get('freshness')} authority={d.get('authority')}")
+          PY
+
       - name: Build fail-closed canonical D50 mirror
+        if: steps.eligibility.outputs.eligible == 'true'
         run: >-
           python main_repo/tools/gate_btc_d50_runtime_authority.py
           --measurement runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json
@@ -53,6 +68,7 @@ jobs:
           --output runtime_repo/runtime/ledgers/d50/STATUS.json
 
       - name: Validate immutable safety boundary
+        if: steps.eligibility.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -71,6 +87,7 @@ jobs:
           PY
 
       - name: Publish D50 status atomically to runtime branch
+        if: steps.eligibility.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
