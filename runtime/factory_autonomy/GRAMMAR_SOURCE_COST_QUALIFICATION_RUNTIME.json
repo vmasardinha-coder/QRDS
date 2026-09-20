@@ -15,7 +15,7 @@
       "grammar_signature": "12fcbcb3731a5ee40c2b1066b8e2627a9bb2ddb69bca9c827e01130e0237a141",
       "historical_testing_started": false,
       "mechanism": "Brazilian equities, BRL and commodity-linked assets may exhibit clock-respecting information transmission.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3",
         "BCB",
@@ -41,7 +41,7 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "channel_id": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
@@ -57,7 +57,7 @@
       "grammar_signature": "3823d2bdf6cddc5dee2c4bbfba21862c2d31961e5ec0068ac83c9d9e62472e4e",
       "historical_testing_started": false,
       "mechanism": "Lagged changes in the B3 DI futures curve may transmit monetary-policy and discount-rate information to later equity/index returns.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3",
         "BCB"
@@ -80,7 +80,7 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "channel_id": "B3_AUCTION_IMBALANCE_OPEN_CLOSE_TRANSMISSION",
@@ -96,7 +96,7 @@
       "grammar_signature": "62ffe168f205da241327911323a03fc8a0664553688559868c301c51e64addf3",
       "historical_testing_started": false,
       "mechanism": "Opening and closing auction states may concentrate price discovery and transmit information only to subsequent eligible observations.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3"
       ],
@@ -117,7 +117,7 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "channel_id": "B3_ADR_CROSS_LISTING_PRICE_DISCOVERY",
@@ -133,7 +133,7 @@
       "grammar_signature": "846e1256675729b65cee6498f109dded1970e086210a8173d8e4c921ad906759",
       "historical_testing_started": false,
       "mechanism": "Cross-listed Brazilian shares and US ADRs can transmit information across distinct market clocks.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3",
         "CVM",
@@ -159,7 +159,7 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "channel_id": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
@@ -175,7 +175,7 @@
       "grammar_signature": "8caf61e121a192ed4cf390b173636b3500b054efe3a5e0d9c280887ebc4664f3",
       "historical_testing_started": false,
       "mechanism": "Index futures and cash may incorporate common information at different speeds.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3",
         "CVM"
@@ -198,7 +198,7 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
@@ -214,7 +214,7 @@
       "grammar_signature": "f587f5854a5176fe38fc1dda1457bb218d5ea7890be21488743482d4f2699f85",
       "historical_testing_started": false,
       "mechanism": "Timestamped corporate disclosures can define ex-ante event grammars whose post-publication response is evaluated only after the public timestamp.",
-      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "CVM",
         "B3"
@@ -237,12 +237,12 @@
       "semantic_preregistration_complete": true,
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "WAITING_SOURCE_COST_EVIDENCE"
+      "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     }
   ],
   "protocol_schema": "qrds.factory.grammar_source_cost_qualification_protocol.v1",
   "qualified_count": 0,
-  "rejected_count": 0,
+  "rejected_count": 6,
   "safety": {
     "ENGINE_FEED": false,
     "FAIL_CLOSED": true,
@@ -257,5 +257,5 @@
     "SHADOW_ONLY": true
   },
   "schema": "qrds.factory.grammar_source_cost_qualification_runtime.v1",
-  "waiting_count": 6
+  "waiting_count": 0
 }
