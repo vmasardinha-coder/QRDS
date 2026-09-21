@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/grammar_008_industrial_evaluator.py'
+      - 'tools/gate_btc_factory/grammar_008_industrial_gap_safe.py'
       - 'tests/test_gate_btc_grammar_008_industrial_evaluator.py'
+      - 'tests/test_gate_btc_grammar_008_gap_safe.py'
       - '.github/workflows/gate-btc-factory-008-industrial-eval.yml'
   push:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/grammar_008_industrial_evaluator.py'
+      - 'tools/gate_btc_factory/grammar_008_industrial_gap_safe.py'
       - 'tests/test_gate_btc_grammar_008_industrial_evaluator.py'
+      - 'tests/test_gate_btc_grammar_008_gap_safe.py'
       - '.github/workflows/gate-btc-factory-008-industrial-eval.yml'
 
 permissions:
@@ -60,7 +64,9 @@ jobs:
           test "$FAIL_CLOSED" = true
       - name: Unit-test partition blindness and deterministic mechanics
         working-directory: source_repo
-        run: python -m unittest -v tests/test_gate_btc_grammar_008_industrial_evaluator.py
+        run: |
+          python -m unittest -v tests/test_gate_btc_grammar_008_industrial_evaluator.py
+          python -m unittest -v tests/test_gate_btc_grammar_008_gap_safe.py
       - name: PR remains Grammar 008 target-blind
         if: github.event_name == 'pull_request'
         run: echo 'GRAMMAR_008_MARKET_DATA_READ=false'
@@ -68,7 +74,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           mkdir -p artifacts/factory_008_industrial_eval
-          python source_repo/tools/gate_btc_factory/grammar_008_industrial_evaluator.py \
+          python source_repo/tools/gate_btc_factory/grammar_008_industrial_gap_safe.py \
             --prereg source_repo/tools/gate_btc_factory/GRAMMAR_008_FREQTRADE_INDUSTRIAL_PREREG_20260921.json \
             --semantics source_repo/tools/gate_btc_factory/GRAMMAR_008_INDICATOR_SEMANTICS_20260921.json \
             --out artifacts/factory_008_industrial_eval/RESULT.json
@@ -79,6 +85,8 @@ jobs:
           assert x['status'] in ('HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR','HISTORICAL_EVALUATION_COMPLETE_SURVIVORS_EXIST')
           assert x['scientific_credit']==0 and x['prospective_credit']==0
           assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0 and x['safety']['ENGINE_FEED'] is False
+          assert x['missing_bar_policy_applied']=='INELIGIBLE_NO_IMPUTATION'
+          assert x['imputed_bar_count']==0
           if not x['validation_source_opened']:
               assert x['validation_pass_count']==0 and not x['holdout_source_opened']
           if not x['holdout_source_opened']:
@@ -87,6 +95,7 @@ jobs:
           print('G008_DISCOVERY_PASS='+str(x['discovery_pass_count']))
           print('G008_VALIDATION_PASS='+str(x['validation_pass_count']))
           print('G008_SURVIVORS='+json.dumps(x['historical_survivors']))
+          print('G008_SOURCE_GAPS='+json.dumps(x['source_gap_audit'],sort_keys=True))
           PY
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
