@@ -31,11 +31,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install test dependency
-        run: python -m pip install pytest
-
       - name: Unit tests
-        run: python -m pytest -q tests/test_gate_btc_2_coinmetrics_onchain_runner.py
+        run: python -m unittest tests.test_gate_btc_2_coinmetrics_onchain_runner -v
 
       - name: Assert research boundary
         shell: bash
