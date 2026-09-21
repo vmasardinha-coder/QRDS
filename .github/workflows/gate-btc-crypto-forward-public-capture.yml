@@ -11,6 +11,7 @@ on:
       - 'tools/gate_btc_factory/crypto_accessible_source_admission.py'
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
+      - 'tests/test_crypto_prospective_pair_capture.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   push:
     branches: [main]
@@ -22,9 +23,10 @@ on:
       - 'tools/gate_btc_factory/crypto_accessible_source_admission.py'
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
+      - 'tests/test_crypto_prospective_pair_capture.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   schedule:
-    - cron: '2-57/5 * * * *'
+    - cron: '7-57/10 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -47,6 +49,7 @@ jobs:
           python -m py_compile tools/gate_btc_factory/crypto_accessible_source_admission.py
           python -m py_compile tools/gate_btc_factory/crypto_family_state_runtime.py
           python -m py_compile tools/gate_btc_factory/crypto_accessible_blind_evaluator.py
+          python -m unittest -v tests/test_crypto_prospective_pair_capture.py
       - run: |
           python - <<'PY'
           import json
@@ -61,30 +64,38 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Capture one immutable prospective packet
-        run: python tools/gate_btc_factory/crypto_forward_public_capture.py --out out/PACKET.json
-      - name: Assert no authority
+      - name: Capture one sealed prospective t to t+1 pair
+        run: python tools/gate_btc_factory/crypto_forward_public_capture.py --pair-dir out/pair --max-wait-seconds 420 --poll-seconds 15
+      - name: Assert exact prospective pair and no authority
         run: |
           python - <<'PY'
           import json
-          p=json.load(open('out/PACKET.json'))
-          assert p['scientific_credit']==0 and p['historical_backfill_credit']==0
-          assert p['economics_feedback_allowed'] is False
-          assert p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0
+          a=json.load(open('out/pair/T.json'));b=json.load(open('out/pair/T_PLUS_1.json'))
+          assert a['prospective_pair']['pair_id']==b['prospective_pair']['pair_id']
+          assert a['prospective_pair']['role']=='SIGNAL_T' and b['prospective_pair']['role']=='OUTCOME_T_PLUS_1'
+          assert a['prospective_pair']['signal_bucket_start_ms']==b['prospective_pair']['signal_bucket_start_ms']
+          assert a['prospective_pair']['retroactive_pairing_allowed'] is False
+          for p in (a,b):
+            assert p['scientific_credit']==0 and p['historical_backfill_credit']==0
+            assert p['economics_feedback_allowed'] is False
+            assert p['safety']['ORDERS']==0 and p['safety']['REAL_CAPITAL']==0
+          print('SEALED_PROSPECTIVE_PAIR='+a['prospective_pair']['pair_id'])
           PY
-      - name: Publish append-only runtime packet
+      - name: Publish append-only sealed prospective pair
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin gate-btc-runtime
           git worktree add runtime-tree origin/gate-btc-runtime
           mkdir -p runtime-tree/runtime/factory_sources/crypto_forward/audits
-          cp out/PACKET.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
-          cp out/PACKET.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}.json"
+          cp out/pair/T_PLUS_1.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
+          cp out/pair/T.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T.json"
+          cp out/pair/T_PLUS_1.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T1.json"
           python tools/gate_btc_factory/crypto_forward_source_admission.py \
             --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
             --out runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json
@@ -105,7 +116,7 @@ jobs:
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/factory_sources/crypto_forward
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Append crypto forward public capture ${GITHUB_RUN_ID}"
+          git commit -m "Append sealed crypto prospective pair ${GITHUB_RUN_ID}"
           for n in 1 2 3 4; do
             if git push origin HEAD:gate-btc-runtime; then exit 0; fi
             git fetch origin gate-btc-runtime
@@ -117,6 +128,6 @@ jobs:
         if: always()
         with:
           name: crypto-forward-public-capture-${{ github.run_id }}
-          path: out/PACKET.json
+          path: out/pair/
           if-no-files-found: warn
           retention-days: 30
