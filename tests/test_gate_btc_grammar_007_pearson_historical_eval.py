@@ -18,28 +18,20 @@ def levels_for_targets(targets, returns):
     return out
 
 
-def fixture(validation_same_sign=False):
+def fixture(validation_same_sign=False, validation_zero_target_variance=False):
     discovery = ['2024-01-02', '2024-01-04', '2024-01-06', '2024-01-08']
     validation = ['2025-02-02', '2025-02-04', '2025-02-06', '2025-02-08']
     holdout = ['2026-03-02', '2026-03-04', '2026-03-06', '2026-03-08']
     rows = []
     for dates in (discovery, validation, holdout):
         for i, d in enumerate(dates, 1):
-            rows.append({
-                'target_session_date': d,
-                m.IPCA: float(i),
-                m.SELIC: float(i) * 2.0,
-            })
+            rows.append({'target_session_date': d, m.IPCA: float(i), m.SELIC: float(i) * 2.0})
     features = {'families': {m.FAMILY: {'rows': rows}}}
     partitions = {
         'partitions_frozen': True,
         'embargo_sessions': 60,
         'partition_contract': '50_30_20_CHRONOLOGICAL',
-        'candidate_partition_dates': {
-            'discovery': discovery,
-            'validation': validation,
-            'holdout': holdout,
-        },
+        'candidate_partition_dates': {'discovery': discovery, 'validation': validation, 'holdout': holdout},
     }
     cases = {
         'status': 'FROZEN_BEFORE_FIRST_TARGET_READ',
@@ -61,7 +53,10 @@ def fixture(validation_same_sign=False):
         },
     }
     disc_rets = [.01, .02, .03, .04]
-    val_rets = [.01, .02, .03, .04] if validation_same_sign else [.04, .03, .02, .01]
+    if validation_zero_target_variance:
+        val_rets = [.02, .02, .02, .02]
+    else:
+        val_rets = [.01, .02, .03, .04] if validation_same_sign else [.04, .03, .02, .01]
     maps = {
         2024: levels_for_targets(discovery, disc_rets),
         2025: levels_for_targets(validation, val_rets),
@@ -87,6 +82,23 @@ class Grammar007PearsonHistoricalEvalTests(unittest.TestCase):
             self.assertIsNone(case['holdout']['pearson_r'])
             self.assertEqual(case['terminal_status'], 'REJECTED_VALIDATION_NO_RETUNE')
 
+    def test_validation_zero_variance_is_fail_closed_terminal_without_2026_fetch(self):
+        features, partitions, cases, stat, route, maps = fixture(validation_zero_target_variance=True)
+        calls = []
+        def fetch(year, _route):
+            calls.append(year)
+            return maps[year]
+        result = m.execute(features, partitions, cases, stat, route, fetch)
+        self.assertEqual(calls, [2024, 2025])
+        self.assertEqual(result['status'], 'HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR')
+        for case in result['cases']:
+            self.assertTrue(case['validation']['started'])
+            self.assertFalse(case['validation']['pass'])
+            self.assertTrue(case['validation']['ineligible'])
+            self.assertEqual(case['ineligibility_reason'], 'PEARSON_TARGET_ZERO_VARIANCE_FAIL_CLOSED')
+            self.assertFalse(case['holdout']['started'])
+            self.assertEqual(case['terminal_status'], 'REJECTED_VALIDATION_NO_RETUNE')
+
     def test_validation_pass_fetches_holdout_only_after_gate_for_each_case(self):
         features, partitions, cases, stat, route, maps = fixture(True)
         calls = []
@@ -110,6 +122,8 @@ class Grammar007PearsonHistoricalEvalTests(unittest.TestCase):
     def test_pearson(self):
         self.assertAlmostEqual(m.sample_pearson([1,2,3,4], [2,4,6,8]), 1.0)
         self.assertAlmostEqual(m.sample_pearson([1,2,3,4], [8,6,4,2]), -1.0)
+        with self.assertRaises(m.ScientificIneligible):
+            m.sample_pearson([1,2,3,4], [2,2,2,2])
 
 
 if __name__ == '__main__':
