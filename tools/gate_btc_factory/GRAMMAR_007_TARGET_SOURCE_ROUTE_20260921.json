@@ -1,0 +1,44 @@
+{
+  "schema": "qrds.factory.grammar_007.target_source_route.v1",
+  "status": "MECHANICAL_SOURCE_ROUTE_CORRECTED_TARGET_IDENTITY_UNCHANGED",
+  "reason": "The frozen target identity is the Ibovespa index close-to-close return. B3 COTAHIST annual files are historical quotations for traded securities/papers; B3 exposes official Ibovespa daily index levels through Index Statistics. This changes only physical delivery plumbing, not the target, partitions, dates, metric or decision rule.",
+  "provider": "B3 S.A. - Brasil, Bolsa, Balcao",
+  "target_identity": "IBOVESPA_SIMPLE_CLOSE_TO_CLOSE_NEXT_ELIGIBLE_SESSION",
+  "official_human_surface": "https://sistemaswebb3-listados.b3.com.br/indexStatisticsPage/daily-evolution/IBOVESPA?language=pt-br",
+  "official_machine_surface_template": "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetPortfolioDay/{base64_json}",
+  "machine_payload": {
+    "language": "pt-br",
+    "index": "IBOV",
+    "year": "YYYY"
+  },
+  "response_contract": "results has day rows; rateValue1..rateValue12 are official daily closing index levels for Jan..Dec",
+  "numeric_locale": "pt-BR thousands dot and decimal comma",
+  "source_transport_policy": {
+    "discovery_validation_years_only_before_validation_decision": [2024, 2025],
+    "holdout_year": 2026,
+    "holdout_year_fetch_allowed_only_after_current_case_validation_pass": true,
+    "persist_raw_provider_payload": false,
+    "no_fallback_to_nonofficial_market_data": true
+  },
+  "scientific_changes": {
+    "target_identity_changed": false,
+    "feature_changed": false,
+    "partition_changed": false,
+    "pearson_changed": false,
+    "case_weights_changed": false,
+    "validation_rule_changed": false,
+    "holdout_rule_changed": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  }
+}
