@@ -1,0 +1,73 @@
+name: GATE BTC Crypto 745 Schedule Fallback
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '1,16,31,46 * * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC Factory Status Export
+      - GATE BTC Source Redundancy Probes
+      - GATE BTC B3 Autonomous Science Loop
+      - GATE BTC Scientific Mortality Audit
+      - GATE BTC B3 Factory Continuation
+    types: [completed]
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-crypto-745-schedule-fallback.yml
+      - tools/gate_btc_factory/crypto_forward_schedule_guard.py
+      - tests/test_gate_btc_crypto_forward_schedule_guard.py
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: gate-btc-crypto-745-schedule-fallback
+  cancel-in-progress: false
+
+jobs:
+  guard-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest -v tests.test_gate_btc_crypto_forward_schedule_guard
+      - run: python -m py_compile tools/gate_btc_factory/crypto_forward_schedule_guard.py
+
+  recover-crossvenue:
+    if: github.event_name != 'pull_request'
+    needs: guard-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Dispatch one current-time cross-venue capture only when stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_WORKFLOW: gate-btc-crypto-745-crossvenue-forward.yml
+          FRESHNESS_SECONDS: '600'
+        run: python tools/gate_btc_factory/crypto_forward_schedule_guard.py
+
+  recover-basis:
+    if: github.event_name != 'pull_request'
+    needs: guard-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Dispatch one current-time basis watcher only when stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_WORKFLOW: gate-btc-crypto-745-basis-forward.yml
+          FRESHNESS_SECONDS: '300'
+        run: python tools/gate_btc_factory/crypto_forward_schedule_guard.py
