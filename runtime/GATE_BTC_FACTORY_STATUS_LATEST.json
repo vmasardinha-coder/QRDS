@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-20T21:25:36.582183+00:00",
+  "generated_at_utc": "2026-09-21T00:06:37.187035+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -12,7 +12,8 @@
     "M1_M2_ACTIVE_STATUS_OVERRIDES_STALE_RED_REPORTING_HINT",
     "H31_ACTIVE_PROSPECTIVE_VISIBLE_EVEN_WITH_ZERO_ELIGIBLE_OBSERVATIONS",
     "ALT_TRAIL_EXISTS_DO_NOT_REPORT_AS_MISSING",
-    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING"
+    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING",
+    "D100_CANONICAL_RUNTIME_OVERRIDES_STALE_FROZEN_DORMANT_HINT"
   ],
   "reporting_only": true,
   "safety": {
@@ -136,6 +137,40 @@
       "exists": true,
       "path": "runtime/ledgers/bull_replay_live_shadow/STATUS.json",
       "sha256": "98d8b214248dcc7141cbae6f9bbebef9a7181e83e6f41b16a579c4cd97959e29"
+    },
+    "d100": {
+      "data": {
+        "activation_date": "2026-09-05",
+        "backfill_performed": false,
+        "collection_enabled": true,
+        "collection_mode": "FORWARD_ONLY_DATA_FEED",
+        "economics_enabled": false,
+        "historical_observations_credited": 0,
+        "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
+        "historical_recovery_attempted": false,
+        "last_heartbeat_utc": "2026-09-20T22:25:36.057376+00:00",
+        "next_action": "COLLECT_NEW_FORWARD_DATA_ONLY",
+        "safety": {
+          "economics_read": false,
+          "engine_feed": false,
+          "fail_closed": true,
+          "no_backfill": true,
+          "no_counter_reset": true,
+          "no_retune": true,
+          "not_approved": true,
+          "orders": 0,
+          "real_capital": 0,
+          "research_only": true,
+          "shadow_only": true
+        },
+        "schema": "qrds.d100.forward_collection.v1",
+        "scientific_observations_credited": 0,
+        "status": "ACTIVE_FORWARD_COLLECTION",
+        "track": "D100"
+      },
+      "exists": true,
+      "path": "runtime/ledgers/d100/STATUS.json",
+      "sha256": "5dca742b52e37d0cb707d31006504e5a90841ae80d8d5299793344fe717ca19e"
     },
     "delta_paper": {
       "data": {
