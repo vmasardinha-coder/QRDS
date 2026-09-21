@@ -45,14 +45,23 @@ class Grammar007CausalFeatureMaterializerTests(unittest.TestCase):
         self.assertIn("2024-09-30", text)
         self.assertIn("HISTORICAL_CLASS_VERSIONING_NOT_YET_PROVEN_FOR_REGISTRO_CLASSE", text)
         self.assertIn("post_rcvm175_dates_ineligible", text)
+        self.assertIn("CVM_HISTORICAL_REPRESENTATION_VALUES_NOT_VERSIONED_BY_ID_DOCUMENTO_IN_STRUCTURED_OPEN_DATA", text)
+        self.assertIn('"late_representation_value_substitution_allowed": False', text)
+
+    def test_focus_current_publication_base_is_frozen(self):
+        self.assertEqual(m.FOCUS_CURRENT_PUBLICATION_BASE_CALCULO, 0)
+        q = m.bcb_query("IPCA", "2024-02-05", "2026-09-20")
+        self.assertIn("baseCalculo%20eq%200", q)
+        self.assertIn("Data%20ge%20%272024-02-05%27", q)
+        self.assertIn("Data%20le%20%272026-09-20%27", q)
 
     def test_focus_ambiguity_is_ineligible_not_selected(self):
         text = Path(m.__file__).read_text(encoding="utf-8")
         self.assertIn("AMBIGUOUS_BASECALCULO_MEDIANA", text)
         self.assertIn("len(values) != 1", text)
+        self.assertIn("NEEDS_PREVIOUS_PUBLICATION_SAME_REFERENCE", text)
 
     def test_materializer_network_boundary_remains_source_only(self):
-        # Mechanical rerun anchor: retry interrupted source delivery without changing science.
         self.assertTrue(m.BCB_BASE.startswith("https://olinda.bcb.gov.br/"))
         self.assertTrue(m.CVM_INF.startswith("https://dados.cvm.gov.br/"))
 
