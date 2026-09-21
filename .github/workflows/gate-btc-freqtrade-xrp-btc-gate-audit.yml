@@ -1,0 +1,113 @@
+name: GATE BTC Freqtrade XRP BTC gate audit
+
+on:
+  push:
+    branches:
+      - research/freqtrade-family-tests
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/**"
+      - ".github/workflows/gate-btc-freqtrade-xrp-btc-gate-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FREQTRADE_TIMERANGE: "20251023-20260921"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare directories
+        run: |
+          mkdir -p artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/data
+          mkdir -p artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/backtest_results
+          mkdir -p artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/results
+
+      - name: Pull Freqtrade
+        run: docker pull freqtradeorg/freqtrade:stable
+
+      - name: Show version
+        run: |
+          set -o pipefail
+          docker run --rm freqtradeorg/freqtrade:stable --version 2>&1 \
+            | tee artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/results/version.txt
+
+      - name: Download OKX XRP/BTC data
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
+          OUT="$BASE/results/download-data.txt"
+          docker run --rm \
+            -v "$PWD/$BASE/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            download-data \
+            --config user_data/config.json \
+            --exchange okx \
+            --pairs XRP/USDT BTC/USDT \
+            -t 1h 12h \
+            --days 365 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+
+      - name: Run exact-rule backtest
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
+          OUT="$BASE/results/backtest.txt"
+          docker run --rm \
+            -v "$PWD/$BASE/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            backtesting \
+            --config user_data/config.json \
+            --strategy XrpBtcRegimeGate48h \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --cache none \
+            --export trades 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+          grep -q 'BACKTESTING REPORT' "$OUT"
+
+      - name: Run lookahead analysis
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
+          OUT="$BASE/results/lookahead-analysis.txt"
+          docker run --rm \
+            -v "$PWD/$BASE/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            lookahead-analysis \
+            --config user_data/config.json \
+            --strategy XrpBtcRegimeGate48h \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --minimum-trade-amount 5 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+
+      - name: Verify research boundary
+        run: |
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
+
+      - name: Inventory
+        if: always()
+        run: |
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
+          find "$BASE/user_data/backtest_results" -maxdepth 2 -type f -print | sort | tee "$BASE/results/backtest-files.txt"
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-freqtrade-xrp-btc-gate-audit
+          path: |
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/results/
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/backtest_results/
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/config.json
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
+          if-no-files-found: warn
