@@ -1,0 +1,75 @@
+name: GATE BTC Factory Cross-Asset Regime Gate Intake
+
+'on':
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/CROSS_ASSET_REGIME_GATE_PREREG.v1.json'
+      - 'tools/gate_btc_factory/validate_cross_asset_regime_gate_prereg.py'
+      - '.github/workflows/gate-btc-factory-cross-asset-regime-gate-intake.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/CROSS_ASSET_REGIME_GATE_PREREG.v1.json'
+      - 'tools/gate_btc_factory/validate_cross_asset_regime_gate_prereg.py'
+      - '.github/workflows/gate-btc-factory-cross-asset-regime-gate-intake.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate preregistration fail-closed
+        run: python source_repo/tools/gate_btc_factory/validate_cross_asset_regime_gate_prereg.py
+      - name: Verify no external winner was seeded
+        run: |
+          python - <<'PY'
+          import json
+          p='source_repo/tools/gate_btc_factory/CROSS_ASSET_REGIME_GATE_PREREG.v1.json'
+          z=json.load(open(p))
+          assert z['engine_weight'] == 0
+          assert z['auto_promote'] is False
+          assert z['external_performance_imported'] is False
+          assert z['winning_external_parameters_seeded'] is False
+          assert z['promotion_boundary']['survivor_on_registration'] is False
+          assert z['promotion_boundary']['requires_independent_factory_validation'] is True
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Persist canonical Factory candidate intake
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          mkdir -p "$ROOT"
+          cp source_repo/tools/gate_btc_factory/CROSS_ASSET_REGIME_GATE_PREREG.v1.json \
+             "$ROOT/CROSS_ASSET_REGIME_GATE_PREREG_RUNTIME.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_autonomy/CROSS_ASSET_REGIME_GATE_PREREG_RUNTIME.json'
+          z=json.load(open(p))
+          assert z['status']=='REGISTERED_FOR_FACTORY_RESEARCH'
+          assert z['research_only'] is True and z['shadow_only'] is True
+          assert z['engine_weight']==0 and z['auto_promote'] is False
+          assert z['promotion_boundary']['candidate_on_registration'] is True
+          assert z['promotion_boundary']['survivor_on_registration'] is False
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/CROSS_ASSET_REGIME_GATE_PREREG_RUNTIME.json
+          git commit -m "Factory cross-asset regime gate intake ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
