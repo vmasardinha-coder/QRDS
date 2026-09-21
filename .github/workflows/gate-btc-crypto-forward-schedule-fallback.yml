@@ -1,0 +1,55 @@
+name: GATE BTC Crypto Forward Schedule Fallback
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '2,17,32,47 * * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC Factory Status Export
+      - GATE BTC Source Redundancy Probes
+      - GATE BTC B3 Autonomous Science Loop
+      - GATE BTC Scientific Mortality Audit
+    types: [completed]
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-crypto-forward-schedule-fallback.yml
+      - tools/gate_btc_factory/crypto_forward_schedule_guard.py
+      - tests/test_crypto_forward_schedule_guard.py
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: gate-btc-crypto-forward-schedule-fallback
+  cancel-in-progress: false
+
+jobs:
+  guard-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest -v tests.test_crypto_forward_schedule_guard
+      - run: python -m py_compile tools/gate_btc_factory/crypto_forward_schedule_guard.py
+
+  recover-stale-capture:
+    if: github.event_name != 'pull_request'
+    needs: guard-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Dispatch one current-time capture only when the target is stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_WORKFLOW: gate-btc-crypto-forward-public-capture.yml
+          FRESHNESS_SECONDS: '900'
+        run: python tools/gate_btc_factory/crypto_forward_schedule_guard.py
