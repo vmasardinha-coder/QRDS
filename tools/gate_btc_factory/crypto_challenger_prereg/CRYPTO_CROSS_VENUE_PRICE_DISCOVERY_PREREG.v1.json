@@ -1,0 +1,94 @@
+{
+  "schema": "qrds.factory.crypto_channel_prereg.v1",
+  "issue": 745,
+  "channel_id": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+  "family_id": null,
+  "stage": "PREREG_ONLY_NO_ECONOMICS",
+  "frozen_before_source_cost": true,
+  "outcome_blind": true,
+  "economics_read": false,
+  "historical_testing_started": false,
+  "mechanism": "Short-horizon information arriving on Coinbase spot may be incorporated with a measurable delay into an OKX perpetual instrument; a frozen one-minute return differential tests cross-venue transmission without selecting a leader, threshold or holding period from outcomes.",
+  "venue_instrument_mapping": {
+    "source_venue": "Coinbase",
+    "source_instrument": "BTC-USD spot",
+    "execution_venue": "OKX",
+    "execution_instrument": "BTC-USDT-SWAP perpetual",
+    "quote_difference_policy": "features use dimensionless log returns only; no level spread or USD/USDT conversion is used",
+    "substitution_policy": "NONE; an unavailable or non-PIT mapping makes this prereg terminally source-ineligible and requires a new prereg rather than substitution."
+  },
+  "timestamp_normalization": {
+    "timezone": "UTC",
+    "bar_definition": "exchange-event observations assigned to exact UTC minute [m,m+60s); only fully completed minutes are eligible",
+    "decision_timestamp": "minute close plus 5 seconds",
+    "synchronization": "both venues must have an eligible last price at or before the same minute close and no last-price age greater than 5 seconds",
+    "late_data": "ignored for that decision; no late seal and no retroactive credit"
+  },
+  "feature_definition": {
+    "source_return": "ln(Coinbase BTC-USD last_price_at_minute_close / Coinbase BTC-USD last_price_at_previous_minute_close)",
+    "execution_return": "ln(OKX BTC-USDT-SWAP last_price_at_minute_close / OKX BTC-USDT-SWAP last_price_at_previous_minute_close)",
+    "scalar": "source_return - execution_return",
+    "direction_rule": "positive scalar defines LONG OKX BTC-USDT-SWAP for the next eligible one-minute holding interval; negative scalar defines SHORT; zero defines FLAT",
+    "threshold": 0.0,
+    "normalization": "NONE",
+    "parameter_grid": "NONE"
+  },
+  "causal_clock": {
+    "decision_clock": "5 seconds after each completed UTC minute",
+    "lookback": "exactly the immediately completed one-minute interval; no rolling optimization or alternate lag",
+    "entry": "first eligible OKX BTC-USDT-SWAP quote timestamped at or after the decision clock, with maximum 5-second delay",
+    "exit": "first eligible OKX BTC-USDT-SWAP quote timestamped at or after entry timestamp plus 60 seconds, with maximum 5-second delay",
+    "holding_semantics": "exactly 60 seconds from eligible entry; no extension, averaging, re-entry or adaptive hold"
+  },
+  "cost_model": {
+    "execution_round_trip_bps": 20.0,
+    "additional_slippage_round_trip_bps": 4.0,
+    "funding_cashflow": "include only if an official funding settlement occurs during the frozen 60-second holding interval; otherwise zero",
+    "source_venue_trade_cost": "NONE because Coinbase is information-source-only and no Coinbase order is modeled",
+    "cost_retune": "PROHIBITED"
+  },
+  "missing_data_rules": {
+    "source_or_execution_price_missing": "INELIGIBLE_ZERO_CREDIT",
+    "last_price_age_gt_5s": "INELIGIBLE_ZERO_CREDIT",
+    "venue_outage": "INELIGIBLE_ZERO_CREDIT",
+    "delisting": "TERMINATE_CHANNEL_UNTIL_NEW_PREREG",
+    "symbol_change": "TERMINATE_CHANNEL_UNTIL_NEW_PREREG",
+    "imputation": "PROHIBITED"
+  },
+  "evaluation": {
+    "mode": "FORWARD_ONLY_AFTER_SOURCE_COST_ADMISSION",
+    "historical_backfill_credit": false,
+    "collection_start": "must be later than the merge/freeze timestamp and source-cost admission timestamp",
+    "minimum_observation_count_before_first_economics": 1440,
+    "checkpoint_counts": [1440, 4320, 10080],
+    "no_early_peeking": true,
+    "dataset_binding": "Before the first economics read, bind an immutable manifest containing source endpoint/version metadata, first/last eligible timestamps, record count and SHA-256 hashes of all raw sealed partitions. Any mismatch fails closed."
+  },
+  "prohibitions": [
+    "NO_OUTCOME_READ_BEFORE_CHECKPOINT",
+    "NO_ECONOMICS_READ_BEFORE_SOURCE_COST_ADMISSION",
+    "NO_BACKFILL",
+    "NO_LATE_SEAL",
+    "NO_RETUNE",
+    "NO_THRESHOLD_GRID",
+    "NO_LOOKBACK_GRID",
+    "NO_HOLD_GRID",
+    "NO_COST_GRID",
+    "NO_DIRECTION_FLIP_FROM_RESULTS",
+    "NO_SYMBOL_SUBSTITUTION",
+    "NO_COUNTER_RESET"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}
