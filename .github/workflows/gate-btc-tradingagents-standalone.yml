@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -73,17 +75,21 @@ jobs:
             'upstream_version': '0.5.0',
             'package_installed': True,
             'selected_pit_and_contract_tests_passed': True,
+            'selected_test_count': 143,
             'deterministic_structural_poc_passed': True,
             'api_dependent_multiagent_propagation_tested': False,
             'economic_value_of_disagreement_proven': False,
           }
           Path('artifacts/gate_btc_2/tradingagents_research/standalone_result.json').write_text(json.dumps(out,indent=2,sort_keys=True))
           PY
-      - name: Verify isolation
+      - name: Verify isolation fail-closed
         run: |
+          set -euo pipefail
           grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/tradingagents_research/TRADINGAGENTS_DISCOVERY_20260921.md
           grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/tradingagents_research/TRADINGAGENTS_DISCOVERY_20260921.md
-          git diff --name-only 3ea3a7554bb5d0a822dde703bc0442d9fa7c4b0a...HEAD | grep -v '^artifacts/gate_btc_2/tradingagents_research/' | grep -v '^.github/workflows/gate-btc-tradingagents-standalone.yml$' && exit 1 || true
+          git cat-file -e 3ea3a7554bb5d0a822dde703bc0442d9fa7c4b0a^{commit}
+          bad="$(git diff --name-only 3ea3a7554bb5d0a822dde703bc0442d9fa7c4b0a...HEAD | grep -v '^artifacts/gate_btc_2/tradingagents_research/' | grep -v '^.github/workflows/gate-btc-tradingagents-standalone.yml$' || true)"
+          test -z "$bad" || { echo "$bad"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: gate-btc-tradingagents-standalone
