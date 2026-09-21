@@ -1,0 +1,119 @@
+name: GATE BTC Factory 007 Causal Feature Materialization
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_causal_feature_materializer.py'
+      - 'tests/test_gate_btc_grammar_007_causal_feature_materializer.py'
+      - '.github/workflows/gate-btc-factory-007-causal-feature-materialization.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_causal_feature_materializer.py'
+      - 'tests/test_gate_btc_grammar_007_causal_feature_materializer.py'
+      - '.github/workflows/gate-btc-factory-007-causal-feature-materialization.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-causal-feature-materialization-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+  PYTHONSTARTUP: ''
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Run static boundary tests
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_causal_feature_materializer.py
+      - name: Materialize feature sources without target read
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/factory_007_causal_feature_materialization
+          rm -f artifacts/factory_007_causal_feature_materialization/RESULT.json
+          timeout 85m python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"
+          python - <<'PY'
+          import json
+          p='artifacts/factory_007_causal_feature_materialization/RESULT.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['target_source_opened'] is False
+          assert x['target_bytes_read'] is False
+          assert x['outcomes_read'] is False
+          assert x['economics_read'] is False
+          assert x['candidate_universe_frozen'] is False
+          assert x['validation_started'] is False
+          assert x['historical_testing_started'] is False
+          assert x['candidate_ranked'] is False
+          assert x['scientific_credit'] == 0
+          print('GRAMMAR_007_FEATURE_STATUS='+x['status'])
+          print('FOCUS_ROWS='+str(x['families']['XAGRAMMAR_728DC88D691B']['row_count']))
+          print('CVM_ROWS='+str(x['families']['XAGRAMMAR_62943307741A']['row_count']))
+          print('NEXT_GATE='+x['next_gate'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grammar-007-causal-feature-materialization-${{ github.run_id }}
+          path: artifacts/factory_007_causal_feature_materialization/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Persist canonical feature materialization evidence
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          DEST=runtime_repo/runtime/factory_autonomy/GRAMMAR_007_CAUSAL_FEATURE_MATERIALIZATION_RUNTIME.json
+          mkdir -p "$(dirname "$DEST")"
+          cp artifacts/factory_007_causal_feature_materialization/RESULT.json "$DEST"
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_007_CAUSAL_FEATURE_MATERIALIZATION_RUNTIME.json
+          git commit -m "Factory 007 causal feature materialization ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((i*2))
+          done
+          exit 1
