@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/gate_btc_2/run_bocd_structural_risk_overlay.py'
+      - 'tools/gate_btc_bocd_structural_risk_overlay.py'
       - 'artifacts/gate_btc_2/bocd_research/**'
       - '.github/workflows/gate-btc-bocd-structural-risk-overlay.yml'
   workflow_dispatch:
@@ -36,7 +36,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy requests "git+https://github.com/fiannai/bocd.git@0c09315e9102ddea885bb7164e47b61a95e99dac"
       - name: Run frozen causal BOCPD benchmark
-        run: python scripts/gate_btc_2/run_bocd_structural_risk_overlay.py
+        run: python tools/gate_btc_bocd_structural_risk_overlay.py
       - name: Validate evidence contract
         run: |
           python - <<'PY'
