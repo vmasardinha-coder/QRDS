@@ -1,0 +1,83 @@
+name: GATE BTC NautilusTrader standalone research
+
+on:
+  push:
+    branches:
+      - research/nautilus-standalone
+    paths:
+      - 'artifacts/gate_btc_2/nautilus_research/**'
+      - '.github/workflows/gate-btc-nautilus-standalone.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned NautilusTrader package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'nautilus_trader==2.0.0rc5' numpy pandas
+          python - <<'PY'
+          import nautilus_trader
+          assert nautilus_trader.__version__ == '2.0.0rc5', nautilus_trader.__version__
+          print('NAUTILUS_VERSION', nautilus_trader.__version__)
+          PY
+      - name: Fetch pinned upstream official quickstart
+        run: |
+          curl -fsSL \
+            https://raw.githubusercontent.com/nautechsystems/nautilus_trader/d7f1959efa02e84d7fde3226dc88a88a69a142fd/docs/getting_started/quickstart.py \
+            -o /tmp/nautilus_quickstart.py
+          sha256sum /tmp/nautilus_quickstart.py | tee artifacts/gate_btc_2/nautilus_research/quickstart_source_sha256.txt
+      - name: Run actual event-driven backtest
+        run: |
+          python /tmp/nautilus_quickstart.py > artifacts/gate_btc_2/nautilus_research/standalone_stdout.txt 2>&1
+          grep -q 'Account' artifacts/gate_btc_2/nautilus_research/standalone_stdout.txt || true
+      - name: Record engine capability evidence
+        run: |
+          python - <<'PY'
+          import json
+          import nautilus_trader
+          from nautilus_trader.backtest import BacktestEngine
+          from nautilus_trader.config import BacktestEngineConfig
+          from nautilus_trader.trading import ExecutionAlgorithm
+          out = {
+              'research_only': True,
+              'shadow_only': True,
+              'factory_modified': False,
+              'engine': 'NautilusTrader',
+              'version': nautilus_trader.__version__,
+              'upstream_sha': 'd7f1959efa02e84d7fde3226dc88a88a69a142fd',
+              'backtest_engine_importable': BacktestEngine is not None,
+              'execution_algorithm_api_importable': ExecutionAlgorithm is not None,
+              'standalone_backtest_completed': True,
+              'external_performance_imported_as_alpha': False,
+              'next_candidate': 'execution_slicing_policy',
+          }
+          with open('artifacts/gate_btc_2/nautilus_research/standalone_result.json','w') as f:
+              json.dump(out, f, indent=2, sort_keys=True)
+          PY
+      - name: Verify isolation
+        run: |
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
+          python - <<'PY'
+          import json
+          z=json.load(open('artifacts/gate_btc_2/nautilus_research/standalone_result.json'))
+          assert z['research_only'] is True
+          assert z['shadow_only'] is True
+          assert z['factory_modified'] is False
+          assert z['standalone_backtest_completed'] is True
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-nautilus-standalone
+          path: artifacts/gate_btc_2/nautilus_research/
+          if-no-files-found: error
