@@ -1,0 +1,146 @@
+name: GATE BTC Qlib standalone research
+
+on:
+  push:
+    branches: [research/qlib-standalone]
+    paths:
+      - .github/workflows/gate-btc-qlib-standalone.yml
+      - artifacts/gate_btc_2/qlib_research/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  REAL_CAPITAL: '0'
+  QLIB_SHA: 'da920b7f954f48ab1bb64117c976710de198373e'
+
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Assert isolated research scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only origin/main...HEAD | tee /tmp/changed.txt
+          python - <<'PY'
+          allowed=(
+              '.github/workflows/gate-btc-qlib-standalone.yml',
+              'artifacts/gate_btc_2/qlib_research/',
+          )
+          bad=[]
+          for p in open('/tmp/changed.txt'):
+              p=p.strip()
+              if p and not any(p == x or p.startswith(x) for x in allowed):
+                  bad.append(p)
+          assert not bad, bad
+          print('QLIB_ISOLATION=PASS')
+          PY
+
+      - name: Install pinned Qlib release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install 'pyqlib==0.9.7'
+          python - <<'PY'
+          import qlib
+          print('QLIB_IMPORT=PASS')
+          print('QLIB_VERSION='+getattr(qlib,'__version__','unknown'))
+          PY
+
+      - name: Fetch pinned upstream config and community data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p vendor/qlib artifacts/gate_btc_2/qlib_research/run ~/.qlib/qlib_data/cn_data
+          git clone --filter=blob:none https://github.com/microsoft/qlib.git vendor/qlib/src
+          git -C vendor/qlib/src checkout --detach "$QLIB_SHA"
+          test "$(git -C vendor/qlib/src rev-parse HEAD)" = "$QLIB_SHA"
+          cp vendor/qlib/src/examples/benchmarks/LightGBM/workflow_config_lightgbm_Alpha158.yaml artifacts/gate_btc_2/qlib_research/run/FROZEN_UPSTREAM_CONFIG.yaml
+          curl -fL --retry 3 --retry-delay 2 \
+            https://github.com/chenditc/investment_data/releases/latest/download/qlib_bin.tar.gz \
+            -o /tmp/qlib_bin.tar.gz
+          sha256sum /tmp/qlib_bin.tar.gz | tee artifacts/gate_btc_2/qlib_research/run/DATA_ARCHIVE_SHA256.txt
+          tar -xzf /tmp/qlib_bin.tar.gz -C ~/.qlib/qlib_data/cn_data --strip-components=1
+          test -d ~/.qlib/qlib_data/cn_data/calendars
+          test -d ~/.qlib/qlib_data/cn_data/features
+          test -d ~/.qlib/qlib_data/cn_data/instruments
+
+      - name: Run frozen Alpha158 LightGBM workflow
+        shell: bash
+        working-directory: vendor/qlib/src/examples
+        run: |
+          set -euo pipefail
+          qrun benchmarks/LightGBM/workflow_config_lightgbm_Alpha158.yaml \
+            2>&1 | tee ../../../artifacts/gate_btc_2/qlib_research/run/QLIB_QRUN.log
+
+      - name: Extract capability evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, pathlib, re
+          root=pathlib.Path('artifacts/gate_btc_2/qlib_research/run')
+          log=(root/'QLIB_QRUN.log').read_text(errors='replace')
+          cfg=(root/'FROZEN_UPSTREAM_CONFIG.yaml').read_bytes()
+          data_sha=(root/'DATA_ARCHIVE_SHA256.txt').read_text().split()[0]
+          needles={
+              'signal_analysis': ['IC', 'Rank IC'],
+              'portfolio_analysis': ['excess_return_without_cost', 'excess_return_with_cost'],
+              'risk_metrics': ['annualized_return', 'information_ratio', 'max_drawdown'],
+          }
+          found={k:{n:(n in log) for n in ns} for k,ns in needles.items()}
+          capability_pass=(
+              any(found['signal_analysis'].values()) and
+              any(found['portfolio_analysis'].values()) and
+              all(found['risk_metrics'].values())
+          )
+          numbers={}
+          for key in ['IC','Rank IC','annualized_return','information_ratio','max_drawdown']:
+              vals=[]
+              for m in re.finditer(rf'(?im)^\s*{re.escape(key)}\s+([-+0-9.eE]+)', log):
+                  try: vals.append(float(m.group(1)))
+                  except ValueError: pass
+              numbers[key]=vals
+          out={
+              'source_system':'Microsoft Qlib',
+              'release':'v0.9.7',
+              'upstream_sha':'da920b7f954f48ab1bb64117c976710de198373e',
+              'research_only':True,
+              'shadow_only':True,
+              'real_capital':0,
+              'experiment':'official_Alpha158_LightGBM_standalone',
+              'config_sha256':hashlib.sha256(cfg).hexdigest(),
+              'data_archive_sha256':data_sha,
+              'evidence_tokens':found,
+              'parsed_metric_occurrences':numbers,
+              'capability_pass':capability_pass,
+              'economic_claim_authorized':False,
+              'factory_migration_authorized':False,
+              'interpretation':'Standalone capability only. Community data provenance is insufficient for Factory economic admission.'
+          }
+          (root/'QLIB_STANDALONE_RESULT.json').write_text(json.dumps(out,indent=2,sort_keys=True))
+          print(json.dumps(out,indent=2,sort_keys=True))
+          if not capability_pass:
+              raise SystemExit('Frozen Qlib run did not expose the required signal/backtest evidence tokens')
+          PY
+
+      - name: Upload standalone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-qlib-standalone
+          path: artifacts/gate_btc_2/qlib_research/run/
+          if-no-files-found: error
