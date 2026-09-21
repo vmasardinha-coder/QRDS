@@ -39,14 +39,12 @@ jobs:
       - name: Run actual event-driven backtest
         run: |
           python /tmp/nautilus_quickstart.py > artifacts/gate_btc_2/nautilus_research/standalone_stdout.txt 2>&1
-          grep -q 'Account' artifacts/gate_btc_2/nautilus_research/standalone_stdout.txt || true
       - name: Record engine capability evidence
         run: |
           python - <<'PY'
           import json
           import nautilus_trader
           from nautilus_trader.backtest import BacktestEngine
-          from nautilus_trader.config import BacktestEngineConfig
           from nautilus_trader.trading import ExecutionAlgorithm
           out = {
               'research_only': True,
@@ -64,17 +62,24 @@ jobs:
           with open('artifacts/gate_btc_2/nautilus_research/standalone_result.json','w') as f:
               json.dump(out, f, indent=2, sort_keys=True)
           PY
-      - name: Verify isolation
+      - name: Run frozen immediate versus TWAP POC
+        run: |
+          python artifacts/gate_btc_2/nautilus_research/run_execution_slicing_poc.py \
+            > artifacts/gate_btc_2/nautilus_research/execution_slicing_stdout.txt 2>&1
+          cat artifacts/gate_btc_2/nautilus_research/runtime_execution_slicing/execution_slicing_result.json
+      - name: Verify isolation and POC semantics
         run: |
           grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
           grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
           python - <<'PY'
           import json
-          z=json.load(open('artifacts/gate_btc_2/nautilus_research/standalone_result.json'))
-          assert z['research_only'] is True
-          assert z['shadow_only'] is True
-          assert z['factory_modified'] is False
-          assert z['standalone_backtest_completed'] is True
+          s=json.load(open('artifacts/gate_btc_2/nautilus_research/standalone_result.json'))
+          z=json.load(open('artifacts/gate_btc_2/nautilus_research/runtime_execution_slicing/execution_slicing_result.json'))
+          assert s['research_only'] is True and s['shadow_only'] is True and s['factory_modified'] is False
+          assert s['standalone_backtest_completed'] is True
+          assert z['research_only'] is True and z['shadow_only'] is True and z['factory_modified'] is False
+          assert z['external_alpha_claim'] is False
+          assert z['immediate']['signals_submitted'] == z['twap_result']['signals_submitted']
           PY
       - uses: actions/upload-artifact@v4
         with:
