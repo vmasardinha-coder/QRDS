@@ -1,0 +1,117 @@
+name: GATE BTC Factory 007 Sealed Partition Preflight
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_sealed_partition_preflight.py'
+      - 'tests/test_gate_btc_grammar_007_sealed_partition_preflight.py'
+      - '.github/workflows/gate-btc-factory-007-sealed-partition-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_sealed_partition_preflight.py'
+      - 'tests/test_gate_btc_grammar_007_sealed_partition_preflight.py'
+      - '.github/workflows/gate-btc-factory-007-sealed-partition-preflight.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-sealed-partition-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Run static boundary tests
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_sealed_partition_preflight.py
+      - name: Seal session partitions without target read
+        run: |
+          mkdir -p artifacts/factory_007_sealed_partition_preflight
+          python source_repo/tools/gate_btc_factory/grammar_007_sealed_partition_preflight.py \
+            --authority runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json \
+            --candidate runtime_repo/runtime/factory_autonomy/GRAMMAR_007_CANDIDATE_UNIVERSE_FREEZE_RUNTIME.json \
+            --rule source_repo/tools/gate_btc_factory/GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json \
+            --prereg source_repo/tools/gate_btc_factory/GRAMMAR_007_SEMANTIC_PREREG.v1.json \
+            --out artifacts/factory_007_sealed_partition_preflight/RESULT.json
+          python - <<'PY'
+          import json
+          p='artifacts/factory_007_sealed_partition_preflight/RESULT.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['status']=='PARTITIONS_SEALED_TARGET_READ_BLOCKED_BY_METHOD_STATISTIC'
+          assert x['session_count']==656
+          assert x['session_split_counts']=={'discovery':268,'validation':76,'holdout':72}
+          assert x['candidate_universe_frozen'] is True and x['partitions_frozen'] is True
+          assert x['target_source_opened'] is False and x['target_bytes_read'] is False
+          assert x['outcomes_read'] is False and x['economics_read'] is False
+          assert x['methodological_blocker']=='FOCUS_TWO_COMPONENT_VECTOR_STANDARDIZED_EFFECT_SCALARIZATION_NOT_PREREGISTERED'
+          print('GRAMMAR_007_PREFLIGHT_STATUS='+x['status'])
+          print('SESSION_SPLITS='+json.dumps(x['session_split_counts'],sort_keys=True))
+          print('CANDIDATE_SPLITS='+json.dumps(x['candidate_partition_counts'],sort_keys=True))
+          print('EMBARGO_OR_UNASSIGNED='+str(x['candidate_embargo_or_unassigned_count']))
+          print('BLOCKER='+x['methodological_blocker'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grammar-007-sealed-partition-preflight-${{ github.run_id }}
+          path: artifacts/factory_007_sealed_partition_preflight/
+          retention-days: 90
+      - name: Persist canonical preflight evidence
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp artifacts/factory_007_sealed_partition_preflight/RESULT.json runtime_repo/runtime/factory_autonomy/GRAMMAR_007_SEALED_PARTITION_PREFLIGHT_RUNTIME.json
+          cd runtime_repo
+          git config user.name 'gate-btc-factory-bot'
+          git config user.email 'gate-btc-factory-bot@users.noreply.github.com'
+          git add runtime/factory_autonomy/GRAMMAR_007_SEALED_PARTITION_PREFLIGHT_RUNTIME.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'runtime: persist Grammar 007 sealed partition preflight'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime
+            sleep $((attempt * 2))
+          done
+          exit 1
