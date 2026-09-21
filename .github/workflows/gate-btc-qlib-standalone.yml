@@ -21,6 +21,7 @@ env:
   SHADOW_ONLY: 'true'
   REAL_CAPITAL: '0'
   QLIB_SHA: 'da920b7f954f48ab1bb64117c976710de198373e'
+  MLFLOW_ALLOW_FILE_STORE: 'true'
 
 jobs:
   standalone:
@@ -90,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           qrun benchmarks/LightGBM/workflow_config_lightgbm_Alpha158.yaml \
-            2>&1 | tee ../../../artifacts/gate_btc_2/qlib_research/run/QLIB_QRUN.log
+            2>&1 | tee ../../../../artifacts/gate_btc_2/qlib_research/run/QLIB_QRUN.log
 
       - name: Extract capability evidence
         shell: bash
@@ -144,6 +145,7 @@ jobs:
           PY
 
       - name: Upload standalone evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-qlib-standalone
