@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import re
 import urllib.parse
 import urllib.request
 from collections import defaultdict
@@ -20,8 +19,9 @@ from typing import Any
 
 UA = "QRDS-GATE-BTC-RESEARCH-ONLY/1.0"
 TIMEOUT = 60
-SCHEMA = "qrds.factory.grammar_007.causal_feature_materialization.v2"
+SCHEMA = "qrds.factory.grammar_007.causal_feature_materialization.v3"
 BCB_BASE = "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais"
+FOCUS_CURRENT_PUBLICATION_BASE_CALCULO = 0
 CVM_INF = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_{yyyymm}.zip"
 CVM_DELIVERY_DATASET = "https://dados.cvm.gov.br/dataset/fi-doc-entrega"
 CVM_INF_DATASET = "https://dados.cvm.gov.br/dataset/fi-doc-inf_diario"
@@ -57,17 +57,21 @@ def dec(x: Any) -> float | None:
 def parse_day(x: Any) -> date | None:
     if not x:
         return None
-    s = str(x).strip()[:10]
     try:
-        return date.fromisoformat(s)
+        return date.fromisoformat(str(x).strip()[:10])
     except ValueError:
         return None
 
 
 def bcb_query(indicator: str, start: str, end: str) -> str:
-    # Bound the API read to the independently qualified authority window. OData
-    # date filtering prevents $top=10000 from silently truncating to unrelated eras.
-    filt = f"Indicador eq '{indicator}' and Data ge '{start}' and Data le '{end}'"
+    # The Focus report's current-publication median ("Hoje") is the aggregate
+    # baseCalculo=0 series. baseCalculo=1 is the auxiliary 5-business-day view and
+    # is not part of this frozen feature. Bind the semantic choice in the source
+    # query itself so the two statistics can never be mixed or outcome-selected.
+    filt = (
+        f"Indicador eq '{indicator}' and baseCalculo eq {FOCUS_CURRENT_PUBLICATION_BASE_CALCULO} "
+        f"and Data ge '{start}' and Data le '{end}'"
+    )
     encoded = urllib.parse.quote(filt, safe="")
     return f"{BCB_BASE}?$format=json&$top=10000&$filter={encoded}"
 
@@ -81,7 +85,8 @@ def bcb_rows(indicator: str, start: str, end: str) -> tuple[list[dict[str, Any]]
         "row_count": len(rows),
         "bounded_start": start,
         "bounded_end": end,
-        "baseCalculo_values": sorted({str(r.get("baseCalculo")) for r in rows}),
+        "baseCalculo_contract": FOCUS_CURRENT_PUBLICATION_BASE_CALCULO,
+        "baseCalculo_values_observed": sorted({str(r.get("baseCalculo")) for r in rows}),
         "payload_bytes": len(raw),
     }
 
@@ -115,6 +120,8 @@ def select_focus_series(
             reasons["NO_CURRENT_YEAR_REFERENCE"] += 1
             continue
 
+        # A single semantic base is already frozen in bcb_query. Duplicated or
+        # conflicting medians inside that base remain fail-closed.
         values = sorted({v for v in (dec(x.get("Mediana")) for x in rr) if v is not None})
         if len(values) != 1:
             reasons["AMBIGUOUS_BASECALCULO_MEDIANA"] += 1
@@ -134,6 +141,7 @@ def select_focus_series(
             "publication_date": pub_s,
             "source_observation_date": source_day.isoformat(),
             "data_reference": reference,
+            "baseCalculo": FOCUS_CURRENT_PUBLICATION_BASE_CALCULO,
             "median": value,
             "previous_publication_date": prev_pub,
             "revision": value - prev_value,
@@ -150,9 +158,9 @@ def cvm_source_block() -> dict[str, Any]:
     Delivery metadata contains Data_Hora_Entrega/ID_Documento and records later
     presentations, while the structured historical Informe Diario provides the
     consolidated row values rather than a value snapshot keyed by each historical
-    ID_Documento. Therefore an old value as known before a later representation
-    cannot be reconstructed from these structured public files without substituting
-    today's revised value. That would be look-ahead, so the family remains zero-row.
+    ID_Documento. An old value as known before a later representation therefore
+    cannot be reconstructed without substituting a revised value. That would be
+    look-ahead, so this family remains zero-row until a versioned value source exists.
     """
     return {
         "feature_names": ["EQUITY_FUND_AGG_NET_FLOW_OVER_PRIOR_AGG_NAV"],
@@ -199,6 +207,7 @@ def main() -> int:
             "target_session_date": pub,
             "source_observation_date_ipca": i["source_observation_date"],
             "source_observation_date_selic": s["source_observation_date"],
+            "baseCalculo": FOCUS_CURRENT_PUBLICATION_BASE_CALCULO,
             "IPCA_CURRENT_YEAR_MEDIAN_REVISION": i["revision"],
             "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION": s["revision"],
             "causal_available_before_session": True,
@@ -215,6 +224,8 @@ def main() -> int:
             "XAGRAMMAR_728DC88D691B": {
                 "status": "FEATURES_MATERIALIZED_OUTCOME_BLIND" if focus_ready else "NO_CAUSAL_FEATURE_ROWS",
                 "feature_names": ["IPCA_CURRENT_YEAR_MEDIAN_REVISION", "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION"],
+                "baseCalculo_contract": FOCUS_CURRENT_PUBLICATION_BASE_CALCULO,
+                "baseCalculo_semantics": "CURRENT_PUBLICATION_TODAY_NOT_5_BUSINESS_DAY_AUXILIARY",
                 "row_count": len(focus_features),
                 "rows": focus_features,
                 "source_meta": {"IPCA": ipca_meta, "Selic": selic_meta},
