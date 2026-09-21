@@ -13,6 +13,9 @@ from pathlib import Path
 
 CHANNEL_ID = "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY"
 CHECKPOINT = 1440
+PREBUFFER_SECONDS = 6.0
+POSTBUFFER_SECONDS = 10.0
+DEFAULT_POLL_SECONDS = 0.5
 UA = {"User-Agent": "QRDS-research-only/1.0"}
 SAFETY = {
     "RESEARCH_ONLY": True,
@@ -116,21 +119,100 @@ def qualified_source_cost(path: Path) -> tuple[dict, str]:
     return obj, evidence
 
 
-def fetch_boundary_packet(boundary_ms: int) -> dict:
-    decision_ms = boundary_ms + 5000
+def event_key(event: dict) -> tuple:
+    trade_id = event.get("trade_id")
+    if trade_id not in (None, ""):
+        return ("id", str(trade_id))
+    return ("fallback", int(event["ts_ms"]), str(event["price"]))
+
+
+def merge_seen(store: dict[tuple, dict], events: list[dict], receipt_ms: int) -> None:
+    for event in events:
+        key = event_key(event)
+        if key not in store:
+            row = dict(event)
+            row["first_seen_receipt_ms"] = receipt_ms
+            store[key] = row
+
+
+def poll_public_trades() -> tuple[tuple[bytes, object], tuple[bytes, object]]:
     with ThreadPoolExecutor(max_workers=2) as ex:
-        f_okx = ex.submit(get_json, "https://www.okx.com/api/v5/market/trades", {"instId": "BTC-USDT-SWAP", "limit": "500"})
-        f_cb = ex.submit(get_json, "https://api.exchange.coinbase.com/products/BTC-USD/trades", {"limit": "1000"})
-        okx_raw, okx_obj = f_okx.result()
-        cb_raw, cb_obj = f_cb.result()
-    okx_events = normalize_okx_trades(okx_obj)
-    cb_events = normalize_coinbase_trades(cb_obj)
+        f_okx = ex.submit(
+            get_json,
+            "https://www.okx.com/api/v5/market/trades",
+            {"instId": "BTC-USDT-SWAP", "limit": "500"},
+        )
+        f_cb = ex.submit(
+            get_json,
+            "https://api.exchange.coinbase.com/products/BTC-USD/trades",
+            {"limit": "1000"},
+        )
+        return f_okx.result(), f_cb.result()
+
+
+def collect_live_boundary_packet(
+    boundary_ms: int,
+    poll_seconds: float = DEFAULT_POLL_SECONDS,
+    now_fn=time.time,
+    sleep_fn=time.sleep,
+    poll_fn=poll_public_trades,
+) -> dict:
+    """Collect only from a prospectively opened live window around one boundary.
+
+    No history endpoint exists in this path. The window opens six seconds before
+    the minute close, which is earlier than the frozen five-second freshness
+    bound. A close absent from this physically observed buffer stays ineligible.
+    """
+    decision_ms = boundary_ms + 5000
+    window_start_ms = boundary_ms - int(PREBUFFER_SECONDS * 1000)
+    window_end_ms = boundary_ms + int(POSTBUFFER_SECONDS * 1000)
+    now_ms = int(now_fn() * 1000)
+    if now_ms > window_start_ms:
+        raise RuntimeError("LIVE_PREBUFFER_MISSED_FAIL_CLOSED")
+    delay = window_start_ms / 1000 - now_fn()
+    if delay > 0:
+        sleep_fn(delay)
+
+    okx_seen: dict[tuple, dict] = {}
+    cb_seen: dict[tuple, dict] = {}
+    receipts = []
+    raw_hashes = []
+    while True:
+        receipt_before_ms = int(now_fn() * 1000)
+        try:
+            (okx_raw, okx_obj), (cb_raw, cb_obj) = poll_fn()
+            receipt_ms = int(now_fn() * 1000)
+            merge_seen(okx_seen, normalize_okx_trades(okx_obj), receipt_ms)
+            merge_seen(cb_seen, normalize_coinbase_trades(cb_obj), receipt_ms)
+            receipts.append({"started_ms": receipt_before_ms, "completed_ms": receipt_ms, "ok": True})
+            raw_hashes.append({
+                "receipt_ms": receipt_ms,
+                "okx_sha256": digest_bytes(okx_raw),
+                "coinbase_sha256": digest_bytes(cb_raw),
+            })
+        except Exception as exc:
+            receipts.append({
+                "started_ms": receipt_before_ms,
+                "completed_ms": int(now_fn() * 1000),
+                "ok": False,
+                "error": f"{type(exc).__name__}:{exc}",
+            })
+        if int(now_fn() * 1000) >= window_end_ms:
+            break
+        sleep_fn(max(0.01, poll_seconds))
+
+    okx_events = sorted(okx_seen.values(), key=lambda x: x["ts_ms"])
+    cb_events = sorted(cb_seen.values(), key=lambda x: x["ts_ms"])
     return {
         "boundary_ms": boundary_ms,
         "decision_ms": decision_ms,
+        "capture_mode": "LIVE_PREBOUNDARY_BUFFER_ONLY",
+        "history_endpoint_used": False,
+        "window_start_ms": window_start_ms,
+        "window_end_ms": window_end_ms,
         "captured_at_utc": utc_now(),
-        "okx_raw_sha256": digest_bytes(okx_raw),
-        "coinbase_raw_sha256": digest_bytes(cb_raw),
+        "poll_receipts": receipts,
+        "raw_poll_hashes": raw_hashes,
         "okx_events": okx_events,
         "coinbase_events": cb_events,
         "source_close": select_last_at_or_before(cb_events, boundary_ms),
@@ -139,10 +221,13 @@ def fetch_boundary_packet(boundary_ms: int) -> dict:
     }
 
 
-def sleep_until(epoch_seconds: float) -> None:
-    delay = epoch_seconds - time.time()
-    if delay > 0:
-        time.sleep(delay)
+def choose_first_future_boundary(now_s: float) -> int:
+    candidate = (int(now_s) // 60 + 1) * 60
+    # We must be alive before boundary-6s. If orchestration starts too late,
+    # skip that minute rather than reconstructing it.
+    if now_s > candidate - PREBUFFER_SECONDS - 1.0:
+        candidate += 60
+    return candidate
 
 
 def finalize_pending(pending: dict, packet: dict) -> dict:
@@ -192,23 +277,19 @@ def pending_from(prev_packet: dict | None, packet: dict) -> dict | None:
     }
 
 
-def capture_partition(admission_path: Path, boundaries: int = 4) -> dict:
+def capture_partition(admission_path: Path, boundaries: int = 4, poll_seconds: float = DEFAULT_POLL_SECONDS) -> dict:
     if boundaries < 3:
         raise ValueError("boundaries must be >= 3")
     _, evidence = qualified_source_cost(admission_path)
     started = utc_now()
-    first_boundary_s = (int(time.time()) // 60 + 1) * 60
+    first_boundary_s = choose_first_future_boundary(time.time())
     packets: list[dict] = []
     observations: list[dict] = []
     previous = None
     pending = None
     for i in range(boundaries):
         boundary_s = first_boundary_s + i * 60
-        # Query at decision+5s so the recent-trades payload can contain the
-        # first event at/after the frozen decision clock, while still retaining
-        # the last event at/before the minute close. No historical request is made.
-        sleep_until(boundary_s + 10.0)
-        packet = fetch_boundary_packet(boundary_s * 1000)
+        packet = collect_live_boundary_packet(boundary_s * 1000, poll_seconds=poll_seconds)
         packets.append(packet)
         if pending is not None:
             observations.append(finalize_pending(pending, packet))
@@ -216,13 +297,15 @@ def capture_partition(admission_path: Path, boundaries: int = 4) -> dict:
         previous = packet
     eligible = sum(x["eligible_for_future_evaluation"] for x in observations)
     out = {
-        "schema": "qrds.factory.crypto_745_crossvenue_forward_partition.v1",
+        "schema": "qrds.factory.crypto_745_crossvenue_forward_partition.v2",
         "issue": 745,
         "channel_id": CHANNEL_ID,
         "collection_started_at_utc": started,
         "collection_finished_at_utc": utc_now(),
+        "collection_contract": "LIVE_PREBOUNDARY_BUFFER_ONLY_NO_HISTORY_REPAIR",
         "source_cost_evidence_sha256": evidence,
         "forward_only": True,
+        "history_endpoint_used": False,
         "historical_backfill_credit": 0,
         "scientific_credit": 0,
         "economics_read": False,
@@ -250,12 +333,23 @@ def build_manifest(partition_dir: Path) -> dict:
     for path in partition_files:
         raw = path.read_bytes()
         obj = json.loads(raw.decode("utf-8"))
-        if obj.get("schema") != "qrds.factory.crypto_745_crossvenue_forward_partition.v1":
+        schema = obj.get("schema")
+        if schema not in {
+            "qrds.factory.crypto_745_crossvenue_forward_partition.v1",
+            "qrds.factory.crypto_745_crossvenue_forward_partition.v2",
+        }:
             raise RuntimeError(f"BAD_PARTITION_SCHEMA:{path.name}")
         if obj.get("channel_id") != CHANNEL_ID or obj.get("economics_read") is not False:
             raise RuntimeError(f"PARTITION_AUTHORITY_MISMATCH:{path.name}")
+        if schema.endswith(".v2") and obj.get("history_endpoint_used") is not False:
+            raise RuntimeError(f"HISTORY_REPAIR_PROHIBITED:{path.name}")
         evidence_hashes.add(obj.get("source_cost_evidence_sha256"))
-        partitions.append({"file": path.name, "sha256": digest_bytes(raw), "eligible_count": obj.get("eligible_observation_count", 0)})
+        partitions.append({
+            "file": path.name,
+            "sha256": digest_bytes(raw),
+            "eligible_count": obj.get("eligible_observation_count", 0),
+            "schema": schema,
+        })
         for obs in obj.get("observations", []):
             if not obs.get("eligible_for_future_evaluation"):
                 continue
@@ -303,20 +397,33 @@ def main() -> None:
     mode.add_argument("--manifest-out")
     ap.add_argument("--admission")
     ap.add_argument("--boundaries", type=int, default=4)
+    ap.add_argument("--poll-seconds", type=float, default=DEFAULT_POLL_SECONDS)
     ap.add_argument("--partition-dir")
     args = ap.parse_args()
     if args.partition_out:
         if not args.admission:
             raise SystemExit("--admission is required with --partition-out")
-        out = capture_partition(Path(args.admission), args.boundaries)
+        out = capture_partition(Path(args.admission), args.boundaries, args.poll_seconds)
         write_json(Path(args.partition_out), out)
-        print(json.dumps({"status":"FORWARD_PARTITION_SEALED","observations":out["observation_count"],"eligible":out["eligible_observation_count"],"economics_read":False,"orders":0,"real_capital":0}, sort_keys=True))
+        print(json.dumps({
+            "status": "FORWARD_PARTITION_SEALED",
+            "observations": out["observation_count"],
+            "eligible": out["eligible_observation_count"],
+            "economics_read": False,
+            "orders": 0,
+            "real_capital": 0,
+        }, sort_keys=True))
     else:
         if not args.partition_dir:
             raise SystemExit("--partition-dir is required with --manifest-out")
         out = build_manifest(Path(args.partition_dir))
         write_json(Path(args.manifest_out), out)
-        print(json.dumps({"status":"FORWARD_MANIFEST_UPDATED","eligible_unique":out["eligible_unique_observation_count"],"checkpoint_ready":out["checkpoint_ready_for_dataset_binding"],"economics_read":False}, sort_keys=True))
+        print(json.dumps({
+            "status": "FORWARD_MANIFEST_UPDATED",
+            "eligible_unique": out["eligible_unique_observation_count"],
+            "checkpoint_ready": out["checkpoint_ready_for_dataset_binding"],
+            "economics_read": False,
+        }, sort_keys=True))
 
 
 if __name__ == "__main__":

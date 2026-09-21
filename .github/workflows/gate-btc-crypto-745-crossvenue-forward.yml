@@ -85,6 +85,7 @@ jobs:
           --admission runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
           --partition-out out/PARTITION.json
           --boundaries 4
+          --poll-seconds 1.0
       - name: Persist append-only partition and blind manifest
         shell: bash
         run: |
