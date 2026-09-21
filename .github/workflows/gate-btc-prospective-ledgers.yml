@@ -106,12 +106,29 @@ jobs:
           SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
           test -n "$SOURCE_RUN_ID"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/jobs?per_page=100" > source_jobs.json
           python - <<'PY'
           import json
           run=json.load(open('source_run.json', encoding='utf-8'))
           assert run['name']=='GATE BTC Daily Research Collection'
           assert run['head_branch']=='main'
-          assert run['status']=='completed' and run['conclusion']=='success'
+          assert run['status']=='completed'
+
+          # O artefato consumido aqui e gate-btc-daily-research-<run_id>, produzido
+          # exclusivamente pelo job daily-research-collection. A conclusao da run
+          # inteira tambem carrega jobs irmaos com outros datasets -- entre eles o
+          # prospective-v2a-pit, que este publicador nunca le. Exigir a run verde
+          # deixava o ledger do LOCK para tras numa run vermelha, e a lacuna
+          # resultante derrubava a coleta seguinte no sidecar de valuation, que
+          # exige closes consecutivos. O portao continua fechado sobre o job que
+          # de fato produz o dado, e os passos seguintes seguem verificando o
+          # manifesto dentro do proprio artefato.
+          jobs=json.load(open('source_jobs.json', encoding='utf-8'))['jobs']
+          producer=[j for j in jobs if j['name'] == 'daily-research-collection']
+          assert len(producer) == 1, f"expected exactly one producer job, got {len(producer)}"
+          assert producer[0]['status'] == 'completed'
+          assert producer[0]['conclusion'] == 'success', (
+              f"daily-research-collection concluded {producer[0]['conclusion']!r}")
           PY
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
