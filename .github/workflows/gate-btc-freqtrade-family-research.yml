@@ -1,0 +1,49 @@
+name: GATE BTC Freqtrade family research
+
+on:
+  push:
+    branches:
+      - "research/freqtrade-family-tests"
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_research/**"
+      - ".github/workflows/gate-btc-freqtrade-family-research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: "true"
+  SHADOW_ONLY: "true"
+
+jobs:
+  isolated-family-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy ccxt
+      - name: Run preregistered isolated family battery
+        run: python artifacts/gate_btc_2/freqtrade_research/run_candidate_family_tests.py
+      - name: Verify safety boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/gate_btc_2/freqtrade_research/runtime/candidate_family_test_results.json')
+          d = json.loads(p.read_text())
+          assert d['policy']['RESEARCH_ONLY'] is True
+          assert d['policy']['SHADOW_ONLY'] is True
+          assert d['policy']['factory_modified'] is False
+          print('PASS: isolated research boundary preserved')
+          PY
+      - name: Upload canonical research result
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-freqtrade-family-research
+          path: artifacts/gate_btc_2/freqtrade_research/runtime/
+          if-no-files-found: error
