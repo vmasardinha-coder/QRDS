@@ -1,0 +1,25 @@
+name: GATE BTC CCXT standalone research
+on:
+  push:
+    branches: [research/ccxt-standalone]
+permissions:
+  contents: read
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned CCXT
+        run: pip install 'git+https://github.com/ccxt/ccxt.git@6c98f320d87cab3fe2224a65bd293dd15673c31d#subdirectory=python'
+      - name: Run capability audit
+        run: python artifacts/gate_btc_2/ccxt_research/ccxt_capability_audit.py | tee artifacts/gate_btc_2/ccxt_research/ccxt_capability_audit.json
+      - name: Verify isolation
+        run: |
+          git diff --exit-code origin/main...HEAD -- ':!artifacts/gate_btc_2/ccxt_research/**' ':!.github/workflows/gate-btc-ccxt-standalone.yml'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-ccxt-standalone
+          path: artifacts/gate_btc_2/ccxt_research/
