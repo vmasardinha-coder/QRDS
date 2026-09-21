@@ -10,8 +10,23 @@ import time
 from pathlib import Path
 
 from cryptofeed import FeedHandler
+from cryptofeed.connection import RestEndpoint, Routes, WebsocketEndpoint
 from cryptofeed.defines import L2_BOOK
 from cryptofeed.exchanges import Binance, OKX
+
+
+class BinancePublicMirror(Binance):
+    """Same Binance spot venue via Binance's public market-data mirror.
+
+    GitHub-hosted runners in some US regions receive HTTP 451 from
+    api.binance.com before Cryptofeed can resolve symbols. This changes only
+    the public transport endpoint, not venue, symbol, channel, or hypothesis.
+    """
+    websocket_endpoints = [WebsocketEndpoint("wss://data-stream.binance.vision:443")]
+    rest_endpoints = [RestEndpoint(
+        "https://data-api.binance.vision",
+        routes=Routes("/api/v3/exchangeInfo", l2book="/api/v3/depth?symbol={}&limit={}"),
+    )]
 
 
 def corr(xs, ys):
@@ -138,7 +153,7 @@ def main():
         })
 
     fh = FeedHandler()
-    fh.add_feed(Binance(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK: book_cb}, max_depth=1))
+    fh.add_feed(BinancePublicMirror(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK: book_cb}, max_depth=1))
     fh.add_feed(OKX(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK: book_cb}, max_depth=1))
     loop = asyncio.get_event_loop()
     loop.call_later(args.duration, loop.stop)
@@ -153,6 +168,7 @@ def main():
     result.update({
         "schema_version": "GATE_BTC_2_CRYPTOFEED_CROSSVENUE_V1",
         "cryptofeed_version": "2.5.0",
+        "binance_transport": "data-api.binance.vision + data-stream.binance.vision",
         "capture_duration_requested_seconds": args.duration,
         "capture_wall_seconds": ended-started,
         "accepted_events": len(events),
