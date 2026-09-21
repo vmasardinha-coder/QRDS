@@ -1,0 +1,29 @@
+name: GATE BTC FinRL standalone research
+on:
+  push:
+    branches: [research/finrl-standalone]
+permissions:
+  contents: read
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen dependencies
+        run: pip install 'ccxt==4.5.81' 'torch==2.8.0' --index-url https://pypi.org/simple
+      - name: Run policy-gradient OOS test
+        shell: bash
+        run: |
+          set -o pipefail
+          python artifacts/gate_btc_2/finrl_research/policy_gradient_portfolio_oos.py | tee artifacts/gate_btc_2/finrl_research/policy_gradient_portfolio_oos_result.json
+      - name: Verify isolation
+        run: git diff --exit-code origin/main...HEAD -- ':!artifacts/gate_btc_2/finrl_research/**' ':!.github/workflows/gate-btc-finrl-standalone.yml'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-finrl-standalone
+          path: artifacts/gate_btc_2/finrl_research/
