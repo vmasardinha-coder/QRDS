@@ -5,7 +5,7 @@ import ccxt
 EXCHANGES = {
     'okx': ccxt.okx({'enableRateLimit': True}),
     'bitget': ccxt.bitget({'enableRateLimit': True}),
-    'gateio': ccxt.gateio({'enableRateLimit': True}),
+    'gate': ccxt.gate({'enableRateLimit': True}),
 }
 SYMBOL = 'BTC/USDT'
 SNAPSHOTS = 20
@@ -125,7 +125,7 @@ report = {
     'shadow_only': True,
     'factory_modified': False,
     'probe_type': 'contemporaneous_order_book_exact_base_roundtrip_probe',
-    'venue_repair_note': 'Bybit was geo-blocked on the GitHub runner and was replaced mechanically by Gate.io; frozen economics were unchanged.',
+    'venue_repair_note': 'Bybit was geo-blocked on the GitHub runner and was replaced mechanically by Gate; frozen economics were unchanged.',
     'symbol': SYMBOL,
     'quote_notional': QUOTE_NOTIONAL,
     'frozen_friction': {
