@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import hashlib, json, time, urllib.parse, urllib.request
+import gzip, hashlib, json, time, urllib.parse, urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -12,11 +12,16 @@ UA={
 }
 SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_LATE_SEAL":True,"NO_COUNTER_RESET":True,"NO_RETUNE":True,"FAIL_CLOSED":True}
 
+def decode_json(raw:bytes):
+    if raw[:2]==b'\x1f\x8b':
+        raw=gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
 def get_json(url:str, headers:dict|None=None):
     req=urllib.request.Request(url,headers=headers or UA)
     with urllib.request.urlopen(req,timeout=30) as r:
         raw=r.read()
-    return raw,json.loads(raw.decode("utf-8"))
+    return raw,decode_json(raw)
 
 def sha(raw:bytes)->str:return hashlib.sha256(raw).hexdigest()
 
@@ -42,7 +47,7 @@ def probe(today:date|None=None):
     today=today or date.today(); start=today-timedelta(days=45)
     result={"schema":"qrds.factory.us_mega_tech_data_probe.v1","frontier":"US_MEGA_TECH_UNIVARIATE","symbols":list(SYMBOLS),"source_stage":"DATA_ONLY","scientific_credit":0,"economics_allowed":False,"safety":SAFETY,"identity":{},"history":{},"blockers":["CORPORATE_ACTION_TREATMENT_NOT_QUALIFIED","PIT_UNIVERSE_NOT_QUALIFIED"]}
     try:
-        raw,obj=get_json("https://www.sec.gov/files/company_tickers.json",{"User-Agent":"QRDS research contact research@example.invalid","Accept-Encoding":"gzip, deflate","Host":"www.sec.gov"})
+        raw,obj=get_json("https://www.sec.gov/files/company_tickers.json",{"User-Agent":"QRDS research contact research@example.invalid","Accept":"application/json","Host":"www.sec.gov"})
         tickers=parse_sec_tickers(obj); result["sec_raw_sha256"]=sha(raw)
         for s in SYMBOLS:
             if s in tickers: result["identity"][s]=tickers[s]
