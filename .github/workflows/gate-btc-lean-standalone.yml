@@ -1,0 +1,29 @@
+name: GATE BTC LEAN standalone research
+on:
+  push:
+    branches: [research/lean-standalone]
+permissions:
+  contents: read
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen transport
+        run: pip install 'ccxt==4.5.81'
+      - name: Run LEAN volume-share capacity audit
+        shell: bash
+        run: |
+          set -o pipefail
+          python artifacts/gate_btc_2/lean_research/volume_share_capacity_audit.py | tee artifacts/gate_btc_2/lean_research/volume_share_capacity_result.json
+      - name: Verify isolation
+        run: git diff --exit-code origin/main...HEAD -- ':!artifacts/gate_btc_2/lean_research/**' ':!.github/workflows/gate-btc-lean-standalone.yml'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-lean-standalone
+          path: artifacts/gate_btc_2/lean_research/
