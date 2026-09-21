@@ -1,4 +1,6 @@
+import gzip
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,9 @@ class ProbeTests(unittest.TestCase):
         obj={'0':{'ticker':'AAPL','cik_str':320193,'title':'Apple Inc.'}}
         out=p.parse_sec_tickers(obj)
         self.assertEqual(out['AAPL']['cik'],320193)
+    def test_decode_json_accepts_gzip(self):
+        raw=gzip.compress(json.dumps({'ok':True}).encode('utf-8'))
+        self.assertEqual(p.decode_json(raw),{'ok':True})
     def test_parse_nasdaq_rows_filters_incomplete(self):
         obj={'data':{'tradesTable':{'rows':[{'date':'09/18/2026','close':'$100','volume':'1,000','open':'$99','high':'$101','low':'$98'},{'date':None,'close':'$99','volume':'900'}]}}}
         rows=p.parse_nasdaq_rows(obj)
