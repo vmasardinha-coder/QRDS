@@ -1,0 +1,124 @@
+name: GATE BTC Crypto 745 Cross Venue Forward
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '4-54/10 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/crypto_745_crossvenue_forward_capture.py
+      - tests/test_gate_btc_crypto_745_crossvenue_forward_capture.py
+      - .github/workflows/gate-btc-crypto-745-crossvenue-forward.yml
+      - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_CROSS_VENUE_PRICE_DISCOVERY_PREREG.v1.json
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/crypto_745_crossvenue_forward_capture.py
+      - tests/test_gate_btc_crypto_745_crossvenue_forward_capture.py
+      - .github/workflows/gate-btc-crypto-745-crossvenue-forward.yml
+      - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_CROSS_VENUE_PRICE_DISCOVERY_PREREG.v1.json
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-crypto-745-crossvenue-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m py_compile tools/gate_btc_factory/crypto_745_crossvenue_forward_capture.py
+      - run: python -m unittest -v tests.test_gate_btc_crypto_745_crossvenue_forward_capture
+
+  capture-forward:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Assert canonical source-cost admission
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json'
+          d=json.load(open(p))
+          rows={x['channel_id']:x for x in d['channels']}
+          r=rows['CRYPTO_CROSS_VENUE_PRICE_DISCOVERY']
+          assert r['adjudication_decision']=='SOURCE_COST_QUALIFIED'
+          assert d['outcomes_read'] is False and d['economics_read'] is False
+          assert d['scientific_credit']==0 and d['historical_backfill_credit']==0
+          print('CRYPTO_745_CROSSVENUE_ADMISSION=PASS')
+          PY
+      - name: Capture bounded prospective partition
+        run: >-
+          python source_repo/tools/gate_btc_factory/crypto_745_crossvenue_forward_capture.py
+          --admission runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
+          --partition-out out/PARTITION.json
+          --boundaries 4
+      - name: Persist append-only partition and blind manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/cross_venue'
+          mkdir -p "$ROOT/partitions"
+          cp out/PARTITION.json "$ROOT/partitions/${GITHUB_RUN_ID}.json"
+          python source_repo/tools/gate_btc_factory/crypto_745_crossvenue_forward_capture.py \
+            --partition-dir "$ROOT/partitions" \
+            --manifest-out "$ROOT/MANIFEST.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/cross_venue/MANIFEST.json'
+          d=json.load(open(p))
+          assert d['economics_read'] is False and d['economics_read_allowed'] is False
+          assert d['historical_backfill_credit']==0 and d['scientific_credit']==0
+          assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0
+          print('CROSSVENUE_FORWARD_ELIGIBLE='+str(d['eligible_unique_observation_count']))
+          print('CROSSVENUE_CHECKPOINT_READY='+str(d['checkpoint_ready_for_dataset_binding']))
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_sources/crypto_challenger_745/forward/cross_venue
+          git commit -m "Append crypto 745 cross-venue forward partition ${GITHUB_RUN_ID}" || exit 0
+          for n in 1 2 3 4 5; do
+            if git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((n*2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crypto-745-crossvenue-forward-${{ github.run_id }}
+          path: out/PARTITION.json
+          if-no-files-found: warn
+          retention-days: 30
