@@ -1,0 +1,26 @@
+name: GATE BTC Hummingbot standalone research
+on:
+  push:
+    branches: [research/hummingbot-standalone]
+permissions:
+  contents: read
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen transport
+        run: pip install 'ccxt==4.5.81'
+      - name: Run inventory-skew proxy audit
+        run: python artifacts/gate_btc_2/hummingbot_research/inventory_skew_bar_proxy_test.py | tee artifacts/gate_btc_2/hummingbot_research/inventory_skew_bar_proxy_result.json
+      - name: Verify isolation
+        run: git diff --exit-code origin/main...HEAD -- ':!artifacts/gate_btc_2/hummingbot_research/**' ':!.github/workflows/gate-btc-hummingbot-standalone.yml'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-hummingbot-standalone
+          path: artifacts/gate_btc_2/hummingbot_research/
