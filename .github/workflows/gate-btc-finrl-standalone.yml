@@ -14,8 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install frozen transport
-        run: pip install 'ccxt==4.5.81'
+      - name: Install frozen transport and numeric dependency
+        run: pip install 'ccxt==4.5.81' 'numpy==2.3.3'
       - name: Install CPU-only torch
         run: pip install 'torch==2.8.0' --index-url https://download.pytorch.org/whl/cpu
       - name: Run policy-gradient OOS test
