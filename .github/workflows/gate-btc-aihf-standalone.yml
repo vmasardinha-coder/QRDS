@@ -1,0 +1,92 @@
+name: GATE BTC AI Hedge Fund standalone research
+
+on:
+  push:
+    branches:
+      - research/aihf-standalone
+    paths:
+      - 'artifacts/gate_btc_2/aihf_research/**'
+      - '.github/workflows/gate-btc-aihf-standalone.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch pinned upstream
+        run: |
+          git clone --filter=blob:none https://github.com/virattt/ai-hedge-fund.git /tmp/aihf
+          cd /tmp/aihf
+          git checkout 154a8b2f46dca0f40764d814e4e747b0ad71f4c4
+          test "$(git rev-parse HEAD)" = "154a8b2f46dca0f40764d814e4e747b0ad71f4c4"
+      - name: Install pinned framework and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install /tmp/aihf pytest
+          python - <<'PY'
+          import importlib.metadata
+          assert importlib.metadata.version('aihf') == '2.3.0'
+          print('AIHF_VERSION', importlib.metadata.version('aihf'))
+          PY
+      - name: Run upstream deterministic core tests
+        run: |
+          cd /tmp/aihf
+          pytest -q \
+            hedge_fund/portfolio \
+            hedge_fund/risk \
+            hedge_fund/brokers \
+            hedge_fund/backtesting/test_fund.py \
+            hedge_fund/backtesting/test_backtest.py \
+            hedge_fund/features/test_snapshot.py \
+            hedge_fund/event_study/test_event_study.py \
+            | tee "$GITHUB_WORKSPACE/artifacts/gate_btc_2/aihf_research/upstream_tests.txt"
+      - name: Run deterministic structural POC
+        env:
+          PYTHONPATH: /tmp/aihf
+        run: |
+          python artifacts/gate_btc_2/aihf_research/run_structural_poc.py \
+            | tee artifacts/gate_btc_2/aihf_research/structural_poc_stdout.txt
+      - name: Record standalone boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          z=json.load(open('artifacts/gate_btc_2/aihf_research/runtime_structural/structural_poc.json'))
+          assert z['research_only'] is True and z['shadow_only'] is True and z['factory_modified'] is False
+          assert z['alpha_tested'] is False
+          assert z['api_dependent_behavior_tested'] is False
+          assert z['abstain_vs_neutral']['bull_plus_abstain_conviction']==1.0
+          assert z['abstain_vs_neutral']['bull_plus_neutral_conviction']==0.5
+          assert z['abstain_vs_neutral']['all_abstain_weight']==0.0
+          assert z['risk_after_proposal']['final_gross'] <= 0.9000000001
+          out={
+            'research_only':True,'shadow_only':True,'factory_modified':False,
+            'upstream_sha':'154a8b2f46dca0f40764d814e4e747b0ad71f4c4','upstream_version':'2.3.0',
+            'package_installed':True,'selected_deterministic_tests_passed':True,
+            'structural_poc_passed':True,'alpha_tested':False,'api_dependent_behavior_tested':False
+          }
+          Path('artifacts/gate_btc_2/aihf_research/standalone_result.json').write_text(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - name: Verify isolation fail-closed
+        run: |
+          set -euo pipefail
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/aihf_research/AIHF_DISCOVERY_20260921.md
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/aihf_research/AIHF_DISCOVERY_20260921.md
+          git cat-file -e 3ea3a7554bb5d0a822dde703bc0442d9fa7c4b0a^{commit}
+          bad="$(git diff --name-only 3ea3a7554bb5d0a822dde703bc0442d9fa7c4b0a...HEAD | grep -v '^artifacts/gate_btc_2/aihf_research/' | grep -v '^.github/workflows/gate-btc-aihf-standalone.yml$' || true)"
+          test -z "$bad" || { echo "$bad"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-aihf-standalone
+          path: artifacts/gate_btc_2/aihf_research/
+          if-no-files-found: error
