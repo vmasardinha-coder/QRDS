@@ -30,6 +30,11 @@ CVM_DELIVERY_2024 = "https://dados.cvm.gov.br/dados/FI/DOC/ENTREGA/DADOS/HIST/fi
 CVM_CAD_HIST = "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/cad_fi_hist.zip"
 CVM_REGISTRY = "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip"
 
+# CVM historical text fields can exceed Python's conservative CSV default.
+# Raising the parser ceiling changes transport capacity only; it does not alter
+# scientific eligibility, classification, or outcome boundaries.
+csv.field_size_limit(16 * 1024 * 1024)
+
 SAFETY = {
     "RESEARCH_ONLY": True, "SHADOW_ONLY": True, "NOT_APPROVED": True,
     "ENGINE_FEED": False, "ORDERS": 0, "REAL_CAPITAL": 0,
@@ -107,9 +112,6 @@ def bcb_rows(indicator: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 
 def select_focus_series(rows: list[dict[str, Any]], indicator: str, eligible_mondays: list[str]) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    # Weekly Focus report: for each eligible Monday, mechanically take the latest
-    # available BCB observation date strictly before publication, current calendar year.
-    # If multiple baseCalculo rows disagree on Mediana, mark ineligible rather than choose.
     grouped: dict[tuple[date, str], list[dict[str, Any]]] = defaultdict(list)
     for r in rows:
         d = parse_day(str(r.get("Data") or ""))
@@ -190,7 +192,6 @@ def equity_at(history: dict[str, list[tuple[date | None, str]]], cnpj: str, d: d
     if not eligible:
         return None
     cls = eligible[-1][1].upper()
-    # Official CVM classification label only; no performance/portfolio inference.
     return "AÇ" in cls or "ACO" in cls or "AÇ" in cls
 
 
@@ -204,10 +205,6 @@ def parse_inf_month(data: bytes) -> list[dict[str, str]]:
 
 
 def cvm_feature_rows(authority: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    # To avoid classification look-ahead across the RCVM175 migration, this first
-    # materialization is bounded to the pre-migration interval 2024-02-05..2024-09-30,
-    # using CVM's historical registration-change archive. Post-migration dates stay
-    # ineligible until equivalent class-history versioning is independently proven.
     cad_raw = get(CVM_CAD_HIST)
     hist, hist_diag = inspect_cad_history(cad_raw)
     delivery_raw = get(CVM_DELIVERY_2024)
@@ -286,7 +283,10 @@ def cvm_feature_rows(authority: dict[str, Any]) -> tuple[list[dict[str, Any]], d
             a, b, c = dec(r.get("CAPTC_DIA")), dec(r.get("RESG_DIA")), dec(r.get("VL_PATRIM_LIQ"))
             if a is None or b is None or c is None:
                 continue
-            subs += a; reds += b; nav += c; count += 1
+            subs += a
+            reds += b
+            nav += c
+            count += 1
         if count == 0:
             reasons["NO_EQUITY_FUNDS_WITH_CAUSAL_CLASSIFICATION"] += 1
             continue
