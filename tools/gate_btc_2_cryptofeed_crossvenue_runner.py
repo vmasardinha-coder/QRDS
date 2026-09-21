@@ -9,25 +9,6 @@ import statistics
 import time
 from pathlib import Path
 
-from cryptofeed import FeedHandler
-from cryptofeed.connection import RestEndpoint, Routes, WebsocketEndpoint
-from cryptofeed.defines import L2_BOOK
-from cryptofeed.exchanges import Binance, OKX
-
-
-class BinancePublicMirror(Binance):
-    """Same Binance spot venue via Binance's public market-data mirror.
-
-    GitHub-hosted runners in some US regions receive HTTP 451 from
-    api.binance.com before Cryptofeed can resolve symbols. This changes only
-    the public transport endpoint, not venue, symbol, channel, or hypothesis.
-    """
-    websocket_endpoints = [WebsocketEndpoint("wss://data-stream.binance.vision:443")]
-    rest_endpoints = [RestEndpoint(
-        "https://data-api.binance.vision",
-        routes=Routes("/api/v3/exchangeInfo", l2book="/api/v3/depth?symbol={}&limit={}"),
-    )]
-
 
 def corr(xs, ys):
     if len(xs) < 2 or len(xs) != len(ys):
@@ -120,6 +101,21 @@ def analyze(events, grid_ms=250, max_age_ms=2000):
 
 
 def main():
+    # Lazy-load the external dependency so repository-wide offline test suites
+    # can import and test `analyze()` without installing Cryptofeed.
+    from cryptofeed import FeedHandler
+    from cryptofeed.connection import RestEndpoint, Routes, WebsocketEndpoint
+    from cryptofeed.defines import L2_BOOK
+    from cryptofeed.exchanges import Binance, OKX
+
+    class BinancePublicMirror(Binance):
+        """Same Binance spot venue via Binance's public market-data mirror."""
+        websocket_endpoints = [WebsocketEndpoint("wss://data-stream.binance.vision:443")]
+        rest_endpoints = [RestEndpoint(
+            "https://data-api.binance.vision",
+            routes=Routes("/api/v3/exchangeInfo", l2book="/api/v3/depth?symbol={}&limit={}"),
+        )]
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--duration", type=int, default=120)
     ap.add_argument("--output", required=True)
