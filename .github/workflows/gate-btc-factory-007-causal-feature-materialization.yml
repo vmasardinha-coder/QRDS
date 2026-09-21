@@ -39,7 +39,7 @@ env:
 jobs:
   materialize:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/factory_007_causal_feature_materialization
           rm -f artifacts/factory_007_causal_feature_materialization/RESULT.json
-          timeout 50m python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"
+          timeout 85m python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"
           python - <<'PY'
           import json
           p='artifacts/factory_007_causal_feature_materialization/RESULT.json'
