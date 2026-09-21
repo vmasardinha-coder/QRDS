@@ -1,0 +1,140 @@
+name: GATE BTC Crypto 745 Basis Funding Forward
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/crypto_745_basis_forward_capture.py
+      - tests/test_gate_btc_crypto_745_basis_forward_capture.py
+      - .github/workflows/gate-btc-crypto-745-basis-forward.yml
+      - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/crypto_745_basis_forward_capture.py
+      - tests/test_gate_btc_crypto_745_basis_forward_capture.py
+      - .github/workflows/gate-btc-crypto-745-basis-forward.yml
+      - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-crypto-745-basis-main
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m py_compile tools/gate_btc_factory/crypto_745_basis_forward_capture.py
+      - run: python -m unittest -v tests.test_gate_btc_crypto_745_basis_forward_capture
+
+  observe-funding-window:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Assert canonical source-cost admission
+        run: |
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json'
+          d=json.load(open(p))
+          rows={x['channel_id']:x for x in d['channels']}
+          r=rows['CRYPTO_SPOT_PERP_BASIS_FUNDING']
+          assert r['adjudication_decision']=='SOURCE_COST_QUALIFIED'
+          assert d['outcomes_read'] is False and d['economics_read'] is False
+          assert d['scientific_credit']==0 and d['historical_backfill_credit']==0
+          print('CRYPTO_745_BASIS_ADMISSION=PASS')
+          PY
+      - name: Observe only the current prospective funding window
+        run: >-
+          python source_repo/tools/gate_btc_factory/crypto_745_basis_forward_capture.py
+          --admission runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
+          --attempt-out out/ATTEMPT.json
+          --max-wait-seconds 420
+          --poll-seconds 0.5
+      - name: Persist only an actually attempted settlement window
+        shell: bash
+        run: |
+          set -euo pipefail
+          ATTEMPTED=$(python - <<'PY'
+          import json
+          d=json.load(open('out/ATTEMPT.json'))
+          print('true' if d['attempted_window'] else 'false')
+          PY
+          )
+          if [[ "$ATTEMPTED" != "true" ]]; then
+            python - <<'PY'
+          import json
+          d=json.load(open('out/ATTEMPT.json'))
+          assert d['economics_read'] is False and d['scientific_credit']==0
+          print('BASIS_FORWARD_NO_RUNTIME_WRITE='+d['status'])
+          PY
+            exit 0
+          fi
+          ROOT='runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/basis_funding'
+          mkdir -p "$ROOT/partitions"
+          cp out/ATTEMPT.json "$ROOT/partitions/${GITHUB_RUN_ID}.json"
+          python source_repo/tools/gate_btc_factory/crypto_745_basis_forward_capture.py \
+            --partition-dir "$ROOT/partitions" \
+            --manifest-out "$ROOT/MANIFEST.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/basis_funding/MANIFEST.json'
+          d=json.load(open(p))
+          assert d['economics_read'] is False and d['economics_read_allowed'] is False
+          assert d['historical_backfill_credit']==0 and d['scientific_credit']==0
+          assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0
+          print('BASIS_FORWARD_ELIGIBLE='+str(d['eligible_unique_observation_count']))
+          print('BASIS_CHECKPOINT_READY='+str(d['checkpoint_ready_for_dataset_binding']))
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_sources/crypto_challenger_745/forward/basis_funding
+          git commit -m "Append crypto 745 basis forward settlement ${GITHUB_RUN_ID}" || exit 0
+          for n in 1 2 3 4 5; do
+            if git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((n*2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crypto-745-basis-forward-${{ github.run_id }}
+          path: out/ATTEMPT.json
+          if-no-files-found: warn
+          retention-days: 30
