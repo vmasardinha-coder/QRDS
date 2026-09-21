@@ -99,28 +99,58 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import hashlib, json, pathlib, re
+
           root=pathlib.Path('artifacts/gate_btc_2/qlib_research/run')
           log=(root/'QLIB_QRUN.log').read_text(errors='replace')
           cfg=(root/'FROZEN_UPSTREAM_CONFIG.yaml').read_bytes()
           data_sha=(root/'DATA_ARCHIVE_SHA256.txt').read_text().split()[0]
-          needles={
-              'signal_analysis': ['IC', 'Rank IC'],
-              'portfolio_analysis': ['excess_return_without_cost', 'excess_return_with_cost'],
-              'risk_metrics': ['annualized_return', 'information_ratio', 'max_drawdown'],
-          }
-          found={k:{n:(n in log) for n in ns} for k,ns in needles.items()}
-          capability_pass=(
-              any(found['signal_analysis'].values()) and
-              any(found['portfolio_analysis'].values()) and
-              all(found['risk_metrics'].values())
+
+          signal_match=re.search(
+              r"\{'IC': np\.float64\(([-+0-9.eE]+)\),\s*"
+              r"'ICIR': np\.float64\(([-+0-9.eE]+)\),\s*"
+              r"'Rank IC': np\.float64\(([-+0-9.eE]+)\),\s*"
+              r"'Rank ICIR': np\.float64\(([-+0-9.eE]+)\)\}",
+              log,
+              re.S,
           )
-          numbers={}
-          for key in ['IC','Rank IC','annualized_return','information_ratio','max_drawdown']:
-              vals=[]
-              for m in re.finditer(rf'(?im)^\s*{re.escape(key)}\s+([-+0-9.eE]+)', log):
-                  try: vals.append(float(m.group(1)))
-                  except ValueError: pass
-              numbers[key]=vals
+          signal_metrics={}
+          if signal_match:
+              signal_metrics={
+                  'IC':float(signal_match.group(1)),
+                  'ICIR':float(signal_match.group(2)),
+                  'Rank IC':float(signal_match.group(3)),
+                  'Rank ICIR':float(signal_match.group(4)),
+              }
+
+          def risk_block(label):
+              m=re.search(
+                  rf"analysis results of {re.escape(label)}\(1day\)\.?'?\s*.*?"
+                  r"annualized_return\s+([-+0-9.eE]+)\s*"
+                  r"information_ratio\s+([-+0-9.eE]+)\s*"
+                  r"max_drawdown\s+([-+0-9.eE]+)",
+                  log,
+                  re.S|re.I,
+              )
+              if not m:
+                  return None
+              return {
+                  'annualized_return':float(m.group(1)),
+                  'information_ratio':float(m.group(2)),
+                  'max_drawdown':float(m.group(3)),
+              }
+
+          benchmark=risk_block('benchmark return')
+          excess_without_cost=risk_block('the excess return without cost')
+          excess_with_cost=risk_block('the excess return with cost')
+
+          evidence={
+              'signal_analysis':bool(signal_metrics),
+              'benchmark_risk_analysis':benchmark is not None,
+              'excess_without_cost_analysis':excess_without_cost is not None,
+              'excess_with_cost_analysis':excess_with_cost is not None,
+          }
+          capability_pass=all(evidence.values())
+
           out={
               'source_system':'Microsoft Qlib',
               'release':'v0.9.7',
@@ -131,8 +161,11 @@ jobs:
               'experiment':'official_Alpha158_LightGBM_standalone',
               'config_sha256':hashlib.sha256(cfg).hexdigest(),
               'data_archive_sha256':data_sha,
-              'evidence_tokens':found,
-              'parsed_metric_occurrences':numbers,
+              'signal_metrics':signal_metrics,
+              'benchmark_risk':benchmark,
+              'excess_return_without_cost':excess_without_cost,
+              'excess_return_with_cost':excess_with_cost,
+              'evidence':evidence,
               'capability_pass':capability_pass,
               'economic_claim_authorized':False,
               'factory_migration_authorized':False,
@@ -141,7 +174,7 @@ jobs:
           (root/'QLIB_STANDALONE_RESULT.json').write_text(json.dumps(out,indent=2,sort_keys=True))
           print(json.dumps(out,indent=2,sort_keys=True))
           if not capability_pass:
-              raise SystemExit('Frozen Qlib run did not expose the required signal/backtest evidence tokens')
+              raise SystemExit('Frozen Qlib run did not expose all required signal/backtest evidence blocks')
           PY
 
       - name: Upload standalone evidence
