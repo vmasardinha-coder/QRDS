@@ -1,0 +1,63 @@
+name: GATE BTC Fincept standalone research
+
+on:
+  push:
+    branches:
+      - research/fincept-standalone
+    paths:
+      - 'artifacts/gate_btc_2/fincept_research/**'
+      - '.github/workflows/gate-btc-fincept-standalone.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deterministic dependencies
+        run: python -m pip install numpy pandas scipy
+      - name: Fetch pinned upstream factor evaluator
+        run: |
+          curl -fsSL \
+            https://raw.githubusercontent.com/Fincept-Corporation/FinceptTerminal/b7d850b49dc033bb133e6e5d2476444ac5c422b1/fincept-qt/scripts/ai_quant_lab/qlib_evaluation.py \
+            -o /tmp/qlib_evaluation.py
+          sha256sum /tmp/qlib_evaluation.py | tee artifacts/gate_btc_2/fincept_research/upstream_factor_eval_sha256.txt
+      - name: Run deterministic factor-evaluation POC
+        env:
+          FINCEPT_EVAL_SCRIPT: /tmp/qlib_evaluation.py
+        run: |
+          python artifacts/gate_btc_2/fincept_research/run_factor_evaluation_poc.py \
+            | tee artifacts/gate_btc_2/fincept_research/factor_eval_stdout.txt
+      - name: Verify isolation and frozen semantics
+        run: |
+          set -euo pipefail
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/fincept_research/FINCEPT_DISCOVERY_20260921.md
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/fincept_research/FINCEPT_DISCOVERY_20260921.md
+          python - <<'PY'
+          import json
+          z=json.load(open('artifacts/gate_btc_2/fincept_research/runtime_factor_eval/factor_evaluation_result.json'))
+          assert z['research_only'] is True and z['shadow_only'] is True and z['factory_modified'] is False
+          assert z['market_alpha_tested'] is False
+          assert z['known_factor']['pearson_ic_mean'] > 0.9
+          assert z['known_factor']['rank_ic_mean'] > 0.9
+          assert abs(z['noise_factor']['pearson_ic_mean']) < 0.15
+          assert abs(z['turnover_audit']['upstream_reported_mean_turnover']-2.0) < 1e-12
+          assert abs(z['turnover_audit']['standard_one_way_replacement_turnover']-1.0) < 1e-12
+          PY
+          git cat-file -e 98d942510d8373cae20a449781e60577107432d4^{commit}
+          bad="$(git diff --name-only 98d942510d8373cae20a449781e60577107432d4...HEAD | grep -v '^artifacts/gate_btc_2/fincept_research/' | grep -v '^.github/workflows/gate-btc-fincept-standalone.yml$' || true)"
+          test -z "$bad" || { echo "$bad"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-fincept-standalone
+          path: artifacts/gate_btc_2/fincept_research/
+          if-no-files-found: error
