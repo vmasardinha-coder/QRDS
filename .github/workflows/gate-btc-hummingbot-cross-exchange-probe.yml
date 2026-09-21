@@ -1,0 +1,26 @@
+name: GATE BTC Hummingbot cross-exchange probe
+on:
+  push:
+    branches: [research/hummingbot-standalone]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen transport
+        run: pip install 'ccxt==4.5.81'
+      - name: Run cross-exchange spread probe
+        run: python artifacts/gate_btc_2/hummingbot_research/cross_exchange_snapshot_probe.py | tee artifacts/gate_btc_2/hummingbot_research/cross_exchange_snapshot_result.json
+      - name: Verify isolation
+        run: git diff --exit-code origin/main...HEAD -- ':!artifacts/gate_btc_2/hummingbot_research/**' ':!.github/workflows/gate-btc-hummingbot-standalone.yml' ':!.github/workflows/gate-btc-hummingbot-cross-exchange-probe.yml'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-hummingbot-cross-exchange-probe
+          path: artifacts/gate_btc_2/hummingbot_research/
