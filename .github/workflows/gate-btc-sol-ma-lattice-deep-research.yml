@@ -1,0 +1,38 @@
+name: GATE BTC SOL MA lattice deep research
+
+on:
+  push:
+    branches:
+      - research/freqtrade-family-tests
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_research/sol_ma_lattice_deep_test.py"
+      - ".github/workflows/gate-btc-sol-ma-lattice-deep-research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deep-sol-ma-lattice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install research dependencies
+        run: pip install numpy pandas
+      - name: Run deep SOL MA lattice research
+        run: python artifacts/gate_btc_2/freqtrade_research/sol_ma_lattice_deep_test.py
+      - name: Verify isolation
+        run: |
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/sol_ma_lattice_deep_test.py
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/sol_ma_lattice_deep_test.py
+          test -f artifacts/gate_btc_2/freqtrade_research/runtime_sol_ma_lattice/sol_ma_lattice_deep_test.json
+      - name: Upload deep research artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-sol-ma-lattice-deep-research
+          path: artifacts/gate_btc_2/freqtrade_research/runtime_sol_ma_lattice/
+          if-no-files-found: error
