@@ -70,8 +70,17 @@ jobs:
         run: python -m unittest -v tests/test_gate_btc_grammar_007_causal_feature_materializer.py
       - name: Materialize feature sources without target read
         run: |
+          set -euo pipefail
           mkdir -p artifacts/factory_007_causal_feature_materialization
-          python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"
+          rm -f artifacts/factory_007_causal_feature_materialization/RESULT.json
+          for attempt in 1 2 3; do
+            if timeout 8m python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"; then
+              break
+            fi
+            rm -f artifacts/factory_007_causal_feature_materialization/RESULT.json
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt*10))
+          done
           python - <<'PY'
           import json
           p='artifacts/factory_007_causal_feature_materialization/RESULT.json'
