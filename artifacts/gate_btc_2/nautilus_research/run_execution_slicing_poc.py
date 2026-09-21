@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 
-import pandas as pd
 from nautilus_trader.backtest import BacktestEngine
 from nautilus_trader.common import LogLevel
 from nautilus_trader.config import BacktestEngineConfig, ExecutionAlgorithmConfig, LoggerConfig, StrategyConfig
@@ -30,11 +30,11 @@ from nautilus_trader.trading import Strategy
 
 OUT = Path("artifacts/gate_btc_2/nautilus_research/runtime_execution_slicing")
 OUT.mkdir(parents=True, exist_ok=True)
-
 ETHUSDT = TestInstrumentProvider.ethusdt_binance()
 TICKS = TestDataProvider.trades_from_binance_csv(ETHUSDT, "binance/ethusdt-trades.csv")
 BAR_TYPE = BarType.from_str("ETHUSDT.BINANCE-250-TICK-LAST-INTERNAL")
 BINANCE = Venue("BINANCE")
+SIZES = [Decimal("0.10"), Decimal("1.00"), Decimal("5.00")]
 
 
 class FrozenEmaConfig(StrategyConfig):
@@ -83,37 +83,36 @@ class FrozenEmaExecutionStrategy(Strategy):
                 "exec_algorithm_id": self.twap_id,
                 "exec_algorithm_params": {"horizon_secs": "10.0", "interval_secs": "2.5"},
             }
-        order = self.order_factory.market(
-            self.config.instrument_id,
-            side,
-            instrument.make_qty(self.config.trade_size),
-            **kwargs,
+        self.submit_order(
+            self.order_factory.market(
+                self.config.instrument_id,
+                side,
+                instrument.make_qty(self.config.trade_size),
+                **kwargs,
+            )
         )
         self.signal_count += 1
-        self.submit_order(order)
 
     def on_stop(self):
         self.close_all_positions(self.config.instrument_id)
 
 
-def scalarize(v):
-    if v is None:
-        return None
-    if hasattr(v, "as_double"):
-        try:
-            return float(v.as_double())
-        except Exception:
-            pass
-    try:
-        return float(v)
-    except Exception:
-        return str(v)
+def money_sum(series) -> float:
+    total = 0.0
+    found = False
+    for x in series.astype(str):
+        m = re.match(r"\s*([-+0-9.eE]+)", x)
+        if m:
+            total += float(m.group(1))
+            found = True
+    return total if found else float("nan")
 
 
-def summarize(mode: str, use_twap: bool):
+def run_one(size: Decimal, use_twap: bool):
+    label = f"{'twap' if use_twap else 'immediate'}_{str(size).replace('.', 'p')}"
     engine = BacktestEngine(
         config=BacktestEngineConfig(
-            trader_id=TraderId(f"BACKTESTER-{mode.upper()}"),
+            trader_id=TraderId(f"BT-{label.upper()}"),
             logging=LoggerConfig(stdout_level=LogLevel.ERROR),
         )
     )
@@ -122,17 +121,12 @@ def summarize(mode: str, use_twap: bool):
         oms_type=OmsType.NETTING,
         account_type=AccountType.CASH,
         base_currency=None,
-        starting_balances=[Money(1_000_000.0, Currency.from_str("USDT")), Money(10.0, Currency.from_str("ETH"))],
+        starting_balances=[Money(1_000_000.0, Currency.from_str("USDT")), Money(100.0, Currency.from_str("ETH"))],
     )
     engine.add_instrument(ETHUSDT)
     engine.add_data(TICKS)
     strategy = FrozenEmaExecutionStrategy(
-        FrozenEmaConfig(
-            instrument_id=ETHUSDT.id,
-            bar_type=BAR_TYPE,
-            trade_size=Decimal("0.10"),
-            use_twap=use_twap,
-        )
+        FrozenEmaConfig(instrument_id=ETHUSDT.id, bar_type=BAR_TYPE, trade_size=size, use_twap=use_twap)
     )
     engine.add_strategy(strategy)
     if use_twap:
@@ -144,34 +138,38 @@ def summarize(mode: str, use_twap: bool):
     fills = engine.generate_order_fills_report()
     positions = engine.generate_positions_report()
     account = engine.generate_account_report(venue=BINANCE)
-    fills.to_csv(OUT / f"{mode}_fills.csv")
-    positions.to_csv(OUT / f"{mode}_positions.csv")
-    account.to_csv(OUT / f"{mode}_account.csv")
-
-    realized_candidates = [c for c in positions.columns if "realized" in str(c).lower() and "pnl" in str(c).lower()]
-    realized_sum = None
-    if realized_candidates:
-        vals = pd.to_numeric(positions[realized_candidates[0]], errors="coerce")
-        if vals.notna().any():
-            realized_sum = float(vals.sum())
-
-    result = {
-        "mode": mode,
-        "use_twap": use_twap,
+    fills.to_csv(OUT / f"{label}_fills.csv")
+    positions.to_csv(OUT / f"{label}_positions.csv")
+    account.to_csv(OUT / f"{label}_account.csv")
+    realized_pnl = money_sum(positions["realized_pnl"]) if "realized_pnl" in positions.columns else float("nan")
+    realized_return = float(positions["realized_return"].astype(float).sum()) if "realized_return" in positions.columns else float("nan")
+    out = {
+        "mode": "twap" if use_twap else "immediate",
+        "trade_size_eth": float(size),
         "signals_submitted": strategy.signal_count,
         "fill_rows": int(len(fills)),
         "position_rows": int(len(positions)),
-        "fill_columns": [str(c) for c in fills.columns],
-        "position_columns": [str(c) for c in positions.columns],
-        "account_columns": [str(c) for c in account.columns],
-        "realized_pnl_numeric_sum_if_available": realized_sum,
+        "realized_pnl_usdt_sum": realized_pnl,
+        "realized_return_sum": realized_return,
     }
     engine.dispose()
-    return result
+    return out
 
 
-immediate = summarize("immediate", False)
-twap = summarize("twap", True)
+rows = []
+for size in SIZES:
+    immediate = run_one(size, False)
+    twap = run_one(size, True)
+    assert immediate["signals_submitted"] == twap["signals_submitted"]
+    rows.append({
+        "trade_size_eth": float(size),
+        "immediate": immediate,
+        "twap": twap,
+        "delta_realized_pnl_usdt_twap_minus_immediate": twap["realized_pnl_usdt_sum"] - immediate["realized_pnl_usdt_sum"],
+        "delta_realized_return_sum": twap["realized_return_sum"] - immediate["realized_return_sum"],
+        "delta_fill_rows": twap["fill_rows"] - immediate["fill_rows"],
+    })
+
 result = {
     "research_only": True,
     "shadow_only": True,
@@ -180,12 +178,11 @@ result = {
     "upstream_sha": "d7f1959efa02e84d7fde3226dc88a88a69a142fd",
     "data": "bundled Binance ETHUSDT trade ticks",
     "signal": "EMA10/EMA20 on 250-tick internal bars",
-    "trade_size_eth": 0.10,
+    "sizes_eth": [float(x) for x in SIZES],
     "twap": {"horizon_secs": 10.0, "interval_secs": 2.5},
-    "immediate": immediate,
-    "twap_result": twap,
-    "delta_fill_rows": twap["fill_rows"] - immediate["fill_rows"],
+    "rows": rows,
     "external_alpha_claim": False,
+    "interpretation_rule": "TWAP is migratable only as a policy hypothesis if benefit is directionally stable as size increases; otherwise retain Nautilus as execution-audit tooling rather than exporting TWAP as a Factory hypothesis.",
 }
 (OUT / "execution_slicing_result.json").write_text(json.dumps(result, indent=2, sort_keys=True))
 print(json.dumps(result, indent=2, sort_keys=True))
