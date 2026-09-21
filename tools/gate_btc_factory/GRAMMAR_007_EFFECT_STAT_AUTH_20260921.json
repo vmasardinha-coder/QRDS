@@ -1,0 +1,76 @@
+{
+  "schema": "qrds.factory.grammar_007.effect_stat_auth.v1",
+  "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+  "status": "FROZEN_BEFORE_FIRST_TARGET_READ",
+  "authorization": "USER_AUTHORIZED_PEARSON_2026-09-21",
+  "authorization_basis": "User explicitly authorized Pearson correlation before any Grammar 007 Ibovespa target/outcome read.",
+  "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+  "effect_statistic": {
+    "name": "PEARSON_PRODUCT_MOMENT_CORRELATION",
+    "symbol": "r",
+    "x": "the scalar effect feature frozen for the current case in GRAMMAR_007_EFFECT_CASES_AUTH_20260921.json",
+    "y": "the frozen next-eligible-session Ibovespa simple close-to-close return",
+    "computation": "ordinary sample Pearson product-moment correlation on eligible paired observations within the sealed partition",
+    "standardized_effect": "Pearson r itself; dimensionless in [-1,1]",
+    "missing_pair_policy": "INELIGIBLE_PAIR_EXCLUDED_ONLY_WHEN_PREEXISTING_CAUSAL_OR_SOURCE_RULE_MAKES_THE_PAIR_INELIGIBLE; NO_IMPUTATION",
+    "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED",
+    "alternate_estimators": false,
+    "post_outcome_metric_selection": false
+  },
+  "cases": [
+    "G007_FOCUS_50_50_V1",
+    "G007_FOCUS_IPCA_ONLY_V1",
+    "G007_FOCUS_SELIC_ONLY_V1"
+  ],
+  "execution_order": [
+    "G007_FOCUS_50_50_V1",
+    "G007_FOCUS_IPCA_ONLY_V1",
+    "G007_FOCUS_SELIC_ONLY_V1"
+  ],
+  "partition_contract": {
+    "rule": "50_30_20_CHRONOLOGICAL",
+    "embargo_sessions": 60,
+    "reuse_exact_same_sealed_partitions_for_all_cases": true
+  },
+  "discovery_validation_holdout_contract": {
+    "discovery_ranking": "largest absolute Pearson r among only the already-frozen eligible candidates; retain discovery sign",
+    "validation_pass": "same sign as discovery and abs(r_validation) >= 0.50 * abs(r_discovery)",
+    "validation_failure": "REJECT_NO_RETUNE",
+    "holdout_read_gate": "holdout is unread unless validation passes",
+    "holdout_pass": "same sign as discovery and abs(r_holdout) >= 0.50 * abs(r_discovery)",
+    "holdout_failure": "REJECT_NO_RETUNE",
+    "survivor_destination": "SEPARATE_BLINDED_PROSPECTIVE_ZERO_RETROACTIVE_CREDIT"
+  },
+  "target_boundary_at_freeze": {
+    "target_source_opened": false,
+    "target_bytes_read": false,
+    "outcomes_read": false,
+    "economics_read": false
+  },
+  "immutability": [
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_COUNTER_RESET",
+    "NO_LATE_SEAL",
+    "NO_ALTERNATE_CORRELATION_ESTIMATOR_AFTER_OUTCOME",
+    "NO_METRIC_SELECTION_AFTER_OUTCOME",
+    "NO_WEIGHT_OPTIMIZATION",
+    "NO_COMPONENT_SELECTION_AFTER_OUTCOME",
+    "NO_CASE_CREATION_AFTER_OUTCOME_FOR_THIS_BATCH",
+    "NO_VALIDATION_REFIT",
+    "NO_HOLDOUT_REFIT"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

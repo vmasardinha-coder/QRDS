@@ -1,0 +1,100 @@
+name: GATE BTC Factory 007 Effect Statistic Authorization
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json'
+      - 'tests/test_gate_btc_grammar_007_effect_stat_auth.py'
+      - '.github/workflows/gate-btc-factory-007-effect-stat-auth.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json'
+      - 'tests/test_gate_btc_grammar_007_effect_stat_auth.py'
+      - '.github/workflows/gate-btc-factory-007-effect-stat-auth.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-effect-stat-auth-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  authorize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Guard Pearson authorization before target read
+        run: |
+          cd source_repo
+          python -m unittest discover -s tests -p 'test_gate_btc_grammar_007_effect_stat_auth.py' -v
+          python - <<'PY'
+          import json
+          p='tools/gate_btc_factory/GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['status']=='FROZEN_BEFORE_FIRST_TARGET_READ'
+          assert x['effect_statistic']['name']=='PEARSON_PRODUCT_MOMENT_CORRELATION'
+          assert x['effect_statistic']['alternate_estimators'] is False
+          assert x['effect_statistic']['post_outcome_metric_selection'] is False
+          assert x['target_boundary_at_freeze']['target_bytes_read'] is False
+          assert x['target_boundary_at_freeze']['outcomes_read'] is False
+          print('GRAMMAR_007_EFFECT_STAT_AUTH='+x['status'])
+          print('STATISTIC='+x['effect_statistic']['name'])
+          print('CASES='+','.join(x['execution_order']))
+          PY
+      - name: Persist canonical authorization
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          mkdir -p "$ROOT"
+          cp source_repo/tools/gate_btc_factory/GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json "$ROOT/GRAMMAR_007_EFFECT_STAT_AUTH_RUNTIME.json"
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_007_EFFECT_STAT_AUTH_RUNTIME.json
+          git commit -m "Factory 007 effect statistic authorization ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
