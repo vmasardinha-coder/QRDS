@@ -1,0 +1,84 @@
+name: GATE BTC Coin Metrics Onchain Standalone
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc_2/coinmetrics_research/**'
+      - 'tools/gate_btc_2_coinmetrics_onchain_runner.py'
+      - 'tests/test_gate_btc_2_coinmetrics_onchain_runner.py'
+      - '.github/workflows/gate-btc-2-coinmetrics-onchain-standalone.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      REAL_CAPITAL_BRL: '0'
+      ORDERS: '0'
+      NO_RETUNE: 'true'
+      NO_BACKFILL: 'true'
+      FACTORY_RUNTIME_UNTOUCHED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python -m unittest tests.test_gate_btc_2_coinmetrics_onchain_runner -v
+
+      - name: Assert research boundary
+        shell: bash
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$REAL_CAPITAL_BRL" = 0
+          test "$ORDERS" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$FACTORY_RUNTIME_UNTOUCHED" = true
+
+      - name: Run frozen historical standalone
+        run: |
+          python tools/gate_btc_2_coinmetrics_onchain_runner.py \
+            --output artifacts_live/coinmetrics_onchain
+
+      - name: Assert tangible zero-capital artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts_live/coinmetrics_onchain/SUMMARY.json')
+          assert p.exists(), p
+          s = json.loads(p.read_text())
+          assert s['data_gate_pass'] is True
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['orders'] == 0
+          assert s['real_capital_brl'] == 0
+          assert s['historical_response_is_revision_versioned_pit_proven'] is False
+          assert s['prospective_pit_validation_required'] is True
+          assert s['economic_claim_authorized'] is False
+          assert s['factory_migration_authorized'] is False
+          assert s['factory_runtime_untouched'] is True
+          assert s['no_retune'] is True
+          assert s['no_backfill'] is True
+          assert Path('artifacts_live/coinmetrics_onchain/RAW.json').exists()
+          assert Path('artifacts_live/coinmetrics_onchain/OBSERVATIONS.jsonl').exists()
+          print(json.dumps(s, indent=2, sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-coinmetrics-onchain-standalone
+          path: artifacts_live/coinmetrics_onchain
+          if-no-files-found: error
+          retention-days: 90
