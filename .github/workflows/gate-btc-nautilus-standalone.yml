@@ -79,7 +79,9 @@ jobs:
           assert s['standalone_backtest_completed'] is True
           assert z['research_only'] is True and z['shadow_only'] is True and z['factory_modified'] is False
           assert z['external_alpha_claim'] is False
-          assert z['immediate']['signals_submitted'] == z['twap_result']['signals_submitted']
+          assert len(z['rows']) == 3
+          for row in z['rows']:
+              assert row['immediate']['signals_submitted'] == row['twap']['signals_submitted']
           PY
       - uses: actions/upload-artifact@v4
         with:
