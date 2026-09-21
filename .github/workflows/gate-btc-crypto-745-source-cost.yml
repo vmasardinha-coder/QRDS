@@ -7,14 +7,14 @@ on:
     paths:
       - 'tools/gate_btc_factory/crypto_challenger_prereg/**'
       - 'tools/gate_btc_factory/crypto_challenger_source_cost.py'
-      - 'tests/test_crypto_challenger_source_cost.py'
+      - 'tests/test_gate_btc_crypto_challenger_source_cost.py'
       - '.github/workflows/gate-btc-crypto-745-source-cost.yml'
   push:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory/crypto_challenger_prereg/**'
       - 'tools/gate_btc_factory/crypto_challenger_source_cost.py'
-      - 'tests/test_crypto_challenger_source_cost.py'
+      - 'tests/test_gate_btc_crypto_challenger_source_cost.py'
       - '.github/workflows/gate-btc-crypto-745-source-cost.yml'
 
 permissions:
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           cd source_repo
           python -m py_compile tools/gate_btc_factory/crypto_challenger_source_cost.py
-          python -m unittest -v tests/test_crypto_challenger_source_cost.py
+          python -m unittest -v tests/test_gate_btc_crypto_challenger_source_cost.py
           python - <<'PY'
           import json
           from pathlib import Path
