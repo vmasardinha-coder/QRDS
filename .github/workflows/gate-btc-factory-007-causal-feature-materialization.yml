@@ -34,6 +34,7 @@ env:
   NO_COUNTER_RESET: 'true'
   NO_RETUNE: 'true'
   FAIL_CLOSED: 'true'
+  PYTHONSTARTUP: ''
 
 jobs:
   materialize:
@@ -43,17 +44,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: source_repo
-
       - uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 1
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Assert immutable boundary
         run: |
           test "$RESEARCH_ONLY" = true
@@ -67,17 +65,13 @@ jobs:
           test "$NO_COUNTER_RESET" = true
           test "$NO_RETUNE" = true
           test "$FAIL_CLOSED" = true
-
       - name: Run static boundary tests
         working-directory: source_repo
         run: python -m unittest -v tests/test_gate_btc_grammar_007_causal_feature_materializer.py
-
       - name: Materialize feature sources without target read
         run: |
           mkdir -p artifacts/factory_007_causal_feature_materialization
-          python source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py \
-            --authority runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json \
-            --out artifacts/factory_007_causal_feature_materialization/RESULT.json
+          python -c "import csv,sys,runpy; csv.field_size_limit(sys.maxsize); sys.argv=['grammar_007_causal_feature_materializer.py','--authority','runtime_repo/runtime/factory_autonomy/GRAMMAR_007_AVAILABILITY_AUTHORITIES_RUNTIME.json','--out','artifacts/factory_007_causal_feature_materialization/RESULT.json']; runpy.run_path('source_repo/tools/gate_btc_factory/grammar_007_causal_feature_materializer.py',run_name='__main__')"
           python - <<'PY'
           import json
           p='artifacts/factory_007_causal_feature_materialization/RESULT.json'
@@ -96,7 +90,6 @@ jobs:
           print('CVM_ROWS='+str(x['families']['XAGRAMMAR_62943307741A']['row_count']))
           print('NEXT_GATE='+x['next_gate'])
           PY
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -104,7 +97,6 @@ jobs:
           path: artifacts/factory_007_causal_feature_materialization/
           if-no-files-found: warn
           retention-days: 90
-
       - name: Persist canonical feature materialization evidence
         if: github.event_name != 'pull_request'
         run: |
