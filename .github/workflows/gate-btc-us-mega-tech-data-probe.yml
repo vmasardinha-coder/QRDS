@@ -1,0 +1,54 @@
+name: GATE BTC US Mega Tech DATA Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/us_mega_tech_data_probe.py
+      - tests/test_gate_btc_us_mega_tech_data_probe.py
+      - .github/workflows/gate-btc-us-mega-tech-data-probe.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_factory/us_mega_tech_data_probe.py
+      - tests/test_gate_btc_us_mega_tech_data_probe.py
+      - .github/workflows/gate-btc-us-mega-tech-data-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Unit tests
+        run: python -m unittest -v tests.test_gate_btc_us_mega_tech_data_probe
+      - name: Compile
+        run: python -m py_compile tools/gate_btc_factory/us_mega_tech_data_probe.py
+      - name: Live DATA-only probe
+        if: github.event_name != 'pull_request'
+        run: python tools/gate_btc_factory/us_mega_tech_data_probe.py --out out/us_mega_tech_data_probe.json
+      - name: Assert no scientific authority
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('out/us_mega_tech_data_probe.json'))
+          assert r['source_stage']=='DATA_ONLY'
+          assert r['scientific_credit']==0 and r['economics_allowed'] is False
+          assert r['data_green'] is False
+          s=r['safety'];assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['ENGINE_FEED'] is False
+          print('US_MEGA_TECH_DATA_PROBE='+r['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request' && always()
+        with:
+          name: us-mega-tech-data-probe-${{ github.run_id }}
+          path: out/us_mega_tech_data_probe.json
+          if-no-files-found: warn
+          retention-days: 30
