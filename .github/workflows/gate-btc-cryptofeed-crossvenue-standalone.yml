@@ -1,0 +1,68 @@
+name: GATE BTC Cryptofeed Cross-Venue Standalone
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gate-btc-cryptofeed-crossvenue-standalone.yml'
+      - 'tools/gate_btc_2_cryptofeed_crossvenue_runner.py'
+      - 'tests/test_gate_btc_2_cryptofeed_crossvenue_runner.py'
+      - 'artifacts/gate_btc_2/cryptofeed_research/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_REAL_CAPITAL: '0'
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen external system
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'cryptofeed==2.5.0'
+      - name: Unit tests
+        run: |
+          python -m py_compile tools/gate_btc_2_cryptofeed_crossvenue_runner.py
+          python -m unittest tests.test_gate_btc_2_cryptofeed_crossvenue_runner -v
+      - name: Assert research boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = "true"
+          test "$GATE_BTC_SHADOW_ONLY" = "true"
+          test "$GATE_BTC_REAL_CAPITAL" = "0"
+      - name: Live standalone capture
+        run: >-
+          python tools/gate_btc_2_cryptofeed_crossvenue_runner.py
+          --duration 120
+          --output cryptofeed_crossvenue_evidence
+      - name: Assert tangible artifact and zero-capital boundary
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('cryptofeed_crossvenue_evidence/SUMMARY.json'))
+          assert x['quality_pass'] is True
+          assert x['accepted_events'] >= 200
+          assert x['orders'] == 0 and x['real_capital_brl'] == 0
+          assert x['research_only'] and x['shadow_only'] and x['no_backfill'] and x['no_retune']
+          assert x['factory_runtime_untouched'] is True
+          assert x['economic_claim_authorized'] is False
+          print('CRYPTOFEED_STANDALONE_CAPTURE=PASS')
+          print(json.dumps(x, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-cryptofeed-crossvenue-standalone
+          path: cryptofeed_crossvenue_evidence/
+          retention-days: 90
+          if-no-files-found: error
