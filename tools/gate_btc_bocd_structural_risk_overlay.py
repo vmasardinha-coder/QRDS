@@ -30,12 +30,12 @@ OUTDIR = Path("bocd_evidence")
 def fetch_okx_history() -> list[dict]:
     url = "https://www.okx.com/api/v5/market/history-candles"
     rows: dict[int, dict] = {}
-    before = None
+    after = None
     session = requests.Session()
     while len(rows) < N_BARS:
         params = {"instId": INST_ID, "bar": BAR, "limit": "100"}
-        if before is not None:
-            params["before"] = str(before)
+        if after is not None:
+            params["after"] = str(after)
         last_exc = None
         for attempt in range(6):
             try:
@@ -72,7 +72,7 @@ def fetch_okx_history() -> list[dict]:
             min_ts = ts if min_ts is None else min(min_ts, ts)
         if min_ts is None:
             break
-        before = min_ts - 1
+        after = min_ts
         time.sleep(0.06)
     ordered = [rows[k] for k in sorted(rows)]
     if len(ordered) < N_BARS:
