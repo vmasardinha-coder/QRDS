@@ -1,0 +1,47 @@
+name: GATE BTC gate selection effect research
+
+on:
+  push:
+    branches:
+      - research/freqtrade-family-tests
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_research/btc_gate_selection_effect_test.py"
+      - ".github/workflows/gate-btc-gate-selection-effect-research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pooled-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install research dependencies
+        run: pip install numpy pandas
+      - name: Run pooled selection-effect test
+        run: python artifacts/gate_btc_2/freqtrade_research/btc_gate_selection_effect_test.py
+      - name: Verify isolation and frozen semantics
+        run: |
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/btc_gate_selection_effect_test.py
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/btc_gate_selection_effect_test.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/gate_btc_2/freqtrade_research/runtime_btc_gate_selection_effect/btc_gate_selection_effect_test.json')
+          d = json.loads(p.read_text())
+          assert d['research_only'] is True
+          assert d['shadow_only'] is True
+          assert d['factory_touched'] is False
+          assert d['frozen_rule']['per_asset_retune'] is False
+          PY
+      - name: Upload selection-effect artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-gate-selection-effect-research
+          path: artifacts/gate_btc_2/freqtrade_research/runtime_btc_gate_selection_effect/
+          if-no-files-found: error
