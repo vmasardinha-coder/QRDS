@@ -1,0 +1,97 @@
+{
+  "schema": "qrds.factory.grammar_007.effect_cases_auth.v1",
+  "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+  "status": "FROZEN_BEFORE_FIRST_TARGET_READ",
+  "authorization": "USER_AUTHORIZED_2026-09-21_PRIMARY_50_50_AND_FOLLOWON_COMPONENT_CASES",
+  "authorization_basis": "User explicitly authorized option 1 with 50/50 weights and requested follow-on cases equivalent to option 3 before any Ibovespa target/outcome read.",
+  "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+  "partitions": {
+    "rule": "50_30_20_CHRONOLOGICAL",
+    "embargo_sessions": 60,
+    "already_sealed": true,
+    "reuse_exact_same_partitions_for_all_cases": true
+  },
+  "feature_components": [
+    "IPCA_CURRENT_YEAR_MEDIAN_REVISION",
+    "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION"
+  ],
+  "standardization": {
+    "method": "ZSCORE",
+    "fit_partition": "DISCOVERY_ONLY",
+    "fit_parameters": "component-wise arithmetic mean and sample standard deviation computed from discovery feature values only",
+    "validation_and_holdout": "reuse discovery-fitted mean and standard deviation without refit",
+    "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED",
+    "missing_component_policy": "INELIGIBLE_NO_IMPUTATION"
+  },
+  "cases": [
+    {
+      "case_id": "G007_FOCUS_50_50_V1",
+      "execution_order": 1,
+      "role": "PRIMARY_AUTHORIZED_CASE",
+      "scalar_effect_feature": "0.50 * Z(IPCA_CURRENT_YEAR_MEDIAN_REVISION) + 0.50 * Z(SELIC_CURRENT_YEAR_END_MEDIAN_REVISION)",
+      "weights": {"IPCA": 0.5, "SELIC": 0.5},
+      "component_selection": false,
+      "optimization": false,
+      "retune": false
+    },
+    {
+      "case_id": "G007_FOCUS_IPCA_ONLY_V1",
+      "execution_order": 2,
+      "role": "PREAUTHORIZED_FOLLOWON_COMPONENT_CASE",
+      "scalar_effect_feature": "Z(IPCA_CURRENT_YEAR_MEDIAN_REVISION)",
+      "weights": {"IPCA": 1.0, "SELIC": 0.0},
+      "component_selection": "fixed ex ante by user authorization, not selected by primary-case performance",
+      "optimization": false,
+      "retune": false
+    },
+    {
+      "case_id": "G007_FOCUS_SELIC_ONLY_V1",
+      "execution_order": 3,
+      "role": "PREAUTHORIZED_FOLLOWON_COMPONENT_CASE",
+      "scalar_effect_feature": "Z(SELIC_CURRENT_YEAR_END_MEDIAN_REVISION)",
+      "weights": {"IPCA": 0.0, "SELIC": 1.0},
+      "component_selection": "fixed ex ante by user authorization, not selected by primary-case performance",
+      "optimization": false,
+      "retune": false
+    }
+  ],
+  "execution_contract": {
+    "primary_case_first": true,
+    "followon_cases_execute_after_primary_terminal_result": true,
+    "followon_existence_independent_of_primary_result": true,
+    "discovery_rule": "reuse GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json",
+    "validation_rule": "same sign as discovery and absolute validation standardized effect >= 0.50 * absolute discovery standardized effect",
+    "holdout_rule": "read only after validation pass; same sign as discovery and absolute holdout standardized effect >= 0.50 * absolute discovery standardized effect",
+    "no_cross_case_retune": true,
+    "no_performance_based_case_creation": true
+  },
+  "target_boundary_at_freeze": {
+    "target_source_opened": false,
+    "target_bytes_read": false,
+    "outcomes_read": false,
+    "economics_read": false
+  },
+  "immutability": [
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_COUNTER_RESET",
+    "NO_WEIGHT_OPTIMIZATION",
+    "NO_COMPONENT_SELECTION_AFTER_OUTCOME",
+    "NO_CASE_CREATION_AFTER_OUTCOME_FOR_THIS_BATCH",
+    "NO_VALIDATION_REFIT",
+    "NO_HOLDOUT_REFIT"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
