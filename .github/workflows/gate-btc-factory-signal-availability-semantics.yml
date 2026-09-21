@@ -1,0 +1,88 @@
+name: GATE BTC Factory Signal Availability Semantics
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/SIGNAL_AVAILABILITY_SEMANTICS_PREREG.v1.json'
+      - '.github/workflows/gate-btc-factory-signal-availability-semantics.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/SIGNAL_AVAILABILITY_SEMANTICS_PREREG.v1.json'
+      - '.github/workflows/gate-btc-factory-signal-availability-semantics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate fail-closed semantic contract
+        run: |
+          python - <<'PY'
+          import json
+          p='source_repo/tools/gate_btc_factory/SIGNAL_AVAILABILITY_SEMANTICS_PREREG.v1.json'
+          z=json.load(open(p))
+          assert z['guard_id']=='AUDIT-XAVAIL-01'
+          assert z['guard_name']=='signal_availability_semantics'
+          assert z['status']=='REGISTERED_INTEGRITY_GUARD'
+          assert z['research_only'] is True and z['shadow_only'] is True
+          assert z['engine_weight']==0 and z['auto_promote'] is False
+          assert z['external_performance_imported'] is False
+          c=z['core_contract']
+          assert c['unavailable_is_not_neutral'] is True
+          assert c['abstained_is_not_neutral'] is True
+          assert c['explicit_zero_is_available_neutral_vote'] is True
+          assert c['unavailable_contributors_excluded_from_aggregation_denominator'] is True
+          assert c['all_unavailable_means_no_active_signal'] is True
+          assert c['all_unavailable_target_weight']==0
+          assert c['availability_and_provenance_receipts_required'] is True
+          assert c['fail_closed_on_semantic_conflation'] is True
+          a=z['aggregation_contract']
+          assert a['available_zero_counts_in_denominator'] is True
+          assert a['missing_unavailable_abstained_do_not_count_in_denominator'] is True
+          assert a['no_imputation_of_missing_as_zero'] is True
+          assert a['signal_value_and_availability_state_stored_separately'] is True
+          assert z['activation_boundary']['does_not_create_alpha_family'] is True
+          assert z['promotion_boundary']['capital_activation_prohibited'] is True
+          print('SIGNAL_AVAILABILITY_SEMANTICS_OK')
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Persist canonical signal availability guard
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          mkdir -p "$ROOT"
+          cp source_repo/tools/gate_btc_factory/SIGNAL_AVAILABILITY_SEMANTICS_PREREG.v1.json \
+             "$ROOT/SIGNAL_AVAILABILITY_SEMANTICS_PREREG_RUNTIME.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_autonomy/SIGNAL_AVAILABILITY_SEMANTICS_PREREG_RUNTIME.json'
+          z=json.load(open(p))
+          assert z['guard_id']=='AUDIT-XAVAIL-01'
+          assert z['status']=='REGISTERED_INTEGRITY_GUARD'
+          assert z['core_contract']['unavailable_is_not_neutral'] is True
+          assert z['core_contract']['explicit_zero_is_available_neutral_vote'] is True
+          assert z['promotion_boundary']['capital_activation_prohibited'] is True
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/SIGNAL_AVAILABILITY_SEMANTICS_PREREG_RUNTIME.json
+          git commit -m "Register signal availability semantics guard ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
