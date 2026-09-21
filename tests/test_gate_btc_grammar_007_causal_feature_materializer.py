@@ -51,6 +51,11 @@ class Grammar007CausalFeatureMaterializerTests(unittest.TestCase):
         self.assertIn("AMBIGUOUS_BASECALCULO_MEDIANA", text)
         self.assertIn("len(values) != 1", text)
 
+    def test_materializer_network_boundary_remains_source_only(self):
+        # Mechanical rerun anchor: keeps CI retrigger explicit without changing science.
+        self.assertTrue(m.BCB_BASE.startswith("https://olinda.bcb.gov.br/"))
+        self.assertTrue(m.CVM_INF.startswith("https://dados.cvm.gov.br/"))
+
 
 if __name__ == "__main__":
     unittest.main()
