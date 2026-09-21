@@ -1,0 +1,93 @@
+{
+  "schema": "qrds.factory.crypto_channel_prereg.v1",
+  "issue": 745,
+  "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+  "family_id": null,
+  "stage": "PREREG_ONLY_NO_ECONOMICS",
+  "frozen_before_source_cost": true,
+  "outcome_blind": true,
+  "economics_read": false,
+  "historical_testing_started": false,
+  "mechanism": "A persistent dislocation between spot and perpetual prices, conditioned only on the contemporaneously published perpetual funding rate, may contain a structural convergence/funding-carry component that is measurable without directional price forecasting.",
+  "venue_instrument_mapping": {
+    "venue": "OKX",
+    "spot_instrument": "BTC-USDT",
+    "perpetual_instrument": "BTC-USDT-SWAP",
+    "quote_currency": "USDT",
+    "substitution_policy": "NONE; any unavailable or non-PIT mapping makes this prereg terminally source-ineligible and requires a new prereg rather than substitution."
+  },
+  "timestamp_normalization": {
+    "timezone": "UTC",
+    "canonical_timestamp": "exchange event timestamp when supplied; otherwise receipt timestamp is not eligible for historical credit",
+    "synchronization": "use only the latest spot and perpetual observations timestamped at or before the decision clock; maximum cross-leg timestamp skew 5 seconds",
+    "late_data": "ignored for that decision; no late seal and no retroactive credit"
+  },
+  "feature_definition": {
+    "basis": "(perpetual_mid / spot_mid) - 1, where each mid=(best_bid+best_ask)/2 from eligible synchronized public quotes",
+    "funding": "latest officially published funding rate for BTC-USDT-SWAP observable before the decision clock",
+    "scalar": "signed_carry_pressure = basis + funding_rate",
+    "direction_rule": "positive scalar defines short-perpetual/long-spot convergence orientation; negative scalar defines long-perpetual/short-spot orientation; zero gives no directional orientation",
+    "threshold": 0.0,
+    "normalization": "NONE",
+    "parameter_grid": "NONE"
+  },
+  "causal_clock": {
+    "decision_clock": "exactly 5 minutes before the next officially scheduled funding settlement timestamp",
+    "lookback": "latest eligible synchronized quote pair and latest funding rate published before that decision clock only",
+    "entry": "first eligible synchronized quote pair at or after the decision clock and before the settlement; if unavailable, observation is ineligible",
+    "exit": "first eligible synchronized quote pair at or after the associated funding settlement timestamp, with maximum 60-second delay; otherwise observation is ineligible",
+    "holding_semantics": "single settlement cycle; no extension, averaging, re-entry or adaptive hold"
+  },
+  "cost_model": {
+    "spot_round_trip_bps": 20.0,
+    "perpetual_round_trip_bps": 20.0,
+    "additional_slippage_round_trip_bps_per_leg": 4.0,
+    "funding_cashflow": "use only the officially published rate bound to the preregistered settlement and the frozen orientation; no inferred or revised funding values",
+    "borrow_or_financing": "NOT_CREDITED; if the orientation requires an unavailable borrow or financing leg, the observation is execution-ineligible rather than assigned a favorable synthetic cost",
+    "cost_retune": "PROHIBITED"
+  },
+  "missing_data_rules": {
+    "quote_missing_or_skew_gt_5s": "INELIGIBLE_ZERO_CREDIT",
+    "funding_missing": "INELIGIBLE_ZERO_CREDIT",
+    "venue_outage": "INELIGIBLE_ZERO_CREDIT",
+    "delisting": "TERMINATE_CHANNEL_UNTIL_NEW_PREREG",
+    "symbol_change": "TERMINATE_CHANNEL_UNTIL_NEW_PREREG",
+    "imputation": "PROHIBITED"
+  },
+  "evaluation": {
+    "mode": "FORWARD_ONLY_AFTER_SOURCE_COST_ADMISSION",
+    "historical_backfill_credit": false,
+    "collection_start": "must be later than the merge/freeze timestamp and source-cost admission timestamp",
+    "minimum_observation_count_before_first_economics": 60,
+    "checkpoint_counts": [60, 120, 240],
+    "no_early_peeking": true,
+    "dataset_binding": "Before the first economics read, bind an immutable manifest containing source endpoint/version metadata, first/last eligible timestamps, record count and SHA-256 hashes of all raw sealed partitions. Any mismatch fails closed."
+  },
+  "prohibitions": [
+    "NO_OUTCOME_READ_BEFORE_CHECKPOINT",
+    "NO_ECONOMICS_READ_BEFORE_SOURCE_COST_ADMISSION",
+    "NO_BACKFILL",
+    "NO_LATE_SEAL",
+    "NO_RETUNE",
+    "NO_THRESHOLD_GRID",
+    "NO_LOOKBACK_GRID",
+    "NO_HOLD_GRID",
+    "NO_COST_GRID",
+    "NO_DIRECTION_FLIP_FROM_RESULTS",
+    "NO_SYMBOL_SUBSTITUTION",
+    "NO_COUNTER_RESET"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}
