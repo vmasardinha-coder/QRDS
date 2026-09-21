@@ -1,0 +1,86 @@
+name: GATE BTC Factory Execution Realism Stress Intake
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_factory/EXECUTION_REALISM_STRESS_PREREG.v1.json'
+      - '.github/workflows/gate-btc-factory-execution-realism-stress-intake.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/EXECUTION_REALISM_STRESS_PREREG.v1.json'
+      - '.github/workflows/gate-btc-factory-execution-realism-stress-intake.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate fail-closed preregistration
+        run: |
+          python - <<'PY'
+          import json
+          p='source_repo/tools/gate_btc_factory/EXECUTION_REALISM_STRESS_PREREG.v1.json'
+          z=json.load(open(p))
+          assert z['gate_id']=='AUDIT-XEXEC-01'
+          assert z['gate_name']=='execution_realism_stress'
+          assert z['status']=='REGISTERED_VALIDATION_GATE'
+          assert z['research_only'] is True and z['shadow_only'] is True
+          assert z['engine_weight']==0 and z['auto_promote'] is False
+          assert z['external_performance_imported'] is False
+          assert z['external_numeric_thresholds_imported'] is False
+          b=z['activation_boundary']
+          assert b['requires_decision_to_execution_contract'] is True
+          assert b['active_before_executable_contract'] is False
+          assert b['may_modify_signal_logic'] is False
+          assert b['may_reoptimize_strategy_parameters'] is False
+          assert b['may_replace_factory_research_engine'] is False
+          s=z['scenario_contract']
+          assert s['same_signal_logic_across_scenarios'] is True
+          assert s['same_research_parameters_across_scenarios'] is True
+          assert s['fail_closed_on_missing_execution_semantics'] is True
+          assert 'latency' in z['stress_dimensions']
+          assert 'fill_and_slippage_assumptions' in z['stress_dimensions']
+          assert z['promotion_boundary']['capital_activation_prohibited'] is True
+          print('EXECUTION_REALISM_STRESS_PREREG_OK')
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Persist canonical execution-realism gate registration
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy
+          mkdir -p "$ROOT"
+          cp source_repo/tools/gate_btc_factory/EXECUTION_REALISM_STRESS_PREREG.v1.json \
+             "$ROOT/EXECUTION_REALISM_STRESS_PREREG_RUNTIME.json"
+          python - <<'PY'
+          import json
+          p='runtime_repo/runtime/factory_autonomy/EXECUTION_REALISM_STRESS_PREREG_RUNTIME.json'
+          z=json.load(open(p))
+          assert z['gate_id']=='AUDIT-XEXEC-01'
+          assert z['status']=='REGISTERED_VALIDATION_GATE'
+          assert z['research_only'] is True and z['shadow_only'] is True
+          assert z['activation_boundary']['active_before_executable_contract'] is False
+          assert z['promotion_boundary']['capital_activation_prohibited'] is True
+          PY
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/EXECUTION_REALISM_STRESS_PREREG_RUNTIME.json
+          git commit -m "Register execution realism stress gate ${{ github.run_id }}" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          exit 1
