@@ -4,8 +4,8 @@ import ccxt
 
 EXCHANGES = {
     'okx': ccxt.okx({'enableRateLimit': True}),
-    'bybit': ccxt.bybit({'enableRateLimit': True}),
     'bitget': ccxt.bitget({'enableRateLimit': True}),
+    'gateio': ccxt.gateio({'enableRateLimit': True}),
 }
 SYMBOL = 'BTC/USDT'
 SNAPSHOTS = 20
@@ -17,15 +17,20 @@ LATENCY_HAIRCUT = 0.0005
 TOTAL_FRICTION = MAKER_FEE + TAKER_FEE + LATENCY_HAIRCUT
 
 
-def vwap_ask(book, quote_notional):
+def level_pa(level):
+    return float(level[0]), float(level[1])
+
+
+def buy_for_quote(book, quote_notional):
     remain = quote_notional
     base = 0.0
     spent = 0.0
-    for price, amount in book['asks']:
+    for level in book['asks']:
+        price, amount = level_pa(level)
         cap = price * amount
         take_q = min(remain, cap)
         if take_q <= 0:
-            break
+            continue
         base += take_q / price
         spent += take_q
         remain -= take_q
@@ -33,27 +38,26 @@ def vwap_ask(book, quote_notional):
             break
     if remain > 1e-6 or base <= 0:
         return None
-    return spent / base
+    return {'base_qty': base, 'quote_spent': spent, 'vwap': spent / base}
 
 
-def vwap_bid(book, quote_notional):
-    remain = quote_notional
-    base_sold = 0.0
+def sell_base(book, base_qty):
+    remain = base_qty
     received = 0.0
-    for price, amount in book['bids']:
-        cap = price * amount
-        take_q = min(remain, cap)
-        if take_q <= 0:
-            break
-        qty = take_q / price
-        base_sold += qty
+    sold = 0.0
+    for level in book['bids']:
+        price, amount = level_pa(level)
+        qty = min(remain, amount)
+        if qty <= 0:
+            continue
+        sold += qty
         received += qty * price
-        remain -= take_q
-        if remain <= 1e-9:
+        remain -= qty
+        if remain <= 1e-12:
             break
-    if remain > 1e-6 or base_sold <= 0:
+    if remain > 1e-9 or sold <= 0:
         return None
-    return received / base_sold
+    return {'base_sold': sold, 'quote_received': received, 'vwap': received / sold}
 
 records = []
 errors = []
@@ -63,29 +67,37 @@ for idx in range(SNAPSHOTS):
     for name, ex in EXCHANGES.items():
         try:
             book = ex.fetch_order_book(SYMBOL, limit=20)
-            ask = vwap_ask(book, QUOTE_NOTIONAL)
-            bid = vwap_bid(book, QUOTE_NOTIONAL)
-            if ask is None or bid is None:
-                raise RuntimeError('insufficient_depth')
-            books[name] = {'ask_vwap': ask, 'bid_vwap': bid}
+            if not book.get('asks') or not book.get('bids'):
+                raise RuntimeError('empty_order_book')
+            books[name] = book
         except Exception as exc:
             errors.append({'snapshot': idx, 'exchange': name, 'error': repr(exc)})
+
     names = sorted(books)
     for buy_ex in names:
+        purchase = buy_for_quote(books[buy_ex], QUOTE_NOTIONAL)
+        if purchase is None:
+            errors.append({'snapshot': idx, 'exchange': buy_ex, 'error': 'insufficient_ask_depth'})
+            continue
         for sell_ex in names:
             if buy_ex == sell_ex:
                 continue
-            ask = books[buy_ex]['ask_vwap']
-            bid = books[sell_ex]['bid_vwap']
-            gross = bid / ask - 1.0
+            sale = sell_base(books[sell_ex], purchase['base_qty'])
+            if sale is None:
+                errors.append({'snapshot': idx, 'exchange': sell_ex, 'error': f'insufficient_bid_depth_for_{purchase["base_qty"]}'})
+                continue
+            gross = sale['quote_received'] / purchase['quote_spent'] - 1.0
             net = gross - TOTAL_FRICTION
             records.append({
                 'snapshot': idx,
                 'timestamp_utc': ts,
                 'buy_exchange': buy_ex,
                 'sell_exchange': sell_ex,
-                'buy_ask_vwap': ask,
-                'sell_bid_vwap': bid,
+                'base_qty': purchase['base_qty'],
+                'quote_spent': purchase['quote_spent'],
+                'quote_received': sale['quote_received'],
+                'buy_ask_vwap': purchase['vwap'],
+                'sell_bid_vwap': sale['vwap'],
                 'gross_spread': gross,
                 'net_after_frozen_friction': net,
             })
@@ -112,7 +124,8 @@ report = {
     'research_only': True,
     'shadow_only': True,
     'factory_modified': False,
-    'probe_type': 'contemporaneous_order_book_vwap_probe',
+    'probe_type': 'contemporaneous_order_book_exact_base_roundtrip_probe',
+    'venue_repair_note': 'Bybit was geo-blocked on the GitHub runner and was replaced mechanically by Gate.io; frozen economics were unchanged.',
     'symbol': SYMBOL,
     'quote_notional': QUOTE_NOTIONAL,
     'frozen_friction': {
@@ -131,6 +144,7 @@ report = {
         'generic frozen fees, not account-tier-specific fees',
         'no queue-position model for maker leg',
         'no transfer/capital-fragmentation cost',
+        'API calls are sequential, so snapshots are near-contemporaneous rather than atomic',
     ],
 }
 print(json.dumps(report, indent=2, sort_keys=True))
