@@ -1,0 +1,126 @@
+name: GATE BTC Factory 007 Pearson Historical Evaluation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_pearson_historical_eval.py'
+      - 'tools/gate_btc_factory/GRAMMAR_007_TARGET_SOURCE_ROUTE_20260921.json'
+      - 'tests/test_gate_btc_grammar_007_pearson_historical_eval.py'
+      - '.github/workflows/gate-btc-factory-007-pearson-historical-eval.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_pearson_historical_eval.py'
+      - 'tools/gate_btc_factory/GRAMMAR_007_TARGET_SOURCE_ROUTE_20260921.json'
+      - 'tests/test_gate_btc_grammar_007_pearson_historical_eval.py'
+      - '.github/workflows/gate-btc-factory-007-pearson-historical-eval.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-pearson-eval-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Unit-test holdout blindness and Pearson mechanics
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_pearson_historical_eval.py
+      - name: PR remains target-blind
+        if: github.event_name == 'pull_request'
+        run: |
+          echo 'PR_TARGET_READ=false'
+          echo 'PR_OUTCOME_READ=false'
+          echo 'PR_ECONOMICS_READ=false'
+      - name: Execute frozen historical cases on official B3 target
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p artifacts/factory_007_pearson_eval
+          python source_repo/tools/gate_btc_factory/grammar_007_pearson_historical_eval.py \
+            --features runtime_repo/runtime/factory_autonomy/GRAMMAR_007_CAUSAL_FEATURE_MATERIALIZATION_RUNTIME.json \
+            --partitions runtime_repo/runtime/factory_autonomy/GRAMMAR_007_SEALED_PARTITION_PREFLIGHT_RUNTIME.json \
+            --cases source_repo/tools/gate_btc_factory/GRAMMAR_007_EFFECT_CASES_AUTH_20260921.json \
+            --stat-auth source_repo/tools/gate_btc_factory/GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json \
+            --source-route source_repo/tools/gate_btc_factory/GRAMMAR_007_TARGET_SOURCE_ROUTE_20260921.json \
+            --out artifacts/factory_007_pearson_eval/RESULT.json
+          python - <<'PY'
+          import json
+          p='artifacts/factory_007_pearson_eval/RESULT.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['status'] in ('HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR','HISTORICAL_EVALUATION_COMPLETE_SURVIVOR_EXISTS')
+          assert [c['case_id'] for c in x['cases']] == ['G007_FOCUS_50_50_V1','G007_FOCUS_IPCA_ONLY_V1','G007_FOCUS_SELIC_ONLY_V1']
+          for c in x['cases']:
+            if not c['validation']['pass']:
+              assert c['holdout']['started'] is False
+              assert c['holdout']['pearson_r'] is None
+              assert c['terminal_status']=='REJECTED_VALIDATION_NO_RETUNE'
+          assert x['safety']['ENGINE_FEED'] is False and x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('FACTORY_007_HISTORICAL_STATUS='+x['status'])
+          print('FACTORY_007_CASES='+json.dumps(x['cases'],sort_keys=True))
+          print('FACTORY_007_SURVIVORS='+json.dumps(x['survivors']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: grammar-007-pearson-historical-eval-${{ github.run_id }}
+          path: artifacts/factory_007_pearson_eval/
+          retention-days: 90
+      - name: Persist canonical historical result
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          cp artifacts/factory_007_pearson_eval/RESULT.json runtime_repo/runtime/factory_autonomy/GRAMMAR_007_PEARSON_HISTORICAL_EVAL_RUNTIME.json
+          cd runtime_repo
+          git config user.name 'gate-btc-factory-bot'
+          git config user.email 'gate-btc-factory-bot@users.noreply.github.com'
+          git add runtime/factory_autonomy/GRAMMAR_007_PEARSON_HISTORICAL_EVAL_RUNTIME.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'runtime: persist Grammar 007 Pearson historical evaluation'
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
