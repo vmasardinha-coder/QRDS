@@ -1,0 +1,122 @@
+name: GATE BTC Factory 007 Candidate Universe Freeze
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_candidate_universe_freeze.py'
+      - 'tools/gate_btc_factory/GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json'
+      - 'tests/test_gate_btc_grammar_007_candidate_universe_freeze.py'
+      - '.github/workflows/gate-btc-factory-007-candidate-universe-freeze.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_007_candidate_universe_freeze.py'
+      - 'tools/gate_btc_factory/GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json'
+      - 'tests/test_gate_btc_grammar_007_candidate_universe_freeze.py'
+      - '.github/workflows/gate-btc-factory-007-candidate-universe-freeze.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-007-candidate-universe-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_LATE_SEAL" = true
+          test "$NO_COUNTER_RESET" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Run static boundary tests
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_candidate_universe_freeze.py
+      - name: Freeze candidate universe without target read
+        run: |
+          mkdir -p artifacts/factory_007_candidate_universe_freeze
+          python source_repo/tools/gate_btc_factory/grammar_007_candidate_universe_freeze.py \
+            --features runtime_repo/runtime/factory_autonomy/GRAMMAR_007_CAUSAL_FEATURE_MATERIALIZATION_RUNTIME.json \
+            --rule source_repo/tools/gate_btc_factory/GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json \
+            --out artifacts/factory_007_candidate_universe_freeze/RESULT.json
+          python - <<'PY'
+          import json
+          p='artifacts/factory_007_candidate_universe_freeze/RESULT.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert x['status']=='CANDIDATE_UNIVERSE_FROZEN_TARGET_STILL_BLINDED'
+          assert x['candidate_count']==1
+          assert x['candidate_universe_frozen'] is True
+          assert x['target_source_opened'] is False
+          assert x['target_bytes_read'] is False
+          assert x['outcomes_read'] is False
+          assert x['economics_read'] is False
+          assert x['scientific_credit']==0
+          print('GRAMMAR_007_CANDIDATE_FREEZE_STATUS='+x['status'])
+          print('CANDIDATE='+x['candidates'][0]['candidate_id'])
+          print('OBSERVATIONS='+str(x['candidates'][0]['observation_count']))
+          print('NEXT_GATE='+x['next_gate'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grammar-007-candidate-universe-freeze-${{ github.run_id }}
+          path: artifacts/factory_007_candidate_universe_freeze/
+          retention-days: 90
+      - name: Persist canonical candidate freeze evidence
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp artifacts/factory_007_candidate_universe_freeze/RESULT.json runtime_repo/runtime/factory_autonomy/GRAMMAR_007_CANDIDATE_UNIVERSE_FREEZE_RUNTIME.json
+          cd runtime_repo
+          git config user.name 'gate-btc-factory-bot'
+          git config user.email 'gate-btc-factory-bot@users.noreply.github.com'
+          git add runtime/factory_autonomy/GRAMMAR_007_CANDIDATE_UNIVERSE_FREEZE_RUNTIME.json
+          if git diff --cached --quiet; then
+            echo 'Canonical candidate freeze runtime unchanged.'
+            exit 0
+          fi
+          git commit -m 'runtime: persist Grammar 007 candidate universe freeze'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gate-btc-runtime; then
+              exit 0
+            fi
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime
+            sleep $((attempt * 2))
+          done
+          exit 1
