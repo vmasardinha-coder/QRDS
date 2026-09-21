@@ -1,0 +1,42 @@
+name: GATE BTC Factory 008 Indicator Semantics Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_008_INDICATOR_SEMANTICS_20260921.json'
+      - 'tests/test_gate_btc_grammar_008_indicator_semantics.py'
+      - '.github/workflows/gate-btc-factory-008-indicator-semantics.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/GRAMMAR_008_INDICATOR_SEMANTICS_20260921.json'
+      - 'tests/test_gate_btc_grammar_008_indicator_semantics.py'
+      - '.github/workflows/gate-btc-factory-008-indicator-semantics.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest -v tests/test_gate_btc_grammar_008_indicator_semantics.py
+      - name: Persist canonical pre-outcome semantics
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          git fetch origin gate-btc-runtime
+          git worktree add runtime-tree origin/gate-btc-runtime
+          mkdir -p runtime-tree/runtime/factory_autonomy
+          cp tools/gate_btc_factory/GRAMMAR_008_INDICATOR_SEMANTICS_20260921.json runtime-tree/runtime/factory_autonomy/GRAMMAR_008_INDICATOR_SEMANTICS_RUNTIME.json
+          cd runtime-tree
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_008_INDICATOR_SEMANTICS_RUNTIME.json
+          git commit -m 'Persist Grammar 008 indicator semantics' || exit 0
+          for n in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((n*2)); done
+          exit 1
