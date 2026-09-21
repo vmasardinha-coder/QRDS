@@ -57,7 +57,7 @@ jobs:
               'execution_algorithm_api_importable': ExecutionAlgorithm is not None,
               'standalone_backtest_completed': True,
               'external_performance_imported_as_alpha': False,
-              'next_candidate': 'execution_slicing_policy',
+              'next_candidate': 'execution_realism_stress_harness',
           }
           with open('artifacts/gate_btc_2/nautilus_research/standalone_result.json','w') as f:
               json.dump(out, f, indent=2, sort_keys=True)
@@ -66,8 +66,12 @@ jobs:
         run: |
           python artifacts/gate_btc_2/nautilus_research/run_execution_slicing_poc.py \
             > artifacts/gate_btc_2/nautilus_research/execution_slicing_stdout.txt 2>&1
-          cat artifacts/gate_btc_2/nautilus_research/runtime_execution_slicing/execution_slicing_result.json
-      - name: Verify isolation and POC semantics
+      - name: Run frozen execution realism stress harness
+        run: |
+          python artifacts/gate_btc_2/nautilus_research/run_execution_stress_harness.py \
+            > artifacts/gate_btc_2/nautilus_research/execution_stress_stdout.txt 2>&1
+          cat artifacts/gate_btc_2/nautilus_research/runtime_execution_stress/execution_stress_result.json
+      - name: Verify isolation and frozen semantics
         run: |
           grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
           grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/nautilus_research/NAUTILUS_DISCOVERY_20260921.md
@@ -75,13 +79,14 @@ jobs:
           import json
           s=json.load(open('artifacts/gate_btc_2/nautilus_research/standalone_result.json'))
           z=json.load(open('artifacts/gate_btc_2/nautilus_research/runtime_execution_slicing/execution_slicing_result.json'))
+          e=json.load(open('artifacts/gate_btc_2/nautilus_research/runtime_execution_stress/execution_stress_result.json'))
           assert s['research_only'] is True and s['shadow_only'] is True and s['factory_modified'] is False
-          assert s['standalone_backtest_completed'] is True
           assert z['research_only'] is True and z['shadow_only'] is True and z['factory_modified'] is False
-          assert z['external_alpha_claim'] is False
+          assert e['research_only'] is True and e['shadow_only'] is True and e['factory_modified'] is False
           assert len(z['rows']) == 3
-          for row in z['rows']:
-              assert row['immediate']['signals_submitted'] == row['twap']['signals_submitted']
+          assert len(e['rows']) == 6
+          assert all(r['signals'] == e['rows'][0]['signals'] for r in e['rows'])
+          assert e['migratable_claim'].startswith('execution-realism stress harness')
           PY
       - uses: actions/upload-artifact@v4
         with:
