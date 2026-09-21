@@ -29,7 +29,16 @@ jobs:
         run: |
           grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/multi_alt_btc_regime_gate_test.py
           grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/multi_alt_btc_regime_gate_test.py
-          grep -q 'per_asset_retune.*False' artifacts/gate_btc_2/freqtrade_research/runtime_multi_alt_btc_gate/multi_alt_btc_regime_gate_test.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/gate_btc_2/freqtrade_research/runtime_multi_alt_btc_gate/multi_alt_btc_regime_gate_test.json')
+          d = json.loads(p.read_text())
+          assert d['research_only'] is True
+          assert d['shadow_only'] is True
+          assert d['factory_touched'] is False
+          assert d['frozen_rule']['per_asset_retune'] is False
+          PY
       - name: Upload panel artifact
         uses: actions/upload-artifact@v4
         with:
