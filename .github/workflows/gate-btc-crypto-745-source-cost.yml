@@ -1,0 +1,137 @@
+name: GATE BTC Crypto 745 Source Cost
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/crypto_challenger_prereg/**'
+      - 'tools/gate_btc_factory/crypto_challenger_source_cost.py'
+      - 'tests/test_crypto_challenger_source_cost.py'
+      - '.github/workflows/gate-btc-crypto-745-source-cost.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/crypto_challenger_prereg/**'
+      - 'tools/gate_btc_factory/crypto_challenger_source_cost.py'
+      - 'tests/test_crypto_challenger_source_cost.py'
+      - '.github/workflows/gate-btc-crypto-745-source-cost.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_LATE_SEAL: 'true'
+  NO_COUNTER_RESET: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+concurrency:
+  group: gate-btc-crypto-745-source-cost-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-cost:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen preregs and source-cost code
+        run: |
+          set -euo pipefail
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/crypto_challenger_source_cost.py
+          python -m unittest -v tests/test_crypto_challenger_source_cost.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('tools/gate_btc_factory/crypto_challenger_prereg')
+          files=sorted(root.glob('CRYPTO_*_PREREG.v1.json'))
+          assert len(files)==2
+          for p in files:
+              d=json.load(open(p))
+              assert d['issue']==745
+              assert d['family_id'] is None
+              assert d['outcome_blind'] is True
+              assert d['economics_read'] is False
+              assert d['historical_testing_started'] is False
+              assert d['evaluation']['historical_backfill_credit'] is False
+          PY
+      - name: Physically probe preregistered public sources without outcomes
+        run: |
+          set -euo pipefail
+          cd source_repo
+          python tools/gate_btc_factory/crypto_challenger_source_cost.py --out ../out/CRYPTO_745_SOURCE_COST.json
+          python - <<'PY'
+          import json
+          d=json.load(open('../out/CRYPTO_745_SOURCE_COST.json'))
+          assert d['schema']=='qrds.factory.crypto_challenger_source_cost.v1'
+          assert d['issue']==745
+          assert d['outcome_blind'] is True
+          assert d['outcomes_read'] is False
+          assert d['economics_read'] is False
+          assert d['historical_testing_started'] is False
+          assert d['family_ids_allocated'] is False
+          assert d['source_substitution_used'] is False
+          assert d['scientific_credit']==0
+          assert d['historical_backfill_credit']==0
+          assert d['qualified_count']==2, d
+          assert d['rejected_count']==0, d
+          expected={'CRYPTO_SPOT_PERP_BASIS_FUNDING','CRYPTO_CROSS_VENUE_PRICE_DISCOVERY'}
+          rows={x['channel_id']:x for x in d['channels']}
+          assert set(rows)==expected
+          for row in rows.values():
+              assert row['family_id'] is None
+              assert row['adjudication_decision']=='SOURCE_COST_QUALIFIED'
+              assert all(row['source_checks'].values())
+              assert all(row['cost_checks'].values())
+          s=d['safety']
+          assert s=={
+              'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,
+              'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,
+              'NO_BACKFILL':True,'NO_LATE_SEAL':True,'NO_COUNTER_RESET':True,
+              'NO_RETUNE':True,'FAIL_CLOSED':True,
+          }
+          print('CRYPTO_745_SOURCE_COST=QUALIFIED_2_OF_2')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crypto-745-source-cost-${{ github.run_id }}
+          path: out/CRYPTO_745_SOURCE_COST.json
+          if-no-files-found: warn
+          retention-days: 30
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Persist canonical outcome-blind Source Cost evidence
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_sources/crypto_challenger_745
+          cp out/CRYPTO_745_SOURCE_COST.json runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
+          git commit -m "Persist crypto 745 source-cost ${GITHUB_RUN_ID}" || exit 0
+          for n in 1 2 3 4 5; do
+            if git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((n*2))
+          done
+          exit 1
