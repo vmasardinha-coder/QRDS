@@ -1,0 +1,103 @@
+name: GATE BTC River standalone research
+
+on:
+  push:
+    branches: [research/river-standalone]
+    paths:
+      - .github/workflows/gate-btc-river-standalone.yml
+      - artifacts/gate_btc_2/river_research/**
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-river-standalone.yml
+      - artifacts/gate_btc_2/river_research/**
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  REAL_CAPITAL: '0'
+
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Assert isolated research scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only origin/main...HEAD | tee /tmp/changed.txt
+          python - <<'PY'
+          allowed=(
+              '.github/workflows/gate-btc-river-standalone.yml',
+              'artifacts/gate_btc_2/river_research/',
+          )
+          bad=[]
+          for p in open('/tmp/changed.txt'):
+              p=p.strip()
+              if p and not any(p == x or p.startswith(x) for x in allowed):
+                  bad.append(p)
+          assert not bad, bad
+          print('RIVER_ISOLATION=PASS')
+          PY
+
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install 'river==0.26.1' 'ccxt==4.5.81'
+          python - <<'PY'
+          import river
+          print('RIVER_IMPORT=PASS')
+          print('RIVER_VERSION='+river.__version__)
+          assert river.__version__ == '0.26.1'
+          PY
+
+      - name: Run frozen causal drift benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/gate_btc_2/river_research/run
+          python artifacts/gate_btc_2/river_research/run_river_poc.py \
+            | tee artifacts/gate_btc_2/river_research/run/RIVER_STANDALONE_RESULT.json
+
+      - name: Validate result contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/gate_btc_2/river_research/run/RIVER_STANDALONE_RESULT.json')
+          d=json.loads(p.read_text())
+          assert d['source_system']=='River'
+          assert d['release']=='0.26.1'
+          assert d['research_only'] is True
+          assert d['shadow_only'] is True
+          assert d['real_capital']==0
+          assert d['data']['bars'] >= 1000
+          assert d['baseline_no_reset']['samples'] == d['adwin_drift_reset']['samples']
+          assert d['factory_migration_authorized'] is False
+          assert isinstance(d['primary_rule']['pass'], bool)
+          print('RIVER_RESULT_CONTRACT=PASS')
+          PY
+
+      - name: Upload standalone evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-river-standalone
+          path: artifacts/gate_btc_2/river_research/run/
+          if-no-files-found: error
