@@ -66,7 +66,7 @@ jobs:
       - name: Guard authorization before target read
         run: |
           cd source_repo
-          python -m unittest -v tests/test_gate_btc_grammar_007_effect_cases_auth.py
+          python -m unittest discover -s tests -p 'test_gate_btc_grammar_007_effect_cases_auth.py' -v
           python - <<'PY'
           import json
           p='tools/gate_btc_factory/GRAMMAR_007_EFFECT_CASES_AUTH_20260921.json'
