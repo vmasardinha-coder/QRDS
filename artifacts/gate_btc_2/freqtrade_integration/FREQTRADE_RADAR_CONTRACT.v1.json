@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "system": "Freqtrade",
+  "lifecycle_status": "CONCLUDED_RETAIN_AS_RADAR_AND_AUDITOR",
+  "research_only": true,
+  "shadow_only": true,
+  "cadence": {
+    "light_scan": "MONTHLY",
+    "deep_scan": "QUARTERLY",
+    "event_driven_scan": "ON_MATERIAL_UPSTREAM_OR_HYPOTHESIS_CHANGE",
+    "factory_survivor_audit": "ON_COMPATIBLE_FACTORY_SURVIVOR"
+  },
+  "light_scan_scope": [
+    "new_or_materially_changed_public_strategies",
+    "new_execution_or_risk_mechanics",
+    "engine_changes_relevant_to_backtest_semantics",
+    "new_validation_features_relevant_to_leakage_or_recursive_bias"
+  ],
+  "deep_scan_pipeline": [
+    "novelty_filter",
+    "hypothesis_abstraction",
+    "point_in_time_backtest",
+    "leakage_audit",
+    "walk_forward",
+    "costs",
+    "robustness",
+    "shadow",
+    "migration_decision"
+  ],
+  "migration_rule": {
+    "import_external_performance_claims": false,
+    "import_external_winning_parameters_as_defaults": false,
+    "migrate_structural_hypothesis_only": true,
+    "factory_registration_status": "candidate_only",
+    "independent_factory_validation_required": true
+  },
+  "permanent_roles": [
+    "external_execution_auditor",
+    "lookahead_and_recursive_bias_validator",
+    "recurring_source_of_migratable_hypotheses"
+  ],
+  "non_goals": [
+    "replace_factory",
+    "auto_promote_external_strategy",
+    "continuous_high_frequency_repository_mining"
+  ]
+}
