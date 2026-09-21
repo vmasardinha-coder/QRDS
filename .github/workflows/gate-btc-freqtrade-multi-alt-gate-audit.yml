@@ -1,0 +1,96 @@
+name: GATE BTC Freqtrade multi-alt gate audit
+
+on:
+  push:
+    branches:
+      - research/freqtrade-family-tests
+    paths:
+      - "artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate/**"
+      - ".github/workflows/gate-btc-freqtrade-multi-alt-gate-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FREQTRADE_TIMERANGE: "20251023-20260921"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare directories
+        run: |
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          mkdir -p "$BASE/user_data/data" "$BASE/user_data/backtest_results" "$BASE/results"
+      - name: Pull Freqtrade
+        run: docker pull freqtradeorg/freqtrade:stable
+      - name: Show version
+        run: |
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          docker run --rm freqtradeorg/freqtrade:stable --version 2>&1 | tee "$BASE/results/version.txt"
+      - name: Download OKX ETH DOGE BTC data
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          docker run --rm -v "$PWD/$BASE/user_data:/freqtrade/user_data" freqtradeorg/freqtrade:stable \
+            download-data --config user_data/config.json --exchange okx --pairs ETH/USDT DOGE/USDT BTC/USDT -t 1h 12h --days 365 2>&1 | tee "$BASE/results/download-data.txt"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$BASE/results/download-data.txt"
+      - name: Run ETH gated and ungated
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          for STRAT in AltBtcRegimeGate48h AltUngated48h; do
+            docker run --rm -v "$PWD/$BASE/user_data:/freqtrade/user_data" freqtradeorg/freqtrade:stable \
+              backtesting --config user_data/config.json --strategy "$STRAT" --strategy-path user_data/strategies -i 1h \
+              -p ETH/USDT --timerange "$FREQTRADE_TIMERANGE" --cache none --export trades 2>&1 | tee "$BASE/results/ETH-${STRAT}.txt"
+            ! grep -Eq ' - (ERROR|CRITICAL) - ' "$BASE/results/ETH-${STRAT}.txt"
+            grep -q 'BACKTESTING REPORT' "$BASE/results/ETH-${STRAT}.txt"
+          done
+      - name: Run DOGE gated and ungated
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          for STRAT in AltBtcRegimeGate48h AltUngated48h; do
+            docker run --rm -v "$PWD/$BASE/user_data:/freqtrade/user_data" freqtradeorg/freqtrade:stable \
+              backtesting --config user_data/config.json --strategy "$STRAT" --strategy-path user_data/strategies -i 1h \
+              -p DOGE/USDT --timerange "$FREQTRADE_TIMERANGE" --cache none --export trades 2>&1 | tee "$BASE/results/DOGE-${STRAT}.txt"
+            ! grep -Eq ' - (ERROR|CRITICAL) - ' "$BASE/results/DOGE-${STRAT}.txt"
+            grep -q 'BACKTESTING REPORT' "$BASE/results/DOGE-${STRAT}.txt"
+          done
+      - name: Run gated lookahead analyses
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          for PAIR in ETH/USDT DOGE/USDT; do
+            SAFE=${PAIR%%/*}
+            docker run --rm -v "$PWD/$BASE/user_data:/freqtrade/user_data" freqtradeorg/freqtrade:stable \
+              lookahead-analysis --config user_data/config.json --strategy AltBtcRegimeGate48h --strategy-path user_data/strategies \
+              -i 1h -p "$PAIR" --timerange "$FREQTRADE_TIMERANGE" --minimum-trade-amount 5 2>&1 | tee "$BASE/results/${SAFE}-lookahead.txt"
+            ! grep -Eq ' - (ERROR|CRITICAL) - ' "$BASE/results/${SAFE}-lookahead.txt"
+          done
+      - name: Verify research boundary
+        run: |
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          grep -q 'RESEARCH_ONLY=true' "$BASE/user_data/strategies/AltBtcRegimeGate48h.py"
+          grep -q 'SHADOW_ONLY=true' "$BASE/user_data/strategies/AltBtcRegimeGate48h.py"
+          grep -q 'RESEARCH_ONLY=true' "$BASE/user_data/strategies/AltUngated48h.py"
+          grep -q 'SHADOW_ONLY=true' "$BASE/user_data/strategies/AltUngated48h.py"
+      - name: Inventory
+        if: always()
+        run: |
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate
+          find "$BASE/user_data/backtest_results" -maxdepth 2 -type f -print | sort | tee "$BASE/results/backtest-files.txt"
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-freqtrade-multi-alt-gate-audit
+          path: |
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate/results/
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate/user_data/backtest_results/
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate/user_data/config.json
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_multi_alt_gate/user_data/strategies/
+          if-no-files-found: error
