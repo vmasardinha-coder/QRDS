@@ -53,11 +53,11 @@ jobs:
             --days 365 2>&1 | tee "$OUT"
           ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
 
-      - name: Run exact-rule backtest
+      - name: Run gated exact-rule backtest
         run: |
           set -o pipefail
           BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
-          OUT="$BASE/results/backtest.txt"
+          OUT="$BASE/results/backtest-gated.txt"
           docker run --rm \
             -v "$PWD/$BASE/user_data:/freqtrade/user_data" \
             freqtradeorg/freqtrade:stable \
@@ -72,7 +72,26 @@ jobs:
           ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
           grep -q 'BACKTESTING REPORT' "$OUT"
 
-      - name: Run lookahead analysis
+      - name: Run ungated baseline backtest
+        run: |
+          set -o pipefail
+          BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
+          OUT="$BASE/results/backtest-baseline.txt"
+          docker run --rm \
+            -v "$PWD/$BASE/user_data:/freqtrade/user_data" \
+            freqtradeorg/freqtrade:stable \
+            backtesting \
+            --config user_data/config.json \
+            --strategy XrpEmaCross48hBaseline \
+            --strategy-path user_data/strategies \
+            -i 1h \
+            --timerange "$FREQTRADE_TIMERANGE" \
+            --cache none \
+            --export trades 2>&1 | tee "$OUT"
+          ! grep -Eq ' - (ERROR|CRITICAL) - ' "$OUT"
+          grep -q 'BACKTESTING REPORT' "$OUT"
+
+      - name: Run gated lookahead analysis
         run: |
           set -o pipefail
           BASE=artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate
@@ -93,6 +112,8 @@ jobs:
         run: |
           grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
           grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
+          grep -q 'RESEARCH_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpEmaCross48hBaseline.py
+          grep -q 'SHADOW_ONLY=true' artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpEmaCross48hBaseline.py
 
       - name: Inventory
         if: always()
@@ -110,4 +131,5 @@ jobs:
             artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/backtest_results/
             artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/config.json
             artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpBtcRegimeGate48h.py
+            artifacts/gate_btc_2/freqtrade_research/freqtrade_xrp_btc_gate/user_data/strategies/XrpEmaCross48hBaseline.py
           if-no-files-found: warn
