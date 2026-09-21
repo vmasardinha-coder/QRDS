@@ -1,0 +1,108 @@
+name: GATE BTC Factory 008 Industrial Historical Evaluation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_008_industrial_evaluator.py'
+      - 'tests/test_gate_btc_grammar_008_industrial_evaluator.py'
+      - '.github/workflows/gate-btc-factory-008-industrial-eval.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/grammar_008_industrial_evaluator.py'
+      - 'tests/test_gate_btc_grammar_008_industrial_evaluator.py'
+      - '.github/workflows/gate-btc-factory-008-industrial-eval.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-008-industrial-eval-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source_repo}
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Assert immutable boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+      - name: Unit-test partition blindness and deterministic mechanics
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_008_industrial_evaluator.py
+      - name: PR remains Grammar 008 target-blind
+        if: github.event_name == 'pull_request'
+        run: echo 'GRAMMAR_008_MARKET_DATA_READ=false'
+      - name: Execute frozen industrial batch in gated partition order
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p artifacts/factory_008_industrial_eval
+          python source_repo/tools/gate_btc_factory/grammar_008_industrial_evaluator.py \
+            --prereg source_repo/tools/gate_btc_factory/GRAMMAR_008_FREQTRADE_INDUSTRIAL_PREREG_20260921.json \
+            --semantics source_repo/tools/gate_btc_factory/GRAMMAR_008_INDICATOR_SEMANTICS_20260921.json \
+            --out artifacts/factory_008_industrial_eval/RESULT.json
+          python - <<'PY'
+          import json
+          x=json.load(open('artifacts/factory_008_industrial_eval/RESULT.json'))
+          assert x['registered_candidate_count']==24 and x['executable_candidate_count']==22
+          assert x['status'] in ('HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR','HISTORICAL_EVALUATION_COMPLETE_SURVIVORS_EXIST')
+          assert x['scientific_credit']==0 and x['prospective_credit']==0
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0 and x['safety']['ENGINE_FEED'] is False
+          if not x['validation_source_opened']:
+              assert x['validation_pass_count']==0 and not x['holdout_source_opened']
+          if not x['holdout_source_opened']:
+              assert x['historical_survivor_count']==0
+          print('G008_STATUS='+x['status'])
+          print('G008_DISCOVERY_PASS='+str(x['discovery_pass_count']))
+          print('G008_VALIDATION_PASS='+str(x['validation_pass_count']))
+          print('G008_SURVIVORS='+json.dumps(x['historical_survivors']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: factory-008-industrial-eval-${{ github.run_id }}
+          path: artifacts/factory_008_industrial_eval/
+          retention-days: 90
+      - name: Persist canonical historical result
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          cp artifacts/factory_008_industrial_eval/RESULT.json runtime_repo/runtime/factory_autonomy/GRAMMAR_008_INDUSTRIAL_HISTORICAL_EVAL_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/GRAMMAR_008_INDUSTRIAL_HISTORICAL_EVAL_RUNTIME.json
+          git commit -m "Persist Grammar 008 industrial historical result ${{ github.run_id }}" || exit 0
+          for n in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((n*2)); done
+          exit 1
