@@ -1,0 +1,66 @@
+{
+  "schema_version": "GATE_BTC_2_EXPERIMENTAL_PROSPECTIVE_SHADOW_V1",
+  "frozen_at": "2026-09-22",
+  "status_name": "EXPERIMENTAL_PROSPECTIVE_SHADOW",
+  "purpose": "Accumulate strictly forward evidence for causal, forward-safe hypotheses that are not historically proven survivors.",
+  "survivor_standard_changed": false,
+  "promotion_standard_changed": false,
+  "historical_credit": 0,
+  "retroactive_credit": 0,
+  "promotion_authority": false,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0,
+  "research_only": true,
+  "shadow_only": true,
+  "no_backfill": true,
+  "no_retune": true,
+  "required_admission": {
+    "mechanism_frozen_before_d0": true,
+    "direction_or_position_mapping_frozen_before_d0": true,
+    "source_identity_valid": true,
+    "timestamp_availability_valid_prospectively": true,
+    "causal_execution_rule_defined": true,
+    "cost_or_slippage_model_defined_for_shadow_accounting": true,
+    "same_hypothesis_clean_terminal_rejection_absent": true,
+    "no_post_result_parameter_changes": true,
+    "d0_first_observation_after_merged_activation": true
+  },
+  "eligible_origin_classes": [
+    "DATA_OR_SOURCE_BLOCKED_BUT_FORWARD_SOURCE_AVAILABLE",
+    "INCONCLUSIVE_BUT_FORWARD_SAFE",
+    "UNDERPOWERED_HISTORICAL_SCREEN",
+    "NEAR_GATE_WITHOUT_CLEAN_TERMINAL_REJECTION"
+  ],
+  "ineligible_origin_classes": [
+    "VALID_SCIENTIFIC_REJECTION_SAME_HYPOTHESIS",
+    "INVALID_PIT_OR_LEAKAGE",
+    "UNRESOLVED_SOURCE_OR_INSTRUMENT_IDENTITY",
+    "FABRICATED_OR_BACKFILLED_PROSPECTIVE_EVIDENCE",
+    "NO_CAUSAL_EXECUTION_RULE",
+    "POST_RESULT_RETUNE",
+    "POST_RESULT_SIGN_FLIP"
+  ],
+  "observation_semantics": {
+    "append_only": true,
+    "forward_only": true,
+    "duplicate_observation_credit": 0,
+    "late_reconstruction_credit": 0,
+    "missing_observation_policy": "RECORD_GAP_NO_CREDIT",
+    "unavailable_evidence_policy": "EXPLICIT_UNAVAILABLE_NEVER_NEUTRALIZED"
+  },
+  "allowed_transitions": {
+    "to_candidate": "REQUIRES_SEPARATE_PREDECLARED_FORWARD_ADJUDICATION_CONTRACT",
+    "to_survivor": "FORBIDDEN_DIRECTLY_FROM_EXPERIMENTAL_SHADOW",
+    "to_execution": "FORBIDDEN",
+    "to_terminal_null": "ALLOWED_BY_SEPARATE_FORWARD_ADJUDICATION_CONTRACT",
+    "to_blocked": "ALLOWED_ON_SOURCE_OR_OPERATIONAL_FAILURE"
+  },
+  "explicit_labels": [
+    "NO_SURVIVOR_CREDIT",
+    "NO_PROMOTION_AUTHORITY",
+    "ZERO_RETROACTIVE_CREDIT",
+    "FORWARD_EVIDENCE_ONLY"
+  ],
+  "item_2_status": "CONTRACT_FROZEN_NO_FAMILIES_ACTIVATED"
+}
