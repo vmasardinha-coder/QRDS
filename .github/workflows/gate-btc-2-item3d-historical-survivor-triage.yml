@@ -45,9 +45,12 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('main_repo/artifacts/gate_btc_2/FACTORY_ITEM3D_HISTORICAL_SURVIVOR_PREREG_20260922.json'))
-          assert p['status']=='PREREGISTERED_BEFORE_HISTORICAL_SURVIVOR_READ'
+          assert p['schema']=='gate_btc_2.factory_item3d_historical_survivor_prereg.v2'
+          assert p['status']=='PREREGISTERED_FACILITATED_HISTORICAL_SCREEN_AFTER_STRICT_ZERO_RESULT'
           assert p['population']['expected_count']==580
           assert p['population']['drop_from_forward_collection'] is False
+          assert p['ranking_policy']['no_top_n_cutoff'] is True
+          assert p['ranking_policy']['no_percentile_cutoff'] is True
           assert p['historical_survivor_semantics']['prospective_survivor_credit']==0
           assert p['historical_survivor_semantics']['promotion_authority'] is False
           s=p['safety']
@@ -65,6 +68,7 @@ jobs:
           python - <<'PY'
           import json
           r=json.load(open('item3d_historical_survivors.json'))
+          assert r['schema']=='gate_btc_2.factory_item3d_historical_survivor_triage.v2'
           assert r['population_count']==580
           assert r['all_580_remain_forward_active'] is True
           assert r['prospective_survivor_credit']==0
