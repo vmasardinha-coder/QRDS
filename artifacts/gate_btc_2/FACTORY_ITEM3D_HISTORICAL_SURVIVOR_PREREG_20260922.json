@@ -41,10 +41,18 @@
       "watch_if": "FORWARD_SAFE_BUT_HISTORICAL_EVIDENCE_INSUFFICIENT_FOR_CANDIDATE",
       "reject_if": "HARD_REJECTION_PRESENT"
     },
+    "metric_aggregation": {
+      "reference_cost_edge": "MIN_NET2_ACROSS_QUALIFIED_CELLS",
+      "stress_cost_edge": "MIN_NET3_ACROSS_QUALIFIED_CELLS",
+      "delayed_entry_edge": "MIN_DELAYED_NET2_ACROSS_QUALIFIED_CELLS",
+      "trade_count": "SUM_TRADES_ACROSS_QUALIFIED_CELLS",
+      "missing_metric": "NULL_NO_IMPUTATION"
+    },
     "ordering": [
       "qualified_horizon_cell_count_desc",
       "reference_cost_edge_desc",
       "stress_cost_edge_desc",
+      "delayed_entry_edge_desc",
       "trade_count_desc",
       "family_id_asc"
     ]
