@@ -1,0 +1,30 @@
+{
+  "schema_version": "BTSE_FAMILY_HANDOFF_V1",
+  "family_id": "F-XAGENT-VETO",
+  "family_class": "RISK_VETO_ABSTENTION_OVERLAY",
+  "origins": ["TradingAgents", "AI Hedge Fund"],
+  "input_states": ["ALLOW", "VETO", "ABSTAIN_UNAVAILABLE"],
+  "aggregation_priority": ["VETO", "ABSTAIN", "ALLOW"],
+  "unavailable_policy": "NEVER_NEUTRALIZE",
+  "features": [
+    "assessor_count",
+    "allow_count",
+    "veto_count",
+    "unavailable_count",
+    "allow_fraction",
+    "veto_fraction",
+    "unavailable_fraction",
+    "aggregate_decision"
+  ],
+  "economic_direction": null,
+  "position_size_mapping": null,
+  "return_horizon": null,
+  "economic_claim_authorized": false,
+  "factory_migration_authorized": false,
+  "factory_runtime_untouched": true,
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+}

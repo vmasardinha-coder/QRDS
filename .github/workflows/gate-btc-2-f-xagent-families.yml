@@ -1,0 +1,71 @@
+name: GATE BTC F-XAGENT Families
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/F_XAGENT_*'
+      - 'tools/gate_btc_2_f_xagent_transforms.py'
+      - 'tests/test_gate_btc_2_f_xagent_transforms.py'
+      - '.github/workflows/gate-btc-2-f-xagent-families.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-families:
+    runs-on: ubuntu-latest
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      REAL_CAPITAL_BRL: '0'
+      ORDERS: '0'
+      FACTORY_RUNTIME_UNTOUCHED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest -v tests/test_gate_btc_2_f_xagent_transforms.py
+      - name: Generate deterministic validation artifact
+        run: |
+          mkdir -p artifacts_live/f_xagent
+          python - <<'PY'
+          import importlib.util, json
+          from pathlib import Path
+          p=Path('tools/gate_btc_2_f_xagent_transforms.py')
+          s=importlib.util.spec_from_file_location('xagent',p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
+          out={
+            'schema_version':'GATE_BTC_2_F_XAGENT_V1',
+            'disagree_consensus_case':m.disagreement_features([0.8,0.7,0.9,None]),
+            'disagree_split_case':m.disagreement_features([1.0,-1.0,0.5,-0.5]),
+            'veto_case':m.risk_veto_decision(['ALLOW','ABSTAIN_UNAVAILABLE','VETO']),
+            'abstain_case':m.risk_veto_decision(['ALLOW','ABSTAIN_UNAVAILABLE']),
+            'allow_case':m.risk_veto_decision(['ALLOW','ALLOW']),
+            'research_only':True,'shadow_only':True,'orders':0,'real_capital_brl':0,
+            'factory_runtime_untouched':True,'economic_claim_authorized':False,'factory_migration_authorized':False
+          }
+          Path('artifacts_live/f_xagent/SUMMARY.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - name: Assert semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path('artifacts_live/f_xagent/SUMMARY.json').read_text())
+          assert s['disagree_consensus_case']['eligible'] is True
+          assert s['disagree_split_case']['pairwise_disagreement'] > 0.5
+          assert s['veto_case']['aggregate_decision']=='VETO'
+          assert s['abstain_case']['aggregate_decision']=='ABSTAIN'
+          assert s['allow_case']['aggregate_decision']=='ALLOW'
+          assert s['economic_claim_authorized'] is False
+          assert s['factory_migration_authorized'] is False
+          assert s['factory_runtime_untouched'] is True
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-f-xagent-families
+          path: artifacts_live/f_xagent
+          retention-days: 90
