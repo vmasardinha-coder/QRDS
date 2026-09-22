@@ -10,6 +10,15 @@ name: GATE BTC Delta V12 Engine
 
 on:
   workflow_dispatch:
+    inputs:
+      authorise_version_replay:
+        description: >-
+          Motivo escrito para reexecutar linhas gravadas por uma VERSAO ANTERIOR
+          do motor. Deixe em branco em qualquer execucao normal. A autorizacao
+          nunca cobre linha ja gravada pela versao corrente -- uma versao nao
+          retifica a si mesma -- e nunca permite encurtar o ledger.
+        required: false
+        default: ''
   workflow_run:
     workflows: ["GATE BTC Delta V12 Price Pinning"]
     types: [completed]
@@ -165,14 +174,35 @@ jobs:
           --since "${FUNDING_SINCE}"
 
       - name: Run the engine
-        run: >-
-          python tools/gate_btc_delta_v12_engine.py
-          --prices-csv prices_out/DAILY_PRICES.csv
-          --universe-csv universe/UNIVERSE_TOP100.csv
-          --contract migration/reporting/delta_v12_engine_contract.json
-          --funding-csv funding_out/FUNDING_DAILY.csv
-          --out-dir "runtime_repo/${ENGINE_LEDGER}"
-          --run-id "${{ github.run_id }}"
+        env:
+          AUTHORISE_VERSION_REPLAY: ${{ inputs.authorise_version_replay || '' }}
+        run: |
+          set -euo pipefail
+          # O corte transversal de cada dia so enxerga os ativos ja fixados
+          # naquele dia. A proveniencia dos precos e quem diz isso; sem ela o
+          # motor volta a normalizar sobre o painel inteiro, que foi o defeito
+          # que travou a serie em 2026-09-21. Exigir o arquivo aqui impede que
+          # uma execucao silenciosamente regrida.
+          test -f "runtime_repo/${PIN_LEDGER}/PRICE_PROVENANCE.json" || {
+            echo "FAIL_CLOSED: no price provenance; run the pinning workflow first"; exit 1; }
+          ARGS=(
+            --prices-csv prices_out/DAILY_PRICES.csv
+            --universe-csv universe/UNIVERSE_TOP100.csv
+            --contract migration/reporting/delta_v12_engine_contract.json
+            --funding-csv funding_out/FUNDING_DAILY.csv
+            --price-provenance "runtime_repo/${PIN_LEDGER}/PRICE_PROVENANCE.json"
+            --out-dir "runtime_repo/${ENGINE_LEDGER}"
+            --run-id "${{ github.run_id }}"
+          )
+          # A autorizacao so chega por despacho manual, com motivo escrito, e
+          # cobre exclusivamente linhas gravadas por uma versao anterior. Uma
+          # execucao agendada nunca a carrega, entao o append-only da versao
+          # corrente segue absoluto sem depender de ninguem lembrar disso.
+          if [ -n "${AUTHORISE_VERSION_REPLAY}" ]; then
+            echo "AUTHORISED VERSION REPLAY: ${AUTHORISE_VERSION_REPLAY}"
+            ARGS+=(--authorise-version-replay "${AUTHORISE_VERSION_REPLAY}")
+          fi
+          python tools/gate_btc_delta_v12_engine.py "${ARGS[@]}"
 
       - name: Upload the full panel as evidence
         if: always()
