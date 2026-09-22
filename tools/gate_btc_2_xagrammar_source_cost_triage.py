@@ -30,38 +30,44 @@ def main() -> int:
     for xid in sorted(expected):
         env=found[xid]
         frozen=contract['decisions'][xid]
-        if env.get('fresh_namespace') != xid:
-            raise RuntimeError(f'NAMESPACE_MISMATCH:{xid}')
-        if env.get('economics_read') is not False:
-            raise RuntimeError(f'ECONOMICS_ALREADY_READ:{xid}')
-        if env.get('economic_credit') != 0:
-            raise RuntimeError(f'ECONOMIC_CREDIT_NONZERO:{xid}')
-        if env.get('status') != 'PREREGISTERED_NEXT_GATE_SOURCE_COST_QUALIFICATION':
+        if env.get('family_id') != xid:
+            raise RuntimeError(f'FAMILY_ID_MISMATCH:{xid}:{env.get("family_id")}')
+        if env.get('channel_id') != frozen['channel']:
+            raise RuntimeError(f'CHANNEL_MISMATCH:{xid}:{env.get("channel_id")}')
+        if env.get('economics_read') is not False or env.get('historical_testing_started') is not False:
+            raise RuntimeError(f'ECONOMICS_OR_TESTING_ALREADY_OPENED:{xid}')
+        if env.get('existing_counter_credit') != 0 or env.get('prospective_credit') != 0:
+            raise RuntimeError(f'CREDIT_NONZERO:{xid}')
+        if env.get('status') != 'PREREGISTERED_AWAITING_SOURCE_COST_QUALIFICATION':
             raise RuntimeError(f'UNEXPECTED_PREREG_STATUS:{xid}:{env.get("status")}')
+        if env.get('next_stage') != 'SOURCE_COST_QUALIFICATION_THEN_EXISTING_FACTORY':
+            raise RuntimeError(f'UNEXPECTED_NEXT_STAGE:{xid}:{env.get("next_stage")}')
+        if env.get('source_qualification_required') is not True or env.get('cost_applicability_required') is not True:
+            raise RuntimeError(f'SOURCE_COST_GATE_NOT_REQUIRED:{xid}')
         rows.append({
-            'fresh_namespace':xid,
+            'family_id':xid,
+            'grammar_signature':env.get('grammar_signature'),
             'channel':frozen['channel'],
             'decision':frozen['decision'],
             'reason':frozen['reason'],
             'source_cost':frozen['source_cost'],
             'next_gate':frozen['next_gate'],
             'economics_read':False,
+            'historical_testing_started':False,
             'economic_credit':0,
             'promotion_authority':False,
         })
 
     counts=Counter(r['decision'] for r in rows)
-    if dict(counts) != contract['expected_counts']:
-        # expected also contains READY_FOR_ECONOMICS=0; normalize zeros explicitly.
-        got={k:counts.get(k,0) for k in contract['expected_counts']}
-        if got != contract['expected_counts']:
-            raise RuntimeError(f'COUNT_MISMATCH:{got}')
+    got={k:counts.get(k,0) for k in contract['expected_counts']}
+    if got != contract['expected_counts']:
+        raise RuntimeError(f'COUNT_MISMATCH:{got}')
 
     out={
         'schema':'gate_btc_2.xagrammar_source_cost_triage_runtime.v1',
         'status':'TRIAGE_COMPLETE_NO_ECONOMICS_OPENED',
         'input_count':len(rows),
-        'counts':{k:counts.get(k,0) for k in contract['expected_counts']},
+        'counts':got,
         'ready_for_economics_count':0,
         'rows':rows,
         'policy':contract['policy'],
