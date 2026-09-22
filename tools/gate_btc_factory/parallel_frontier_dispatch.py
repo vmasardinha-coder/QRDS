@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from tools.gate_btc_factory.grammar_scout_handoff import build_handoff
+from grammar_scout_handoff import build_handoff
 
 BLOCKED_PREFIXES = (
     "WAITING_",
