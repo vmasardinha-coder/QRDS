@@ -114,9 +114,22 @@ jobs:
           if [[ "$status" == PARALLEL_FRONTIER_* ]]; then
             sig=$(python -c "import json; print(json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))['selected']['grammar_signature'])")
             cp out/PARALLEL_FRONTIER_RUNTIME.json "runtime_repo/runtime/factory_autonomy/parallel_frontier_audits/${sig}.json"
-            # Record the selected grammar signature in the existing handoff audit namespace too,
-            # so the outcome-blind deduper will never dispatch it again.
-            cp out/PARALLEL_FRONTIER_RUNTIME.json "runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/parallel-${sig}.json"
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))
+          if d['status'].startswith('PARALLEL_FRONTIER_'):
+              sig=d['selected']['grammar_signature']
+              receipt={
+                  'schema':'qrds.factory.grammar_scout_handoff.v1',
+                  'mode':'OUTCOME_BLIND_HANDOFF_ONLY',
+                  'request_count':1,
+                  'requests':[d['selected']],
+                  'safety':d['safety'],
+              }
+              Path(f'runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/parallel-{sig}.json').write_text(
+                  json.dumps(receipt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
           fi
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
