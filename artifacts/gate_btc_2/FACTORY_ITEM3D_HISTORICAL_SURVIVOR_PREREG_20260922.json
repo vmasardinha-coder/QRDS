@@ -1,9 +1,10 @@
 {
-  "schema": "gate_btc_2.factory_item3d_historical_survivor_prereg.v1",
+  "schema": "gate_btc_2.factory_item3d_historical_survivor_prereg.v2",
   "frozen_at": "2026-09-22",
   "item": "3D",
-  "status": "PREREGISTERED_BEFORE_HISTORICAL_SURVIVOR_READ",
-  "purpose": "Rank the 580 already-admitted Item 3 experimental families using only pre-D0 historical evidence, while leaving all 580 prospective collectors intact.",
+  "status": "PREREGISTERED_FACILITATED_HISTORICAL_SCREEN_AFTER_STRICT_ZERO_RESULT",
+  "provenance_note": "V1 strict screen required two fully QUALIFIED cells and yielded zero candidates. V2 is an explicitly versioned, user-directed facilitated historical screen; it is descriptive only and does not claim untouched preregistration independence from the V1 result.",
+  "purpose": "Identify historically credible shadow candidates among the 580 already-admitted Item 3 experimental families while leaving all 580 prospective collectors intact.",
   "population": {
     "source": "runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json",
     "selector": "experimental_shadow_eligible == true",
@@ -12,7 +13,7 @@
     "drop_from_forward_collection": false
   },
   "historical_survivor_semantics": {
-    "label": "HISTORICAL_SURVIVOR_CANDIDATE",
+    "label": "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED",
     "not_equal_to_h1_h31_survivor": true,
     "prospective_survivor_credit": 0,
     "promotion_authority": false,
@@ -26,21 +27,13 @@
     "use_only_existing_pre_d0_historical_evidence": true,
     "hard_rejection_remains_excluded": true,
     "economic_view_required": true,
-    "primary_axes": [
-      "qualified_horizon_cell_count",
-      "reference_cost_edge",
-      "stress_cost_robustness",
-      "delayed_entry_robustness",
-      "trade_count_evidence",
-      "calendar_half_stability",
-      "side_stability",
-      "concentration"
-    ],
+    "admissible_cell_classes": ["QUALIFIED", "SOFT_INSUFFICIENT"],
     "classification": {
-      "candidate_if": "NO_HARD_REJECTION_AND_AT_LEAST_TWO_QUALIFIED_HORIZON_CELLS",
-      "watch_if": "FORWARD_SAFE_BUT_HISTORICAL_EVIDENCE_INSUFFICIENT_FOR_CANDIDATE",
+      "candidate_if": "NO_HARD_REJECTION_AND_AT_LEAST_ONE_QUALIFIED_HORIZON_CELL_AND_AT_LEAST_TWO_ADMISSIBLE_HORIZON_CELLS_TOTAL",
+      "watch_if": "FORWARD_SAFE_BUT_NO_FULLY_QUALIFIED_CELL_OR_OTHERWISE_INSUFFICIENT_FOR_FACILITATED_CANDIDATE",
       "reject_if": "HARD_REJECTION_PRESENT"
     },
+    "rationale": "Requires at least one fully passing historical horizon as positive economic evidence, permits the second supporting horizon to be evidence-insufficient rather than economically failed, and never rescues a hard economic or robustness rejection.",
     "metric_aggregation": {
       "reference_cost_edge": "MIN_NET2_ACROSS_QUALIFIED_CELLS",
       "stress_cost_edge": "MIN_NET3_ACROSS_QUALIFIED_CELLS",
@@ -50,12 +43,15 @@
     },
     "ordering": [
       "qualified_horizon_cell_count_desc",
+      "admissible_horizon_cell_count_desc",
       "reference_cost_edge_desc",
       "stress_cost_edge_desc",
       "delayed_entry_edge_desc",
       "trade_count_desc",
       "family_id_asc"
-    ]
+    ],
+    "no_top_n_cutoff": true,
+    "no_percentile_cutoff": true
   },
   "shadow_link": {
     "all_580_remain_active": true,
