@@ -1,0 +1,117 @@
+name: GATE BTC 2 Item 3D Forward Adjudication
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc_2/FACTORY_ITEM3D_FORWARD_ADJUDICATION_PREREG_20260922.json'
+      - 'tools/gate_btc_2_item3d_forward_adjudicator.py'
+      - '.github/workflows/gate-btc-2-item3d-forward-adjudication.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/FACTORY_ITEM3D_FORWARD_ADJUDICATION_PREREG_20260922.json'
+      - 'tools/gate_btc_2_item3d_forward_adjudicator.py'
+      - '.github/workflows/gate-btc-2-item3d-forward-adjudication.yml'
+  workflow_run:
+    workflows: ['GATE BTC 2 Item 3C Experimental Forward Collector']
+    types: [completed]
+  schedule:
+    - cron: '35 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-item3d-forward-adjudication
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  H1_H31_RUNTIME_MUTATION: 'false'
+
+jobs:
+  adjudicate:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          path: main_repo
+      - name: Check out canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen contract and implementation
+        run: |
+          set -euo pipefail
+          python -m py_compile main_repo/tools/gate_btc_2_item3d_forward_adjudicator.py
+          python main_repo/tools/gate_btc_2_item3d_forward_adjudicator.py --self-test
+          python - <<'PY'
+          import json
+          p=json.load(open('main_repo/artifacts/gate_btc_2/FACTORY_ITEM3D_FORWARD_ADJUDICATION_PREREG_20260922.json',encoding='utf-8'))
+          assert p['status']=='PREREGISTERED_BEFORE_FIRST_FORWARD_ADJUDICATION'
+          assert p['population']['manual_selection'] is False
+          assert p['population']['historical_performance_selection'] is False
+          assert p['fixed_forward_checkpoint']['trigger_observations_per_horizon']==60
+          assert p['authority']['survivor_promotion_authority'] is False
+          assert p['authority']['direct_survivor_transition'] is False
+          assert p['authority']['orders']==0 and p['authority']['real_capital']==0
+          s=p['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_BACKFILL'] and s['NO_RETUNE']
+          assert s['H1_H31_RUNTIME_MUTATION'] is False
+          assert s['SURVIVOR_STANDARD_CHANGED'] is False and s['PROMOTION_STANDARD_CHANGED'] is False
+          PY
+      - name: Adjudicate only immutable forward evidence
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_item3d_forward_adjudicator.py \
+            --runtime-root runtime_repo \
+            --prereg main_repo/artifacts/gate_btc_2/FACTORY_ITEM3D_FORWARD_ADJUDICATION_PREREG_20260922.json \
+            --out out/ADJUDICATION_STATUS.json
+          python - <<'PY'
+          import json
+          x=json.load(open('out/ADJUDICATION_STATUS.json',encoding='utf-8'))
+          assert x['survivor_credit']==0 and x['survivor_promotion_authority'] is False
+          assert x['orders']==0 and x['real_capital']==0 and x['engine_feed'] is False
+          assert x['no_backfill'] and x['no_retune']
+          print('ITEM3D_STATUS='+x['status'])
+          print('ITEM3D_POPULATION='+str(x['population_count']))
+          print('ITEM3D_SESSIONS='+str(x['ledger_session_count']))
+          print('ITEM3D_STATES='+json.dumps(x['family_state_counts'],sort_keys=True))
+          PY
+      - name: Persist canonical adjudication status after merge/runtime events
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/item3_forward_shadow
+          cp ../out/ADJUDICATION_STATUS.json runtime/gate_btc_2/item3_forward_shadow/ADJUDICATION_STATUS.json
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/gate_btc_2/item3_forward_shadow/ADJUDICATION_STATUS.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update Item 3 forward adjudication status'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
