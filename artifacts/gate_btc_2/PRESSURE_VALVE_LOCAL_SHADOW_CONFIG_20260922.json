@@ -1,0 +1,80 @@
+{
+  "schema": "gate_btc_2.pressure_valve_local_shadow_config.v1",
+  "status": "MONITORING_MIRROR_ONLY",
+  "created_at": "2026-09-22",
+  "d0": "2026-09-23",
+  "timezone": "America/Sao_Paulo",
+  "source": {
+    "provider": "LOCAL_SELF_HOSTED_MT5_TERMINAL",
+    "root_symbol": "WIN",
+    "timeframe": "M5",
+    "time_mode": "UTC_EPOCH",
+    "volume_field": "real_volume",
+    "read_only": true
+  },
+  "schedule": {
+    "weekdays_only": true,
+    "not_before_local": "12:30",
+    "recommended_task_time_local": "12:35"
+  },
+  "isolation": {
+    "local_root": "C:\\actions-runner\\qrds-pressure-valve-shadow",
+    "task_name": "QRDS-Pressure-Valve-Shadow",
+    "must_not_touch_task": "QRDS-Local-Shadow-Clock",
+    "must_not_write_root": "C:\\actions-runner\\qrds-local-shadow",
+    "separate_process": true,
+    "separate_lock": true,
+    "separate_spool": true,
+    "separate_ledger": true,
+    "separate_logs": true
+  },
+  "economics": {
+    "holding_horizons_minutes": [30, 60, 120],
+    "reference_cost_bps": 2.0,
+    "stress_cost_bps": 3.0,
+    "delayed_entry_bars": 1
+  },
+  "families": [
+    {
+      "family_id": "H626",
+      "feature": "BODY_RANGE",
+      "direction": "CONTINUATION",
+      "decision_window_minutes": 60,
+      "abs_z_threshold": 0.75,
+      "standardization_lookback_sessions": 10,
+      "holding_horizons_minutes": [30, 60, 120],
+      "historical_label": "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED"
+    },
+    {
+      "family_id": "H478",
+      "feature": "OPEN_RANGE",
+      "direction": "REVERSION",
+      "decision_window_minutes": 30,
+      "abs_z_threshold": 0.75,
+      "standardization_lookback_sessions": 10,
+      "holding_horizons_minutes": [30, 60, 120],
+      "historical_label": "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED"
+    },
+    {
+      "family_id": "H474",
+      "feature": "OPEN_RANGE",
+      "direction": "REVERSION",
+      "decision_window_minutes": 15,
+      "abs_z_threshold": 0.75,
+      "standardization_lookback_sessions": 10,
+      "holding_horizons_minutes": [30, 60, 120],
+      "historical_label": "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED"
+    }
+  ],
+  "authority": {
+    "scientific_credit": 0,
+    "survivor_credit": 0,
+    "promotion_authority": false,
+    "canonical_prospective_ledger": "Item3C only",
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true
+  }
+}
