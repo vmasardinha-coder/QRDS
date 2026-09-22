@@ -1,0 +1,56 @@
+{
+  "schema": "gate_btc_2.xagrammar_f587_cvm_source_qualification_prereg.v1",
+  "frozen_at": "2026-09-22",
+  "family_id": "XAGRAMMAR_F587F5854A51",
+  "canonical_channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+  "status": "PREREGISTERED_BEFORE_PHYSICAL_CVM_SOURCE_READ",
+  "mechanism": "Timestamped corporate disclosures can define ex-ante event grammars whose post-publication response is evaluated only after the public timestamp.",
+  "source": {
+    "provider": "CVM_PORTAL_DADOS_ABERTOS",
+    "dataset": "CIA_ABERTA_DOC_IPE",
+    "dataset_page": "https://dados.cvm.gov.br/dataset/cia_aberta-doc-ipe",
+    "metadata_url": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/META/meta_ipe_cia_aberta.txt",
+    "data_url_2026": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/DADOS/ipe_cia_aberta_2026.zip",
+    "official": true,
+    "free": true
+  },
+  "qualification_questions": {
+    "q1_timestamp_dictionary": "Does the official CVM metadata dictionary explicitly document a row-level delivery/receipt/public-availability date and time field usable without inference?",
+    "q2_timestamp_physical": "Does the physical 2026 IPE file contain that documented field with parseable values on event-document rows?",
+    "q3_issuer_identity": "Does the physical file expose a stable issuer identity key sufficient to join to an independently qualified issuer-to-B3 mapping later?",
+    "q4_event_category": "Does the file expose document category/type fields sufficient to freeze an event class without reading market outcomes?"
+  },
+  "pass_policy": {
+    "timestamp_source_pass_requires_q1_and_q2": true,
+    "issuer_identity_source_pass_requires_q3": true,
+    "event_category_source_pass_requires_q4": true,
+    "full_source_qualification_requires_all_four": true,
+    "no_semantic_guessing_from_column_name_only": true,
+    "no_market_outcome_read": true,
+    "no_b3_price_join": true,
+    "no_event_return_calculation": true,
+    "no_family_parameter_change": true,
+    "no_historical_credit": true
+  },
+  "allowed_results": [
+    "PASS_CVM_EVENT_SOURCE_SEMANTICS",
+    "PARTIAL_TIMESTAMP_PASS_IDENTITY_OR_CATEGORY_PENDING",
+    "FAIL_CLOSED_TIMESTAMP_NOT_PROVEN",
+    "FAIL_CLOSED_PHYSICAL_SOURCE_UNAVAILABLE"
+  ],
+  "next_gate_if_full_pass": "SEPARATE_ISSUER_TO_B3_IDENTITY_AND_COST_PREREGISTRATION_BEFORE_ANY_MARKET_OUTCOME_READ",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "NO_COUNTER_RESET": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_H2730_H2739_UNTOUCHED": true,
+    "ECONOMICS_READ": false
+  }
+}
