@@ -1,0 +1,92 @@
+{
+  "schema": "gate_btc_2.factory_item3b_forward_source_prereg.v1",
+  "frozen_at": "2026-09-22",
+  "item": "3B",
+  "status": "PREREGISTERED_BEFORE_PHYSICAL_FORWARD_SOURCE_READ",
+  "activation_population": {
+    "canonical_item3_path": "runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json",
+    "canonical_item3_git_blob_sha": "3baa62396b57215c6bfdc7fdf830c11cd40f3ba3",
+    "selector": "experimental_shadow_eligible == true",
+    "expected_count": 580,
+    "manual_selection": false,
+    "cherry_picking": false
+  },
+  "prospective_source": {
+    "provider": "LOCAL_SELF_HOSTED_MT5_TERMINAL",
+    "market": "B3",
+    "root": "WIN",
+    "timeframe": "M5",
+    "source_role": "PROSPECTIVE_OBSERVATION_SOURCE_ONLY",
+    "historical_scientific_credit": 0,
+    "retroactive_credit": 0,
+    "current_contract_rule": "EARLIEST_EXACT_WIN_DELIVERY_CONTRACT_WITH_EXPLICIT_EXPIRATION_DATE_NOT_BEFORE_SESSION",
+    "contract_selection_inputs": ["symbol_identity", "description", "path", "expiration_time"],
+    "forbidden_roll_inputs": ["price", "volume", "open_interest", "strategy_outcome"],
+    "exact_symbol_regex": "^WIN[FGHJKMNQUVXZ]\\d{2}$",
+    "description_must_include": "IBOVESPA MINI",
+    "path_must_include_one_of": ["BVMF", "B3"]
+  },
+  "physical_forward_qa": {
+    "terminal_connected": true,
+    "fresh_tick_required_seconds": 900,
+    "timezone_mode_must_be_unambiguous": true,
+    "closed_m5_only": true,
+    "minimum_closed_m5_bars_in_observed_session": 40,
+    "exact_spacing_seconds": 300,
+    "ohlc_integrity": true,
+    "win_tick_grid_points": 5.0,
+    "prior_session_close_observable_for_gap_feature": true,
+    "raw_capture_hash_required": true
+  },
+  "feature_source_compatibility": {
+    "OPEN_RETURN": "OHLC_QA",
+    "OPEN_RANGE": "OHLC_QA",
+    "REALIZED_VOL": "OHLC_QA",
+    "BAR_IMBALANCE": "OHLC_QA",
+    "CLOSE_LOCATION": "OHLC_QA",
+    "BODY_RANGE": "OHLC_QA",
+    "GAP_FROM_PRIOR_CLOSE": "OHLC_PLUS_PRIOR_SESSION_CLOSE_QA",
+    "VOLUME_EARLY": "REAL_VOLUME_QA_SEPARATE_FAIL_CLOSED"
+  },
+  "volume_admission": {
+    "field": "real_volume",
+    "tick_volume_is_not_accepted_as_equivalent": true,
+    "minimum_positive_real_volume_bar_fraction": 0.95,
+    "if_failed": "VOLUME_EARLY_FAMILIES_WAIT_SOURCE_SEMANTICS",
+    "outcome_independent": true
+  },
+  "forward_state": {
+    "warmup": "PROSPECTIVE_ONLY_AFTER_D0",
+    "pre_d0_rows_as_prospective_observations": 0,
+    "lookback_sessions_preserved_per_frozen_family": true,
+    "holding_horizons_minutes": [30, 60, 120],
+    "reference_cost_bps": 2.0,
+    "stress_cost_bps": 3.0,
+    "same_bar_reaction_forbidden": true,
+    "first_scored_signal_only_after_required_forward_lookback_exists": true,
+    "d0": "NEXT_B3_WEEKDAY_AFTER_SUCCESSFUL_MERGED_SOURCE_BINDING",
+    "rollover": "MECHANICAL_EXPIRATION_METADATA_ONLY"
+  },
+  "activation_semantics": {
+    "active_if_feature_source_qa_passes": true,
+    "volume_family_activation_depends_only_on_volume_source_qa": true,
+    "no_family_may_be_selected_by_historical_or_forward_pnl": true,
+    "status": "EXPERIMENTAL_PROSPECTIVE_SHADOW",
+    "survivor_credit": 0,
+    "promotion_authority": false,
+    "direct_transition_to_survivor": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "MT5_READ_ONLY": true,
+    "NO_ORDER_SEND": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "NO_COUNTER_RESET": true,
+    "H1_H31_RUNTIME_MUTATION": false
+  }
+}
