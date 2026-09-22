@@ -1,0 +1,46 @@
+name: Pressure Valve Local Shadow Validation
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_pressure_valve_local_shadow.py'
+      - 'tools/install_pressure_valve_local_shadow.ps1'
+      - 'artifacts/gate_btc_2/PRESSURE_VALVE_LOCAL_SHADOW_CONFIG_20260922.json'
+      - '.github/workflows/pressure-valve-local-shadow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile collector
+        run: python -m py_compile tools/gate_btc_2_pressure_valve_local_shadow.py tools/gate_btc_2_item3c_forward_collector.py tools/gate_btc_2_item3b_forward_source_probe.py
+      - name: Run pure self-test
+        run: python tools/gate_btc_2_pressure_valve_local_shadow.py --self-test
+      - name: Assert isolation and safety contract
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          cfg=json.loads(Path('artifacts/gate_btc_2/PRESSURE_VALVE_LOCAL_SHADOW_CONFIG_20260922.json').read_text())
+          py=Path('tools/gate_btc_2_pressure_valve_local_shadow.py').read_text()
+          ps=Path('tools/install_pressure_valve_local_shadow.ps1').read_text()
+          assert cfg['isolation']['task_name'] == 'QRDS-Pressure-Valve-Shadow'
+          assert cfg['isolation']['must_not_touch_task'] == 'QRDS-Local-Shadow-Clock'
+          assert cfg['authority']['scientific_credit'] == 0
+          assert cfg['authority']['engine_feed'] is False
+          assert cfg['authority']['orders'] == 0
+          assert cfg['authority']['real_capital'] == 0
+          assert 'order_send' not in py.lower()
+          assert 'C:\\actions-runner\\qrds-pressure-valve-shadow' in ps
+          assert 'QRDS-Local-Shadow-Clock' in ps
+          assert 'Stop-ScheduledTask -TaskName $ForbiddenTask' not in ps
+          assert 'Unregister-ScheduledTask -TaskName $ForbiddenTask' not in ps
+          print('PRESSURE_VALVE_ISOLATION_CONTRACT=PASS')
