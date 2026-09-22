@@ -1,0 +1,85 @@
+name: GATE BTC F-XVOL Surface Family
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/F_XVOL_SURFACE_PREREG_20260921.md'
+      - 'tools/gate_btc_2_f_xvol_surface_extractor.py'
+      - 'tests/test_gate_btc_2_f_xvol_surface_extractor.py'
+      - '.github/workflows/gate-btc-2-f-xvol-surface-family.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-family:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      REAL_CAPITAL_BRL: '0'
+      ORDERS: '0'
+      NO_RETUNE: 'true'
+      NO_BACKFILL: 'true'
+      FACTORY_RUNTIME_UNTOUCHED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python -m unittest -v tests/test_gate_btc_2_f_xvol_surface_extractor.py
+
+      - name: Assert research boundary
+        shell: bash
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$REAL_CAPITAL_BRL" = 0
+          test "$ORDERS" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$FACTORY_RUNTIME_UNTOUCHED" = true
+
+      - name: Extract live family feature snapshot
+        run: |
+          python tools/gate_btc_2_f_xvol_surface_extractor.py \
+            --output artifacts_live/f_xvol_surface
+
+      - name: Assert tangible family artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s = json.loads(Path('artifacts_live/f_xvol_surface/SUMMARY.json').read_text())
+          f = json.loads(Path('artifacts_live/f_xvol_surface/FAMILY_FEATURES.json').read_text())
+          assert s['family_id'] == 'F-XVOL-SURFACE'
+          assert s['feature_snapshot_eligible'] is True
+          assert f['eligible'] is True
+          assert set(f['features']) == {
+              'atm_iv_near', 'atm_iv_far', 'term_slope',
+              'put_25d_iv_near', 'call_25d_iv_near',
+              'risk_reversal_25d', 'butterfly_25d', 'surface_dispersion_near'
+          }
+          assert s['research_only'] is True
+          assert s['shadow_only'] is True
+          assert s['orders'] == 0
+          assert s['real_capital_brl'] == 0
+          assert s['economic_claim_authorized'] is False
+          assert s['factory_migration_authorized'] is False
+          assert s['factory_runtime_untouched'] is True
+          assert s['no_backfill'] is True
+          print(json.dumps({'summary': s, 'features': f['features']}, indent=2, sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-f-xvol-surface-family
+          path: artifacts_live/f_xvol_surface
+          if-no-files-found: error
+          retention-days: 90
