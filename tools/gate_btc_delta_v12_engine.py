@@ -49,16 +49,56 @@ from typing import Any
 
 SCHEMA = "gate_btc.delta_v12_engine.v1"
 ENGINE_VERSION = "DELTA_V12_ENGINE_1.1"
+
+# A contract may name itself only from this list. The engine runs more than one
+# preregistered series -- V12 closed on a data gap and V13 succeeds it under its
+# own anchor -- but a version it was never built for is refused rather than
+# guessed at, and a new one is added here deliberately, in code review.
+SUPPORTED_ENGINE_VERSIONS = (ENGINE_VERSION, "DELTA_V13_ENGINE_1.0")
+
 ZERO_HASH = "0" * 64
 
 # The four books run in parallel, always. Picking the leader after seeing the
 # returns is the exact bias the preregistration exists to prevent.
-BOOKS = (
-    {"strategy": "V12_LS_70_30", "gross_long": 0.70, "gross_short": 0.30, "stopvol": False},
-    {"strategy": "V12_LS_70_30_StopVol", "gross_long": 0.70, "gross_short": 0.30, "stopvol": True},
-    {"strategy": "V12_LS_50_50", "gross_long": 0.50, "gross_short": 0.50, "stopvol": False},
-    {"strategy": "V12_LS_50_50_StopVol", "gross_long": 0.50, "gross_short": 0.50, "stopvol": True},
+#
+# The SHAPES are frozen here and a contract cannot touch them: it names its
+# books, it never re-weights them. A series that could set its own gross split
+# from the contract could retune the strategy without a line of code changing.
+BOOK_SHAPES = (
+    {"suffix": "LS_70_30", "gross_long": 0.70, "gross_short": 0.30, "stopvol": False},
+    {"suffix": "LS_70_30_StopVol", "gross_long": 0.70, "gross_short": 0.30, "stopvol": True},
+    {"suffix": "LS_50_50", "gross_long": 0.50, "gross_short": 0.50, "stopvol": False},
+    {"suffix": "LS_50_50_StopVol", "gross_long": 0.50, "gross_short": 0.50, "stopvol": True},
 )
+
+BOOKS = tuple({"strategy": f"V12_{shape['suffix']}", **{k: v for k, v in shape.items()
+                                                        if k != "suffix"}}
+              for shape in BOOK_SHAPES)
+
+
+def books_for(contract: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+    """The four books this contract names, in the frozen shapes.
+
+    The contract supplies names and nothing else. Each name must sit on exactly
+    one frozen shape, in order, under a single prefix; anything else -- a book
+    missing, a fifth book, two prefixes, a reordering -- is refused, because a
+    ledger whose book identity drifts is a ledger whose history cannot be read
+    back.
+    """
+    named = list(contract["books"]["books"])
+    if len(named) != len(BOOK_SHAPES):
+        raise EngineError(
+            f"FAIL_CLOSED: contract names {len(named)} books; the engine runs "
+            f"exactly {len(BOOK_SHAPES)}, always in parallel")
+    prefix = named[0].split("_LS_", 1)[0]
+    expected = [f"{prefix}_{shape['suffix']}" for shape in BOOK_SHAPES]
+    if named != expected:
+        raise EngineError(
+            f"FAIL_CLOSED: contract books {named} do not match the frozen shapes "
+            f"under prefix {prefix!r}; expected {expected}")
+    return tuple({"strategy": name, **{k: v for k, v in shape.items() if k != "suffix"}}
+                 for name, shape in zip(named, BOOK_SHAPES))
+
 
 FUNDING_OBSERVED = "OBSERVED_PER_PINNED_VENUE_SUMMED_TO_THE_UTC_DAY_OF_SETTLEMENT"
 FUNDING_ABSENT = "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY"
@@ -748,7 +788,8 @@ def chain_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def assert_append_only(existing: list[dict[str, str]], recomputed: list[dict[str, Any]],
-                       version_replay_reason: str = "") -> list[dict[str, str]]:
+                       version_replay_reason: str = "",
+                       engine_version: str = ENGINE_VERSION) -> list[dict[str, str]]:
     """A recomputed run may extend the ledger. It may never restate it.
 
     The single exception is a replay across an engine version boundary, and only
@@ -767,13 +808,13 @@ def assert_append_only(existing: list[dict[str, str]], recomputed: list[dict[str
         if old["chain_sha256"] == new["chain_sha256"]:
             continue
         committed_version = str(old.get("engine_version") or "").strip()
-        if version_replay_reason and committed_version and committed_version != ENGINE_VERSION:
+        if version_replay_reason and committed_version and committed_version != engine_version:
             superseded.append(dict(old))
             continue
         detail = ""
-        if version_replay_reason and committed_version == ENGINE_VERSION:
+        if version_replay_reason and committed_version == engine_version:
             detail = (f" The authorised replay does not cover it: the row already carries "
-                      f"{ENGINE_VERSION}, and a version never restates itself.")
+                      f"{engine_version}, and a version never restates itself.")
         raise EngineError(
             f"FAIL_CLOSED: committed row {position} ({old['date']} {old['strategy']}) "
             f"changed on recomputation; committed {old['chain_sha256'][:12]}, "
@@ -784,7 +825,7 @@ def assert_append_only(existing: list[dict[str, str]], recomputed: list[dict[str
 
 def record_version_replay(path: Path, superseded: list[dict[str, str]],
                           recomputed: list[dict[str, Any]], reason: str,
-                          run_id: str) -> None:
+                          run_id: str, engine_version: str = ENGINE_VERSION) -> None:
     """Write the audit record of an authorised cross-version replay.
 
     A replay that leaves no record is indistinguishable from a silent restatement,
@@ -800,7 +841,7 @@ def record_version_replay(path: Path, superseded: list[dict[str, str]],
         rows.append({
             "date": old["date"], "strategy": old["strategy"],
             "from_engine_version": old.get("engine_version", ""),
-            "to_engine_version": ENGINE_VERSION,
+            "to_engine_version": engine_version,
             "superseded_chain_sha256": old["chain_sha256"],
             "replacement_chain_sha256": new.get("chain_sha256", ""),
             "superseded_normalized_nav": old.get("normalized_nav", ""),
@@ -831,7 +872,8 @@ def record_version_replay(path: Path, superseded: list[dict[str, str]],
 
 
 def load_or_create_anchor(path: Path, latest_close: str, not_before: str,
-                          run_id: str) -> tuple[str, bool]:
+                          run_id: str,
+                          engine_version: str = ENGINE_VERSION) -> tuple[str, bool]:
     if path.exists():
         stored = json.loads(path.read_text(encoding="utf-8-sig"))
         return str(stored["anchor_date"]), False
@@ -840,7 +882,7 @@ def load_or_create_anchor(path: Path, latest_close: str, not_before: str,
             f"FAIL_CLOSED: latest completed close {latest_close} precedes the frozen "
             f"not_before {not_before}; the anchor may never be backdated")
     payload = {
-        "schema": SCHEMA, "engine_version": ENGINE_VERSION,
+        "schema": SCHEMA, "engine_version": engine_version,
         "anchor_date": latest_close, "initial_nav": 1.0,
         "established_at_utc": datetime.now(timezone.utc).isoformat(),
         "established_by_run_id": run_id,
@@ -885,8 +927,12 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
         price_provenance: Path | None = None,
         authorise_version_replay: str = "") -> dict[str, Any]:
     contract = json.loads(contract_path.read_text(encoding="utf-8-sig"))
-    if contract["version"] != ENGINE_VERSION:
-        raise EngineError(f"contract version {contract['version']} is not {ENGINE_VERSION}")
+    engine_version = contract["version"]
+    if engine_version not in SUPPORTED_ENGINE_VERSIONS:
+        raise EngineError(
+            f"FAIL_CLOSED: contract version {engine_version} is not one this engine "
+            f"runs ({', '.join(SUPPORTED_ENGINE_VERSIONS)})")
+    books = books_for(contract)
 
     cfg = {
         "top_n": contract["selection"]["top_n"],
@@ -908,7 +954,8 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     fee = float(contract["costs"]["fee_bps_per_side"])
 
     anchor, first_run = load_or_create_anchor(
-        out_dir / "ANCHOR.json", dates[-1], contract["anchor"]["not_before"], run_id)
+        out_dir / "ANCHOR.json", dates[-1], contract["anchor"]["not_before"], run_id,
+        engine_version)
     if anchor not in dates:
         raise EngineError(
             f"FAIL_CLOSED: anchor {anchor} is absent from the price panel "
@@ -952,11 +999,11 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     holdings: list[dict[str, Any]] = []
     events: list[dict[str, Any]] = []
     summaries: dict[str, dict[str, Any]] = {}
-    for book in BOOKS:
+    for book in books:
         result = simulate(book, dates, bases, panels, panel, cost_rate, anchor, cfg,
                           funding, funded, funding_model, membership)
         for row in result["daily"]:
-            row["engine_version"] = ENGINE_VERSION
+            row["engine_version"] = engine_version
         ledger.extend(result["daily"])
         selections.extend(result["selections"])
         holdings.extend(result["holdings"])
@@ -966,9 +1013,9 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     ledger.sort(key=lambda r: (r["date"], r["strategy"]))
     chained = chain_rows(ledger)
     superseded = assert_append_only(read_csv_rows(out_dir / "DAILY_NAV.csv"), chained,
-                                    authorise_version_replay)
+                                    authorise_version_replay, engine_version)
     record_version_replay(out_dir / "RESTATEMENTS.json", superseded, chained,
-                          authorise_version_replay, run_id)
+                          authorise_version_replay, run_id, engine_version)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     write_csv_rows(out_dir / "DAILY_NAV.csv", chained, LEDGER_FIELDS)
@@ -988,7 +1035,7 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
     gate = evidence_gate(summaries, cfg)
     observed_days = len({row["date"] for row in ledger})
     status = {
-        "schema": SCHEMA, "engine_version": ENGINE_VERSION,
+        "schema": SCHEMA, "engine_version": engine_version,
         "status": "ACTIVE_PROSPECTIVE_SHADOW" if observed_days else "ANCHOR_ESTABLISHED_AWAITING_FIRST_CLOSE",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "anchor_date": anchor, "anchor_established_this_run": first_run,
@@ -1007,7 +1054,7 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
             sum(1 for d in dates if d > anchor) - len(booked) > int(cfg["persistence_days"])),
         "selection": {"top_n": cfg["top_n"], "bottom_n": cfg["bottom_n"]},
         "books": {b["strategy"]: {**summaries[b["strategy"]], **gate[b["strategy"]]}
-                  for b in BOOKS},
+                  for b in books},
         "evidence_gate_min_observations": cfg["evidence_gate_min_observations"],
         "leaderboard_descriptive_only": True,
         "retrospective_winner_selection_forbidden": True,
