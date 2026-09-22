@@ -1,0 +1,71 @@
+{
+  "schema_version": "BTSE_EXTERNAL_FAMILY_HANDOFF_INDEX_V1",
+  "as_of": "2026-09-21",
+  "principle": "SYSTEM_TO_MECHANISM_TO_FAMILY_TO_FACTORY_COMMON_ADJUDICATION",
+  "ready_family_sources": [
+    {
+      "family_id": "H-XREGIME-01",
+      "origin": "Freqtrade",
+      "class": "CROSS_ASSET_REGIME_GATE",
+      "status": "EXISTING_FACTORY_CANDIDATE_HYPOTHESIS"
+    },
+    {
+      "family_id": "F-XVOL-SURFACE",
+      "origin": "QuantLib + Deribit",
+      "class": "DERIVATIVES_IMPLIED_VOLATILITY_REGIME",
+      "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY"
+    },
+    {
+      "family_id": "F-XMM-INVENTORY",
+      "origin": "Cryptofeed + Hummingbot",
+      "class": "MICROSTRUCTURE_ORDER_BOOK_PRESSURE",
+      "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY"
+    },
+    {
+      "family_id": "F-XAGENT-DISAGREE",
+      "origin": "TradingAgents",
+      "class": "ENSEMBLE_UNCERTAINTY_DISAGREEMENT",
+      "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+    },
+    {
+      "family_id": "F-XAGENT-VETO",
+      "origin": "TradingAgents + AI Hedge Fund",
+      "class": "RISK_VETO_ABSTENTION_OVERLAY",
+      "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+    }
+  ],
+  "blocked_family_sources": [
+    {
+      "family_id": "F-XFACTOR-NONLINEAR",
+      "origin": "Qlib",
+      "blocker": "HISTORICAL_PIT_CROSS_SECTIONAL_QRDS_FEATURE_PANEL_MISSING"
+    },
+    {
+      "family_id": "F-XNLP-SENTIMENT",
+      "origin": "FinBERT",
+      "blocker": "ADMISSIBLE_TIMESTAMPED_CRYPTO_NEWS_HISTORY_MISSING"
+    }
+  ],
+  "auditors_and_components_not_alpha_families": [
+    "AUDIT-XEXEC-01 / NautilusTrader execution realism",
+    "Backtrader engine parity / execution semantics",
+    "LEAN capacity/slippage audit",
+    "AUDIT-XAVAIL-01 / AI Hedge Fund unavailable != neutral",
+    "CCXT transport/source normalization",
+    "Fincept factor/reference semantics"
+  ],
+  "closed_specific_hypotheses_do_not_resurrect": [
+    "Coin Metrics AdrActCnt 7d risk gate",
+    "River online model + ADWIN frozen formulation",
+    "BOCPD frozen hazard/threshold/cooldown formulation",
+    "FinRL frozen RL allocation configuration",
+    "Cryptofeed H_CF_LL_01 Binance->OKX 250ms lead-lag",
+    "Jesse Dual Thrust tested formulation"
+  ],
+  "factory_rule": "Ready handoffs are inputs for fresh Factory child hypotheses, not pre-approved survivors. Blocked handoffs remain zero-credit until their exact evidence blocker is resolved.",
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "factory_runtime_untouched": true
+}
