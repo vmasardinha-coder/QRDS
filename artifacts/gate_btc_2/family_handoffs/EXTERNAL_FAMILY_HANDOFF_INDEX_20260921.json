@@ -1,37 +1,39 @@
 {
   "schema_version": "BTSE_EXTERNAL_FAMILY_HANDOFF_INDEX_V1",
-  "as_of": "2026-09-21",
+  "as_of": "2026-09-22",
   "principle": "SYSTEM_TO_MECHANISM_TO_FAMILY_TO_FACTORY_COMMON_ADJUDICATION",
   "ready_family_sources": [
     {
       "family_id": "H-XREGIME-01",
       "origin": "Freqtrade",
       "class": "CROSS_ASSET_REGIME_GATE",
-      "status": "EXISTING_FACTORY_CANDIDATE_HYPOTHESIS"
+      "status": "EXISTING_FACTORY_CANDIDATE_HYPOTHESIS_AWAITING_FINITE_FACTORY_SEARCH_FREEZE"
     },
     {
       "family_id": "F-XVOL-SURFACE",
       "origin": "QuantLib + Deribit",
       "class": "DERIVATIVES_IMPLIED_VOLATILITY_REGIME",
-      "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY"
+      "status": "PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING",
+      "runtime_branch": "runtime/gate-btc-external-forward"
     },
     {
       "family_id": "F-XMM-INVENTORY",
       "origin": "Cryptofeed + Hummingbot",
       "class": "MICROSTRUCTURE_ORDER_BOOK_PRESSURE",
-      "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY"
+      "status": "PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING",
+      "runtime_branch": "runtime/gate-btc-external-forward"
     },
     {
       "family_id": "F-XAGENT-DISAGREE",
       "origin": "TradingAgents",
       "class": "ENSEMBLE_UNCERTAINTY_DISAGREEMENT",
-      "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+      "status": "HANDOFF_READY_AWAITING_CONCRETE_INDEPENDENT_SIGNAL_BINDING"
     },
     {
       "family_id": "F-XAGENT-VETO",
       "origin": "TradingAgents + AI Hedge Fund",
       "class": "RISK_VETO_ABSTENTION_OVERLAY",
-      "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+      "status": "HANDOFF_READY_AWAITING_CONCRETE_ASSESSOR_BINDING"
     }
   ],
   "blocked_family_sources": [
@@ -44,6 +46,16 @@
       "family_id": "F-XNLP-SENTIMENT",
       "origin": "FinBERT",
       "blocker": "ADMISSIBLE_TIMESTAMPED_CRYPTO_NEWS_HISTORY_MISSING"
+    }
+  ],
+  "closed_factory_batches": [
+    {
+      "batch": "GRAMMAR_008_FREQTRADE_INDUSTRIAL",
+      "registered_candidates": 24,
+      "executable_candidates": 22,
+      "discovery_pass_count": 0,
+      "historical_survivor_count": 0,
+      "disposition": "CLOSED_NO_SURVIVOR_NO_RETUNE"
     }
   ],
   "auditors_and_components_not_alpha_families": [
@@ -62,7 +74,7 @@
     "Cryptofeed H_CF_LL_01 Binance->OKX 250ms lead-lag",
     "Jesse Dual Thrust tested formulation"
   ],
-  "factory_rule": "Ready handoffs are inputs for fresh Factory child hypotheses, not pre-approved survivors. Blocked handoffs remain zero-credit until their exact evidence blocker is resolved.",
+  "factory_rule": "Ready handoffs are inputs for fresh Factory child hypotheses, not pre-approved survivors. Scientific bindings/search spaces must be frozen before outcome reads. Blocked handoffs remain zero-credit until their exact evidence blocker is resolved.",
   "research_only": true,
   "shadow_only": true,
   "real_capital_brl": 0,
