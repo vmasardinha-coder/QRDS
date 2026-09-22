@@ -1,12 +1,26 @@
 name: GATE BTC Delta V12 Engine
 
-# Runs the preregistered V12 engine over the TOP100 universe once the venue pins
-# for the day exist. Chained on the pinning workflow rather than scheduled, so it
-# can never run against a panel the pin ledger has not seen.
+# SERIES CLOSED on 2026-09-22. See migration/reporting/delta_v12_engine_closure.json.
 #
-# The anchor is established by the FIRST successful run and never chosen again.
-# The ledger is append-only and hash-chained: a run that would restate a
-# committed close fails instead of writing.
+# 2026-09-20 and 2026-09-21 were never observed, so UNIVERSE_MEMBERSHIP.csv ends
+# at 2026-09-19 and a day the engine did not see is never reconstructed. Every
+# run of this ledger now fails closed on that gap, permanently and by design.
+# The successor is .github/workflows/gate-btc-delta-v13-engine.yml, with its own
+# anchor and its own 60 observations.
+#
+# The workflow_run trigger is therefore REMOVED: chaining it on the daily pinning
+# would paint the board red every morning for a failure that is already
+# understood and recorded, and a red that means nothing new trains people to
+# ignore the ones that do. The file stays, and workflow_dispatch stays, so the
+# closed series can still be re-read or re-verified deliberately.
+#
+# Nothing here is disabled to make a failure go away: the failure is the correct
+# behaviour of missing_day_policy, and it is recorded in the closure record
+# rather than suppressed.
+#
+# What it used to do: run the preregistered V12 engine over the TOP100 universe
+# once the venue pins for the day existed, anchored by the first successful run
+# and never re-anchored, on an append-only hash-chained ledger.
 
 on:
   workflow_dispatch:
@@ -19,9 +33,6 @@ on:
           retifica a si mesma -- e nunca permite encurtar o ledger.
         required: false
         default: ''
-  workflow_run:
-    workflows: ["GATE BTC Delta V12 Price Pinning"]
-    types: [completed]
   pull_request:
     branches: [main]
     paths:
@@ -78,9 +89,10 @@ jobs:
 
   run-engine:
     needs: engine-tests
-    if: >-
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    # Only a deliberate dispatch now. The workflow_run arm is gone with its
+    # trigger; leaving the condition behind would suggest a chaining that no
+    # longer exists.
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       actions: read
       contents: write
