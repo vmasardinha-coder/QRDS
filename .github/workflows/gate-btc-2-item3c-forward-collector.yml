@@ -1,0 +1,136 @@
+name: GATE BTC 2 Item 3C Experimental Forward Collector
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/gate_btc_2/FACTORY_ITEM3C_FORWARD_COLLECTOR_PREREG_20260922.json'
+      - 'tools/gate_btc_2_item3c_forward_collector.py'
+      - '.github/workflows/gate-btc-2-item3c-forward-collector.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/FACTORY_ITEM3C_FORWARD_COLLECTOR_PREREG_20260922.json'
+      - 'tools/gate_btc_2_item3c_forward_collector.py'
+      - '.github/workflows/gate-btc-2-item3c-forward-collector.yml'
+  schedule:
+    # 19:05 America/Sao_Paulo. All frozen 15/30/60m decisions and 120m exits are complete.
+    - cron: '5 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-item3c-forward-collector
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  MT5_READ_ONLY: 'true'
+  NO_ORDER_SEND: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  H1_H31_RUNTIME_MUTATION: 'false'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile collector and dependency
+        shell: powershell
+        run: |
+          python -m py_compile tools/gate_btc_2_item3b_forward_source_probe.py tools/gate_btc_2_item3c_forward_collector.py
+      - name: Run embedded deterministic semantics test
+        shell: powershell
+        run: python tools/gate_btc_2_item3c_forward_collector.py --self-test
+      - name: Assert preregistration/safety and no order path
+        shell: powershell
+        run: |
+          python -c "import json; p=json.load(open('artifacts/gate_btc_2/FACTORY_ITEM3C_FORWARD_COLLECTOR_PREREG_20260922.json',encoding='utf-8')); assert p['status']=='PREREGISTERED_BEFORE_FIRST_FORWARD_OBSERVATION'; assert p['session']['no_missed_session_reconstruction'] and p['session']['no_backfill']; assert p['ledger']['survivor_credit']==0 and p['ledger']['promotion_authority'] is False; assert p['future_adjudication']['not_defined_here'] and p['future_adjudication']['direct_survivor_transition'] is False; s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['MT5_READ_ONLY'] and s['NO_ORDER_SEND'] and s['NO_BACKFILL'] and s['NO_RETUNE']; assert s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['ENGINE_FEED'] is False and s['H1_H31_RUNTIME_MUTATION'] is False"
+          $t=Get-Content tools/gate_btc_2_item3c_forward_collector.py -Raw
+          if ($t -match 'order_send\s*\(') { throw 'ORDER_SEND_FORBIDDEN' }
+
+  collect:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - name: Check out canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Assert safety and install read-only MT5 dependency
+        shell: powershell
+        run: |
+          if ($env:RESEARCH_ONLY -ne 'true' -or $env:SHADOW_ONLY -ne 'true') { throw 'RESEARCH_BOUNDARY' }
+          if ($env:MT5_READ_ONLY -ne 'true' -or $env:NO_ORDER_SEND -ne 'true') { throw 'MT5_READ_ONLY_BOUNDARY' }
+          if ($env:ENGINE_FEED -ne 'false' -or $env:ORDERS -ne '0' -or $env:REAL_CAPITAL -ne '0') { throw 'TRADING_BOUNDARY' }
+          if ($env:NO_BACKFILL -ne 'true' -or $env:NO_RETUNE -ne 'true' -or $env:H1_H31_RUNTIME_MUTATION -ne 'false') { throw 'SCIENTIFIC_BOUNDARY' }
+          python -m pip install -q MetaTrader5 tzdata
+      - name: Collect one current-session zero-credit experimental shadow batch
+        shell: powershell
+        run: |
+          $env:PYTHONPATH = (Resolve-Path main_repo\tools).Path
+          python main_repo/tools/gate_btc_2_item3c_forward_collector.py `
+            --runtime-root runtime_repo `
+            --prereg main_repo/artifacts/gate_btc_2/FACTORY_ITEM3C_FORWARD_COLLECTOR_PREREG_20260922.json `
+            --out-dir item3c_out
+      - name: Assert output safety
+        shell: powershell
+        run: |
+          python -c "import json; s=json.load(open('item3c_out/STATUS.json',encoding='utf-8')); assert s['scientific_credit']==0; assert s['orders']==0 and s['real_capital']==0 and s['engine_feed'] is False; print('ITEM3C_STATUS='+s['status']); print('ITEM3C_SESSION='+str(s.get('session'))); print('ITEM3C_FAMILIES='+str(s.get('active_family_count'))); print('ITEM3C_STATES='+str(s.get('family_state_counts')))"
+      - name: Persist append-only prospective ledger/status
+        shell: powershell
+        run: |
+          $root='runtime_repo\runtime\gate_btc_2\item3_forward_shadow'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          Copy-Item item3c_out\STATUS.json "$root\COLLECTOR_STATUS.json" -Force
+          if (Test-Path item3c_out\SESSION_RECORD.json) {
+            $rec = Get-Content item3c_out\SESSION_RECORD.json -Raw | ConvertFrom-Json
+            $ledger = "$root\ledger"
+            New-Item -ItemType Directory -Force -Path $ledger | Out-Null
+            $target = "$ledger\$($rec.session).json"
+            if (Test-Path $target) {
+              $old = Get-Content $target -Raw | ConvertFrom-Json
+              if ($old.record_sha256 -ne $rec.record_sha256) { throw 'APPEND_ONLY_SESSION_CONFLICT' }
+            } else {
+              Copy-Item item3c_out\SESSION_RECORD.json $target
+            }
+          }
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/item3_forward_shadow
+          git -C runtime_repo diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          git -C runtime_repo commit -m "Append Factory Item 3C experimental forward session ${{ github.run_id }}"
+          for ($i=1; $i -le 5; $i++) {
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime
+            if ($LASTEXITCODE -ne 0) { git -C runtime_repo rebase --abort; throw 'RUNTIME_REBASE_FAILED' }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            Start-Sleep -Seconds ($i*2)
+          }
+          throw 'RUNTIME_PUSH_FAILED'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-item3c-forward-${{ github.run_id }}
+          path: item3c_out/
+          retention-days: 90
