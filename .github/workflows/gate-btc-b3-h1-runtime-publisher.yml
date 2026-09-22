@@ -83,6 +83,11 @@ jobs:
           print('date='+str(s['date']))
           if s.get('status')=='STRUCTURAL_PASS' and s.get('qualified') is True:
               print('mode=qualified')
+          elif s.get('status')=='NO_FROZEN_H1_SCHEDULE_FOR_DATE' and s.get('qualified') is False:
+              # Expected no-op outside the frozen canonical H1 schedule.  This is
+              # neither an operational gap nor scientific evidence and must not
+              # advance the /20 counter.
+              print('mode=noop')
           else:
               gaps=list(Path('b3_evidence').rglob('H1_OPERATIONAL_GAP.json'))
               assert len(gaps)==1, 'unqualified H1 run lacks classified operational gap'
@@ -93,6 +98,7 @@ jobs:
 
       - name: Resolve canonical 20/20 gate without reading economics
         id: gate
+        if: steps.payload.outputs.mode != 'noop'
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
@@ -144,6 +150,7 @@ jobs:
             --output runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json
 
       - name: Arm 20/20 checkpoint and disabled MT5 paper handoff
+        if: steps.payload.outputs.mode != 'noop'
         run: |
           set -euo pipefail
           CAN=runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json
@@ -155,6 +162,7 @@ jobs:
           fi
 
       - name: Validate safety and no synthetic backfill
+        if: steps.payload.outputs.mode != 'noop'
         run: |
           python - <<'PY'
           import json
@@ -185,6 +193,7 @@ jobs:
           PY
 
       - name: Publish runtime H1 evidence
+        if: steps.payload.outputs.mode != 'noop'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
