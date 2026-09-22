@@ -25,12 +25,21 @@ $config = Join-Path $RepoRoot "artifacts\gate_btc_2\PRESSURE_VALVE_LOCAL_SHADOW_
 if (-not (Test-Path $collector)) { throw "COLLECTOR_NOT_FOUND: $collector" }
 if (-not (Test-Path $config)) { throw "CONFIG_NOT_FOUND: $config" }
 
+# Task Scheduler does not reliably inherit the GitHub runner's transient PATH.
+# Resolve Python now and persist its absolute executable path in the task action.
+$pythonCommand = Get-Command $PythonExe -ErrorAction Stop
+$resolvedPython = if ($pythonCommand.Source) { $pythonCommand.Source } else { $pythonCommand.Path }
+if (-not $resolvedPython -or -not (Test-Path $resolvedPython)) {
+    throw "PYTHON_EXECUTABLE_NOT_FOUND: $PythonExe"
+}
+$resolvedPython = [System.IO.Path]::GetFullPath($resolvedPython)
+
 New-Item -ItemType Directory -Force -Path $LocalRoot | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $LocalRoot "logs") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $LocalRoot "spool\pressure_valves\ledger") | Out-Null
 
 $arg = ('"{0}" --config "{1}" --root "{2}"' -f $collector, $config, $LocalRoot)
-$action = New-ScheduledTaskAction -Execute $PythonExe -Argument $arg -WorkingDirectory $RepoRoot
+$action = New-ScheduledTaskAction -Execute $resolvedPython -Argument $arg -WorkingDirectory $RepoRoot
 $trigger = New-ScheduledTaskTrigger -Daily -At "12:35"
 $trigger.DaysInterval = 1
 
@@ -61,6 +70,7 @@ $result = [ordered]@{
     task = $TaskName
     local_root = $resolvedLocal
     repo_root = $RepoRoot
+    python_executable = $resolvedPython
     schedule_local = "12:35 daily; collector itself rejects weekends/pre-D0/pre-window"
     h1_h31_task_present = [bool]($null -ne $hTask)
     h1_h31_task_name = $ForbiddenTask
