@@ -1,0 +1,40 @@
+{
+  "schema_version": "BTSE_FAMILY_HANDOFF_V1",
+  "family_id": "F-XNLP-SENTIMENT",
+  "family_class": "CRYPTO_NEWS_SENTIMENT_STATE",
+  "origin": ["FinBERT"],
+  "validated_external_capability": {
+    "status": "PASS_ON_FINANCIAL_PHRASEBANK_TEST",
+    "sample_n": 970,
+    "accuracy": 0.8649,
+    "macro_f1": 0.8561
+  },
+  "external_benchmark_economic_credit_to_factory": false,
+  "required_factory_input": "TIMESTAMPED_ADMISSIBLE_CRYPTO_NEWS_WITH_EXPLICIT_AVAILABILITY_SEMANTICS",
+  "required_history_available": false,
+  "allowed_child_hypothesis_axes": [
+    "SENTIMENT_LEVEL",
+    "SENTIMENT_SHOCK",
+    "SENTIMENT_PERSISTENCE",
+    "SENTIMENT_DISPERSION",
+    "NEWS_PRICE_DISAGREEMENT",
+    "SENTIMENT_AS_ENTRY_GATE",
+    "SENTIMENT_AS_ABSTENTION_LAYER"
+  ],
+  "forbidden": [
+    "ASSUME_FINANCIAL_PHRASEBANK_GENERALIZES_ECONOMICALLY_TO_CRYPTO",
+    "BACKFILL_NEWS_WITHOUT_HISTORICAL_AVAILABILITY_SEMANTICS",
+    "SENTIMENT_POSITIVE_EQUALS_BUY_WITHOUT_FRESH_PREREGISTERED_HYPOTHESIS"
+  ],
+  "economic_direction": null,
+  "thresholds": null,
+  "lookbacks": null,
+  "factory_migration_authorized": false,
+  "economic_claim_authorized": false,
+  "factory_runtime_untouched": true,
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "status": "BLOCKED_AWAITING_ADMISSIBLE_TIMESTAMPED_CRYPTO_NEWS_HISTORY"
+}
