@@ -1,4 +1,4 @@
-# BTSE external-family handoff index — 2026-09-21
+# BTSE external-family handoff index — refreshed 2026-09-22
 
 ## Governing rule
 
@@ -6,33 +6,43 @@
 
 The external platform itself is not integrated unless a capability genuinely requires it. External benchmark performance never becomes Factory economic truth by inheritance.
 
-## Ready / usable as Factory family sources
+## Ready / active Factory family sources
 
 | Family | Origin | What the Factory receives | Current boundary |
 |---|---|---|---|
-| `H-XREGIME-01` | Freqtrade | cross-asset regime-gate hypothesis | existing candidate; adjudicate under Factory evidence |
-| `F-XVOL-SURFACE` | QuantLib + Deribit | 8 frozen BTC options-surface features: ATM level, term slope, 25d skew/butterfly, dispersion | live extractor validated; needs admissible timestamped feature history before economic testing |
-| `F-XMM-INVENTORY` | Cryptofeed + Hummingbot | 8 frozen depth10 order-book pressure/liquidity features | live Binance+OKX capture validated; needs admissible timestamped/prospective feature history |
-| `F-XAGENT-DISAGREE` | TradingAgents | deterministic disagreement/uncertainty transform over independent available signals | ready for fresh Factory child hypotheses; no LLM dependency |
-| `F-XAGENT-VETO` | TradingAgents + AI Hedge Fund | deterministic `VETO > ABSTAIN > ALLOW` risk-overlay semantics | ready for fresh Factory child hypotheses; unavailable evidence never neutralized |
+| `H-XREGIME-01` | Freqtrade | cross-asset regime-gate hypothesis | registered candidate; **awaiting a finite Factory search freeze before any outcome read** |
+| `F-XVOL-SURFACE` | QuantLib + Deribit | 8 frozen BTC options-surface features | **prospective feature history accumulating** on `runtime/gate-btc-external-forward`; zero economic/survivor credit |
+| `F-XMM-INVENTORY` | Cryptofeed + Hummingbot | 8 frozen depth10 order-book pressure/liquidity features | **prospective feature history accumulating** on `runtime/gate-btc-external-forward`; zero economic/survivor credit |
+| `F-XAGENT-DISAGREE` | TradingAgents | deterministic disagreement/uncertainty transform over independent available signals | handoff ready; awaiting concrete independent-signal binding before child generation |
+| `F-XAGENT-VETO` | TradingAgents + AI Hedge Fund | deterministic `VETO > ABSTAIN > ALLOW` risk-overlay semantics | handoff ready; awaiting concrete assessor binding before child generation |
+
+## Freqtrade industrial batch already adjudicated
+
+Grammar 008 is not an open Freqtrade task. It froze 24 candidates, of which 22 were executable after two Morning Star variants failed closed for preregistration underspecification. The real historical evaluation produced:
+
+- registered candidates: `24`
+- executable candidates: `22`
+- discovery passes: `0`
+- validation source opened: `false`
+- holdout source opened: `false`
+- historical survivors: `0`
+- disposition: `CLOSED_NO_SURVIVOR_NO_RETUNE`
+
+This batch remains closed and must not be revived through parameter shopping.
 
 ## Family contracts prepared but scientifically blocked
 
 ### `F-XFACTOR-NONLINEAR` — Qlib
 
-External nonlinear-factor capability passed its own benchmark, but the repo still lacks the historical PIT cross-sectional QRDS feature panel needed for a causal common comparison. Therefore:
+External nonlinear-factor capability passed its own benchmark, but the repo still lacks the historical PIT cross-sectional QRDS feature panel needed for a causal common comparison.
 
 `BLOCKED_AWAITING_HISTORICAL_PIT_CROSS_SECTIONAL_PANEL`
 
-The Qlib benchmark metrics may motivate the family class but receive zero Factory alpha credit.
-
 ### `F-XNLP-SENTIMENT` — FinBERT
 
-FinBERT passed the frozen Financial PhraseBank capability benchmark, but there is no admissible timestamped crypto-news history with explicit historical availability semantics. Therefore:
+FinBERT passed the frozen Financial PhraseBank capability benchmark, but there is no admissible timestamped crypto-news history with explicit historical availability semantics.
 
 `BLOCKED_AWAITING_ADMISSIBLE_TIMESTAMPED_CRYPTO_NEWS_HISTORY`
-
-Financial-language classification quality is not treated as crypto trading alpha.
 
 ## Useful auditors/components, not standalone alpha families
 
@@ -52,20 +62,10 @@ Financial-language classification quality is not treated as crypto trading alpha
 - Cryptofeed `H_CF_LL_01` Binance -> OKX 250 ms lead-lag.
 - Jesse Dual Thrust tested formulation.
 
-Their broader capability classes may support a genuinely new preregistered hypothesis, but the failed formulations remain failed.
+## Operational boundary
 
-## What this changes operationally
+The external lane is a family/component/auditor mine. `F-XVOL-SURFACE` and `F-XMM-INVENTORY` now have a live prospective evidence lane, but no economic direction, threshold, lookback, horizon, alpha claim, survivor claim or promotion authority was created.
 
-The BTSE external lane is now a **family/component/auditor mine**, not a platform-integration program.
+`H-XREGIME-01` and both XAGENT handoffs are now explicitly blocked at scientific choices that must be frozen before outcome reads rather than selected post hoc.
 
-The practical throughput metric becomes:
-
-`external mechanisms extracted -> valid family handoffs -> Factory child hypotheses tested -> survivors -> incremental gain`
-
-not number of external applications installed.
-
-## Safety / lane boundary
-
-This index changes no Factory runtime, V2A/PIT registry, engine, order behavior, capital, canonical threshold or survivor status.
-
-`RESEARCH_ONLY=true`, `SHADOW_ONLY=true`, `REAL_CAPITAL_BRL=0`, `ORDERS=0`, `FACTORY_RUNTIME_UNTOUCHED=true`.
+`RESEARCH_ONLY=true`, `SHADOW_ONLY=true`, `ENGINE_FEED=false`, `REAL_CAPITAL_BRL=0`, `ORDERS=0`, `NO_RETUNE=true`, `NO_BACKFILL=true`.
