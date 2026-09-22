@@ -1,0 +1,85 @@
+{
+  "schema": "gate_btc_2.factory_item3c_forward_collector_prereg.v1",
+  "frozen_at": "2026-09-22",
+  "item": "3C",
+  "status": "PREREGISTERED_BEFORE_FIRST_FORWARD_OBSERVATION",
+  "upstream_binding": {
+    "runtime_manifest": "runtime/gate_btc_2/item3_forward_shadow/ACTIVATION_MANIFEST.json",
+    "required_status": "ACTIVATED_PENDING_FIRST_OBSERVATION",
+    "experimental_status": "EXPERIMENTAL_PROSPECTIVE_SHADOW",
+    "population_rule": "ALL_SOURCE_COMPATIBLE_ITEM3B_ACTIVE_FAMILIES",
+    "manual_selection": false
+  },
+  "session": {
+    "timezone": "America/Sao_Paulo",
+    "decision_session_start": "09:00",
+    "daily_batch_not_before": "12:30",
+    "allowed_weekdays": [0, 1, 2, 3, 4],
+    "closed_m5_only": true,
+    "no_missed_session_reconstruction": true,
+    "no_backfill": true
+  },
+  "source": {
+    "provider": "LOCAL_SELF_HOSTED_MT5_TERMINAL",
+    "root": "WIN",
+    "timeframe": "M5",
+    "contract_roll_rule": "EARLIEST_EXACT_WIN_DELIVERY_CONTRACT_WITH_EXPLICIT_EXPIRATION_DATE_NOT_BEFORE_SESSION",
+    "roll_inputs_forbidden": ["price", "volume", "open_interest", "strategy_outcome"],
+    "volume_field_if_admitted": "real_volume",
+    "tick_volume_as_real_volume": false
+  },
+  "frozen_strategy_semantics": {
+    "holding_horizons_minutes": [30, 60, 120],
+    "reference_cost_bps": 2.0,
+    "stress_cost_bps": 3.0,
+    "signal_standardization": "ROLLING_PRIOR_SESSIONS_MEDIAN_MAD_PER_FAMILY_LOOKBACK",
+    "mad_scale": 1.4826,
+    "signal_threshold": "ABS_Z_GTE_FROZEN_FAMILY_THRESHOLD",
+    "entry": "NEXT_M5_OPEN_AFTER_DECISION_WINDOW",
+    "exit": "M5_OPEN_AFTER_FROZEN_HOLDING_HORIZON",
+    "delayed_entry_robustness": "ONE_ADDITIONAL_M5_BAR",
+    "direction": "FROZEN_PER_FAMILY_CONTINUATION_OR_REVERSION",
+    "same_bar_reaction_forbidden": true,
+    "prospective_warmup_only": true,
+    "first_signal_requires_complete_frozen_prior_lookback": true,
+    "missing_feature": "EXPLICIT_UNAVAILABLE_NO_SIGNAL_NO_CREDIT"
+  },
+  "features": {
+    "OPEN_RETURN": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "OPEN_RANGE": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "REALIZED_VOL": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "VOLUME_EARLY": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA_USING_ADMITTED_REAL_VOLUME_ONLY",
+    "BAR_IMBALANCE": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "CLOSE_LOCATION": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "BODY_RANGE": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA",
+    "GAP_FROM_PRIOR_CLOSE": "EXACT_AUTONOMOUS_EVALUATOR_FORMULA_USING_PRIOR_PROSPECTIVE_SESSION_CLOSE"
+  },
+  "ledger": {
+    "root": "runtime/gate_btc_2/item3_forward_shadow/ledger",
+    "one_immutable_record_per_session": true,
+    "duplicate_same_hash": "IDEMPOTENT_NOOP",
+    "duplicate_different_hash": "FAIL_CLOSED",
+    "raw_feature_history_is_forward_only": true,
+    "signal_and_outcome_same_daily_record": true,
+    "economics_read_for_promotion": false,
+    "survivor_credit": 0,
+    "promotion_authority": false
+  },
+  "future_adjudication": {
+    "not_defined_here": true,
+    "must_be_preregistered_before_promotion_read": true,
+    "direct_survivor_transition": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "MT5_READ_ONLY": true,
+    "NO_ORDER_SEND": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "H1_H31_RUNTIME_MUTATION": false
+  }
+}
