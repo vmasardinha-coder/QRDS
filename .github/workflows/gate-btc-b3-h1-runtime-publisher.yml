@@ -133,7 +133,7 @@ jobs:
           cp "$GAP" "runtime_repo/runtime/ledgers/b3_h1/gaps/${{ steps.payload.outputs.date }}.json"
 
       - name: Advance canonical /20 reporting clock exactly once
-        if: steps.gate.outputs.frozen != 'true'
+        if: steps.payload.outputs.mode != 'noop' && steps.gate.outputs.frozen != 'true'
         run: |
           set -euo pipefail
           EXISTING=()
