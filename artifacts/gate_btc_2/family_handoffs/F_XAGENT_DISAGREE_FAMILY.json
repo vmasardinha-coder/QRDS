@@ -1,0 +1,31 @@
+{
+  "schema_version": "BTSE_FAMILY_HANDOFF_V1",
+  "family_id": "F-XAGENT-DISAGREE",
+  "family_class": "ENSEMBLE_UNCERTAINTY_DISAGREEMENT",
+  "origins": ["TradingAgents"],
+  "input_signal_range": [-1.0, 1.0],
+  "minimum_available_signals": 3,
+  "missing_signal_policy": "EXCLUDE_AND_COUNT_NOT_ZERO_FILL",
+  "features": [
+    "available_count",
+    "unavailable_count",
+    "availability_fraction",
+    "consensus_mean",
+    "consensus_abs",
+    "disagreement_std",
+    "pairwise_disagreement",
+    "sign_split_fraction"
+  ],
+  "economic_direction": null,
+  "thresholds": null,
+  "lookbacks": null,
+  "exposure_mapping": null,
+  "economic_claim_authorized": false,
+  "factory_migration_authorized": false,
+  "factory_runtime_untouched": true,
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "status": "HANDOFF_READY_FOR_FACTORY_CHILD_HYPOTHESIS_GENERATION"
+}
