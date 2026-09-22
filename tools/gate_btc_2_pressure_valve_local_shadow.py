@@ -25,10 +25,14 @@ def dump(path: Path, obj):
     path.write_text(json.dumps(obj, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def windows_norm(path: Path | str) -> str:
+    return str(path).replace("/", "\\").lower().rstrip("\\")
+
+
 def assert_isolation(root: Path) -> None:
-    a = str(root.resolve()).lower().rstrip("\\/")
-    b = str(FORBIDDEN_ROOT).lower().rstrip("\\/")
-    if a == b or a.startswith(b + "\\") or a.startswith(b + "/"):
+    a = windows_norm(root)
+    b = windows_norm(FORBIDDEN_ROOT)
+    if a == b or a.startswith(b + "\\"):
         raise RuntimeError("ISOLATION_FAIL_FORBIDDEN_H1_H31_ROOT")
 
 
