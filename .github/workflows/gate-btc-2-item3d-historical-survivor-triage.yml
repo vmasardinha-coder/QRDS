@@ -40,23 +40,21 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Assert preregistration and safety
+      - name: Assert versioned rule and safety
         run: |
           python - <<'PY'
           import json
           p=json.load(open('main_repo/artifacts/gate_btc_2/FACTORY_ITEM3D_HISTORICAL_SURVIVOR_PREREG_20260922.json'))
-          assert p['schema']=='gate_btc_2.factory_item3d_historical_survivor_prereg.v2'
-          assert p['status']=='PREREGISTERED_FACILITATED_HISTORICAL_SCREEN_AFTER_STRICT_ZERO_RESULT'
+          assert p['schema']=='gate_btc_2.factory_item3d_historical_survivor_prereg.v3'
+          assert p['status']=='VERSIONED_USER_DIRECTED_HISTORICAL_ECONOMIC_SCREEN'
           assert p['population']['expected_count']==580
           assert p['population']['drop_from_forward_collection'] is False
           assert p['ranking_policy']['no_top_n_cutoff'] is True
           assert p['ranking_policy']['no_percentile_cutoff'] is True
           assert p['historical_survivor_semantics']['prospective_survivor_credit']==0
           assert p['historical_survivor_semantics']['promotion_authority'] is False
-          s=p['safety']
-          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
-          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
-          assert s['H1_H31_RUNTIME_MUTATION'] is False
+          s=p['safety']; assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['H1_H31_RUNTIME_MUTATION'] is False
           PY
       - name: Run historical triage
         run: |
@@ -68,20 +66,16 @@ jobs:
           python - <<'PY'
           import json
           r=json.load(open('item3d_historical_survivors.json'))
-          assert r['schema']=='gate_btc_2.factory_item3d_historical_survivor_triage.v2'
-          assert r['population_count']==580
-          assert r['all_580_remain_forward_active'] is True
-          assert r['prospective_survivor_credit']==0
-          assert r['survivor_promotion_authority'] is False
+          assert r['schema']=='gate_btc_2.factory_item3d_historical_survivor_triage.v3'
+          assert r['population_count']==580 and r['all_580_remain_forward_active'] is True
+          assert r['prospective_survivor_credit']==0 and r['survivor_promotion_authority'] is False
           assert r['engine_feed'] is False and r['orders']==0 and r['real_capital']==0
-          assert r['no_retune'] and r['no_backfill']
-          assert r['h1_h31_runtime_mutation'] is False
+          assert r['no_retune'] and r['no_backfill'] and r['h1_h31_runtime_mutation'] is False
           PY
       - name: Persist historical candidate overlay
         if: github.event_name != 'pull_request'
         run: |
-          root='runtime_repo/runtime/gate_btc_2/item3_forward_shadow'
-          mkdir -p "$root"
+          root='runtime_repo/runtime/gate_btc_2/item3_forward_shadow'; mkdir -p "$root"
           cp item3d_historical_survivors.json "$root/HISTORICAL_SURVIVOR_TRIAGE.json"
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
