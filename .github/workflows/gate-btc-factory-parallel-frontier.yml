@@ -1,0 +1,145 @@
+name: GATE BTC Factory Parallel Frontier
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/parallel_frontier_dispatch.py'
+      - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+      - '.github/workflows/gate-btc-factory-parallel-frontier.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/parallel_frontier_dispatch.py'
+      - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+      - '.github/workflows/gate-btc-factory-parallel-frontier.yml'
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-factory-parallel-frontier
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  NO_COUNTER_RESET: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and self-test
+        run: |
+          python -m py_compile tools/gate_btc_factory/parallel_frontier_dispatch.py
+          python tools/gate_btc_factory/parallel_frontier_dispatch.py --self-test
+      - name: Assert frozen safety contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'))
+          assert p['canonical_frontier_policy']['mutation_allowed'] is False
+          assert p['dispatch_policy']['manual_selection'] is False
+          assert p['dispatch_policy']['pnl_selection'] is False
+          assert p['dispatch_policy']['economics_read_before_selection'] is False
+          assert p['dispatch_policy']['existing_h_id_allocation'] is False
+          assert p['parallel_frontier']['historical_credit']==0
+          assert p['parallel_frontier']['promotion_authority'] is False
+          s=p['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_BACKFILL'] and s['NO_RETUNE'] and s['NO_COUNTER_RESET'] and s['H1_H31_UNTOUCHED']
+          print('PARALLEL_FRONTIER_CONTRACT=PASS')
+          PY
+
+  dispatch:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+      - name: Check out canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize one bounded parallel frontier
+        run: |
+          mkdir -p out runtime_repo/runtime/factory_autonomy/parallel_frontier_audits
+          PYTHONPATH=main_repo python main_repo/tools/gate_btc_factory/parallel_frontier_dispatch.py \
+            --current runtime_repo/runtime/autonomous_science/CURRENT.json \
+            --scout runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json \
+            --handoff-ledger-dir runtime_repo/runtime/factory_autonomy/grammar_handoff_audits \
+            --output out/PARALLEL_FRONTIER_RUNTIME.json
+          python - <<'PY'
+          import json
+          d=json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))
+          s=d['safety']
+          assert s['canonical_frontier_untouched'] and s['h1_h31_untouched']
+          assert s['economics_read'] is False and s['no_retune'] and s['no_backfill']
+          assert s['orders']==0 and s['real_capital']==0 and s['engine_feed'] is False
+          if d['status'].startswith('PARALLEL_FRONTIER_'):
+              assert d['family_ids_allocated']==[]
+              assert d['historical_credit']==0 and d['retroactive_credit']==0
+              assert d['promotion_authority'] is False
+          print('PARALLEL_FRONTIER_STATUS='+d['status'])
+          print('PARALLEL_FRONTIER_SELECTED='+str((d.get('selected') or {}).get('channel_id')))
+          PY
+      - name: Persist append-only bounded frontier
+        run: |
+          status=$(python -c "import json; print(json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))['status'])")
+          cp out/PARALLEL_FRONTIER_RUNTIME.json runtime_repo/runtime/factory_autonomy/PARALLEL_FRONTIER_RUNTIME.json
+          if [[ "$status" == PARALLEL_FRONTIER_* ]]; then
+            sig=$(python -c "import json; print(json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))['selected']['grammar_signature'])")
+            cp out/PARALLEL_FRONTIER_RUNTIME.json "runtime_repo/runtime/factory_autonomy/parallel_frontier_audits/${sig}.json"
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))
+          if d['status'].startswith('PARALLEL_FRONTIER_'):
+              sig=d['selected']['grammar_signature']
+              receipt={
+                  'schema':'qrds.factory.grammar_scout_handoff.v1',
+                  'mode':'OUTCOME_BLIND_HANDOFF_ONLY',
+                  'request_count':1,
+                  'requests':[d['selected']],
+                  'safety':d['safety'],
+              }
+              Path(f'runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/parallel-{sig}.json').write_text(
+                  json.dumps(receipt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+          fi
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/PARALLEL_FRONTIER_RUNTIME.json runtime/factory_autonomy/parallel_frontier_audits runtime/factory_autonomy/grammar_handoff_audits
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "Factory parallel frontier ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1

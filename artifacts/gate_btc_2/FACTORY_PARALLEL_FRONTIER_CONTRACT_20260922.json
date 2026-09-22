@@ -1,0 +1,41 @@
+{
+  "schema": "gate_btc_2.factory_parallel_frontier_contract.v1",
+  "frozen_at": "2026-09-22",
+  "purpose": "KEEP_SCIENTIFIC_IDEATION_MOVING_WHEN_CANONICAL_GENERATION_IS_SOURCE_BLOCKED",
+  "canonical_frontier_policy": {
+    "mutation_allowed": false,
+    "current_blocker_must_remain_authoritative": true,
+    "parallel_lineage_is_separate": true
+  },
+  "dispatch_policy": {
+    "source": "GRAMMAR_SCOUT_OUTCOME_BLIND_HANDOFF",
+    "only_when_canonical_status_prefix_in": ["WAITING_", "BLOCKED_", "DATA_GAP", "FAIL_CLOSED"],
+    "selection": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND",
+    "manual_selection": false,
+    "pnl_selection": false,
+    "economics_read_before_selection": false,
+    "existing_h_id_allocation": false,
+    "existing_grammar_mutation": false
+  },
+  "parallel_frontier": {
+    "namespace_prefix": "PF::",
+    "status_after_dispatch": "PARALLEL_FRONTIER_PREREGISTERED_AWAITING_SOURCE_QUALIFICATION",
+    "family_ids_allocated_at_dispatch": 0,
+    "historical_credit": 0,
+    "retroactive_credit": 0,
+    "promotion_authority": false,
+    "next_gate": "SOURCE_QUALIFICATION_THEN_SEPARATE_CHILD_PREREGISTRATION"
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "NO_COUNTER_RESET": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
