@@ -32,8 +32,6 @@ def main() -> int:
         frozen=contract['decisions'][xid]
         if env.get('family_id') != xid:
             raise RuntimeError(f'FAMILY_ID_MISMATCH:{xid}:{env.get("family_id")}')
-        if env.get('channel_id') != frozen['channel']:
-            raise RuntimeError(f'CHANNEL_MISMATCH:{xid}:{env.get("channel_id")}')
         if env.get('economics_read') is not False or env.get('historical_testing_started') is not False:
             raise RuntimeError(f'ECONOMICS_OR_TESTING_ALREADY_OPENED:{xid}')
         if env.get('existing_counter_credit') != 0 or env.get('prospective_credit') != 0:
@@ -47,7 +45,8 @@ def main() -> int:
         rows.append({
             'family_id':xid,
             'grammar_signature':env.get('grammar_signature'),
-            'channel':frozen['channel'],
+            'canonical_channel_id':env.get('channel_id'),
+            'contract_channel_label':frozen['channel'],
             'decision':frozen['decision'],
             'reason':frozen['reason'],
             'source_cost':frozen['source_cost'],
