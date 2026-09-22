@@ -1,0 +1,71 @@
+{
+  "schema": "gate_btc_2.factory_item3d_forward_adjudication_prereg.v1",
+  "frozen_at": "2026-09-22",
+  "item": "3D",
+  "status": "PREREGISTERED_BEFORE_FIRST_FORWARD_ADJUDICATION",
+  "purpose": "Automatically classify Item 3 experimental families from forward-only evidence without changing the survivor ruler or awarding survivor credit.",
+  "population": {
+    "activation_manifest": "runtime/gate_btc_2/item3_forward_shadow/ACTIVATION_MANIFEST.json",
+    "ledger_root": "runtime/gate_btc_2/item3_forward_shadow/ledger",
+    "rule": "ALL_ACTIVATED_ITEM3_EXPERIMENTAL_FAMILIES",
+    "manual_selection": false,
+    "historical_performance_selection": false
+  },
+  "fixed_forward_checkpoint": {
+    "trigger_observations_per_horizon": 60,
+    "observation_slice": "FIRST_60_FORWARD_TRIGGER_OUTCOMES_PER_FAMILY_AND_HORIZON_ONLY",
+    "holding_horizons_minutes": [30, 60, 120],
+    "minimum_passing_horizons_for_candidate": 2,
+    "minimum_rejected_horizons_for_terminal_null": 2
+  },
+  "cell_gates": {
+    "reference_cost_bps": 2.0,
+    "minimum_mean_net_reference_bps_exclusive": 0.25,
+    "stress_cost_bps": 3.0,
+    "minimum_mean_net_stress_bps_exclusive": 0.0,
+    "delayed_entry": "ONE_ADDITIONAL_M5_BAR",
+    "minimum_mean_delayed_net_reference_bps_exclusive": 0.0,
+    "maximum_top5_positive_gross_share_inclusive": 0.40,
+    "side_stability": "DEFERRED_TO_CANDIDATE_OR_SURVIVOR_VALIDATION_NOT_USED_TO_KILL_EXPERIMENTAL_SHADOW",
+    "calendar_half_stability": "DEFERRED_TO_CANDIDATE_OR_SURVIVOR_VALIDATION_NOT_USED_TO_KILL_EXPERIMENTAL_SHADOW"
+  },
+  "cell_states": {
+    "AWAITING_FORWARD_TRIGGERS": "fewer than 60 forward trigger outcomes",
+    "PASS_FORWARD_SCREEN": "all fixed-checkpoint economic and robustness gates pass",
+    "REJECTED_FORWARD_SCREEN": "at least one fixed-checkpoint economic or robustness gate fails"
+  },
+  "family_states": {
+    "CANDIDATE_READY_FORWARD_SCREEN": "at least two horizons PASS_FORWARD_SCREEN; candidate only, never survivor",
+    "EXPERIMENTAL_TERMINAL_NULL": "at least two horizons REJECTED_FORWARD_SCREEN",
+    "CONTINUE_EXPERIMENTAL_SHADOW": "all other cases"
+  },
+  "immutability": {
+    "first_60_slice_never_replaced": true,
+    "later_observations_cannot_rewrite_checkpoint": true,
+    "no_threshold_changes_after_results": true,
+    "no_sign_flip": true,
+    "no_retune": true,
+    "no_backfill": true,
+    "missing_observation": "NO_CREDIT",
+    "historical_credit": 0,
+    "retroactive_credit": 0
+  },
+  "authority": {
+    "candidate_status_authority": true,
+    "survivor_promotion_authority": false,
+    "direct_survivor_transition": false,
+    "execution_authority": false,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "H1_H31_RUNTIME_MUTATION": false,
+    "SURVIVOR_STANDARD_CHANGED": false,
+    "PROMOTION_STANDARD_CHANGED": false
+  }
+}
