@@ -1,0 +1,119 @@
+name: GATE BTC Factory H-XREGIME-01 Historical Evaluation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xregime_01_historical_evaluator.py'
+      - 'tests/test_gate_btc_xregime_01_historical_evaluator.py'
+      - '.github/workflows/gate-btc-factory-xregime-01-historical-eval.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xregime_01_historical_evaluator.py'
+      - 'tests/test_gate_btc_xregime_01_historical_evaluator.py'
+      - '.github/workflows/gate-btc-factory-xregime-01-historical-eval.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-xregime-01-historical-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$FAIL_CLOSED" = true
+      - name: Unit-test causal mechanics and partition blindness
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_xregime_01_historical_evaluator.py
+      - name: PR remains H-XREGIME target-blind
+        if: github.event_name == 'pull_request'
+        run: echo 'XREGIME01_MARKET_DATA_READ=false'
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Execute frozen H-XREGIME Batch A in gated partition order
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p artifacts/xregime_01_historical_eval
+          python source_repo/tools/gate_btc_factory/xregime_01_historical_evaluator.py \
+            --prereg source_repo/tools/gate_btc_factory/XREGIME_01_FINITE_BATCH_PREREG_20260922.json \
+            --out artifacts/xregime_01_historical_eval/RESULT.json
+          python - <<'PY'
+          import json
+          p='artifacts/xregime_01_historical_eval/RESULT.json'
+          x=json.load(open(p))
+          assert x['family_id']=='H-XREGIME-01'
+          assert x['registered_candidate_count']==12
+          assert x['status'] in ('HISTORICAL_TRIAGE_COMPLETE_NO_PASS','HISTORICAL_TRIAGE_COMPLETE_PASSES_EXIST')
+          assert x['historical_survivor_credit']==0 and x['prospective_credit']==0
+          assert x['promotion_authority'] is False
+          assert x['missing_bar_policy_applied']=='INELIGIBLE_NO_IMPUTATION'
+          assert x['imputed_bar_count']==0
+          assert x['safety']['ENGINE_FEED'] is False and x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          if not x['validation_source_opened']:
+              assert x['validation_pass_count']==0 and not x['holdout_source_opened']
+          if not x['holdout_source_opened']:
+              assert x['historical_triage_pass_count']==0
+          print('XREGIME01_STATUS='+x['status'])
+          print('XREGIME01_DISCOVERY_PASS='+str(x['discovery_pass_count']))
+          print('XREGIME01_VALIDATION_PASS='+str(x['validation_pass_count']))
+          print('XREGIME01_TRIAGE_PASSES='+json.dumps(x['historical_triage_passes']))
+          print('XREGIME01_SOURCE_AUDIT='+json.dumps(x['source_gap_audit'],sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: xregime-01-historical-eval-${{ github.run_id }}
+          path: artifacts/xregime_01_historical_eval/
+          retention-days: 90
+      - name: Persist canonical historical result
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy
+          cp artifacts/xregime_01_historical_eval/RESULT.json \
+             runtime_repo/runtime/factory_autonomy/XREGIME_01_HISTORICAL_EVAL_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/XREGIME_01_HISTORICAL_EVAL_RUNTIME.json
+          git commit -m "Persist H-XREGIME-01 historical result ${{ github.run_id }}" || exit 0
+          for n in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((n*2))
+          done
+          exit 1
