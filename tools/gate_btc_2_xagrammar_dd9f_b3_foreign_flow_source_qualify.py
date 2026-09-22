@@ -44,14 +44,29 @@ def norm_text(s: str) -> str:
 
 
 def extract_pdf_text(data: bytes) -> str:
+    """Extract only enough BDI pages to cover the investor-participation section.
+
+    Scientific semantics are unchanged: this is a bounded transport optimization only.
+    We scan pages in canonical order and, after first finding the section, include that
+    page plus the next two pages, then stop. If the section is never found, the bounded
+    scan returns what it saw and the downstream gate fails closed.
+    """
     from pypdf import PdfReader
     reader = PdfReader(io.BytesIO(data))
     chunks=[]
-    for page in reader.pages:
+    found_at=None
+    max_pages=min(len(reader.pages), 80)
+    for i in range(max_pages):
         try:
-            chunks.append(page.extract_text() or "")
+            text=reader.pages[i].extract_text() or ""
         except Exception:
-            chunks.append("")
+            text=""
+        chunks.append(text)
+        n=norm_text(text)
+        if found_at is None and "participacao dos investidores" in n:
+            found_at=i
+        if found_at is not None and i >= found_at + 2:
+            break
     return "\n".join(chunks)
 
 
@@ -77,12 +92,8 @@ def analyze_bdi(text: str) -> dict:
             break
 
     foreign_row_present="investidor estrangeiro" in n
-    # Require the table semantics to be present in the same physical document.
     purchase_header=bool(re.search(r"compras\s*\(r\$\)",n) or "compras (r$) mil" in n)
     sales_header=bool(re.search(r"vendas\s*\(r\$\)",n) or "vendas (r$) mil" in n)
-
-    # Extract the first line-like slice after foreign investor. This is evidence only;
-    # values are not used for any strategy/outcome selection.
     foreign_context=None
     idx=n.find("investidor estrangeiro")
     if idx >= 0:
