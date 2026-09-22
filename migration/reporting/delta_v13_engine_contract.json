@@ -1,0 +1,211 @@
+{
+  "anchor": {
+    "anchor_date": null,
+    "anchor_rule": "The anchor is the first completed UTC close processed by a production run of this contract. It is recorded at that moment and never chosen later. No close that exists today may become this anchor.",
+    "backdating_prohibited": true,
+    "historical_replay_status": "DIAGNOSTIC_ONLY. Any replay before the anchor inherits survivorship and current-liquidity conditioning from the universe snapshot and is not prospective evidence.",
+    "initial_nav": 1.0,
+    "not_before": "2026-09-22",
+    "pins_established_on": "2026-08-26",
+    "why_the_pins_predate_the_anchor": "Venue pinning is a data-plumbing fact about where each asset is priced and funded, frozen before any V12 return existed and unchanged since. Reusing it carries no return information into this series."
+  },
+  "annualization_days": 365,
+  "books": {
+    "books": [
+      "V13_LS_70_30",
+      "V13_LS_70_30_StopVol",
+      "V13_LS_50_50",
+      "V13_LS_50_50_StopVol"
+    ],
+    "gross_books": [
+      "70/30",
+      "50/50"
+    ],
+    "parallel_variants_required": true,
+    "retrospective_winner_selection_forbidden": true,
+    "stopvol_observation": "In the V11 paper monitor the StopVol books returned figures identical to their base books on every observed day, including a plus 5.58 percent day, so the vol cap has not bound once. The variants are kept here for comparability with V11, not because they are known to differ.",
+    "stopvol_variants": true
+  },
+  "contract_revision": "1.0",
+  "costs": {
+    "fee_bps_per_side": 5.0,
+    "model": "LIQUIDITY_TIERED_NOT_FLAT",
+    "rationale": "The V11 premise of 3 bps slippage was set for a 20-name high-liquidity universe. Median 24h liquidity in the 76-100 band is about 8 percent of the 1-30 band, so a flat rate would understate cost for exactly the names this universe adds.",
+    "slippage_by_band": {
+      "1-30": 3.0,
+      "31-50": 5.5,
+      "51-75": 8.4,
+      "76-100": 10.5
+    },
+    "source": "delta_v12_universe_expansion_contract.json cost_model_by_liquidity_band"
+  },
+  "decision": "V12_PREMISES_ADOPTED_VERBATIM_UNDER_A_NEW_ANCHOR",
+  "evidence": {
+    "counter_starts_at": 0,
+    "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
+    "leaderboard_role": "DESCRIPTIVE_ONLY",
+    "max_drawdown": -0.15,
+    "min_observations": 60,
+    "min_product_sharpe": 0.5,
+    "no_credit_for_prior_series": "The 60 observations are counted from this contract's own anchor. No observation from DELTA_V12_ENGINE or DELTA_WALK_FORWARD_1.1 counts toward them."
+  },
+  "frozen_date": "2026-09-22",
+  "funding": {
+    "aggregation_is_inherited_not_invented": "This is the DELTA_WALK_FORWARD_1.1 rule verbatim (funding_daily groupby sum in 00_run_delta_v11.py). It absorbs the difference between an 8-hour and an hourly cadence without a per-venue choice, so no convention was selected after seeing which one flatters a result.",
+    "application": "funding_return = -signed_weight * daily_rate for each position held at the close, as in V11.",
+    "coverage_measured_before_the_anchor": {
+      "covered": 100,
+      "events": 3300,
+      "mean_daily_rate": 0.000124,
+      "measured_on": "2026-09-03",
+      "pinned_assets": 100,
+      "share_of_days_with_positive_funding": 0.84,
+      "uncovered": 0,
+      "window": "2026-08-01..2026-09-02"
+    },
+    "daily_aggregation": "Every settled funding event is stamped to the UTC day of its own settlement timestamp and the daily rate is the SUM of that day's events.",
+    "frozen_date": "2026-09-03",
+    "measured_effect_before_any_prospective_observation": {
+      "V12_LS_50_50": -0.000791,
+      "V12_LS_50_50_StopVol": -0.000472,
+      "V12_LS_70_30": -0.001139,
+      "V12_LS_70_30_StopVol": -0.000388,
+      "direction_confirmed": "Funding costs the long-tilted 70/30 book more than the balanced 50/50 book, which is the direction predicted when the omission was first recorded.",
+      "note": "Measured on a diagnostic 8-day window that is NOT prospective evidence, purely to confirm the direction of the bias the previous zero assumption carried."
+    },
+    "model": "OBSERVED_PER_PINNED_VENUE_SUMMED_TO_THE_UTC_DAY_OF_SETTLEMENT",
+    "pipeline": "tools/gate_btc_delta_v12_funding.py",
+    "read_from": "THE_VENUE_THE_ASSET_IS_PINNED_TO",
+    "sources": {
+      "HYPERLIQUID": "public info fundingHistory, fundingRate, settles hourly",
+      "OKX_SWAP": "public /api/v5/public/funding-rate-history, fundingRate, settles every 8 hours"
+    },
+    "supersedes": "ABSENT_FROM_V12_PRICE_PIPELINE_TREATED_AS_ZERO_NOT_A_CLAIM_OF_ZERO_CARRY",
+    "uncovered_policy": "FAIL_CLOSED. An asset held on a day the feed does not cover halts the run. A zero rate is never implied for a position that could not be costed.",
+    "why_this_is_not_a_mid_collection_change": "No V12 ledger existed and no V12 anchor had been established when this was frozen. The engine had never run in production. Adding funding after observing a prospective return would have been a methodology change; adding it before the first observation completes the specification."
+  },
+  "implementation": {
+    "deviation_from_v11": "None in selection or risk. Costs are tiered per the frozen band table and funding is absent; both are recorded below.",
+    "engine_version_required": "DELTA_V13_ENGINE_1.0",
+    "inherits_from": "migration/canonical/delta/scripts/00_run_delta_v11.py",
+    "rules_reimplemented_verbatim": [
+      "cross_section_z uses population stdev (ddof=0); a flat cross-section yields undefined, not zero",
+      "vol30 uses sample stdev (ddof=1) over a 30-day window with 30 minimum periods",
+      "liquidity is log1p of the 14-day rolling median volume with 7 minimum periods",
+      "a score with any undefined component is undefined, never a partial sum",
+      "persistence requires the same side on the signal day and the day before",
+      "base weight is gross divided by the configured count, not by the number that persisted",
+      "gap exit at the open, then rebalance at the open, then intraday stop/take with stop winning ties",
+      "trailing best updates only on days without an exit",
+      "reentry cooldown and the daily and weekly kill switches",
+      "the StopVol variant must beat its base on both Sharpe and drawdown or it is rejected"
+    ],
+    "tests": "tests/test_gate_btc_delta_v12_engine.py",
+    "tool": "tools/gate_btc_delta_v12_engine.py"
+  },
+  "prices": {
+    "bar_calendar": "UTC_DAILY_COMPLETED_ONLY",
+    "pipeline": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
+    "required_venues": [
+      "OKX_SWAP",
+      "HYPERLIQUID"
+    ],
+    "venue_order_authority": "delta_v12_universe_expansion_contract.json amendment VENUE_PREFERENCE_REORDER_AND_REQUIRED_VENUE_SET (2026-08-26)",
+    "venue_pinning": "PINNED_AT_FIRST_ADMISSION_CHANGE_ONLY_ON_INSTRUMENT_LOSS",
+    "venue_preference_order": [
+      "OKX_SWAP",
+      "HYPERLIQUID",
+      "BINANCE_FUTURES",
+      "BYBIT_LINEAR"
+    ]
+  },
+  "purpose": "Preregister a TOP100 long/short shadow engine succeeding DELTA_V12_ENGINE, which closed on 2026-09-22 after two prospective days were never observed. The premises below are V12's, adopted verbatim, so that nothing is retuned from what V12 returned. This series starts at zero observations under its own anchor.",
+  "relationship_to_v11": "Same selection and risk rules as DELTA_WALK_FORWARD_1.1. What differs is the universe (20 to TOP100), the selection size (5+5 to 10+10), the price pipeline (OKX-only to multi-venue) and the cost model (flat to liquidity-tiered). V11 is not modified, replaced or reinterpreted, and the two series are never compared.",
+  "risk": {
+    "daily_kill_cooldown_days": 1,
+    "daily_loss_kill_switch": 0.03,
+    "reentry_cooldown_days": 2,
+    "regime_persistence_days": 3,
+    "stop_cap": 0.35,
+    "stop_floor": 0.06,
+    "stop_vol_multiplier": 2.5,
+    "stopvol_target_daily_vol": 0.04,
+    "take_profit_r_multiple": 2.0,
+    "trailing_cap": 0.25,
+    "trailing_floor": 0.04,
+    "trailing_vol_multiplier": 1.5,
+    "weekly_kill_cooldown_days": 3,
+    "weekly_loss_kill_switch": 0.07
+  },
+  "risk_free_annual": 0.045,
+  "safety": {
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "methodology_changes": 0,
+    "not_approved": true,
+    "official_replica_claim": false,
+    "orders": 0,
+    "promotion_eligible": false,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc.delta_v13_engine_contract.v1",
+  "selection": {
+    "bottom_n": 10,
+    "cross_section_panel": "ADMITTED_ON_OR_BEFORE_THE_DAY",
+    "cross_section_panel_rationale": "The z-score of a day is measured ONLY over the assets already pinned on that day, read from pinned_at in PRICE_PROVENANCE.json. An asset pinned later carries retroactive history; without this cut it enters the mean and the standard deviation of a past day, displaces the z-score of every eligible name and makes an already committed row irreproducible. Membership still governs who is eligible; this governs who the statistic is measured over. Frozen here as an original premise, before this series has observed anything.",
+    "execution_timing": "next UTC daily open",
+    "minimum_signal_history": 30,
+    "persistence_days": 2,
+    "score": "0.20*z(ret7)+0.35*z(ret14)+0.35*z(ret30)-0.10*z(vol30)+0.05*z(liquidity)",
+    "selected_fraction_of_universe": 0.2,
+    "signal_lookbacks": [
+      7,
+      14,
+      30
+    ],
+    "signal_timing": "completed UTC daily close",
+    "top_n": 10
+  },
+  "selection_size_policy": "top_n and bottom_n are frozen at 10 and 10 on 2026-08-21. Any other selection size is a NEW preregistration carrying its own freeze date and its own clean-evidence start. A size must never be added or switched after observing the return of another size, and no size may be backdated to this freeze.",
+  "selection_size_rationale_recorded_before_any_return": "V11 selects 5 long and 5 short from 20 names, half the universe. Holding 5+5 on 100 names would trade only the 10 percent extremes; holding the 50 percent proportion would mean 25+25 and push the book across the whole liquidity tail. 10+10 doubles V11 diversification while keeping the book out of the thinnest band by default. No TOP100 return existed when this was chosen; the engine was not implemented.",
+  "status": "PREREGISTERED_AWAITING_FIRST_ANCHOR",
+  "supersession": {
+    "closure_record": "migration/reporting/delta_v12_engine_closure.json",
+    "inherits_anchor": false,
+    "inherits_counter": false,
+    "inherits_evidence": false,
+    "inherits_ledger": false,
+    "ledger_path": "runtime/ledgers/delta_v13_engine",
+    "never_compare": "The twelve V12 observations, the V11 paper monitor and this series are three separate records. This series is never ranked against either, and no V12 or V11 number counts toward its 60 observations.",
+    "supersedes": "DELTA_V12_ENGINE",
+    "the_one_thing_that_differs": "selection.cross_section_panel is ADMITTED_ON_OR_BEFORE_THE_DAY from this contract's first day, as an original premise rather than a correction. V12 was written before the defect was known and its 1.0 rows were computed without it.",
+    "why_the_premises_are_unchanged": "V12 closed on a data gap, not on a result. Changing a threshold, a cost band, a selection size or a risk parameter now would be retuning against twelve observed days, which is precisely what preregistration forbids. Every premise is therefore carried over exactly as frozen on 2026-08-21 and 2026-09-03."
+  },
+  "universe": {
+    "membership_policy": "ROTATES_DAILY",
+    "other_strata_available": [
+      30,
+      50,
+      75
+    ],
+    "other_strata_status": "NOT_TRADED_BY_THIS_CONTRACT_SEPARATE_PREREGISTRATION_REQUIRED",
+    "rotation": {
+      "cost_follows_the_day": "Slippage uses the liquidity band of the rank the asset held on the day it traded, not its rank on any other day. A name outside the universe is costed at the widest band.",
+      "decided_by": "account owner, asked explicitly after the first pinning failure exposed the gap",
+      "decided_on": "2026-09-03",
+      "first_traded_day": "Selection needs the signal day and the day before it for persistence, so the first day the book can trade is the anchor plus two. This is a consequence of never inventing membership, not a tuned delay.",
+      "held_dropout_policy": "A position outlives its membership. Every pinned asset stays priced and funded even after it leaves the TOP100, so the book can mark and close it. Leaving the universe removes a name from selection, never from the panel.",
+      "known_consequence_recorded_before_any_result": "The cross-section the score is computed over changes composition day to day, so a z-score is relative to that day's universe rather than a fixed set. This is inherent to a rotating universe and was accepted knowingly. The alternative, freezing the universe at the anchor, was rejected by the owner.",
+      "membership_is_recorded_append_only": "Each run appends the membership it observed to UNIVERSE_MEMBERSHIP.csv in the ledger, and recomputation reads it back. A recorded day is never rewritten and a day the engine never observed is never reconstructed from a later snapshot, because that would re-select the past with hindsight.",
+      "missing_day_policy": "FAIL_CLOSED. A traded day with no recorded membership halts the run rather than selecting from an empty universe and booking a flat day that never happened.",
+      "new_entrant_no_venue_serves": "Excluded from that day's selection and recorded in COVERAGE.json as an unpriced new entrant. This is a documented exclusion, not a silent drop, and it does not halt the pipeline. Losing an asset that was ALREADY PINNED does halt it, because the book may still hold it.",
+      "policy": "The TOP100 is re-read from each day's universe snapshot. Membership on day D governs which names are ELIGIBLE FOR SELECTION on D and nothing else."
+    },
+    "source": "delta_v12_universe_expansion_contract.json",
+    "stratum": "TOP100",
+    "stratum_frozen_date": "2026-08-21"
+  },
+  "version": "DELTA_V13_ENGINE_1.0"
+}
