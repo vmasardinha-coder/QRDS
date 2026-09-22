@@ -1,0 +1,116 @@
+{
+  "schema": "gate_btc_2.xagrammar_source_cost_triage.v1",
+  "frozen_at": "2026-09-22",
+  "input_count": 9,
+  "policy": {
+    "economics_read_for_triage": false,
+    "pnl_selection": false,
+    "no_retune": true,
+    "no_backfill": true,
+    "clean_tombstones_are_terminal": true,
+    "source_capability_is_not_source_admission": true,
+    "missing_timestamp_or_revision_semantics_fail_closed": true
+  },
+  "evidence_basis": [
+    {
+      "path": "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_BCB_CVM_B3_20260919.json",
+      "commit": "a80477a4d7ad8bc73c0e37796e3fcab173e1a12d"
+    },
+    {
+      "path": "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_FRED_EIA_CFTC_20260919.json",
+      "commit": "88967aa7b05c39b98168bed1138753f04424fd7d"
+    },
+    {
+      "path": "tools/gate_btc_b3_h150_h159_focus_causality_qa.py",
+      "commit": "cdbbbe9cac4770bff1de41d611b2fdac7479bcea"
+    },
+    {
+      "description": "H150-H159 frozen economics and canonical terminal no-survivor close",
+      "commit": "0c256e4ffa6952bcd5ce25124952637cb8b2ed5e"
+    }
+  ],
+  "decisions": {
+    "XAGRAMMAR_12FCBCB3731A": {
+      "channel": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "PTAX capability is evidenced, but FRED/EIA dataset-specific frequency, publication-time and revision semantics required by the frozen FX/commodity mechanism are not yet admitted.",
+      "source_cost": "FREE_OFFICIAL_CANDIDATES_ZERO_ECONOMIC_CREDIT",
+      "next_gate": "DATASET_SPECIFIC_FX_COMMODITY_TIMESTAMP_QUALIFICATION"
+    },
+    "XAGRAMMAR_3823D2BDF6CD": {
+      "channel": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "No existing evidence proves the required historical DI strip transport, contract identity, rollover and PIT publication semantics for near/far slope and curvature.",
+      "source_cost": "OFFICIAL_SOURCE_CANDIDATES_NOT_YET_ADMITTED",
+      "next_gate": "B3_DI_STRIP_TRANSPORT_AND_PIT_QUALIFICATION"
+    },
+    "XAGRAMMAR_62943307741A": {
+      "channel": "CVM_FUND_FLOW_LIQUIDITY_PRESSURE",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "Existing CVM evidence covers issuer IPE documents, not the exact fund-report fields and public-availability timing needed for subscriptions, redemptions, NAV and flow pressure.",
+      "source_cost": "FREE_OFFICIAL_CANDIDATE_NOT_YET_ADMITTED",
+      "next_gate": "CVM_FUND_REPORT_FIELD_AND_RELEASE_TIME_QUALIFICATION"
+    },
+    "XAGRAMMAR_62FFE168F205": {
+      "channel": "B3_AUCTION_IMBALANCE_PRESSURE",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "Existing B3 evidence explicitly does not establish intraday auction imbalance/state fields or their historical timestamps.",
+      "source_cost": "OFFICIAL_SOURCE_CAPABILITY_INSUFFICIENT",
+      "next_gate": "OFFICIAL_B3_AUCTION_FIELD_AND_TIMESTAMP_QUALIFICATION"
+    },
+    "XAGRAMMAR_728DC88D691B": {
+      "channel": "BCB_FOCUS_EXPECTATION_SKEW",
+      "decision": "TERMINAL_DUPLICATE_EXISTING_CLEAN_REJECTION",
+      "reason": "The same Focus expectation/dispersion mechanism class already received official source QA, strict one-completed-B3-session causal treatment, exact prior-session join QA, frozen historical economics and canonical terminal no-survivor close in H150-H159. A fresh namespace cannot reset that evidence without a scientifically distinct mechanism.",
+      "source_cost": "NOT_APPLICABLE_TERMINAL_DUPLICATE",
+      "existing_evidence_commit": "0c256e4ffa6952bcd5ce25124952637cb8b2ed5e",
+      "next_gate": "NONE_TOMBSTONE_UNLESS_DISTINCT_MECHANISM_IS_PREREGISTERED_BEFORE_OUTCOME_READ"
+    },
+    "XAGRAMMAR_846E12566757": {
+      "channel": "US_ADR_B3_CROSSLISTED_PRICE_DISCOVERY",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "No admitted point-in-time ADR-to-B3 identity map plus US-session historical source and causal cross-market timestamp contract is present.",
+      "source_cost": "PUBLIC_SOURCE_CANDIDATES_NOT_YET_ADMITTED",
+      "next_gate": "ADR_IDENTITY_MAP_AND_US_SESSION_SOURCE_QUALIFICATION"
+    },
+    "XAGRAMMAR_8CAF61E121A1": {
+      "channel": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "Existing B3 daily bulletins/quotations do not prove the intraday synchronized futures-versus-cash index history required for lead-lag/basis price discovery; the canonical tick frontier is itself waiting for official tick source.",
+      "source_cost": "OFFICIAL_SOURCE_CAPABILITY_INSUFFICIENT",
+      "next_gate": "SYNCHRONIZED_OFFICIAL_WIN_IBOV_INTRADAY_SOURCE_QUALIFICATION"
+    },
+    "XAGRAMMAR_DD9F1F0501B3": {
+      "channel": "CVM_CORPORATE_EVENT_GAP",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "CVM IPE history is evidenced, but the evidence explicitly does not prove the exact public-release timestamp required for event-time PIT admission.",
+      "source_cost": "FREE_OFFICIAL_CANDIDATE_NOT_YET_ADMITTED",
+      "next_gate": "CVM_EVENT_PUBLIC_RELEASE_TIMESTAMP_AND_ISSUER_IDENTITY_QUALIFICATION"
+    },
+    "XAGRAMMAR_F587F5854A51": {
+      "channel": "NATURAL_GAS_CRUDE_SPREAD_REGIME",
+      "decision": "BLOCKED_SOURCE_SEMANTICS",
+      "reason": "EIA/FRED source capability exists, but dataset-specific release timestamp, frequency and revision semantics for the frozen gas/crude spread are not yet proven.",
+      "source_cost": "FREE_OFFICIAL_CANDIDATES_ZERO_ECONOMIC_CREDIT",
+      "next_gate": "EIA_GAS_CRUDE_DATASET_RELEASE_AND_REVISION_QUALIFICATION"
+    }
+  },
+  "expected_counts": {
+    "TERMINAL_DUPLICATE_EXISTING_CLEAN_REJECTION": 1,
+    "BLOCKED_SOURCE_SEMANTICS": 8,
+    "READY_FOR_ECONOMICS": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_H2730_H2739_UNTOUCHED": true
+  }
+}
