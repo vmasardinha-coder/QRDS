@@ -1,0 +1,89 @@
+name: GATE BTC Factory H-XREGIME-01 Finite Prereg
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/XREGIME_01_FINITE_BATCH_PREREG_20260922.json'
+      - 'tests/test_gate_btc_xregime_01_finite_prereg.py'
+      - '.github/workflows/gate-btc-factory-xregime-01-prereg.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/XREGIME_01_FINITE_BATCH_PREREG_20260922.json'
+      - 'tests/test_gate_btc_xregime_01_finite_prereg.py'
+      - '.github/workflows/gate-btc-factory-xregime-01-prereg.yml'
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+  FAIL_CLOSED: 'true'
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          test "$FAIL_CLOSED" = true
+      - name: Validate finite preregistration
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_xregime_01_finite_prereg.py
+      - name: Assert no H-XREGIME batch outcome read in freeze
+        working-directory: source_repo
+        run: |
+          python - <<'PY'
+          import json
+          p='tools/gate_btc_factory/XREGIME_01_FINITE_BATCH_PREREG_20260922.json'
+          x=json.load(open(p))
+          assert x['status']=='FROZEN_BEFORE_BATCH_OUTCOME_READ'
+          assert x['scientific_boundary']['batch_outcomes_read_before_freeze'] is False
+          assert x['candidate_construction']['candidate_count']==12
+          assert x['decision_rule']['historical_survivor_credit']==0
+          assert x['decision_rule']['promotion_authority'] is False
+          print('XREGIME01_BATCH_A=FROZEN_12_CANDIDATES_NO_OUTCOME_READ')
+          PY
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Persist canonical preregistration after merge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/factory_autonomy
+          cp source_repo/tools/gate_btc_factory/XREGIME_01_FINITE_BATCH_PREREG_20260922.json \
+             runtime_repo/runtime/factory_autonomy/XREGIME_01_FINITE_BATCH_PREREG_RUNTIME.json
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/XREGIME_01_FINITE_BATCH_PREREG_RUNTIME.json
+          git commit -m "Persist H-XREGIME-01 finite prereg ${{ github.run_id }}" || exit 0
+          for n in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((n*2))
+          done
+          exit 1
