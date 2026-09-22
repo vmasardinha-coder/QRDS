@@ -1,0 +1,76 @@
+{
+  "schema_version": "GATE_BTC_2_EXTERNAL_FORWARD_COLLECTION_PREREG_V1",
+  "date": "2026-09-22",
+  "purpose": "Build admissible prospective feature history for already-frozen external family handoffs without importing economic direction, thresholds, winners, or prior PnL.",
+  "families": [
+    {
+      "family_id": "F-XVOL-SURFACE",
+      "source_market": "DERIBIT_BTC_OPTIONS",
+      "extractor": "tools/gate_btc_2_f_xvol_surface_extractor.py",
+      "frozen_features": [
+        "atm_iv_near",
+        "atm_iv_far",
+        "term_slope",
+        "put_25d_iv_near",
+        "call_25d_iv_near",
+        "risk_reversal_25d",
+        "butterfly_25d",
+        "surface_dispersion_near"
+      ]
+    },
+    {
+      "family_id": "F-XMM-INVENTORY",
+      "source_market": "BTC_USDT_SPOT_L2",
+      "venues": ["BINANCE", "OKX"],
+      "extractor": "tools/gate_btc_2_f_xmm_inventory_extractor.py",
+      "capture_duration_seconds": 60,
+      "book_depth": 10,
+      "frozen_features": [
+        "spread_bps",
+        "imbalance_l1",
+        "imbalance_l5",
+        "imbalance_l10",
+        "microprice_deviation_bps",
+        "bid_concentration_l1_l10",
+        "ask_concentration_l1_l10",
+        "imbalance_shape"
+      ]
+    }
+  ],
+  "prospective_d0_rule": "For each family, D0 is its first successful live collection attempt executed by the merged collector workflow after this preregistration is present on main. Earlier validation snapshots receive zero prospective or economic credit.",
+  "collection_cadence": {
+    "cron_utc": "17 */4 * * *",
+    "meaning": "collection cadence only; it does not define an economic horizon, threshold, lookback, or entry/exit rule"
+  },
+  "persistence": {
+    "branch": "runtime/gate-btc-external-forward",
+    "format": "append-only JSONL per family plus latest STATUS.json",
+    "persisted_payload": "derived frozen features, source-quality state, timestamps, extractor exit status, and GitHub provenance",
+    "full_capture_evidence": "uploaded as GitHub Actions artifact with finite retention; runtime history stores the derived admissible feature record and provenance, not the bulky raw/event corpus"
+  },
+  "missing_or_ineligible_policy": "Persist explicit UNAVAILABLE/ABSTAIN state; never zero-fill missing features and never silently drop an attempted observation.",
+  "forbidden": [
+    "retroactive/backfilled feature history",
+    "economic direction assignment",
+    "threshold selection",
+    "lookback selection",
+    "return-horizon selection",
+    "post-hoc sign flip",
+    "survivor or alpha claim",
+    "Factory promotion",
+    "engine feed",
+    "orders",
+    "real capital"
+  ],
+  "handoff_status_after_collection_start": "PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING",
+  "factory_runtime_mutation": false,
+  "economic_claim_authorized": false,
+  "promotion_authority": false,
+  "research_only": true,
+  "shadow_only": true,
+  "no_retune": true,
+  "no_backfill": true,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital_brl": 0
+}
