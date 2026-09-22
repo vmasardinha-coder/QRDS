@@ -1,0 +1,111 @@
+{
+  "schema_version": "BTSE_FACTORY_INTAKE_V1",
+  "date": "2026-09-21",
+  "source_lane": "BTSE_EXTERNAL",
+  "target_lane": "QRDS_FACTORY",
+  "operating_rule": "external_system -> reusable_mechanism -> family_contract -> factory_child_hypotheses -> canonical_factory_adjudication",
+  "factory_runtime_mutated": false,
+  "economic_claim_authorized": false,
+  "families": [
+    {
+      "family_id": "F-XAGENT-DISAGREE",
+      "status": "READY_FOR_FACTORY_CHILD_GENERATION",
+      "required_inputs": {
+        "minimum_available_signals": 3,
+        "signal_range": [-1.0, 1.0],
+        "independence_requirement": "signals must originate from distinct evidence/family channels; duplicate transforms of the same signal do not count",
+        "missing_policy": "EXCLUDE_AND_COUNT_NOT_ZERO_FILL"
+      },
+      "frozen_features": [
+        "available_count",
+        "unavailable_count",
+        "availability_fraction",
+        "consensus_mean",
+        "consensus_abs",
+        "disagreement_std",
+        "pairwise_disagreement",
+        "sign_split_fraction"
+      ],
+      "factory_child_grammar": {
+        "role": ["ABSTENTION_GATE", "EXPOSURE_GATE"],
+        "uncertainty_metric": ["disagreement_std", "pairwise_disagreement", "sign_split_fraction"],
+        "threshold_basis": ["ROLLING_EMPIRICAL_QUANTILE"],
+        "threshold_quantile": [0.25, 0.5, 0.75],
+        "lookback_bars": [168, 720],
+        "exposure_modes": ["HARD_ABSTAIN", "BINARY_FULL_OR_FLAT"],
+        "direction_source": "BASE_STRATEGY_ONLY",
+        "same_bar_reaction_forbidden": true
+      },
+      "required_comparator": "same base strategy, same dates, same costs, same execution, disagreement layer disabled",
+      "evaluation": "FACTORY_CANONICAL",
+      "prohibitions": [
+        "no post-hoc sign flip",
+        "no unavailable-to-zero conversion",
+        "no use of disagreement as direction source in first generation",
+        "no import of TradingAgents LLM decisions or PnL",
+        "no survivor claim before canonical Factory adjudication"
+      ]
+    },
+    {
+      "family_id": "F-XAGENT-VETO",
+      "status": "READY_FOR_FACTORY_CHILD_GENERATION_AFTER_ASSESSOR_BINDING",
+      "required_inputs": {
+        "minimum_assessors": 2,
+        "allowed_states": ["ALLOW", "VETO", "ABSTAIN_UNAVAILABLE"],
+        "aggregation_priority": ["VETO", "ABSTAIN_UNAVAILABLE", "ALLOW"],
+        "unavailable_policy": "NEVER_NEUTRALIZE",
+        "assessor_independence_requirement": "risk assessors must represent distinct evidence classes or failure modes"
+      },
+      "frozen_features": [
+        "assessor_count",
+        "allow_count",
+        "veto_count",
+        "unavailable_count",
+        "allow_fraction",
+        "veto_fraction",
+        "unavailable_fraction",
+        "aggregate_decision"
+      ],
+      "factory_child_grammar": {
+        "role": ["ENTRY_VETO_OVERLAY"],
+        "veto_policy": ["ANY_VETO", "MAJORITY_VETO"],
+        "unavailable_policy": ["ABSTAIN_IF_ANY_UNAVAILABLE", "ABSTAIN_IF_MAJORITY_UNAVAILABLE"],
+        "direction_source": "BASE_STRATEGY_ONLY",
+        "position_mapping": "ALLOW=BASE_POSITION; VETO_OR_ABSTAIN=FLAT",
+        "same_bar_reaction_forbidden": true
+      },
+      "required_comparator": "same base strategy, same dates, same costs, same execution, veto layer disabled",
+      "evaluation": "FACTORY_CANONICAL",
+      "prohibitions": [
+        "no unavailable-to-allow conversion",
+        "no hidden score averaging across categorical states",
+        "no post-hoc reassignment of assessor meaning",
+        "no import of TradingAgents or AI Hedge Fund PnL",
+        "no survivor claim before canonical Factory adjudication"
+      ]
+    }
+  ],
+  "handoff_boundary": {
+    "external_lane_may_do": [
+      "define reusable mechanism",
+      "freeze feature semantics",
+      "freeze admissible child search dimensions",
+      "provide deterministic transforms and provenance"
+    ],
+    "factory_lane_must_do": [
+      "bind concrete existing signals/assessors",
+      "generate child hypotheses under Factory search discipline",
+      "run canonical backtests and economic gates",
+      "adjudicate survivors",
+      "perform runtime promotion only if independently authorized"
+    ]
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "orders": 0,
+    "real_capital_brl": 0,
+    "no_backfill": true,
+    "no_retune": true
+  }
+}
