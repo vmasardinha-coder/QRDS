@@ -1,0 +1,55 @@
+{
+  "schema_version": "BTSE_FAMILY_HANDOFF_V1",
+  "family_id": "F-XVOL-SURFACE",
+  "family_class": "DERIVATIVES_IMPLIED_VOLATILITY_REGIME",
+  "origin": [
+    "QuantLib",
+    "Deribit"
+  ],
+  "source_market": "DERIBIT_BTC_OPTIONS",
+  "features": [
+    "atm_iv_near",
+    "atm_iv_far",
+    "term_slope",
+    "put_25d_iv_near",
+    "call_25d_iv_near",
+    "risk_reversal_25d",
+    "butterfly_25d",
+    "surface_dispersion_near"
+  ],
+  "feature_units": "IV_PERCENTAGE_POINTS",
+  "delta_convention": "UNDISCOUNTED_BLACK76_FORWARD_DELTA",
+  "eligibility": {
+    "minimum_eligible_expiries": 2,
+    "minimum_calls_per_expiry": 5,
+    "minimum_puts_per_expiry": 5,
+    "atm_max_abs_log_moneyness": 0.075,
+    "delta_target_abs_distance_max": 0.1,
+    "duplicate_instruments_allowed": false,
+    "missing_feature_policy": "ABSTAIN"
+  },
+  "allowed_child_hypothesis_axes": [
+    "IV_LEVEL",
+    "IV_TERM_SLOPE",
+    "RISK_REVERSAL_25D",
+    "BUTTERFLY_25D",
+    "SURFACE_DISPERSION",
+    "SPOT_FAMILY_GATE_INTERACTION",
+    "ABSTENTION_LAYER"
+  ],
+  "economic_direction": null,
+  "thresholds": null,
+  "lookbacks": null,
+  "historical_pit_panel_available": false,
+  "feature_extractor_validated_live": true,
+  "economic_claim_authorized": false,
+  "factory_migration_authorized": false,
+  "factory_runtime_untouched": true,
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "no_backfill": true,
+  "no_retune": true,
+  "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY"
+}
