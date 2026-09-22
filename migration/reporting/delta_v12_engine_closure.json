@@ -1,0 +1,79 @@
+{
+  "schema": "gate_btc.delta_v12_engine_closure.v1",
+  "closes": "DELTA_V12_ENGINE",
+  "closed_on": "2026-09-22",
+  "decision": "SERIES_TERMINATED_BY_DATA_GAP_NOT_BY_RESULT",
+  "status": "CLOSED_NO_FURTHER_OBSERVATIONS_POSSIBLE",
+
+  "why_this_is_not_a_result_driven_decision": "The series is closed because two prospective days were never observed, not because of what the twelve observed days returned. Had the same gap opened with the books up instead of down, this record would read identically. The returns below are recorded for completeness and were not consulted in reaching the decision.",
+
+  "terminal_state": {
+    "anchor_date": "2026-09-06",
+    "first_booked_close": "2026-09-08",
+    "last_observed_close": "2026-09-19",
+    "observed_days": 12,
+    "evidence_gate_min_observations": 60,
+    "ledger_rows": 48,
+    "engine_version_of_every_committed_row": "DELTA_V12_ENGINE_1.0",
+    "normalized_nav_at_close": {
+      "V12_LS_70_30": "1.0960068596960917",
+      "V12_LS_70_30_StopVol": "1.0452888014029116",
+      "V12_LS_50_50": "1.0882683733154714",
+      "V12_LS_50_50_StopVol": "1.0434706064550223"
+    }
+  },
+
+  "cause": {
+    "root_defect": "cross_section_z normalised each day's score over the ENTIRE price panel rather than over the assets already pinned on that day. An asset pinned later carries retroactive history into the mean and the standard deviation of a past day, displacing the z-score of every eligible name on it.",
+    "how_it_surfaced": "On 2026-09-21 the engine recomputed committed row 40 (2026-09-18 V12_LS_50_50) to a different hash and halted: committed 70574b5cfc45, recomputed a02430751c6a. Prices and funding for that day's nine positions were byte-identical between the run that wrote the row and the run that recomputed it. What changed was the denominator: the 2026-09-18 panel held 137 assets when the row was written and 142 afterwards, with PROVE, S, SAGA, SHELL and ZETA pinned on 2026-09-21 carrying history back to June.",
+    "the_cascade": [
+      "The defect halted the runs of 2026-09-20 and 2026-09-21 before either could record that day's universe.",
+      "UNIVERSE_MEMBERSHIP.csv therefore ends at 2026-09-19.",
+      "membership_is_recorded_append_only and missing_day_policy forbid reconstructing a day the engine never observed, because reading its membership from a later snapshot would re-select the past with hindsight.",
+      "tradeable_days pins the series to its first booked close, 2026-09-08, so every day from there forward requires recorded membership. Two of them never will have it.",
+      "Every future run of this ledger therefore fails closed, and so does the authorised cross-version replay of the twelve committed rows, because the membership check runs before it."
+    ],
+    "the_defect_is_fixed_but_the_gap_is_not": "DELTA_V12_ENGINE_1.1 corrects the normalisation and its correctness is not in question here. The fix removed the restatement failure and exposed the failure underneath it. A corrected engine cannot manufacture a day nobody observed."
+  },
+
+  "what_was_considered_and_refused": {
+    "backfill_the_two_missing_days": "REFUSED. NO_BACKFILL. Reconstructing 2026-09-20 membership from a later snapshot selects the past with hindsight, which is the exact bias the ledger exists to exclude.",
+    "re_anchor_this_series": "REFUSED. runtime/ledgers/delta_v12_engine/DISCARDED_ANCHORS.json: once a single observation exists this route is closed. An anchor carrying evidence is never discarded, and a poor result is never a reason to re-anchor.",
+    "shorten_the_series_to_end_at_2026_09_19": "REFUSED. That would convert an interrupted collection into a clean twelve-day sample chosen after the fact.",
+    "carry_the_twelve_observations_into_the_successor": "REFUSED. They were produced under a formula now known to be defective, and a successor that inherits them would start with evidence it did not observe under its own rules."
+  },
+
+  "disposition_of_the_evidence": {
+    "the_twelve_observations_remain": "The ledger is left byte-untouched. No row is rewritten, deleted, re-hashed or re-dated by this record.",
+    "what_they_are": "A closed, interrupted, twelve-day prospective record computed under DELTA_V12_ENGINE_1.0, whose cross-section normalisation is known to be defective.",
+    "what_they_are_not": [
+      "not evidence toward any 60-observation gate, this series' or any other's",
+      "not promotable, and promotion_allowed stays false",
+      "not comparable to DELTA_WALK_FORWARD_1.1, which differs in universe, selection size, cost bands, funding treatment and gate-window semantics",
+      "not comparable to the successor series, which starts from zero under its own anchor",
+      "not a measurement of the corrected formula, which never wrote a row here"
+    ],
+    "leaderboard_role": "DESCRIPTIVE_ONLY_AND_NOW_FROZEN"
+  },
+
+  "successor": {
+    "contract": "migration/reporting/delta_v13_engine_contract.json",
+    "inherits_evidence": false,
+    "inherits_anchor": false,
+    "inherits_counter": false,
+    "relationship": "A new preregistration with its own freeze date, its own anchor and its own 60 observations. It reuses V12's frozen premises verbatim so that nothing is retuned from what V12 returned."
+  },
+
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "methodology_changes": 0,
+    "promotion_eligible": false,
+    "official_replica_claim": false
+  }
+}
