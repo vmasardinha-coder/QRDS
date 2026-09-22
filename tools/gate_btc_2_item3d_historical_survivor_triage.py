@@ -32,21 +32,38 @@ def _family_id(row: dict[str, Any]) -> str:
     raise KeyError("family id missing")
 
 
-def _qualified_count(row: dict[str, Any]) -> int:
-    for k in ("qualified_horizon_cell_count", "qualified_cell_count", "qualified_cells"):
-        v = row.get(k)
-        if isinstance(v, int):
-            return v
+def _rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
+    nested = runtime.get("autonomous_base", {}).get("families")
+    if isinstance(nested, list):
+        return [x for x in nested if isinstance(x, dict)]
+    for key in ("families", "family_results", "results", "reclassification_results"):
+        v = runtime.get(key)
         if isinstance(v, list):
-            return len(v)
-    cells = row.get("horizon_cells") or row.get("cells")
-    if isinstance(cells, list):
-        return sum(1 for c in cells if isinstance(c, dict) and c.get("qualified") is True)
-    return 0
+            return [x for x in v if isinstance(x, dict)]
+    return []
+
+
+def _cells(row: dict[str, Any]) -> list[dict[str, Any]]:
+    v = row.get("cells") or row.get("horizon_cells")
+    return [x for x in v if isinstance(x, dict)] if isinstance(v, list) else []
+
+
+def _qualified_cells(row: dict[str, Any]) -> list[dict[str, Any]]:
+    return [c for c in _cells(row) if c.get("class") == "QUALIFIED" or c.get("qualified") is True]
+
+
+def _qualified_count(row: dict[str, Any]) -> int:
+    return len(_qualified_cells(row))
 
 
 def _reasons(row: dict[str, Any]) -> list[str]:
-    vals = []
+    vals: list[str] = []
+    for c in _cells(row):
+        v = c.get("reasons")
+        if isinstance(v, list):
+            vals.extend(str(x) for x in v)
+        elif isinstance(v, str):
+            vals.append(v)
     for k in ("reasons", "rejection_reasons", "failure_reasons", "reason_codes"):
         v = row.get(k)
         if isinstance(v, list):
@@ -56,24 +73,19 @@ def _reasons(row: dict[str, Any]) -> list[str]:
     return sorted(set(vals))
 
 
-def _metric(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
-    for k in keys:
-        v = row.get(k)
-        if isinstance(v, (int, float)):
-            return float(v)
-    return None
+def _min_metric(cells: list[dict[str, Any]], key: str) -> float | None:
+    vals = [float(c[key]) for c in cells if isinstance(c.get(key), (int, float))]
+    return min(vals) if vals else None
 
 
-def _rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
-    for key in ("families", "family_results", "results", "reclassification_results"):
-        v = runtime.get(key)
-        if isinstance(v, list):
-            return [x for x in v if isinstance(x, dict)]
-    return []
+def _sum_metric(cells: list[dict[str, Any]], key: str) -> float | None:
+    vals = [float(c[key]) for c in cells if isinstance(c.get(key), (int, float))]
+    return sum(vals) if vals else None
 
 
 def classify(runtime: dict[str, Any]) -> dict[str, Any]:
-    ids = runtime.get("autonomous_base", {}).get("experimental_shadow_eligible_ids")
+    base = runtime.get("autonomous_base", {})
+    ids = base.get("experimental_shadow_eligible_ids")
     if not isinstance(ids, list):
         ids = runtime.get("experimental_shadow_eligible_ids")
     if not isinstance(ids, list):
@@ -89,19 +101,28 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
         r = source_rows.get(fid, {})
         if not r:
             missing_detail += 1
-        q = _qualified_count(r)
+        qc = _qualified_cells(r)
+        q = len(qc)
         reasons = _reasons(r)
         hard = sorted(HARD_REASONS.intersection(reasons))
         label = "HISTORICAL_SURVIVOR_CANDIDATE" if (not hard and q >= 2) else "HISTORICAL_WATCH"
         out.append({
             "family_id": fid,
             "label": label,
+            "feature": r.get("feature"),
+            "direction": r.get("direction"),
+            "decision_window_minutes": r.get("decision_window_minutes"),
+            "abs_z_threshold": r.get("abs_z_threshold"),
+            "standardization_lookback_sessions": r.get("standardization_lookback_sessions"),
+            "evidence_basis": r.get("evidence_basis"),
             "qualified_horizon_cell_count": q,
+            "qualified_horizons": [c.get("horizon") for c in qc],
             "hard_reasons": hard,
             "all_reasons": reasons,
-            "reference_cost_edge": _metric(r, ("reference_cost_edge", "reference_cost_edge_bps", "edge_reference_bps")),
-            "stress_cost_edge": _metric(r, ("stress_cost_edge", "stress_cost_edge_bps", "edge_stress_bps")),
-            "trade_count": _metric(r, ("trade_count", "trades", "n_trades")),
+            "reference_cost_edge": _min_metric(qc, "net2"),
+            "stress_cost_edge": _min_metric(qc, "net3"),
+            "delayed_entry_edge": _min_metric(qc, "delayed_net2"),
+            "trade_count": _sum_metric(qc, "trades"),
             "historical_detail_available": bool(r),
             "prospective_survivor_credit": 0,
             "promotion_authority": False,
@@ -114,6 +135,7 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
             -x["qualified_horizon_cell_count"],
             nk(x["reference_cost_edge"]),
             nk(x["stress_cost_edge"]),
+            nk(x["delayed_entry_edge"]),
             nk(x["trade_count"]),
             x["family_id"],
         )
@@ -126,12 +148,15 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
     for r in out:
         counts[r["label"]] = counts.get(r["label"], 0) + 1
 
+    candidates = [r for r in out if r["label"] == "HISTORICAL_SURVIVOR_CANDIDATE"]
     return {
         "schema": "gate_btc_2.factory_item3d_historical_survivor_triage.v1",
         "status": "HISTORICAL_TRIAGE_COMPLETE" if missing_detail == 0 else "HISTORICAL_TRIAGE_PARTIAL_SOURCE_DETAIL",
         "population_count": 580,
+        "historical_survivor_candidate_count": len(candidates),
         "family_state_counts": counts,
         "missing_historical_detail_count": missing_detail,
+        "top_candidate_ids": [r["family_id"] for r in candidates[:50]],
         "families": out,
         "all_580_remain_forward_active": True,
         "prospective_survivor_credit": 0,
@@ -155,8 +180,10 @@ def main() -> None:
     print(json.dumps({
         "status": result["status"],
         "population": result["population_count"],
+        "candidate_count": result["historical_survivor_candidate_count"],
         "counts": result["family_state_counts"],
         "missing_detail": result["missing_historical_detail_count"],
+        "top_candidate_ids": result["top_candidate_ids"][:20],
     }, sort_keys=True))
 
 
