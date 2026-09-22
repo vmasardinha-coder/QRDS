@@ -1,0 +1,90 @@
+name: GATE BTC 2 XAGRAMMAR Source Cost Triage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/XAGRAMMAR_SOURCE_COST_TRIAGE_20260922.json'
+      - 'tools/gate_btc_2_xagrammar_source_cost_triage.py'
+      - '.github/workflows/gate-btc-2-xagrammar-source-cost-triage.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/XAGRAMMAR_SOURCE_COST_TRIAGE_20260922.json'
+      - 'tools/gate_btc_2_xagrammar_source_cost_triage.py'
+      - '.github/workflows/gate-btc-2-xagrammar-source-cost-triage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run frozen source-cost triage against canonical prereg queue
+        run: |
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_xagrammar_source_cost_triage.py \
+            --runtime-root runtime_repo \
+            --contract main_repo/artifacts/gate_btc_2/XAGRAMMAR_SOURCE_COST_TRIAGE_20260922.json \
+            --out out/XAGRAMMAR_SOURCE_COST_TRIAGE_RUNTIME.json
+      - name: Assert no accidental economics or promotion
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/XAGRAMMAR_SOURCE_COST_TRIAGE_RUNTIME.json'))
+          assert d['input_count']==9
+          assert d['counts']['TERMINAL_DUPLICATE_EXISTING_CLEAN_REJECTION']==1
+          assert d['counts']['BLOCKED_SOURCE_SEMANTICS']==8
+          assert d['ready_for_economics_count']==0
+          assert all(r['economics_read'] is False and r['economic_credit']==0 and r['promotion_authority'] is False for r in d['rows'])
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_RETUNE'] and s['NO_BACKFILL'] and s['H1_H31_UNTOUCHED'] and s['CANONICAL_H2730_H2739_UNTOUCHED']
+          print('XAGRAMMAR_SOURCE_COST_TRIAGE=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xagrammar-source-cost-triage-${{ github.run_id }}
+          path: out/XAGRAMMAR_SOURCE_COST_TRIAGE_RUNTIME.json
+          retention-days: 90
+      - name: Persist canonical triage after merge only
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p runtime_repo/runtime/factory_autonomy/xagrammar_source_cost
+          cp out/XAGRAMMAR_SOURCE_COST_TRIAGE_RUNTIME.json runtime_repo/runtime/factory_autonomy/xagrammar_source_cost/TRIAGE_RUNTIME.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/xagrammar_source_cost/TRIAGE_RUNTIME.json
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "Persist XAGRAMMAR source-cost triage ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
