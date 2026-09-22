@@ -1,0 +1,71 @@
+{
+  "schema": "gate_btc_2.factory_item3d_historical_survivor_prereg.v3",
+  "frozen_at": "2026-09-22",
+  "item": "3D",
+  "status": "VERSIONED_USER_DIRECTED_HISTORICAL_ECONOMIC_SCREEN",
+  "provenance_note": "V1 required two fully QUALIFIED cells and yielded zero candidates. V2 required one fully QUALIFIED cell and also yielded zero. V3 is an explicitly versioned descriptive screen requested to identify historical shadow candidates; it does not claim untouched preregistration independence from the earlier diagnostic reads.",
+  "purpose": "Identify historically credible shadow candidates among the 580 Item 3 forward-safe families without removing or modifying any prospective collector.",
+  "population": {
+    "source": "runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json",
+    "selector": "experimental_shadow_eligible == true",
+    "expected_count": 580,
+    "manual_selection": false,
+    "drop_from_forward_collection": false
+  },
+  "historical_survivor_semantics": {
+    "label": "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED",
+    "not_equal_to_h1_h31_survivor": true,
+    "prospective_survivor_credit": 0,
+    "promotion_authority": false,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true
+  },
+  "ranking_policy": {
+    "use_only_existing_pre_d0_historical_evidence": true,
+    "hard_rejection_remains_excluded": true,
+    "economic_view_required": true,
+    "economic_pass_soft_reason_set": ["CALENDAR_HALF_STABILITY"],
+    "classification": {
+      "candidate_if": "NO_HARD_REJECTION_ANYWHERE_IN_FAMILY_AND_AT_LEAST_TWO_HORIZON_CELLS_ARE_SOFT_INSUFFICIENT_ONLY_FOR_CALENDAR_HALF_STABILITY",
+      "watch_if": "OTHER_ITEM3_FORWARD_SAFE_FAMILY",
+      "reject_if": "NOT_USED_TO_REMOVE_FROM_FORWARD; HARD_REJECTIONS_ONLY_PREVENT_HISTORICAL_CANDIDATE_TAG"
+    },
+    "rationale": "CALENDAR_HALF_STABILITY is already defined by Item 3 as a soft evidence-sufficiency failure when too few calendar halves have >=15 trades. A cell soft only for that reason has passed the hard economic/robustness gates but lacks enough temporal-split evidence. V3 therefore uses it as provisional historical evidence while never rescuing any family with a hard rejection.",
+    "metric_aggregation": {
+      "reference_cost_edge": "MIN_NET2_ACROSS_CANDIDATE_SUPPORT_CELLS",
+      "stress_cost_edge": "MIN_NET3_ACROSS_CANDIDATE_SUPPORT_CELLS",
+      "delayed_entry_edge": "MIN_DELAYED_NET2_ACROSS_CANDIDATE_SUPPORT_CELLS",
+      "trade_count": "SUM_TRADES_ACROSS_CANDIDATE_SUPPORT_CELLS",
+      "missing_metric": "NULL_NO_IMPUTATION"
+    },
+    "ordering": [
+      "candidate_support_cell_count_desc",
+      "reference_cost_edge_desc",
+      "stress_cost_edge_desc",
+      "delayed_entry_edge_desc",
+      "trade_count_desc",
+      "family_id_asc"
+    ],
+    "no_top_n_cutoff": true,
+    "no_percentile_cutoff": true
+  },
+  "shadow_link": {
+    "all_580_remain_active": true,
+    "historical_candidates_receive_observation_tag_only": true,
+    "no_change_to_item3c_collection_contract": true,
+    "no_h1_h31_runtime_mutation": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_RUNTIME_MUTATION": false
+  }
+}
