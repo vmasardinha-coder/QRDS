@@ -1,0 +1,103 @@
+{
+  "b3_price_join_performed": false,
+  "canonical_channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+  "data_encoding": "cp1252",
+  "dataset": "CIA_ABERTA_DOC_IPE",
+  "delimiter": ";",
+  "economics_read": false,
+  "family_id": "XAGRAMMAR_F587F5854A51",
+  "fields": {
+    "combined_timestamp": null,
+    "delivery_date": "Data_Entrega",
+    "delivery_time": null,
+    "event_category": "Categoria",
+    "issuer_identity": "CNPJ_Companhia"
+  },
+  "full_source_qualification": false,
+  "header_count": 13,
+  "headers": [
+    "CNPJ_Companhia",
+    "Nome_Companhia",
+    "Codigo_CVM",
+    "Data_Referencia",
+    "Categoria",
+    "Tipo",
+    "Especie",
+    "Assunto",
+    "Data_Entrega",
+    "Tipo_Apresentacao",
+    "Protocolo_Entrega",
+    "Versao",
+    "Link_Download"
+  ],
+  "historical_credit": 0,
+  "market_outcomes_read": false,
+  "metadata_context": {
+    "CNPJ_Companhia": [
+      "",
+      "-----------------------",
+      "Campo: CNPJ_Companhia",
+      "-----------------------",
+      "   Descrição : CNPJ da companhia"
+    ],
+    "Categoria": [
+      "",
+      "-----------------------",
+      "Campo: Categoria",
+      "-----------------------",
+      "   Descrição : Categoria",
+      "Campo: Categoria",
+      "-----------------------",
+      "   Descrição : Categoria",
+      "   Domínio   : Alfanumérico",
+      "   Tipo Dados: varchar"
+    ],
+    "Data_Entrega": [
+      "",
+      "-----------------------",
+      "Campo: Data_Entrega",
+      "-----------------------",
+      "   Descrição : Data de entrega/recebimento do documento"
+    ]
+  },
+  "metadata_documents_candidate_fields": {
+    "combined_timestamp": false,
+    "delivery_date": true,
+    "delivery_time": false,
+    "event_category": true,
+    "issuer_identity": true
+  },
+  "metadata_encoding": "cp1252",
+  "next_gate": "SOURCE_BLOCKER_REMAINS_WITH_PHYSICAL_EVIDENCE",
+  "nonempty_fraction_sample": {
+    "CNPJ_Companhia": 1.0,
+    "Categoria": 1.0,
+    "Data_Entrega": 1.0
+  },
+  "official_source": "CVM_PORTAL_DADOS_ABERTOS",
+  "physical_file": "ipe_cia_aberta_2026.csv",
+  "promotion_authority": false,
+  "questions": {
+    "q1_timestamp_dictionary": false,
+    "q2_timestamp_physical": false,
+    "q3_issuer_identity": true,
+    "q4_event_category": true
+  },
+  "safety": {
+    "CANONICAL_H2730_H2739_UNTOUCHED": true,
+    "ECONOMICS_READ": false,
+    "ENGINE_FEED": false,
+    "H1_H31_UNTOUCHED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "sample_rows_checked": 500,
+  "schema": "gate_btc_2.xagrammar_f587_cvm_source_qualification.v1",
+  "status": "FAIL_CLOSED_TIMESTAMP_NOT_PROVEN"
+}
