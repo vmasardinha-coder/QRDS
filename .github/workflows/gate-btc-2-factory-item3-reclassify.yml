@@ -1,0 +1,113 @@
+name: GATE BTC 2 Factory Item 3 Reclassification
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_factory_item3_reclassify.py'
+      - 'artifacts/gate_btc_2/EXPERIMENTAL_PROSPECTIVE_SHADOW_CONTRACT_20260922.json'
+      - '.github/workflows/gate-btc-2-factory-item3-reclassify.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_factory_item3_reclassify.py'
+      - 'artifacts/gate_btc_2/EXPERIMENTAL_PROSPECTIVE_SHADOW_CONTRACT_20260922.json'
+      - '.github/workflows/gate-btc-2-factory-item3-reclassify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-factory-item3-reclassify
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: 'true'
+  GATE_BTC_SHADOW_ONLY: 'true'
+  GATE_BTC_ENGINE_FEED: 'false'
+  GATE_BTC_ORDERS: '0'
+  GATE_BTC_REAL_CAPITAL: '0'
+  GATE_BTC_NO_RETUNE: 'true'
+  GATE_BTC_NO_BACKFILL: 'true'
+
+jobs:
+  reclassify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code under test
+        uses: actions/checkout@v4
+        with:
+          path: main_repo
+
+      - name: Check out canonical runtime evidence
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reclassify full autonomous base from actual cell evidence
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_factory_item3_reclassify.py \
+            --runtime-root runtime_repo \
+            --contract main_repo/artifacts/gate_btc_2/EXPERIMENTAL_PROSPECTIVE_SHADOW_CONTRACT_20260922.json \
+            --out-json out/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json \
+            --out-md out/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md
+
+      - name: Assert Item 3 safety and full-base coverage
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          j=json.load(open('out/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json',encoding='utf-8'))
+          assert j['autonomous_base']['families_scanned'] == 2560
+          assert j['invalidated_requalification_queue']['affected_family_count'] == 768
+          assert j['invalidated_requalification_queue']['green_source_family_count'] == 512
+          assert j['invalidated_requalification_queue']['completed_family_count'] == 768
+          s=j['safety']
+          assert s['research_only'] and s['shadow_only'] and s['no_backfill'] and s['no_retune']
+          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
+          assert j['policy']['survivor_standard_changed'] is False
+          assert j['policy']['experimental_lane_credit'] == 0
+          assert j['policy']['experimental_lane_promotion_authority'] is False
+          print('ITEM3_FULL_BASE_RECLASSIFICATION=PASS')
+          print('ELIGIBLE='+str(j['autonomous_base']['experimental_shadow_eligible_count']))
+          print('COUNTS='+json.dumps(j['autonomous_base']['classification_counts'],sort_keys=True))
+          PY
+
+      - name: Upload Item 3 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-item3-reclassification
+          path: out/
+          retention-days: 90
+
+      - name: Persist canonical reporting result after merge only
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/item3_reclassification
+          cp ../out/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json
+          cp ../out/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/gate_btc_2/item3_reclassification
+          git diff --cached --quiet && exit 0
+          git commit -m 'Persist Factory Item 3 reclassification'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
