@@ -2,13 +2,13 @@
 
 ## Scope
 
-This inventory reconstructs the original 15-system BTSE 2.0 radar and separates later-added execution/backtest auditors. The decision rule is practical: retain only systems that can plausibly contribute an economically new family, a measurable component, or an independent auditor. UI/wrapper/media/productivity projects are not advanced merely because they are technically interesting.
+This inventory reconstructs the original 15-system BTSE 2.0 radar and separates later-added execution/backtest auditors and capability probes. The decision rule is practical: retain only systems that can plausibly contribute an economically new family, a measurable component, or an independent auditor. UI/wrapper/media/productivity projects are not advanced merely because they are technically interesting.
 
 ## Original 15-system radar
 
 | System | Relevant to trading research? | Tested? | Status | Role | Family / idea extracted | Migrated? | Next step |
 |---|---|---|---|---|---|---|---|
-| TradingAgents | Yes | Yes | HOLD_FOR_ECONOMIC_BENCHMARK | COMPONENT / possible ensemble research | multiagent debate/divergence hypothesis not yet economically proven | No | Revisit only with a preregistered economic benchmark |
+| TradingAgents | Yes | Yes | HOLD / PROVIDER_REPRODUCIBILITY_BLOCKED_FOR_ECONOMIC_BENCHMARK | COMPONENT / possible ensemble research | multiagent debate/divergence, risk-veto / abstention ideas not yet economically proven | No | Reopen only with authorized reproducible LLM provider/local endpoint and paired preregistered benchmark |
 | Fincept Terminal | Yes | Yes | CONCLUDED / REFERENCE_ONLY | FACTOR REFERENCE | factor evaluation semantics; no superior new family found | No | Periodic reference only |
 | NautilusTrader | Yes | Yes | CONCLUDED / AUDITOR | EXECUTION AUDITOR | execution_realism_stress | Yes, methodology only as `AUDIT-XEXEC-01` | Use on compatible survivor execution audits |
 | Freqtrade | Yes | Yes | CONCLUDED / RETAIN_AS_RADAR_AND_AUDITOR | FAMILY SOURCE / AUDITOR | `cross_asset_regime_gate`; other strategy-family seeds | Yes: `H-XREGIME-01`; separate industrial seeds also evaluated | Periodic family mining, not platform migration |
@@ -24,30 +24,21 @@ This inventory reconstructs the original 15-system BTSE 2.0 radar and separates 
 | VoxCPM / VoxCPM2 | No for BTSE trading research | Explored outside BTSE | REJECT_AS_BTSE_RESEARCH_PRIORITY | speech/audio generation | none | No | Keep outside trading research |
 | Agentic Inbox | No material economic edge identified | No BTSE economic test needed | REJECT_AS_BTSE_RESEARCH_PRIORITY | productivity / inbox automation | none | No | Keep outside trading research |
 
-## Later-added relevant auditors / engines
+## Later-added relevant auditors / capability probes
 
-These are not part of the reconstructed original 15, but were sensibly added because they can independently challenge research/execution semantics.
+| System / capability | Status | Tangible standalone result | Factory / BTSE disposition |
+|---|---|---|---|
+| QuantConnect LEAN | CONCLUDED / RETAIN_AS_EXECUTION_AND_BACKTEST_AUDITOR | independent execution/capacity stress | auditor only |
+| Backtrader | CONCLUDED / AUDITOR | engine/order-lifecycle semantic divergence quantified | second-engine parity auditor |
+| Qlib | CONCLUDED / RETAIN_AS_NONLINEAR_FACTOR_RESEARCH_SANDBOX | Alpha158/LightGBM capability benchmark passed; historical PIT authority insufficient for QRDS integration | sandbox only |
+| River | ONLINE_ML / DRIFT_RESEARCH_SANDBOX | frozen ADWIN reset hypothesis produced zero drifts and no improvement | tested formulation rejected |
+| BOCPD | CONCLUDED / frozen formulation rejected | causal change-point overlay failed enrichment/economic gates | no migration |
+| Cryptofeed | COMPONENT / CROSS-VENUE CAPTURE | simultaneous Binance/OKX L2 capture worked; frozen 250ms Binance→OKX lead-lag hypothesis rejected | capture component only |
+| QuantLib + Deribit | RETAIN_AS_OPTIONS_PRICING_AUDITOR | 957 BTC options across 11 expiries reconstructed; 100% within frozen mark tolerance | options/IV auditor only |
+| Coin Metrics Community API | SOURCE_RETAINED_AS_RESEARCH_COMPONENT | 7d active-address gate cut DD but retained only 59.77% of buy-and-hold terminal equity | frozen feature rejected; source retained |
+| FinBERT | COMPONENT / HOLD_FOR_TEMPORAL_CRYPTO_NEWS_DATA | 970 Financial PhraseBank test samples, 86.49% accuracy, 85.61% macro-F1 | NLP capability passed; no crypto-news alpha claim |
 
-| System | Relevant? | Tested? | Status | Role | Family / idea extracted | Migrated? | Next step |
-|---|---|---|---|---|---|---|---|
-| QuantConnect LEAN | Yes | Yes | CONCLUDED / RETAIN_AS_EXECUTION_AND_BACKTEST_AUDITOR | AUDITOR | capacity / slippage stress via VolumeShareSlippageModel; default saturation caveat | No | Use as independent execution/capacity auditor, not canonical model |
-| Backtrader | Yes | Yes | CONCLUDED / AUDITOR | AUDITOR | execution_timing_semantics_audit / engine parity | No; finding overlaps `AUDIT-XEXEC-01` | Use as second-engine parity auditor when useful |
-
-## Answer to the inventory question
-
-Among the **economically relevant systems in the original 15**, the active research set has already been covered: TradingAgents, Fincept Terminal, NautilusTrader, Freqtrade, AI Hedge Fund, CCXT, Hummingbot, Jesse, and FinRL/FinRL-X.
-
-The remaining original-radar projects are primarily agent/UI/media/productivity infrastructure and do not currently justify BTSE scientific throughput because they do not expose a concrete new alpha family, market-data signal, microstructure mechanism, factor, regime detector, derivatives capability, execution model, or measurable risk overlay.
-
-Therefore there is **no missing high-priority original-radar trading system that should be tested merely to complete the count of 15**.
-
-The correct next-stage metric remains:
-
-`new economic families -> tested families -> survivors -> incremental gain over QRDS`
-
-not number of external platforms executed.
-
-## Current external-system scientific map
+## Current scientific map
 
 ### Migrated into Factory
 - `H-XREGIME-01 / cross_asset_regime_gate` from Freqtrade — candidate hypothesis, independently revalidated by Factory.
@@ -55,25 +46,40 @@ not number of external platforms executed.
 - `AUDIT-XAVAIL-01 / signal_availability_semantics` from AI Hedge Fund — integrity guard only.
 
 ### Retained externally
-- TradingAgents — economic benchmark pending.
+- TradingAgents — architecture verified; economic paired benchmark blocked until a reproducible authorized LLM provider/local endpoint exists.
 - Freqtrade — recurring family source and auditor.
 - Jesse — periodic hypothesis source.
 - Hummingbot — microstructure / market-making family source.
 - FinRL — RL sandbox, with frozen tested formulation rejected.
 - CCXT — transport/source probe.
 - Fincept — reference only.
-- LEAN — execution/capacity auditor.
-- Backtrader — execution semantics / engine-parity auditor.
+- LEAN / Backtrader — execution auditors.
+- Qlib — nonlinear-factor sandbox.
+- Cryptofeed — cross-venue capture component.
+- QuantLib — options/volatility auditor.
+- Coin Metrics — on-chain research source.
+- FinBERT — sentiment classifier awaiting admissible timestamped crypto-news history.
 
-## Recommended next direction
+## Capability-class coverage
 
-Do not continue by installing the remaining low-relevance original projects. The next external research pass should target missing **capability classes**, not missing brand names, with priority on:
+The six capability gaps identified in the prior inventory have now all received at least one frozen external test:
 
-1. order-book / microstructure and cross-venue lead-lag;
-2. derivatives / basis / funding / volatility surface;
-3. anomaly and change-point detection;
-4. nonlinear factor discovery;
-5. alternative-data signals with provable PIT semantics;
-6. online learning / adaptive allocation with strict OOS discipline.
+1. order-book / cross-venue microstructure — Cryptofeed tested; capture passed, frozen lead-lag rejected;
+2. derivatives / volatility surface — QuantLib + Deribit passed as pricing auditor;
+3. anomaly / change-point detection — BOCPD frozen formulation rejected;
+4. nonlinear factor discovery — Qlib capability passed, integration blocked by historical PIT authority;
+5. alternative data — Coin Metrics feature rejected; FinBERT NLP capability passed but temporal crypto-news integration is blocked;
+6. online learning / adaptive allocation — River frozen ADWIN formulation rejected.
 
-Any new external system should be admitted only if it has a credible path to one of those classes and can produce a tangible standalone artifact before integration.
+Therefore the next external research should **not** be driven by completing brand counts or retuning failed frozen hypotheses. New work should enter only when it supplies one of:
+
+- a genuinely new economic family not already represented;
+- admissible PIT data that unlocks a currently blocked capability;
+- a reproducible provider needed to resolve an existing HOLD;
+- an independent audit that materially challenges a surviving QRDS result.
+
+The practical metric remains:
+
+`new economic families -> tested families -> survivors -> incremental gain over QRDS`
+
+not number of external platforms executed.
