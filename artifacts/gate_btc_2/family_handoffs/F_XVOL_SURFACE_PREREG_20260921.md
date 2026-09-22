@@ -14,51 +14,66 @@ This artifact is a family definition / handoff only. It does not claim alpha, do
 - class: `DERIVATIVES / IMPLIED_VOLATILITY_REGIME`
 - origin: `QuantLib + Deribit options-pricing audit`
 - source market: Deribit BTC European options
-- underlying reference: Deribit BTC index / expiry forward
+- underlying reference: Deribit expiry forward (`underlying_price`)
 - research boundary: `RESEARCH_ONLY=true`, `SHADOW_ONLY=true`, `REAL_CAPITAL_BRL=0`, `ORDERS=0`
 
 ## Scientific idea
 
 The options surface may contain regime information orthogonal to spot-price-only families. The family is defined by **surface state**, not by the QuantLib engine itself.
 
-The initial frozen feature geometry is:
+## Frozen feature geometry
+
+For each expiry, define log-moneyness as `abs(log(K/F))`, where `K` is strike and `F` is that option's Deribit expiry forward.
 
 1. `atm_iv_near`
-   - median mark IV of options nearest to forward moneyness 1.00 within the nearest eligible expiry.
+   - among valid options in the nearest eligible expiry, find the minimum absolute log-moneyness;
+   - take the median mark IV across instruments tied at that minimum (normally call/put at the same strike).
 2. `atm_iv_far`
-   - same definition for the next eligible farther expiry.
+   - same rule for the next farther eligible expiry.
 3. `term_slope`
    - `atm_iv_far - atm_iv_near`.
 4. `put_25d_iv_near`
-   - near-expiry put IV closest to Black-76 delta -0.25.
+   - near-expiry put mark IV whose **undiscounted Black-76 forward delta** is closest to `-0.25`.
 5. `call_25d_iv_near`
-   - near-expiry call IV closest to Black-76 delta +0.25.
+   - near-expiry call mark IV whose undiscounted Black-76 forward delta is closest to `+0.25`.
 6. `risk_reversal_25d`
    - `call_25d_iv_near - put_25d_iv_near`.
 7. `butterfly_25d`
    - `0.5 * (call_25d_iv_near + put_25d_iv_near) - atm_iv_near`.
 8. `surface_dispersion_near`
-   - robust cross-strike IV dispersion for the near expiry.
+   - interquartile range `Q75(mark_iv) - Q25(mark_iv)` across all valid options in the near expiry.
+
+All IVs are expressed in **percentage points**, matching Deribit `mark_iv` units.
 
 No price direction rule is frozen here. This is deliberately a **family**, not a single hypothesis.
 
-## Eligibility gate for one surface snapshot
+## Black-76 forward delta convention
 
-A snapshot is feature-eligible only if all hold:
+For `sigma = mark_iv / 100` and `T` in years:
 
-- at least 2 distinct expiries after the observation time;
-- nearest eligible expiry has at least 5 calls and 5 puts with finite positive mark IV and forward/strike inputs;
-- farther expiry has enough observations to estimate ATM IV;
-- nearest-expiry ATM candidate exists within absolute log-moneyness <= 0.075;
-- 25-delta call and put candidates exist with absolute delta-distance <= 0.10 from target;
-- no duplicate instrument identity;
-- no non-finite emitted feature.
+`d1 = [ln(F/K) + 0.5*sigma^2*T] / [sigma*sqrt(T)]`
 
-Otherwise the snapshot is `ABSTAIN / SURFACE_NOT_ELIGIBLE`; missing features are never silently neutralized.
+- call forward delta = `N(d1)`
+- put forward delta = `N(d1) - 1`
 
-## Delta convention
+This convention is frozen as feature geometry and is not a tunable alpha parameter.
 
-Use Black-76 delta on the expiry forward and the option mark IV published by Deribit. For calls, target `+0.25`; for puts, target `-0.25`. This convention is frozen for the family extractor and is not a tunable alpha parameter.
+## Expiry eligibility
+
+An expiry is eligible only if:
+
+- expiration is strictly after observation time;
+- at least 5 valid calls and 5 valid puts exist;
+- all used rows have finite positive strike, forward and mark IV;
+- the ATM candidate has absolute log-moneyness <= `0.075`;
+- the nearest call to +0.25 has absolute delta-distance <= `0.10`;
+- the nearest put to -0.25 has absolute delta-distance <= `0.10`.
+
+The family snapshot requires at least **two eligible expiries**. The earliest is `near`; the second earliest is `far`.
+
+Instrument identity must be unique. Any duplicate identity or non-finite emitted feature makes the whole snapshot `ABSTAIN / SURFACE_NOT_ELIGIBLE`.
+
+Missing features are never silently neutralized.
 
 ## What may vary later inside the Factory
 
