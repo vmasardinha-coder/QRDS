@@ -1,0 +1,61 @@
+{
+  "schema": "gate_btc_2.xagrammar_dd9f_b3_foreign_flow_source_prereg.v1",
+  "frozen_at": "2026-09-22",
+  "family_id": "XAGRAMMAR_DD9F1F0501B3",
+  "canonical_channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
+  "status": "PREREGISTERED_BEFORE_PHYSICAL_B3_BDI_READ",
+  "mechanism": "Officially published lagged foreign-investor movement aggregates may transmit capital-flow pressure to strictly later B3 observations.",
+  "official_source": {
+    "provider": "B3_BDI",
+    "publication_notice": "https://www.b3.com.br/pt_br/noticias/dados-de-participacao-de-investidores-da-b3-passa-a-ser-disponibilizado-somente-no-boletim-diario-do-mercado.htm",
+    "archive_pattern": "https://arquivos.b3.com.br/bdi/download/bdi/{YYYY-MM-DD}/BDI_02_{YYYYMMDD}.pdf",
+    "free": true,
+    "official": true
+  },
+  "frozen_probe_dates": [
+    {"publication_date": "2025-09-03", "expected_data_through": "2025-09-01"},
+    {"publication_date": "2025-09-19", "expected_data_through": "2025-09-17"},
+    {"publication_date": "2025-10-28", "expected_data_through": "2025-10-24"}
+  ],
+  "qualification_questions": {
+    "q1_official_lag_rule": "Does official B3 documentation explicitly state that investor-participation data in the BDI reflect two business days retroactive?",
+    "q2_physical_lag_consistency": "Do the frozen historical BDI documents physically state data-through dates consistent with that rule?",
+    "q3_foreign_fields": "Do the physical BDI documents expose Investidor Estrangeiro purchases and sales as numeric fields?",
+    "q4_archive_retrievability": "Are all frozen historical BDI documents retrievable from the official archive pattern without outcome-based date selection?"
+  },
+  "pass_policy": {
+    "full_source_semantics_requires_q1_q2_q3_q4": true,
+    "publication_day_is_availability_day": true,
+    "strict_signal_availability": "NO_EARLIER_THAN_BDI_PUBLICATION_DATE",
+    "underlying_data_cutoff_must_be_recorded": true,
+    "no_intraday_publication_time_claim": true,
+    "same_day_market_reaction_not_credited": true,
+    "earliest_future_market_join": "NEXT_B3_SESSION_AFTER_BDI_PUBLICATION_DATE",
+    "no_daily_flow_derivation_here": true,
+    "no_market_outcome_read": true,
+    "no_b3_price_join": true,
+    "no_economics": true,
+    "no_family_parameter_change": true,
+    "historical_credit": 0
+  },
+  "allowed_results": [
+    "PASS_B3_FOREIGN_FLOW_SOURCE_SEMANTICS",
+    "FAIL_CLOSED_BDI_LAG_OR_FIELDS_NOT_PROVEN",
+    "FAIL_CLOSED_PHYSICAL_SOURCE_UNAVAILABLE"
+  ],
+  "next_gate_if_pass": "SEPARATE_FOREIGN_FLOW_TRANSFORM_AND_COST_PREREGISTRATION_BEFORE_ANY_MARKET_OUTCOME_READ",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "NO_COUNTER_RESET": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_H2730_H2739_UNTOUCHED": true,
+    "ECONOMICS_READ": false
+  }
+}
