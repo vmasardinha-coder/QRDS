@@ -1,0 +1,39 @@
+{
+  "schema_version": "BTSE_FAMILY_HANDOFF_V1",
+  "family_id": "F-XFACTOR-NONLINEAR",
+  "family_class": "CROSS_SECTIONAL_NONLINEAR_FACTOR",
+  "origin": ["Qlib", "LightGBM", "Alpha158"],
+  "validated_external_capability": {
+    "status": "PASS_ON_EXTERNAL_BENCHMARK",
+    "ic": 0.04706,
+    "icir": 0.38197,
+    "rank_ic": 0.04870,
+    "excess_with_cost_annualized": 0.11563,
+    "information_ratio": 1.3615,
+    "max_drawdown": -0.08216
+  },
+  "external_benchmark_economic_credit_to_factory": false,
+  "required_factory_input": "HISTORICAL_PIT_CROSS_SECTIONAL_QRDS_FEATURE_PANEL",
+  "required_panel_available": false,
+  "allowed_child_hypothesis_axes": [
+    "NONLINEAR_FACTOR_COMBINATION",
+    "CROSS_SECTIONAL_RANKING",
+    "FACTOR_INTERACTION",
+    "REGIME_CONDITIONAL_RANKING"
+  ],
+  "forbidden": [
+    "IMPORT_EXTERNAL_QLIB_PERFORMANCE_AS_QRDS_ALPHA",
+    "BACKFILL_WITHOUT_HISTORICAL_ASOF_SEMANTICS",
+    "IMPORT_WINNER_PARAMETERS_FROM_EXTERNAL_BENCHMARK"
+  ],
+  "economic_direction": null,
+  "thresholds": null,
+  "factory_migration_authorized": false,
+  "economic_claim_authorized": false,
+  "factory_runtime_untouched": true,
+  "research_only": true,
+  "shadow_only": true,
+  "real_capital_brl": 0,
+  "orders": 0,
+  "status": "BLOCKED_AWAITING_HISTORICAL_PIT_CROSS_SECTIONAL_PANEL"
+}
