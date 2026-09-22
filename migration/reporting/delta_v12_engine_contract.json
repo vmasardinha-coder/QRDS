@@ -191,6 +191,8 @@
   "schema": "gate_btc.delta_v12_engine_contract.v1",
   "selection": {
     "bottom_n": 10,
+    "cross_section_panel": "ADMITTED_ON_OR_BEFORE_THE_DAY",
+    "cross_section_panel_rationale": "O z-score de cada dia e medido SOMENTE sobre os ativos ja fixados naquele dia, lidos do pinned_at em PRICE_PROVENANCE.json. Um ativo fixado depois traz historico retroativo; sem este recorte ele entra na media e no desvio de um dia passado, desloca o z-score de todos os elegiveis e torna irreproduzivel uma linha ja gravada. Corrige o defeito que travou a serie 1.0 em 2026-09-21. A membership continua governando quem e elegivel; isto governa sobre quem a estatistica e medida.",
     "execution_timing": "next UTC daily open",
     "minimum_signal_history": 30,
     "persistence_days": 2,
@@ -202,6 +204,7 @@
       30
     ],
     "signal_timing": "completed UTC daily close",
+    "supersedes": "DELTA_V12_ENGINE_1.0 normalizou o corte transversal sobre o painel inteiro",
     "top_n": 10
   },
   "selection_size_policy": "top_n and bottom_n are frozen at 10 and 10 on 2026-08-21. Any other selection size is a NEW preregistration carrying its own freeze date and its own clean-evidence start. A size must never be added or switched after observing the return of another size, and no size may be backdated to this freeze.",
@@ -231,5 +234,5 @@
     "stratum": "TOP100",
     "stratum_frozen_date": "2026-08-21"
   },
-  "version": "DELTA_V12_ENGINE_1.0"
+  "version": "DELTA_V12_ENGINE_1.1"
 }

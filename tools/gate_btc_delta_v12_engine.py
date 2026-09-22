@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "gate_btc.delta_v12_engine.v1"
-ENGINE_VERSION = "DELTA_V12_ENGINE_1.0"
+ENGINE_VERSION = "DELTA_V12_ENGINE_1.1"
 ZERO_HASH = "0" * 64
 
 # The four books run in parallel, always. Picking the leader after seeing the
@@ -220,7 +220,9 @@ def assert_no_gaps(dates: list[str]) -> None:
 
 def build_panels(dates: list[str], bases: list[str],
                  panel: dict[str, dict[str, dict[str, float]]],
-                 cfg: dict[str, Any]) -> dict[str, dict[str, dict[str, float | None]]]:
+                 cfg: dict[str, Any],
+                 admitted_on: dict[str, str] | None = None,
+                 ) -> dict[str, dict[str, dict[str, float | None]]]:
     close = {d: {b: panel[d].get(b, {}).get("close") for b in bases} for d in dates}
     volume = {d: {b: panel[d].get(b, {}).get("volume") for b in bases} for d in dates}
     index = {d: i for i, d in enumerate(dates)}
@@ -258,13 +260,24 @@ def build_panels(dates: list[str], bases: list[str],
 
     score: dict[str, dict[str, float | None]] = {}
     for day in dates:
-        z7 = cross_section_z({b: shifted_return(day, b, 7) for b in bases}, bases)
-        z14 = cross_section_z({b: shifted_return(day, b, 14) for b in bases}, bases)
-        z30 = cross_section_z({b: shifted_return(day, b, 30) for b in bases}, bases)
-        zvol = cross_section_z(vol30[day], bases)
-        zliq = cross_section_z(liquidity[day], bases)
+        # A normalizacao cruzada usa SOMENTE os ativos ja admitidos no painel
+        # naquele dia. Um ativo fixado depois traz historico retroativo, e sem
+        # este recorte ele entraria na media e no desvio de um dia passado,
+        # deslocando o z-score de todos os elegiveis e tornando a linha ja
+        # gravada irreproduzivel. Membership governa quem e elegivel; isto
+        # governa sobre quem a estatistica e medida.
+        day_bases = ([b for b in bases if admitted_on.get(b, "9999-12-31") <= day]
+                     if admitted_on is not None else bases)
+        z7 = cross_section_z({b: shifted_return(day, b, 7) for b in day_bases}, day_bases)
+        z14 = cross_section_z({b: shifted_return(day, b, 14) for b in day_bases}, day_bases)
+        z30 = cross_section_z({b: shifted_return(day, b, 30) for b in day_bases}, day_bases)
+        zvol = cross_section_z({b: vol30[day][b] for b in day_bases}, day_bases)
+        zliq = cross_section_z({b: liquidity[day][b] for b in day_bases}, day_bases)
         row: dict[str, float | None] = {}
         for base in bases:
+            if base not in z7:
+                row[base] = None
+                continue
             parts = (z7[base], z14[base], z30[base], zvol[base], zliq[base])
             # Any missing component makes the score undefined, as a NaN sum does
             # in the canonical script. A partial score is not a weaker signal,
@@ -776,8 +789,31 @@ def load_or_create_anchor(path: Path, latest_close: str, not_before: str,
 # run
 # --------------------------------------------------------------------------
 
+def read_price_provenance(path: Path | None) -> dict[str, str] | None:
+    """Base asset to the UTC day its venue pin was recorded.
+
+    A pin recorded on day P carries backfilled history before P. The cross
+    section of a day D must only see assets already pinned on D, otherwise a
+    later pin rewrites the score of a day that is already committed.
+    """
+    if path is None or not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    prov = payload.get("provenance") or {}
+    out: dict[str, str] = {}
+    for base, entry in prov.items():
+        pinned = str(entry.get("pinned_at") or "").strip()
+        if not pinned:
+            raise EngineError(
+                f"FAIL_CLOSED: price provenance for {base} has no pinned_at; "
+                "the admitted-on date is required to freeze the cross section")
+        out[str(base).strip().upper()] = pinned
+    return out or None
+
+
 def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path,
-        run_id: str = "", funding_csv: Path | None = None) -> dict[str, Any]:
+        run_id: str = "", funding_csv: Path | None = None,
+        price_provenance: Path | None = None) -> dict[str, Any]:
     contract = json.loads(contract_path.read_text(encoding="utf-8-sig"))
     if contract["version"] != ENGINE_VERSION:
         raise EngineError(f"contract version {contract['version']} is not {ENGINE_VERSION}")
@@ -837,7 +873,8 @@ def run(prices_csv: Path, universe_csv: Path, contract_path: Path, out_dir: Path
         for day in dates for base in bases
     }
 
-    panels = build_panels(dates, bases, panel, cfg)
+    admitted_on = read_price_provenance(price_provenance)
+    panels = build_panels(dates, bases, panel, cfg, admitted_on)
     funding, funded, funding_model = read_funding(funding_csv)
 
     ledger: list[dict[str, Any]] = []
@@ -939,9 +976,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default="")
     parser.add_argument("--funding-csv", type=Path, default=None,
                         help="FUNDING_DAILY.csv; omitted means funding is booked as zero")
+    parser.add_argument("--price-provenance", type=Path, default=None,
+                        help="PRICE_PROVENANCE.json; freezes each day's cross section "
+                             "to the assets already pinned on that day")
     args = parser.parse_args(argv)
     status = run(args.prices_csv, args.universe_csv, args.contract, args.out_dir,
-                 args.run_id, args.funding_csv)
+                 args.run_id, args.funding_csv, args.price_provenance)
     print(json.dumps({k: status[k] for k in SUMMARY_KEYS}, indent=2, sort_keys=True))
     return 0
 
