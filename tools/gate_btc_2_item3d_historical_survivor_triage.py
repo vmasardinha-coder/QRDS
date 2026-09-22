@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Item 3D historical-survivor triage.
+"""Item 3D facilitated historical-survivor triage.
 
-Consumes only existing Item 3 reclassification evidence and emits a descriptive
-historical candidate/watch ranking. It does not alter prospective Item 3C
-collection, does not promote to H1/H31 survivor, and has zero trading authority.
+Consumes only existing pre-D0 Item 3 reclassification evidence and emits a
+DESCRIPTIVE historical candidate/watch ranking. It never removes any of the 580
+families from prospective collection, never promotes to H1/H31 survivor, and
+has zero trading/promotion authority.
 """
 from __future__ import annotations
 
@@ -19,6 +20,9 @@ HARD_REASONS = {
     "SIDE_STABILITY",
     "STRESS_COST",
 }
+ADMISSIBLE_CLASSES = {"QUALIFIED", "SOFT_INSUFFICIENT"}
+CANDIDATE = "HISTORICAL_SURVIVOR_CANDIDATE_FACILITATED"
+WATCH = "HISTORICAL_WATCH"
 
 
 def _load(path: Path) -> Any:
@@ -52,8 +56,13 @@ def _qualified_cells(row: dict[str, Any]) -> list[dict[str, Any]]:
     return [c for c in _cells(row) if c.get("class") == "QUALIFIED" or c.get("qualified") is True]
 
 
-def _qualified_count(row: dict[str, Any]) -> int:
-    return len(_qualified_cells(row))
+def _admissible_cells(row: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for c in _cells(row):
+        cls = c.get("class")
+        if cls in ADMISSIBLE_CLASSES or c.get("qualified") is True:
+            out.append(c)
+    return out
 
 
 def _reasons(row: dict[str, Any]) -> list[str]:
@@ -102,10 +111,12 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
         if not r:
             missing_detail += 1
         qc = _qualified_cells(r)
-        q = len(qc)
+        ac = _admissible_cells(r)
         reasons = _reasons(r)
         hard = sorted(HARD_REASONS.intersection(reasons))
-        label = "HISTORICAL_SURVIVOR_CANDIDATE" if (not hard and q >= 2) else "HISTORICAL_WATCH"
+        q = len(qc)
+        a = len(ac)
+        label = CANDIDATE if (not hard and q >= 1 and a >= 2) else WATCH
         out.append({
             "family_id": fid,
             "label": label,
@@ -116,7 +127,13 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
             "standardization_lookback_sessions": r.get("standardization_lookback_sessions"),
             "evidence_basis": r.get("evidence_basis"),
             "qualified_horizon_cell_count": q,
+            "admissible_horizon_cell_count": a,
             "qualified_horizons": [c.get("horizon") for c in qc],
+            "admissible_horizons": [c.get("horizon") for c in ac],
+            "cell_classes": [
+                {"horizon": c.get("horizon"), "class": c.get("class"), "reasons": c.get("reasons") or []}
+                for c in _cells(r)
+            ],
             "hard_reasons": hard,
             "all_reasons": reasons,
             "reference_cost_edge": _min_metric(qc, "net2"),
@@ -132,7 +149,9 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
         def nk(v: float | None) -> tuple[int, float]:
             return (1, 0.0) if v is None else (0, -v)
         return (
+            0 if x["label"] == CANDIDATE else 1,
             -x["qualified_horizon_cell_count"],
+            -x["admissible_horizon_cell_count"],
             nk(x["reference_cost_edge"]),
             nk(x["stress_cost_edge"]),
             nk(x["delayed_entry_edge"]),
@@ -145,13 +164,14 @@ def classify(runtime: dict[str, Any]) -> dict[str, Any]:
         row["rank"] = i
 
     counts: dict[str, int] = {}
-    for r in out:
-        counts[r["label"]] = counts.get(r["label"], 0) + 1
+    for row in out:
+        counts[row["label"]] = counts.get(row["label"], 0) + 1
 
-    candidates = [r for r in out if r["label"] == "HISTORICAL_SURVIVOR_CANDIDATE"]
+    candidates = [r for r in out if r["label"] == CANDIDATE]
     return {
-        "schema": "gate_btc_2.factory_item3d_historical_survivor_triage.v1",
+        "schema": "gate_btc_2.factory_item3d_historical_survivor_triage.v2",
         "status": "HISTORICAL_TRIAGE_COMPLETE" if missing_detail == 0 else "HISTORICAL_TRIAGE_PARTIAL_SOURCE_DETAIL",
+        "methodology": "FACILITATED_DESCRIPTIVE_POST_V1_STRICT_ZERO",
         "population_count": 580,
         "historical_survivor_candidate_count": len(candidates),
         "family_state_counts": counts,
@@ -179,6 +199,7 @@ def main() -> None:
     Path(args.out).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({
         "status": result["status"],
+        "methodology": result["methodology"],
         "population": result["population_count"],
         "candidate_count": result["historical_survivor_candidate_count"],
         "counts": result["family_state_counts"],
