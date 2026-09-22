@@ -1,0 +1,105 @@
+name: GATE BTC 2 XAGRAMMAR F587 CVM Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/XAGRAMMAR_F587_CVM_SOURCE_QUALIFICATION_PREREG_20260922.json'
+      - 'tools/gate_btc_2_xagrammar_f587_cvm_source_qualify.py'
+      - '.github/workflows/gate-btc-2-xagrammar-f587-cvm-source-qualification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/XAGRAMMAR_F587_CVM_SOURCE_QUALIFICATION_PREREG_20260922.json'
+      - 'tools/gate_btc_2_xagrammar_f587_cvm_source_qualify.py'
+      - '.github/workflows/gate-btc-2-xagrammar-f587-cvm-source-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NOT_APPROVED: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile probe
+        run: python -m py_compile tools/gate_btc_2_xagrammar_f587_cvm_source_qualify.py
+      - name: Assert preregistration precedes source qualification and safety
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/gate_btc_2/XAGRAMMAR_F587_CVM_SOURCE_QUALIFICATION_PREREG_20260922.json'))
+          assert p['family_id']=='XAGRAMMAR_F587F5854A51'
+          assert p['canonical_channel_id']=='CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION'
+          assert p['status']=='PREREGISTERED_BEFORE_PHYSICAL_CVM_SOURCE_READ'
+          assert p['pass_policy']['no_semantic_guessing_from_column_name_only']
+          assert p['pass_policy']['no_market_outcome_read'] and p['pass_policy']['no_b3_price_join']
+          s=p['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NOT_APPROVED']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['NO_BACKFILL'] and s['NO_RETUNE'] and s['H1_H31_UNTOUCHED'] and s['ECONOMICS_READ'] is False
+          print('F587_PREREG=PASS')
+          PY
+      - name: Read official CVM metadata and physical IPE file
+        run: |
+          mkdir -p out
+          python tools/gate_btc_2_xagrammar_f587_cvm_source_qualify.py \
+            --prereg artifacts/gate_btc_2/XAGRAMMAR_F587_CVM_SOURCE_QUALIFICATION_PREREG_20260922.json \
+            --out out/F587_CVM_SOURCE_QUALIFICATION.json
+      - name: Assert zero-economic-credit output
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('out/F587_CVM_SOURCE_QUALIFICATION.json'))
+          assert d['family_id']=='XAGRAMMAR_F587F5854A51'
+          assert d['economics_read'] is False and d['historical_credit']==0
+          if 'market_outcomes_read' in d:
+              assert d['market_outcomes_read'] is False and d['b3_price_join_performed'] is False
+              assert d['promotion_authority'] is False
+          assert d['status'] in {
+              'PASS_CVM_EVENT_SOURCE_SEMANTICS',
+              'PARTIAL_TIMESTAMP_PASS_IDENTITY_OR_CATEGORY_PENDING',
+              'FAIL_CLOSED_TIMESTAMP_NOT_PROVEN',
+              'FAIL_CLOSED_PHYSICAL_SOURCE_UNAVAILABLE'
+          }
+          print('F587_STATUS='+d['status'])
+          print('F587_QUESTIONS='+str(d.get('questions')))
+          print('F587_FIELDS='+str(d.get('fields')))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xagrammar-f587-cvm-source-${{ github.run_id }}
+          path: out/F587_CVM_SOURCE_QUALIFICATION.json
+          retention-days: 90
+      - name: Persist canonical source qualification after merge only
+        if: github.event_name == 'push'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          mkdir -p runtime_repo/runtime/factory_autonomy/xagrammar_source_cost/F587
+          cp out/F587_CVM_SOURCE_QUALIFICATION.json runtime_repo/runtime/factory_autonomy/xagrammar_source_cost/F587/CVM_SOURCE_QUALIFICATION.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/xagrammar_source_cost/F587/CVM_SOURCE_QUALIFICATION.json
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "Persist F587 CVM source qualification ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
