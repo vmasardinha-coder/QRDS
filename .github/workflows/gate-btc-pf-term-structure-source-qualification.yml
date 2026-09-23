@@ -46,7 +46,7 @@ jobs:
           python -m py_compile tools/gate_btc_factory/pf_term_structure_carry_source_qualification.py
           pytest -q tests/test_gate_btc_pf_term_structure_carry_source_qualification.py
           python tools/gate_btc_factory/pf_term_structure_carry_source_qualification.py --self-test
-      - name: Assert frozen no-economics contract
+      - name: Assert frozen pre-outcome failover contract
         run: |
           cd source_repo
           python - <<'PY'
@@ -59,11 +59,20 @@ jobs:
           assert d['lookbacks_defined'] is False
           assert d['return_horizon_defined'] is False
           assert d['historical_backfill_allowed'] is False
+          f=d['preoutcome_transport_failover']
+          assert f['allowed'] is True
+          assert f['fallback_provider']=='OKX_PUBLIC_API'
+          assert f['economics_may_be_read_before_failover'] is False
+          assert f['performance_may_influence_failover'] is False
+          assert f['mechanism_change_allowed'] is False
+          assert f['required_observables_change_allowed'] is False
+          assert f['provenance_must_preserve_original_primary_failure'] is True
+          assert f['silent_substitution_for_missing_semantic_fields'] is False
           s=d['safety']
           assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
           assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
           assert s['CANONICAL_580_UNTOUCHED'] is True
-          print('PF_TERM_STRUCTURE_SOURCE_CONTRACT=PASS')
+          print('PF_TERM_STRUCTURE_FAILOVER_CONTRACT=PASS')
           PY
       - name: Probe live public derivative sources
         if: github.event_name != 'pull_request'
@@ -80,10 +89,16 @@ jobs:
           assert d['carry_formula_defined'] is False
           assert d['historical_backfill_started'] is False
           assert d['safety']['canonical_580_untouched'] is True
-          assert d['primary']['status'] in {'QUALIFIED_PUBLIC_SOURCE','BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING','FAIL_CLOSED_SOURCE_UNVERIFIED'}
+          assert d['original_primary']['status'] in {'QUALIFIED_PUBLIC_SOURCE','BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING','FAIL_CLOSED_SOURCE_UNVERIFIED'}
+          if d['transport_failover']['activated']:
+              assert d['fallback']['status']=='PASS'
+              assert d['operational_primary']['provider']=='OKX_PUBLIC_API'
+              assert d['transport_failover']['economic_outcomes_read_before_failover'] is False
+              assert d['transport_failover']['performance_used_for_failover'] is False
           print('PF_TERM_STRUCTURE_LIVE_STATUS='+d['status'])
-          print('PF_TERM_STRUCTURE_PRIMARY='+d['primary']['status'])
-          print('PF_TERM_STRUCTURE_VALIDATION='+d['validation']['status'])
+          print('PF_TERM_STRUCTURE_ORIGINAL_PRIMARY='+d['original_primary']['status'])
+          print('PF_TERM_STRUCTURE_FALLBACK='+d['fallback']['status'])
+          print('PF_TERM_STRUCTURE_OPERATIONAL_PRIMARY='+str((d.get('operational_primary') or {}).get('provider')))
           PY
       - name: Persist source qualification to canonical runtime
         if: github.event_name != 'pull_request'
@@ -104,13 +119,13 @@ jobs:
             sleep $((i*2))
           done
           exit 1
-      - name: Fail only if primary source could not be adjudicated
+      - name: Fail only if no operational primary was adjudicated
         if: github.event_name != 'pull_request'
         run: |
           python - <<'PY'
           import json
           d=json.load(open('live/PF_TERM_STRUCTURE_CARRY_SOURCE_QUALIFICATION_RUNTIME.json'))
-          if d['primary']['status']=='FAIL_CLOSED_SOURCE_UNVERIFIED':
-              raise SystemExit('SOURCE_UNVERIFIED_FAIL_CLOSED')
-          print('PF_TERM_STRUCTURE_ADJUDICATED='+d['primary']['status'])
+          if d.get('operational_primary') is None:
+              raise SystemExit('NO_OPERATIONAL_PRIMARY_FAIL_CLOSED')
+          print('PF_TERM_STRUCTURE_ADJUDICATED='+d['status'])
           PY
