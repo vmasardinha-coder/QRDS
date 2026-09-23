@@ -1,0 +1,58 @@
+{
+  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "qualification_date": "2026-09-23",
+  "namespace": "PF::68f5b4b1bcb58e95",
+  "grammar_signature": "68f5b4b1bcb58e95ffec65c0e62e69da82c7d8f477f48c4d5d732ca5b24030ae",
+  "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+  "purpose": "SOURCE_QUALIFICATION_ONLY_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
+  "provider": "OKX_PUBLIC_API",
+  "authentication_required": false,
+  "instrument_binding": {
+    "spot": "BTC-USDT",
+    "perpetual": "BTC-USDT-SWAP",
+    "interval": "1H"
+  },
+  "required_observables": [
+    "live_spot_instrument_metadata",
+    "live_perpetual_instrument_metadata",
+    "closed_spot_ohlcv_1h",
+    "closed_perpetual_ohlcv_1h",
+    "common_closed_bar_timestamp",
+    "funding_history_with_timestamp_not_after_common_bar_close"
+  ],
+  "endpoints": [
+    "https://www.okx.com/api/v5/public/instruments",
+    "https://www.okx.com/api/v5/market/candles",
+    "https://www.okx.com/api/v5/public/funding-rate-history"
+  ],
+  "qualification_rule": {
+    "all_required_observables_must_pass": true,
+    "missing_or_unsynchronized_required_observable": "BLOCKED_REQUIRED_PUBLIC_SPOT_PERP_FIELD_MISSING",
+    "transport_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+  },
+  "xagent_third_input_eligibility": {
+    "status": "NOT_ESTABLISHED_SHARED_COMPONENTS",
+    "shared_with": "S-XTERM-CARRY-01",
+    "shared_components": ["PERPETUAL_MARKET", "FUNDING"],
+    "rule": "DO_NOT_COUNT_AS_THIRD_INDEPENDENT_XAGENT_INPUT_WITHOUT_SEPARATE_PREOUTCOME_INDEPENDENCE_ADJUDICATION"
+  },
+  "economic_parameters_defined": false,
+  "signal_formula_defined": false,
+  "direction_defined": false,
+  "thresholds_defined": false,
+  "lookbacks_defined": false,
+  "return_horizon_defined": false,
+  "historical_backfill_allowed": false,
+  "next_gate_if_qualified": "FAMILY_SOURCE_READY_BUT_XAGENT_THIRD_INPUT_NOT_AUTHORIZED",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
