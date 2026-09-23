@@ -1,5 +1,5 @@
 {
-  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "schema": "gate_btc_2.pf_source_qualification.v2",
   "qualification_date": "2026-09-23",
   "namespace": "PF::5c6294637c3b4e7f",
   "grammar_signature": "5c6294637c3b4e7f61f9f4419a68671e6b3503314b6520e093b1301d504b3503",
@@ -11,7 +11,7 @@
     "perpetual_funding_rate",
     "dated_futures_expiry_timestamp"
   ],
-  "primary_source": {
+  "original_primary_source": {
     "provider": "BINANCE_COIN_M_PUBLIC_API",
     "authentication_required": false,
     "instrument_family": "BTCUSD",
@@ -21,7 +21,19 @@
       "https://dapi.binance.com/dapi/v1/fundingRate"
     ]
   },
-  "validation_source": {
+  "preoutcome_transport_failover": {
+    "allowed": true,
+    "fallback_provider": "OKX_PUBLIC_API",
+    "trigger_only_when_original_primary": "TRANSPORT_OR_JURISDICTION_UNAVAILABLE",
+    "required_fallback_state": "ALL_FOUR_REQUIRED_OBSERVABLES_PUBLICLY_VERIFIED",
+    "economics_may_be_read_before_failover": false,
+    "performance_may_influence_failover": false,
+    "mechanism_change_allowed": false,
+    "required_observables_change_allowed": false,
+    "provenance_must_preserve_original_primary_failure": true,
+    "silent_substitution_for_missing_semantic_fields": false
+  },
+  "fallback_source": {
     "provider": "OKX_PUBLIC_API",
     "authentication_required": false,
     "instrument_family": "BTC-USD",
@@ -32,10 +44,10 @@
     ]
   },
   "qualification_rule": {
-    "primary": "REQUIRE_LIVE_PERPETUAL_AND_LIVE_DATED_BTC_FUTURE_WITH_PARSEABLE_PRICES_FUTURE_EXPIRY_AND_PARSEABLE_PERPETUAL_FUNDING",
-    "validation": "RECORD_OKX_EQUIVALENT_WHEN_PUBLICLY_OBSERVABLE_BUT_DO_NOT_REPLACE_PRIMARY_FIELDS_SILENTLY",
-    "missing_primary_required_observable": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING",
-    "transport_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+    "direct_primary": "BINANCE_MUST_EXPOSE_ALL_FOUR_REQUIRED_OBSERVABLES",
+    "transport_failover": "IF_BINANCE_IS_TRANSPORT_OR_JURISDICTION_UNAVAILABLE_AND_OKX_EXPOSES_THE_SAME_FOUR_OBSERVABLES_THEN_OKX_BECOMES_OPERATIONAL_PRIMARY_WITH_BINANCE_FAILURE_RETAINED_IN_PROVENANCE",
+    "missing_required_observable": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING",
+    "unadjudicated_transport_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
   },
   "economic_parameters_defined": false,
   "carry_formula_defined": false,
