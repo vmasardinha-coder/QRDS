@@ -57,7 +57,8 @@ jobs:
           assert p['dispatch_policy']['pnl_selection'] is False
           assert p['dispatch_policy']['economics_read_before_selection'] is False
           assert p['dispatch_policy']['existing_h_id_allocation'] is False
-          assert p['dispatch_policy']['sources']==['GRAMMAR_SCOUT_RUNTIME','CRYPTO_GRAMMAR_SCOUT_RUNTIME']
+          assert p['dispatch_policy']['sources']==['GRAMMAR_SCOUT_RUNTIME','CRYPTO_GRAMMAR_SCOUT_RUNTIME','CRYPTO_GRAMMAR_SCOUT_AUDIT_HISTORY']
+          assert p['dispatch_policy']['history_role']=='RECOVER_UNCONSUMED_OUTCOME_BLIND_PROPOSALS_ONLY_NOT_PERFORMANCE_SELECTION'
           assert p['parallel_frontier']['historical_credit']==0
           assert p['parallel_frontier']['promotion_authority'] is False
           s=p['safety']
@@ -93,6 +94,7 @@ jobs:
             --current runtime_repo/runtime/autonomous_science/CURRENT.json \
             --scout runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json \
             --scout runtime_repo/runtime/factory_autonomy/CRYPTO_GRAMMAR_SCOUT_RUNTIME.json \
+            --scout-dir runtime_repo/runtime/factory_autonomy/crypto_grammar_scout_audits \
             --handoff-ledger-dir runtime_repo/runtime/factory_autonomy/grammar_handoff_audits \
             --output out/PARALLEL_FRONTIER_RUNTIME.json
           python - <<'PY'
@@ -106,7 +108,7 @@ jobs:
               assert d['family_ids_allocated']==[]
               assert d['historical_credit']==0 and d['retroactive_credit']==0
               assert d['promotion_authority'] is False
-              assert d['scout_count']==2
+              assert d['scout_count']>=2
           print('PARALLEL_FRONTIER_STATUS='+d['status'])
           print('PARALLEL_FRONTIER_SELECTED='+str((d.get('selected') or {}).get('channel_id')))
           PY
@@ -123,15 +125,8 @@ jobs:
           d=json.load(open('out/PARALLEL_FRONTIER_RUNTIME.json'))
           if d['status'].startswith('PARALLEL_FRONTIER_'):
               sig=d['selected']['grammar_signature']
-              receipt={
-                  'schema':'qrds.factory.grammar_scout_handoff.v1',
-                  'mode':'OUTCOME_BLIND_HANDOFF_ONLY',
-                  'request_count':1,
-                  'requests':[d['selected']],
-                  'safety':d['safety'],
-              }
-              Path(f'runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/parallel-{sig}.json').write_text(
-                  json.dumps(receipt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+              receipt={'schema':'qrds.factory.grammar_scout_handoff.v1','mode':'OUTCOME_BLIND_HANDOFF_ONLY','request_count':1,'requests':[d['selected']],'safety':d['safety']}
+              Path(f'runtime_repo/runtime/factory_autonomy/grammar_handoff_audits/parallel-{sig}.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
           PY
           fi
           git -C runtime_repo config user.name gate-btc-research-bot
