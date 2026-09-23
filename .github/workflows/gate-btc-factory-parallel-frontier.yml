@@ -57,6 +57,7 @@ jobs:
           assert p['dispatch_policy']['pnl_selection'] is False
           assert p['dispatch_policy']['economics_read_before_selection'] is False
           assert p['dispatch_policy']['existing_h_id_allocation'] is False
+          assert p['dispatch_policy']['sources']==['GRAMMAR_SCOUT_RUNTIME','CRYPTO_GRAMMAR_SCOUT_RUNTIME']
           assert p['parallel_frontier']['historical_credit']==0
           assert p['parallel_frontier']['promotion_authority'] is False
           s=p['safety']
@@ -91,6 +92,7 @@ jobs:
           PYTHONPATH=main_repo python main_repo/tools/gate_btc_factory/parallel_frontier_dispatch.py \
             --current runtime_repo/runtime/autonomous_science/CURRENT.json \
             --scout runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json \
+            --scout runtime_repo/runtime/factory_autonomy/CRYPTO_GRAMMAR_SCOUT_RUNTIME.json \
             --handoff-ledger-dir runtime_repo/runtime/factory_autonomy/grammar_handoff_audits \
             --output out/PARALLEL_FRONTIER_RUNTIME.json
           python - <<'PY'
@@ -104,6 +106,7 @@ jobs:
               assert d['family_ids_allocated']==[]
               assert d['historical_credit']==0 and d['retroactive_credit']==0
               assert d['promotion_authority'] is False
+              assert d['scout_count']==2
           print('PARALLEL_FRONTIER_STATUS='+d['status'])
           print('PARALLEL_FRONTIER_SELECTED='+str((d.get('selected') or {}).get('channel_id')))
           PY
