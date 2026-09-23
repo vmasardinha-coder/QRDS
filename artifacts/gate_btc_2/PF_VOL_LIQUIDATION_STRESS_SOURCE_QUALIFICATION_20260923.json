@@ -5,18 +5,20 @@
   "grammar_signature": "fc39959718b106564ff15db9cda660aa42e9a9c1c247aa87c576aca4efaa3bee",
   "channel_id": "CRYPTO_VOL_LIQUIDATION_STRESS",
   "purpose": "SOURCE_QUALIFICATION_ONLY_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
-  "primary_source": {
-    "provider": "BINANCE_USDS_M_PUBLIC_MARKET_DATA",
-    "authentication_required": false,
-    "instrument": "BTCUSDT_PERPETUAL",
-    "required_transports": ["HTTPS_REST", "PUBLIC_WEBSOCKET_FORCE_ORDER"]
-  },
-  "independent_validation_source": {
-    "provider": "OKX_PUBLIC_MARKET_DATA",
-    "authentication_required": false,
-    "instrument": "BTC-USDT-SWAP",
-    "role": "INDEPENDENT_OHLCV_OPEN_INTEREST_FUNDING_VALIDATION_NOT_LIQUIDATION_SUBSTITUTE"
-  },
+  "preregistered_source_candidates": [
+    {
+      "provider": "BINANCE_USDS_M_PUBLIC_MARKET_DATA",
+      "authentication_required": false,
+      "instrument": "BTCUSDT_PERPETUAL",
+      "capability_roles": ["OHLCV", "OPEN_INTEREST", "FUNDING", "PUBLIC_FORCE_ORDER_WEBSOCKET"]
+    },
+    {
+      "provider": "OKX_PUBLIC_MARKET_DATA",
+      "authentication_required": false,
+      "instrument": "BTC-USDT-SWAP",
+      "capability_roles": ["OHLCV", "OPEN_INTEREST", "FUNDING"]
+    }
+  ],
   "required_capabilities": {
     "closed_derivatives_ohlcv": true,
     "open_interest": true,
@@ -24,7 +26,12 @@
     "public_liquidation_or_preregistered_stress_proxy": true,
     "availability_timestamps": true
   },
+  "allowed_source_routes": {
+    "BINANCE_COMPLETE": "BINANCE_REST_PLUS_BINANCE_PUBLIC_FORCE_ORDER_WEBSOCKET",
+    "PREREGISTERED_COMPOSITE": "OKX_REST_PLUS_BINANCE_PUBLIC_FORCE_ORDER_WEBSOCKET"
+  },
   "semantic_boundary": {
+    "composite_route_uses_only_preregistered_source_candidates": true,
     "liquidation_stream_transport_handshake_is_source_availability_not_signal": true,
     "liquidation_event_required_during_probe": false,
     "open_interest_is_equivalent_to_liquidation": false,
@@ -38,9 +45,10 @@
   },
   "qualification_rule": {
     "binance_rest_and_public_force_order_transport_pass": "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION",
+    "okx_rest_and_binance_public_force_order_transport_pass": "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION",
     "rest_pass_but_force_order_transport_unavailable": "BLOCKED_PUBLIC_LIQUIDATION_TRANSPORT_UNAVAILABLE",
-    "authentication_or_paid_tier_required": "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED",
-    "network_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+    "no_public_rest_route_and_authorization_required": "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED",
+    "network_or_schema_failure_without_complete_preregistered_route": "FAIL_CLOSED_SOURCE_UNVERIFIED"
   },
   "economic_parameters_defined": false,
   "return_horizon_defined": false,
