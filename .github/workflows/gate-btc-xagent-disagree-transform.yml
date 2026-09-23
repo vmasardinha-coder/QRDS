@@ -47,6 +47,7 @@ jobs:
           python-version: '3.12'
       - name: Validate frozen deterministic transform
         run: |
+          python -m pip install -q pytest
           cd source_repo
           python -m py_compile tools/gate_btc_factory/xagent_disagree_transform.py
           python -m pytest -q tests/test_gate_btc_xagent_disagree_transform.py
