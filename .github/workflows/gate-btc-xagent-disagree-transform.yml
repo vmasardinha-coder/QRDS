@@ -1,0 +1,126 @@
+name: GATE BTC XAGENT Disagreement Transform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xagent_disagree_transform.py'
+      - 'tests/test_gate_btc_xagent_disagree_transform.py'
+      - '.github/workflows/gate-btc-xagent-disagree-transform.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xagent_disagree_transform.py'
+      - 'tests/test_gate_btc_xagent_disagree_transform.py'
+      - '.github/workflows/gate-btc-xagent-disagree-transform.yml'
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-xagent-disagree-transform
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  transform:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate deterministic transform against frozen handoff
+        run: |
+          python -m pip install -q pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/xagent_disagree_transform.py
+          pytest -q tests/test_gate_btc_xagent_disagree_transform.py
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/family_handoffs/F_XAGENT_DISAGREE_FAMILY.json'))
+          assert d['family_id']=='F-XAGENT-DISAGREE'
+          assert d['minimum_available_signals']==3
+          assert d['missing_signal_policy']=='EXCLUDE_AND_COUNT_NOT_ZERO_FILL'
+          assert d['input_signal_range']==[-1.0,1.0]
+          assert d['economic_direction'] is None
+          assert d['thresholds'] is None
+          assert d['lookbacks'] is None
+          assert d['exposure_mapping'] is None
+          assert d['economic_claim_authorized'] is False
+          assert d['research_only'] and d['shadow_only']
+          assert d['real_capital_brl']==0 and d['orders']==0
+          print('F_XAGENT_DISAGREE_FROZEN_HANDOFF=PASS')
+          PY
+      - name: Prepare canonical prospective inputs
+        if: github.event_name != 'pull_request'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          ROOT='runtime_repo/runtime/factory_autonomy/xagent_signal_producers'
+          test -f "$ROOT/S-XSPOT-FLOW-01/LATEST.json"
+          test -f "$ROOT/S-XTERM-CARRY-01/LATEST.json"
+          test -f "$ROOT/S-XBREADTH-01/LATEST.json"
+          mkdir -p live
+      - name: Produce deterministic prospective disagreement feature vector
+        if: github.event_name != 'pull_request'
+        run: |
+          ROOT='runtime_repo/runtime/factory_autonomy/xagent_signal_producers'
+          python source_repo/tools/gate_btc_factory/xagent_disagree_transform.py \
+            "$ROOT/S-XSPOT-FLOW-01/LATEST.json" \
+            "$ROOT/S-XTERM-CARRY-01/LATEST.json" \
+            "$ROOT/S-XBREADTH-01/LATEST.json" \
+            --output live/F_XAGENT_DISAGREE.json
+      - name: Validate no economic mutation
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('live/F_XAGENT_DISAGREE.json'))
+          assert d['family_id']=='F-XAGENT-DISAGREE'
+          assert d['status'] in {'PROSPECTIVE_FEATURE_VECTOR_AVAILABLE','ABSTAIN_INSUFFICIENT_INDEPENDENT_SIGNALS'}
+          assert d['economic_direction'] is None
+          assert d['thresholds'] is None
+          assert d['lookbacks'] is None
+          assert d['exposure_mapping'] is None
+          assert d['economic_outcomes_read'] is False
+          assert d['economic_claim'] is False
+          assert d['promotion_authority'] is False
+          assert d['scientific_credit']==0 and d['survivor_credit']==0
+          assert d['engine_feed'] is False and d['orders']==0 and d['real_capital']==0
+          assert d['no_retune'] and d['no_backfill']
+          assert d['canonical_580_untouched'] and d['h1_h31_untouched']
+          print('F_XAGENT_DISAGREE_RUNTIME_SAFETY=PASS')
+          PY
+      - name: Persist append-only prospective feature vector
+        if: github.event_name != 'pull_request'
+        run: |
+          ROOT='runtime_repo/runtime/factory_autonomy/xagent_family_features/F-XAGENT-DISAGREE'
+          mkdir -p "$ROOT"
+          TS=$(date +%s%3N)
+          cp live/F_XAGENT_DISAGREE.json "$ROOT/${TS}.json"
+          cp live/F_XAGENT_DISAGREE.json "$ROOT/LATEST.json"
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/xagent_family_features/F-XAGENT-DISAGREE
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "XAGENT disagreement feature vector ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
