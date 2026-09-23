@@ -13,6 +13,7 @@ BASE_URL = "https://stablecoins.llama.fi"
 STABLECOINS_ENDPOINT = f"{BASE_URL}/stablecoins"
 HISTORY_ENDPOINT = f"{BASE_URL}/stablecoincharts/all"
 FLOW_FIELD_TOKENS = ("flow", "transfer", "deposit", "withdraw", "inflow", "outflow")
+DIMENSION_MAP_FIELDS = {"chainCirculating"}
 
 
 def now() -> str:
@@ -28,6 +29,10 @@ def _explicit_flow_fields(value: Any, prefix: str = "") -> list[str]:
             lowered = key_s.lower()
             if any(token in lowered for token in FLOW_FIELD_TOKENS):
                 found.append(path)
+            # `chainCirculating` is a dimension map keyed by blockchain name.
+            # A key such as `Flow` means the Flow blockchain, not a flow metric.
+            if key_s in DIMENSION_MAP_FIELDS:
+                continue
             found.extend(_explicit_flow_fields(child, path))
     elif isinstance(value, list):
         for child in value[:5]:
@@ -171,6 +176,17 @@ def self_test() -> None:
     responses = iter([R(200, supply), R(200, history)])
     blocked = qualify(lambda *a, **k: next(responses))
     assert blocked["qualification"]["status"] == "BLOCKED_REQUIRED_FLOW_CAPABILITY_NOT_PUBLICLY_AVAILABLE"
+
+    supply_with_chain_named_flow = {
+        "peggedAssets": [{
+            "circulating": {"peggedUSD": 1},
+            "chainCirculating": {"Flow": {"current": {"peggedUSD": 1}}},
+        }]
+    }
+    responses = iter([R(200, supply_with_chain_named_flow), R(200, history)])
+    chain_name_case = qualify(lambda *a, **k: next(responses))
+    assert chain_name_case["qualification"]["status"] == "BLOCKED_REQUIRED_FLOW_CAPABILITY_NOT_PUBLICLY_AVAILABLE"
+    assert chain_name_case["capabilities"]["explicit_flow_fields_observed"] == []
 
     supply_with_flow = {"peggedAssets": [{"circulating": {"peggedUSD": 1}, "transferFlow": 2}]}
     responses = iter([R(200, supply_with_flow), R(200, history)])
