@@ -2,6 +2,12 @@ name: GATE BTC XAGENT Schedule Fallback
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-xagent-schedule-fallback.yml
+      - artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_PREREG_20260923.json
+      - artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_SCOPE_20260923.json
   schedule:
     - cron: '7,22,52 * * * *'
   workflow_run:
