@@ -8,10 +8,12 @@ on:
       - '.github/workflows/gate-btc-xagent-schedule-fallback-validation.yml'
       - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_PREREG_20260923.json'
       - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_SCOPE_20260923.json'
+      - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_EXPECTED_BEHAVIOR_20260923.md'
       - 'tests/test_gate_btc_xagent_schedule_fallback_boundary.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_scope.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_workflow.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_validation_workflow.py'
+      - 'tests/test_gate_btc_xagent_schedule_fallback_expected_behavior.py'
       - 'tools/gate_btc_factory/crypto_forward_schedule_guard.py'
       - 'tests/test_gate_btc_crypto_forward_schedule_guard.py'
   push:
@@ -21,10 +23,12 @@ on:
       - '.github/workflows/gate-btc-xagent-schedule-fallback-validation.yml'
       - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_PREREG_20260923.json'
       - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_SCOPE_20260923.json'
+      - 'artifacts/gate_btc_2/XAGENT_SCHEDULE_FALLBACK_EXPECTED_BEHAVIOR_20260923.md'
       - 'tests/test_gate_btc_xagent_schedule_fallback_boundary.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_scope.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_workflow.py'
       - 'tests/test_gate_btc_xagent_schedule_fallback_validation_workflow.py'
+      - 'tests/test_gate_btc_xagent_schedule_fallback_expected_behavior.py'
 
 permissions:
   contents: read
@@ -52,6 +56,7 @@ jobs:
           tests/test_gate_btc_xagent_schedule_fallback_scope.py
           tests/test_gate_btc_xagent_schedule_fallback_workflow.py
           tests/test_gate_btc_xagent_schedule_fallback_validation_workflow.py
+          tests/test_gate_btc_xagent_schedule_fallback_expected_behavior.py
           tests/test_gate_btc_crypto_forward_schedule_guard.py
       - run: python -m py_compile tools/gate_btc_factory/crypto_forward_schedule_guard.py
       - name: Assert immutable safety boundary
