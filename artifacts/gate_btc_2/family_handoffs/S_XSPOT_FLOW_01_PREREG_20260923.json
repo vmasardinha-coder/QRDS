@@ -1,0 +1,80 @@
+{
+  "schema": "gate_btc_2.xagent_signal_producer_prereg.v1",
+  "preregistered_at": "2026-09-23",
+  "producer_id": "S-XSPOT-FLOW-01",
+  "evidence_class": "SPOT_PARTICIPATION_TAKER_FLOW",
+  "source_family": "PF::06c2f268bcaf9212",
+  "source_channel": "CRYPTO_SPOT_PARTICIPATION_FLOW",
+  "source_qualification": "runtime/factory_autonomy/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json",
+  "primary_source": {
+    "venue": "BINANCE",
+    "market": "SPOT",
+    "instrument": "BTCUSDT",
+    "endpoint": "https://data-api.binance.vision/api/v3/klines",
+    "interval": "1h",
+    "authentication_required": false,
+    "closed_kline_only": true
+  },
+  "signal_semantics": {
+    "formula": "2 * (taker_buy_base_asset_volume / total_base_asset_volume) - 1",
+    "range": [-1.0, 1.0],
+    "positive_meaning": "TAKER_BUY_DOMINANCE",
+    "negative_meaning": "TAKER_SELL_DOMINANCE",
+    "zero_meaning": "BALANCED_TAKER_FLOW",
+    "economic_return_direction_claim": false,
+    "alpha_claim": false,
+    "threshold": null,
+    "smoothing": null,
+    "sign_flip_allowed": false
+  },
+  "availability": {
+    "timestamp": "KLINE_CLOSE_TIME",
+    "usable_only_after": "KLINE_CLOSE_TIME",
+    "same_bar_reaction_forbidden": true,
+    "missing_if": [
+      "TOTAL_BASE_ASSET_VOLUME_LE_ZERO",
+      "MALFORMED_OR_MISSING_TAKER_BUY_VOLUME",
+      "SOURCE_UNAVAILABLE"
+    ],
+    "missing_policy": "UNAVAILABLE_NOT_ZERO_FILL"
+  },
+  "xagent_binding_eligibility": {
+    "signal_range_requirement_satisfied": true,
+    "distinct_evidence_channel": "SPOT_PARTICIPATION_TAKER_FLOW",
+    "duplicate_transform_of_existing_signal": false,
+    "eligible_after_prospective_runtime_validation": true,
+    "may_count_as_one_of_three_required_signals": true
+  },
+  "prospective_collection": {
+    "mode": "APPEND_ONLY",
+    "cadence": "HOURLY",
+    "historical_backfill": false,
+    "missed_observation_reconstruction": false,
+    "first_observation_only_after_prereg_merge": true
+  },
+  "validation_source_reserved": {
+    "venue": "OKX",
+    "instrument": "BTC-USDT",
+    "role": "INDEPENDENT_PROSPECTIVE_SEMANTIC_VALIDATION",
+    "economic_outcomes_read": false
+  },
+  "prohibitions": [
+    "NO_ECONOMIC_OUTCOME_READ_FOR_PRODUCER_VALIDATION",
+    "NO_POSTHOC_SIGN_FLIP",
+    "NO_THRESHOLD_TUNING",
+    "NO_SMOOTHING_TUNING",
+    "NO_MISSING_TO_ZERO",
+    "NO_RETROACTIVE_CREDIT"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
