@@ -8,9 +8,10 @@
     "parallel_lineage_is_separate": true
   },
   "dispatch_policy": {
-    "source": "GRAMMAR_SCOUT_OUTCOME_BLIND_HANDOFF",
+    "source": "OUTCOME_BLIND_SCOUT_UNION",
+    "sources": ["GRAMMAR_SCOUT_RUNTIME", "CRYPTO_GRAMMAR_SCOUT_RUNTIME"],
     "only_when_canonical_status_prefix_in": ["WAITING_", "BLOCKED_", "DATA_GAP", "FAIL_CLOSED"],
-    "selection": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND",
+    "selection": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND_ACROSS_ALL_SCOUTS",
     "manual_selection": false,
     "pnl_selection": false,
     "economics_read_before_selection": false,
