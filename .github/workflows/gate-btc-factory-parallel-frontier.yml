@@ -24,6 +24,9 @@ concurrency:
   group: gate-btc-factory-parallel-frontier
   cancel-in-progress: false
 
+# Once a grammar signature is recorded in the append-only handoff ledger it remains
+# consumed even when its later source qualification is blocked; subsequent runs
+# advance outcome-blind to the next novel signature without revisiting economics.
 env:
   RESEARCH_ONLY: 'true'
   SHADOW_ONLY: 'true'
