@@ -41,6 +41,20 @@ def test_supply_without_explicit_flow_is_blocked_not_reinterpreted():
     assert d["historical_backfill_started"] is False
 
 
+def test_flow_blockchain_name_is_not_misread_as_flow_metric():
+    payload = supply_payload({
+        "chainCirculating": {
+            "Flow": {"current": {"peggedUSD": 100}},
+            "Ethereum": {"current": {"peggedUSD": 100}},
+        }
+    })
+    responses = iter([R(200, payload), R(200, history_payload())])
+    d = qualify(lambda *a, **k: next(responses))
+    assert d["qualification"]["status"] == "BLOCKED_REQUIRED_FLOW_CAPABILITY_NOT_PUBLICLY_AVAILABLE"
+    assert d["capabilities"]["stablecoin_transfer_or_exchange_flow_aggregate"] is False
+    assert d["capabilities"]["explicit_flow_fields_observed"] == []
+
+
 def test_explicit_flow_field_can_qualify_without_outcome_read():
     responses = iter([
         R(200, supply_payload({"exchangeOutflow": 10})),
