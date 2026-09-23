@@ -1,0 +1,75 @@
+{
+  "schema": "gate_btc_2.xagent_signal_producer_prereg.v1",
+  "preregistered_at": "2026-09-23",
+  "producer_id": "S-XBREADTH-01",
+  "target_family": "F-XAGENT-DISAGREE",
+  "source_family": "CRYPTO_DISPERSION_BREADTH_REGIME",
+  "source_namespace": "PF::757b8b0385a1b53b",
+  "source_qualification": "SOURCE_QUALIFIED",
+  "evidence_class": "SPOT_CROSS_SECTIONAL_BREADTH",
+  "source": {
+    "provider": "OKX_PUBLIC_API",
+    "instrument_type": "SPOT",
+    "quote_currency": "USDT",
+    "interval": "1H",
+    "authentication_required": false
+  },
+  "genesis_universe": {
+    "creation": "FIRST_POST_MERGE_PRODUCER_RUN_ONLY",
+    "filter": "instType=SPOT AND quoteCcy=USDT AND state=live AND listTime<=capture_time AND (expTime empty OR expTime>capture_time)",
+    "immutable_after_creation": true,
+    "new_listings_enter_after_genesis": false,
+    "missing_or_delisted_members_replaced": false,
+    "historical_reconstruction": false,
+    "missing_policy": "UNAVAILABLE_AND_COUNT_NOT_ZERO_FILL"
+  },
+  "signal_semantics": {
+    "range": [-1.0, 1.0],
+    "per_member_return": "close/open - 1 for the same confirmed 1H candle",
+    "formula": "(positive_return_count - negative_return_count) / available_count",
+    "zero_return_contribution": 0,
+    "positive_semantics": "MORE_GENESIS_MEMBERS_UP_THAN_DOWN_ON_COMMON_CLOSED_1H_BAR",
+    "negative_semantics": "MORE_GENESIS_MEMBERS_DOWN_THAN_UP_ON_COMMON_CLOSED_1H_BAR",
+    "economic_return_direction_claim": false,
+    "alpha_claim": false,
+    "threshold": null,
+    "smoothing": null,
+    "sign_flip_allowed": false,
+    "dispersion_diagnostic": "MEDIAN_ABSOLUTE_DEVIATION_OF_MEMBER_RETURNS_NOT_USED_IN_SIGNAL"
+  },
+  "availability": {
+    "minimum_genesis_size": 50,
+    "minimum_common_bar_coverage_fraction": 0.8,
+    "same_bar_reaction_forbidden": true,
+    "available_after": "CAPTURE_TIME_AFTER_ALL_MEMBER_REQUESTS_COMPLETE",
+    "below_minimum_coverage": "UNAVAILABLE_NO_SIGNAL_NO_CREDIT"
+  },
+  "prospective_collection": {
+    "cadence": "HOURLY",
+    "append_only": true,
+    "historical_backfill": false,
+    "missed_observation_reconstruction": false,
+    "first_observation_after_merge_only": true
+  },
+  "xagent_independence": {
+    "distinct_from": ["S-XSPOT-FLOW-01", "S-XTERM-CARRY-01"],
+    "reason": "CROSS_SECTIONAL_SPOT_BREADTH_VS_SINGLE_INSTRUMENT_TAKER_FLOW_AND_DERIVATIVES_TERM_STRUCTURE"
+  },
+  "economics": {
+    "outcomes_read_before_preregistration": false,
+    "economic_credit": 0,
+    "survivor_credit": 0,
+    "promotion_authority": false
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
