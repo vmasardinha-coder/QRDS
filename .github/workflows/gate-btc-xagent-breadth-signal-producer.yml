@@ -1,0 +1,173 @@
+name: GATE BTC XAGENT Breadth Signal Producer
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/S_XBREADTH_01_PREREG_20260923.json'
+      - 'tools/gate_btc_factory/xagent_breadth_signal_producer.py'
+      - 'tests/test_gate_btc_xagent_breadth_signal_producer.py'
+      - '.github/workflows/gate-btc-xagent-breadth-signal-producer.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/S_XBREADTH_01_PREREG_20260923.json'
+      - 'tools/gate_btc_factory/xagent_breadth_signal_producer.py'
+      - 'tests/test_gate_btc_xagent_breadth_signal_producer.py'
+      - '.github/workflows/gate-btc-xagent-breadth-signal-producer.yml'
+  schedule:
+    - cron: '27 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-xagent-breadth-signal-producer
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  produce:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen prereg and deterministic producer
+        run: |
+          python -m pip install -q requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/xagent_breadth_signal_producer.py
+          pytest -q tests/test_gate_btc_xagent_breadth_signal_producer.py
+          python tools/gate_btc_factory/xagent_breadth_signal_producer.py --self-test
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/family_handoffs/S_XBREADTH_01_PREREG_20260923.json'))
+          assert d['producer_id']=='S-XBREADTH-01'
+          assert d['target_family']=='F-XAGENT-DISAGREE'
+          assert d['evidence_class']=='SPOT_CROSS_SECTIONAL_BREADTH'
+          assert d['signal_semantics']['range']==[-1.0,1.0]
+          assert d['signal_semantics']['formula']=='(positive_return_count - negative_return_count) / available_count'
+          assert d['signal_semantics']['threshold'] is None
+          assert d['signal_semantics']['smoothing'] is None
+          assert d['signal_semantics']['sign_flip_allowed'] is False
+          assert d['availability']['minimum_genesis_size']==50
+          assert d['availability']['minimum_common_bar_coverage_fraction']==0.8
+          assert d['genesis_universe']['immutable_after_creation'] is True
+          assert d['genesis_universe']['new_listings_enter_after_genesis'] is False
+          assert d['prospective_collection']['historical_backfill'] is False
+          assert d['prospective_collection']['missed_observation_reconstruction'] is False
+          assert d['economics']['outcomes_read_before_preregistration'] is False
+          assert set(d['xagent_independence']['distinct_from'])=={'S-XSPOT-FLOW-01','S-XTERM-CARRY-01'}
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['H1_H31_UNTOUCHED'] and s['CANONICAL_580_UNTOUCHED']
+          print('S_XBREADTH_01_PREREG=PASS')
+          PY
+      - name: Prepare canonical runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          mkdir -p live
+      - name: Produce live prospective breadth signal
+        if: github.event_name != 'pull_request'
+        run: |
+          ROOT='runtime_repo/runtime/factory_autonomy/xagent_signal_producers/S-XBREADTH-01'
+          GENESIS_ARGS=()
+          if [[ -f "$ROOT/GENESIS.json" ]]; then
+            GENESIS_ARGS=(--genesis-input "$ROOT/GENESIS.json")
+          fi
+          python source_repo/tools/gate_btc_factory/xagent_breadth_signal_producer.py \
+            --output live/S_XBREADTH_01.json \
+            --genesis-output live/GENESIS.json \
+            "${GENESIS_ARGS[@]}"
+      - name: Validate and persist append-only breadth observation
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json, pathlib, shutil
+          obs=json.load(open('live/S_XBREADTH_01.json'))
+          genesis=json.load(open('live/GENESIS.json'))
+          assert obs['producer_id']=='S-XBREADTH-01'
+          assert obs['target_family']=='F-XAGENT-DISAGREE'
+          assert obs['evidence_class']=='SPOT_CROSS_SECTIONAL_BREADTH'
+          assert obs['genesis_member_count']>=50
+          assert genesis['member_count']==obs['genesis_member_count']
+          assert genesis['genesis_sha256']==obs['genesis_sha256']
+          assert obs['frozen_minimum_coverage_fraction']==0.8
+          assert obs['economic_outcomes_read'] is False
+          assert obs['economic_return_direction_claim'] is False
+          assert obs['alpha_claim'] is False
+          assert obs['scientific_credit']==0 and obs['survivor_credit']==0
+          assert obs['engine_feed'] is False and obs['orders']==0 and obs['real_capital']==0
+          assert obs['no_backfill'] and obs['no_retune'] and obs['h1_h31_untouched'] and obs['canonical_580_untouched']
+          if obs['signal'] is not None:
+              assert -1.0 <= obs['signal'] <= 1.0
+              assert obs['coverage_fraction']>=0.8
+              assert obs['status']=='PROSPECTIVE_SIGNAL_AVAILABLE'
+          else:
+              assert obs['status']=='UNAVAILABLE_BELOW_FROZEN_COMMON_BAR_COVERAGE'
+          root=pathlib.Path('runtime_repo/runtime/factory_autonomy/xagent_signal_producers/S-XBREADTH-01')
+          root.mkdir(parents=True,exist_ok=True)
+          gp=root/'GENESIS.json'
+          if gp.exists():
+              old=json.loads(gp.read_text())
+              if old.get('genesis_sha256') != genesis.get('genesis_sha256'):
+                  raise SystemExit('IMMUTABLE_GENESIS_HASH_CONFLICT')
+          else:
+              shutil.copy2('live/GENESIS.json',gp)
+          target=root/f"{obs['capture_time_ms']}.json"
+          if target.exists():
+              old=json.loads(target.read_text())
+              if old.get('record_sha256') != obs.get('record_sha256'):
+                  raise SystemExit('APPEND_ONLY_HASH_CONFLICT')
+          else:
+              shutil.copy2('live/S_XBREADTH_01.json',target)
+          shutil.copy2('live/S_XBREADTH_01.json',root/'LATEST.json')
+          eligible=obs['signal'] is not None and obs['coverage_fraction']>=0.8
+          summary={
+              'schema':'gate_btc_2.xagent_signal_producer_status.v1',
+              'producer_id':'S-XBREADTH-01',
+              'status':'PROSPECTIVE_SIGNAL_PRODUCER_ACTIVE' if eligible else 'PROSPECTIVE_SIGNAL_PRODUCER_AWAITING_FROZEN_COVERAGE',
+              'latest_capture_time_ms':obs['capture_time_ms'],
+              'latest_common_closed_bar_start_ms':obs['common_closed_bar_start_ms'],
+              'latest_signal':obs['signal'],
+              'latest_coverage_fraction':obs['coverage_fraction'],
+              'genesis_member_count':obs['genesis_member_count'],
+              'genesis_sha256':obs['genesis_sha256'],
+              'record_sha256':obs['record_sha256'],
+              'evidence_class':'SPOT_CROSS_SECTIONAL_BREADTH',
+              'eligible_xagent_input_after_runtime_validation':eligible,
+              'independent_from':['S-XSPOT-FLOW-01','S-XTERM-CARRY-01'],
+              'economic_credit':0,'survivor_credit':0,'promotion_authority':False,
+              'engine_feed':False,'orders':0,'real_capital':0,'no_backfill':True,'no_retune':True
+          }
+          (root/'STATUS.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print('S_XBREADTH_01_RUNTIME_STATUS='+summary['status'])
+          print('S_XBREADTH_01_XAGENT_ELIGIBLE='+str(eligible))
+          PY
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/xagent_signal_producers/S-XBREADTH-01
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "S-XBREADTH-01 prospective observation ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
