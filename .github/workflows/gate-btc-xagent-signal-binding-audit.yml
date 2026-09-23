@@ -1,0 +1,61 @@
+name: GATE BTC XAGENT Signal Binding Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/XAGENT_SIGNAL_BINDING_AUDIT_20260922.json'
+      - 'tests/test_gate_btc_xagent_signal_binding_audit.py'
+      - '.github/workflows/gate-btc-xagent-signal-binding-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/family_handoffs/XAGENT_SIGNAL_BINDING_AUDIT_20260922.json'
+      - 'tests/test_gate_btc_xagent_signal_binding_audit.py'
+      - '.github/workflows/gate-btc-xagent-signal-binding-audit.yml'
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+      - name: Validate XAGENT binding audit
+        run: python -m unittest -v tests/test_gate_btc_xagent_signal_binding_audit.py
+      - name: Assert outcome-blind blocker
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/gate_btc_2/family_handoffs/XAGENT_SIGNAL_BINDING_AUDIT_20260922.json'
+          x=json.load(open(p))
+          assert x['economics_read_for_binding_selection'] is False
+          assert x['eligible_existing_trios']==[]
+          assert x['parallel_frontier']['manual_selection'] is False
+          assert x['parallel_frontier']['pnl_selection'] is False
+          assert x['safety']['ENGINE_FEED'] is False
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('XAGENT_BINDING_AUDIT=BLOCKED_NO_EXISTING_ELIGIBLE_TRIO')
+          PY
