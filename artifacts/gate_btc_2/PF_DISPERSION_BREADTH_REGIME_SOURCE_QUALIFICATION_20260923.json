@@ -1,0 +1,61 @@
+{
+  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "qualification_date": "2026-09-23",
+  "namespace": "PF::757b8b0385a1b53b",
+  "grammar_signature": "757b8b0385a1b53beb6ad406a69450403a52d05a222d8312d7920fc6019debfa",
+  "channel_id": "CRYPTO_DISPERSION_BREADTH_REGIME",
+  "purpose": "SOURCE_AND_UNIVERSE_CAUSALITY_QUALIFICATION_ONLY_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
+  "provider": "OKX_PUBLIC_API",
+  "authentication_required": false,
+  "required_capabilities": [
+    "public_spot_instrument_snapshot",
+    "quote_currency_field",
+    "listing_time_field",
+    "instrument_state_field",
+    "spot_offline_or_expiry_time_field",
+    "confirmed_1h_ohlcv"
+  ],
+  "universe_source_rule": {
+    "candidate_filter": "instType=SPOT AND quoteCcy=USDT AND state=live",
+    "genesis_timing": "FIRST_POST_MERGE_PRODUCER_RUN_ONLY",
+    "genesis_membership": "ALL_CANDIDATES_WITH_listTime_NOT_AFTER_GENESIS_CAPTURE_TIME_AND_expTime_EMPTY_OR_AFTER_GENESIS_CAPTURE_TIME",
+    "genesis_immutable": true,
+    "new_listings_after_genesis_enter_universe": false,
+    "missing_or_delisted_genesis_members_replaced": false,
+    "missing_policy": "UNAVAILABLE_AND_COUNT_NOT_ZERO_FILL",
+    "historical_membership_reconstruction": false
+  },
+  "qualification_rule": {
+    "minimum_live_usdt_spot_instruments": 50,
+    "deterministic_ohlcv_probe_count": 5,
+    "probe_selection": "LEXICOGRAPHICALLY_FIRST_FIVE_LIVE_USDT_SPOT_INST_IDS",
+    "each_probe_requires_confirmed_1h_candle": true,
+    "required_metadata_fields": ["instId", "instType", "baseCcy", "quoteCcy", "listTime", "expTime", "state"],
+    "missing_capability": "BLOCKED_REQUIRED_CAUSAL_UNIVERSE_CAPABILITY_MISSING",
+    "transport_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+  },
+  "xagent_independence": {
+    "status_if_source_qualified": "ELIGIBLE_FOR_SEPARATE_PRODUCER_PREREGISTRATION",
+    "evidence_class": "SPOT_CROSS_SECTIONAL_BREADTH",
+    "distinct_from": ["SPOT_PARTICIPATION_TAKER_FLOW", "DERIVATIVES_TERM_STRUCTURE_CARRY"]
+  },
+  "economic_parameters_defined": false,
+  "signal_formula_defined": false,
+  "direction_defined": false,
+  "thresholds_defined": false,
+  "lookbacks_defined": false,
+  "return_horizon_defined": false,
+  "historical_backfill_allowed": false,
+  "next_gate_if_qualified": "SEPARATE_BREADTH_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}

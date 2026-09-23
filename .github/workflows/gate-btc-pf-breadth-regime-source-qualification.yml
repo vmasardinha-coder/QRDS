@@ -1,0 +1,117 @@
+name: GATE BTC PF Breadth Regime Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_dispersion_breadth_regime_source_qualification.py'
+      - 'tests/test_gate_btc_pf_dispersion_breadth_regime_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-breadth-regime-source-qualification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_dispersion_breadth_regime_source_qualification.py'
+      - 'tests/test_gate_btc_pf_dispersion_breadth_regime_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-breadth-regime-source-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate source and prospective universe boundary
+        run: |
+          python -m pip install -q requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/pf_dispersion_breadth_regime_source_qualification.py
+          pytest -q tests/test_gate_btc_pf_dispersion_breadth_regime_source_qualification.py
+          python tools/gate_btc_factory/pf_dispersion_breadth_regime_source_qualification.py --self-test
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_20260923.json'))
+          u=d['universe_source_rule']
+          assert u['genesis_immutable'] is True
+          assert u['new_listings_after_genesis_enter_universe'] is False
+          assert u['missing_or_delisted_genesis_members_replaced'] is False
+          assert u['historical_membership_reconstruction'] is False
+          assert d['economic_parameters_defined'] is False and d['signal_formula_defined'] is False
+          assert d['direction_defined'] is False and d['historical_backfill_allowed'] is False
+          x=d['xagent_independence']
+          assert x['evidence_class']=='SPOT_CROSS_SECTIONAL_BREADTH'
+          assert 'SPOT_PARTICIPATION_TAKER_FLOW' in x['distinct_from']
+          assert 'DERIVATIVES_TERM_STRUCTURE_CARRY' in x['distinct_from']
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0 and s['CANONICAL_580_UNTOUCHED']
+          print('PF_BREADTH_SOURCE_CONTRACT=PASS')
+          PY
+      - name: Probe live public source
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p live
+          python source_repo/tools/gate_btc_factory/pf_dispersion_breadth_regime_source_qualification.py --output live/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json
+      - name: Validate live source adjudication
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('live/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json'))
+          assert d['economic_outcomes_read'] is False and d['signal_formula_defined'] is False
+          assert d['historical_backfill_started'] is False and d['safety']['canonical_580_untouched'] is True
+          assert d['source']['status'] in {'QUALIFIED_PUBLIC_SOURCE','BLOCKED_REQUIRED_CAUSAL_UNIVERSE_CAPABILITY_MISSING','FAIL_CLOSED_SOURCE_UNVERIFIED'}
+          if d['source']['status']=='QUALIFIED_PUBLIC_SOURCE':
+              assert d['source']['eligible_live_usdt_spot_count']>=50
+              assert d['xagent_independence']['eligible_after_separate_producer_preregistration'] is True
+          print('PF_BREADTH_LIVE_STATUS='+d['status'])
+          print('PF_BREADTH_SOURCE='+d['source']['status'])
+          print('PF_BREADTH_ELIGIBLE_COUNT='+str(d['source'].get('eligible_live_usdt_spot_count')))
+          PY
+      - name: Persist source qualification to canonical runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          mkdir -p runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications
+          cp live/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json
+          cp live/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications/757b8b0385a1b53beb6ad406a69450403a52d05a222d8312d7920fc6019debfa.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/parallel_frontier_source_qualifications
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "PF breadth-regime source qualification ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+      - name: Fail only if source could not be adjudicated
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('live/PF_DISPERSION_BREADTH_REGIME_SOURCE_QUALIFICATION_RUNTIME.json'))
+          if d['source']['status']=='FAIL_CLOSED_SOURCE_UNVERIFIED':
+              raise SystemExit('SOURCE_UNVERIFIED_FAIL_CLOSED')
+          print('PF_BREADTH_ADJUDICATED='+d['source']['status'])
+          PY
