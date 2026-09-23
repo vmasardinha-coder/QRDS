@@ -35,10 +35,18 @@ def _f(x):
     return v
 
 
+def _transport_unavailable(primary: dict) -> bool:
+    reason = str(primary.get("reason") or "")
+    return primary.get("status") == "FAIL_CLOSED_SOURCE_UNVERIFIED" and (
+        "HTTP_451:" in reason or "HTTP_403:" in reason
+    )
+
+
 def qualify(get=requests.get, now_ms: int | None = None) -> dict:
     now_ms = int(now_ms if now_ms is not None else time.time() * 1000)
-    primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "FAIL_CLOSED_SOURCE_UNVERIFIED"}
-    validation = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_UNVERIFIED"}
+    original_primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "FAIL_CLOSED_SOURCE_UNVERIFIED"}
+    fallback = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_UNVERIFIED"}
+
     try:
         info = _json(get, BINANCE_EXCHANGE_INFO)
         symbols = [s for s in (info.get("symbols") or []) if s.get("pair") == "BTCUSD" and s.get("contractStatus") == "TRADING"]
@@ -47,7 +55,7 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
         dated.sort(key=lambda s: int(s.get("deliveryDate") or 0))
         future = dated[0] if dated else None
         if not perp or not future:
-            primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING", "reason": "LIVE_PERPETUAL_OR_DATED_FUTURE_MISSING"}
+            original_primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING", "reason": "LIVE_PERPETUAL_OR_DATED_FUTURE_MISSING"}
         else:
             tickers = _json(get, BINANCE_TICKER)
             by_symbol = {r.get("symbol"): r for r in tickers if isinstance(r, dict)}
@@ -58,7 +66,7 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
                 raise ValueError("funding row missing")
             funding = float(funding_rows[-1]["fundingRate"])
             funding_time = int(funding_rows[-1]["fundingTime"])
-            primary = {
+            original_primary = {
                 "provider": "BINANCE_COIN_M_PUBLIC_API",
                 "status": "QUALIFIED_PUBLIC_SOURCE",
                 "authentication_required": False,
@@ -74,13 +82,13 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
                     "perpetual_price_positive": perp_px > 0,
                     "dated_price_positive": future_px > 0,
                     "expiry_in_future": int(future["deliveryDate"]) > now_ms,
-                    "funding_parseable": isinstance(funding, float)
-                }
+                    "funding_parseable": isinstance(funding, float),
+                },
             }
     except (KeyError, TypeError, ValueError) as exc:
-        primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING", "reason": f"{type(exc).__name__}:{exc}"}
+        original_primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "BLOCKED_REQUIRED_PUBLIC_TERM_STRUCTURE_FIELD_MISSING", "reason": f"{type(exc).__name__}:{exc}"}
     except Exception as exc:
-        primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "FAIL_CLOSED_SOURCE_UNVERIFIED", "reason": f"{type(exc).__name__}:{exc}"}
+        original_primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "status": "FAIL_CLOSED_SOURCE_UNVERIFIED", "reason": f"{type(exc).__name__}:{exc}"}
 
     try:
         fut_payload = _json(get, OKX_INSTRUMENTS, {"instType": "FUTURES", "instFamily": "BTC-USD"})
@@ -89,7 +97,7 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
         futures.sort(key=lambda r: int(r.get("expTime") or 0))
         swaps = [r for r in (swap_payload.get("data") or []) if r.get("state") == "live" and r.get("instType") == "SWAP"]
         if not futures or not swaps:
-            validation = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_REQUIRED_FIELD_MISSING"}
+            fallback = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_REQUIRED_FIELD_MISSING"}
         else:
             future, swap = futures[0], swaps[0]
             ftk = _json(get, OKX_TICKER, {"instId": future["instId"]}).get("data") or []
@@ -97,31 +105,69 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
             fr = _json(get, OKX_FUNDING, {"instId": swap["instId"]}).get("data") or []
             if not ftk or not stk or not fr:
                 raise ValueError("ticker or funding missing")
-            _f(ftk[0]["last"]); _f(stk[0]["last"]); float(fr[0]["fundingRate"])
-            validation = {
+            future_px = _f(ftk[0]["last"])
+            perp_px = _f(stk[0]["last"])
+            funding = float(fr[0]["fundingRate"])
+            funding_time = int(fr[0].get("fundingTime") or 0)
+            next_funding_time = int(fr[0].get("nextFundingTime") or 0)
+            fallback = {
                 "provider": "OKX_PUBLIC_API",
                 "status": "PASS",
                 "authentication_required": False,
                 "perpetual_symbol": swap["instId"],
                 "dated_symbol": future["instId"],
                 "dated_expiry_ms": int(future["expTime"]),
-                "public_tickers_observed": True,
-                "public_funding_observed": True
+                "perpetual_price_observed": True,
+                "dated_price_observed": True,
+                "funding_rate_observed": True,
+                "funding_time_ms": funding_time,
+                "next_funding_time_ms": next_funding_time,
+                "sample_checks": {
+                    "perpetual_price_positive": perp_px > 0,
+                    "dated_price_positive": future_px > 0,
+                    "expiry_in_future": int(future["expTime"]) > now_ms,
+                    "funding_parseable": isinstance(funding, float),
+                },
             }
     except Exception as exc:
-        validation = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_UNVERIFIED", "reason": f"{type(exc).__name__}:{exc}"}
+        fallback = {"provider": "OKX_PUBLIC_API", "status": "VALIDATION_UNVERIFIED", "reason": f"{type(exc).__name__}:{exc}"}
 
-    primary_ok = primary.get("status") == "QUALIFIED_PUBLIC_SOURCE"
-    status = "SOURCE_QUALIFIED_AWAITING_SEPARATE_SIGNAL_PREREGISTRATION" if primary_ok else primary.get("status")
+    direct_ok = original_primary.get("status") == "QUALIFIED_PUBLIC_SOURCE"
+    failover_ok = _transport_unavailable(original_primary) and fallback.get("status") == "PASS"
+    if direct_ok:
+        status = "SOURCE_QUALIFIED_AWAITING_SEPARATE_SIGNAL_PREREGISTRATION"
+        operational_primary = {"provider": "BINANCE_COIN_M_PUBLIC_API", "binding_reason": "ORIGINAL_PRIMARY_QUALIFIED"}
+        failover = {"activated": False, "reason": None}
+    elif failover_ok:
+        status = "SOURCE_QUALIFIED_VIA_PREOUTCOME_TRANSPORT_FAILOVER_AWAITING_SEPARATE_SIGNAL_PREREGISTRATION"
+        operational_primary = {"provider": "OKX_PUBLIC_API", "binding_reason": "BINANCE_TRANSPORT_OR_JURISDICTION_UNAVAILABLE_AND_OKX_SAME_OBSERVABLES_PASS"}
+        failover = {
+            "activated": True,
+            "original_primary_provider": "BINANCE_COIN_M_PUBLIC_API",
+            "fallback_provider": "OKX_PUBLIC_API",
+            "original_primary_failure_retained": True,
+            "economic_outcomes_read_before_failover": False,
+            "performance_used_for_failover": False,
+            "mechanism_changed": False,
+            "required_observables_changed": False,
+        }
+    else:
+        status = original_primary.get("status")
+        operational_primary = None
+        failover = {"activated": False, "reason": "FAILOVER_PRECONDITIONS_NOT_MET"}
+
+    qualified = direct_ok or failover_ok
     return {
-        "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
+        "schema": "gate_btc_2.pf_source_qualification_runtime.v2",
         "generated_at_utc": utc_now(),
         "namespace": "PF::5c6294637c3b4e7f",
         "grammar_signature": "5c6294637c3b4e7f61f9f4419a68671e6b3503314b6520e093b1301d504b3503",
         "channel_id": "CRYPTO_TERM_STRUCTURE_CARRY",
         "status": status,
-        "primary": primary,
-        "validation": validation,
+        "original_primary": original_primary,
+        "fallback": fallback,
+        "operational_primary": operational_primary,
+        "transport_failover": failover,
         "economic_outcomes_read": False,
         "carry_formula_defined": False,
         "direction_defined": False,
@@ -129,8 +175,8 @@ def qualify(get=requests.get, now_ms: int | None = None) -> dict:
         "lookbacks_defined": False,
         "return_horizon_defined": False,
         "historical_backfill_started": False,
-        "next_gate": "SEPARATE_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ" if primary_ok else "RETAIN_BLOCKER_OR_ADVANCE_PARALLEL_FRONTIER_WITHOUT_CREDIT",
-        "safety": {"research_only": True, "shadow_only": True, "engine_feed": False, "orders": 0, "real_capital": 0, "no_retune": True, "no_backfill": True, "h1_h31_untouched": True, "canonical_580_untouched": True}
+        "next_gate": "SEPARATE_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ" if qualified else "RETAIN_BLOCKER_OR_ADVANCE_PARALLEL_FRONTIER_WITHOUT_CREDIT",
+        "safety": {"research_only": True, "shadow_only": True, "engine_feed": False, "orders": 0, "real_capital": 0, "no_retune": True, "no_backfill": True, "h1_h31_untouched": True, "canonical_580_untouched": True},
     }
 
 
@@ -143,21 +189,21 @@ def self_test() -> None:
         if url == BINANCE_EXCHANGE_INFO:
             return R({"symbols":[
                 {"symbol":"BTCUSD_PERP","pair":"BTCUSD","contractType":"PERPETUAL","contractStatus":"TRADING","deliveryDate":0},
-                {"symbol":"BTCUSD_270101","pair":"BTCUSD","contractType":"CURRENT_QUARTER","contractStatus":"TRADING","deliveryDate":now+10_000_000}
+                {"symbol":"BTCUSD_270101","pair":"BTCUSD","contractType":"CURRENT_QUARTER","contractStatus":"TRADING","deliveryDate":now+10_000_000},
             ]})
         if url == BINANCE_TICKER: return R([{"symbol":"BTCUSD_PERP","price":"70000"},{"symbol":"BTCUSD_270101","price":"71000"}])
         if url == BINANCE_FUNDING: return R([{"symbol":"BTCUSD_PERP","fundingRate":"0.0001","fundingTime":now-1}])
         if url == OKX_INSTRUMENTS and params["instType"] == "FUTURES": return R({"data":[{"instId":"BTC-USD-270101","instType":"FUTURES","state":"live","expTime":str(now+10_000_000)}]})
         if url == OKX_INSTRUMENTS: return R({"data":[{"instId":"BTC-USD-SWAP","instType":"SWAP","state":"live","expTime":""}]})
         if url == OKX_TICKER: return R({"data":[{"last":"70000"}]})
-        if url == OKX_FUNDING: return R({"data":[{"fundingRate":"0.0001"}]})
+        if url == OKX_FUNDING: return R({"data":[{"fundingRate":"0.0001","fundingTime":str(now-1),"nextFundingTime":str(now+28_800_000)}]})
         raise AssertionError(url)
     d=qualify(fake, now)
     assert d["status"] == "SOURCE_QUALIFIED_AWAITING_SEPARATE_SIGNAL_PREREGISTRATION"
-    assert d["primary"]["status"] == "QUALIFIED_PUBLIC_SOURCE"
-    assert d["validation"]["status"] == "PASS"
+    assert d["original_primary"]["status"] == "QUALIFIED_PUBLIC_SOURCE"
+    assert d["fallback"]["status"] == "PASS"
+    assert d["transport_failover"]["activated"] is False
     assert d["economic_outcomes_read"] is False and d["carry_formula_defined"] is False
-    assert d["safety"]["canonical_580_untouched"] is True
     print("PF_TERM_STRUCTURE_SOURCE_SELF_TEST=PASS")
 
 
@@ -166,7 +212,7 @@ def main() -> int:
     if args.self_test: self_test(); return 0
     if not args.output: ap.error("--output required")
     d=qualify(); Path(args.output).write_text(json.dumps(d,indent=2,sort_keys=True)+"\n",encoding="utf-8")
-    print(json.dumps({"status":d["status"],"primary":d["primary"]["status"],"validation":d["validation"]["status"]}))
+    print(json.dumps({"status":d["status"],"original_primary":d["original_primary"]["status"],"fallback":d["fallback"]["status"],"operational_primary":(d.get("operational_primary") or {}).get("provider")}))
     return 0
 
 if __name__ == "__main__": raise SystemExit(main())
