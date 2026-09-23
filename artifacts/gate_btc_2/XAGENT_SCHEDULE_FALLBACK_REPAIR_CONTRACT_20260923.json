@@ -1,0 +1,14 @@
+{
+  "repair_complete_when": [
+    "pr_checks_green_on_exact_head_sha",
+    "merged_to_current_main",
+    "fallback_executes_on_main",
+    "existing_xagent_target_workflow_runs_successfully_if_stale",
+    "gate_btc_runtime_receives_current_time_vector_only_if_target_dispatched",
+    "post_merge_runtime_inspected"
+  ],
+  "do_not_count_as_complete": ["pr_opened", "ci_green_only", "merge_only"],
+  "scientific_change": false,
+  "backfill": false,
+  "retune": false
+}
