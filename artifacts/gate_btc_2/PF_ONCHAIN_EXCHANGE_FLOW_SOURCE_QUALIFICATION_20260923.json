@@ -1,0 +1,47 @@
+{
+  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "qualification_date": "2026-09-23",
+  "namespace": "PF::07712a5ee7505e45",
+  "grammar_signature": "07712a5ee7505e458bf426cebe935762a46d5e3a12f4b970d13db3c6bb34e95d",
+  "channel_id": "CRYPTO_ONCHAIN_EXCHANGE_FLOW",
+  "purpose": "SOURCE_QUALIFICATION_ONLY_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
+  "candidate_source": {
+    "provider": "COIN_METRICS_COMMUNITY_API",
+    "endpoint": "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics",
+    "asset": "btc",
+    "metrics": ["FlowInBNBNtv", "FlowOutBNBNtv"],
+    "frequency": "1d",
+    "api_key_supplied": false
+  },
+  "required_semantics": {
+    "exchange_inflow": "ASSETS_SENT_TO_ADDRESSES_PROVIDER_IDENTIFIES_AS_EXCHANGE_OWNED",
+    "exchange_outflow": "ASSETS_LEAVING_CONTROL_OF_ADDRESSES_PROVIDER_IDENTIFIES_AS_EXCHANGE_OWNED",
+    "homegrown_address_labels_allowed": false,
+    "raw_public_blockchain_without_exchange_labels_is_sufficient": false
+  },
+  "qualification_rule": {
+    "http_200_with_requested_metrics_without_credentials": "QUALIFIED_COMMUNITY_PUBLIC_SOURCE",
+    "http_401_or_403": "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED",
+    "unsupported_metric_or_missing_data": "BLOCKED_REQUIRED_METRIC_NOT_PUBLICLY_AVAILABLE",
+    "network_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+  },
+  "economic_parameters_defined": false,
+  "direction_defined": false,
+  "thresholds_defined": false,
+  "lookbacks_defined": false,
+  "return_horizon_defined": false,
+  "historical_backfill_allowed": false,
+  "next_gate_if_qualified": "SEPARATE_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "next_gate_if_blocked": "RETAIN_BLOCKER_UNTIL_ADMISSIBLE_PREREGISTERED_LABELED_EXCHANGE_FLOW_SOURCE_EXISTS",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
