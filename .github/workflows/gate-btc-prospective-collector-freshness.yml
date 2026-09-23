@@ -1,0 +1,110 @@
+name: GATE BTC Prospective Collector Freshness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/prospective_collector_freshness.py'
+      - 'tests/test_gate_btc_prospective_collector_freshness.py'
+      - '.github/workflows/gate-btc-prospective-collector-freshness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/prospective_collector_freshness.py'
+      - 'tests/test_gate_btc_prospective_collector_freshness.py'
+      - '.github/workflows/gate-btc-prospective-collector-freshness.yml'
+  schedule:
+    - cron: '53 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-prospective-collector-freshness
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run deterministic monitor tests
+        run: |
+          python -m pip install -q pytest
+          python -m py_compile tools/gate_btc_factory/prospective_collector_freshness.py
+          pytest -q tests/test_gate_btc_prospective_collector_freshness.py
+
+  observe:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source main
+        uses: actions/checkout@v4
+        with:
+          path: source
+      - name: Checkout canonical Factory runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: factory_runtime
+      - name: Checkout external forward runtime
+        uses: actions/checkout@v4
+        with:
+          ref: runtime/gate-btc-external-forward
+          path: external_runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate read-only freshness
+        id: freshness
+        continue-on-error: true
+        run: |
+          mkdir -p evidence
+          python source/tools/gate_btc_factory/prospective_collector_freshness.py \
+            --xagent factory_runtime/runtime/factory_autonomy/xagent_family_features/F-XAGENT-DISAGREE/LATEST.json \
+            --xmm external_runtime/runtime/gate_btc_2/external_family_forward/F-XMM-INVENTORY/STATUS.json \
+            --xvol external_runtime/runtime/gate_btc_2/external_family_forward/F-XVOL-SURFACE/STATUS.json \
+            --output evidence/PROSPECTIVE_COLLECTOR_FRESHNESS.json
+      - name: Assert immutable safety boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
+          python - <<'PY'
+          import json
+          d=json.load(open('evidence/PROSPECTIVE_COLLECTOR_FRESHNESS.json'))
+          assert d['operational_only'] is True
+          assert d['scientific_criteria_changed'] is False
+          assert d['collection_cadence_changed'] is False
+          assert d['runtime_mutation'] is False
+          assert d['economic_outcomes_read'] is False
+          PY
+      - name: Upload freshness evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-collector-freshness-${{ github.run_id }}
+          path: evidence/PROSPECTIVE_COLLECTOR_FRESHNESS.json
+          retention-days: 30
+      - name: Fail only on hard operational staleness
+        if: steps.freshness.outcome == 'failure'
+        run: |
+          cat evidence/PROSPECTIVE_COLLECTOR_FRESHNESS.json
+          exit 1
