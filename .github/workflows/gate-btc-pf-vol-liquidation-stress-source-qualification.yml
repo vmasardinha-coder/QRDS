@@ -1,0 +1,132 @@
+name: GATE BTC PF Vol Liquidation Stress Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_vol_liquidation_stress_source_qualification.py'
+      - 'tests/test_gate_btc_pf_vol_liquidation_stress_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-vol-liquidation-stress-source-qualification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_vol_liquidation_stress_source_qualification.py'
+      - 'tests/test_gate_btc_pf_vol_liquidation_stress_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-vol-liquidation-stress-source-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate source qualification code and frozen contract
+        run: |
+          python -m pip install -q requests pytest websocket-client
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/pf_vol_liquidation_stress_source_qualification.py
+          pytest -q tests/test_gate_btc_pf_vol_liquidation_stress_source_qualification.py
+          python tools/gate_btc_factory/pf_vol_liquidation_stress_source_qualification.py --self-test
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_20260923.json'))
+          assert d['economic_parameters_defined'] is False
+          assert d['return_horizon_defined'] is False
+          assert d['historical_backfill_allowed'] is False
+          assert d['economic_outcomes_may_be_read'] is False
+          b=d['semantic_boundary']
+          assert b['signal_formula_defined'] is False
+          assert b['direction_defined'] is False
+          assert b['thresholds_defined'] is False
+          assert b['lookbacks_defined'] is False
+          assert b['open_interest_is_equivalent_to_liquidation'] is False
+          assert b['funding_is_equivalent_to_liquidation'] is False
+          assert b['new_stress_proxy_may_be_invented_during_qualification'] is False
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['H1_H31_UNTOUCHED'] and s['CANONICAL_580_UNTOUCHED']
+          print('PF_VOL_LIQUIDATION_STRESS_SOURCE_CONTRACT=PASS')
+          PY
+      - name: Probe live anonymous public market-data transports
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p live
+          python source_repo/tools/gate_btc_factory/pf_vol_liquidation_stress_source_qualification.py --output live/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json
+      - name: Validate live adjudication and safety
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          p='live/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json'
+          d=json.load(open(p))
+          status=d['qualification']['status']
+          allowed={
+            'SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION',
+            'BLOCKED_PUBLIC_LIQUIDATION_TRANSPORT_UNAVAILABLE',
+            'BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED',
+            'FAIL_CLOSED_SOURCE_UNVERIFIED',
+          }
+          assert status in allowed
+          assert d['authentication_supplied'] is False
+          assert d['liquidation_event_payload_read'] is False
+          assert d['signal_formula_defined'] is False
+          assert d['direction_defined'] is False
+          assert d['thresholds_defined'] is False
+          assert d['lookbacks_defined'] is False
+          assert d['economic_outcomes_read'] is False
+          assert d['historical_backfill_started'] is False
+          assert d['new_stress_proxy_invented'] is False
+          assert d['okx']['liquidation_substitute_claimed'] is False
+          assert d['safety']['canonical_580_untouched'] is True
+          print('PF_VOL_LIQUIDATION_STRESS_LIVE_STATUS='+status)
+          PY
+      - name: Persist source qualification result to canonical runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          mkdir -p runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications
+          cp live/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json
+          cp live/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications/fc39959718b106564ff15db9cda660aa42e9a9c1c247aa87c576aca4efaa3bee.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/parallel_frontier_source_qualifications
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "PF vol-liquidation-stress source qualification ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+      - name: Fail only if source could not be adjudicated
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('live/PF_VOL_LIQUIDATION_STRESS_SOURCE_QUALIFICATION_RUNTIME.json'))
+          status=d['qualification']['status']
+          if status=='FAIL_CLOSED_SOURCE_UNVERIFIED':
+              raise SystemExit('SOURCE_UNVERIFIED_FAIL_CLOSED')
+          print('PF_VOL_LIQUIDATION_STRESS_ADJUDICATED='+status)
+          PY
