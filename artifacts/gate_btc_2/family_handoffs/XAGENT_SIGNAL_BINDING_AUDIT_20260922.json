@@ -1,0 +1,86 @@
+{
+  "schema": "gate_btc_2.xagent_signal_binding_audit.v1",
+  "audit_date": "2026-09-22",
+  "family_id": "F-XAGENT-DISAGREE",
+  "selection_basis": "PROVENANCE_AND_SEMANTIC_ELIGIBILITY_ONLY_NO_ECONOMICS",
+  "economics_read_for_binding_selection": false,
+  "required_binding": {
+    "minimum_signals": 3,
+    "range": [-1.0, 1.0],
+    "distinct_evidence_or_family_channels": true,
+    "missing_policy": "EXCLUDE_AND_COUNT_NOT_ZERO_FILL",
+    "common_causal_timestamps_required": true
+  },
+  "reviewed_channels": [
+    {
+      "channel": "PRESSURE_VALVE_ITEM3_FEATURE_FAMILIES",
+      "examples": ["H626", "H478", "H474"],
+      "eligible_as_existing_xagent_signal": false,
+      "reasons": [
+        "contracts emit feature/z/trigger semantics rather than a pre-existing directional signal frozen in [-1,+1]",
+        "H478 and H474 share OPEN_RANGE evidence and therefore do not constitute independent evidence channels"
+      ]
+    },
+    {
+      "channel": "F-XMM-INVENTORY",
+      "eligible_as_existing_xagent_signal": false,
+      "reasons": [
+        "feature extractor is live and missing semantics are explicit",
+        "economic_direction is null",
+        "thresholds and aggregation window are not frozen",
+        "mapping the feature set to a directional [-1,+1] producer would be a new scientific hypothesis"
+      ]
+    },
+    {
+      "channel": "F-XVOL-SURFACE",
+      "eligible_as_existing_xagent_signal": false,
+      "reasons": [
+        "feature extractor is live and missing semantics are explicit",
+        "economic_direction is null",
+        "thresholds and lookbacks are not frozen",
+        "mapping the options-surface features to a directional [-1,+1] producer would be a new scientific hypothesis"
+      ]
+    },
+    {
+      "channel": "H-XREGIME-01_BATCH_A",
+      "eligible_as_existing_xagent_signal": false,
+      "reasons": [
+        "Batch A is historically closed with zero discovery passes and no retune permitted",
+        "its gate states were not preregistered as reusable normalized directional producers"
+      ]
+    }
+  ],
+  "eligible_existing_trios": [],
+  "conclusion": "NO_EXISTING_THREE_SIGNAL_BINDING_CAN_BE_FROZEN_WITHOUT_NEW_SCIENTIFIC_SEMANTICS",
+  "xagent_status": "BLOCKED_AWAITING_PREREGISTERED_INDEPENDENT_SIGNAL_PRODUCERS",
+  "parallel_frontier": {
+    "applicable": true,
+    "contract": "artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json",
+    "reason": "canonical XAGENT child generation is blocked by missing eligible upstream signal producers",
+    "selection_rule": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND",
+    "manual_selection": false,
+    "pnl_selection": false,
+    "family_namespace": "PF::",
+    "next_gate": "GRAMMAR_SCOUT_OUTCOME_BLIND_HANDOFF_THEN_SOURCE_QUALIFICATION_THEN_SEPARATE_CHILD_PREREGISTRATION",
+    "historical_credit": 0,
+    "retroactive_credit": 0,
+    "promotion_authority": false
+  },
+  "prohibitions": [
+    "NO_POSTHOC_THREE_SIGNAL_SELECTION",
+    "NO_NEW_NORMALIZATION_WITHOUT_PREREGISTRATION",
+    "NO_FEATURE_TO_DIRECTION_MAPPING_AFTER_ECONOMICS_READ",
+    "NO_DUPLICATE_TRANSFORMS_COUNTED_AS_INDEPENDENT_SIGNALS",
+    "NO_XMM_OR_XVOL_ECONOMIC_DIRECTION_INVENTED_FROM_LIVE_FORWARD_RECORDS"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
