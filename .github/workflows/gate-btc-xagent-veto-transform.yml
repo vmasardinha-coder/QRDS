@@ -1,0 +1,78 @@
+name: GATE BTC XAGENT Veto Transform Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xagent_veto_transform.py'
+      - 'tests/test_gate_btc_xagent_veto_transform.py'
+      - 'artifacts/gate_btc_2/family_handoffs/F_XAGENT_VETO_FAMILY.json'
+      - 'artifacts/gate_btc_2/family_handoffs/F_XAGENT_FAMILIES_PREREG_20260921.md'
+      - '.github/workflows/gate-btc-xagent-veto-transform.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory/xagent_veto_transform.py'
+      - 'tests/test_gate_btc_xagent_veto_transform.py'
+      - 'artifacts/gate_btc_2/family_handoffs/F_XAGENT_VETO_FAMILY.json'
+      - 'artifacts/gate_btc_2/family_handoffs/F_XAGENT_FAMILIES_PREREG_20260921.md'
+      - '.github/workflows/gate-btc-xagent-veto-transform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL_BRL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen deterministic veto transform only
+        run: |
+          python -m py_compile tools/gate_btc_factory/xagent_veto_transform.py
+          python -m unittest -v tests/test_gate_btc_xagent_veto_transform.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          handoff=json.loads(Path('artifacts/gate_btc_2/family_handoffs/F_XAGENT_VETO_FAMILY.json').read_text())
+          assert handoff['family_id']=='F-XAGENT-VETO'
+          assert handoff['input_states']==['ALLOW','VETO','ABSTAIN_UNAVAILABLE']
+          assert handoff['aggregation_priority']==['VETO','ABSTAIN','ALLOW']
+          assert handoff['unavailable_policy']=='NEVER_NEUTRALIZE'
+          assert handoff['economic_direction'] is None
+          assert handoff['position_size_mapping'] is None
+          assert handoff['return_horizon'] is None
+          assert handoff['economic_claim_authorized'] is False
+          assert handoff['factory_migration_authorized'] is False
+          assert handoff['research_only'] and handoff['shadow_only']
+          assert handoff['orders']==0 and handoff['real_capital_brl']==0
+          prereg=Path('artifacts/gate_btc_2/family_handoffs/F_XAGENT_FAMILIES_PREREG_20260921.md').read_text()
+          assert 'At least one assessor is required.' in prereg
+          assert 'if **any** assessor emits `VETO` => aggregate `VETO`' in prereg
+          assert 'else if **any** assessor emits `ABSTAIN_UNAVAILABLE` => aggregate `ABSTAIN`' in prereg
+          print('F_XAGENT_VETO_DETERMINISTIC_VALIDATION=PASS')
+          print('F_XAGENT_VETO_RUNTIME_ACTIVATION=false')
+          print('F_XAGENT_VETO_ASSESSOR_BINDING_REQUIRED=true')
+          PY
+      - name: Assert immutable safety boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL_BRL" = 0
+          test "$NO_RETUNE" = true
+          test "$NO_BACKFILL" = true
