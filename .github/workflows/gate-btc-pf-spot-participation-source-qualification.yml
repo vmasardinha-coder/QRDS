@@ -1,0 +1,105 @@
+name: GATE BTC PF Spot Participation Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_CRYPTO_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_spot_participation_source_qualification.py'
+      - 'tests/test_gate_btc_pf_spot_participation_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-spot-participation-source-qualification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'artifacts/gate_btc_2/PF_CRYPTO_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_20260923.json'
+      - 'tools/gate_btc_factory/pf_spot_participation_source_qualification.py'
+      - 'tests/test_gate_btc_pf_spot_participation_source_qualification.py'
+      - '.github/workflows/gate-btc-pf-spot-participation-source-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_RETUNE: 'true'
+  NO_BACKFILL: 'true'
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source qualification boundary
+        run: |
+          python -m pip install -q requests pytest
+          cd source_repo
+          python -m py_compile tools/gate_btc_factory/pf_spot_participation_source_qualification.py
+          pytest -q tests/test_gate_btc_pf_spot_participation_source_qualification.py
+          python tools/gate_btc_factory/pf_spot_participation_source_qualification.py --self-test
+      - name: Assert frozen no-economics contract
+        run: |
+          cd source_repo
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/gate_btc_2/PF_CRYPTO_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_20260923.json'))
+          assert d['economic_parameters_defined'] is False
+          assert d['direction_defined'] is False
+          assert d['thresholds_defined'] is False
+          assert d['lookbacks_defined'] is False
+          assert d['return_horizon_defined'] is False
+          assert d['qualification_pass_rule']['no_economic_outcomes_may_be_read'] is True
+          assert d['qualification_pass_rule']['no_historical_backfill_may_be_started'] is True
+          s=d['safety']
+          assert s['RESEARCH_ONLY'] and s['SHADOW_ONLY'] and s['NO_RETUNE'] and s['NO_BACKFILL']
+          assert s['ENGINE_FEED'] is False and s['ORDERS']==0 and s['REAL_CAPITAL']==0
+          assert s['CANONICAL_580_UNTOUCHED'] is True
+          print('PF_SPOT_PARTICIPATION_SOURCE_CONTRACT=PASS')
+          PY
+      - name: Probe live public sources
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p live
+          python source_repo/tools/gate_btc_factory/pf_spot_participation_source_qualification.py --output live/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json
+      - name: Assert live source qualification
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('live/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json'))
+          assert d['status']=='SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION'
+          assert d['primary']['status']=='PASS' and d['primary']['venue']=='BINANCE'
+          assert d['validation']['status']=='PASS' and d['validation']['venue']=='OKX'
+          assert d['historical_backfill_started'] is False
+          assert d['economic_outcomes_read'] is False
+          assert d['safety']['canonical_580_untouched'] is True
+          print('PF_SPOT_PARTICIPATION_LIVE_SOURCE_QUALIFICATION=PASS')
+          PY
+      - name: Persist qualification to canonical runtime
+        if: github.event_name != 'pull_request'
+        run: |
+          git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
+          mkdir -p runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications
+          cp live/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json
+          cp live/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json runtime_repo/runtime/factory_autonomy/parallel_frontier_source_qualifications/06c2f268bcaf92121b084621b11225fb817f395bf2dadacb9cc0bc6da24e4574.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/factory_autonomy/PF_SPOT_PARTICIPATION_SOURCE_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/parallel_frontier_source_qualifications
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "PF spot participation source qualification ${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo rebase origin/gate-btc-runtime || { git -C runtime_repo rebase --abort; exit 1; }
+            git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1

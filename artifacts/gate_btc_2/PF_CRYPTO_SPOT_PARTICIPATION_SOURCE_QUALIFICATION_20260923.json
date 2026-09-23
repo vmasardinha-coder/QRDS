@@ -1,0 +1,67 @@
+{
+  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "qualification_date": "2026-09-23",
+  "namespace": "PF::06c2f268bcaf9212",
+  "grammar_signature": "06c2f268bcaf92121b084621b11225fb817f395bf2dadacb9cc0bc6da24e4574",
+  "channel_id": "CRYPTO_SPOT_PARTICIPATION_FLOW",
+  "purpose": "SOURCE_QUALIFICATION_ONLY_BEFORE_ANY_CHILD_PREREGISTRATION_OR_OUTCOME_READ",
+  "economic_parameters_defined": false,
+  "direction_defined": false,
+  "thresholds_defined": false,
+  "lookbacks_defined": false,
+  "return_horizon_defined": false,
+  "primary_source": {
+    "venue": "BINANCE",
+    "market": "SPOT",
+    "instrument": "BTCUSDT",
+    "endpoint": "https://data-api.binance.vision/api/v3/klines",
+    "authentication_required": false,
+    "interval": "1m",
+    "required_observables": [
+      "open_time",
+      "close_time",
+      "volume",
+      "quote_asset_volume",
+      "number_of_trades",
+      "taker_buy_base_asset_volume",
+      "taker_buy_quote_asset_volume"
+    ],
+    "derived_source_quantities_allowed_for_future_preregistration": [
+      "taker_sell_base_asset_volume_equals_total_base_volume_minus_taker_buy_base_asset_volume"
+    ],
+    "causal_use_constraint": "CLOSED_KLINE_ONLY_AFTER_CLOSE_TIME",
+    "role_if_live_probe_passes": "PRIMARY_QUALIFIED_SOURCE"
+  },
+  "validation_source": {
+    "venue": "OKX",
+    "market": "SPOT",
+    "instrument": "BTC-USDT",
+    "endpoint": "https://www.okx.com/api/v5/market/history-trades",
+    "authentication_required": false,
+    "required_observables": ["tradeId", "px", "sz", "side", "ts"],
+    "side_semantics_required": "TAKER_SIDE_BUY_OR_SELL",
+    "documented_public_history_window": "LAST_3_MONTHS",
+    "causal_use_constraint": "TRADE_TIMESTAMP_MUST_PRECEDE_ANY_FUTURE_DECISION_TIMESTAMP",
+    "role_if_live_probe_passes": "PROSPECTIVE_VALIDATION_SOURCE_LIMITED_HISTORY"
+  },
+  "qualification_pass_rule": {
+    "primary_required": true,
+    "validation_required": true,
+    "both_must_be_public_unauthenticated": true,
+    "both_must_expose_timestamped_spot_participation_observables": true,
+    "no_economic_outcomes_may_be_read": true,
+    "no_historical_backfill_may_be_started": true
+  },
+  "next_gate_if_pass": "SEPARATE_CHILD_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
