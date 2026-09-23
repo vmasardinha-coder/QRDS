@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 
@@ -34,7 +35,30 @@ def load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def build_parallel(current: dict, scout: dict, handoff_ledger_dir: Path) -> dict:
+def _handoff_compatible_scout(scout: dict) -> dict:
+    out = copy.deepcopy(scout)
+    for row in out.get("proposals", []):
+        if "may_change_existing_grammar" not in row and row.get("may_modify_incumbent") is False:
+            row["may_change_existing_grammar"] = False
+    return out
+
+
+def _requests_from_scouts(scouts: list[dict], handoff_ledger_dir: Path) -> list[dict]:
+    merged = {}
+    for scout in scouts:
+        handoff = build_handoff(_handoff_compatible_scout(scout), handoff_ledger_dir)
+        for request in handoff.get("requests", []):
+            sig = str(request.get("grammar_signature") or "")
+            if not sig:
+                raise ValueError("fail closed: request missing grammar signature")
+            merged.setdefault(sig, request)
+    return sorted(
+        merged.values(),
+        key=lambda r: (str(r.get("grammar_signature") or ""), str(r.get("channel_id") or "")),
+    )
+
+
+def build_parallel(current: dict, scouts: dict | list[dict], handoff_ledger_dir: Path) -> dict:
     status = str(current.get("status") or "")
     generation = str(current.get("generation") or "")
     if not status.startswith(BLOCKED_PREFIXES):
@@ -47,11 +71,8 @@ def build_parallel(current: dict, scout: dict, handoff_ledger_dir: Path) -> dict
             "safety": SAFETY,
         }
 
-    handoff = build_handoff(scout, handoff_ledger_dir)
-    requests = sorted(
-        handoff.get("requests", []),
-        key=lambda r: (str(r.get("grammar_signature") or ""), str(r.get("channel_id") or "")),
-    )
+    scout_list = scouts if isinstance(scouts, list) else [scouts]
+    requests = _requests_from_scouts(scout_list, handoff_ledger_dir)
     if not requests:
         return {
             "schema": "qrds.factory.parallel_frontier.v1",
@@ -59,6 +80,7 @@ def build_parallel(current: dict, scout: dict, handoff_ledger_dir: Path) -> dict
             "canonical_generation": generation,
             "canonical_status": status,
             "selected": None,
+            "scout_count": len(scout_list),
             "safety": SAFETY,
         }
 
@@ -80,7 +102,8 @@ def build_parallel(current: dict, scout: dict, handoff_ledger_dir: Path) -> dict
         "canonical_generation": generation,
         "canonical_status": status,
         "canonical_frontier_mutated": False,
-        "selection_policy": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND",
+        "selection_policy": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND_ACROSS_ALL_SCOUTS",
+        "scout_count": len(scout_list),
         "selected": selected,
         "family_ids_allocated": [],
         "historical_credit": 0,
@@ -95,39 +118,46 @@ def self_test() -> None:
     import tempfile
 
     current = {"generation": "H2730-H2739", "status": "WAITING_OFFICIAL_TICK_SOURCE"}
-    scout = {
+    b3_scout = {
         "mode": "IDEATION_ONLY_NO_ECONOMICS",
         "history_used_for_selection": False,
         "proposals": [
             {
-                "channel_id": "B",
+                "channel_id": "B3_B",
                 "status": "SCOUTED_NOT_PREREGISTERED",
                 "mechanism": "b",
                 "required_new_data": ["b"],
                 "official_free_source_candidates": ["B3"],
                 "economics_read": False,
                 "may_change_existing_grammar": False,
-            },
+            }
+        ],
+    }
+    crypto_scout = {
+        "mode": "IDEATION_ONLY_NO_ECONOMICS",
+        "history_used_for_selection": False,
+        "proposals": [
             {
-                "channel_id": "A",
+                "channel_id": "CRYPTO_A",
                 "status": "SCOUTED_NOT_PREREGISTERED",
                 "mechanism": "a",
                 "required_new_data": ["a"],
-                "official_free_source_candidates": ["BCB"],
+                "official_free_source_candidates": ["PUBLIC"],
                 "economics_read": False,
-                "may_change_existing_grammar": False,
-            },
+                "may_modify_incumbent": False,
+            }
         ],
     }
     with tempfile.TemporaryDirectory() as td:
-        out = build_parallel(current, scout, Path(td))
+        out = build_parallel(current, [b3_scout, crypto_scout], Path(td))
         assert out["status"].startswith("PARALLEL_FRONTIER_")
+        assert out["scout_count"] == 2
         assert out["canonical_frontier_mutated"] is False
         assert out["family_ids_allocated"] == []
         assert out["historical_credit"] == 0
         assert out["safety"]["h1_h31_untouched"] is True
         active = {"generation": "H1-H10", "status": "DISCOVERY_RUNNING"}
-        noop = build_parallel(active, scout, Path(td))
+        noop = build_parallel(active, [b3_scout, crypto_scout], Path(td))
         assert noop["status"] == "NOOP_CANONICAL_FRONTIER_NOT_BLOCKED"
     print("PARALLEL_FRONTIER_SELF_TEST=PASS")
 
@@ -135,7 +165,7 @@ def self_test() -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--current")
-    ap.add_argument("--scout")
+    ap.add_argument("--scout", action="append")
     ap.add_argument("--handoff-ledger-dir")
     ap.add_argument("--output")
     ap.add_argument("--self-test", action="store_true")
@@ -144,10 +174,11 @@ def main() -> int:
         self_test()
         return 0
     if not all([args.current, args.scout, args.handoff_ledger_dir, args.output]):
-        ap.error("current, scout, handoff-ledger-dir and output are required")
-    out = build_parallel(load(Path(args.current)), load(Path(args.scout)), Path(args.handoff_ledger_dir))
+        ap.error("current, at least one scout, handoff-ledger-dir and output are required")
+    scouts = [load(Path(p)) for p in args.scout]
+    out = build_parallel(load(Path(args.current)), scouts, Path(args.handoff_ledger_dir))
     Path(args.output).write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"status": out["status"], "namespace": out.get("namespace"), "selected": (out.get("selected") or {}).get("channel_id")}))
+    print(json.dumps({"status": out["status"], "namespace": out.get("namespace"), "selected": (out.get("selected") or {}).get("channel_id"), "scout_count": out.get("scout_count")}))
     return 0
 
 
