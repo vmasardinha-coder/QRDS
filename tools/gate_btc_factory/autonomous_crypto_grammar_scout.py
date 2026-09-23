@@ -42,6 +42,41 @@ CHANNELS=[
     "mechanism":"Differences across dated futures and perpetual funding may define carry/term-structure challengers separate from existing Delta/QOS/Momentum incumbents.",
     "required_new_data":["dated futures prices","perpetual prices","funding","expiry metadata"],
     "official_free_source_candidates":["Binance","OKX"]
+  },
+  {
+    "channel_id":"CRYPTO_ONCHAIN_EXCHANGE_FLOW",
+    "queries":["bitcoin exchange inflow outflow returns on-chain predictive","cryptocurrency exchange netflow price returns"],
+    "mechanism":"Lagged exchange-directed and exchange-originating on-chain flows may represent inventory transfer pressure distinct from price-only and order-book channels.",
+    "required_new_data":["timestamped exchange inflow/outflow or netflow metrics","BTC spot reference prices","metric availability timestamps"],
+    "official_free_source_candidates":["Coin Metrics Community API","public blockchain data"]
+  },
+  {
+    "channel_id":"CRYPTO_STABLECOIN_LIQUIDITY_IMPULSE",
+    "queries":["stablecoin supply liquidity bitcoin returns","stablecoin flows cryptocurrency market returns"],
+    "mechanism":"Changes in observable stablecoin liquidity and transfer activity may proxy crypto-native purchasing power independently of BTC price trend.",
+    "required_new_data":["stablecoin circulating supply","stablecoin transfer or exchange-flow aggregates","BTC spot reference prices","availability timestamps"],
+    "official_free_source_candidates":["public issuer attestations","DefiLlama public stablecoin data"]
+  },
+  {
+    "channel_id":"CRYPTO_MACRO_LIQUIDITY_RATES",
+    "queries":["bitcoin macro liquidity interest rates dollar returns","cryptocurrency monetary policy liquidity bitcoin returns"],
+    "mechanism":"Lagged public macro-liquidity, rates and dollar states may provide an evidence channel distinct from crypto-native market microstructure.",
+    "required_new_data":["policy rates","Treasury yields","USD index or broad dollar proxy","BTC spot reference prices","publication timestamps"],
+    "official_free_source_candidates":["FRED","Federal Reserve","US Treasury"]
+  },
+  {
+    "channel_id":"CRYPTO_MINER_HASHRATE_STRESS",
+    "queries":["bitcoin miner stress hash rate returns","bitcoin miner revenue hashprice price returns"],
+    "mechanism":"Lagged mining-network and miner-economics stress may capture forced-supply or network-security states that are structurally different from trading-venue signals.",
+    "required_new_data":["hashrate or difficulty","miner revenue or fee metrics","BTC spot reference prices","metric availability timestamps"],
+    "official_free_source_candidates":["public Bitcoin blockchain data","Coin Metrics Community API","mempool.space public data"]
+  },
+  {
+    "channel_id":"CRYPTO_SPOT_PARTICIPATION_FLOW",
+    "queries":["bitcoin spot volume participation returns predictive","cryptocurrency volume imbalance participation price returns"],
+    "mechanism":"Lagged spot participation and taker-volume composition may define a venue-flow channel without reusing order-book depth geometry from F-XMM-INVENTORY.",
+    "required_new_data":["spot OHLCV","taker buy/sell or aggressor volume when public","venue metadata","synchronized timestamps"],
+    "official_free_source_candidates":["Binance public market data","OKX public market data"]
   }
 ]
 
@@ -63,7 +98,7 @@ def existing_ids(existing_dir:Path|None):
     for p in existing_dir.glob("*.json"):
         try:d=json.loads(p.read_text())
         except Exception:continue
-        for x in d.get("proposals",[]): 
+        for x in d.get("proposals",[]):
             if x.get("channel_id"): ids.add(str(x["channel_id"]))
     return ids
 
