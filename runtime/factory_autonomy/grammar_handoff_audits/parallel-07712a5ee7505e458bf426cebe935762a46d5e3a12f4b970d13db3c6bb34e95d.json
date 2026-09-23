@@ -1,0 +1,43 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_ONCHAIN_EXCHANGE_FLOW",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "07712a5ee7505e458bf426cebe935762a46d5e3a12f4b970d13db3c6bb34e95d",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Lagged exchange-directed and exchange-originating on-chain flows may represent inventory transfer pressure distinct from price-only and order-book channels.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "Coin Metrics Community API",
+        "public blockchain data"
+      ],
+      "required_new_data": [
+        "timestamped exchange inflow/outflow or netflow metrics",
+        "BTC spot reference prices",
+        "metric availability timestamps"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}
