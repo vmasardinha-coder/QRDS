@@ -47,20 +47,17 @@ def _binance_klines_schema(payload: Any) -> tuple[bool, bool]:
         return False, False
     row = payload[-1]
     schema = isinstance(row, list) and len(row) >= 7
-    timestamp = bool(schema and isinstance(row[6], (int, float)))
-    return schema, timestamp
+    return schema, bool(schema and isinstance(row[6], (int, float)))
 
 
 def _binance_oi_schema(payload: Any) -> tuple[bool, bool]:
     schema = isinstance(payload, dict) and "openInterest" in payload and "symbol" in payload
-    timestamp = bool(schema and isinstance(payload.get("time"), (int, float)))
-    return schema, timestamp
+    return schema, bool(schema and isinstance(payload.get("time"), (int, float)))
 
 
 def _binance_funding_schema(payload: Any) -> tuple[bool, bool]:
     schema = isinstance(payload, dict) and "lastFundingRate" in payload and "symbol" in payload
-    timestamp = bool(schema and isinstance(payload.get("time"), (int, float)))
-    return schema, timestamp
+    return schema, bool(schema and isinstance(payload.get("time"), (int, float)))
 
 
 def _okx_data(payload: Any) -> list[Any]:
@@ -76,16 +73,14 @@ def _okx_candles_schema(payload: Any) -> tuple[bool, bool]:
         return False, False
     row = rows[0]
     schema = isinstance(row, list) and len(row) >= 9
-    timestamp = bool(schema and str(row[0]).isdigit())
-    return schema, timestamp
+    return schema, bool(schema and str(row[0]).isdigit())
 
 
 def _okx_oi_schema(payload: Any) -> tuple[bool, bool]:
     rows = _okx_data(payload)
     row = rows[0] if rows else None
     schema = isinstance(row, dict) and "oi" in row and "instId" in row
-    timestamp = bool(schema and str(row.get("ts", "")).isdigit())
-    return schema, timestamp
+    return schema, bool(schema and str(row.get("ts", "")).isdigit())
 
 
 def _okx_funding_schema(payload: Any) -> tuple[bool, bool]:
@@ -135,23 +130,33 @@ def qualify(get=requests.get, ws_connect: Callable[..., Any] | None = None) -> d
     of_schema, of_ts = _okx_funding_schema(of["payload"])
 
     responses = [bk, bo, bf, ok, oo, of]
-    auth_blocked = any(r["error"] == "AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED" for r in responses)
+    auth_seen = any(r["error"] == "AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED" for r in responses)
     binance_rest_pass = bk_schema and bo_schema and bf_schema and bk_ts and bo_ts and bf_ts
-    okx_validation_pass = ok_schema and oo_schema and of_schema and ok_ts and oo_ts and of_ts
-    complete_primary = binance_rest_pass and ws["connected"]
+    okx_rest_pass = ok_schema and oo_schema and of_schema and ok_ts and oo_ts and of_ts
+    binance_complete = binance_rest_pass and ws["connected"]
+    composite_complete = okx_rest_pass and ws["connected"]
+    complete_preregistered_route = binance_complete or composite_complete
 
-    if auth_blocked:
-        status = "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED"
-        reason = "REQUIRED_PUBLIC_MARKET_DATA_RETURNED_AUTHORIZATION_BLOCK"
-    elif complete_primary:
+    if binance_complete:
         status = "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION"
         reason = "BINANCE_PUBLIC_REST_AND_FORCE_ORDER_WEBSOCKET_TRANSPORT_QUALIFIED"
-    elif binance_rest_pass and not ws["connected"]:
+        route = "BINANCE_COMPLETE"
+    elif composite_complete:
+        status = "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION"
+        reason = "PREREGISTERED_COMPOSITE_OKX_REST_PLUS_BINANCE_FORCE_ORDER_TRANSPORT_QUALIFIED"
+        route = "PREREGISTERED_COMPOSITE"
+    elif (binance_rest_pass or okx_rest_pass) and not ws["connected"]:
         status = "BLOCKED_PUBLIC_LIQUIDATION_TRANSPORT_UNAVAILABLE"
-        reason = "BINANCE_PUBLIC_REST_QUALIFIED_BUT_FORCE_ORDER_WEBSOCKET_HANDSHAKE_FAILED"
+        reason = "PUBLIC_REST_ROUTE_QUALIFIED_BUT_BINANCE_FORCE_ORDER_WEBSOCKET_HANDSHAKE_FAILED"
+        route = None
+    elif auth_seen:
+        status = "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED"
+        reason = "NO_COMPLETE_PUBLIC_PREREGISTERED_ROUTE_AND_AUTHORIZATION_BLOCK_OBSERVED"
+        route = None
     else:
         status = "FAIL_CLOSED_SOURCE_UNVERIFIED"
-        reason = "REQUIRED_BINANCE_PUBLIC_REST_SCHEMA_OR_TIMESTAMPS_NOT_CONFIRMED"
+        reason = "NO_COMPLETE_PREREGISTERED_PUBLIC_REST_ROUTE_CONFIRMED"
+        route = None
 
     return {
         "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
@@ -159,9 +164,10 @@ def qualify(get=requests.get, ws_connect: Callable[..., Any] | None = None) -> d
         "namespace": "PF::fc39959718b10656",
         "grammar_signature": "fc39959718b106564ff15db9cda660aa42e9a9c1c247aa87c576aca4efaa3bee",
         "channel_id": "CRYPTO_VOL_LIQUIDATION_STRESS",
-        "primary_provider": "BINANCE_USDS_M_PUBLIC_MARKET_DATA",
-        "independent_validation_provider": "OKX_PUBLIC_MARKET_DATA",
+        "preregistered_source_candidates": ["BINANCE_USDS_M_PUBLIC_MARKET_DATA", "OKX_PUBLIC_MARKET_DATA"],
         "authentication_supplied": False,
+        "qualification_route": route,
+        "complete_preregistered_route": complete_preregistered_route,
         "binance": {
             "ohlcv": {"url": BINANCE_KLINES, "http_status": bk["http_status"], "schema_ok": bk_schema, "timestamp_present": bk_ts},
             "open_interest": {"url": BINANCE_OI, "http_status": bo["http_status"], "schema_ok": bo_schema, "timestamp_present": bo_ts},
@@ -174,14 +180,19 @@ def qualify(get=requests.get, ws_connect: Callable[..., Any] | None = None) -> d
                 "error": ws["error"],
             },
             "rest_capabilities_pass": binance_rest_pass,
-            "complete_required_capabilities_pass": complete_primary,
+            "complete_required_capabilities_pass": binance_complete,
         },
         "okx": {
             "ohlcv": {"url": OKX_CANDLES, "http_status": ok["http_status"], "schema_ok": ok_schema, "timestamp_present": ok_ts},
             "open_interest": {"url": OKX_OI, "http_status": oo["http_status"], "schema_ok": oo_schema, "timestamp_present": oo_ts},
             "funding": {"url": OKX_FUNDING, "http_status": of["http_status"], "schema_ok": of_schema, "timestamp_present": of_ts},
-            "independent_validation_pass": okx_validation_pass,
+            "rest_capabilities_pass": okx_rest_pass,
             "liquidation_substitute_claimed": False,
+        },
+        "composite": {
+            "allowed_only_preregistered_sources": True,
+            "okx_rest_plus_binance_liquidation_transport_pass": composite_complete,
+            "new_source_added": False,
         },
         "qualification": {"status": status, "reason": reason},
         "liquidation_event_payload_read": False,
@@ -224,29 +235,32 @@ def self_test() -> None:
         def close(self):
             pass
 
-    payloads = iter([
+    good_binance = [
         R(200, [[1, "1", "2", "0", "1", "5", 2, "0", 1, "0", "0", "0"]]),
         R(200, {"symbol": "BTCUSDT", "openInterest": "1", "time": 1}),
         R(200, {"symbol": "BTCUSDT", "lastFundingRate": "0", "time": 1}),
+    ]
+    good_okx = [
         R(200, {"code": "0", "data": [["1", "1", "2", "0", "1", "5", "5", "0", "1"]]}),
         R(200, {"code": "0", "data": [{"instId": "BTC-USDT-SWAP", "oi": "1", "ts": "1"}]}),
         R(200, {"code": "0", "data": [{"instId": "BTC-USDT-SWAP", "fundingRate": "0", "fundingTime": "1"}]}),
-    ])
-    d = qualify(lambda *a, **k: next(payloads), lambda *a, **k: WS())
-    assert d["qualification"]["status"] == "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION"
-    assert d["binance"]["complete_required_capabilities_pass"] is True
-    assert d["okx"]["independent_validation_pass"] is True
-    assert d["liquidation_event_payload_read"] is False
-    assert d["economic_outcomes_read"] is False
+    ]
 
-    payloads = iter([
-        R(200, [[1, "1", "2", "0", "1", "5", 2, "0", 1, "0", "0", "0"]]),
-        R(200, {"symbol": "BTCUSDT", "openInterest": "1", "time": 1}),
-        R(200, {"symbol": "BTCUSDT", "lastFundingRate": "0", "time": 1}),
-        R(200, {"code": "0", "data": [["1", "1", "2", "0", "1", "5", "5", "0", "1"]]}),
-        R(200, {"code": "0", "data": [{"instId": "BTC-USDT-SWAP", "oi": "1", "ts": "1"}]}),
-        R(200, {"code": "0", "data": [{"instId": "BTC-USDT-SWAP", "fundingRate": "0", "fundingTime": "1"}]}),
-    ])
+    payloads = iter(good_binance + good_okx)
+    d = qualify(lambda *a, **k: next(payloads), lambda *a, **k: WS())
+    assert d["qualification_route"] == "BINANCE_COMPLETE"
+    assert d["complete_preregistered_route"] is True
+
+    binance_geo_blocked = [R(451, {}), R(451, {}), R(451, {})]
+    payloads = iter(binance_geo_blocked + good_okx)
+    composite = qualify(lambda *a, **k: next(payloads), lambda *a, **k: WS())
+    assert composite["qualification"]["status"] == "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION"
+    assert composite["qualification_route"] == "PREREGISTERED_COMPOSITE"
+    assert composite["composite"]["new_source_added"] is False
+    assert composite["liquidation_event_payload_read"] is False
+    assert composite["economic_outcomes_read"] is False
+
+    payloads = iter(good_binance + good_okx)
     def broken_ws(*a, **k):
         raise OSError("blocked")
     blocked = qualify(lambda *a, **k: next(payloads), broken_ws)
@@ -269,8 +283,10 @@ def main() -> int:
     Path(args.output).write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({
         "status": data["qualification"]["status"],
-        "binance_complete": data["binance"]["complete_required_capabilities_pass"],
-        "okx_validation": data["okx"]["independent_validation_pass"],
+        "qualification_route": data["qualification_route"],
+        "binance_rest": data["binance"]["rest_capabilities_pass"],
+        "okx_rest": data["okx"]["rest_capabilities_pass"],
+        "liquidation_transport": data["binance"]["public_liquidation_stream"]["transport_connected"],
         "next_gate": data["next_gate"],
     }, sort_keys=True))
     return 0
