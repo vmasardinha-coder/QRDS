@@ -1,0 +1,55 @@
+{
+  "schema": "gate_btc_2.pf_source_qualification.v1",
+  "qualification_date": "2026-09-23",
+  "namespace": "PF::f34d320d5a70b6c4",
+  "grammar_signature": "f34d320d5a70b6c4e86791a526dc24e3956efad52d405e837587e1b0f732b873",
+  "channel_id": "CRYPTO_STABLECOIN_LIQUIDITY_IMPULSE",
+  "purpose": "SOURCE_QUALIFICATION_ONLY_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
+  "candidate_source": {
+    "provider": "DEFILLAMA_PUBLIC_STABLECOIN_API",
+    "base_url": "https://stablecoins.llama.fi",
+    "authentication_required": false,
+    "endpoints": [
+      "/stablecoins",
+      "/stablecoincharts/all"
+    ]
+  },
+  "required_capabilities": {
+    "stablecoin_circulating_supply": true,
+    "stablecoin_supply_history": true,
+    "stablecoin_transfer_or_exchange_flow_aggregate": true,
+    "availability_timestamps": true
+  },
+  "semantic_boundary": {
+    "circulating_supply_change_is_equivalent_to_transfer_or_exchange_flow": false,
+    "stablecoin_market_cap_change_is_equivalent_to_transfer_or_exchange_flow": false,
+    "homegrown_exchange_labels_allowed": false,
+    "proxy_substitution_without_new_preregistration_allowed": false
+  },
+  "qualification_rule": {
+    "all_required_capabilities_observed_anonymously": "QUALIFIED_PUBLIC_SOURCE",
+    "supply_available_but_flow_aggregate_missing": "BLOCKED_REQUIRED_FLOW_CAPABILITY_NOT_PUBLICLY_AVAILABLE",
+    "authentication_or_paid_tier_required": "BLOCKED_AUTHORIZATION_OR_PRODUCT_TIER_REQUIRED",
+    "network_or_schema_failure": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+  },
+  "economic_parameters_defined": false,
+  "signal_formula_defined": false,
+  "direction_defined": false,
+  "thresholds_defined": false,
+  "lookbacks_defined": false,
+  "return_horizon_defined": false,
+  "historical_backfill_allowed": false,
+  "next_gate_if_qualified": "SEPARATE_STABLECOIN_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "next_gate_if_blocked": "RETAIN_BLOCKER_OR_CREATE_NEW_PREREGISTRATION_FOR_A_DIFFERENT_EXPLICITLY_NAMED_SOURCE_OR_PROXY",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "H1_H31_UNTOUCHED": true,
+    "CANONICAL_580_UNTOUCHED": true
+  }
+}
