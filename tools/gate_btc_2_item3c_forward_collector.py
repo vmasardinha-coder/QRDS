@@ -310,7 +310,72 @@ def main() -> int:
     if not enough_session_rows(rows, max_window):
         raise RuntimeError(f"INCOMPLETE_SESSION_FOR_FROZEN_OUTCOMES bars={len(rows)} max_window={max_window}")
     if not source.exact_spacing(rows):
-        raise RuntimeError("SESSION_M5_SPACING_FAIL")
+        keys = sorted({feature_key(c["feature"], int(c["decision_window_minutes"])) for c in contracts})
+        obs = []
+        for key in keys:
+            feature, window_s = key.split("|", 1)
+            obs.append({
+                "key": key,
+                "feature": feature,
+                "decision_window_minutes": int(window_s),
+                "available": False,
+                "value": None,
+            })
+        fam_rows = [evaluate_family(c, [], None, []) for c in sorted(contracts, key=lambda x: int(str(x["family_id"])[1:]))]
+        counts = {"FEATURE_UNAVAILABLE": len(fam_rows)}
+        record = {
+            "schema": "gate_btc_2.factory_item3c_forward_session.v1",
+            "session": session,
+            "captured_at": now.isoformat(),
+            "d0": d0,
+            "experimental_status": "EXPERIMENTAL_PROSPECTIVE_SHADOW",
+            "source": {
+                "provider": "LOCAL_SELF_HOSTED_MT5_TERMINAL",
+                "symbol": symbol,
+                "time_mode": mode,
+                "copy_rates_error": str(err),
+                "bar_count": len(rows),
+                "first_bar": rows[0]["timestamp"] if rows else None,
+                "last_bar": rows[-1]["timestamp"] if rows else None,
+                "raw_rows_sha256": stable_hash(rows),
+                "contract_expiration_local": str(source.expiry_local(selected)),
+                "source_qa_pass": False,
+                "gap_reason": "SESSION_M5_SPACING_FAIL",
+                "required_spacing_seconds": 300,
+            },
+            "active_family_count": len(contracts),
+            "family_state_counts": counts,
+            "feature_observations": obs,
+            "family_observations": fam_rows,
+            "session_close": None,
+            "historical_credit": 0,
+            "retroactive_credit": 0,
+            "survivor_credit": 0,
+            "promotion_authority": False,
+            "engine_feed": False,
+            "orders": 0,
+            "real_capital": 0,
+            "no_backfill": True,
+            "no_retune": True,
+            "observation_gap": True,
+        }
+        record["record_sha256"] = stable_hash(record)
+        dump(out / "SESSION_RECORD.json", record)
+        dump(out / "STATUS.json", {
+            "schema": "gate_btc_2.factory_item3c_forward_collection_status.v1",
+            "status": "SESSION_GAP_RECORDED_ZERO_CREDIT",
+            "session": session,
+            "record_sha256": record["record_sha256"],
+            "active_family_count": len(contracts),
+            "family_state_counts": counts,
+            "scientific_credit": 0,
+            "orders": 0,
+            "real_capital": 0,
+            "engine_feed": False,
+            "gap_reason": "SESSION_M5_SPACING_FAIL",
+        })
+        print(json.dumps({"session": session, "gap": "SESSION_M5_SPACING_FAIL", "families": len(contracts), "record_sha256": record["record_sha256"]}, sort_keys=True))
+        return 0
     if not source.ohlc_integrity(rows):
         raise RuntimeError("SESSION_OHLC_TICK_GRID_FAIL")
 
