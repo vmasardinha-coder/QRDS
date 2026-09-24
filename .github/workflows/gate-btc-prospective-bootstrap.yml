@@ -95,7 +95,17 @@ jobs:
               run=json.loads(subprocess.check_output(['gh','api',f'/repos/{repo}/actions/runs/{rid}']))
               assert run['name']=='GATE BTC Daily Research Collection'
               assert run['head_branch']=='main'
-              assert run['status']=='completed' and run['conclusion']=='success'
+              assert run['status']=='completed'
+              # O artefato vem do job daily-research-collection, nao da run inteira.
+              # O irmao prospective-v2a-pit roda sem needs e pode falhar sozinho,
+              # deixando a run vermelha com o dado bom -- o mesmo defeito que
+              # segurou o V11 por quatro dias. O portao fica sobre o produtor.
+              jobs=json.loads(subprocess.check_output(
+                  ['gh','api',f'/repos/{repo}/actions/runs/{rid}/jobs?per_page=100']))['jobs']
+              producer=[j for j in jobs if j['name']=='daily-research-collection']
+              assert len(producer)==1, (rid, len(producer))
+              assert producer[0]['status']=='completed'
+              assert producer[0]['conclusion']=='success', (rid, producer[0]['conclusion'])
               arts=json.loads(subprocess.check_output(['gh','api',f'/repos/{repo}/actions/runs/{rid}/artifacts']))['artifacts']
               arts=[a for a in arts if not a['expired'] and a['name'].startswith('gate-btc-daily-research-')]
               assert len(arts)==1, (rid, len(arts))
