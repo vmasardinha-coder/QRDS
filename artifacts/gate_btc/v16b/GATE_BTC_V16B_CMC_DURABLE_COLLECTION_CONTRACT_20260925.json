@@ -1,0 +1,44 @@
+{
+  "schema": "gate_btc.v16b.cmc_durable_collection_contract.v1",
+  "contract_id": "GATE_BTC_V16B_CMC_DURABLE_COLLECTION_20260925",
+  "created_utc": "2026-09-25",
+  "status": "MECHANICAL_PROVENANCE_ONLY",
+  "purpose": "Preserve contemporaneous Thursday CMC Top-150 captures beyond GitHub Actions artifact retention without changing V16B/V16B.1 methodology or granting scientific credit.",
+  "source_workflow": ".github/workflows/gate-btc-v16b-cmc-snapshot.yml",
+  "capture_contract": "gate_btc.v16b.cmc_universe_snapshot_evidence.v1",
+  "persistence": {
+    "branch": "gate-btc-runtime",
+    "root": "runtime/evidence/v16b/cmc_weekly",
+    "granularity": "every valid Thursday capture, preserving multiple same-day captures independently by github_run_id",
+    "index": "runtime/evidence/v16b/cmc_weekly/INDEX.jsonl",
+    "append_only": true,
+    "raw_bytes_preserved": true,
+    "adjacent_evidence_preserved": true,
+    "sha256_required": true,
+    "idempotence_key": "github_run_id",
+    "retrospective_selection": false
+  },
+  "scientific_semantics": {
+    "prospective_credit": 0,
+    "training_admission": "NOT_AUTHORIZED_BY_THIS_CONTRACT",
+    "signal_admission": "NOT_AUTHORIZED_BY_THIS_CONTRACT",
+    "backfill": false,
+    "late_seal": false,
+    "retune": false,
+    "counter_reset": false,
+    "note": "This contract preserves source evidence only. Any use as model-training history remains subject to the separate scientific decision gate in issue #976."
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  }
+}

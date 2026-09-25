@@ -11,9 +11,11 @@ on:
     paths:
       - .github/workflows/gate-btc-v16b-cmc-snapshot.yml
       - tools/gate_btc_v16b_cmc_snapshot.py
+      - tools/gate_btc_v16b_cmc_persist.py
+      - tests/test_gate_btc_v16b_cmc_persist.py
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: gate-btc-v16b-cmc-prospective-snapshot-${{ github.event.pull_request.number || github.ref }}
@@ -37,7 +39,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install capture dependency
-        run: pip install 'requests>=2.31,<3'
+        run: pip install 'requests>=2.31,<3' pytest
+
+      - name: Validate durable persistence contract
+        run: pytest -q tests/test_gate_btc_v16b_cmc_persist.py
 
       - name: Capture raw CMC Top-150 and availability manifest
         run: |
@@ -77,3 +82,43 @@ jobs:
           path: artifacts/gate_btc/v16b/cmc_snapshots/
           retention-days: 90
           if-no-files-found: error
+
+      - name: Checkout canonical runtime branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: canonical-runtime
+          fetch-depth: 0
+
+      - name: Persist Thursday evidence into append-only runtime corpus
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_v16b_cmc_persist.py \
+            --capture-dir artifacts/gate_btc/v16b/cmc_snapshots \
+            --runtime-root canonical-runtime \
+            --run-id "${{ github.run_id }}"
+
+      - name: Publish durable CMC corpus atomically
+        if: github.event_name != 'pull_request'
+        working-directory: canonical-runtime
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- runtime/evidence/v16b/cmc_weekly; then
+            echo "No durable Thursday corpus change."
+            exit 0
+          fi
+          git config user.name "gate-btc-research-bot"
+          git config user.email "gate-btc-research-bot@users.noreply.github.com"
+          git add runtime/evidence/v16b/cmc_weekly
+          git commit -m "Persist V16B CMC Thursday evidence run ${{ github.run_id }}"
+          git pull --rebase origin gate-btc-runtime
+          git push origin HEAD:gate-btc-runtime
+
+      - name: Confirm execution safety boundaries
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+          echo "ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0 NO_BACKFILL=true NO_RETUNE=true"
