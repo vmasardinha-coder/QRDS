@@ -40,6 +40,8 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
     cr = load_json(control_root / "FACTORY_CONTROL_ROOM.json")
     economics_path = control_root / "FACTORY_ECONOMICS_MONITOR.json"
     economics = load_json(economics_path) if economics_path.is_file() else None
+    backlog_path = control_root / "FACTORY_RESEARCH_BACKLOG.json"
+    backlog = load_json(backlog_path) if backlog_path.is_file() else None
     manifest = load_json(shadow_root / "ACTIVATION_MANIFEST.json")
     reclass = load_text(runtime_root / "runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md")
     frontier = load_json(main_root / "artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json")
@@ -104,6 +106,47 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             "checkpoint_60_complete_cells": int(economics.get("checkpoint_60_complete_cells", 0)),
         })
 
+    research_backlog = {
+        "available": backlog is not None,
+        "state": "NO_CANONICAL_BACKLOG_SIDECAR" if backlog is None else "REGISTERED_RESEARCH_BACKLOG_VISIBLE",
+        "registered_hypothesis_documents": 0,
+        "not_eligible_count": 0,
+        "non_not_eligible_count": 0,
+        "family_ids": [],
+        "next_gate": "REGISTER_AND_CLASSIFY_RESEARCH_HYPOTHESES",
+    }
+    if backlog is not None:
+        if backlog.get("mode") != "READ_ONLY_RESEARCH_BACKLOG":
+            raise RuntimeError("RESEARCH_BACKLOG_MODE_MISMATCH")
+        auth = backlog.get("authority") or {}
+        forbidden_authority = (
+            bool(auth.get("source_admission_authority"))
+            or bool(auth.get("family_id_allocation_authority"))
+            or bool(auth.get("collector_creation_authority"))
+            or bool(auth.get("promotion_authority"))
+            or bool(auth.get("execution_authority"))
+            or int(auth.get("scientific_credit", 0)) != 0
+        )
+        if forbidden_authority:
+            raise RuntimeError("RESEARCH_BACKLOG_AUTHORITY_FAIL")
+        bs = backlog.get("safety") or {}
+        if not (bs.get("RESEARCH_ONLY") and bs.get("SHADOW_ONLY") and bs.get("NO_BACKFILL") and bs.get("NO_RETUNE")):
+            raise RuntimeError("RESEARCH_BACKLOG_SAFETY_FLAG_FAIL")
+        if bs.get("ENGINE_FEED") is not False or int(bs.get("ORDERS", 0)) != 0 or int(bs.get("REAL_CAPITAL", 0)) != 0:
+            raise RuntimeError("RESEARCH_BACKLOG_SAFETY_BOUNDARY_FAIL")
+        summary = backlog.get("summary") or {}
+        families = list(backlog.get("families") or [])
+        if int(summary.get("registered_hypothesis_documents", -1)) != len(families):
+            raise RuntimeError("RESEARCH_BACKLOG_COUNT_MISMATCH")
+        research_backlog.update({
+            "state": "REGISTERED_RESEARCH_BACKLOG_VISIBLE",
+            "registered_hypothesis_documents": len(families),
+            "not_eligible_count": int(summary.get("not_eligible_count", 0)),
+            "non_not_eligible_count": int(summary.get("non_not_eligible_count", 0)),
+            "family_ids": [str(row.get("family_id")) for row in families],
+            "next_gate": "DATA_READINESS_AND_EXPLICIT_PROSPECTIVE_ELIGIBILITY_BEFORE_ANY_COLLECTION",
+        })
+
     lanes = {
         "ITEM3_EXPERIMENTAL_SHADOW": {
             "state": "ACTIVE_AUTONOMOUS_PROSPECTIVE",
@@ -165,6 +208,7 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             "promotion_authority": bool(frontier["parallel_frontier"]["promotion_authority"]),
             "next_gate": frontier["parallel_frontier"]["next_gate"],
         },
+        "RESEARCH_BACKLOG": research_backlog,
     }
 
     return {
@@ -183,6 +227,8 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             "families_with_any_trigger": economic_maturity["families_with_any_trigger"],
             "max_trigger_count": economic_maturity["max_trigger_count"],
             "checkpoint_60_complete_cells": economic_maturity["checkpoint_60_complete_cells"],
+            "research_backlog_registered": research_backlog["registered_hypothesis_documents"],
+            "research_backlog_not_eligible": research_backlog["not_eligible_count"],
         },
         "lanes": lanes,
         "authority": {
@@ -206,6 +252,8 @@ def render_md(x: dict[str, Any]) -> str:
         f"- Experimental shadow active: **{s['experimental_shadow_active']}**",
         f"- Valid scientific rejections: **{s['valid_scientific_rejections']}**",
         f"- Operational/scientific lanes tracked: **{s['tracked_lanes']}**",
+        f"- Registered research backlog: **{s['research_backlog_registered']}**",
+        f"- Backlog currently NOT_ELIGIBLE: **{s['research_backlog_not_eligible']}**",
         f"- Canonical ledger sessions: **{s['ledger_sessions_observed']}**",
         f"- Frozen warmup range: **{s['minimum_warmup_lookback_sessions']}–{s['maximum_warmup_lookback_sessions']} prior sessions**",
         f"- Nominal families lookback-satisfied for next session: **{s['nominal_families_lookback_satisfied_for_next_session']}**",
