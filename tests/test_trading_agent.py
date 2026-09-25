@@ -14,8 +14,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from trading_agent import (config, cotahist, data_sources, portfolio, report,
-                           strategy)
+from trading_agent import (charts, config, cotahist, data_sources, portal,
+                           portfolio, report, strategy)
 
 _CACHE_ISOLADO = None
 
@@ -1766,3 +1766,173 @@ class TestB3RegimeProxy(unittest.TestCase):
         # Se divergissem, o ciclo passaria a descarregar um papel a mais sem
         # que ninguem tivesse decidido isso.
         self.assertEqual(config.B3_REGIME_PROXY, config.B3S_UNDERLYING)
+
+
+class TestPortal(unittest.TestCase):
+    """O portal e uma camada de leitura: pode ser bonito, nao pode mentir."""
+
+    def _result(self, cur="USD", with_cdi=False, nav=55_000.0):
+        estado = portfolio.new_state("equities", "SPY", "2026-08-06", 500.0)
+        estado["currency"] = cur
+        estado["positions"] = {"AAA": {"qty": 100.0, "avg_cost": 100.0}}
+        estado["cash"] = 1_000.0
+        entry = {"date": "2026-09-25", "nav": nav, "benchmark_nav": 51_000.0}
+        if with_cdi:
+            estado["benchmark2"] = {"symbol": "CDI"}
+            entry["benchmark2_nav"] = 53_000.0
+        estado["history"] = [{"date": "2026-09-24", "nav": 54_000.0,
+                              "benchmark_nav": 50_500.0}, entry]
+        return {"state": estado, "entry": entry, "prices": {"AAA": 100.0},
+                "regime": "risk_on", "trades": [
+                    {"date": "2026-09-25", "symbol": "AAA", "side": "buy",
+                     "qty": 100.0, "price": 100.0, "value": 10_000.0}],
+                "log": {"rebalance_trigger": "cadencia semanal",
+                        "hurdle": "SPY", "hurdle_score": 0.12,
+                        "eligible_count": 7,
+                        "rejected": [{"symbol": "DDD",
+                                      "reason": "nao bate o benchmark"}]}}
+
+    def test_every_sleeve_has_a_card(self):
+        # Acrescentar uma carteira sem lhe dar rotulo faria o portal rebentar
+        # com KeyError a meio do ciclo; este teste apanha isso na bancada.
+        self.assertEqual(set(portal.CARD_LABELS),
+                         {key for key, *_ in report.SLEEVES})
+
+    def test_portal_is_self_contained(self):
+        html = portal.build_portal("2026-09-25",
+                                   {"equities": self._result()}, {})
+        limpo = html.replace('xmlns="http://www.w3.org/2000/svg"', "")
+        self.assertNotIn("http://", limpo)
+        self.assertNotIn("https://", limpo)
+        self.assertNotIn("<script", limpo)
+        # o grafico vai embutido, nao referenciado
+        self.assertIn("<svg", html)
+        self.assertNotIn("<img", html)
+
+    def test_alpha_is_the_same_number_the_report_prints(self):
+        # Portal e relatorio descrevem o mesmo facto. Se divergirem no
+        # arredondamento, quem le deixa de saber em qual acreditar.
+        import re
+        resultado = self._result()
+        seccao = report._sleeve_section("Acoes EUA", "SPY", resultado, None)
+        do_relatorio = re.search(r"Alfa vs SPY\*\* \| \*\*([+-][\d.]+)%", seccao)
+        self.assertIsNotNone(do_relatorio)
+        html = portal.build_portal("2026-09-25", {"equities": resultado}, {})
+        self.assertIn(f"{do_relatorio.group(1)} pp", html)
+
+    def test_alpha_uses_the_higher_benchmark(self):
+        # carteira +10%, IBOV +2%, CDI +6% -> o alfa mede-se contra o CDI
+        resultado = self._result(cur="BRL", with_cdi=True)
+        html = portal.build_portal("2026-09-25", {"b3": resultado}, {})
+        self.assertIn("alfa vs o maior (CDI)", html)
+        self.assertIn("+4.00 pp", html)
+        self.assertNotIn("+8.00 pp", html)
+
+    def test_a_single_benchmark_is_not_called_the_higher_one(self):
+        # "o maior" so faz sentido quando ha dois para comparar. Verifica-se no
+        # cartao, nao na pagina: o rodape explica a regra e ha-de dizer "maior".
+        cartao = portal._card("equities", self._result(), "SPY", None)
+        self.assertIn("alfa vs SPY", cartao)
+        self.assertNotIn("o maior", cartao)
+
+    def test_a_losing_mandate_is_not_dressed_as_a_win(self):
+        html = portal.build_portal("2026-09-25",
+                                   {"equities": self._result(nav=49_000.0)}, {})
+        self.assertIn("p-delta p-down", html)
+        self.assertNotIn("p-delta p-up", html)
+
+    def test_portal_classes_never_collide_with_the_chart_css(self):
+        # O <style> do SVG embutido aplica-se a pagina inteira, e usa nomes
+        # genericos ('.title', '.line', '.axis'). Sem prefixo, o grafico
+        # repintava o portal.
+        import re
+        svg = charts.build_svg("2026-09-25", [
+            ("P", self._result()["state"], "SPY", None)])
+        do_svg = set(re.findall(r"\.([a-z][\w-]*)\s*\{", svg))
+        do_portal = set(re.findall(r"\.([a-z][\w-]*)", portal._STYLE))
+        self.assertTrue(do_svg, "o SVG deixou de declarar classes?")
+        self.assertEqual(do_svg & do_portal, set())
+        self.assertTrue(all(nome.startswith("p-") for nome in do_portal),
+                        f"classes sem prefixo: {sorted(do_portal)}")
+
+    def test_a_failed_sleeve_is_declared_not_hidden(self):
+        html = portal.build_portal("2026-09-25", {"equities": self._result()},
+                                   {"crypto": "sem rede"},
+                                   {"crypto": {"coinbase": {"n": 3,
+                                                            "motivo": "timeout"}}})
+        self.assertIn("falhou hoje", html)
+        self.assertIn("sem execucao hoje", html)
+        self.assertIn("sem rede", html)
+        self.assertIn("Nenhum dado foi estimado", html)
+
+    def test_clean_run_says_so_plainly(self):
+        html = portal.build_portal("2026-09-25",
+                                   {"equities": self._result()}, {})
+        self.assertIn("nenhuma fonte falhou", html)
+        self.assertNotIn("falhou hoje", html)
+
+    def test_source_failure_is_visible_even_when_the_sleeve_survived(self):
+        # A cascata cobriu a falha, a carteira correu — e mesmo assim quem le
+        # tem de saber que uma fonte esteve em baixo.
+        resultado = self._result()
+        resultado["log"]["source_failures"] = {"yahoo": {"n": 2,
+                                                         "motivo": "HTTP 429"}}
+        html = portal.build_portal("2026-09-25", {"equities": resultado}, {})
+        self.assertIn("Fontes com falha", html)
+        self.assertIn("yahoo", html)
+
+    def test_the_three_regime_states_are_distinguishable(self):
+        base = self._result()
+        ligado = portal._regime_badge(base, "SPY")
+        self.assertIn("risco ligado", ligado)
+        self.assertNotIn("proxy", ligado)
+
+        por_proxy = portal._regime_badge({**base, "regime_fonte": "BOVA11"},
+                                         "IBOV")
+        self.assertIn("via proxy BOVA11", por_proxy)
+
+        # Uma SMA 200 sem 200 pregoes devolve o mesmo valor que uma aprovacao.
+        # Dizer qual dos dois foi e a diferenca entre um filtro e a aparencia
+        # de um filtro.
+        nao_avaliado = portal._regime_badge({**base, "regime_avaliado": False},
+                                            "IBOV")
+        self.assertIn("nao avaliado", nao_avaliado)
+        self.assertNotIn("risco ligado", nao_avaliado)
+
+    def test_direction_never_depends_on_colour_alone(self):
+        subiu = portal._delta(0.01)
+        desceu = portal._delta(-0.01)
+        self.assertIn("&#9650;", subiu)     # seta para cima
+        self.assertIn("&#9660;", desceu)    # seta para baixo
+        self.assertIn("+1.00 pp", subiu)
+        self.assertIn("-1.00 pp", desceu)
+
+    def test_text_from_the_data_cannot_inject_markup(self):
+        resultado = self._result()
+        resultado["log"]["rejected"] = [
+            {"symbol": "<script>alert(1)</script>", "reason": "a & b"}]
+        html = portal.build_portal("2026-09-25", {"equities": resultado}, {})
+        self.assertNotIn("<script>alert", html)
+        self.assertIn("&lt;script&gt;", html)
+        self.assertIn("a &amp; b", html)
+
+    def test_dark_mode_is_declared(self):
+        html = portal.build_portal("2026-09-25",
+                                   {"equities": self._result()}, {})
+        self.assertIn("prefers-color-scheme: dark", html)
+
+    def test_write_portal_keeps_one_current_file_and_no_dated_copies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            destino = Path(tmp) / "reports"
+            caminho = portal.write_portal("2026-09-25",
+                                          {"equities": self._result()}, {},
+                                          None, destino)
+            self.assertEqual(caminho.name, "PORTAL_ATUAL.html")
+            self.assertEqual([p.name for p in destino.iterdir()],
+                             ["PORTAL_ATUAL.html"])
+            self.assertIn("Quatro Mandatos", caminho.read_text(encoding="utf-8"))
+
+    def test_a_cycle_with_no_sleeve_still_produces_a_readable_page(self):
+        html = portal.build_portal("2026-09-25", {}, {"equities": "sem rede"})
+        self.assertIn("Quatro Mandatos", html)
+        self.assertIn("sem execucao hoje", html)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import traceback
 
-from . import charts, data_sources, engine, report
+from . import charts, data_sources, engine, portal, report
 
 SLEEVE_RUNNERS = {
     "equities": engine.run_equities,
@@ -37,6 +37,18 @@ def main() -> int:
         chart_path = charts.write_chart(today, report.chart_panels(results),
                                         report.REPORTS_DIR)
         print(f"Grafico escrito em {chart_path}")
+
+    # O portal e camada de leitura: se rebentar, o ciclo ja entregou o
+    # relatorio e o grafico, e derrubar a execucao por causa da vista bonita
+    # seria trocar o que importa pelo que ajuda.
+    try:
+        portal_path = portal.write_portal(today, results, errors,
+                                          source_failures, report.REPORTS_DIR)
+        print(f"Portal escrito em {portal_path}")
+    except Exception:  # noqa: BLE001 - nunca derruba o ciclo
+        print("AVISO: portal nao foi gerado (relatorio e grafico intactos).",
+              file=sys.stderr)
+        traceback.print_exc()
 
     if not results:
         print("FALHA: nenhuma carteira executou.", file=sys.stderr)
