@@ -65,6 +65,15 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(c['DELTA_PAPER_MONITOR']['expected_ledger'], 'runtime/ledgers/delta_paper_monitor/STATUS.json')
         self.assertIsNone(c['D100']['expected_artifact'])
         self.assertEqual(c['D100']['expected_ledger'], 'runtime/ledgers/d100/STATUS.json')
+        self.assertEqual(c['D50_ECONOMIC']['expected_workflow_job'], 'gate-btc-d50-runtime-authority.yml')
+        self.assertIsNone(c['D50_ECONOMIC']['expected_artifact'])
+        self.assertEqual(c['D50_ECONOMIC']['expected_ledger'], 'runtime/ledgers/d50/STATUS.json')
+        self.assertEqual(c['B3_H31']['expected_workflow_job'], 'gate-btc-b3-h31-prospective.yml')
+        self.assertIsNone(c['B3_H31']['expected_artifact'])
+        self.assertEqual(c['B3_H31']['expected_ledger'], 'runtime/ledgers/b3_h31_prospective/STATUS.json')
+        self.assertEqual(c['PRL50']['expected_workflow_job'], 'gate-btc-prl50-position-shadow.yml')
+        self.assertIsNone(c['PRL50']['expected_artifact'])
+        self.assertEqual(c['PRL50']['expected_ledger'], 'runtime/ledgers/prl50_position/STATUS.json')
 
     def test_d100_registry_matches_forward_only_authority(self):
         c = {x['collector_id']: x for x in self.r['collectors']}['D100']
@@ -83,12 +92,15 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
 
-    def test_workflow_score_does_not_match_token_substrings(self):
-        collector = {"collector_id": "NO_LOCK", "expected_workflow_job": "discover preservation workflow"}
+    def test_workflow_score_requires_two_fuzzy_tokens(self):
+        vague = {"collector_id": "NO_LOCK", "expected_workflow_job": "discover preservation workflow"}
         false_match = {"name": "GATE BTC Shadow Executive 13 Blocks", "path": ".github/workflows/gate-btc-shadow-executive.yml"}
-        true_match = {"name": "GATE BTC No Lock Preservation", "path": ".github/workflows/gate-btc-no-lock-preservation.yml"}
-        self.assertEqual(supervisor.workflow_score(collector, false_match), 0)
-        self.assertGreater(supervisor.workflow_score(collector, true_match), 0)
+        one_token = {"name": "GATE BTC Cross Asset Holdout Lock", "path": ".github/workflows/cross-asset-lock.yml"}
+        exact = {"collector_id": "NO_LOCK", "expected_workflow_job": "gate-btc-no-lock-preservation.yml"}
+        true_exact = {"name": "GATE BTC No Lock Preservation", "path": ".github/workflows/gate-btc-no-lock-preservation.yml"}
+        self.assertEqual(supervisor.workflow_score(vague, false_match), 0)
+        self.assertEqual(supervisor.workflow_score(vague, one_token), 0)
+        self.assertEqual(supervisor.workflow_score(exact, true_exact), 100)
 
     def test_workflow_discovery_paginates_until_short_page(self):
         pages = {
