@@ -102,6 +102,17 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(supervisor.workflow_score(vague, one_token), 0)
         self.assertEqual(supervisor.workflow_score(exact, true_exact), 100)
 
+    def test_latest_run_ignores_pull_request_validations(self):
+        payload = {"workflow_runs": [
+            {"id": 3, "event": "pull_request", "conclusion": "success"},
+            {"id": 2, "event": "pull_request", "conclusion": "success"},
+            {"id": 1, "event": "workflow_run", "conclusion": "success"},
+        ]}
+        with patch.object(supervisor, "api", return_value=payload) as mocked:
+            run = supervisor.latest_run("owner/repo", 99, "token")
+        self.assertEqual(run["id"], 1)
+        self.assertIn("per_page=100", mocked.call_args.args[0])
+
     def test_workflow_discovery_paginates_until_short_page(self):
         pages = {
             1: {"workflows": [{"id": i} for i in range(100)]},
