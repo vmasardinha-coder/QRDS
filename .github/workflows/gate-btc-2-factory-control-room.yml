@@ -11,7 +11,7 @@ on:
       - 'tools/gate_btc_2_factory_control_room.py'
       - '.github/workflows/gate-btc-2-factory-control-room.yml'
   workflow_run:
-    workflows: ['GATE BTC 2 Item 3D Forward Adjudication']
+    workflows: ['GATE BTC 2 Item 3D Forward Adjudication', 'GATE BTC External Family Forward Collector']
     types: [completed]
   schedule:
     - cron: '50 22 * * 1-5'
@@ -51,6 +51,12 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+      - name: Check out external prospective runtime
+        uses: actions/checkout@v4
+        with:
+          ref: runtime/gate-btc-external-forward
+          path: external_runtime_repo
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -76,6 +82,7 @@ jobs:
           mkdir -p out
           python main_repo/tools/gate_btc_2_factory_control_room.py \
             --runtime-root runtime_repo \
+            --external-runtime-root external_runtime_repo \
             --out-json out/FACTORY_CONTROL_ROOM.json \
             --out-md out/FACTORY_CONTROL_ROOM.md
           python - <<'PY'
@@ -85,6 +92,9 @@ jobs:
           assert x['population']['experimental_shadow_eligible']==580
           assert x['population']['active']==580
           assert x['population']['adjudication_population']==580
+          assert sum(x['collection']['latest_family_state_counts'].values())==580
+          assert x['external_forward']['available'] is True
+          assert set(x['external_forward']['families'])=={'F-XMM-INVENTORY','F-XVOL-SURFACE'}
           assert x['safety']['RESEARCH_ONLY'] and x['safety']['SHADOW_ONLY']
           assert x['safety']['NO_BACKFILL'] and x['safety']['NO_RETUNE']
           assert x['safety']['ENGINE_FEED'] is False
@@ -92,8 +102,10 @@ jobs:
           print('FACTORY_CONTROL_ROOM=PASS')
           print('FACTORY_ACTIVE='+str(x['population']['active']))
           print('FACTORY_LEDGER_SESSIONS='+str(x['collection']['ledger_session_count']))
+          print('FACTORY_LATEST_STATES='+json.dumps(x['collection']['latest_family_state_counts'],sort_keys=True))
           print('FACTORY_TRIGGERED_CELLS='+str(x['adjudication']['triggered_cells']))
           print('FACTORY_60_COMPLETE='+str(x['adjudication']['checkpoint_60_complete_cells']))
+          print('FACTORY_EXTERNAL='+json.dumps(x['external_forward']['families'],sort_keys=True))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
