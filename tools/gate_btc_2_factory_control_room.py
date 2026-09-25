@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,17 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_reclassification_counts(path: Path) -> tuple[int, int]:
+    if not path.is_file():
+        raise FileNotFoundError(f"REQUIRED_RUNTIME_MISSING:{path}")
+    text = path.read_text(encoding="utf-8")
+    total = re.search(r"Autonomous families scanned:\s*\*\*(\d+)\*\*", text)
+    eligible = re.search(r"Experimental-shadow eligible[^:]*:\s*\*\*(\d+)\*\*", text)
+    if not total or not eligible:
+        raise RuntimeError("RECLASSIFICATION_SUMMARY_SCHEMA_UNRECOGNIZED")
+    return int(total.group(1)), int(eligible.group(1))
+
+
 def count_ledger_sessions(ledger_root: Path) -> int:
     if not ledger_root.is_dir():
         raise FileNotFoundError(f"REQUIRED_RUNTIME_MISSING:{ledger_root}")
@@ -30,19 +42,20 @@ def count_ledger_sessions(ledger_root: Path) -> int:
 def summarize(runtime_root: Path) -> dict[str, Any]:
     base = runtime_root / "runtime" / "gate_btc_2"
     shadow = base / "item3_forward_shadow"
-    reclass = load_json(base / "item3_reclassification" / "FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.json")
+    reclass_count, eligible_count = load_reclassification_counts(
+        base / "item3_reclassification" / "FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md"
+    )
     activation = load_json(shadow / "ACTIVATION_MANIFEST.json")
     collector = load_json(shadow / "COLLECTOR_STATUS.json")
     adjudication = load_json(shadow / "ADJUDICATION_STATUS.json")
     source_binding = load_json(shadow / "FORWARD_SOURCE_BINDING.json")
     source_discovery = load_json(base / "source_discovery" / "MT5_EVIDENCE_RECORD.json")
 
-    eligible = [x for x in reclass.get("families", []) if x.get("experimental_shadow_eligible") is True]
-    reclass_count = len(reclass.get("families", []))
-    eligible_count = len(eligible)
     active_count = int(activation.get("active_family_count", -1))
     adjudication_population = int(adjudication.get("population_count", len(adjudication.get("families", []))))
 
+    if reclass_count != 2560:
+        raise RuntimeError(f"RECLASSIFIED_POPULATION_INVARIANT_FAIL:{reclass_count}")
     if eligible_count != 580:
         raise RuntimeError(f"ELIGIBLE_POPULATION_INVARIANT_FAIL:{eligible_count}")
     if active_count != eligible_count:
@@ -74,7 +87,6 @@ def summarize(runtime_root: Path) -> dict[str, Any]:
         "ORDERS": 0,
         "REAL_CAPITAL": 0,
     }
-    # Fail closed if any canonical runtime claims operational authority.
     for obj_name, obj in (("collector", collector), ("adjudication", adjudication)):
         if obj.get("engine_feed") is not False or int(obj.get("orders", 0)) != 0 or int(obj.get("real_capital", 0)) != 0:
             raise RuntimeError(f"SAFETY_BOUNDARY_FAIL:{obj_name}")
@@ -157,7 +169,6 @@ def render_markdown(x: dict[str, Any]) -> str:
 
 
 def self_test() -> None:
-    # Pure formatting smoke-test; runtime invariants are checked against canonical files in workflow.
     x={"generated_at_utc":"x","population":{"reclassified_total":2560,"experimental_shadow_eligible":580,"active":580},"collection":{"ledger_session_count":1,"latest_collector_status":"OK","latest_collector_session":"2026-09-24"},"adjudication":{"triggered_cells":0,"checkpoint_60_complete_cells":0,"min_trigger_count":0,"max_trigger_count":0,"family_state_counts":{"CONTINUE_EXPERIMENTAL_SHADOW":580},"cell_state_counts":{"AWAITING_FORWARD_TRIGGERS":1740}},"source":{"binding_status":"FORWARD_SOURCE_BOUND","selected_symbol":"WINV26","waiting_source_semantics_count":0,"discovery_status":"AVAILABLE_SOURCE_CANDIDATE","discovery_record_count":42,"discovery_source_admission_pass":False}}
     md=render_markdown(x)
     assert "580" in md and "60/60" in md and "NO_BACKFILL=true" in md
