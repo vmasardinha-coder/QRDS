@@ -118,10 +118,15 @@ def histories(records: list[dict]) -> dict[str, list[float]]:
 
 
 def previous_close(records: list[dict]) -> float | None:
-    for rec in reversed(records):
-        v = rec.get("session_close")
-        if isinstance(v, (int, float)) and float(v) > 0:
-            return float(v)
+    # Frozen feature semantics require the immediately prior prospective
+    # session close. Never skip a recorded gap/unavailable session and use
+    # an older close, because that would silently turn a multi-session gap
+    # into a valid one-session GAP_FROM_PRIOR_CLOSE observation.
+    if not records:
+        return None
+    v = records[-1].get("session_close")
+    if isinstance(v, (int, float)) and float(v) > 0:
+        return float(v)
     return None
 
 
@@ -212,6 +217,9 @@ def self_test() -> None:
     assert raw_feature("OPEN_RETURN", rows, 15, None) is not None
     assert raw_feature("VOLUME_EARLY", rows, 15, None) == 303.0
     assert raw_feature("GAP_FROM_PRIOR_CLOSE", rows, 15, 99900.0) is not None
+    assert previous_close([]) is None
+    assert previous_close([{"session_close": 100.0}]) == 100.0
+    assert previous_close([{"session_close": 100.0}, {"session_close": None}]) is None
     assert causal_z([1, 2, 3], 4, 4) is None
     assert causal_z([1, 2, 3, 4], 5, 4) is not None
     c = {
