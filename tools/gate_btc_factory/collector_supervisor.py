@@ -106,7 +106,19 @@ def repair(repo, collector, wf, run, anomaly, token):
     if not token or not anomaly:
         return result
     if anomaly == "WORKFLOW_FAILED" and "rerun_failed_job" in allow and run and int(run.get("run_attempt", 1)) < 2:
-        api(f"/repos/{repo}/actions/runs/{run['id']}/rerun-failed-jobs", token, "POST")
+        try:
+            api(f"/repos/{repo}/actions/runs/{run['id']}/rerun-failed-jobs", token, "POST")
+        except RuntimeError as exc:
+            if "This workflow run cannot be retried" not in str(exc):
+                raise
+            result.update(
+                repair_attempted=False,
+                repair_result="RERUN_NOT_AVAILABLE",
+                repair_evidence={"run_id": run["id"], "prior_attempt": run.get("run_attempt"), "reason": "GITHUB_RUN_NOT_RETRIABLE"},
+                regression_fix=False,
+                idempotence="NO_MUTATION",
+            )
+            return result
         result.update(repair_attempted=True, repair_result="RERUN_FAILED_JOBS_REQUESTED", repair_evidence={"run_id": run["id"], "prior_attempt": run.get("run_attempt")}, regression_fix=True, idempotence="BOUNDED_TO_ONE_AUTOMATIC_RETRY")
     elif anomaly == "SCHEDULE_DISABLED" and "restore_authorized_schedule" in allow and wf:
         api(f"/repos/{repo}/actions/workflows/{wf['id']}/enable", token, "PUT")

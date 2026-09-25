@@ -1,5 +1,8 @@
 import json
 import unittest
+from unittest.mock import patch
+
+from tools.gate_btc_factory import collector_supervisor as supervisor
 from pathlib import Path
 
 
@@ -70,6 +73,26 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['V16B'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
+
+    def test_unretryable_failed_run_is_recorded_without_crashing(self):
+        collector = {"approved_auto_repair_actions": ["rerun_failed_job"]}
+        run = {"id": 123, "run_attempt": 1}
+        with patch.object(supervisor, "api", side_effect=RuntimeError(
+            "GitHub API POST /x: HTTP 403: {\"message\":\"This workflow run cannot be retried\"}"
+        )):
+            result = supervisor.repair("owner/repo", collector, {"id": 7}, run, "WORKFLOW_FAILED", "token")
+        self.assertFalse(result["repair_attempted"])
+        self.assertFalse(result["regression_fix"])
+        self.assertEqual(result["repair_result"], "RERUN_NOT_AVAILABLE")
+        self.assertEqual(result["idempotence"], "NO_MUTATION")
+        self.assertEqual(result["repair_evidence"]["reason"], "GITHUB_RUN_NOT_RETRIABLE")
+
+    def test_other_rerun_api_errors_still_fail_closed(self):
+        collector = {"approved_auto_repair_actions": ["rerun_failed_job"]}
+        run = {"id": 123, "run_attempt": 1}
+        with patch.object(supervisor, "api", side_effect=RuntimeError("GitHub API POST /x: HTTP 500: boom")):
+            with self.assertRaises(RuntimeError):
+                supervisor.repair("owner/repo", collector, {"id": 7}, run, "WORKFLOW_FAILED", "token")
 
 
 if __name__ == '__main__':
