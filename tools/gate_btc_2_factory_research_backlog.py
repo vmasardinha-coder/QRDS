@@ -56,7 +56,8 @@ def parse_doc(path: Path) -> dict:
 
 def build(main_root: Path) -> dict:
     docs_root = main_root / "crypto_decision_lab/docs"
-    rows = [parse_doc(p) for p in sorted(docs_root.glob(DOC_GLOB))]
+    paths = [p for p in sorted(docs_root.glob(DOC_GLOB)) if "REGISTRY" not in p.stem.upper()]
+    rows = [parse_doc(p) for p in paths]
     not_eligible = [r for r in rows if r["prospective_eligibility"].upper() == "NOT_ELIGIBLE"]
     eligible = [r for r in rows if r["prospective_eligibility"].upper() not in {"NOT_ELIGIBLE", "UNSPECIFIED"}]
     return {
