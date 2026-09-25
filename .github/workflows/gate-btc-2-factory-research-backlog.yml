@@ -1,0 +1,121 @@
+name: GATE BTC 2 Factory Research Backlog
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_factory_research_backlog.py'
+      - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
+      - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_factory_research_backlog.py'
+      - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
+      - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
+  schedule:
+    - cron: '25 23 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-factory-research-backlog
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  backlog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical main or PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          path: main_repo
+      - name: Check out canonical runtime
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+      - name: Validate implementation
+        run: |
+          set -euo pipefail
+          python -m py_compile main_repo/tools/gate_btc_2_factory_research_backlog.py
+          python main_repo/tools/gate_btc_2_factory_research_backlog.py --self-test
+      - name: Build read-only research backlog
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_factory_research_backlog.py \
+            --main-root main_repo \
+            --out-json out/FACTORY_RESEARCH_BACKLOG.json \
+            --out-md out/FACTORY_RESEARCH_BACKLOG.md
+          python - <<'PY'
+          import json
+          x=json.load(open('out/FACTORY_RESEARCH_BACKLOG.json',encoding='utf-8'))
+          assert x['mode']=='READ_ONLY_RESEARCH_BACKLOG'
+          assert x['authority']['source_admission_authority'] is False
+          assert x['authority']['collector_creation_authority'] is False
+          assert x['authority']['promotion_authority'] is False
+          assert x['authority']['execution_authority'] is False
+          assert x['authority']['scientific_credit']==0
+          assert x['safety']['RESEARCH_ONLY'] and x['safety']['SHADOW_ONLY']
+          assert x['safety']['NO_BACKFILL'] and x['safety']['NO_RETUNE']
+          assert x['safety']['ENGINE_FEED'] is False
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('FACTORY_RESEARCH_BACKLOG=PASS')
+          print('REGISTERED_HYPOTHESES='+str(x['summary']['registered_hypothesis_documents']))
+          print('NOT_ELIGIBLE='+str(x['summary']['not_eligible_count']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-factory-research-backlog
+          path: out
+          if-no-files-found: error
+          retention-days: 90
+      - name: Persist canonical research backlog
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/control_room
+          cp ../out/FACTORY_RESEARCH_BACKLOG.json runtime/gate_btc_2/control_room/FACTORY_RESEARCH_BACKLOG.json
+          cp ../out/FACTORY_RESEARCH_BACKLOG.md runtime/gate_btc_2/control_room/FACTORY_RESEARCH_BACKLOG.md
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/gate_btc_2/control_room/FACTORY_RESEARCH_BACKLOG.json runtime/gate_btc_2/control_room/FACTORY_RESEARCH_BACKLOG.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update Factory research backlog inventory'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
