@@ -1,3 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quatro Mandatos — 2026-09-25</title>
+<style>
+:root {
+  color-scheme: light;
+  --plane:#f9f9f7; --surface:#fcfcfb;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --hairline:rgba(11,11,11,0.10); --rule:#e1e0d9;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --up:#006300; --down:#d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane:#0d0d0d; --surface:#1a1a19;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+    --hairline:rgba(255,255,255,0.10); --rule:#2c2c2a;
+    --up:#0ca30c; --down:#e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:#0d0d0d; --surface:#1a1a19;
+  --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --hairline:rgba(255,255,255,0.10); --rule:#2c2c2a;
+  --up:#0ca30c; --down:#e66767;
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; background:var(--plane); color:var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  font-size:15px; line-height:1.55;
+}
+.p-wrap { max-width:1180px; margin:0 auto; padding:32px 24px 72px; }
+@media (max-width:640px) { .p-wrap { padding:24px 16px 56px; } }
+.p-head h1 { font-size:26px; font-weight:600; margin:0 0 4px; letter-spacing:-0.01em; }
+.p-head .p-date { color:var(--ink-2); margin:0 0 2px; font-size:14px; }
+.p-head .p-disclaimer { color:var(--ink-muted); margin:0 0 20px; font-size:13px; max-width:62ch; }
+.p-health {
+  margin:0 0 28px; padding:10px 14px; border-radius:8px; font-size:14px;
+  background:var(--surface); border:1px solid var(--hairline);
+  border-left:3px solid var(--rule);
+}
+.p-health.p-good { border-left-color:var(--good); }
+.p-health.p-warning { border-left-color:var(--warning); }
+.p-health.p-critical { border-left-color:var(--critical); }
+.p-grid {
+  display:grid; gap:14px; margin:0 0 32px;
+  grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+}
+.p-card {
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:10px; padding:16px;
+}
+.p-card-error { border-left:3px solid var(--critical); }
+.p-card-label { margin:0; font-size:14px; font-weight:600; }
+/* duas linhas reservadas: "bater o maior entre Ibovespa e CDI" quebra, e sem
+   isto o cartao da B3 descia e a fila de quatro deixava de alinhar */
+.p-card-goal { margin:1px 0 12px; font-size:12px; color:var(--ink-muted);
+               min-height:2.9em; }
+.p-card-value { margin:0; font-size:27px; font-weight:600; letter-spacing:-0.02em; }
+.p-card-delta { margin:4px 0 14px; font-size:14px; }
+.p-card-vs { color:var(--ink-muted); font-size:12px; margin-left:7px; }
+.p-delta { font-weight:600; font-variant-numeric:tabular-nums; }
+.p-delta.p-up { color:var(--up); }
+.p-delta.p-down { color:var(--down); }
+.p-card-rows { margin:0; font-size:13px; }
+.p-card-rows > div {
+  display:flex; justify-content:space-between; gap:12px;
+  padding:4px 0; border-top:1px solid var(--rule);
+}
+.p-card-rows dt { color:var(--ink-2); margin:0; }
+.p-card-rows dd { margin:0; font-variant-numeric:tabular-nums; }
+.p-card-regime { margin:12px 0 0; font-size:12px; }
+.p-badge {
+  display:inline-flex; align-items:center; gap:5px; font-weight:600;
+  color:var(--ink);
+}
+.p-badge .p-good { color:var(--good); }
+.p-badge .p-warning { color:var(--warning); }
+.p-badge .p-serious { color:var(--serious); }
+.p-badge .p-critical { color:var(--critical); }
+.p-badge-note { color:var(--ink-muted); font-weight:400; }
+.p-chart {
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:10px; padding:8px; margin:0 0 36px; overflow:hidden;
+}
+.p-chart svg { display:block; width:100%; height:auto; }
+.p-section { margin:0 0 30px; }
+.p-section h2 {
+  font-size:18px; font-weight:600; margin:0 0 12px;
+  padding-bottom:8px; border-bottom:1px solid var(--rule);
+}
+.p-section h3 { font-size:13px; font-weight:600; color:var(--ink-2);
+                margin:18px 0 8px; text-transform:uppercase;
+                letter-spacing:0.05em; }
+.p-note { margin:8px 0; font-size:14px; color:var(--ink-2); }
+.p-note-error { color:var(--critical); }
+.p-muted { color:var(--ink-muted); font-size:14px; }
+.p-scroll { overflow-x:auto; }
+.p-table { border-collapse:collapse; width:100%; font-size:13px;
+           font-variant-numeric:tabular-nums; }
+.p-table th {
+  text-align:left; font-weight:600; color:var(--ink-2); font-size:12px;
+  padding:6px 12px 6px 0; border-bottom:1px solid var(--rule); white-space:nowrap;
+}
+.p-table td { padding:6px 12px 6px 0; border-bottom:1px solid var(--rule); }
+.p-table th:not(:first-child), .p-table td:not(:first-child) { text-align:right; }
+/* colunas de texto marcadas a mao: com ':last-child' a coluna "Peso" tambem
+   era apanhada, e uma percentagem alinhada a esquerda deixa de se comparar */
+.p-table th.p-text, .p-table td.p-text { text-align:left; }
+.p-details { margin:16px 0 0; }
+.p-details summary {
+  cursor:pointer; font-size:13px; color:var(--ink-2); font-weight:600;
+  padding:6px 0;
+}
+.p-audit { margin:8px 0; padding-left:20px; font-size:13px; color:var(--ink-2); }
+.p-audit li { margin:3px 0; }
+code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+       font-size:0.9em; }
+.p-foot { margin-top:40px; padding-top:16px; border-top:1px solid var(--rule);
+          font-size:12px; color:var(--ink-muted); max-width:70ch; }
+</style>
+</head>
+<body>
+<div class="p-wrap">
+<header class="p-head">
+  <h1>Quatro Mandatos</h1>
+  <p class="p-date">Ciclo de 2026-09-25</p>
+  <p class="p-disclaimer">Paper trading 100% autonomo com precos reais de
+  mercado. Nenhum dinheiro real esta a ser negociado. Os premios de opcoes da
+  carteira de estruturadas sao modelados (Black-Scholes com volatilidade
+  GARCH).</p>
+</header>
+<p class="p-health p-good"><span aria-hidden="true">&#9679;</span> <strong>Todas as carteiras correram e nenhuma fonte falhou.</strong></p>
+<div class="p-grid">
+<article class="p-card">
+<h3 class="p-card-label">Acoes EUA</h3>
+<p class="p-card-goal">objetivo: bater o S&amp;P 500</p>
+<p class="p-card-value">$52,401.36</p>
+<p class="p-card-delta"><span class="p-delta p-up"><span aria-hidden="true">&#9650;</span> +5.14 pp</span><span class="p-card-vs">alfa vs SPY</span></p>
+<dl class="p-card-rows">
+<div><dt>No dia</dt><dd>+0.52%</dd></div>
+<div><dt>Desde o inicio</dt><dd>+4.80%</dd></div>
+<div><dt>SPY</dt><dd>-0.34%</dd></div>
+</dl>
+<p class="p-card-regime"><span class="p-badge"><span class="p-good" aria-hidden="true">&#9679;</span> risco ligado</span></p>
+</article>
+<article class="p-card">
+<h3 class="p-card-label">Crypto</h3>
+<p class="p-card-goal">objetivo: bater o BTC</p>
+<p class="p-card-value">$71,121.63</p>
+<p class="p-card-delta"><span class="p-delta p-up"><span aria-hidden="true">&#9650;</span> +11.24 pp</span><span class="p-card-vs">alfa vs BTC</span></p>
+<dl class="p-card-rows">
+<div><dt>No dia</dt><dd>-0.00%</dd></div>
+<div><dt>Desde o inicio</dt><dd>+42.24%</dd></div>
+<div><dt>BTC</dt><dd>+31.00%</dd></div>
+</dl>
+<p class="p-card-regime"><span class="p-badge"><span class="p-good" aria-hidden="true">&#9679;</span> risco ligado</span></p>
+</article>
+<article class="p-card">
+<h3 class="p-card-label">Acoes B3</h3>
+<p class="p-card-goal">objetivo: bater o maior entre Ibovespa e CDI</p>
+<p class="p-card-value">R$ 52,865.02</p>
+<p class="p-card-delta"><span class="p-delta p-up"><span aria-hidden="true">&#9650;</span> +0.93 pp</span><span class="p-card-vs">alfa vs o maior (IBOV)</span></p>
+<dl class="p-card-rows">
+<div><dt>No dia</dt><dd>+0.00%</dd></div>
+<div><dt>Desde o inicio</dt><dd>+5.73%</dd></div>
+<div><dt>IBOV</dt><dd>+4.80%</dd></div>
+</dl>
+<p class="p-card-regime"><span class="p-badge"><span class="p-good" aria-hidden="true">&#9679;</span> risco ligado</span> <span class="p-badge-note">via proxy BOVA11</span></p>
+</article>
+<article class="p-card">
+<h3 class="p-card-label">Estruturadas B3</h3>
+<p class="p-card-goal">objetivo: bater o CDI</p>
+<p class="p-card-value">R$ 52,512.47</p>
+<p class="p-card-delta"><span class="p-delta p-up"><span aria-hidden="true">&#9650;</span> +0.23 pp</span><span class="p-card-vs">alfa vs o maior (IBOV)</span></p>
+<dl class="p-card-rows">
+<div><dt>No dia</dt><dd>+0.02%</dd></div>
+<div><dt>Desde o inicio</dt><dd>+5.02%</dd></div>
+<div><dt>IBOV</dt><dd>+4.80%</dd></div>
+</dl>
+</article>
+</div>
+<div class="p-chart">
 <svg xmlns="http://www.w3.org/2000/svg" width="1076" height="682"
      viewBox="0 0 1076 682" role="img"
      aria-label="Historico das carteiras indexado a base 100, por carteira">
@@ -584,3 +774,118 @@
 <text class="direct" style="fill:var(--series-3)" x="409.0" y="90.0">CDI</text>
 </g>
 </svg>
+
+</div>
+<section class="p-section" id="equities">
+<h2>Acoes EUA (objetivo: bater o S&amp;P 500)</h2>
+<h3>Posicoes</h3>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Ativo</th><th>Qtd</th><th>Preco</th><th>Valor</th><th>Peso</th></tr></thead><tbody>
+<tr><td>INTC</td><td>45.4629</td><td>$127.39</td><td>$5,791.52</td><td>11.1%</td></tr>
+<tr><td>AMD</td><td>8.81939</td><td>$629.26</td><td>$5,549.69</td><td>10.6%</td></tr>
+<tr><td>PANW</td><td>14.0351</td><td>$389.92</td><td>$5,472.56</td><td>10.4%</td></tr>
+<tr><td>MU</td><td>4.94041</td><td>$1,080.53</td><td>$5,338.26</td><td>10.2%</td></tr>
+<tr><td>LRCX</td><td>17.1367</td><td>$307.16</td><td>$5,263.72</td><td>10.0%</td></tr>
+<tr><td>KLAC</td><td>27.8957</td><td>$187.11</td><td>$5,219.57</td><td>10.0%</td></tr>
+<tr><td>AMAT</td><td>10.6875</td><td>$474.25</td><td>$5,068.57</td><td>9.7%</td></tr>
+<tr><td>MRK</td><td>33.6166</td><td>$147.98</td><td>$4,974.58</td><td>9.5%</td></tr>
+<tr><td>CAT</td><td>5.99638</td><td>$805.25</td><td>$4,828.58</td><td>9.2%</td></tr>
+<tr><td>TGT</td><td>30.8094</td><td>$156.15</td><td>$4,810.89</td><td>9.2%</td></tr>
+</tbody></table></div>
+<h3>Movimentacoes de hoje</h3>
+<p class="p-muted">Sem movimentacoes hoje.</p>
+<details class="p-details"><summary>Rasto de decisao (auditoria)</summary><ul class="p-audit"><li><strong>Gatilho:</strong> nenhum (sem motivo para negociar)</li><li><strong>Obstaculo (SPY):</strong> momentum de +15.5% — so entram ativos acima disto</li><li><strong>Candidatos elegiveis:</strong> 47</li><li><strong>Fontes usadas:</strong> nasdaq: 101</li></ul>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Rejeitado</th><th class="p-text">Motivo</th></tr></thead><tbody>
+<tr><td>ABT</td><td class="p-text">nao bate o benchmark (-14.5% &lt;= +15.5%)</td></tr>
+<tr><td>ACN</td><td class="p-text">nao bate o benchmark (-20.6% &lt;= +15.5%)</td></tr>
+<tr><td>ADBE</td><td class="p-text">nao bate o benchmark (-24.3% &lt;= +15.5%)</td></tr>
+<tr><td>AMT</td><td class="p-text">nao bate o benchmark (-8.1% &lt;= +15.5%)</td></tr>
+<tr><td>AVGO</td><td class="p-text">nao bate o benchmark (+5.3% &lt;= +15.5%)</td></tr>
+<tr><td>AXP</td><td class="p-text">nao bate o benchmark (-1.6% &lt;= +15.5%)</td></tr>
+<tr><td>BA</td><td class="p-text">nao bate o benchmark (-2.4% &lt;= +15.5%)</td></tr>
+<tr><td>BKNG</td><td class="p-text">nao bate o benchmark (-3.0% &lt;= +15.5%)</td></tr>
+<tr><td colspan="2" class="p-muted">(+45 outros)</td></tr>
+</tbody></table></div></details>
+</section>
+<section class="p-section" id="crypto">
+<h2>Crypto (objetivo: bater o BTC)</h2>
+<h3>Posicoes</h3>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Ativo</th><th>Qtd</th><th>Preco</th><th>Valor</th><th>Peso</th></tr></thead><tbody>
+<tr><td>BTC</td><td>0.421585</td><td>$84,386.41</td><td>$35,576.00</td><td>50.0%</td></tr>
+<tr><td>ARB</td><td>49350.3</td><td>$0.22</td><td>$10,730.72</td><td>15.1%</td></tr>
+<tr><td>UNI</td><td>1167.28</td><td>$9.13</td><td>$10,660.90</td><td>15.0%</td></tr>
+<tr><td>ZEC</td><td>6.90377</td><td>$1,538.23</td><td>$10,619.59</td><td>14.9%</td></tr>
+</tbody></table></div>
+<h3>Movimentacoes de hoje</h3>
+<p class="p-muted">Sem movimentacoes hoje.</p>
+<details class="p-details"><summary>Rasto de decisao (auditoria)</summary><ul class="p-audit"><li><strong>Gatilho:</strong> nenhum (sem motivo para negociar)</li><li><strong>Obstaculo (BTC):</strong> momentum de +23.8% — so entram ativos acima disto</li><li><strong>Candidatos elegiveis:</strong> 29</li><li><strong>Fontes usadas:</strong> binance: 31, coinbase: 119, nasdaq: 101</li><li><strong>Fonte coinbase nao tem 31 ativos</strong> (servidos pela fonte seguinte)</li><li><strong>Nota:</strong> teto de 15% por alt deixou 5.0% em caixa</li></ul>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Rejeitado</th><th class="p-text">Motivo</th></tr></thead><tbody>
+<tr><td>1INCH</td><td class="p-text">liquidez baixa (0.0M &lt; 1M)</td></tr>
+<tr><td>ALICE</td><td class="p-text">liquidez baixa (0.0M &lt; 1M)</td></tr>
+<tr><td>AMP</td><td class="p-text">liquidez baixa (0.1M &lt; 1M)</td></tr>
+<tr><td>ANKR</td><td class="p-text">liquidez baixa (0.1M &lt; 1M)</td></tr>
+<tr><td>APE</td><td class="p-text">liquidez baixa (0.4M &lt; 1M)</td></tr>
+<tr><td>API3</td><td class="p-text">liquidez baixa (0.1M &lt; 1M)</td></tr>
+<tr><td>ASTR</td><td class="p-text">liquidez baixa (0.2M &lt; 1M)</td></tr>
+<tr><td>ATOM</td><td class="p-text">liquidez baixa (0.6M &lt; 1M)</td></tr>
+<tr><td colspan="2" class="p-muted">(+102 outros)</td></tr>
+</tbody></table></div></details>
+</section>
+<section class="p-section" id="b3">
+<h2>Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)</h2>
+<h3>Posicoes</h3>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Ativo</th><th>Qtd</th><th>Preco</th><th>Valor</th><th>Peso</th></tr></thead><tbody>
+<tr><td>PETR4</td><td>138.736</td><td>R$ 49.26</td><td>R$ 6,834.12</td><td>12.9%</td></tr>
+<tr><td>VBBR3</td><td>171.593</td><td>R$ 39.15</td><td>R$ 6,717.88</td><td>12.7%</td></tr>
+<tr><td>ABEV3</td><td>436.997</td><td>R$ 15.34</td><td>R$ 6,703.54</td><td>12.7%</td></tr>
+<tr><td>PRIO3</td><td>109.151</td><td>R$ 60.71</td><td>R$ 6,626.57</td><td>12.5%</td></tr>
+<tr><td>WEGE3</td><td>130.526</td><td>R$ 50.74</td><td>R$ 6,622.91</td><td>12.5%</td></tr>
+<tr><td>UGPA3</td><td>168.245</td><td>R$ 38.80</td><td>R$ 6,527.91</td><td>12.3%</td></tr>
+<tr><td>GGBR4</td><td>262.06</td><td>R$ 24.73</td><td>R$ 6,480.75</td><td>12.3%</td></tr>
+<tr><td>VALE3</td><td>89.886</td><td>R$ 70.66</td><td>R$ 6,351.35</td><td>12.0%</td></tr>
+</tbody></table></div>
+<h3>Movimentacoes de hoje</h3>
+<p class="p-muted">Sem movimentacoes hoje.</p>
+<details class="p-details"><summary>Rasto de decisao (auditoria)</summary><ul class="p-audit"><li><strong>Gatilho:</strong> nenhum (sem motivo para negociar)</li><li><strong>Obstaculo (CDI):</strong> momentum de +13.2% — so entram ativos acima disto</li><li><strong>Candidatos elegiveis:</strong> 12</li><li><strong>Fontes usadas:</strong> binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 101</li><li><strong>Fonte coinbase nao tem 31 ativos</strong> (servidos pela fonte seguinte)</li></ul>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Rejeitado</th><th class="p-text">Motivo</th></tr></thead><tbody>
+<tr><td>ASAI3</td><td class="p-text">nao bate o benchmark (-11.5% &lt;= +13.2%)</td></tr>
+<tr><td>AXIA3</td><td class="p-text">historico insuficiente</td></tr>
+<tr><td>BBAS3</td><td class="p-text">nao bate o benchmark (-9.5% &lt;= +13.2%)</td></tr>
+<tr><td>BBDC4</td><td class="p-text">nao bate o benchmark (-5.3% &lt;= +13.2%)</td></tr>
+<tr><td>BRKM5</td><td class="p-text">nao bate o benchmark (-51.6% &lt;= +13.2%)</td></tr>
+<tr><td>CMIG4</td><td class="p-text">nao bate o benchmark (-6.9% &lt;= +13.2%)</td></tr>
+<tr><td>CMIN3</td><td class="p-text">nao bate o benchmark (+12.9% &lt;= +13.2%)</td></tr>
+<tr><td>CSAN3</td><td class="p-text">nao bate o benchmark (-50.0% &lt;= +13.2%)</td></tr>
+<tr><td colspan="2" class="p-muted">(+29 outros)</td></tr>
+</tbody></table></div></details>
+</section>
+<section class="p-section" id="b3_estruturadas">
+<h2>Estruturadas B3 — financiamento coberto (objetivo: bater o CDI)</h2>
+<p class="p-note">Call vendida (premio modelado): strike R$ 187.40, vence 2026-10-05, premio R$ 2.5408/un, valor atual da obrigacao R$ 46.99</p>
+<p class="p-note">Volatilidade usada na call (GARCH(1,1)): 14.0% a.a. | realizada 30d: 15.2% a.a. | CDI: 0.0508% a.d.</p>
+<h3>Posicoes</h3>
+<div class="p-scroll"><table class="p-table">
+<thead><tr><th>Ativo</th><th>Qtd</th><th>Preco</th><th>Valor</th><th>Peso</th></tr></thead><tbody>
+<tr><td>BOVA11</td><td>290.34</td><td>R$ 180.87</td><td>R$ 52,513.75</td><td>100.0%</td></tr>
+</tbody></table></div>
+<h3>Movimentacoes de hoje</h3>
+<p class="p-muted">Sem movimentacoes hoje.</p>
+<details class="p-details"><summary>Rasto de decisao (auditoria)</summary><ul class="p-audit"><li><strong>Gatilho:</strong> nenhum (call em curso)</li><li><strong>Candidatos elegiveis:</strong> 0</li></ul></details>
+</section>
+<footer class="p-foot">
+Sob a Carta de Operacao: teto por posicao ativa, piso de diversificacao (abaixo
+dele fica caixa), stop proporcional a volatilidade do ativo, filtro de regime e
+de liquidez, e forca relativa ao benchmark. Dado em falta exclui o ativo — nunca
+e estimado. Criterios congelados: mudanca so com validacao fora-da-amostra.
+O alfa e medido contra o maior dos benchmarks quando ha dois.
+Pagina gerada pelo ciclo diario; o relatorio completo fica em
+<code>RELATORIO_ATUAL.md</code> e o grafico em <code>GRAFICO_ATUAL.svg</code>.
+</footer>
+</div>
+</body>
+</html>
