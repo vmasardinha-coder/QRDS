@@ -79,9 +79,9 @@ def all_workflows(repo, token):
 
 
 def latest_run(repo, wf_id, token):
-    data = api(f"/repos/{repo}/actions/workflows/{wf_id}/runs?per_page=5", token)
+    data = api(f"/repos/{repo}/actions/workflows/{wf_id}/runs?per_page=100", token)
     runs = data.get("workflow_runs", [])
-    return runs[0] if runs else None
+    return next((run for run in runs if run.get("event") != "pull_request"), None)
 
 
 def artifacts_for_run(repo, run_id, token):
