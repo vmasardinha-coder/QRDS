@@ -79,7 +79,7 @@ jobs:
           signal_date=json.load(open(os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'))['signal_date']
           repo=os.environ['REPO']
           runs=json.loads(subprocess.check_output([
-              'gh','api',f'repos/{repo}/actions/runs?per_page=100'
+              'gh','api',f'repos/{repo}/actions/workflows/gate-btc-v16b-cmc-snapshot.yml/runs?status=success&per_page=100'
           ], text=True))
           candidates=[]
           for r in runs.get('workflow_runs', []):
