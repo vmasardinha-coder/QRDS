@@ -34,7 +34,10 @@ def extract_int(text: str, pattern: str) -> int:
 
 
 def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
-    cr = load_json(runtime_root / "runtime/gate_btc_2/control_room/FACTORY_CONTROL_ROOM.json")
+    control_root = runtime_root / "runtime/gate_btc_2/control_room"
+    cr = load_json(control_root / "FACTORY_CONTROL_ROOM.json")
+    economics_path = control_root / "FACTORY_ECONOMICS_MONITOR.json"
+    economics = load_json(economics_path) if economics_path.is_file() else None
     reclass = load_text(runtime_root / "runtime/gate_btc_2/item3_reclassification/FACTORY_ITEM3_RECLASSIFICATION_RUNTIME.md")
     frontier = load_json(main_root / "artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json")
 
@@ -52,6 +55,29 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
     if safety["ENGINE_FEED"] is not False or int(safety["ORDERS"]) != 0 or int(safety["REAL_CAPITAL"]) != 0:
         raise RuntimeError("SAFETY_BOUNDARY_FAIL")
 
+    economic_maturity = {
+        "available": economics is not None,
+        "mode": None,
+        "families_with_any_trigger": 0,
+        "triggered_cells": 0,
+        "max_trigger_count": 0,
+        "checkpoint_60_complete_cells": 0,
+        "formal_adjudication_authority": False,
+    }
+    if economics is not None:
+        if economics.get("mode") != "READ_ONLY_DESCRIPTIVE_PARTIAL_ECONOMICS":
+            raise RuntimeError("ECONOMICS_MONITOR_MODE_MISMATCH")
+        auth = economics.get("authority") or {}
+        if auth.get("formal_adjudication_authority") is not False or auth.get("promotion_authority") is not False or int(auth.get("scientific_credit", 0)) != 0:
+            raise RuntimeError("ECONOMICS_MONITOR_AUTHORITY_FAIL")
+        economic_maturity.update({
+            "mode": economics["mode"],
+            "families_with_any_trigger": int(economics.get("families_with_any_trigger", 0)),
+            "triggered_cells": int(economics.get("triggered_cells", 0)),
+            "max_trigger_count": int(economics.get("max_trigger_count", 0)),
+            "checkpoint_60_complete_cells": int(economics.get("checkpoint_60_complete_cells", 0)),
+        })
+
     lanes = {
         "ITEM3_EXPERIMENTAL_SHADOW": {
             "state": "ACTIVE_AUTONOMOUS_PROSPECTIVE",
@@ -68,6 +94,11 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             "checkpoint_n": int(cr["adjudication"]["checkpoint_n"]),
             "checkpoint_complete_cells": int(cr["adjudication"]["checkpoint_60_complete_cells"]),
             "next_gate": "FIRST_60_FORWARD_TRIGGER_OUTCOMES_PER_FAMILY_HORIZON",
+        },
+        "ECONOMICS_MATURITY": {
+            "state": "DESCRIPTIVE_PARTIAL_MONITOR_ACTIVE" if economic_maturity["available"] else "WAIT_ECONOMICS_MONITOR",
+            **economic_maturity,
+            "next_gate": "FIRST_TRIGGER_THEN_PROGRESS_TO_60_PER_FAMILY_HORIZON",
         },
         "SOURCE_BINDING": {
             "state": cr["source"]["binding_status"],
@@ -110,7 +141,7 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
     }
 
     return {
-        "schema": "gate_btc_2.factory_inventory.v1",
+        "schema": "gate_btc_2.factory_inventory.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "READ_ONLY_CANONICAL_INVENTORY",
         "summary": {
@@ -118,6 +149,9 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             "experimental_shadow_active": eligible,
             "valid_scientific_rejections": total - eligible,
             "tracked_lanes": len(lanes),
+            "families_with_any_trigger": economic_maturity["families_with_any_trigger"],
+            "max_trigger_count": economic_maturity["max_trigger_count"],
+            "checkpoint_60_complete_cells": economic_maturity["checkpoint_60_complete_cells"],
         },
         "lanes": lanes,
         "authority": {
@@ -139,7 +173,10 @@ def render_md(x: dict[str, Any]) -> str:
         f"- Reclassified: **{s['reclassified_total']}**",
         f"- Experimental shadow active: **{s['experimental_shadow_active']}**",
         f"- Valid scientific rejections: **{s['valid_scientific_rejections']}**",
-        f"- Operational/scientific lanes tracked: **{s['tracked_lanes']}**", "",
+        f"- Operational/scientific lanes tracked: **{s['tracked_lanes']}**",
+        f"- Families with prospective trigger: **{s['families_with_any_trigger']}**",
+        f"- Max trigger maturity: **{s['max_trigger_count']} / 60**",
+        f"- Cells at formal checkpoint: **{s['checkpoint_60_complete_cells']}**", "",
         "| Lane | State | Next gate |", "|---|---|---|",
     ]
     for name, lane in x["lanes"].items():
