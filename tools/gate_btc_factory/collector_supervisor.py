@@ -120,6 +120,14 @@ def repair(repo, collector, wf, run, anomaly, token):
     allow = set(collector.get("approved_auto_repair_actions", []))
     if not token or not anomaly:
         return result
+    expected = (collector.get("expected_workflow_job") or "").strip().lower()
+    if expected.startswith("discover"):
+        result.update(
+            repair_result="BINDING_NOT_EXPLICIT_NO_REPAIR",
+            repair_evidence={"expected_workflow_job": collector.get("expected_workflow_job")},
+            idempotence="NO_MUTATION",
+        )
+        return result
     if anomaly == "WORKFLOW_FAILED" and "rerun_failed_job" in allow and run and int(run.get("run_attempt", 1)) < 2:
         try:
             api(f"/repos/{repo}/actions/runs/{run['id']}/rerun-failed-jobs", token, "POST")
