@@ -57,6 +57,15 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertIn('survivor_promotion', c['B3_H31']['prohibited_actions'])
         self.assertIn('recover_approved_missing_collector', c['B3_H31']['approved_auto_repair_actions'])
 
+    def test_registry_delivery_surfaces_are_explicit(self):
+        c = {x['collector_id']: x for x in self.r['collectors']}
+        self.assertEqual(c['B3_H1']['expected_workflow_job'], 'gate-btc-b3-h1-daily.yml')
+        self.assertEqual(c['DELTA_PAPER_MONITOR']['expected_workflow_job'], 'gate-btc-delta-paper-monitor.yml')
+        self.assertIsNone(c['DELTA_PAPER_MONITOR']['expected_artifact'])
+        self.assertEqual(c['DELTA_PAPER_MONITOR']['expected_ledger'], 'runtime/ledgers/delta_paper_monitor/STATUS.json')
+        self.assertIsNone(c['D100']['expected_artifact'])
+        self.assertEqual(c['D100']['expected_ledger'], 'runtime/ledgers/d100/STATUS.json')
+
     def test_d100_registry_matches_forward_only_authority(self):
         c = {x['collector_id']: x for x in self.r['collectors']}['D100']
         self.assertEqual(c['status_expected'], 'ACTIVE_DATA_FEED')
