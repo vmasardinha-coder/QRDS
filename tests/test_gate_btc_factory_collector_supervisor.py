@@ -83,6 +83,13 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
 
+    def test_workflow_score_does_not_match_token_substrings(self):
+        collector = {"collector_id": "NO_LOCK", "expected_workflow_job": "discover preservation workflow"}
+        false_match = {"name": "GATE BTC Shadow Executive 13 Blocks", "path": ".github/workflows/gate-btc-shadow-executive.yml"}
+        true_match = {"name": "GATE BTC No Lock Preservation", "path": ".github/workflows/gate-btc-no-lock-preservation.yml"}
+        self.assertEqual(supervisor.workflow_score(collector, false_match), 0)
+        self.assertGreater(supervisor.workflow_score(collector, true_match), 0)
+
     def test_workflow_discovery_paginates_until_short_page(self):
         pages = {
             1: {"workflows": [{"id": i} for i in range(100)]},
