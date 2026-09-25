@@ -1,0 +1,124 @@
+name: GATE BTC 2 Factory Control Room
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_factory_control_room.py'
+      - '.github/workflows/gate-btc-2-factory-control-room.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_factory_control_room.py'
+      - '.github/workflows/gate-btc-2-factory-control-room.yml'
+  workflow_run:
+    workflows: ['GATE BTC 2 Item 3D Forward Adjudication']
+    types: [completed]
+  schedule:
+    - cron: '50 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-factory-control-room
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+
+jobs:
+  aggregate:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          path: main_repo
+      - name: Check out canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+      - name: Validate control-room implementation
+        run: |
+          set -euo pipefail
+          python -m py_compile main_repo/tools/gate_btc_2_factory_control_room.py
+          python main_repo/tools/gate_btc_2_factory_control_room.py --self-test
+      - name: Aggregate canonical Factory state
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_factory_control_room.py \
+            --runtime-root runtime_repo \
+            --out-json out/FACTORY_CONTROL_ROOM.json \
+            --out-md out/FACTORY_CONTROL_ROOM.md
+          python - <<'PY'
+          import json
+          x=json.load(open('out/FACTORY_CONTROL_ROOM.json',encoding='utf-8'))
+          assert x['mode']=='READ_ONLY_AGGREGATION'
+          assert x['population']['experimental_shadow_eligible']==580
+          assert x['population']['active']==580
+          assert x['population']['adjudication_population']==580
+          assert x['safety']['RESEARCH_ONLY'] and x['safety']['SHADOW_ONLY']
+          assert x['safety']['NO_BACKFILL'] and x['safety']['NO_RETUNE']
+          assert x['safety']['ENGINE_FEED'] is False
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('FACTORY_CONTROL_ROOM=PASS')
+          print('FACTORY_ACTIVE='+str(x['population']['active']))
+          print('FACTORY_LEDGER_SESSIONS='+str(x['collection']['ledger_session_count']))
+          print('FACTORY_TRIGGERED_CELLS='+str(x['adjudication']['triggered_cells']))
+          print('FACTORY_60_COMPLETE='+str(x['adjudication']['checkpoint_60_complete_cells']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-factory-control-room
+          path: out
+          if-no-files-found: error
+          retention-days: 90
+      - name: Persist canonical control room after merge/runtime events
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/control_room
+          cp ../out/FACTORY_CONTROL_ROOM.json runtime/gate_btc_2/control_room/FACTORY_CONTROL_ROOM.json
+          cp ../out/FACTORY_CONTROL_ROOM.md runtime/gate_btc_2/control_room/FACTORY_CONTROL_ROOM.md
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/gate_btc_2/control_room/FACTORY_CONTROL_ROOM.json runtime/gate_btc_2/control_room/FACTORY_CONTROL_ROOM.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update Factory control room'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
