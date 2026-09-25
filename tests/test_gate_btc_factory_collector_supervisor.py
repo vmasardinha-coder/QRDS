@@ -74,6 +74,7 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(c['PRL50']['expected_workflow_job'], 'gate-btc-prl50-position-shadow.yml')
         self.assertIsNone(c['PRL50']['expected_artifact'])
         self.assertEqual(c['PRL50']['expected_ledger'], 'runtime/ledgers/prl50_position/STATUS.json')
+        self.assertEqual(c['BULL_REPLAY_FROZEN']['expected_workflow_job'], 'gate-btc-bull-replay-live-shadow.yml')
         self.assertEqual(c['D50_READINESS']['expected_workflow_job'], 'gate-btc-d50-mirror-reconcile.yml')
         self.assertIsNone(c['D50_READINESS']['expected_artifact'])
         self.assertEqual(c['D50_READINESS']['expected_ledger'], 'runtime/ledgers/d50/STATUS.json')
@@ -113,6 +114,13 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['V16B'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
+
+    def test_fuzzy_workflow_match_requires_all_collector_tokens(self):
+        collector = {"collector_id": "SHADOW_LIVE_BOARD", "expected_workflow_job": "discover name/path containing live/shadow"}
+        wrong = {"name": "GATE BTC Bull Replay Live Shadow", "path": ".github/workflows/gate-btc-bull-replay-live-shadow.yml"}
+        exactish = {"name": "Shadow Live Board", "path": ".github/workflows/shadow-live-board.yml"}
+        self.assertEqual(supervisor.workflow_score(collector, wrong), 0)
+        self.assertGreater(supervisor.workflow_score(collector, exactish), 0)
 
     def test_workflow_score_requires_two_fuzzy_tokens(self):
         vague = {"collector_id": "NO_LOCK", "expected_workflow_job": "discover preservation workflow"}
