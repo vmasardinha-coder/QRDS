@@ -6,7 +6,7 @@
     "scientific_credit": 0,
     "source_admission_authority": false
   },
-  "generated_at_utc": "2026-09-25T11:50:26.926898+00:00",
+  "generated_at_utc": "2026-09-25T12:43:07.529895+00:00",
   "lanes": {
     "ECONOMICS_MATURITY": {
       "available": true,
@@ -85,6 +85,27 @@
       "record_count": 42,
       "source_admission_pass": false,
       "state": "AVAILABLE_SOURCE_CANDIDATE"
+    },
+    "WARMUP_MATURITY": {
+      "ledger_sessions_observed": 1,
+      "lookback_family_counts": {
+        "10": 5,
+        "120": 26,
+        "160": 16,
+        "20": 5,
+        "200": 256,
+        "252": 256,
+        "60": 6,
+        "80": 10
+      },
+      "maximum_lookback_sessions": 252,
+      "minimum_lookback_sessions": 10,
+      "next_gate": "ACCUMULATE_FROZEN_PROSPECTIVE_SESSION_HISTORY",
+      "nominal_families_lookback_satisfied_for_next_session": 0,
+      "nominal_families_still_warming_for_next_session": 580,
+      "nominal_next_unlock_lookback_sessions": 10,
+      "note": "Nominal maturity uses only count of prior canonical ledger sessions. Actual z-score eligibility still requires complete finite feature history for the frozen family key; unavailable/gap observations never count as history.",
+      "state": "PROSPECTIVE_WARMUP_ACCUMULATING"
     }
   },
   "mode": "READ_ONLY_CANONICAL_INVENTORY",
@@ -97,14 +118,18 @@
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true
   },
-  "schema": "gate_btc_2.factory_inventory.v2",
+  "schema": "gate_btc_2.factory_inventory.v3",
   "summary": {
     "checkpoint_60_complete_cells": 0,
     "experimental_shadow_active": 580,
     "families_with_any_trigger": 0,
+    "ledger_sessions_observed": 1,
     "max_trigger_count": 0,
+    "maximum_warmup_lookback_sessions": 252,
+    "minimum_warmup_lookback_sessions": 10,
+    "nominal_families_lookback_satisfied_for_next_session": 0,
     "reclassified_total": 2560,
-    "tracked_lanes": 10,
+    "tracked_lanes": 11,
     "valid_scientific_rejections": 1980
   }
 }

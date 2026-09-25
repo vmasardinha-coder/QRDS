@@ -1,18 +1,37 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-09-25T11:50:26.926898+00:00`
+Generated: `2026-09-25T12:43:07.529895+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
 - Valid scientific rejections: **1980**
-- Operational/scientific lanes tracked: **10**
+- Operational/scientific lanes tracked: **11**
+- Canonical ledger sessions: **1**
+- Frozen warmup range: **10–252 prior sessions**
+- Nominal families lookback-satisfied for next session: **0**
 - Families with prospective trigger: **0**
 - Max trigger maturity: **0 / 60**
 - Cells at formal checkpoint: **0**
 
+## Frozen warmup distribution
+
+| Prior-session lookback | Families |
+|---:|---:|
+| 10 | 5 |
+| 20 | 5 |
+| 60 | 6 |
+| 80 | 10 |
+| 120 | 26 |
+| 160 | 16 |
+| 200 | 256 |
+| 252 | 256 |
+
+Nominal maturity uses only count of prior canonical ledger sessions. Actual z-score eligibility still requires complete finite feature history for the frozen family key; unavailable/gap observations never count as history.
+
 | Lane | State | Next gate |
 |---|---|---|
 | `ITEM3_EXPERIMENTAL_SHADOW` | `ACTIVE_AUTONOMOUS_PROSPECTIVE` | `FORWARD_TRIGGERS_AND_OUTCOMES` |
+| `WARMUP_MATURITY` | `PROSPECTIVE_WARMUP_ACCUMULATING` | `ACCUMULATE_FROZEN_PROSPECTIVE_SESSION_HISTORY` |
 | `ITEM3D_FORWARD_ADJUDICATION` | `ACTIVE_AUTONOMOUS_ADJUDICATION_WATCH` | `FIRST_60_FORWARD_TRIGGER_OUTCOMES_PER_FAMILY_HORIZON` |
 | `ECONOMICS_MATURITY` | `DESCRIPTIVE_PARTIAL_MONITOR_ACTIVE` | `FIRST_TRIGGER_THEN_PROGRESS_TO_60_PER_FAMILY_HORIZON` |
 | `SOURCE_BINDING` | `FORWARD_SOURCE_BOUND` | `KEEP_CANONICAL_SOURCE_QA_INTACT` |
