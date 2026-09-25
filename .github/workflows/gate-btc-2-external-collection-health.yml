@@ -1,0 +1,130 @@
+name: GATE BTC 2 External Collection Health
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_external_collection_health.py'
+      - '.github/workflows/gate-btc-2-external-collection-health.yml'
+      - 'artifacts/gate_btc_2/family_handoffs/EXTERNAL_FORWARD_COLLECTION_PREREG_20260922.json'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_external_collection_health.py'
+      - '.github/workflows/gate-btc-2-external-collection-health.yml'
+      - 'artifacts/gate_btc_2/family_handoffs/EXTERNAL_FORWARD_COLLECTION_PREREG_20260922.json'
+  workflow_run:
+    workflows: ['GATE BTC External Family Forward Collector']
+    types: [completed]
+  schedule:
+    - cron: '47 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-external-collection-health
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  health:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical main or PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          path: main_repo
+      - name: Check out external append-only runtime
+        uses: actions/checkout@v4
+        with:
+          ref: runtime/gate-btc-external-forward
+          path: external_runtime
+          fetch-depth: 1
+      - name: Check out canonical runtime
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: canonical_runtime
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+      - name: Build operational health snapshot
+        run: |
+          set -euo pipefail
+          python -m py_compile main_repo/tools/gate_btc_2_external_collection_health.py
+          python main_repo/tools/gate_btc_2_external_collection_health.py --self-test
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_external_collection_health.py \
+            --main-root main_repo \
+            --external-root external_runtime \
+            --out-json out/EXTERNAL_COLLECTION_HEALTH.json \
+            --out-md out/EXTERNAL_COLLECTION_HEALTH.md
+          python - <<'PY'
+          import json
+          x=json.load(open('out/EXTERNAL_COLLECTION_HEALTH.json',encoding='utf-8'))
+          assert x['mode']=='READ_ONLY_OPERATIONAL_HEALTH'
+          assert x['preregistered_cron_utc']=='17 */4 * * *'
+          assert set(x['families'])=={'F-XVOL-SURFACE','F-XMM-INVENTORY'}
+          assert x['authority']['backfill_authority'] is False
+          assert x['authority']['cadence_change_authority'] is False
+          assert x['authority']['promotion_authority'] is False
+          assert x['authority']['scientific_credit']==0
+          assert x['safety']['RESEARCH_ONLY'] and x['safety']['SHADOW_ONLY']
+          assert x['safety']['NO_BACKFILL'] and x['safety']['NO_RETUNE']
+          assert x['safety']['ENGINE_FEED'] is False
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('EXTERNAL_COLLECTION_HEALTH=PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-external-collection-health
+          path: out
+          if-no-files-found: error
+          retention-days: 90
+      - name: Persist canonical health snapshot
+        if: github.event_name != 'pull_request'
+        working-directory: canonical_runtime
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/control_room
+          cp ../out/EXTERNAL_COLLECTION_HEALTH.json runtime/gate_btc_2/control_room/EXTERNAL_COLLECTION_HEALTH.json
+          cp ../out/EXTERNAL_COLLECTION_HEALTH.md runtime/gate_btc_2/control_room/EXTERNAL_COLLECTION_HEALTH.md
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/gate_btc_2/control_room/EXTERNAL_COLLECTION_HEALTH.json runtime/gate_btc_2/control_room/EXTERNAL_COLLECTION_HEALTH.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update external collection health'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
