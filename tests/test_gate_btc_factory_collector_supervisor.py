@@ -74,6 +74,19 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(c['PRL50']['expected_workflow_job'], 'gate-btc-prl50-position-shadow.yml')
         self.assertIsNone(c['PRL50']['expected_artifact'])
         self.assertEqual(c['PRL50']['expected_ledger'], 'runtime/ledgers/prl50_position/STATUS.json')
+        self.assertEqual(c['DELTA_FORMAL_EXPANDING']['expected_workflow_job'], 'gate-btc-prospective-ledgers.yml')
+        self.assertIsNone(c['DELTA_FORMAL_EXPANDING']['expected_artifact'])
+        self.assertEqual(c['DELTA_FORMAL_EXPANDING']['expected_ledger'], 'runtime/GATE_BTC_MEASUREMENT_STATUS.json')
+        self.assertEqual(c['GATEWAY']['expected_workflow_job'], 'gate-btc-prospective-ledgers.yml')
+        self.assertIsNone(c['GATEWAY']['expected_artifact'])
+        self.assertEqual(c['GATEWAY']['expected_ledger'], 'runtime/ledgers/gateway_dynamics/STATUS.json')
+        self.assertEqual(c['QOS_MONTHLY']['expected_workflow_job'], 'gate-btc-prospective-ledgers.yml')
+        self.assertIsNone(c['QOS_MONTHLY']['expected_artifact'])
+        self.assertEqual(c['QOS_MONTHLY']['expected_ledger'], 'runtime/GATE_BTC_MEASUREMENT_STATUS.json')
+        for key in ('NO_LOCK','LOCK25','LOCK50'):
+            self.assertEqual(c[key]['expected_workflow_job'], 'gate-btc-prospective-ledgers.yml')
+            self.assertIsNone(c[key]['expected_artifact'])
+            self.assertEqual(c[key]['expected_ledger'], 'runtime/ledgers/lock25_50/STATUS.json')
 
     def test_d100_registry_matches_forward_only_authority(self):
         c = {x['collector_id']: x for x in self.r['collectors']}['D100']
