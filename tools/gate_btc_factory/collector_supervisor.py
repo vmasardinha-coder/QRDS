@@ -63,6 +63,19 @@ def find_workflow(collector, workflows):
     return ranked[0][1]
 
 
+def all_workflows(repo, token):
+    workflows = []
+    page = 1
+    while True:
+        data = api(f"/repos/{repo}/actions/workflows?per_page=100&page={page}", token)
+        batch = data.get("workflows", [])
+        workflows.extend(batch)
+        if len(batch) < 100:
+            break
+        page += 1
+    return workflows
+
+
 def latest_run(repo, wf_id, token):
     data = api(f"/repos/{repo}/actions/workflows/{wf_id}/runs?per_page=5", token)
     runs = data.get("workflow_runs", [])
@@ -140,7 +153,7 @@ def main():
     assert registry["global_boundary"] == SAFETY
     assert set(registry["anomaly_classes"]) == ANOMALIES
     track_state = {x["track"]: x["state"] for x in production["tracks"]}
-    workflows = api(f"/repos/{args.repo}/actions/workflows?per_page=100", token).get("workflows", [])
+    workflows = all_workflows(args.repo, token)
     rows, repaired = [], 0
     for c in registry["collectors"]:
         wf = find_workflow(c, workflows)
