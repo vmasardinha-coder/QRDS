@@ -74,6 +74,9 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(c['PRL50']['expected_workflow_job'], 'gate-btc-prl50-position-shadow.yml')
         self.assertIsNone(c['PRL50']['expected_artifact'])
         self.assertEqual(c['PRL50']['expected_ledger'], 'runtime/ledgers/prl50_position/STATUS.json')
+        self.assertEqual(c['D50_READINESS']['expected_workflow_job'], 'gate-btc-d50-mirror-reconcile.yml')
+        self.assertIsNone(c['D50_READINESS']['expected_artifact'])
+        self.assertEqual(c['D50_READINESS']['expected_ledger'], 'runtime/ledgers/d50/STATUS.json')
         self.assertEqual(c['DELTA_FORMAL_EXPANDING']['expected_workflow_job'], 'gate-btc-prospective-ledgers.yml')
         self.assertIsNone(c['DELTA_FORMAL_EXPANDING']['expected_artifact'])
         self.assertEqual(c['DELTA_FORMAL_EXPANDING']['expected_ledger'], 'runtime/GATE_BTC_MEASUREMENT_STATUS.json')
@@ -154,6 +157,19 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(result["repair_result"], "RERUN_NOT_AVAILABLE")
         self.assertEqual(result["idempotence"], "NO_MUTATION")
         self.assertEqual(result["repair_evidence"]["reason"], "GITHUB_RUN_NOT_RETRIABLE")
+
+    def test_fuzzy_discovery_never_authorizes_auto_repair(self):
+        collector = {
+            "expected_workflow_job": "discover name/path containing live/shadow",
+            "approved_auto_repair_actions": ["rerun_failed_job"],
+        }
+        run = {"id": 123, "run_attempt": 1}
+        with patch.object(supervisor, "api") as mocked:
+            result = supervisor.repair("owner/repo", collector, {"id": 7}, run, "WORKFLOW_FAILED", "token")
+        mocked.assert_not_called()
+        self.assertFalse(result["repair_attempted"])
+        self.assertEqual(result["repair_result"], "BINDING_NOT_EXPLICIT_NO_REPAIR")
+        self.assertEqual(result["idempotence"], "NO_MUTATION")
 
     def test_other_rerun_api_errors_still_fail_closed(self):
         collector = {"approved_auto_repair_actions": ["rerun_failed_job"]}
