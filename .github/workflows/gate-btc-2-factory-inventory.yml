@@ -1,0 +1,129 @@
+name: GATE BTC 2 Factory Inventory
+
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_2_factory_inventory.py'
+      - '.github/workflows/gate-btc-2-factory-inventory.yml'
+      - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_factory_inventory.py'
+      - '.github/workflows/gate-btc-2-factory-inventory.yml'
+      - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+  workflow_run:
+    workflows: ['GATE BTC 2 Factory Control Room', 'GATE BTC 2 Factory Economics Monitor']
+    types: [completed]
+  schedule:
+    - cron: '15 23 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-2-factory-inventory
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+
+jobs:
+  inventory:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          path: main_repo
+      - name: Check out canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert immutable research boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+      - name: Validate inventory implementation
+        run: |
+          set -euo pipefail
+          python -m py_compile main_repo/tools/gate_btc_2_factory_inventory.py
+          python main_repo/tools/gate_btc_2_factory_inventory.py --self-test
+      - name: Build canonical inventory
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python main_repo/tools/gate_btc_2_factory_inventory.py \
+            --runtime-root runtime_repo \
+            --main-root main_repo \
+            --out-json out/FACTORY_INVENTORY.json \
+            --out-md out/FACTORY_INVENTORY.md
+          python - <<'PY'
+          import json
+          x=json.load(open('out/FACTORY_INVENTORY.json',encoding='utf-8'))
+          assert x['mode']=='READ_ONLY_CANONICAL_INVENTORY'
+          assert x['summary']['reclassified_total']==2560
+          assert x['summary']['experimental_shadow_active']==580
+          assert x['summary']['valid_scientific_rejections']==1980
+          assert x['authority']['source_admission_authority'] is False
+          assert x['authority']['science_reactivation_authority'] is False
+          assert x['authority']['promotion_authority'] is False
+          assert x['authority']['execution_authority'] is False
+          assert x['authority']['scientific_credit']==0
+          assert x['safety']['RESEARCH_ONLY'] and x['safety']['SHADOW_ONLY']
+          assert x['safety']['NO_BACKFILL'] and x['safety']['NO_RETUNE']
+          assert x['safety']['ENGINE_FEED'] is False
+          assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
+          print('FACTORY_INVENTORY=PASS')
+          print('TRACKED_LANES='+str(x['summary']['tracked_lanes']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-factory-inventory
+          path: out
+          if-no-files-found: error
+          retention-days: 90
+      - name: Persist canonical inventory
+        if: github.event_name != 'pull_request'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/gate_btc_2/control_room
+          cp ../out/FACTORY_INVENTORY.json runtime/gate_btc_2/control_room/FACTORY_INVENTORY.json
+          cp ../out/FACTORY_INVENTORY.md runtime/gate_btc_2/control_room/FACTORY_INVENTORY.md
+          git config user.name gate-btc-actions
+          git config user.email gate-btc-actions@users.noreply.github.com
+          git add runtime/gate_btc_2/control_room/FACTORY_INVENTORY.json runtime/gate_btc_2/control_room/FACTORY_INVENTORY.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update Factory canonical inventory'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
