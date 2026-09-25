@@ -53,7 +53,8 @@ def workflow_score(collector: dict, wf: dict):
     if expected in hay:
         return 100
     tokens = [t for t in re.split(r"[^a-z0-9]+", collector["collector_id"].lower()) if len(t) > 2]
-    return sum(5 for t in tokens if t in hay)
+    hay_tokens = set(t for t in re.split(r"[^a-z0-9]+", hay) if t)
+    return sum(5 for t in tokens if t in hay_tokens)
 
 
 def find_workflow(collector, workflows):
