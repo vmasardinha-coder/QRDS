@@ -1,11 +1,13 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-09-25T13:37:01.892703+00:00`
+Generated: `2026-09-25T13:46:24.458486+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
 - Valid scientific rejections: **1980**
-- Operational/scientific lanes tracked: **11**
+- Operational/scientific lanes tracked: **12**
+- Registered research backlog: **1**
+- Backlog currently NOT_ELIGIBLE: **1**
 - Canonical ledger sessions: **1**
 - Frozen warmup range: **10–252 prior sessions**
 - Nominal families lookback-satisfied for next session: **0**
@@ -41,6 +43,7 @@ Nominal maturity uses only count of prior canonical ledger sessions. Actual z-sc
 | `GRAMMAR_007` | `TERMINAL_CURRENT_HYPOTHESIS` | `MATERIALLY_DISTINCT_PREREGISTERED_HYPOTHESIS_ONLY` |
 | `GRAMMAR_008` | `TERMINAL_OR_INVALID_CURRENT_HYPOTHESIS` | `MATERIALLY_DISTINCT_COMPLETE_PREREGISTRATION_ONLY` |
 | `PARALLEL_FRONTIER` | `PARALLEL_FRONTIER_PREREGISTERED_AWAITING_SOURCE_QUALIFICATION` | `SOURCE_QUALIFICATION_THEN_SEPARATE_CHILD_PREREGISTRATION` |
+| `RESEARCH_BACKLOG` | `REGISTERED_RESEARCH_BACKLOG_VISIBLE` | `DATA_READINESS_AND_EXPLICIT_PROSPECTIVE_ELIGIBILITY_BEFORE_ANY_COLLECTION` |
 
 Inventory is read-only and carries zero source-admission, science-reactivation, promotion, execution or scientific-credit authority.
 
