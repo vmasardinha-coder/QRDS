@@ -74,6 +74,22 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
 
+    def test_workflow_discovery_paginates_until_short_page(self):
+        pages = {
+            1: {"workflows": [{"id": i} for i in range(100)]},
+            2: {"workflows": [{"id": i} for i in range(100, 200)]},
+            3: {"workflows": [{"id": 200}]},
+        }
+        def fake_api(path, token, method="GET"):
+            page = int(path.rsplit("page=", 1)[1])
+            return pages[page]
+        with patch.object(supervisor, "api", side_effect=fake_api):
+            workflows = supervisor.all_workflows("owner/repo", "token")
+        self.assertEqual(len(workflows), 201)
+        self.assertEqual(workflows[0]["id"], 0)
+        self.assertEqual(workflows[-1]["id"], 200)
+
+
     def test_unretryable_failed_run_is_recorded_without_crashing(self):
         collector = {"approved_auto_repair_actions": ["rerun_failed_job"]}
         run = {"id": 123, "run_attempt": 1}
