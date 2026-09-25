@@ -6,14 +6,22 @@ on:
       - 'tools/gate_btc_2_factory_inventory.py'
       - '.github/workflows/gate-btc-2-factory-inventory.yml'
       - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+      - 'tools/gate_btc_2_factory_research_backlog.py'
+      - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
+      - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
   push:
     branches: [main]
     paths:
       - 'tools/gate_btc_2_factory_inventory.py'
       - '.github/workflows/gate-btc-2-factory-inventory.yml'
       - 'artifacts/gate_btc_2/FACTORY_PARALLEL_FRONTIER_CONTRACT_20260922.json'
+      - 'tools/gate_btc_2_factory_research_backlog.py'
+      - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
+      - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
   workflow_run:
-    workflows: ['GATE BTC 2 Factory Economics Monitor']
+    workflows:
+      - 'GATE BTC 2 Factory Economics Monitor'
+      - 'GATE BTC 2 Factory Research Backlog'
     types: [completed]
   schedule:
     - cron: '15 23 * * 1-5'
@@ -88,6 +96,8 @@ jobs:
           assert x['summary']['reclassified_total']==2560
           assert x['summary']['experimental_shadow_active']==580
           assert x['summary']['valid_scientific_rejections']==1980
+          assert 'RESEARCH_BACKLOG' in x['lanes']
+          assert x['lanes']['RESEARCH_BACKLOG']['available'] is True
           assert x['authority']['source_admission_authority'] is False
           assert x['authority']['science_reactivation_authority'] is False
           assert x['authority']['promotion_authority'] is False
@@ -99,6 +109,8 @@ jobs:
           assert x['safety']['ORDERS']==0 and x['safety']['REAL_CAPITAL']==0
           print('FACTORY_INVENTORY=PASS')
           print('TRACKED_LANES='+str(x['summary']['tracked_lanes']))
+          print('RESEARCH_BACKLOG_REGISTERED='+str(x['summary']['research_backlog_registered']))
+          print('RESEARCH_BACKLOG_NOT_ELIGIBLE='+str(x['summary']['research_backlog_not_eligible']))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
