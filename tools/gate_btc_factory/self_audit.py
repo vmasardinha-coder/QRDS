@@ -56,6 +56,18 @@ def d50_qualification_healthy(row: dict | None) -> bool:
     )
 
 
+def momentum_collection_healthy(row: dict | None) -> bool:
+    if not row:
+        return False
+    return (
+        row.get('status') == 'ACTIVE_PROSPECTIVE_SHADOW'
+        and int(row.get('observed_snapshots', 0) or 0) > 0
+        and row.get('engine_feed') is False
+        and int(row.get('orders_generated', row.get('orders', 0)) or 0) == 0
+        and int(row.get('real_capital_used', row.get('real_capital', 0)) or 0) == 0
+    )
+
+
 def open_generation_issue(frontier: dict | None) -> dict | None:
     if not frontier:
         return None
@@ -92,8 +104,11 @@ def main() -> int:
     for name,row in sorted(tracks.items()):
         if not isinstance(row,dict) or not row.get('blocker'):
             continue
-        # A reconciled runtime qualification supersedes stale static D50 diagnostics.
+        # Healthy canonical runtime supersedes stale static diagnostics for tracks
+        # whose persisted state already proves collection/qualification health.
         if name == 'D50_DATA_QUALIFICATION' and d50_qualification_healthy(d50):
+            continue
+        if name == 'MOMENTUM_M1_M2' and momentum_collection_healthy(momentum):
             continue
         blockers.append({'track':name,'blocker':row.get('blocker')})
 
