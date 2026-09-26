@@ -42,7 +42,6 @@ def _rows(payload: Any) -> list[dict[str, Any]]:
 
 
 def capture(out_dir: Path, now: datetime | None = None) -> tuple[Path, Path, dict[str, Any]]:
-    captured = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 GATE-BTC-Research-Only/1.0"})
     response = session.get(ENDPOINT, params=PARAMS, timeout=45)
@@ -50,6 +49,8 @@ def capture(out_dir: Path, now: datetime | None = None) -> tuple[Path, Path, dic
     raw = response.content
     payload = response.json()
     rows = _rows(payload)
+    # Availability is measured after the complete HTTP response, never before.
+    captured = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
 
     digest = sha256_bytes(raw)
     stamp = captured.strftime("%Y%m%dT%H%M%SZ")
