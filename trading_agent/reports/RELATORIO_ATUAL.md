@@ -60,21 +60,21 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $71,121.63 |
-| Retorno do dia | -0.00% |
-| Retorno desde inicio (2026-08-06) | +42.24% |
-| Benchmark BTC | +31.00% |
-| **Alfa vs BTC** | **+11.24%** |
+| NAV | $72,123.35 |
+| Retorno do dia | +1.41% |
+| Retorno desde inicio (2026-08-06) | +44.25% |
+| Benchmark BTC | +30.49% |
+| **Alfa vs BTC** | **+13.76%** |
 | Caixa | $3,534.41 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.421585 | $84,386.41 | $35,576.00 | 50.0% |
-| ARB | 49350.3 | $0.22 | $10,730.72 | 15.1% |
-| UNI | 1167.28 | $9.13 | $10,660.90 | 15.0% |
-| ZEC | 6.90377 | $1,538.23 | $10,619.59 | 14.9% |
+| BTC | 0.421585 | $84,057.60 | $35,437.38 | 49.1% |
+| UNI | 1167.28 | $9.63 | $11,246.41 | 15.6% |
+| ARB | 49350.3 | $0.23 | $11,171.91 | 15.5% |
+| ZEC | 6.90377 | $1,554.69 | $10,733.23 | 14.9% |
 
 _Sem movimentacoes hoje._
 
@@ -82,8 +82,8 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +23.8% — so entram ativos acima disto
-- **Candidatos elegiveis:** 29
+- **Obstaculo (BTC):** momentum de +23.0% — so entram ativos acima disto
+- **Candidatos elegiveis:** 31
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -98,7 +98,7 @@ _Sem movimentacoes hoje._
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.2M < 1M) |
 | ATOM | liquidez baixa (0.6M < 1M) |
-| _(+102 outros)_ | |
+| _(+100 outros)_ | |
 
 </details>
 
@@ -109,9 +109,9 @@ _Sem movimentacoes hoje._
 | NAV | R$ 52,865.02 |
 | Retorno do dia | +0.00% |
 | Retorno desde inicio (2026-08-06) | +5.73% |
-| Benchmark IBOV | +4.80% |
-| Benchmark CDI | +1.71% |
-| **Alfa vs o maior (IBOV)** | **+0.93%** |
+| Benchmark IBOV | +4.52% |
+| Benchmark CDI | +1.77% |
+| **Alfa vs o maior (IBOV)** | **+1.21%** |
 | Caixa | R$ 0.00 |
 | Regime | risco ligado — avaliado por proxy (BOVA11) |
 
@@ -156,13 +156,13 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 52,512.47 |
+| NAV | R$ 52,512.49 |
 | Retorno do dia | +0.02% |
 | Retorno desde inicio (2026-08-06) | +5.02% |
-| Benchmark IBOV | +4.80% |
-| Benchmark CDI | +1.71% |
-| **Alfa vs o maior (IBOV)** | **+0.23%** |
-| Caixa | R$ 45.71 |
+| Benchmark IBOV | +4.52% |
+| Benchmark CDI | +1.77% |
+| **Alfa vs o maior (IBOV)** | **+0.51%** |
+| Caixa | R$ 45.73 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
