@@ -84,6 +84,11 @@ jobs:
           path: runtime_repo
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+
       - name: Assert local safety boundary and Python MT5 availability
         shell: powershell
         run: |
