@@ -68,6 +68,22 @@ def momentum_collection_healthy(row: dict | None) -> bool:
     )
 
 
+def v16b_terminal_boundary_closed(row: dict | None) -> bool:
+    if not row:
+        return False
+    return (
+        row.get('status') == 'TERMINAL_BLOCKED_NOT_PROMOTABLE'
+        and row.get('scientific_decision_status') == 'CLOSED_COMPLETED'
+        and bool(row.get('successor_family_id'))
+        and bool(row.get('successor_runtime'))
+        and row.get('promotion_allowed') is False
+        and int(row.get('prospective_credit', 0) or 0) == 0
+        and row.get('engine_feed') is False
+        and int(row.get('orders_generated', row.get('orders', 0)) or 0) == 0
+        and int(row.get('real_capital_used', row.get('real_capital', 0)) or 0) == 0
+    )
+
+
 def open_generation_issue(frontier: dict | None) -> dict | None:
     if not frontier:
         return None
@@ -110,6 +126,8 @@ def main() -> int:
             continue
         if name == 'MOMENTUM_M1_M2' and momentum_collection_healthy(momentum):
             continue
+        if name == 'V16B' and v16b_terminal_boundary_closed(v16b):
+            continue
         blockers.append({'track':name,'blocker':row.get('blocker')})
 
     runtime_authority={
@@ -138,6 +156,9 @@ def main() -> int:
             'status': v16b.get('status') if v16b else None,
             'observations': v16b.get('canonical_cycle_count') if v16b else None,
             'latest_date': v16b.get('data_as_of') if v16b else None,
+            'terminal_disposition': v16b.get('terminal_disposition') if v16b else None,
+            'successor_family_id': v16b.get('successor_family_id') if v16b else None,
+            'successor_runtime': v16b.get('successor_runtime') if v16b else None,
         },
     }
     next_expected_action=(
