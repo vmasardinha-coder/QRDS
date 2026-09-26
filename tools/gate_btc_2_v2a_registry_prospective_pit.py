@@ -83,6 +83,13 @@ def _probe(entry: dict[str, Any], now: datetime) -> tuple[str, bytes]:
     if upper.startswith("GATE_SPOT"):
         u = _url("https://api.gateio.ws/api/v4/spot/candlesticks", {"currency_pair": symbol, "interval": "1d", "limit": 2})
         return u, _get(u)
+    if upper.startswith("BINGX_SPOT"):
+        now_ms = int(now.timestamp() * 1000)
+        u = _url(
+            "https://open-api.bingx.com/openApi/market/his/v1/kline",
+            {"symbol": symbol, "interval": "1d", "endTime": now_ms, "limit": 2, "timestamp": now_ms},
+        )
+        return u, _get(u)
     if upper.startswith("MEXC_SPOT"):
         u = _url("https://api.mexc.com/api/v3/klines", {"symbol": symbol, "interval": "1d", "limit": 2})
         return u, _get(u)
@@ -150,6 +157,8 @@ def _response_has_observation(entry: dict[str, Any], raw: bytes) -> bool:
     identity = str(entry["source_identity"]).upper()
     if identity.startswith("BINANCE_SPOT") or identity.startswith("MEXC_SPOT"):
         return isinstance(payload, list) and len(payload) > 0
+    if identity.startswith("BINGX_SPOT"):
+        return isinstance(payload, dict) and str(payload.get("code")) == "0" and bool(payload.get("data"))
     if identity.startswith("BITGET_SPOT"):
         return isinstance(payload, dict) and str(payload.get("code")) in {"00000", "0"} and bool(payload.get("data"))
     if identity.startswith("OKX_SPOT") or identity.startswith("OKX_PUBLIC_SPOT"):
