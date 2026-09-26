@@ -5,7 +5,7 @@
   "frontier_generation": "H2730-H2739",
   "frontier_next_generation_start": 2730,
   "frontier_status": "WAITING_OFFICIAL_TICK_SOURCE",
-  "generated_at_utc": "2026-09-26T01:13:27.701385Z",
+  "generated_at_utc": "2026-09-26T01:17:41.957932Z",
   "next_expected_action": "OPERATIONAL_REPAIR",
   "planned_actions": [],
   "runtime_authority": {
@@ -33,7 +33,10 @@
     "V16B": {
       "latest_date": "2026-09-09",
       "observations": 0,
-      "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
+      "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE",
+      "successor_family_id": "GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909",
+      "successor_runtime": "runtime/ledgers/v16b1/STATUS.json",
+      "terminal_disposition": "CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK"
     }
   },
   "safety": {
@@ -50,15 +53,10 @@
     {
       "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
       "track": "GATE_BTC_2_CORE"
-    },
-    {
-      "blocker": "isolated rehearsal against real immutable source artifacts and canonical SIGNAL producer path are not yet verified",
-      "track": "V16B"
     }
   ],
   "source_freshness": "FRESH",
   "stalled_tracks": [
-    "V16B",
     "GATE_BTC_2_CORE"
   ],
   "survivor_health_count": 3,

@@ -2,16 +2,6 @@
   "actions": [
     {
       "backfill_allowed": false,
-      "blocker": "isolated rehearsal against real immutable source artifacts and canonical SIGNAL producer path are not yet verified",
-      "engine_feed": false,
-      "orders": 0,
-      "real_capital": 0,
-      "repair_mode": "RETRY_SOURCE_MAPPING_REHEARSAL_PLUMBING_ONLY",
-      "scientific_change_allowed": false,
-      "track": "V16B"
-    },
-    {
-      "backfill_allowed": false,
       "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
       "engine_feed": false,
       "orders": 0,
@@ -21,7 +11,7 @@
       "track": "GATE_BTC_2_CORE"
     }
   ],
-  "generated_at_utc": "2026-09-26T01:13:22.252189Z",
+  "generated_at_utc": "2026-09-26T01:17:38.681372Z",
   "runtime_frontier": {
     "authority": "gate-btc-runtime",
     "generation": "H2730-H2739",
@@ -55,6 +45,14 @@
       "data_as_of": "2026-09-24",
       "eligible_observations": 31,
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
+    },
+    "V16B": {
+      "authority": "gate-btc-runtime",
+      "data_as_of": "2026-09-09",
+      "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE",
+      "successor_family_id": "GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909",
+      "successor_runtime": "runtime/ledgers/v16b1/STATUS.json",
+      "terminal_disposition": "CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK"
     }
   },
   "safety": {
@@ -68,7 +66,6 @@
   },
   "schema": "qrds.factory.watchdog.v2",
   "stalled_tracks": [
-    "V16B",
     "GATE_BTC_2_CORE"
   ]
 }
