@@ -1,0 +1,23 @@
+{
+  "discarded": [
+    {
+      "anchor_date": "2026-09-03",
+      "authorised_by": "account owner, asked explicitly and answered on 2026-09-05",
+      "discard_policy_going_forward": "Once a single observation exists this route is closed. An anchor carrying evidence is never discarded, and a poor result is never a reason to re-anchor.",
+      "discarded_at_utc": "2026-09-05T10:22:40.153704+00:00",
+      "established_at_utc": "2026-09-04T06:32:44.748540+00:00",
+      "established_by_run_id": "33844683632",
+      "ledger_rows_produced": 0,
+      "observations_produced": 0,
+      "reason": "The anchor was established at 06:32 UTC on 2026-09-04 by the engine as it stood before daily universe membership was recorded. With no membership for the anchor day or the day before it, the first two days after the anchor could not select anything and would have entered the ledger as flat observations that measure nothing, padding the 60-observation gate.",
+      "why_this_is_not_result_shopping": "Zero observations existed. DAILY_NAV.csv, SELECTIONS_HISTORY.csv, POSITIONS_HISTORY.csv and TRADE_EVENTS.csv all held nothing but headers, and the hash chain was still the zero hash. No return of any kind had been seen when this decision was taken."
+    }
+  ],
+  "not_approved": true,
+  "orders": 0,
+  "purpose": "An anchor is permanent once it carries evidence. This records anchors discarded BEFORE producing any, so the discard is auditable and can never be confused with re-anchoring away from an unfavourable result.",
+  "real_capital": 0,
+  "research_only": true,
+  "schema": "gate_btc.delta_v12_engine.discarded_anchors.v1",
+  "shadow_only": true
+}

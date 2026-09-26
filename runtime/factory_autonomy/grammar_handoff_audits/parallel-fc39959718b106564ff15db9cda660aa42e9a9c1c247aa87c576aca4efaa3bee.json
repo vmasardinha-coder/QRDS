@@ -1,0 +1,44 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_VOL_LIQUIDATION_STRESS",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "fc39959718b106564ff15db9cda660aa42e9a9c1c247aa87c576aca4efaa3bee",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Observable volatility and liquidation-stress states may define preregistered protection or tactical challenger families.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "Binance",
+        "OKX"
+      ],
+      "required_new_data": [
+        "OHLCV",
+        "open interest",
+        "public liquidation or stress proxy",
+        "funding"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}

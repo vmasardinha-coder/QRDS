@@ -1,0 +1,55 @@
+{
+  "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+  "direction_defined": false,
+  "economic_outcomes_read": false,
+  "generated_at_utc": "2026-09-23T02:20:02.856514Z",
+  "grammar_signature": "68f5b4b1bcb58e95ffec65c0e62e69da82c7d8f477f48c4d5d732ca5b24030ae",
+  "historical_backfill_started": false,
+  "namespace": "PF::68f5b4b1bcb58e95",
+  "next_gate": "ADVANCE_PARALLEL_FRONTIER_FOR_DISTINCT_XAGENT_CHANNEL",
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
+  "signal_formula_defined": false,
+  "source": {
+    "authentication_required": false,
+    "causal_funding_history_observed": true,
+    "common_closed_bar_close_ms": 1790128800000,
+    "common_closed_bar_open_ms": 1790125200000,
+    "interval": "1H",
+    "latest_causal_funding_time_ms": 1790121600000,
+    "perpetual_closed_ohlcv_observed": true,
+    "perpetual_metadata_live": true,
+    "perpetual_symbol": "BTC-USDT-SWAP",
+    "provider": "OKX_PUBLIC_API",
+    "sample_checks": {
+      "funding_time_not_after_bar_close": true,
+      "perpetual_close_positive": true,
+      "spot_close_positive": true
+    },
+    "spot_closed_ohlcv_observed": true,
+    "spot_metadata_live": true,
+    "spot_symbol": "BTC-USDT",
+    "status": "QUALIFIED_PUBLIC_SOURCE"
+  },
+  "status": "SOURCE_QUALIFIED_FAMILY_READY_XAGENT_THIRD_INPUT_NOT_AUTHORIZED",
+  "thresholds_defined": false,
+  "xagent_third_input_eligibility": {
+    "count_as_third_input": false,
+    "shared_components": [
+      "PERPETUAL_MARKET",
+      "FUNDING"
+    ],
+    "shared_with": "S-XTERM-CARRY-01",
+    "status": "NOT_ESTABLISHED_SHARED_COMPONENTS"
+  }
+}

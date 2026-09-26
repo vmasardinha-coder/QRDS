@@ -1,0 +1,38 @@
+{
+  "schema": "qrds.factory.win_wdo_materialized.v1",
+  "family_id": "XAWINWDO_REGIME_001",
+  "source": "MT5_TERMINAL_AUTHORIZED_PRIMARY_EXPERIMENT_XAWINWDO_ONLY",
+  "source_packet_sha256": "aaa184f9b4e4acaf070a2550231964b395430530ef7675b51195ce5456af933d",
+  "timezone": "America/Sao_Paulo",
+  "bar_granularity": "M5_PHYSICAL_AGGREGATED_TO_SESSION_CLOSE",
+  "roll_rule": "t_minus_1_liquidity",
+  "return_rule": "log_close_to_close_no_synthetic_returns_across_rolls",
+  "known_gap_policy": "drop_only",
+  "split_rule": "50_30_20_chronological",
+  "embargo_sessions": 60,
+  "aligned_session_count": 125,
+  "usable_return_count": 119,
+  "splits": {
+    "discovery": [],
+    "validation": [],
+    "holdout": []
+  },
+  "split_counts": {
+    "discovery": 0,
+    "validation": 0,
+    "holdout": 0
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true
+  },
+  "next_stage": "FAIL_CLOSED_INSUFFICIENT_PHYSICAL_OVERLAP"
+}

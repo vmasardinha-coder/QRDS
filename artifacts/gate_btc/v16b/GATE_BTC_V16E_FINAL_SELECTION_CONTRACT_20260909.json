@@ -1,0 +1,111 @@
+{
+  "contract_id": "GATE_BTC_V16E_FINAL_SELECTION_CONTRACT_20260909",
+  "family_governance": "GATE_BTC_V16_FAMILY_GOVERNANCE_20260815",
+  "status": "FROZEN_DECISION_CONTRACT_WAITING_PROSPECTIVE_EVIDENCE",
+  "created_at_utc": "2026-09-09T15:57:00Z",
+  "role": "ALLOCATION_READY_FINAL",
+  "purpose": "Freeze the decision process that will select the final V16 configuration without using future outcomes to rewrite candidate definitions or winner criteria.",
+  "eligible_candidates": {
+    "V16B": {
+      "role": "FROZEN_BASELINE",
+      "candidate_id": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811"
+    },
+    "V16C": {
+      "role": "STRUCTURAL_CHALLENGER",
+      "prereg_id": "GATE_BTC_V16C_STRUCTURAL_PREREG_20260815",
+      "change": "EX_ANTE_BTC_BETA_NEUTRALIZATION"
+    },
+    "V16D": {
+      "role": "RISK_ENGINE_CHALLENGER",
+      "prereg_id": "GATE_BTC_V16D_RISK_PREREG_20260909",
+      "change": "CAUSAL_PORTFOLIO_VOLATILITY_TARGETING_DELEVER_ONLY"
+    }
+  },
+  "evidence_admission": {
+    "prospective_only_for_live_claims": true,
+    "historical_replay_role": "DIAGNOSTIC_ONLY",
+    "historical_backfill_counts_as_live": false,
+    "external_delta_role": "BENCHMARK_AND_AUDIT_ONLY_NEVER_TUNING",
+    "candidate_parameter_retuning_after_first_eligible_signal": false,
+    "required_chain": ["SIGNAL_SEAL", "ENTRY_SEAL", "RESULT_SEAL"],
+    "independent_ledgers_required": true,
+    "failed_or_missing_evidence": "FAIL_CLOSED"
+  },
+  "comparison_design": {
+    "paired_future_signal_dates_required": true,
+    "primary_checkpoints_completed_cycles": [13, 26, 52],
+    "minimum_final_selection_checkpoint": 52,
+    "checkpoint_13_role": "EARLY_DIAGNOSTIC_NO_FINAL_SELECTION",
+    "checkpoint_26_role": "INTERMEDIATE_DIAGNOSTIC_NO_FINAL_SELECTION",
+    "checkpoint_52_role": "FIRST_ELIGIBLE_FINAL_SELECTION_REVIEW",
+    "common_metrics": [
+      "net_return",
+      "volatility",
+      "max_drawdown",
+      "Sharpe_when_meaningful",
+      "Sortino_when_meaningful",
+      "Calmar_when_meaningful",
+      "BTC_beta",
+      "gross_exposure",
+      "net_exposure",
+      "turnover",
+      "fees",
+      "funding",
+      "regime_stability",
+      "evidence_integrity"
+    ]
+  },
+  "mandatory_gates_before_ranking": [
+    "candidate definition remained frozen",
+    "no backfill credited as live",
+    "no late seals credited",
+    "causal input availability verified",
+    "cost and funding evidence complete",
+    "paired comparison dates are valid",
+    "no methodology change after observing prospective outcomes"
+  ],
+  "decision_rule": {
+    "single_metric_winner_allowed": false,
+    "primary_objective": "maximize robust net risk-adjusted performance subject to evidence integrity",
+    "risk_constraints": [
+      "reject candidates with materially worse drawdown without compensating net risk-adjusted improvement",
+      "prefer lower absolute BTC beta when net risk-adjusted performance is not materially worse",
+      "prefer lower realized volatility when net risk-adjusted performance is not materially worse",
+      "reject gains explained primarily by unplanned leverage, missing costs, missing funding or evidence gaps"
+    ],
+    "tie_break_order": [
+      "evidence_integrity",
+      "net_risk_adjusted_performance",
+      "max_drawdown",
+      "absolute_BTC_beta",
+      "turnover_and_cost_drag",
+      "implementation_simplicity"
+    ],
+    "automatic_promotion_to_engine_feed": false,
+    "separate_operator_approval_required_after_scientific_selection": true
+  },
+  "current_disposition": {
+    "final_candidate_selected": null,
+    "reason": "INSUFFICIENT_PROSPECTIVE_COMPLETED_CYCLES",
+    "V16B_completed_cycles": 0,
+    "V16C_completed_cycles": 0,
+    "V16D_completed_cycles": 0,
+    "next_scientific_action": "UNBLOCK_CAUSAL_PRODUCERS_AND_BEGIN_APPEND_ONLY_INDEPENDENT_PROSPECTIVE_LEDGER_COLLECTION; DO_NOT ALTER THIS CONTRACT BASED_ON_OUTCOMES"
+  },
+  "version_cap": {
+    "terminal_version": "V16E",
+    "do_not_create": ["V16F", "V16G", "V16H"],
+    "materially_new_hypothesis_starts_new_family": true
+  },
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "FAIL_CLOSED": true
+  }
+}

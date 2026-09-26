@@ -1,0 +1,369 @@
+{
+  "schema": "qrds.factory.invalidated_source_qualification_search.v1",
+  "generated_at_utc": "2026-09-05T23:46:51.715671Z",
+  "status": "ACTIVE_SEARCHING_QUALIFICATION",
+  "cadence_hours": 2,
+  "root_cause_classification": "SOURCE_DATA_GAP",
+  "affected_family_count": 768,
+  "source_gate": {
+    "present": false,
+    "valid": false,
+    "reason": "SOURCE_GATE_ABSENT"
+  },
+  "frozen_source_contract": {
+    "instrument": "WIN_B3_MINI_INDEX_FUTURES",
+    "bar_interval": "M5",
+    "minimum_sessions_required": 161,
+    "identity_must_be_proven": true,
+    "timezone_and_session_semantics_must_be_proven": true,
+    "publication_semantics_must_be_proven": true,
+    "revision_semantics_must_be_proven": true,
+    "point_in_time_must_be_proven": true,
+    "independent_unseen_evaluation_must_be_proven": true,
+    "historical_backfill_credit": 0
+  },
+  "blocking_requirements": [
+    "EXACT_WIN_SOURCE_IDENTITY",
+    "M5_SCHEMA_AND_SESSION_TIMEZONE",
+    "MINIMUM_HISTORY_COVERAGE",
+    "PUBLICATION_SEMANTICS",
+    "REVISION_SEMANTICS",
+    "POINT_IN_TIME_VALIDITY",
+    "INDEPENDENT_UNSEEN_EVALUATION_WINDOWS",
+    "HASH_BOUND_DATASET"
+  ],
+  "search_strategy": {
+    "mode": "PROVENANCE_FIRST_NOT_GENERIC_CSV_HUNT",
+    "priority_order": [
+      "OFFICIAL_B3_EXACT_SURFACE",
+      "MT5_READ_ONLY_EXACT_WIN_IDENTITY",
+      "INDEPENDENT_PUBLIC_EXACT_WIN_DATASET"
+    ],
+    "official_b3_tick_endpoint_variants": [
+      "https://arquivos.b3.com.br/apinegocios/tickercsv/{date}",
+      "https://arquivos.b3.com.br/rapinegocios/tickercsv/{date}"
+    ],
+    "generic_search_hit_may_green_gate": false,
+    "reachability_may_green_gate": false,
+    "failed_identity_hits_are_noise_not_data_gap_evidence": true
+  },
+  "search": {
+    "official_b3_probes": [
+      {
+        "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-01-02",
+        "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-01-02",
+        "http_status": 404,
+        "reachable": false,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-01-02"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-03-03",
+        "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-03-03",
+        "http_status": 404,
+        "reachable": false,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-03-03"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-06-02",
+        "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-06-02",
+        "http_status": 404,
+        "reachable": false,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-06-02"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-09-01",
+        "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-09-01",
+        "http_status": 404,
+        "reachable": false,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-09-01"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-12-12",
+        "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-12-12",
+        "http_status": 404,
+        "reachable": false,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-12-12"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-01-02",
+        "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-01-02",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-01-02"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-03-03",
+        "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-03-03",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-03-03"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-06-02",
+        "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-06-02",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-06-02"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-09-01",
+        "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-09-01",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-09-01"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-12-12",
+        "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-12-12",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
+        "sample_bytes": 0,
+        "sample_sha256": null,
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_TRADE_BY_TRADE",
+        "probe_date": "2025-12-12"
+      },
+      {
+        "url": "https://arquivos.b3.com.br/bdi/",
+        "final_url": "https://arquivos.b3.com.br/bdi/",
+        "http_status": 206,
+        "reachable": true,
+        "content_type": "text/html",
+        "content_length": "1827",
+        "sample_bytes": 1827,
+        "sample_sha256": "2cba6b9a820274f8091e71298550c8fc58a79b369809ffc9d708b22aaed23da1",
+        "zip_magic": false,
+        "win_identity_hint": false,
+        "csv_schema_hint": false,
+        "official_surface": "B3_BDI"
+      }
+    ],
+    "mt5_read_only_source_evidence": {
+      "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
+      "source_packet_sha256": "20da42170c5666ec33c473012846b99b7f6be7457ebadb13181df6f6a22c6f10",
+      "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
+      "matching_record_count": 5,
+      "matching_records": [
+        {
+          "symbol": "WING23",
+          "description": "IBOVESPA MINI",
+          "path": "GTW_BMF\\WING23",
+          "earliest_observation_utc": "2022-12-27T09:00:00Z",
+          "latest_observation_utc": "2023-02-15T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
+          "symbol": "WING27",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WING27",
+          "earliest_observation_utc": "2026-08-12T10:25:00Z",
+          "latest_observation_utc": "2026-09-04T18:20:00Z",
+          "captured_bar_count": 283
+        },
+        {
+          "symbol": "WINV26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINV26",
+          "earliest_observation_utc": "2026-07-16T15:10:00Z",
+          "latest_observation_utc": "2026-09-04T18:30:00Z",
+          "captured_bar_count": 4096
+        },
+        {
+          "symbol": "WINZ22",
+          "description": "IBOVESPA MINI",
+          "path": "GTW_BMF\\WINZ22",
+          "earliest_observation_utc": "2022-10-21T13:45:00Z",
+          "latest_observation_utc": "2022-12-14T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
+          "symbol": "WINZ26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINZ26",
+          "earliest_observation_utc": "2026-05-12T17:10:00Z",
+          "latest_observation_utc": "2026-09-04T18:30:00Z",
+          "captured_bar_count": 3088
+        }
+      ],
+      "source_admission_pass": false,
+      "prospective_credit": 0,
+      "historical_backfill_credit": 0,
+      "blocks_other_sources": false,
+      "next_requirement": "PROVE_BROKER_SYMBOL_MAPPING_HISTORY_SESSION_TIMEZONE_PUBLICATION_REVISION_AND_PIT_BEFORE_SOURCE_GATE"
+    },
+    "independent_free_github_candidates": [
+      {
+        "query": "filename:WINFUT extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=filename%3AWINFUT+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "WINFUT_5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT_5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "WINFUT_F_0_5min.csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT_F_0_5min.csv&per_page=30"
+      },
+      {
+        "query": "WIN$N 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WIN%24N+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "WINFUT timestamp open high low close extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+timestamp+open+high+low+close+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "WINFUT datetime open high low close extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+datetime+open+high+low+close+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"mini indice futuro\" 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice+futuro%22+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"mini índice futuro\" 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WIN B3\" OHLC 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WINFUT%22+volume+timestamp+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"mini indice\" intraday B3 extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WIN continuous\" futures Brazil extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
+      }
+    ],
+    "reachable_official_probe_count": 6,
+    "official_payload_probe_count": 1,
+    "schema_identity_candidate_count": 0,
+    "irrelevant_identity_candidate_count": 0,
+    "github_query_count": 12,
+    "github_candidate_count": 0,
+    "github_per_query": 30,
+    "original_invalidated_source_excluded_from_independent_candidates": true
+  },
+  "qualification_policy": {
+    "free_or_official_auditable_required": true,
+    "publication_semantics_required": true,
+    "revision_semantics_required": true,
+    "identity_schema_qa_required": true,
+    "point_in_time_required": true,
+    "independent_unseen_evaluation_required": true,
+    "nonoverlapping_discovery_replication_required": true,
+    "dataset_hash_required": true,
+    "no_candidate_promoted_by_reachability_alone": true,
+    "mt5_identity_discovery_does_not_self_admit": true
+  },
+  "definitive_data_gap_allowed": false,
+  "next_action": "RESOLVE_BLOCKING_REQUIREMENTS_BY_PROVENANCE_PRIORITY_FAIL_CLOSED",
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false,
+    "scientific_change_allowed": false
+  }
+}

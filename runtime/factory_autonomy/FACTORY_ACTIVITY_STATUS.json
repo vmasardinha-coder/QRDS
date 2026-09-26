@@ -1,0 +1,87 @@
+{
+  "schema": "qrds.factory.activity_status.v2",
+  "generated_at_utc": "2026-09-26T19:27:25.482494Z",
+  "overall_status": "DEGRADED_WARMUP_OR_STALE",
+  "monitor_cadence_minutes": 15,
+  "executive_counters": {
+    "xawinwdo_correlation": {
+      "qualified": false,
+      "qualification_status": "QUALIFIED_FOR_XAWINWDO_PRIMARY_EXPERIMENT_ONLY",
+      "mt5_record_count": 0,
+      "materialization_next_stage": "FAIL_CLOSED_INSUFFICIENT_PHYSICAL_OVERLAP",
+      "aligned_session_count": 125,
+      "usable_return_count": 119,
+      "split_counts": {
+        "discovery": 0,
+        "validation": 0,
+        "holdout": 0
+      }
+    },
+    "grammar_pipeline": {
+      "scout_proposals_current": 14,
+      "scouted_not_preregistered_current": 8,
+      "duplicate_suppressed_current": 0,
+      "insufficient_evidence_current": 6,
+      "handoff_new_current": 0,
+      "handoff_unique_cumulative": 18,
+      "preregistered_unique_cumulative": 9,
+      "transported_current": 0
+    },
+    "legacy_requalification": {
+      "affected": 768,
+      "completed": 768,
+      "remaining": 0,
+      "survivors": 0,
+      "source_gate_green": false
+    }
+  },
+  "cadence_policy": {
+    "grammar_scout_hours": 24,
+    "source_qualification_search_hours": 2,
+    "requalification_hours": 6,
+    "factory_status_monitor_minutes": 15
+  },
+  "components": {
+    "grammar_scout": {
+      "name": "grammar_scout",
+      "active": true,
+      "freshness": "FRESH",
+      "age_hours": 4.37,
+      "status": "IDEATION_ONLY_NO_ECONOMICS",
+      "path": "runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json"
+    },
+    "source_qualification_search": {
+      "name": "source_qualification_search",
+      "active": true,
+      "freshness": "FRESH",
+      "age_hours": 2.21,
+      "status": "ACTIVE_SEARCHING_QUALIFICATION",
+      "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json"
+    },
+    "invalidated_family_requalification": {
+      "name": "invalidated_family_requalification",
+      "active": false,
+      "freshness": "STALE_OR_UNDATED",
+      "age_hours": 170.12,
+      "status": "SOURCE_GATE_NOT_GREEN:qualified",
+      "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json",
+      "affected_family_count": 768,
+      "completed_family_count": 768,
+      "survivor_count": 0,
+      "source_gate_green": false
+    }
+  },
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "scientific_change_allowed": false
+  }
+}

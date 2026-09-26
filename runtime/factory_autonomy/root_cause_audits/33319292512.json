@@ -1,0 +1,73 @@
+{
+  "affected_scope": {
+    "family_count": 0,
+    "family_ids": [],
+    "historical_results_mutated": false
+  },
+  "boundary_first_known_failure": "H1357",
+  "boundary_last_known_working": "H1356",
+  "evidence": {
+    "discovery_first_session": "2024-06-19",
+    "discovery_last_session": "2024-12-30",
+    "discovery_sessions_available": 135,
+    "first_failure_family": "H1357",
+    "first_failure_feature": "CLOSE_LOCATION",
+    "first_failure_lookback_sessions": 60,
+    "first_failure_recorded_reason": "NO_TRADES",
+    "minimum_sessions_required_for_first_causal_z": 61,
+    "source_evidence": {
+      "coverage": {
+        "discovery_first_session": "2024-06-19",
+        "discovery_last_session": "2024-12-30",
+        "discovery_sessions_available": 135
+      },
+      "exact_url": "https://raw.githubusercontent.com/wesleyzilva/tradetech/main/CandlesHistoryDatas/2024_26/WINFUT_F_0_5min.csv",
+      "final_url": "https://raw.githubusercontent.com/wesleyzilva/tradetech/main/CandlesHistoryDatas/2024_26/WINFUT_F_0_5min.csv",
+      "instrument_identity": "WINFUT_CONTINUOUS_EXPORT_MAPPED_TO_WIN_FRONT_BY_SESSION",
+      "missingness": "PARSE_REQUIRES_REQUIRED_FIELDS;_NONCONTIGUOUS_SESSIONS_DROPPED",
+      "primary_source_role": "DIAGNOSTIC_EXISTING_FACTORY_SOURCE_ONLY",
+      "provider": "GitHub/wesleyzilva/tradetech",
+      "publication_timing": "UNPROVEN_FAIL_CLOSED",
+      "raw_sha256": "64604a4b29c432df9af2663329e3e582fa412f6cf54bc508ee62786d60b3c088",
+      "resource_identifier": "bc064fbc3d2b4ab22fe84561e19d46b9b1da6d1d",
+      "retrieval_timestamp": "2026-08-30T15:19:29.134802Z",
+      "revision_semantics": "UNPROVEN_FAIL_CLOSED",
+      "roll_identity": "PROFIT_CONTINUOUS_INTRADAY_ONLY",
+      "schema": [
+        "timestamp",
+        "symbol",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "first_divergent_layer": "FEATURE_MATERIALIZATION",
+  "generated_at_utc": "2026-08-30T15:19:32.222928Z",
+  "historical_integrity_status": "ORIGINAL_RESULTS_PRESERVED_APPEND_ONLY",
+  "regression_test": "tests/test_gate_btc_autonomous_root_cause.py",
+  "remediation_required": false,
+  "remediation_type": "DIAGNOSTIC_ONLY_FAIL_CLOSED",
+  "root_cause_classification": "INSUFFICIENT_EVIDENCE_FAIL_CLOSED",
+  "root_cause_unresolved": true,
+  "root_cause_work_required": true,
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_economics_read": false,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "scientific_change_allowed": false,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.root_cause_audit.v2",
+  "scientific_contract_changed": false
+}
