@@ -27,6 +27,7 @@ RUNTIME_TRACK_FILES = {
     "B3_H31": "runtime/ledgers/b3_h31_prospective/STATUS.json",
     "MOMENTUM_M1_M2": "runtime/ledgers/momentum_m1_m2/STATUS.json",
     "D50_DATA_QUALIFICATION": "runtime/ledgers/d50/STATUS.json",
+    "V16B": "runtime/ledgers/v16b/STATUS.json",
 }
 ACTIVE_RUNTIME_STATES = {
     "ACTIVE_STRUCTURAL_COLLECTION",
@@ -89,6 +90,18 @@ def runtime_frontier() -> dict | None:
 def is_runtime_healthy(row: dict | None, track: str | None = None) -> bool:
     if not row:
         return False
+    if track == "V16B":
+        return (
+            row.get("status") == "TERMINAL_BLOCKED_NOT_PROMOTABLE"
+            and row.get("scientific_decision_status") == "CLOSED_COMPLETED"
+            and bool(row.get("successor_family_id"))
+            and bool(row.get("successor_runtime"))
+            and row.get("promotion_allowed") is False
+            and int(row.get("prospective_credit", 0) or 0) == 0
+            and row.get("engine_feed") is False
+            and int(row.get("orders_generated", row.get("orders", 0)) or 0) == 0
+            and int(row.get("real_capital_used", row.get("real_capital", 0)) or 0) == 0
+        )
     if track == "D50_DATA_QUALIFICATION":
         dq=row.get("data_qualification", {})
         mirror=row.get("mirror_alignment", {})
@@ -115,6 +128,15 @@ def is_runtime_healthy(row: dict | None, track: str | None = None) -> bool:
 
 
 def runtime_state_view(name: str, runtime_row: dict) -> dict:
+    if name == "V16B":
+        return {
+            "status": runtime_row.get("status"),
+            "data_as_of": runtime_row.get("data_as_of"),
+            "terminal_disposition": runtime_row.get("terminal_disposition"),
+            "successor_family_id": runtime_row.get("successor_family_id"),
+            "successor_runtime": runtime_row.get("successor_runtime"),
+            "authority": "gate-btc-runtime",
+        }
     if name == "D50_DATA_QUALIFICATION":
         dq=runtime_row.get("data_qualification", {})
         return {

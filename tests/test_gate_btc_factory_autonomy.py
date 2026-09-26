@@ -186,6 +186,40 @@ def test_watchdog_d50_runtime_qualification_overrides_stale_static_blocker(tmp_p
     assert d['runtime_track_states']['D50_DATA_QUALIFICATION']['eligible_observations'] == 7
 
 
+def test_watchdog_terminal_v16b_parent_never_requests_repair(tmp_path, monkeypatch):
+    m = load_module('universal_watchdog_v16b_terminal_test', 'tools/gate_btc_factory/universal_watchdog.py')
+    source = tmp_path / 'source.json'
+    out = tmp_path / 'watch.json'
+    source.write_text(json.dumps({'tracks': {
+        'V16B': {
+            'classification': 'DATA_BLOCKED',
+            'status': 'FACTORY_DATA_BLOCKED',
+            'blocker': 'stale rehearsal blocker',
+        }
+    }}), encoding='utf-8')
+    runtime = {
+        'status': 'TERMINAL_BLOCKED_NOT_PROMOTABLE',
+        'scientific_decision_status': 'CLOSED_COMPLETED',
+        'terminal_disposition': 'CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK',
+        'successor_family_id': 'GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909',
+        'successor_runtime': 'runtime/ledgers/v16b1/STATUS.json',
+        'promotion_allowed': False,
+        'prospective_credit': 0,
+        'engine_feed': False,
+        'orders_generated': 0,
+        'real_capital_used': 0,
+    }
+    monkeypatch.setattr(m, 'SOURCE', source)
+    monkeypatch.setattr(m, 'OUT', out)
+    monkeypatch.setattr(m, 'load_runtime', lambda path: runtime if path.endswith('v16b/STATUS.json') else None)
+    assert m.main() == 0
+    d = json.loads(out.read_text(encoding='utf-8'))
+    assert 'V16B' not in d['stalled_tracks']
+    assert all(a['track'] != 'V16B' for a in d['actions'])
+    assert d['runtime_track_states']['V16B']['status'] == 'TERMINAL_BLOCKED_NOT_PROMOTABLE'
+    assert d['runtime_track_states']['V16B']['successor_family_id'] == 'GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909'
+
+
 def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_path, monkeypatch):
     m = load_module('self_audit_runtime_authority_test', 'tools/gate_btc_factory/self_audit.py')
     source = tmp_path / 'source.json'
@@ -197,6 +231,7 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
         'B3_H40_PLUS': {'status': 'CLOSED_NO_H160_H169_SURVIVOR'},
         'D50_DATA_QUALIFICATION': {'blocker': 'stale 0/7 blocker'},
         'MOMENTUM_M1_M2': {'blocker': 'stale collection-delivery anomaly'},
+        'V16B': {'blocker': 'stale parent rehearsal blocker'},
     }}), encoding='utf-8')
     plan.write_text(json.dumps({'actions': [], 'transitions_allowed': True}), encoding='utf-8')
     watch.write_text(json.dumps({'stalled_tracks': []}), encoding='utf-8')
@@ -215,6 +250,18 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
             'orders_generated': 0,
             'real_capital_used': 0,
         },
+        'runtime/ledgers/v16b/STATUS.json': {
+            'status': 'TERMINAL_BLOCKED_NOT_PROMOTABLE',
+            'scientific_decision_status': 'CLOSED_COMPLETED',
+            'terminal_disposition': 'CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK',
+            'successor_family_id': 'GATE_BTC_V16B1_OKX_FAMILY_FREEZE_20260909',
+            'successor_runtime': 'runtime/ledgers/v16b1/STATUS.json',
+            'promotion_allowed': False,
+            'prospective_credit': 0,
+            'engine_feed': False,
+            'orders_generated': 0,
+            'real_capital_used': 0,
+        },
     }
     monkeypatch.setattr(m, 'SOURCE', source)
     monkeypatch.setattr(m, 'PLAN', plan)
@@ -229,6 +276,7 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
     assert d['frontier_authority'] == 'gate-btc-runtime'
     assert all(x['track'] != 'D50_DATA_QUALIFICATION' for x in d['scientific_blockers'])
     assert all(x['track'] != 'MOMENTUM_M1_M2' for x in d['scientific_blockers'])
+    assert all(x['track'] != 'V16B' for x in d['scientific_blockers'])
     assert d['runtime_authority']['D50_DATA_QUALIFICATION']['observations'] == 7
     assert d['runtime_authority']['MOMENTUM_M1_M2']['observations'] == 31
 
