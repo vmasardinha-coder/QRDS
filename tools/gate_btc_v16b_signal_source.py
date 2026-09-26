@@ -48,6 +48,14 @@ def load_cmc_assets(path: Path) -> pd.DataFrame:
         if not isinstance(rows, list):
             raise ValueError("CMC snapshot must be CSV, a JSON list, or JSON object with data list")
         raw = pd.DataFrame(rows)
+    # CMC official map emits rank; preserve the raw snapshot and normalize only
+    # the derived frame. Conflicting dual fields must never be silently chosen.
+    if "rank" in raw.columns:
+        if "cmc_rank" in raw.columns:
+            if not pd.to_numeric(raw["rank"], errors="raise").equals(pd.to_numeric(raw["cmc_rank"], errors="raise")):
+                raise ValueError("conflicting CMC rank fields")
+        else:
+            raw = raw.rename(columns={"rank": "cmc_rank"})
     required = {"id", "symbol", "slug", "cmc_rank"}
     missing = required - set(raw.columns)
     if missing:

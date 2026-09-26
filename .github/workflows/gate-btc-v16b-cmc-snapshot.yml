@@ -12,6 +12,11 @@ on:
       - .github/workflows/gate-btc-v16b-cmc-snapshot.yml
       - tools/gate_btc_v16b_cmc_snapshot.py
       - tools/gate_btc_v16b_cmc_persist.py
+      - tools/gate_btc_v16b1_universe_corpus.py
+      - tools/gate_btc_v16b_signal_source.py
+      - tests/test_gate_btc_v16b1_universe_corpus.py
+      - tests/test_gate_btc_v16b_signal_source.py
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B1_UNIVERSE_CUTOVER_20260926.json
       - tests/test_gate_btc_v16b_cmc_persist.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_CMC_DURABLE_COLLECTION_CONTRACT_20260925.json
   pull_request:
@@ -20,6 +25,11 @@ on:
       - .github/workflows/gate-btc-v16b-cmc-snapshot.yml
       - tools/gate_btc_v16b_cmc_snapshot.py
       - tools/gate_btc_v16b_cmc_persist.py
+      - tools/gate_btc_v16b1_universe_corpus.py
+      - tools/gate_btc_v16b_signal_source.py
+      - tests/test_gate_btc_v16b1_universe_corpus.py
+      - tests/test_gate_btc_v16b_signal_source.py
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B1_UNIVERSE_CUTOVER_20260926.json
       - tests/test_gate_btc_v16b_cmc_persist.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_CMC_DURABLE_COLLECTION_CONTRACT_20260925.json
 
@@ -48,16 +58,23 @@ jobs:
           python-version: "3.12"
 
       - name: Install capture dependency
-        run: pip install 'requests>=2.31,<3' pytest
+        run: pip install 'requests>=2.31,<3' pytest pandas
 
       - name: Validate durable persistence contract
-        run: pytest -q tests/test_gate_btc_v16b_cmc_persist.py
+        run: python -m pytest -q tests/test_gate_btc_v16b_cmc_persist.py tests/test_gate_btc_v16b1_universe_corpus.py tests/test_gate_btc_v16b_signal_source.py
 
       - name: Capture raw CMC Top-150 and availability manifest
         run: |
           set -euo pipefail
           python tools/gate_btc_v16b_cmc_snapshot.py \
             --out-dir artifacts/gate_btc/v16b/cmc_snapshots
+
+      - name: Qualify live Top-150 in isolated corpus
+        run: |
+          python -m tools.gate_btc_v16b1_universe_corpus \
+            --capture-dir artifacts/gate_btc/v16b/cmc_snapshots \
+            --runtime-root "$RUNNER_TEMP/v16b1-corpus-qualification" \
+            --run-id "${{ github.run_id }}" --code-sha "$(git rev-parse HEAD)"
 
       - name: Verify adjacent provenance and fail closed
         run: |
@@ -93,7 +110,7 @@ jobs:
           if-no-files-found: error
 
       - name: Checkout canonical runtime branch
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -101,7 +118,7 @@ jobs:
           fetch-depth: 0
 
       - name: Persist Thursday evidence into append-only runtime corpus
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
           python tools/gate_btc_v16b_cmc_persist.py \
@@ -109,21 +126,46 @@ jobs:
             --runtime-root canonical-runtime \
             --run-id "${{ github.run_id }}"
 
+      - name: Preserve post-cutover live universe evidence
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          python -m tools.gate_btc_v16b1_universe_corpus \
+            --capture-dir artifacts/gate_btc/v16b/cmc_snapshots \
+            --runtime-root canonical-runtime \
+            --run-id "${{ github.run_id }}" --code-sha "$(git rev-parse HEAD)"
+
       - name: Publish durable CMC corpus atomically
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         working-directory: canonical-runtime
         run: |
           set -euo pipefail
-          if git diff --quiet -- runtime/evidence/v16b/cmc_weekly; then
-            echo "No durable Thursday corpus change."
+          git add -- runtime/evidence/v16b1/prospective_universe
+          if [ -d runtime/evidence/v16b/cmc_weekly ]; then
+            git add -- runtime/evidence/v16b/cmc_weekly
+          fi
+          if git diff --cached --quiet; then
+            echo "No durable universe corpus change."
             exit 0
           fi
           git config user.name "gate-btc-research-bot"
           git config user.email "gate-btc-research-bot@users.noreply.github.com"
-          git add runtime/evidence/v16b/cmc_weekly
-          git commit -m "Persist V16B CMC Thursday evidence run ${{ github.run_id }}"
+          git commit -m "Persist V16B CMC live universe evidence run ${{ github.run_id }}"
           git pull --rebase origin gate-btc-runtime
           git push origin HEAD:gate-btc-runtime
+
+      - name: Verify newly captured evidence on canonical remote
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        working-directory: canonical-runtime
+        run: |
+          set -euo pipefail
+          git fetch origin gate-btc-runtime
+          CAPTURE="runtime/evidence/v16b1/prospective_universe/captures/run_${{ github.run_id }}"
+          git ls-tree -r --name-only HEAD -- "$CAPTURE" > "$RUNNER_TEMP/cmc-capture-paths"
+          test -s "$RUNNER_TEMP/cmc-capture-paths"
+          while IFS= read -r path; do
+            test "$(git rev-parse "HEAD:$path")" = "$(git rev-parse "origin/gate-btc-runtime:$path")"
+          done < "$RUNNER_TEMP/cmc-capture-paths"
+          echo "V16B1_LIVE_CAPTURE_CANONICAL_PERSISTENCE=PASS"
 
       - name: Confirm execution safety boundaries
         run: |

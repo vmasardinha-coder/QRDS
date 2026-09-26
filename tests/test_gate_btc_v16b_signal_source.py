@@ -72,3 +72,18 @@ def test_non_thursday_live_build_rejected_before_network(tmp_path):
     ev.write_text('{}')
     with pytest.raises(ValueError, match="Thursday"):
         src.build_live(snap, ev, pd.Timestamp("2026-09-09"), tmp_path / "out")
+
+def test_official_map_rank_is_accepted_without_mutating_raw(tmp_path):
+    import json
+    p=tmp_path/"raw.json"
+    p.write_text(json.dumps({"data":[{"id":1,"symbol":"BTC","slug":"bitcoin","rank":1}]}))
+    before=p.read_bytes()
+    assets=src.load_cmc_assets(p)
+    assert assets.iloc[0].cmc_rank==1 and p.read_bytes()==before
+
+def test_conflicting_rank_alias_fails_closed(tmp_path):
+    import json
+    p=tmp_path/"raw.json"
+    p.write_text(json.dumps({"data":[{"id":1,"symbol":"BTC","slug":"bitcoin","rank":1,"cmc_rank":2}]}))
+    with pytest.raises(ValueError,match="conflicting CMC rank"):
+        src.load_cmc_assets(p)
