@@ -196,6 +196,7 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
     source.write_text(json.dumps({'tracks': {
         'B3_H40_PLUS': {'status': 'CLOSED_NO_H160_H169_SURVIVOR'},
         'D50_DATA_QUALIFICATION': {'blocker': 'stale 0/7 blocker'},
+        'MOMENTUM_M1_M2': {'blocker': 'stale collection-delivery anomaly'},
     }}), encoding='utf-8')
     plan.write_text(json.dumps({'actions': [], 'transitions_allowed': True}), encoding='utf-8')
     watch.write_text(json.dumps({'stalled_tracks': []}), encoding='utf-8')
@@ -205,6 +206,14 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
         'runtime/ledgers/d50/STATUS.json': {
             'data_qualification': {'qualified': True, 'current': 7, 'target': 7, 'status': 'ACTIVE_CONSECUTIVE_PASS_CHAIN_7_OF_7'},
             'mirror_alignment': {'status': 'PASS_D50_CURRENT_EVIDENCE_ALIGNED'},
+        },
+        'runtime/ledgers/momentum_m1_m2/STATUS.json': {
+            'status': 'ACTIVE_PROSPECTIVE_SHADOW',
+            'observed_snapshots': 31,
+            'data_as_of': '2026-09-24',
+            'engine_feed': False,
+            'orders_generated': 0,
+            'real_capital_used': 0,
         },
     }
     monkeypatch.setattr(m, 'SOURCE', source)
@@ -219,7 +228,9 @@ def test_self_audit_uses_runtime_frontier_and_suppresses_stale_d50_blocker(tmp_p
     assert d['frontier_status'] == 'CLOSED_NO_H2720_H2729_SURVIVOR'
     assert d['frontier_authority'] == 'gate-btc-runtime'
     assert all(x['track'] != 'D50_DATA_QUALIFICATION' for x in d['scientific_blockers'])
+    assert all(x['track'] != 'MOMENTUM_M1_M2' for x in d['scientific_blockers'])
     assert d['runtime_authority']['D50_DATA_QUALIFICATION']['observations'] == 7
+    assert d['runtime_authority']['MOMENTUM_M1_M2']['observations'] == 31
 
 
 def test_survivor_health_never_grants_scientific_change(tmp_path, monkeypatch):
