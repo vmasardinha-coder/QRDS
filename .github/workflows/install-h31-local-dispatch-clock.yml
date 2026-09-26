@@ -1,0 +1,66 @@
+﻿name: Install H31 Local Dispatch Clock
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_h31_local_dispatch_clock.ps1'
+      - '.github/workflows/install-h31-local-dispatch-clock.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_h31_local_dispatch_clock.ps1'
+      - '.github/workflows/install-h31-local-dispatch-clock.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  NO_BACKFILL: 'true'
+  NO_RETUNE: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell and assert bounded transport-only clock
+        shell: powershell
+        run: |
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tools/gate_btc_h31_local_dispatch_clock.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if (@($errors).Count -ne 0) { throw ($errors | Out-String) }
+          $t=Get-Content tools/gate_btc_h31_local_dispatch_clock.ps1 -Raw
+          foreach($x in @('09','18','55','workflow run','.github/workflows/gate-btc-b3-h31-intraday-shadow.yml','OUTSIDE_WINDOW_NOOP')) { if(-not $t.Contains($x)){ throw "MISSING_$x" } }
+          foreach($bad in @('order_send','REAL_CAPITAL=1','ENGINE_FEED=true','backfill')) { if($t.ToLower().Contains($bad.ToLower())){ throw "FORBIDDEN_$bad" } }
+
+  install:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install transport-only clock task
+        shell: powershell
+        run: |
+          if ($env:RESEARCH_ONLY -ne 'true' -or $env:SHADOW_ONLY -ne 'true' -or $env:NO_BACKFILL -ne 'true' -or $env:NO_RETUNE -ne 'true') { throw 'SAFETY_BOUNDARY' }
+          if ($env:ENGINE_FEED -ne 'false' -or $env:ORDERS -ne '0' -or $env:REAL_CAPITAL -ne '0') { throw 'TRADING_BOUNDARY' }
+          $root='C:\actions-runner-qrds\local-clocks'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $dst=Join-Path $root 'gate_btc_h31_local_dispatch_clock.ps1'
+          Copy-Item tools\gate_btc_h31_local_dispatch_clock.ps1 $dst -Force
+          $days=@('Monday','Tuesday','Wednesday','Thursday','Friday')
+          $primary=New-ScheduledTaskTrigger -Weekly -WeeksInterval 1 -DaysOfWeek $days -At 08:58
+          $backup=New-ScheduledTaskTrigger -Weekly -WeeksInterval 1 -DaysOfWeek $days -At 09:03
+          $action=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$dst`""
+          $settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 10 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Hours 11) -StartWhenAvailable
+          Register-ScheduledTask -TaskName 'QRDS-H31-Dispatch-Clock' -Action $action -Trigger @($primary,$backup) -Settings $settings -User 'jsard' -Force | Out-Null
+          $t=Get-ScheduledTask -TaskName 'QRDS-H31-Dispatch-Clock'
+          if($t.Settings.MultipleInstances -ne 'IgnoreNew'){ throw 'MULTI_INSTANCE_GUARD_MISSING' }
+          Write-Host 'H31_LOCAL_DISPATCH_CLOCK=INSTALLED'
