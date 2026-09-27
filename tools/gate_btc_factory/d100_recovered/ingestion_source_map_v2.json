@@ -1,0 +1,60 @@
+{
+  "version": "GATE_BTC_INGESTION_SOURCE_MAP_V2",
+  "frozen_at": "2026-07-31T00:00:00-03:00",
+  "research_only": true,
+  "delta_official": {
+    "universe": [
+      "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "AVAX", "LINK", "LTC", "BCH",
+      "DOT", "TRX", "SUI", "APT", "ARB", "OP", "NEAR", "FIL", "AAVE", "ETC"
+    ],
+    "ohlc_primary": "okx_public_swap_1Dutc",
+    "funding_primary": "okx_public_funding_history",
+    "pnl_fallback": null,
+    "diagnostic_crosscheck": "binance_spot_or_perpetual_not_substituted_into_official_pnl",
+    "required_assets": 20,
+    "required_asset_ratio": 1.0,
+    "confirmed_closed_bars_only": true,
+    "missing_primary_action": "INVALIDATE_BAR_DO_NOT_SUBSTITUTE_DO_NOT_ADVANCE_LEDGER"
+  },
+  "v2a_shared_prices": {
+    "affected_cdd_assets": [
+      "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "AVAX", "LINK", "LTC", "BCH",
+      "DOT", "TRX", "NEAR", "FIL", "AAVE", "ETC"
+    ],
+    "existing_okx_assets": ["SUI", "APT", "ARB", "OP"],
+    "per_asset_priority": {
+      "BTC": ["cdd", "binance", "okx"],
+      "ETH": ["cdd", "binance", "okx"],
+      "SOL": ["cdd", "binance", "okx"],
+      "XRP": ["cdd", "binance", "okx"],
+      "DOGE": ["cdd", "binance", "okx"],
+      "ADA": ["cdd", "binance", "okx"],
+      "AVAX": ["cdd", "binance", "okx"],
+      "LINK": ["cdd", "binance", "okx"],
+      "LTC": ["cdd", "binance", "okx"],
+      "BCH": ["cdd", "binance", "okx"],
+      "DOT": ["cdd", "binance", "okx"],
+      "TRX": ["cdd", "binance", "okx"],
+      "NEAR": ["cdd", "binance", "okx"],
+      "FIL": ["cdd", "binance", "okx"],
+      "AAVE": ["cdd", "binance", "okx"],
+      "ETC": ["cdd", "binance", "okx"],
+      "SUI": ["okx", "binance", "cdd"],
+      "APT": ["okx", "binance", "cdd"],
+      "ARB": ["okx", "binance", "cdd"],
+      "OP": ["okx", "binance", "cdd"]
+    },
+    "default_priority": ["cdd", "binance", "okx"],
+    "merge_rule": "fill each missing date from the next frozen source without overwriting a higher-priority observation",
+    "confirmed_closed_bars_only": true,
+    "required_delta_subset_ratio": 1.0,
+    "historical_repair_window": {
+      "start": "2026-05-15",
+      "end": "2026-07-29",
+      "expected_calendar_bars": 76,
+      "required_assets_per_bar": 20
+    },
+    "historical_availability_rule": "backfilled rows repair features but never count as prospective evidence",
+    "prospective_availability_rule": "available_at_utc must be the actual retrieval timestamp and must precede the decision cutoff"
+  }
+}

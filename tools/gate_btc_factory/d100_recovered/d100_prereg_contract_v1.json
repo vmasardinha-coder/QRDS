@@ -1,0 +1,68 @@
+﻿{
+  "schema": "gate_btc.d100_universe_expansion.v1",
+  "experiment": "D100_UNIVERSE_EXPANSION_V1",
+  "status": "FROZEN_DORMANT",
+  "created_for_future_activation": true,
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "orders_generated": 0,
+  "real_capital_used": 0,
+
+  "activation_gate": {
+    "required_d50_paired_prospective_observations": 30,
+    "automatic_activation": false,
+    "manual_activation_required": true,
+    "historical_backfill_allowed": false,
+    "prospective_counter_starts_at_zero": true
+  },
+
+  "universe_definition": {
+    "raw_universe": "TOP_100_BY_CURRENT_MARKET_CAP_AT_EACH_SIGNAL_DATE",
+    "raw_universe_size": 100,
+    "dynamic_point_in_time_universe": true,
+    "stablecoins_excluded": true,
+    "blocked_assets_excluded": true,
+    "wrapped_or_fund_like_assets_excluded": true,
+    "minimum_history_required": true,
+    "liquidity_filter_required": true,
+    "execution_market_required": true,
+    "short_requires_derivatives_availability": true,
+    "funding_required_for_short": true,
+    "silent_substitution_prohibited": true
+  },
+
+  "daily_universe_reporting_required": {
+    "top100_raw": true,
+    "eligible_after_filters": true,
+    "long_eligible": true,
+    "shortable": true,
+    "rejected_assets_with_reason": true
+  },
+
+  "economic_engine_policy": {
+    "reuse_d50_logic_without_retuning": true,
+    "reuse_d50_control": true,
+    "reuse_d50_cost_aware": true,
+    "reuse_d50_exit_2sigma": true,
+    "score_retuning_before_activation": false,
+    "stop_retuning_before_activation": false,
+    "threshold_retuning_before_activation": false,
+    "hindsight_parameter_selection_prohibited": true
+  },
+
+  "prospective_evidence_policy": {
+    "counter_start": 0,
+    "retrospective_rows_count_as_prospective": false,
+    "pre_activation_rows_are_diagnostics_only": true,
+    "first_valid_observation": "FIRST_UNTOUCHED_ELIGIBLE_CLOSE_AFTER_MANUAL_ACTIVATION"
+  },
+
+  "governance": {
+    "must_not_modify_existing_d50_files": true,
+    "must_not_modify_existing_d50_counter": true,
+    "must_not_modify_existing_d50_runner": true,
+    "must_not_feed_existing_d50_engine": true,
+    "must_not_share_prospective_ledger_with_d50": true
+  }
+}

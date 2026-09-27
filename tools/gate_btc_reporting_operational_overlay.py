@@ -116,6 +116,13 @@ INVENTORY_FIELDS = (
     "observed_snapshots",
     "observed_days",
     "canonical_cycle_count",
+    "physical_snapshot_count",
+    "distinct_capture_days",
+    "latest_physical_capture_at_utc",
+    "scientific_observations_credited",
+    "scientific_target",
+    "economic_status",
+    "scientific_blockers",
     "economics_locked",
     "promotion_allowed",
     "engine_feed",
@@ -226,12 +233,38 @@ def enrich(runtime_root: Path, current: dict) -> dict:
         "source": "ledgers/momentum_m1_m2/STATUS.json",
     }, collection_health_hint("momentum_m1_m2", mom))
 
+    # D100 v2 distinguishes physical delivery from scientific readiness.
+    d100p = runtime_root / "ledgers/d100/STATUS.json"
+    d100 = load(d100p)
+    d100_active = bool(d100 and d100.get("schema") == "qrds.d100.forward_collection.v2")
+    if d100_active:
+        safe("d100", d100)
+        failed_capture = d100.get("last_error") is not None
+        hint = "RED_FAILED_DELIVERY" if failed_capture else "AMBER_BLOCKED_DEPENDENCY"
+        current["components"]["d100"] = {
+            "status": d100["status"],
+            "freshness": freshness(d100, reference, "latest_physical_capture_at_utc"),
+            "collection_health_hint": hint,
+            "physical_snapshot_count": d100.get("physical_snapshot_count"),
+            "distinct_capture_days": d100.get("distinct_capture_days"),
+            "latest_physical_capture_at_utc": d100.get("latest_physical_capture_at_utc"),
+            "latest_raw_universe_count": d100.get("latest_raw_universe_count"),
+            "latest_market_data_observed_count": d100.get("latest_market_data_observed_count"),
+            "scientific_observations_credited": d100.get("scientific_observations_credited"),
+            "scientific_target": d100.get("scientific_target"),
+            "economic_status": d100.get("economic_status"),
+            "scientific_blockers": d100.get("scientific_blockers"),
+            "next_action": d100.get("next_action"),
+            "source": "ledgers/d100/STATUS.json",
+        }
+        current.setdefault("sources", {})["d100"] = source_meta(d100p, d100)
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
     failed = list(warnings.get("failed_delivery_components", []))
     blocked = list(warnings.get("blocked_dependency_components", []))
-    for name in ("b3_h1", "v16b", "momentum_m1_m2"):
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")
