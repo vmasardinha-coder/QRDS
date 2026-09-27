@@ -11,11 +11,18 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_momentum_economic_shadow.py
+      - tools/gate_btc_momentum_required_prices.py
+      - tests/test_gate_btc_momentum_economics.py
       - migration/reporting/momentum_m1m2_economic_contract_v1.json
+      - migration/reporting/MOMENTUM_M1M2_INTERRUPTION_20260927.md
       - .github/workflows/gate-btc-momentum-economics.yml
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: momentum-economics-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
+  cancel-in-progress: false
 
 env:
   RESEARCH_ONLY: 'true'
@@ -31,9 +38,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: python -m py_compile tools/gate_btc_momentum_economic_shadow.py
+      - run: pip install pandas==2.2.3 numpy==2.1.3
+      - run: python -m unittest discover -s tests -p test_gate_btc_momentum_economics.py -v
       - run: |
           python - <<'PY'
           import json
@@ -54,7 +64,9 @@ jobs:
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, path: main_repo}
@@ -62,56 +74,84 @@ jobs:
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Install canonical V2A dependencies
+      - name: Install canonical source dependencies
         working-directory: main_repo
         run: pip install -r migration/canonical/v2a/requirements.txt
-      - name: Resolve latest Momentum cutoff
+      - name: Resolve latest Momentum cutoff and preserve ledger seals
         run: |
           python - <<'PY'
-          import json, os
+          import hashlib,json,os
           from pathlib import Path
           root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2')
-          snaps=sorted(p for p in root.glob('20*.json'))
+          snaps=sorted(root.glob('20*.json'))
           if not snaps: raise SystemExit('NO_MOMENTUM_SNAPSHOT')
           latest=json.loads(snaps[-1].read_text())
-          with open(os.environ['GITHUB_ENV'],'a') as f: f.write(f"MOMENTUM_CUTOFF={latest['cutoff']}\nMOMENTUM_SNAPSHOT={snaps[-1]}\n")
-          print(latest['cutoff'])
+          eroot=Path('runtime_repo/runtime/ledgers/momentum_m1_m2_economics')
+          seals={n:hashlib.sha256((eroot/n).read_bytes()).hexdigest() for n in ('STATE.json','HISTORY.json') if (eroot/n).exists()}
+          Path('economic_pre_run_seals.json').write_text(json.dumps(seals))
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f"MOMENTUM_CUTOFF={latest['cutoff']}\nMOMENTUM_SNAPSHOT={snaps[-1]}\n")
           PY
-      - name: Collect public V2A prices
-        working-directory: main_repo
-        run: python migration/canonical/v2a/scripts/00_run_all_v2a.py --output-zip ../qos_v2a_public_collection.zip
-      - name: Freeze prices to Momentum cutoff
-        working-directory: main_repo
-        run: python tools/v2a_frozen_replay.py ../qos_v2a_public_collection.zip --data-cutoff "$MOMENTUM_CUTOFF" --output-zip ../qos_v2a_outputs.zip --evidence-dir ../v2a_evidence
-      - name: Append economic shadow
-        id: append
+      - name: Capture prices for held positions and frozen current selections
+        id: prices
         continue-on-error: true
         working-directory: main_repo
-        run: python tools/gate_btc_momentum_economic_shadow.py --snapshot "../$MOMENTUM_SNAPSHOT" --v2a-zip ../qos_v2a_outputs.zip --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics
-      - name: Classify unavailable frozen prices
-        if: steps.append.outcome == 'failure'
         run: |
-          echo "MOMENTUM_ECONOMICS=NOOP_MISSING_FROZEN_PRICE_COVERAGE"
-          echo "SCIENTIFIC_CREDIT=0"
-          echo "NO_BACKFILL=true"
-          echo "NO_RETUNE=true"
-      - name: Assert safety
-        if: steps.append.outcome == 'success'
+          python tools/gate_btc_momentum_required_prices.py \
+            --snapshot "../$MOMENTUM_SNAPSHOT" \
+            --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics \
+            --output-zip ../momentum_required_prices.zip
+      - name: Validate economic continuity and explicit scientific boundary
+        id: append
+        if: steps.prices.outcome == 'success'
+        continue-on-error: true
+        working-directory: main_repo
+        run: |
+          python tools/gate_btc_momentum_economic_shadow.py \
+            --snapshot "../$MOMENTUM_SNAPSHOT" --v2a-zip ../momentum_required_prices.zip \
+            --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics
+      - name: Verify preserved history and diagnostic safety
+        id: integrity
+        if: always() && steps.prices.outcome != 'skipped'
         run: |
           python - <<'PY'
-          import json
-          p=json.load(open('runtime_repo/runtime/ledgers/momentum_m1_m2_economics/ECONOMICS_STATUS.json'))
-          assert p['orders']==0 and p['real_capital']==0 and p['engine_feed'] is False
-          assert p['status']=='ECONOMICS_ACTIVE'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2_economics')
+          seals=json.loads(Path('economic_pre_run_seals.json').read_text())
+          for n,h in seals.items(): assert hashlib.sha256((root/n).read_bytes()).hexdigest()==h, n
+          for name in ('PRICE_COVERAGE_STATUS.json','DELIVERY_STATUS.json'):
+              p=root/name
+              if p.exists():
+                  s=json.loads(p.read_text())
+                  assert s['research_only'] is True and s['shadow_only'] is True
+                  assert s['orders']==s['real_capital']==0
+          print('MOMENTUM_ORIGINAL_ECONOMIC_HISTORY_UNCHANGED=PASS')
           PY
-      - name: Publish economics runtime
-        if: steps.append.outcome == 'success'
+      - name: Publish source evidence and actual economic blockage
+        if: always() && steps.integrity.outcome == 'success'
         working-directory: runtime_repo
         run: |
+          set -euo pipefail
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/ledgers/momentum_m1_m2_economics
-          git diff --cached --quiet && exit 0
-          git commit -m "Append Momentum M1/M2 economics ${MOMENTUM_CUTOFF}"
-          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Momentum held-price coverage and economic disposition ${MOMENTUM_CUTOFF}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: momentum-economic-evidence-${{ github.run_id }}
+          path: runtime_repo/runtime/ledgers/momentum_m1_m2_economics
+          retention-days: 90
+          if-no-files-found: error
+      - name: Propagate source or economic failure after evidence publication
+        if: always() && (steps.prices.outcome != 'success' || steps.append.outcome != 'success')
+        run: |
+          echo 'MOMENTUM_ECONOMICS_BLOCKED — inspect preserved delivery status; no economic row fabricated'
           exit 1
