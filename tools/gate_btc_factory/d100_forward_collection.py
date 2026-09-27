@@ -231,8 +231,8 @@ def run(output, production_map, fetch=request_bytes, clock=utcnow, run_id="manua
     started = clock()
     root = output.parent
     row = next((x for x in production_map.get("tracks", []) if x.get("track") == "D100"), {})
-    if row.get("collect") is not True or row.get("evolve") is not False or row.get("state") != "DATA_FEED_ONLY":
-        raise ValueError("D100 authority must be collect=true/evolve=false/DATA_FEED_ONLY")
+    if row.get("collect") is not True or row.get("evolve") is not False or row.get("state") not in {"DATA_FEED_ONLY", "COLLECT_ONLY_FROZEN"}:
+        raise ValueError("D100 authority must be collect=true/evolve=false with data-only or approved frozen-shadow authority")
     prior = json.loads(output.read_text(encoding="utf-8")) if output.exists() else {}
     if prior.get("scientific_observations_credited", 0) != 0 or prior.get("economics_enabled", False):
         raise ValueError("unexpected scientific authority: refuse counter reset")

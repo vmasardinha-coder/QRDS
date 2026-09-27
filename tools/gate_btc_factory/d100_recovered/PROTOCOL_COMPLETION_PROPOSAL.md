@@ -1,6 +1,6 @@
 # D100 — proposta para completar o protocolo
 
-**RASCUNHO PARA DECISÃO DE VICTOR. NÃO APROVADO. NÃO EXECUTÁVEL.**
+**APROVADO POR VICTOR em 2026-09-27 às 12:39:51 -03:00. Implementação sujeita à qualificação técnica; pesquisa/simulação apenas.**
 
 Esta proposta completa lacunas do contrato recuperado. Não altera o D50 atual,
 não aproveita retrospectivamente suas 56 observações e não foi escolhida a partir
@@ -16,13 +16,13 @@ de resultado econômico D100: nenhum resultado D100 foi calculado nesta correç�
 | Estratégias e risco | Reusar Control, CostAware e Exit2Sigma, posições/ranks/stops/custos/limites D50 congelados, sem Vol20 nesta primeira comparação. | O D100 original nomeia essas três linhas. Não escolher variantes pelo resultado. |
 | Rotação e lacunas | Sem nova entrada quando perder elegibilidade; posição que sair do Top100 é encerrada no próximo open elegível. Continuar buscando preços/funding de posições mantidas, mesmo fora do universo novo. Falta de dado necessário bloqueia a observação e exige destinação explícita da interrupção, sem fabricar linha nem resetar contador. | Regra dinâmica hoje ausente; precisa ser aprovada antes de qualquer posição D100. |
 | Comparação | Primária: D100 CostAware versus referência D50 CostAware de mesmas datas e novo ponto inicial pareado, calculada isoladamente sob regras congeladas; Control e Exit2Sigma descritivos. Preservar ledger D50 existente. | Isola a mudança de universo e evita comparar janelas distintas. Não herdar P&L ou contador D50. |
-| Decisão em N80 | Revisão única da diferença líquida pareada, custos, drawdown e intervalo por bootstrap pareado (10.000 amostras, blocos de 5, seed 20260731). Evidência favorável exige diferença líquida >0, limite inferior 95% ≥0 e piora de drawdown ≤1 ponto percentual. Caso contrário, concluir sem validação de superioridade nessa rodada. | Critérios propostos de comparação, ainda sem autoridade. Encerrar a rodada em N80, sem coleta indefinida para mudar o veredito. Nenhuma promoção/ordem/capital automática. |
+| Decisão em N80 | Revisão única da diferença líquida pareada, custos, drawdown e intervalo por bootstrap pareado (10.000 amostras, blocos de 5, seed 20260731). Evidência favorável exige diferença líquida >0, limite inferior 95% ≥0 e piora de drawdown ≤1 ponto percentual. Caso contrário, concluir sem validação de superioridade nessa rodada. | Critérios propostos de comparação, aprovados nesta sessão. Encerrar a rodada em N80, sem coleta indefinida para mudar o veredito. Nenhuma promoção/ordem/capital automática. |
 
 Antes da ativação econômica, implementar e testar o protocolo aprovado, selar
 fontes/identidades e registrar o primeiro sinal causal futuro. A coleta física
 já disponível não é convertida retroativamente em observação econômica.
 
-As decisões novas que exigem aprovação são: N80, limiar de liquidez, política de
+As decisões novas aprovadas nesta sessão são: N80, limiar de liquidez, política de
 saída por universo, comparador pareado e critérios finais. O restante deriva do
 contrato recuperado ou é qualificação técnica ainda a executar. Aprovar esta
 proposta não equivale a dizer que esses testes/qualificações já passaram.

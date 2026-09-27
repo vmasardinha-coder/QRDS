@@ -64,7 +64,7 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertIsNone(c['DELTA_PAPER_MONITOR']['expected_artifact'])
         self.assertEqual(c['DELTA_PAPER_MONITOR']['expected_ledger'], 'runtime/ledgers/delta_paper_monitor/STATUS.json')
         self.assertIsNone(c['D100']['expected_artifact'])
-        self.assertEqual(c['D100']['expected_ledger'], 'runtime/ledgers/d100/STATUS.json')
+        self.assertEqual(c['D100']['expected_ledger'], 'runtime/ledgers/d100/economic/STATUS.json')
         self.assertEqual(c['D50_ECONOMIC']['expected_workflow_job'], 'gate-btc-d50-runtime-authority.yml')
         self.assertIsNone(c['D50_ECONOMIC']['expected_artifact'])
         self.assertEqual(c['D50_ECONOMIC']['expected_ledger'], 'runtime/ledgers/d50/STATUS.json')
@@ -100,7 +100,9 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
 
     def test_d100_registry_matches_forward_only_authority(self):
         c = {x['collector_id']: x for x in self.r['collectors']}['D100']
-        self.assertEqual(c['status_expected'], 'ACTIVE_DATA_FEED')
+        self.assertEqual(c['status_expected'], 'ARMED_OR_ACTIVE_SHADOW_N80')
+        self.assertEqual(c['target_counter'], 80)
+        self.assertEqual(c['expected_ledger'], 'runtime/ledgers/d100/economic/STATUS.json')
         self.assertEqual(c['expected_workflow_job'], 'gate-btc-d100-forward-collection.yml')
         self.assertEqual(c['approved_auto_repair_actions'], [])
         self.assertIn('synthetic_backfill', c['prohibited_actions'])
@@ -113,7 +115,7 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         self.assertEqual(states['B3_H60_PLUS'], 'FACTORY_ACTIVE_DISCOVERY')
         self.assertEqual(states['V16B'], 'FACTORY_DATA_BLOCKED')
         self.assertEqual(states['MOMENTUM_M1_M2'], 'FACTORY_DATA_BLOCKED')
-        self.assertEqual(states['D100'], 'DATA_FEED_ONLY')
+        self.assertEqual(states['D100'], 'COLLECT_ONLY_FROZEN')
 
     def test_fuzzy_workflow_match_requires_all_collector_tokens(self):
         collector = {"collector_id": "SHADOW_LIVE_BOARD", "expected_workflow_job": "discover name/path containing live/shadow"}

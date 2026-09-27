@@ -10,15 +10,19 @@ on:
     paths:
       - '.github/workflows/gate-btc-d100-forward-collection.yml'
       - 'tools/gate_btc_factory/d100_forward_collection.py'
+      - 'tools/gate_btc_factory/d100_economics.py'
       - 'tools/gate_btc_factory/d100_recovered/**'
       - 'tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json'
       - 'tests/test_gate_btc_d100_forward_collection.py'
+      - 'tests/test_gate_btc_d100_economics.py'
   pull_request:
     paths:
       - '.github/workflows/gate-btc-d100-forward-collection.yml'
       - 'tools/gate_btc_factory/d100_forward_collection.py'
+      - 'tools/gate_btc_factory/d100_economics.py'
       - 'tools/gate_btc_factory/d100_recovered/**'
       - 'tests/test_gate_btc_d100_forward_collection.py'
+      - 'tests/test_gate_btc_d100_economics.py'
 
 permissions:
   contents: read
@@ -38,8 +42,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install frozen numerical dependencies
+        run: python -m pip install numpy==2.1.3 pandas==2.2.3
       - name: Test physical evidence, causality and immutable history
-        run: python -m unittest discover -s tests -p test_gate_btc_d100_forward_collection.py -v
+        run: python -m unittest discover -s tests -p "test_gate_btc_d100_*.py" -v
 
   collect-forward-only:
     needs: validate
@@ -65,6 +71,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install frozen numerical dependencies
+        run: python -m pip install numpy==2.1.3 pandas==2.2.3
       - uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
@@ -76,6 +84,10 @@ jobs:
         run: |
           python tools/gate_btc_factory/d100_forward_collection.py \
             --output runtime_repo/runtime/ledgers/d100/STATUS.json
+      - name: Execute approved D100 shadow protocol
+        id: economics
+        continue-on-error: true
+        run: python tools/gate_btc_factory/d100_economics.py --root runtime_repo/runtime/ledgers/d100/economic
       - name: Verify published safety and archive integrity
         id: integrity
         if: always() && steps.capture.outcome != 'skipped'
@@ -95,6 +107,13 @@ jobs:
           records = verify_history(root)
           assert s['physical_snapshot_count'] == len(records)
           print('D100_PHYSICAL_ARCHIVE_INTEGRITY=PASS')
+          from tools.gate_btc_factory.d100_economics import verify
+          bundles, observations = verify(root/'economic')
+          es = json.loads((root/'economic/STATUS.json').read_text())
+          assert es['scientific_target'] == 80
+          assert es['scientific_observations_credited'] == len(observations)
+          assert es['safety']['orders'] == es['safety']['real_capital'] == 0
+          print('D100_ECONOMIC_INTEGRITY=PASS')
           PY
       - name: Publish D100 evidence and explicit failures
         if: always() && steps.integrity.outcome == 'success'
@@ -118,6 +137,9 @@ jobs:
           if test -f runtime_repo/runtime/ledgers/d100/D100_STATUS.md; then
             cat runtime_repo/runtime/ledgers/d100/D100_STATUS.md >> "$GITHUB_STEP_SUMMARY"
           fi
+          if test -f runtime_repo/runtime/ledgers/d100/economic/D100_ECONOMIC_STATUS.md; then
+            cat runtime_repo/runtime/ledgers/d100/economic/D100_ECONOMIC_STATUS.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -130,3 +152,6 @@ jobs:
         run: |
           echo 'D100_SOURCE_COLLECTION_FAILED — evidence preserved; scientific credit remains zero'
           exit 1
+      - name: Fail workflow when approved economic execution failed
+        if: always() && steps.economics.outcome != 'success'
+        run: exit 1
