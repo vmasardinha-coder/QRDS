@@ -141,6 +141,20 @@ class D100EconomicsTests(unittest.TestCase):
         self.assertEqual(len(list((self.root/'observations').glob('*.json'))),80)
         self.assertEqual(e.read(self.root/'STATUS.json')['remaining_scientific_observations'],0)
 
+    def test_terminal_state_stops_physical_source_requests_too(self):
+        from tools.gate_btc_factory import d100_forward_collection as physical
+        ep=self.root/'economic'
+        e.atomic_json(ep/'STATUS.json',{'status':'CLOSED_NO_VALIDATED_SUPERIORITY'})
+        e.atomic_json(ep/'FINAL_DECISION.json',{'fixture':True})
+        policy={'tracks':[{'track':'D100','collect':True,'evolve':False,'state':'COLLECT_ONLY_FROZEN'}]}
+        with patch.object(e,'verify',return_value=([],[{}]*80)),contextlib.redirect_stdout(io.StringIO()):
+            result=physical.run(self.root/'STATUS.json',policy,fetch=lambda url:self.fail('terminal source fetch'),clock=lambda:self.now)
+        self.assertEqual(result,0)
+        status=e.read(self.root/'STATUS.json')
+        self.assertFalse(status['collection_enabled'])
+        self.assertIsNone(status['next_expected_capture_date'])
+        self.assertEqual(status['status'],'CLOSED_PHYSICAL_FEED_N80')
+
     def test_report_replaces_old_scientific_block_and_detects_stale_signal(self):
         from tools.gate_btc_reporting_operational_overlay import enrich
         physical=self.root/'ledgers/d100/STATUS.json'

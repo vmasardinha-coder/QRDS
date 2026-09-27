@@ -272,7 +272,9 @@ def enrich(runtime_root: Path, current: dict) -> dict:
             component["physical_status"] = component["status"]
             component["status"] = economic["status"]
             component["economic_status"] = economic["status"]
-            if not str(economic["status"]).startswith("CLOSED_"):
+            if str(economic["status"]).startswith("CLOSED_"):
+                component["freshness"] = "CLOSED_NOT_APPLICABLE"
+            else:
                 ef = freshness(economic, reference, "latest_signal_available_at_utc")
                 component["economic_freshness"] = ef
                 if ef != "FRESH":
