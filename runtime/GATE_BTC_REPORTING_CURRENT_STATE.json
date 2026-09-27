@@ -91,25 +91,29 @@
       "status": "LIVE_DIAGNOSTIC_ACTIVE"
     },
     "d100": {
-      "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
+      "anchor_bar_date": null,
+      "collection_health_hint": "GREEN_ACTIVE",
       "distinct_capture_days": 1,
-      "economic_status": "BLOCKED_UNRESOLVED_SCIENTIFIC_SPECIFICATION",
+      "economic_freshness": "FRESH",
+      "economic_source": "ledgers/d100/economic/STATUS.json",
+      "economic_status": "ARMED_WAITING_FIRST_CAUSAL_BAR",
+      "first_possible_bar_date": "2026-09-29",
       "freshness": "FRESH",
+      "latest_eligible_asset_count": 39,
       "latest_market_data_observed_count": 71,
       "latest_physical_capture_at_utc": "2026-09-27T15:26:17.787968Z",
       "latest_raw_universe_count": 100,
-      "next_action": "RESOLVE_D100_SCIENTIFIC_CONTRACT_WHILE_COLLECTING_PHYSICAL_SOURCE_EVIDENCE",
+      "latest_signal_available_at_utc": "2026-09-27T16:06:05.700526Z",
+      "next_action": "AUTOMATIC_DAILY_CAPTURE_AND_PAIRED_ADVANCEMENT_UNTIL_N80",
       "physical_snapshot_count": 1,
-      "scientific_blockers": [
-        "D100_FINAL_N_AND_COMPARISON_PROTOCOL_NOT_DEFINED",
-        "D100_LIQUIDITY_THRESHOLD_AND_EXCLUSION_IDENTITIES_NOT_FROZEN",
-        "D100_EXECUTABLE_SOURCE_IDENTITY_BINDING_NOT_ADMITTED",
-        "D100_DYNAMIC_UNIVERSE_MISSING_DATA_AND_POSITION_EXIT_POLICY_NOT_FROZEN"
-      ],
+      "physical_status": "ACTIVE_PHYSICAL_DATA_FEED",
+      "protocol_approved": true,
+      "remaining_scientific_observations": 80,
+      "scientific_blockers": [],
       "scientific_observations_credited": 0,
-      "scientific_target": null,
+      "scientific_target": 80,
       "source": "ledgers/d100/STATUS.json",
-      "status": "ACTIVE_PHYSICAL_DATA_FEED"
+      "status": "ARMED_WAITING_FIRST_CAUSAL_BAR"
     },
     "d50": {
       "authority": "VERIFIED_RECONCILIATION_STALE_EXTERNAL_EVIDENCE_REQUIRED",
@@ -338,7 +342,7 @@
       },
       "d100": {
         "distinct_capture_days": 1,
-        "economic_status": "BLOCKED_UNRESOLVED_SCIENTIFIC_SPECIFICATION",
+        "economic_status": "SEE_SEPARATE_APPROVED_ECONOMIC_AUTHORITY",
         "health_authority": false,
         "inventory_only": true,
         "latest_physical_capture_at_utc": "2026-09-27T15:26:17.787968Z",
@@ -346,15 +350,10 @@
         "ledger_id": "d100",
         "physical_snapshot_count": 1,
         "schema": "qrds.d100.forward_collection.v2",
-        "scientific_blockers": [
-          "D100_FINAL_N_AND_COMPARISON_PROTOCOL_NOT_DEFINED",
-          "D100_LIQUIDITY_THRESHOLD_AND_EXCLUSION_IDENTITIES_NOT_FROZEN",
-          "D100_EXECUTABLE_SOURCE_IDENTITY_BINDING_NOT_ADMITTED",
-          "D100_DYNAMIC_UNIVERSE_MISSING_DATA_AND_POSITION_EXIT_POLICY_NOT_FROZEN"
-        ],
+        "scientific_blockers": [],
         "scientific_observations_credited": 0,
         "scientific_target": null,
-        "sha256": "4cf5d7cf44aacbd18b547081b77fb1d3ddb87563b08b067813fa493536e9639c",
+        "sha256": "ae500fbf9d06926b121ac3b83e9d9140ee4d03df05c6c4770f1a2073101289c4",
         "source": "ledgers/d100/STATUS.json",
         "status": "ACTIVE_PHYSICAL_DATA_FEED"
       },
@@ -667,7 +666,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-09-27T15:30:10.753314+00:00",
+  "generated_at_utc": "2026-09-27T16:07:39.545868+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 14,
@@ -824,7 +823,7 @@
     },
     "d100": {
       "distinct_capture_days": 1,
-      "economic_status": "BLOCKED_UNRESOLVED_SCIENTIFIC_SPECIFICATION",
+      "economic_status": "SEE_SEPARATE_APPROVED_ECONOMIC_AUTHORITY",
       "health_authority": false,
       "inventory_only": true,
       "latest_physical_capture_at_utc": "2026-09-27T15:26:17.787968Z",
@@ -832,15 +831,10 @@
       "ledger_id": "d100",
       "physical_snapshot_count": 1,
       "schema": "qrds.d100.forward_collection.v2",
-      "scientific_blockers": [
-        "D100_FINAL_N_AND_COMPARISON_PROTOCOL_NOT_DEFINED",
-        "D100_LIQUIDITY_THRESHOLD_AND_EXCLUSION_IDENTITIES_NOT_FROZEN",
-        "D100_EXECUTABLE_SOURCE_IDENTITY_BINDING_NOT_ADMITTED",
-        "D100_DYNAMIC_UNIVERSE_MISSING_DATA_AND_POSITION_EXIT_POLICY_NOT_FROZEN"
-      ],
+      "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "4cf5d7cf44aacbd18b547081b77fb1d3ddb87563b08b067813fa493536e9639c",
+      "sha256": "ae500fbf9d06926b121ac3b83e9d9140ee4d03df05c6c4770f1a2073101289c4",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
@@ -1120,7 +1114,13 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/d100/STATUS.json",
       "schema": "qrds.d100.forward_collection.v2",
-      "sha256": "4cf5d7cf44aacbd18b547081b77fb1d3ddb87563b08b067813fa493536e9639c"
+      "sha256": "ae500fbf9d06926b121ac3b83e9d9140ee4d03df05c6c4770f1a2073101289c4"
+    },
+    "d100_economic": {
+      "exists": true,
+      "path": "runtime_repo/runtime/ledgers/d100/economic/STATUS.json",
+      "schema": "qrds.d100.economics.v1",
+      "sha256": "ca31e6fdb9fc3ba55d1438a498c989da170287c86310aadccf4c4509c651d82c"
     },
     "d50": {
       "exists": true,
@@ -1179,9 +1179,7 @@
   },
   "status": "BLOCKED_INCOMPLETE_DELIVERY",
   "warnings": {
-    "blocked_dependency_components": [
-      "d100"
-    ],
+    "blocked_dependency_components": [],
     "failed_delivery_components": [],
     "missing_or_undated_components": [],
     "semantic_projection_ledger_ids": [
