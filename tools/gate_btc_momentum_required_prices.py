@@ -48,6 +48,21 @@ class RecordingSession:
         return response
 
 
+class PublicMarketSession:
+    """Route the unchanged Spot kline loader to Binance's public-data service."""
+    def __init__(self,session):self.session=session
+    def get(self,url,**kwargs):
+        if url=='https://api.binance.com/api/v3/klines':
+            url='https://data-api.binance.vision/api/v3/klines'
+        return self.session.get(url,**kwargs)
+
+
+class MissingRequiredPrices(ValueError):
+    def __init__(self,failures,evidence_path):
+        super().__init__('MISSING_REQUIRED_PRICES: '+','.join(sorted(failures)))
+        self.failures=failures;self.evidence_path=str(evidence_path)
+
+
 def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None):
     cutoff=snapshot['cutoff'];at=clock()
     if cutoff!=(at.date()-timedelta(days=1)).isoformat():
@@ -70,7 +85,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None):
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         # A mark needs only the requested close; no historical replay is performed.
         module.START_DATE=pd.Timestamp(cutoff)
-        loaders=[('cdd',module.fetch_cdd_symbol),('binance',module.fetch_binance_klines)]
+        loaders=[('cdd',module.fetch_cdd_symbol),('binance_market_data',
+                 lambda s,symbol:module.fetch_binance_klines(PublicMarketSession(s),symbol))]
         session=RecordingSession(requests.Session(),clock)
     prices=[];failures={};attempts=[]
     for symbol in required:
@@ -83,9 +99,13 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None):
                 attempts.append({'symbol':symbol,'source':name,'error':str(exc)})
         else:failures[symbol]=[r for r in attempts if r['symbol']==symbol]
     if clock().date()!=at.date():raise ValueError('COLLECTION_CROSSED_UTC_DAY')
-    if failures:raise ValueError('MISSING_REQUIRED_PRICES: '+','.join(sorted(failures)))
     raw_records=getattr(session,'records',[])
     raw=gzip.compress(packed({'sources':raw_records,'attempts':attempts}),mtime=0)
+    if failures:
+        failure_path=root/'failures'/cutoff/(sha(raw)+'.json.gz')
+        failure_path.parent.mkdir(parents=True,exist_ok=True)
+        failure_path.write_bytes(raw)
+        raise MissingRequiredPrices(failures,failure_path.relative_to(root))
     buf=io.StringIO();writer=csv.DictWriter(buf,fieldnames=['date','symbol','close_usd','source']);writer.writeheader();writer.writerows(prices)
     zip_bytes=io.BytesIO()
     with zipfile.ZipFile(zip_bytes,'w',zipfile.ZIP_DEFLATED) as z:
@@ -94,7 +114,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None):
     manifest={'schema':'gate_btc.momentum_required_prices.v1','cutoff':cutoff,'required_assets':required,
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
-              'source_priority':['cdd','binance'],'okx_policy':'NOT_USED_HERE_UNTIL_UTC_DAILY_ALIGNMENT_IS_QUALIFIED',
+              'source_priority':[name for name,_ in loaders],'okx_policy':'NOT_USED_HERE_UNTIL_UTC_DAILY_ALIGNMENT_IS_QUALIFIED',
               'evidence_role':'CURRENT_SOURCE_EVIDENCE_ONLY_NOT_BACKFILLED_ECONOMICS',
               'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0}
     dest.mkdir(parents=True,exist_ok=True)
@@ -113,7 +133,7 @@ def main():
         write_json(args.ledger_dir/'PRICE_COVERAGE_STATUS.json',{'status':'PASS_REQUIRED_PRICE_COVERAGE','cutoff':m['cutoff'],'required_assets':m['required_assets'],'available_at_utc':m['available_at_utc'],'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0})
         print(json.dumps({'status':'PASS_REQUIRED_PRICE_COVERAGE','assets':m['price_count'],'cutoff':m['cutoff']}));return 0
     except Exception as exc:
-        write_json(args.ledger_dir/'PRICE_COVERAGE_STATUS.json',{'status':'FAILED_REQUIRED_PRICE_COVERAGE','cutoff':snap.get('cutoff'),'error':str(exc),'observed_at_utc':now().isoformat(),'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0})
+        write_json(args.ledger_dir/'PRICE_COVERAGE_STATUS.json',{'status':'FAILED_REQUIRED_PRICE_COVERAGE','cutoff':snap.get('cutoff'),'error':str(exc),'source_failures':getattr(exc,'failures',{}),'failure_evidence':getattr(exc,'evidence_path',None),'observed_at_utc':now().isoformat(),'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0})
         print(str(exc));return 2
 
 
