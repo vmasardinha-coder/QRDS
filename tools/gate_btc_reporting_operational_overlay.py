@@ -258,12 +258,44 @@ def enrich(runtime_root: Path, current: dict) -> dict:
             "source": "ledgers/d100/STATUS.json",
         }
         current.setdefault("sources", {})["d100"] = source_meta(d100p, d100)
+        ep = runtime_root / "ledgers/d100/economic/STATUS.json"
+        economic = load(ep)
+        if economic and economic.get("schema") == "qrds.d100.economics.v1":
+            safe("d100_economic", economic)
+            failed_economic = economic.get("last_error") is not None
+            component = current["components"]["d100"]
+            component.update({key: economic.get(key) for key in (
+                "scientific_observations_credited", "scientific_target",
+                "remaining_scientific_observations", "scientific_blockers", "next_action",
+                "latest_eligible_asset_count", "first_possible_bar_date", "anchor_bar_date",
+                "latest_signal_available_at_utc", "protocol_approved")})
+            component["physical_status"] = component["status"]
+            component["status"] = economic["status"]
+            component["economic_status"] = economic["status"]
+            if str(economic["status"]).startswith("CLOSED_"):
+                component["freshness"] = "CLOSED_NOT_APPLICABLE"
+            else:
+                ef = freshness(economic, reference, "latest_signal_available_at_utc")
+                component["economic_freshness"] = ef
+                if ef != "FRESH":
+                    component["freshness"] = ef
+            component["collection_health_hint"] = "RED_FAILED_DELIVERY" if failed_capture or failed_economic else "GREEN_ACTIVE"
+            component["economic_source"] = "ledgers/d100/economic/STATUS.json"
+            current.setdefault("sources", {})["d100_economic"] = source_meta(ep, economic)
+
 
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
     failed = list(warnings.get("failed_delivery_components", []))
     blocked = list(warnings.get("blocked_dependency_components", []))
+    if d100_active:
+        # Reconcile prior D100 warnings against the current economic authority.
+        # Other fronts retain their existing reconciliation behavior.
+        stale = [x for x in stale if x != "d100"]
+        missing = [x for x in missing if x != "d100"]
+        failed = [x for x in failed if x != "d100"]
+        blocked = [x for x in blocked if x != "d100"]
     for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]

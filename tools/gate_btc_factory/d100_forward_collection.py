@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -231,8 +232,8 @@ def run(output, production_map, fetch=request_bytes, clock=utcnow, run_id="manua
     started = clock()
     root = output.parent
     row = next((x for x in production_map.get("tracks", []) if x.get("track") == "D100"), {})
-    if row.get("collect") is not True or row.get("evolve") is not False or row.get("state") != "DATA_FEED_ONLY":
-        raise ValueError("D100 authority must be collect=true/evolve=false/DATA_FEED_ONLY")
+    if row.get("collect") is not True or row.get("evolve") is not False or row.get("state") not in {"DATA_FEED_ONLY", "COLLECT_ONLY_FROZEN"}:
+        raise ValueError("D100 authority must be collect=true/evolve=false with data-only or approved frozen-shadow authority")
     prior = json.loads(output.read_text(encoding="utf-8")) if output.exists() else {}
     if prior.get("scientific_observations_credited", 0) != 0 or prior.get("economics_enabled", False):
         raise ValueError("unexpected scientific authority: refuse counter reset")
@@ -257,8 +258,27 @@ def run(output, production_map, fetch=request_bytes, clock=utcnow, run_id="manua
         "next_action": "RESOLVE_D100_SCIENTIFIC_CONTRACT_WHILE_COLLECTING_PHYSICAL_SOURCE_EVIDENCE",
         "workflow_run_id": str(run_id),
     }
+    approved = row.get("state") == "COLLECT_ONLY_FROZEN"
+    terminal = False
+    economic_status_path = root / "economic/STATUS.json"
+    if economic_status_path.exists():
+        economic_status = json.loads(economic_status_path.read_text(encoding="utf-8"))
+        if str(economic_status.get("status", "")).startswith("CLOSED_"):
+            if __package__ in (None, ""):
+                sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+            from tools.gate_btc_factory.d100_economics import verify
+            _, economic_rows = verify(root / "economic")
+            if len(economic_rows) != 80 or not (root / "economic/FINAL_DECISION.json").exists():
+                raise ValueError("unverified terminal D100 state")
+            terminal = True
+    if approved:
+        base.update(economic_status="SEE_SEPARATE_APPROVED_ECONOMIC_AUTHORITY", scientific_blockers=[],
+                    next_action="READ_ECONOMIC_STATUS_FOR_APPROVED_N80_PROGRESS")
     failure = None
-    if current_good:
+    if terminal:
+        result = "TERMINAL_N80_NO_MORE_SOURCE_REQUESTS"
+        latest = records[-1] if records else None
+    elif current_good:
         result = "IDEMPOTENT_ALREADY_CAPTURED_TODAY"
         latest = current_good
     else:
@@ -303,7 +323,8 @@ def run(output, production_map, fetch=request_bytes, clock=utcnow, run_id="manua
             failure = f"{type(exc).__name__}: {exc}"
             result = "FAILED_NO_VALID_NEW_CAPTURE"
     base.update(
-        status="PHYSICAL_DATA_FEED_SOURCE_FAILURE" if failure else "ACTIVE_PHYSICAL_DATA_FEED",
+        status="CLOSED_PHYSICAL_FEED_N80" if terminal else ("PHYSICAL_DATA_FEED_SOURCE_FAILURE" if failure else "ACTIVE_PHYSICAL_DATA_FEED"),
+        collection_enabled=not terminal,
         last_attempt_result=result, last_error=failure,
         physical_snapshot_count=len(records),
         distinct_capture_days=len({r["capture_date"] for r in records}),
@@ -315,16 +336,16 @@ def run(output, production_map, fetch=request_bytes, clock=utcnow, run_id="manua
         latest_raw_universe_count=latest["raw_universe_count"] if latest else 0,
         latest_market_data_observed_count=latest["market_data_observed_count"] if latest else 0,
         latest_source_failure_count=len(latest["source_failures"]) if latest else None,
-        next_expected_capture_date=(started.date() + timedelta(days=1)).isoformat() if not failure else started.date().isoformat(),
+        next_expected_capture_date=None if terminal else ((started.date() + timedelta(days=1)).isoformat() if not failure else started.date().isoformat()),
     )
     atomic_json(output, base)
     text = ["# D100 — operational evidence", "", f"Status: {base['status']}",
             f"Last attempt: {result}", f"Physical captures: {len(records)}; distinct days: {base['distinct_capture_days']}",
             f"Latest physical capture: {base['latest_physical_capture_at_utc']}",
             f"Raw universe: {base['latest_raw_universe_count']}; market data observed: {base['latest_market_data_observed_count']}",
-            "Scientific observations: 0 / NOT_DEFINED; economics: BLOCKED.",
+            "Physical feed scientific credit: 0. Approved economic authority: economic/STATUS.json." if approved else "Scientific observations: 0 / NOT_DEFINED; economics: BLOCKED.",
             "Physical source captures do not count toward a scientific gate. Symbol matching does not admit an execution source.",
-            "", "Required scientific definitions:"] + ["- " + x for x in BLOCKERS]
+            "", "Separate approved economic protocol is authoritative." if approved else "Required scientific definitions:"] + (["- " + x for x in BLOCKERS] if not approved else [])
     if failure:
         text += ["", "Source failure: " + failure]
     (root / "D100_STATUS.md").write_text("\n".join(text) + "\n", encoding="utf-8")
