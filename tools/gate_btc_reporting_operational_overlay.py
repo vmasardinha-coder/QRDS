@@ -233,6 +233,36 @@ def enrich(runtime_root: Path, current: dict) -> dict:
         "source": "ledgers/momentum_m1_m2/STATUS.json",
     }, collection_health_hint("momentum_m1_m2", mom))
 
+    # Fresh Momentum signals do not imply fresh or admissible economic marks.
+    me_root = runtime_root / "ledgers/momentum_m1_m2_economics"
+    me = load(me_root / "ECONOMICS_STATUS.json")
+    md = load(me_root / "DELIVERY_STATUS.json")
+    mp = load(me_root / "PRICE_COVERAGE_STATUS.json")
+    if me or md or mp:
+        for label, obj in (("momentum_economics", me), ("momentum_delivery", md), ("momentum_prices", mp)):
+            safe(label, obj)
+        component = current["components"]["momentum_m1_m2"]
+        component.update(signal_status=component["status"],
+                         economic_status=(md or me or {}).get("status", "MISSING"),
+                         last_economic_cutoff=(me or {}).get("data_as_of"),
+                         economic_freshness=freshness(me, reference),
+                         price_coverage_status=(mp or {}).get("status", "MISSING"),
+                         price_coverage_cutoff=(mp or {}).get("cutoff"),
+                         economic_gaps=(md or {}).get("gaps", []),
+                         weighting_audit=(md or {}).get("weighting_audit"),
+                         next_economic_action=(md or {}).get("next_action"),
+                         cost_status=(me or {}).get("cost_status"),
+                         economics_source="ledgers/momentum_m1_m2_economics/DELIVERY_STATUS.json")
+        blocked = str(component["economic_status"]).startswith("BLOCKED")
+        failed = str(component["economic_status"]).startswith("FAILED") or str(component["price_coverage_status"]).startswith("FAILED")
+        if failed:
+            component["collection_health_hint"] = "RED_FAILED_DELIVERY"
+        elif blocked or component["economic_freshness"] != "FRESH":
+            component["collection_health_hint"] = "AMBER_BLOCKED_DEPENDENCY"
+        if blocked or failed:
+            component["status"] = component["economic_status"]
+        current.setdefault("sources", {})["momentum_economic_delivery"] = source_meta(me_root / "DELIVERY_STATUS.json", md)
+
     # D100 v2 distinguishes physical delivery from scientific readiness.
     d100p = runtime_root / "ledgers/d100/STATUS.json"
     d100 = load(d100p)
