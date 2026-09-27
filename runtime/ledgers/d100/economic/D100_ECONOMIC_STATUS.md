@@ -20,10 +20,10 @@
     "no_counter_reset": true,
     "no_backfill": true
   },
-  "updated_at_utc": "2026-09-27T22:09:01.805237Z",
+  "updated_at_utc": "2026-09-27T23:57:20.413392Z",
   "last_error": null,
   "scientific_blockers": [],
-  "workflow_run_id": "36354226872",
+  "workflow_run_id": "36360355930",
   "status": "ARMED_WAITING_FIRST_CAUSAL_BAR",
   "anchor_bar_date": null,
   "signal_capture_count": 1,
