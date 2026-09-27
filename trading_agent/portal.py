@@ -472,7 +472,10 @@ def build_portal(date: str, results: dict[str, dict], errors: dict[str, str],
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quatro Mandatos — {_esc(date)}</title>
+<!-- Titulo sem data de proposito: esta pagina e publicada todos os dias no
+     mesmo artefacto, e um titulo com data mudava-lhe o nome a cada ciclo. A
+     data vive no cabecalho, onde se le. -->
+<title>Quatro Mandatos</title>
 <style>{_STYLE}</style>
 </head>
 <body>

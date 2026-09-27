@@ -1936,3 +1936,15 @@ class TestPortal(unittest.TestCase):
         html = portal.build_portal("2026-09-25", {}, {"equities": "sem rede"})
         self.assertIn("Quatro Mandatos", html)
         self.assertIn("sem execucao hoje", html)
+
+    def test_the_title_is_stable_across_cycles(self):
+        # A pagina e publicada todos os dias no mesmo artefacto. Um titulo com
+        # data renomeava-o a cada ciclo, e o nome na galeria deixava de ser um
+        # nome. A data tem de estar visivel, mas no cabecalho.
+        ontem = portal.build_portal("2026-09-26", {"equities": self._result()}, {})
+        hoje = portal.build_portal("2026-09-27", {"equities": self._result()}, {})
+        self.assertIn("<title>Quatro Mandatos</title>", hoje)
+        self.assertEqual(
+            [l for l in ontem.splitlines() if "<title>" in l],
+            [l for l in hoje.splitlines() if "<title>" in l])
+        self.assertIn("Ciclo de 2026-09-27", hoje)
