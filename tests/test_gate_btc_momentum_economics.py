@@ -1,4 +1,4 @@
-import contextlib,copy,io,json,tempfile,unittest,zipfile
+import contextlib,copy,gzip,io,json,tempfile,unittest,zipfile
 from argparse import Namespace
 from datetime import datetime,timezone
 from pathlib import Path
@@ -38,6 +38,19 @@ class MomentumEconomicsTests(unittest.TestCase):
         def missing(session,symbol):raise ValueError('no data')
         with self.assertRaisesRegex(ValueError,'MISSING_REQUIRED_PRICES'):self.collect([('cdd',missing)])
         self.assertFalse((self.root/'quotes.zip').exists())
+        evidence=list((self.root/'prices/failures/2026-09-26').glob('*.json.gz'))
+        self.assertEqual(len(evidence),1)
+        saved=json.loads(gzip.decompress(evidence[0].read_bytes()))
+        self.assertTrue(any(r['symbol']=='LSK' and r['error']=='no data' for r in saved['attempts']))
+    def test_public_endpoint_preserves_exact_canonical_kline_request(self):
+        class Session:
+            def get(self,url,**kwargs):return url,kwargs
+        params={'symbol':'LSKUSDT','interval':'1d','startTime':1790380800000,'limit':1000}
+        s=p.PublicMarketSession(Session())
+        url,kw=s.get('https://api.binance.com/api/v3/klines',params=params,timeout=30)
+        self.assertEqual(url,'https://data-api.binance.vision/api/v3/klines')
+        self.assertEqual(kw,{'params':params,'timeout':30})
+        self.assertEqual(s.get('https://www.cryptodatadownload.com/data.csv')[0],'https://www.cryptodatadownload.com/data.csv')
     def test_backfill_is_not_accepted(self):
         self.snapshot['cutoff']='2026-09-14'
         with self.assertRaisesRegex(ValueError,'NO_BACKFILL'):self.collect()
