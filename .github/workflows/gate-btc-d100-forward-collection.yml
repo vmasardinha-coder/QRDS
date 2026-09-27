@@ -10,19 +10,44 @@ on:
     paths:
       - '.github/workflows/gate-btc-d100-forward-collection.yml'
       - 'tools/gate_btc_factory/d100_forward_collection.py'
+      - 'tools/gate_btc_factory/d100_recovered/**'
       - 'tools/gate_btc_factory/PRODUCTION_LINE_MAP.v1.json'
+      - 'tests/test_gate_btc_d100_forward_collection.py'
+  pull_request:
+    paths:
+      - '.github/workflows/gate-btc-d100-forward-collection.yml'
+      - 'tools/gate_btc_factory/d100_forward_collection.py'
+      - 'tools/gate_btc_factory/d100_recovered/**'
+      - 'tests/test_gate_btc_d100_forward_collection.py'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: gate-btc-d100-forward-collection
+  group: gate-btc-d100-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'forward-collection' }}
   cancel-in-progress: false
 
 jobs:
-  collect-forward-only:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test physical evidence, causality and immutable history
+        run: python -m unittest discover -s tests -p test_gate_btc_d100_forward_collection.py -v
+
+  collect-forward-only:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
     env:
       GATE_BTC_RESEARCH_ONLY: 'true'
       GATE_BTC_SHADOW_ONLY: 'true'
@@ -36,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -45,85 +70,63 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
-      - name: Assert forward-only safety boundary
-        run: |
-          test "$GATE_BTC_RESEARCH_ONLY" = true
-          test "$GATE_BTC_SHADOW_ONLY" = true
-          test "$GATE_BTC_NOT_APPROVED" = true
-          test "$GATE_BTC_ENGINE_FEED" = false
-          test "$GATE_BTC_ORDERS" = 0
-          test "$GATE_BTC_REAL_CAPITAL" = 0
-          test "$GATE_BTC_NO_RETUNE" = true
-          test "$GATE_BTC_NO_BACKFILL" = true
-          test "$GATE_BTC_NO_COUNTER_RESET" = true
-      - name: Decide whether heartbeat is due
-        id: heartbeat_gate
-        env:
-          SCHEDULE_EXPR: ${{ github.event.schedule }}
-        run: |
-          python - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
-          from pathlib import Path
-
-          schedule = os.environ.get('SCHEDULE_EXPR', '')
-          status_path = Path('runtime_repo/runtime/ledgers/d100/STATUS.json')
-          should = True
-          reason = 'PRIMARY_OR_MANUAL_TRIGGER'
-
-          if schedule == '41 * * * *':
-              reason = 'BACKUP_STALE_CHECK'
-              try:
-                  d = json.loads(status_path.read_text(encoding='utf-8'))
-                  raw = d.get('last_heartbeat_utc')
-                  if raw:
-                      last = datetime.fromisoformat(raw.replace('Z', '+00:00'))
-                      age_minutes = (datetime.now(timezone.utc) - last).total_seconds() / 60.0
-                      should = age_minutes >= 75.0
-                      reason = f'BACKUP_HEARTBEAT_AGE_MINUTES={age_minutes:.1f}'
-              except Exception as exc:
-                  should = True
-                  reason = f'BACKUP_STATUS_UNREADABLE_FAIL_SAFE={type(exc).__name__}'
-
-          out = Path(os.environ['GITHUB_OUTPUT'])
-          with out.open('a', encoding='utf-8') as fh:
-              fh.write(f"should_heartbeat={'true' if should else 'false'}\n")
-              fh.write(f"reason={reason}\n")
-          print(f"D100_HEARTBEAT_DUE={should} {reason}")
-          PY
-      - name: Collect D100 forward heartbeat
-        if: steps.heartbeat_gate.outputs.should_heartbeat == 'true'
+      - name: Capture and seal physical source evidence
+        id: capture
+        continue-on-error: true
         run: |
           python tools/gate_btc_factory/d100_forward_collection.py \
             --output runtime_repo/runtime/ledgers/d100/STATUS.json
+      - name: Verify published safety and archive integrity
+        id: integrity
+        if: always() && steps.capture.outcome != 'skipped'
+        run: |
           python - <<'PY'
           import json
-          p='runtime_repo/runtime/ledgers/d100/STATUS.json'
-          d=json.load(open(p,encoding='utf-8'))
-          assert d['status']=='ACTIVE_FORWARD_COLLECTION'
-          assert d['collection_enabled'] is True
-          assert d['historical_recovery_attempted'] is False
-          assert d['backfill_performed'] is False
-          assert d['economics_enabled'] is False
-          assert d['scientific_observations_credited'] == 0
-          s=d['safety']
-          assert s['engine_feed'] is False and s['orders']==0 and s['real_capital']==0
-          assert s['no_backfill'] is True and s['no_counter_reset'] is True
-          print('D100_FORWARD_COLLECTION_RUNTIME=PASS')
+          from pathlib import Path
+          from tools.gate_btc_factory.d100_forward_collection import verify_history
+          root = Path('runtime_repo/runtime/ledgers/d100')
+          s = json.loads((root/'STATUS.json').read_text())
+          assert s['schema'] == 'qrds.d100.forward_collection.v2'
+          assert s['scientific_observations_credited'] == 0
+          assert s['scientific_target'] is None
+          assert s['economics_enabled'] is False
+          assert s['safety']['engine_feed'] is False
+          assert s['safety']['orders'] == s['safety']['real_capital'] == 0
+          records = verify_history(root)
+          assert s['physical_snapshot_count'] == len(records)
+          print('D100_PHYSICAL_ARCHIVE_INTEGRITY=PASS')
           PY
-      - name: Persist D100 runtime
-        if: steps.heartbeat_gate.outputs.should_heartbeat == 'true'
+      - name: Publish D100 evidence and explicit failures
+        if: always() && steps.integrity.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           cd runtime_repo
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/ledgers/d100/STATUS.json
+          git add runtime/ledgers/d100
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "D100 forward collection ${{ github.run_id }}"
+          git commit -m "D100 physical evidence and health ${{ github.run_id }}"
           for i in 1 2 3 4 5; do
             git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
             sleep $((i*2))
           done
+          exit 1
+      - name: Show D100 operational summary
+        if: always()
+        run: |
+          if test -f runtime_repo/runtime/ledgers/d100/D100_STATUS.md; then
+            cat runtime_repo/runtime/ledgers/d100/D100_STATUS.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: d100-physical-evidence-${{ github.run_id }}
+          path: runtime_repo/runtime/ledgers/d100
+          retention-days: 90
+          if-no-files-found: error
+      - name: Fail workflow when source collection failed
+        if: always() && steps.capture.outcome != 'success'
+        run: |
+          echo 'D100_SOURCE_COLLECTION_FAILED — evidence preserved; scientific credit remains zero'
           exit 1

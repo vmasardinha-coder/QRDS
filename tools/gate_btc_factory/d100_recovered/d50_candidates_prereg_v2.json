@@ -1,0 +1,158 @@
+{
+  "preregistration_id": "GATE_BTC_D50_SPRINT0_20260731_V2",
+  "amends": "GATE_BTC_D50_SPRINT0_20260731_V1",
+  "frozen_at": "2026-07-31T00:00:00-03:00",
+  "status": "FROZEN_BEFORE_FIRST_PROSPECTIVE_OBSERVATION",
+  "research_only": true,
+  "orders_allowed": false,
+  "capital_allowed": false,
+  "v1_ledgers": {
+    "status": "SUPERSEDED_BEFORE_FIRST_OBSERVATION",
+    "prospective_rows_accumulated": 0,
+    "historical_backfill_allowed": false
+  },
+  "start_gate": {
+    "d50_ledger_start_allowed": false,
+    "required_status": "DELTA_OFFICIAL_INGESTION_GATE_PASS",
+    "requirements": [
+      "official_delta_raw_ohlc_packaged",
+      "official_delta_raw_funding_packaged",
+      "delta_universe_20_of_20_complete",
+      "delta_available_at_recorded_for_prospective_rows",
+      "no_backfill_as_prospective_evidence"
+    ],
+    "v2a_qos_repair_is_not_a_d50_start_requirement": true,
+    "first_valid_observation_rule": "first bar after DELTA_OFFICIAL_INGESTION_GATE_PASS; never earlier than the gate timestamp"
+  },
+  "control": {
+    "name": "D50_CONTROL",
+    "source_strategy": "Delta_LS_50_50",
+    "source_version": "DELTA_WALK_FORWARD_1.1",
+    "modifications": "NONE",
+    "historical_series_status": "OFFICIAL_PUBLISHED_BASELINE",
+    "prospective_anchor": "UNSET_UNTIL_INGESTION_GATE_PASS"
+  },
+  "multiplicity": {
+    "method": "DECLARED_HIERARCHY",
+    "family_wise_promotable_arms_this_round": 1,
+    "primary_arm": "D50_COST_AWARE",
+    "exploratory_arms": [
+      "D50_EXIT_2SIGMA",
+      "D50_COST_AWARE_VOL20"
+    ],
+    "rule": "Only the primary arm may be promoted in this round. Exploratory arms may produce diagnostics but require a new pre-registered round to become promotion-eligible."
+  },
+  "candidates": [
+    {
+      "name": "D50_COST_AWARE",
+      "role": "PRIMARY_PROMOTION_ELIGIBLE",
+      "status": "AWAITING_OFFICIAL_DELTA_RAW_EXPORT_20_OF_20",
+      "hypothesis": "Retention hysteresis and signal-reset re-entry will reduce churn while preserving the existing score edge.",
+      "parameters": {
+        "retention_rank_long": 7,
+        "retention_rank_short": 7,
+        "new_entry_rank_long": 5,
+        "new_entry_rank_short": 5,
+        "ranking_frequency": "DAILY_PRIOR_CLOSE",
+        "execution": "NEXT_DAILY_OPEN",
+        "reentry_cooldown_days": 2,
+        "reentry_after_stop_requires_signal_reset": true,
+        "signal_reset_definition": "asset must leave the same-side retention band before a new entry is allowed"
+      }
+    },
+    {
+      "name": "D50_EXIT_2SIGMA",
+      "role": "EXPLORATORY_NOT_PROMOTION_ELIGIBLE_THIS_ROUND",
+      "status": "AWAITING_OFFICIAL_DELTA_RAW_EXPORT_20_OF_20",
+      "hypothesis": "Close-confirmed exits will reduce intraday whipsaw without hiding tail risk.",
+      "parameters": {
+        "soft_stop_sigma": 2.0,
+        "soft_stop_floor": 0.04,
+        "soft_stop_cap": 0.25,
+        "soft_stop_confirmation": "DAILY_CLOSE",
+        "soft_stop_execution": "NEXT_DAILY_OPEN",
+        "trailing_stop": "DISABLED_IN_FIRST_ARM",
+        "take_profit_r_multiple": 2.0,
+        "hard_tail_stop": "INTRADAY_BASELINE_2_5SIGMA_FLOOR_6PCT_CAP_35PCT",
+        "reentry_cooldown_days": 2,
+        "reentry_after_stop_requires_signal_reset": true
+      }
+    },
+    {
+      "name": "D50_COST_AWARE_VOL20",
+      "role": "EXPLORATORY_CONDITIONAL_NOT_PROMOTION_ELIGIBLE_THIS_ROUND",
+      "status": "DISABLED_PENDING_ONE_TIME_GATE",
+      "parent": "D50_COST_AWARE",
+      "parameters": {
+        "target_annualized_volatility": 0.20,
+        "realized_vol_lookback_valid_observations": 30,
+        "scale_uses_prior_data_only": true,
+        "scale_floor": 0.50,
+        "scale_cap": 1.50,
+        "gross_exposure_cap": 1.50,
+        "kill_switches_preserved": true
+      },
+      "activation_gate": {
+        "evaluation_timing": "ONCE_AT_EXACTLY_30_VALID_PAIRED_PRIMARY_OBSERVATIONS",
+        "cost_metric": "cumulative_fees_plus_slippage_bps",
+        "minimum_cost_reduction_vs_control": 0.25,
+        "minimum_gross_return_retention_ratio": 0.90,
+        "minimum_net_return_improvement_vs_control": 0.0,
+        "maximum_drawdown_deterioration_percentage_points": 1.0,
+        "all_conditions_required": true,
+        "failed_gate_action": "REMAIN_DISABLED_UNTIL_NEW_PREREGISTRATION",
+        "passed_gate_start": "NEXT_VALID_BAR_AFTER_GATE_EVALUATION",
+        "anchor_rule": "NEW_ANCHOR_OBSERVATION_ZERO_NO_INHERITED_PNL",
+        "historical_or_parent_pnl_inheritance_allowed": false,
+        "repeated_peeking_allowed": false
+      }
+    }
+  ],
+  "evaluation": {
+    "valid_observation_definition": "paired control/candidate bar admitted by the frozen ingestion gate",
+    "primary_checkpoint_valid_observations": 80,
+    "historical_role": "DIAGNOSTIC_ONLY_NO_WINNER_SELECTION",
+    "primary_promotion_requirements": {
+      "net_return_improvement_vs_control": ">0",
+      "minimum_cost_reduction_vs_control": 0.25,
+      "minimum_gross_return_retention_ratio": 0.90,
+      "maximum_drawdown_deterioration_percentage_points": 1.0,
+      "paired_block_bootstrap_net_return_difference_lower_95pct_bound": ">=0",
+      "promotion_requires_explicit_decision": true
+    },
+    "external_benchmark": {
+      "status": "DESCRIPTIVE_ONLY_WHILE_DAILY_CURVE_UNAVAILABLE",
+      "frozen_window_end": "2026-07-29",
+      "point_estimates_not_binary_cutoffs": [
+        "sharpe_1.64",
+        "max_drawdown_minus_7.25pct",
+        "annualized_volatility_20.44pct"
+      ],
+      "superiority_claim_status_without_daily_curve": "NOT_TESTABLE",
+      "daily_curve_requirement_for_formal_comparison": true,
+      "formal_superiority_protocol_when_daily_curve_available": {
+        "paired_same_dates_and_net_of_all_costs": true,
+        "fixed_checkpoints_paired_observations": [80, 120],
+        "bootstrap_method": "PAIRED_STATIONARY_BLOCK_BOOTSTRAP",
+        "bootstrap_paths": 10000,
+        "bootstrap_block_length_observations": 5,
+        "bootstrap_seed": 20260731,
+        "sharpe_difference_lower_95pct_bound": ">0_AT_BOTH_CHECKPOINTS",
+        "net_return_difference_lower_95pct_bound": ">0_AT_BOTH_CHECKPOINTS",
+        "maximum_drawdown_tolerance_percentage_points": 1.0,
+        "annualized_volatility_tolerance_percentage_points": 2.0,
+        "formal_claim_requires_all_conditions": true
+      }
+    },
+    "risk_budget_utilization": {
+      "classification": "HYPOTHESIS_TO_TEST_NOT_ESTABLISHED_CAUSE",
+      "promotion_effect": "NONE_UNTIL_MEASURED"
+    },
+    "calendar": {
+      "binding_unit": "VALID_OBSERVATIONS_NOT_DATES",
+      "planning_inflation_factor_until_repair_validated": 1.09,
+      "example": "84 valid bars may require approximately 91 calendar bars",
+      "reset_condition": "30 consecutive full-coverage admitted observations after ingestion repair"
+    }
+  }
+}
