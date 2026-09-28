@@ -5,8 +5,6 @@ on:
     workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
     types: [completed]
   workflow_dispatch:
-  schedule:
-    - cron: '25 * * * *'
   pull_request:
     paths:
       - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
@@ -43,7 +41,7 @@ jobs:
   collect-m3:
     needs: causality-and-accounting-tests
     if: >-
-      github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
