@@ -63,11 +63,13 @@ class MissingRequiredPrices(ValueError):
         self.failures=failures;self.evidence_path=str(evidence_path)
 
 
-def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None):
+def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, *, assets=None):
     cutoff=snapshot['cutoff'];at=clock()
     if cutoff!=(at.date()-timedelta(days=1)).isoformat():
         raise ValueError('CUTOFF_NOT_LATEST_COMPLETED_UTC_CLOSE_NO_BACKFILL')
-    required=required_assets(snapshot,state)
+    required=required_assets(snapshot,state) if assets is None else sorted(set(assets))
+    if not required or 'BTC' not in required or any(not re.fullmatch(r'[A-Z0-9]{2,12}',s) for s in required):
+        raise ValueError('UNSUPPORTED_REQUIRED_ASSET_IDENTITY')
     dest=root/cutoff;manifest_path=dest/'MANIFEST.json';archive=dest/'required_prices.zip';raw_path=dest/'RAW_SOURCES.json.gz'
     if manifest_path.exists():
         manifest=load_json(manifest_path)
