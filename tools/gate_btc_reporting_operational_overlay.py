@@ -363,6 +363,17 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "collection_health_hint": "RED_FAILED_DELIVERY" if str(m3.get("status", "")).startswith("FAILED") else "GREEN_ACTIVE" if waiting or mfresh == "FRESH" else "AMBER_BLOCKED_DEPENDENCY",
             "source": "ledgers/momentum_m3_economics/STATUS.json"}
 
+    alt = load(runtime_root / "ledgers/alt_trail40_10/DELIVERY_STATUS.json")
+    alt_active = bool(alt and alt.get("schema") == "gate_btc.alt_trail40_10.delivery.v1")
+    if alt_active:
+        safe("alt_trail", alt)
+        blocked_alt = str(alt.get("status", "")).startswith("BLOCKED")
+        current["components"]["alt_trail"] = {
+            **alt,
+            "freshness": "INTERRUPTED_PRESERVED" if blocked_alt else freshness(alt, reference, "last_archived_date"),
+            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if blocked_alt else "GREEN_ACTIVE",
+            "source": "ledgers/alt_trail40_10/DELIVERY_STATUS.json"}
+
     prl = load(runtime_root / "ledgers/prl50_position/DELIVERY_STATUS.json")
     prl_active = bool(prl and prl.get("schema") == "gate_btc.prl50.delivery.v1")
     if prl_active:
@@ -400,12 +411,17 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "momentum_m3_economics"]
         failed = [x for x in failed if x != "momentum_m3_economics"]
         blocked = [x for x in blocked if x != "momentum_m3_economics"]
+    if alt_active:
+        stale = [x for x in stale if x != "alt_trail"]
+        missing = [x for x in missing if x != "alt_trail"]
+        failed = [x for x in failed if x != "alt_trail"]
+        blocked = [x for x in blocked if x != "alt_trail"]
     if prl_active:
         stale = [x for x in stale if x != "prl50"]
         missing = [x for x in missing if x != "prl50"]
         failed = [x for x in failed if x != "prl50"]
         blocked = [x for x in blocked if x != "prl50"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()):
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")

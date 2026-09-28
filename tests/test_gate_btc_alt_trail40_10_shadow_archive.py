@@ -101,18 +101,11 @@ class AltTrailShadowArchiveTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-01", "2")
 
-    def test_daily_gap_resumes_forward_without_backfill(self):
+    def test_daily_gap_fails_closed_without_backfill(self):
         archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-08-31", "1")
-        result = archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
-        self.assertTrue(result["gap_from_previous"])
-        self.assertEqual(result["skipped_calendar_days"], 1)
-        row = json.loads((self.ledger / "snapshots/2026-09-02.json").read_text(encoding="utf-8"))
-        self.assertTrue(row["gap_from_previous"])
-        self.assertEqual(row["skipped_calendar_days"], 1)
-        self.assertFalse((self.ledger / "snapshots/2026-09-01.json").exists())
-        status = json.loads((self.ledger / "STATUS.json").read_text(encoding="utf-8"))
-        self.assertEqual(status["recorded_gap_count"], 1)
-        self.assertEqual(status["skipped_calendar_days"], 1)
+        with self.assertRaisesRegex(RuntimeError, "daily gap invalidates"):
+            archive.append(self.contract, self.ledger, self.portfolios, self.master, "2026-09-02", "3")
+        self.assertFalse((self.ledger / "snapshots/2026-09-02.json").exists())
 
     def test_midcycle_pre_freeze_signal_fails_closed(self):
         write_csv(self.portfolios, portfolios("2026-07-31", "2026-08-01"))
