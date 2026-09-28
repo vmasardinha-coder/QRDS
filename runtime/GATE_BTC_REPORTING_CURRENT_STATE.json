@@ -276,12 +276,25 @@
       "updated_at_utc": "2026-09-28T12:48:26.281030+00:00"
     },
     "prl50": {
-      "first_eligible_execution_date": null,
-      "first_eligible_signal_date": "2026-08-31",
-      "freshness": "STALE",
-      "snapshot_count": 5,
-      "source": "ledgers/prl50_position/STATUS.json",
-      "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "can_append": false,
+      "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
+      "economic_result_valid": false,
+      "engine_feed": false,
+      "freshness": "INTERRUPTED_PRESERVED",
+      "last_archived_date": "2026-09-04",
+      "next_action": "AUTHORIZE_INDEPENDENT_MONTHLY_CYCLE_WITHOUT_HISTORICAL_CREDIT",
+      "not_approved": true,
+      "orders_generated": 0,
+      "proposed_next_untouched_signal": "2026-09-30",
+      "real_capital_used": 0,
+      "reason": "MISSING_FROZEN_MONTHLY_SIGNALS",
+      "research_only": true,
+      "retrospective_backfill": false,
+      "schema": "gate_btc.prl50.delivery.v1",
+      "shadow_only": true,
+      "source": "ledgers/prl50_position/DELIVERY_STATUS.json",
+      "status": "BLOCKED_NEXT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED",
+      "updated_at_utc": "2026-09-28T17:59:58.801330+00:00"
     },
     "qos_monthly": {
       "current": 1,
@@ -430,7 +443,7 @@
         "scientific_blockers": [],
         "scientific_observations_credited": 0,
         "scientific_target": null,
-        "sha256": "b6b449c0d9427d92c8bd6475f80975a8fd0c8c025dbecaeceec7439637a468de",
+        "sha256": "162bf939dd9ba2a89c514f6af5767217ae6e86199c758c594d965454ec8f27c8",
         "source": "ledgers/d100/STATUS.json",
         "status": "ACTIVE_PHYSICAL_DATA_FEED"
       },
@@ -605,11 +618,11 @@
         "ledger_id": "prl50_position",
         "orders_generated": 0,
         "real_capital_used": 0,
-        "schema": "gate_btc.prl50_position_shadow_status.v1",
-        "sha256": "a96071dcf3362a5369bd756084845418596df003d3960b384c4332ec8f550ac8",
+        "schema": "gate_btc.prl50.delivery.v1",
+        "sha256": "e207d4a0b957e92173d6b6a9979d6260cc3c9037076fa12ab7fadd8fe8690a01",
         "snapshot_count": 5,
         "source": "ledgers/prl50_position/STATUS.json",
-        "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+        "status": "BLOCKED_NEXT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED"
       },
       "qos_three_track": {
         "engine_feed": false,
@@ -659,7 +672,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b1.status.v1",
-        "sha256": "27b94a5f78ca6c3a2cb5afcd73b7533cf9f93c491a1f53dc94f3f1d1608ca9f4",
+        "sha256": "93f6a6f9635c77c0da616f036058341f66b714b4c8e5bee20c08067041542199",
         "source": "ledgers/v16b1/STATUS.json",
         "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
       },
@@ -761,7 +774,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-09-28T12:49:28.999782+00:00",
+  "generated_at_utc": "2026-09-28T18:00:33.639484+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 16,
@@ -931,7 +944,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "b6b449c0d9427d92c8bd6475f80975a8fd0c8c025dbecaeceec7439637a468de",
+      "sha256": "162bf939dd9ba2a89c514f6af5767217ae6e86199c758c594d965454ec8f27c8",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
@@ -1106,11 +1119,11 @@
       "ledger_id": "prl50_position",
       "orders_generated": 0,
       "real_capital_used": 0,
-      "schema": "gate_btc.prl50_position_shadow_status.v1",
-      "sha256": "a96071dcf3362a5369bd756084845418596df003d3960b384c4332ec8f550ac8",
+      "schema": "gate_btc.prl50.delivery.v1",
+      "sha256": "e207d4a0b957e92173d6b6a9979d6260cc3c9037076fa12ab7fadd8fe8690a01",
       "snapshot_count": 5,
       "source": "ledgers/prl50_position/STATUS.json",
-      "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "status": "BLOCKED_NEXT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED"
     },
     "qos_three_track": {
       "engine_feed": false,
@@ -1160,7 +1173,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.v16b1.status.v1",
-      "sha256": "27b94a5f78ca6c3a2cb5afcd73b7533cf9f93c491a1f53dc94f3f1d1608ca9f4",
+      "sha256": "93f6a6f9635c77c0da616f036058341f66b714b4c8e5bee20c08067041542199",
       "source": "ledgers/v16b1/STATUS.json",
       "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     },
@@ -1228,13 +1241,13 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/d100/STATUS.json",
       "schema": "qrds.d100.forward_collection.v2",
-      "sha256": "b6b449c0d9427d92c8bd6475f80975a8fd0c8c025dbecaeceec7439637a468de"
+      "sha256": "162bf939dd9ba2a89c514f6af5767217ae6e86199c758c594d965454ec8f27c8"
     },
     "d100_economic": {
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/d100/economic/STATUS.json",
       "schema": "qrds.d100.economics.v1",
-      "sha256": "b5a053de8920e50d0bd76b9061c2dd1f4644f133a70ff3c2b84d072b647ca4cc"
+      "sha256": "d7148ec0e65674dfb221f39ddcbf0bd8863a5815617d75af0dee2f42083d3d48"
     },
     "d50": {
       "exists": true,
@@ -1287,8 +1300,8 @@
     "prl50": {
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/prl50_position/STATUS.json",
-      "schema": "gate_btc.prl50_position_shadow_status.v1",
-      "sha256": "a96071dcf3362a5369bd756084845418596df003d3960b384c4332ec8f550ac8"
+      "schema": "gate_btc.prl50.delivery.v1",
+      "sha256": "e207d4a0b957e92173d6b6a9979d6260cc3c9037076fa12ab7fadd8fe8690a01"
     },
     "v16b": {
       "exists": true,
@@ -1299,7 +1312,9 @@
   },
   "status": "BLOCKED_INCOMPLETE_DELIVERY",
   "warnings": {
-    "blocked_dependency_components": [],
+    "blocked_dependency_components": [
+      "prl50"
+    ],
     "failed_delivery_components": [],
     "missing_or_undated_components": [],
     "semantic_projection_ledger_ids": [
@@ -1311,7 +1326,6 @@
     ],
     "stale_components": [
       "d50",
-      "prl50",
       "alt_trail",
       "bull_replay_live_shadow",
       "b3_h1",
