@@ -5,6 +5,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from datetime import date
 from pathlib import Path
 
@@ -163,7 +164,8 @@ def exact_prices(master_rows, assets, snapshot_id):
     for row in master_rows:
         if row.get("date") == snapshot_id and row.get("symbol") in assets:
             value = float(row["close_usd"])
-            require(value > 0, f"invalid price {row.get('symbol')}")
+            require(math.isfinite(value) and value > 0, f"invalid price {row.get('symbol')}")
+            require(row["symbol"] not in found or found[row["symbol"]] == value, "conflicting exact price")
             found[row["symbol"]] = value
     missing = sorted(set(assets) - set(found))
     require(not missing, f"missing exact snapshot prices: {missing}")
@@ -174,6 +176,7 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
     contract = load_json(contract_path)
     validate_contract(contract)
     ledger_dir = Path(ledger_dir)
+    require(not (ledger_dir / "INTERRUPTION.json").exists(), "interrupted history cannot append")
     anchor = load_json(ledger_dir / "ANCHOR.json")
     require(anchor["contract_sha256"] == file_sha(contract_path), "contract differs from anchor")
 
@@ -209,8 +212,9 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         require(previous["row_sha256"] == payload_sha(previous, "row_sha256"), "previous row hash invalid")
         previous_sha = previous["row_sha256"]
         delta_days = (snapshot_day - previous_day).days
-        gap_from_previous = delta_days > 1
-        skipped_calendar_days = max(0, delta_days - 1)
+        require(delta_days == 1, "daily gap invalidates frozen prospective cycle; backfill prohibited")
+        gap_from_previous = False
+        skipped_calendar_days = 0
 
     signals = parse_signals(read_csv(current_portfolios))
     for strategy, signal in signals.items():
