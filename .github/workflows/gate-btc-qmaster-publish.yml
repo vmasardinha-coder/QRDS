@@ -32,11 +32,17 @@ env:
 
 jobs:
   publish-qmaster:
+    # Sem exigir a run inteira verde. A conclusao da run de coleta carrega jobs
+    # irmaos com outros datasets -- entre eles o prospective-v2a-pit, que roda sem
+    # needs e falha sozinho. Exigir a run verde aqui deixava a publicacao sem
+    # rodar nos dias em que o dado que ela le estava perfeito: foi assim que um
+    # simbolo delistado segurou o V11 por quatro dias. O portao real e o passo
+    # 'Gate on the producer job' abaixo, e ele falha fechado.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
       github.event_name == 'push' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -80,6 +86,30 @@ jobs:
           test -n "$run_id"
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "QMASTER_SOURCE_RUN_ID=$run_id"
+
+      - name: Gate on the producer job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/jobs?per_page=100" > source_jobs.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          assert run['name']=='GATE BTC Daily Research Collection', run['name']
+          assert run['head_branch']=='main', run['head_branch']
+          assert run['status']=='completed', run['status']
+          # O artefato publicado aqui e gate-btc-daily-research-<run_id>, produzido
+          # apenas pelo job daily-research-collection. A conclusao da run inteira
+          # carrega jobs irmaos que leem outros datasets e podem falhar sozinhos.
+          jobs=json.load(open('source_jobs.json', encoding='utf-8'))['jobs']
+          producer=[j for j in jobs if j['name']=='daily-research-collection']
+          assert len(producer)==1, len(producer)
+          assert producer[0]['status']=='completed', producer[0]['status']
+          assert producer[0]['conclusion']=='success', producer[0]['conclusion']
+          PY
 
       - name: Download Daily Research evidence
         uses: actions/download-artifact@v4
