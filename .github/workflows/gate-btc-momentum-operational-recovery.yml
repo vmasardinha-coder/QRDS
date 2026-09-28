@@ -4,108 +4,68 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '35 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-momentum-operational-recovery.yml
+      - tools/gate_btc_momentum_recovery_policy.py
+      - tests/test_gate_btc_momentum_recovery_policy.py
 
 permissions:
-  actions: write
   contents: read
-  issues: write
 
 env:
   GH_TOKEN: ${{ github.token }}
   PYTHONDONTWRITEBYTECODE: '1'
 
 concurrency:
-  group: gate-btc-momentum-operational-recovery
+  group: gate-btc-momentum-operational-recovery-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
   cancel-in-progress: false
 
 jobs:
-  recover:
+  validate-recovery:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_gate_btc_momentum_recovery_policy -v
 
-      - name: Read canonical runtime failure state
-        id: state
+  recover:
+    if: github.event_name != 'pull_request'
+    needs: validate-recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Assess current cutoff, overlap and actual daily run budget
+        id: decision
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin gate-btc-runtime
           git show origin/gate-btc-runtime:runtime/ledgers/momentum_m1_m2/STATUS.json > /tmp/momentum_status.json
-          python - <<'PY'
-          import json, os
-          from datetime import datetime, timedelta, timezone
-          s=json.load(open('/tmp/momentum_status.json',encoding='utf-8'))
-          target=(datetime.now(timezone.utc).date()-timedelta(days=1)).isoformat()
-          recoverable=(
-              s.get('repair_scope')=='ORCHESTRATION_AND_DATA_DELIVERY_ONLY'
-              and s.get('status') in {'RED_TRUE_PROCESSING_FAILURE','BLOCKED_SOURCE_RETRY_EXHAUSTED'}
-              and s.get('data_as_of')==target
-          )
-          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
-              f.write(f"recoverable={str(recoverable).lower()}\n")
-              f.write(f"target={target}\n")
-              f.write(f"status={s.get('status','UNKNOWN')}\n")
-          print(json.dumps({'recoverable':recoverable,'target':target,'status':s.get('status'),'repair_scope':s.get('repair_scope')},sort_keys=True))
-          PY
-
-      - name: Refuse overlapping Momentum run
-        id: overlap
-        if: steps.state.outputs.recoverable == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          active=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 20 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="requested" or .status=="pending")] | length')
-          if [ "$active" -gt 0 ]; then
-            echo 'skip=true' >> "$GITHUB_OUTPUT"
-            echo 'MOMENTUM_RECOVERY=SKIP_ACTIVE_RUN'
-          else
-            echo 'skip=false' >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Enforce bounded attempts for current UTC day
-        id: budget
-        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          today=$(date -u +%Y-%m-%d)
-          attempts=$(gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 50 --json createdAt,conclusion --jq ".[] | select(.createdAt|startswith(\"$today\")) | select(.conclusion==\"failure\")" | wc -l)
-          attempts=$(echo "$attempts" | tr -d ' ')
-          echo "attempts=$attempts" >> "$GITHUB_OUTPUT"
-          if [ "$attempts" -ge 6 ]; then
-            echo 'allowed=false' >> "$GITHUB_OUTPUT"
-            echo 'MOMENTUM_RECOVERY=FAIL_CLOSED_ATTEMPT_BUDGET_EXHAUSTED'
-          else
-            echo 'allowed=true' >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Dispatch safe mechanical rerun
-        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true' && steps.budget.outputs.allowed == 'true'
+          gh run list --repo "${{ github.repository }}" --workflow gate-btc-momentum-shadow.yml --limit 100 \
+            --json databaseId,createdAt,status,conclusion > /tmp/momentum_runs.json
+          python tools/gate_btc_momentum_recovery_policy.py \
+            --state /tmp/momentum_status.json --runs /tmp/momentum_runs.json | tee /tmp/momentum_recovery.json
+      - name: Dispatch safe current-cutoff rerun
+        if: steps.decision.outputs.dispatch == 'true'
         run: |
           gh workflow run gate-btc-momentum-shadow.yml --repo "${{ github.repository }}" --ref main
           echo 'MOMENTUM_RECOVERY=DISPATCHED_SAFE_MECHANICAL_RERUN'
-
-      - name: Escalate only after bounded recovery is exhausted
-        if: steps.state.outputs.recoverable == 'true' && steps.overlap.outputs.skip != 'true' && steps.budget.outputs.allowed == 'false'
-        shell: bash
+      - name: Publish bounded recovery decision
         run: |
-          TITLE="[AUTO-REPAIR:MOMENTUM_M1_M2:${{ steps.state.outputs.target }}] bounded recovery exhausted"
-          BODY=$(cat <<EOF
-          Momentum M1/M2 remains fail-closed after the bounded automatic orchestration/data-delivery recovery budget was exhausted for cutoff ${{ steps.state.outputs.target }}.
-
-          Current runtime status: ${{ steps.state.outputs.status }}
-          Repair scope: ORCHESTRATION_AND_DATA_DELIVERY_ONLY
-          Failed-run budget observed today: ${{ steps.budget.outputs.attempts }}
-
-          No methodology, thresholds, universe, costs, scientific gates, backfill or tuning were changed. Human review is required only to decide whether the remaining blocker is an external DATA_GAP/source-publication issue or requires a source/methodology decision.
-          EOF
-          )
-          EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --repo "${{ github.repository }}" --body "$BODY"
-          else
-            gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY"
-          fi
+          cat /tmp/momentum_recovery.json >> "$GITHUB_STEP_SUMMARY"
+          echo 'The daily budget counts successful wait runs too. No backfill or scientific change is authorized.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: momentum-recovery-${{ github.run_id }}
+          path: /tmp/momentum_recovery.json
+          retention-days: 30
