@@ -351,6 +351,18 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "collection_health_hint": "RED_FAILED_DELIVERY" if failed_qos else "GREEN_ACTIVE" if waiting or qfresh == "FRESH" else "AMBER_BLOCKED_DEPENDENCY",
             "source": "ledgers/qos_three_track/STATUS.json"}
 
+    m3 = load(runtime_root / "ledgers/momentum_m3_economics/STATUS.json")
+    m3_active = bool(m3 and m3.get("schema") == "gate_btc.momentum_m3_economics_status.v1")
+    if m3_active:
+        safe("momentum_m3_economics", m3)
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        waiting = m3.get("status") == "WAITING_FIRST_POST_IMPLEMENTATION_CLOSE" and completed < iso(m3.get("first_eligible_cutoff"))
+        mfresh = "CURRENT_CALENDAR_GATED" if waiting else freshness(m3, completed)
+        current["components"]["momentum_m3_economics"] = {
+            **m3, "freshness": mfresh,
+            "collection_health_hint": "RED_FAILED_DELIVERY" if str(m3.get("status", "")).startswith("FAILED") else "GREEN_ACTIVE" if waiting or mfresh == "FRESH" else "AMBER_BLOCKED_DEPENDENCY",
+            "source": "ledgers/momentum_m3_economics/STATUS.json"}
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
@@ -368,7 +380,12 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "qos_three_track"]
         failed = [x for x in failed if x != "qos_three_track"]
         blocked = [x for x in blocked if x != "qos_three_track"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()):
+    if m3_active:
+        stale = [x for x in stale if x != "momentum_m3_economics"]
+        missing = [x for x in missing if x != "momentum_m3_economics"]
+        failed = [x for x in failed if x != "momentum_m3_economics"]
+        blocked = [x for x in blocked if x != "momentum_m3_economics"]
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")

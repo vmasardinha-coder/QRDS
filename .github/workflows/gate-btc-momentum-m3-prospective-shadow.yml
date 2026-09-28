@@ -5,6 +5,18 @@ on:
     workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
     types: [completed]
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
+      - tools/gate_btc_momentum_m3_persistence.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_momentum_m3_economics.py
+      - tools/gate_btc_momentum_required_prices.py
+      - tools/gate_btc_momentum_economic_shadow.py
+      - migration/reporting/momentum_m3_persistence_contract.json
+      - migration/reporting/momentum_m3_persistence_clarification_20260909.json
+      - tests/test_gate_btc_momentum_m3_persistence.py
+      - tests/test_gate_btc_momentum_m3_economics.py
 
 permissions:
   contents: write
@@ -14,11 +26,20 @@ env:
   PYTHONDONTWRITEBYTECODE: '1'
 
 concurrency:
-  group: gate-btc-momentum-m3-prospective-shadow
+  group: gate-btc-momentum-m3-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
   cancel-in-progress: false
 
 jobs:
+  causality-and-accounting-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests pytest
+      - run: python -m pytest -q tests/test_gate_btc_momentum_m3_persistence.py tests/test_gate_btc_momentum_m3_economics.py
   collect-m3:
+    needs: causality-and-accounting-tests
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
@@ -28,6 +49,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests
 
       - name: Check out append-only runtime branch
         uses: actions/checkout@v4
@@ -117,7 +142,8 @@ jobs:
             'observed_snapshots':len(snaps),
             'latest_snapshot_sha256':latest['snapshot_sha256'],
             'common_universe_n':latest['common_universe_n'],
-            'economics_status':'NOT_ACTIVATED',
+            'economics_status':'SEE_INDEPENDENT_ECONOMIC_LEDGER',
+            'economics_status_path':'runtime/ledgers/momentum_m3_economics/STATUS.json',
             'retrospective_credit':0,
             'research_only':True,
             'shadow_only':True,
@@ -135,22 +161,29 @@ jobs:
           print(json.dumps(status,sort_keys=True))
           PY
 
+      - name: Deliver independent prospective M3 economics
+        id: economics
+        if: always() && steps.cutoff.outcome == 'success'
+        run: python tools/gate_btc_momentum_m3_economics.py --runtime-root runtime_repo
+
       - name: Upload M3 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate-btc-momentum-m3-${{ github.run_id }}
-          path: artifacts/momentum_m3
+          path: |
+            artifacts/momentum_m3
+            runtime_repo/runtime/ledgers/momentum_m3_economics
           retention-days: 90
           if-no-files-found: ignore
 
       - name: Publish M3 append-only runtime ledger
-        if: steps.cutoff.outputs.eligible == 'true' && steps.m3.outcome == 'success'
+        if: always() && steps.cutoff.outcome == 'success'
         run: |
           set -euo pipefail
           git -C runtime_repo config user.name 'gate-btc-actions'
           git -C runtime_repo config user.email 'gate-btc-actions@users.noreply.github.com'
-          git -C runtime_repo add runtime/ledgers/momentum_m3
+          git -C runtime_repo add runtime/ledgers/momentum_m3 runtime/ledgers/momentum_m3_economics
           if git -C runtime_repo diff --cached --quiet; then
             echo 'M3 runtime already current'
             exit 0
