@@ -367,10 +367,15 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     prl_active = bool(prl and prl.get("schema") == "gate_btc.prl50.delivery.v1")
     if prl_active:
         safe("prl50", prl)
-        blocked_prl = str(prl.get("status", "")).startswith("BLOCKED")
+        prl_status = str(prl.get("status", ""))
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        waiting = prl_status == "WAITING_APPROVED_MONTH_END_2026_09_30" and completed < iso(prl.get("first_eligible_signal_date"))
+        failed_prl = prl_status.startswith("FAILED")
+        blocked_prl = prl_status.startswith("BLOCKED")
+        prl_fresh = "CURRENT_CALENDAR_GATED" if waiting else "INTERRUPTED_PRESERVED" if blocked_prl else freshness(prl, completed, "last_archived_date")
         current["components"]["prl50"] = {
-            **prl, "freshness": "INTERRUPTED_PRESERVED" if blocked_prl else freshness(prl, reference, "last_archived_date"),
-            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if blocked_prl else "GREEN_ACTIVE",
+            **prl, "freshness": prl_fresh,
+            "collection_health_hint": "RED_FAILED_DELIVERY" if failed_prl else "AMBER_BLOCKED_DEPENDENCY" if blocked_prl or (not waiting and prl_fresh != "FRESH") else "GREEN_ACTIVE",
             "source": "ledgers/prl50_position/DELIVERY_STATUS.json"}
 
     warnings = current.setdefault("warnings", {})

@@ -7,6 +7,10 @@ on:
       - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_prl50_position_economics.py
       - tools/gate_btc_prl50_position_shadow_archive.py
+      - tools/gate_btc_prl50_position_cycle.py
+      - tools/gate_btc_prl50_cycle_20260930.json
+      - tools/gate_btc_prl50_position_shadow_contract_20260930.json
+      - tests/test_gate_btc_prl50_position_cycle.py
       - tests/test_gate_btc_prl50_position_economics.py
       - .github/workflows/gate-btc-prl50-economics.yml
   workflow_dispatch:
@@ -37,8 +41,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: python -m unittest tests.test_gate_btc_prl50_position_economics
-      - run: python -m py_compile tools/gate_btc_prl50_position_shadow_archive.py tools/gate_btc_prl50_position_economics.py
+      - run: python -m unittest tests.test_gate_btc_prl50_position_economics tests.test_gate_btc_prl50_position_cycle
+      - run: python -m py_compile tools/gate_btc_prl50_position_shadow_archive.py tools/gate_btc_prl50_position_economics.py tools/gate_btc_prl50_position_cycle.py
 
   economics:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
@@ -50,17 +54,16 @@ jobs:
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - name: Build PRL50 hold-vs-preservation economics
+      - name: Refresh approved PRL50 cycle economics and delivery
         working-directory: main_repo
         run: >-
-          python tools/gate_btc_prl50_position_economics.py
-          --contract tools/gate_btc_prl50_position_shadow_contract_v1.json
+          python -m tools.gate_btc_prl50_position_cycle --mode plan
           --ledger-dir ../runtime_repo/runtime/ledgers/prl50_position
       - name: Assert immutable safety boundary
         run: |
           python - <<'PY'
           import json
-          p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/ECONOMICS_STATUS.json'))
+          p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/monthly_20260930/ECONOMICS_STATUS.json'))
           assert p['research_only'] and p['shadow_only'] and p['not_approved']
           assert p['engine_feed'] is False and p['orders_generated']==0 and p['real_capital_used']==0
           assert p['retrospective_backfill'] is False
