@@ -18,7 +18,11 @@ def read_csv(p):
 def validate_contract(c):
     require(c["schema"]=="gate_btc.prl50_position_shadow_contract.v1","bad contract schema"); require(c["candidate_name"]=="PRL50_POSITION","candidate drift")
     require(c["candidate_definition"]["activation_gain"]==0.20,"activation drift"); require(c["candidate_definition"]["giveback_fraction_of_peak_profit"]==0.50,"giveback drift")
-    require(c["first_eligible_signal_date"]=="2026-08-31","signal start drift"); require(c["first_eligible_execution_date"]=="2026-09-01","execution start drift")
+    if c.get("authorization_id")=="PRL50_20260930_USER_20260928":
+        require(c["derived_from_contract_sha256"]=="cd17139f9d52382c9f23881d0e5867b6f1eebc1cd79f0b9b5954384aad569d0a","parent contract drift")
+        require(c["first_eligible_signal_date"]=="2026-09-30" and c["first_eligible_execution_date"]=="2026-10-01","independent cycle start drift")
+    else:
+        require(c["first_eligible_signal_date"]=="2026-08-31","signal start drift"); require(c["first_eligible_execution_date"]=="2026-09-01","execution start drift")
     require(c["retrospective_backfill"]=="PROHIBITED","backfill guard drift"); require(c["name_collision_guard"]["must_remain_separate"] is True,"name collision guard drift"); require(c["research_only"] is True and c["engine_feed"] is False,"safety drift")
 def snapshot_paths(d): return sorted((Path(d)/"snapshots").glob("*.json"))
 def is_month_end(d): return (d+timedelta(days=1)).month!=d.month
