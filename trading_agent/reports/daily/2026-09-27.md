@@ -60,30 +60,36 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $73,114.54 |
-| Retorno do dia | +0.50% |
-| Retorno desde inicio (2026-08-06) | +46.23% |
-| Benchmark BTC | +31.10% |
-| **Alfa vs BTC** | **+15.13%** |
-| Caixa | $3,534.41 |
+| NAV | $72,670.97 |
+| Retorno do dia | -0.11% |
+| Retorno desde inicio (2026-08-06) | +45.34% |
+| Benchmark BTC | +31.15% |
+| **Alfa vs BTC** | **+14.19%** |
+| Caixa | $3,517.72 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.421585 | $84,453.82 | $35,604.42 | 48.7% |
-| ZEC | 6.90377 | $1,649.56 | $11,388.19 | 15.6% |
-| UNI | 1167.28 | $9.75 | $11,382.05 | 15.6% |
-| ARB | 49350.3 | $0.23 | $11,205.47 | 15.3% |
+| BTC | 0.430232 | $84,482.55 | $36,347.12 | 50.0% |
+| ZEC | 6.90377 | $1,593.02 | $10,997.85 | 15.1% |
+| ARB | 47841.9 | $0.23 | $10,904.14 | 15.0% |
+| NEAR | 2031.36 | $5.37 | $10,904.14 | 15.0% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| ARB | VENDA | 1508.31 | $0.23 | $343.43 | rebalanceio |
+| UNI | VENDA | 1167.28 | $9.67 | $11,286.24 | rebalanceio |
+| BTC | COMPRA | 0.0086478 | $84,567.03 | $731.32 | rebalanceio |
+| NEAR | COMPRA | 2031.36 | $5.37 | $10,915.04 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +24.4% — so entram ativos acima disto
-- **Candidatos elegiveis:** 30
+- **Gatilho:** desvio de peso em NEAR: 0.0% vs alvo 15.0%
+- **Obstaculo (BTC):** momentum de +24.5% — so entram ativos acima disto
+- **Candidatos elegiveis:** 33
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -98,7 +104,7 @@ _Sem movimentacoes hoje._
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.2M < 1M) |
 | ATOM | liquidez baixa (0.7M < 1M) |
-| _(+101 outros)_ | |
+| _(+98 outros)_ | |
 
 </details>
 
