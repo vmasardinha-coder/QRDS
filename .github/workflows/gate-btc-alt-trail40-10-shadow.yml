@@ -98,9 +98,15 @@ jobs:
 
   append-prospective-path:
     needs: contract-tests
+    # Sem exigir a run inteira verde. A conclusao da run de coleta carrega jobs
+    # irmaos com outros datasets -- entre eles o prospective-v2a-pit, que roda sem
+    # needs e falha sozinho. Exigir a run verde aqui deixava este registro sem
+    # rodar nos dias em que o dado que ele le estava perfeito: foi assim que um
+    # simbolo delistado segurou o V11 por quatro dias. O portao real esta no passo
+    # que resolve a run, sobre o job daily-research-collection, e falha fechado.
     if: >-
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main')
     permissions:
       actions: read
       contents: write
