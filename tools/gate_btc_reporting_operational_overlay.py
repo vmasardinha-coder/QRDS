@@ -367,11 +367,15 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     alt_active = bool(alt and alt.get("schema") == "gate_btc.alt_trail40_10.delivery.v1")
     if alt_active:
         safe("alt_trail", alt)
-        blocked_alt = str(alt.get("status", "")).startswith("BLOCKED")
+        alt_status = str(alt.get("status", ""))
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        waiting = alt_status == "WAITING_APPROVED_MONTH_END_2026_09_30" and completed < iso(alt.get("first_eligible_signal_date"))
+        failed_alt = alt_status.startswith("FAILED")
+        blocked_alt = alt_status.startswith("BLOCKED")
+        alt_fresh = "CURRENT_CALENDAR_GATED" if waiting else "INTERRUPTED_PRESERVED" if blocked_alt else freshness(alt, completed, "last_archived_date")
         current["components"]["alt_trail"] = {
-            **alt,
-            "freshness": "INTERRUPTED_PRESERVED" if blocked_alt else freshness(alt, reference, "last_archived_date"),
-            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if blocked_alt else "GREEN_ACTIVE",
+            **alt, "freshness": alt_fresh,
+            "collection_health_hint": "RED_FAILED_DELIVERY" if failed_alt else "AMBER_BLOCKED_DEPENDENCY" if blocked_alt or (not waiting and alt_fresh != "FRESH") else "GREEN_ACTIVE",
             "source": "ledgers/alt_trail40_10/DELIVERY_STATUS.json"}
 
     prl = load(runtime_root / "ledgers/prl50_position/DELIVERY_STATUS.json")
