@@ -1,12 +1,27 @@
 {
   "components": {
     "alt_trail": {
-      "first_eligible_execution_date": "2026-09-01",
-      "first_eligible_signal_date": "2026-08-31",
-      "freshness": "STALE",
+      "can_append": false,
+      "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
+      "economic_credit": 0,
+      "economic_result_valid": false,
+      "engine_feed": false,
+      "freshness": "INTERRUPTED_PRESERVED",
+      "last_archived_date": "2026-08-31",
+      "next_action": "AUTHORIZE_INDEPENDENT_MONTHLY_CYCLE_WITHOUT_HISTORICAL_CREDIT",
+      "not_approved": true,
+      "orders_generated": 0,
+      "proposed_next_untouched_signal": "2026-09-30",
+      "real_capital_used": 0,
+      "reason": "MISSING_CONFIRMED_FIRST_ENTRY_CLOSE_NO_BACKFILL",
+      "research_only": true,
+      "retrospective_backfill": false,
+      "schema": "gate_btc.alt_trail40_10.delivery.v1",
+      "shadow_only": true,
       "snapshot_count": 1,
-      "source": "ledgers/alt_trail40_10/STATUS.json",
-      "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "source": "ledgers/alt_trail40_10/DELIVERY_STATUS.json",
+      "status": "BLOCKED_INDEPENDENT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED",
+      "updated_at_utc": "2026-09-28T23:25:33.995829+00:00"
     },
     "b3_h1": {
       "backfill_automatically_created": false,
@@ -373,11 +388,11 @@
         "ledger_id": "alt_trail40_10",
         "orders_generated": 0,
         "real_capital_used": 0,
-        "schema": "gate_btc.alt_trail40_10_shadow_status.v1",
-        "sha256": "55bdd04eb288b8a3ff32e8fc73548ac5e1db6de8a623dcb2bbb57dbe7c531272",
+        "schema": "gate_btc.alt_trail40_10.delivery.v1",
+        "sha256": "c9d20ef823371f82dc0926f495aa554d2da0a4d462e9d9e3210e4ba54960491b",
         "snapshot_count": 1,
         "source": "ledgers/alt_trail40_10/STATUS.json",
-        "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+        "status": "BLOCKED_INDEPENDENT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED"
       },
       "b3_h1": {
         "economics_locked": true,
@@ -788,7 +803,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-09-28T23:17:52.157298+00:00",
+  "generated_at_utc": "2026-09-28T23:26:50.950347+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 16,
@@ -873,11 +888,11 @@
       "ledger_id": "alt_trail40_10",
       "orders_generated": 0,
       "real_capital_used": 0,
-      "schema": "gate_btc.alt_trail40_10_shadow_status.v1",
-      "sha256": "55bdd04eb288b8a3ff32e8fc73548ac5e1db6de8a623dcb2bbb57dbe7c531272",
+      "schema": "gate_btc.alt_trail40_10.delivery.v1",
+      "sha256": "c9d20ef823371f82dc0926f495aa554d2da0a4d462e9d9e3210e4ba54960491b",
       "snapshot_count": 1,
       "source": "ledgers/alt_trail40_10/STATUS.json",
-      "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "status": "BLOCKED_INDEPENDENT_MONTHLY_CYCLE_AUTHORIZATION_REQUIRED"
     },
     "b3_h1": {
       "economics_locked": true,
@@ -1235,8 +1250,8 @@
     "alt_trail": {
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json",
-      "schema": "gate_btc.alt_trail40_10_shadow_status.v1",
-      "sha256": "55bdd04eb288b8a3ff32e8fc73548ac5e1db6de8a623dcb2bbb57dbe7c531272"
+      "schema": "gate_btc.alt_trail40_10.delivery.v1",
+      "sha256": "c9d20ef823371f82dc0926f495aa554d2da0a4d462e9d9e3210e4ba54960491b"
     },
     "b3_h1": {
       "exists": true,
@@ -1325,7 +1340,9 @@
   },
   "status": "BLOCKED_INCOMPLETE_DELIVERY",
   "warnings": {
-    "blocked_dependency_components": [],
+    "blocked_dependency_components": [
+      "alt_trail"
+    ],
     "failed_delivery_components": [],
     "missing_or_undated_components": [],
     "semantic_projection_ledger_ids": [
@@ -1337,7 +1354,6 @@
     ],
     "stale_components": [
       "d50",
-      "alt_trail",
       "bull_replay_live_shadow",
       "b3_h1",
       "v16b"
