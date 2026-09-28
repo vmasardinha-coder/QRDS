@@ -48,7 +48,13 @@ series. The repaired runner blocks rather than manufacturing continuity or
 silently changing the engine. The original arithmetic is preserved in Git at
 94f3206cf250296ea2077f8836de7967b6aca590:tools/gate_btc_momentum_economic_shadow.py.
 
-## Concrete proposed disposition — NOT APPROVED
+## Disposition approved on 2026-09-28
+
+Victor replied "Continue" at 2026-09-28 04:02:02 America/Sao_Paulo to the
+explicit proposal below. Approval is for this independent prospective shadow
+epoch only, not for live trading, historical backfill or changed score formulas.
+The frozen original economic contract remains unchanged. Approval is recorded
+in `momentum_m1m2_hold_epoch_20260928.json`.
 
 - Close the interrupted economic epoch as a preserved diagnostic, with its
   original files/hashes/rows and explicit gaps. Do not reset or overwrite it.
@@ -62,6 +68,19 @@ silently changing the engine. The original arithmetic is preserved in Git at
 - Do not assign D100's N80 to M1/M2: its current contract does not define that
   terminal gate, promotion or net-performance certification.
 
-Victor's standing operating boundary reserves scientific/engine/clock changes
-for explicit decision. Approval of this disposition permits implementing/testing
-that exact new epoch; it does not claim it is already active.
+Implementation: `epochs/hold_20260928/LEDGER.json` is the single atomic
+state/history authority. Original STATE/HISTORY are sealed in place and the
+interrupted series is explicitly diagnostic-only. Equal weighting occurs only
+at initialization and each seventh consecutive completed-close return; daily
+valuation holds quantities fixed and revalues old holdings before rebalancing.
+BTC is a separate buy-and-hold comparator. Activation NAV is 1, contributes no
+return observation and inherits no prior P&L. Returns are gross; costs and net
+returns remain N_D/null. BRL figures are fixed-notional illustrations, not FX
+adjusted realized P&L. Current-close execution remains the approved shadow
+convention, not a claim of realizable live execution after observing the close.
+
+The first eligible cutoff is 2026-09-28, the first UTC daily close after
+approval. Before it completes, the runner reports WAITING_FIRST_POST_APPROVAL_CLOSE.
+Thereafter missing current signals/prices or any new gap fail closed, without
+automatic reset/backfill. Exact input responses, prices and frozen signal
+snapshots are preserved. Same-cutoff reruns cannot append duplicate economics.
