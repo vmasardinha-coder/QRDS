@@ -9,6 +9,8 @@ on:
       - tools/gate_btc_qos_interruption_20260928.json
       - tools/gate_btc_qos_prospective_three_track.py
       - tools/gate_btc_qos_covered_delivery.py
+      - tools/gate_btc_momentum_required_prices.py
+      - tools/gate_btc_momentum_economic_shadow.py
       - tests/test_gate_btc_qos_prospective_three_track.py
       - tests/test_gate_btc_qos_covered_delivery.py
   workflow_dispatch:
@@ -32,6 +34,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  upstream-daily-delivery:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Propagate failed main Daily collection
+        env:
+          UPSTREAM_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          UPSTREAM_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          test "$UPSTREAM_BRANCH" = "main"
+          test "$UPSTREAM_CONCLUSION" = "success"
+
   contract-tests:
     runs-on: ubuntu-latest
     steps:
