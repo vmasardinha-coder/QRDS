@@ -363,6 +363,16 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "collection_health_hint": "RED_FAILED_DELIVERY" if str(m3.get("status", "")).startswith("FAILED") else "GREEN_ACTIVE" if waiting or mfresh == "FRESH" else "AMBER_BLOCKED_DEPENDENCY",
             "source": "ledgers/momentum_m3_economics/STATUS.json"}
 
+    prl = load(runtime_root / "ledgers/prl50_position/DELIVERY_STATUS.json")
+    prl_active = bool(prl and prl.get("schema") == "gate_btc.prl50.delivery.v1")
+    if prl_active:
+        safe("prl50", prl)
+        blocked_prl = str(prl.get("status", "")).startswith("BLOCKED")
+        current["components"]["prl50"] = {
+            **prl, "freshness": "INTERRUPTED_PRESERVED" if blocked_prl else freshness(prl, reference, "last_archived_date"),
+            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if blocked_prl else "GREEN_ACTIVE",
+            "source": "ledgers/prl50_position/DELIVERY_STATUS.json"}
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
@@ -385,7 +395,12 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "momentum_m3_economics"]
         failed = [x for x in failed if x != "momentum_m3_economics"]
         blocked = [x for x in blocked if x != "momentum_m3_economics"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()):
+    if prl_active:
+        stale = [x for x in stale if x != "prl50"]
+        missing = [x for x in missing if x != "prl50"]
+        failed = [x for x in failed if x != "prl50"]
+        blocked = [x for x in blocked if x != "prl50"]
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")

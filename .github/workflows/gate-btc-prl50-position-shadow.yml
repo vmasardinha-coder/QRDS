@@ -4,15 +4,18 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_reporting_operational_overlay.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
       - tools/gate_btc_prl50_position_shadow_contract_v1.json
       - tools/gate_btc_prl50_position_shadow_archive.py
       - tests/test_gate_btc_prl50_position_shadow_archive.py
+      - tests/test_gate_btc_prl50_position_economics.py
+      - tools/gate_btc_prl50_position_economics.py
   workflow_dispatch:
     inputs:
       run_id:
         description: Eligible Daily Research workflow run ID
-        required: true
+        required: false
         type: string
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
@@ -23,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-prl50-position-shadow-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  group: gate-btc-prl50-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
   cancel-in-progress: false
 
 env:
@@ -68,7 +71,7 @@ jobs:
           print('PRL50_POSITION_CONTRACT=PASS')
           PY
       - name: Test fail-closed prospective archive
-        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py
+        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py tests/test_gate_btc_prl50_position_economics.py
 
   append-prospective-path:
     needs: contract-tests
@@ -90,7 +93,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - name: Audit existing path before any new append
+        id: plan
+        run: python tools/gate_btc_prl50_position_economics.py --plan --ledger-dir runtime_repo/runtime/ledgers/prl50_position
       - name: Resolve and validate Daily Research source run
+        if: steps.plan.outputs.can_append == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
@@ -127,6 +136,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download V2A daily evidence
+        if: steps.plan.outputs.can_append == 'true'
         id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
@@ -175,14 +185,6 @@ jobs:
           PY
           echo "PRL50_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
 
-      - name: Check out immutable runtime branch
-        if: steps.daily_source.outputs.eligible == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: gate-btc-runtime
-          path: runtime_repo
-          fetch-depth: 0
-
       - name: Initialize immutable PRL50_POSITION archive
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
@@ -215,8 +217,12 @@ jobs:
           print('PRL50_POSITION_ARCHIVE_SAFETY=PASS')
           PY
 
+      - name: Refresh honest delivery status
+        if: always() && steps.plan.outcome == 'success'
+        run: python tools/gate_btc_prl50_position_economics.py --ledger-dir runtime_repo/runtime/ledgers/prl50_position
+
       - name: Commit PRL50 runtime evidence only
-        if: steps.daily_source.outputs.eligible == 'true'
+        if: always() && steps.plan.outcome == 'success'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
@@ -224,7 +230,7 @@ jobs:
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/ledgers/prl50_position
           git diff --cached --quiet && exit 0
-          git commit -m "Append PRL50 position shadow ${PRL50_SNAPSHOT_ID}"
+          git commit -m "Append PRL50 position shadow ${PRL50_SNAPSHOT_ID:-diagnostic}"
           for attempt in 1 2 3 4 5; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi

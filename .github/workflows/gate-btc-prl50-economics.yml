@@ -4,13 +4,19 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_prl50_position_economics.py
       - tools/gate_btc_prl50_position_shadow_archive.py
+      - tests/test_gate_btc_prl50_position_economics.py
       - .github/workflows/gate-btc-prl50-economics.yml
   workflow_dispatch:
   workflow_run:
     workflows: ["GATE BTC PRL50 Position Shadow Archive"]
     types: [completed]
+
+concurrency:
+  group: gate-btc-prl50-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -31,10 +37,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
+      - run: python -m unittest tests.test_gate_btc_prl50_position_economics
       - run: python -m py_compile tools/gate_btc_prl50_position_shadow_archive.py tools/gate_btc_prl50_position_economics.py
 
   economics:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +70,7 @@ jobs:
         run: |
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/ledgers/prl50_position/ECONOMICS_STATUS.json
+          git add runtime/ledgers/prl50_position
           git diff --cached --quiet && exit 0
           git commit -m "Refresh PRL50 economic mirror $GITHUB_RUN_ID"
           git pull --rebase origin gate-btc-runtime
