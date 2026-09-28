@@ -266,6 +266,31 @@
       "status": "ACTIVE_CALENDAR_GATED",
       "target": 3
     },
+    "qos_three_track": {
+      "backfill_performed": false,
+      "collection_health_hint": "GREEN_ACTIVE",
+      "cycles": [
+        {
+          "signal_date": "2026-08-31",
+          "status": "CLOSED_INTERRUPTED_NO_ECONOMIC_RESULT"
+        }
+      ],
+      "engine_feed": false,
+      "freshness": "CURRENT_CALENDAR_GATED",
+      "interrupted_cycle_economic_credit": 0,
+      "latest_snapshot_date": "2026-09-08",
+      "next_signal_date": "2026-09-30",
+      "not_approved": true,
+      "orders_generated": 0,
+      "real_capital_used": 0,
+      "research_only": true,
+      "result_ledger_rows": 0,
+      "schema": "gate_btc.qos_covered_delivery.v1",
+      "shadow_only": true,
+      "source": "ledgers/qos_three_track/STATUS.json",
+      "status": "WAITING_NEXT_APPROVED_MONTH_END",
+      "updated_at_utc": "2026-09-28T12:36:58.747085+00:00"
+    },
     "v16b": {
       "canonical_cycle_count": 0,
       "entry_seal": "NONE_CANONICAL",
@@ -546,16 +571,17 @@
         "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
       },
       "qos_three_track": {
+        "engine_feed": false,
         "health_authority": false,
         "inventory_only": true,
         "latest_snapshot_date": "2026-09-08",
         "ledger_id": "qos_three_track",
         "orders_generated": 0,
         "real_capital_used": 0,
-        "schema": "gate-btc.qos-prospective-three-track.runtime-status.v1",
-        "sha256": "c81792fc0d33ec90829c6ce158d6370dc4d8c4b7804a15b59328dcabb8af1844",
+        "schema": "gate_btc.qos_covered_delivery.v1",
+        "sha256": "44c2d019576a6a336ef0b44d7c9d39d64f830b63991e47d05f752d081e7bbef4",
         "source": "ledgers/qos_three_track/STATUS.json",
-        "status": "UNKNOWN"
+        "status": "WAITING_NEXT_APPROVED_MONTH_END"
       },
       "v16_family": {
         "health_authority": false,
@@ -693,10 +719,10 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-09-28T10:06:31.041225+00:00",
+  "generated_at_utc": "2026-09-28T12:38:57.038478+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
-    "component_count": 14,
+    "component_count": 15,
     "does_not_change_delivery_health": true,
     "inventory_only": true,
     "ledger_count": 26,
@@ -739,6 +765,7 @@
       "lock25_50",
       "momentum_m1_m2",
       "prl50_position",
+      "qos_three_track",
       "v16b"
     ],
     "status_authority_candidates": [
@@ -759,7 +786,6 @@
       "delta_v13_engine",
       "momentum_m1_m2_economics",
       "momentum_m3",
-      "qos_three_track",
       "v16_family",
       "v16b1",
       "v16c",
@@ -1031,16 +1057,17 @@
       "status": "ACTIVE_PROSPECTIVE_ARCHIVE"
     },
     "qos_three_track": {
+      "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "latest_snapshot_date": "2026-09-08",
       "ledger_id": "qos_three_track",
       "orders_generated": 0,
       "real_capital_used": 0,
-      "schema": "gate-btc.qos-prospective-three-track.runtime-status.v1",
-      "sha256": "c81792fc0d33ec90829c6ce158d6370dc4d8c4b7804a15b59328dcabb8af1844",
+      "schema": "gate_btc.qos_covered_delivery.v1",
+      "sha256": "44c2d019576a6a336ef0b44d7c9d39d64f830b63991e47d05f752d081e7bbef4",
       "source": "ledgers/qos_three_track/STATUS.json",
-      "status": "UNKNOWN"
+      "status": "WAITING_NEXT_APPROVED_MONTH_END"
     },
     "v16_family": {
       "health_authority": false,
@@ -1187,7 +1214,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "0e79595195dc50ad5c6bddf853afefe13e1117b9237db2e9424ee899946d04c6"
+      "sha256": "7b49ad1efe07bc47734a27cbfc959a50e854280fc88636e79a5d6799badb9280"
     },
     "momentum_m1_m2": {
       "exists": true,
@@ -1257,7 +1284,6 @@
       "delta_v13_engine",
       "momentum_m1_m2_economics",
       "momentum_m3",
-      "qos_three_track",
       "v16_family",
       "v16b1",
       "v16c",
