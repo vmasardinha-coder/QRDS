@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -187,7 +187,7 @@ def discover_ledger_inventory(runtime_root: Path, current: dict) -> None:
     }
 
 
-def enrich(runtime_root: Path, current: dict) -> dict:
+def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     reference = iso(current.get("reference_data_date"))
     b3p = runtime_root / "ledgers/b3_h1/STATUS.json"
     v16p = runtime_root / "ledgers/v16b/STATUS.json"
@@ -235,6 +235,13 @@ def enrich(runtime_root: Path, current: dict) -> dict:
 
     # Fresh Momentum signals do not imply fresh or admissible economic marks.
     me_root = runtime_root / "ledgers/momentum_m1_m2_economics"
+    active_epoch = load(me_root / "ACTIVE_EPOCH.json")
+    legacy_disposition = load(me_root / "INTERRUPTED_EPOCH.json")
+    if active_epoch:
+        safe("momentum_active_epoch", active_epoch)
+        if active_epoch.get("relative_path") != "epochs/hold_20260928":
+            raise RuntimeError("UNRECOGNIZED_MOMENTUM_EPOCH_PATH")
+        me_root = me_root / active_epoch["relative_path"]
     me = load(me_root / "ECONOMICS_STATUS.json")
     md = load(me_root / "DELIVERY_STATUS.json")
     mp = load(me_root / "PRICE_COVERAGE_STATUS.json")
@@ -252,14 +259,31 @@ def enrich(runtime_root: Path, current: dict) -> dict:
                          weighting_audit=(md or {}).get("weighting_audit"),
                          next_economic_action=(md or {}).get("next_action"),
                          cost_status=(me or {}).get("cost_status"),
-                         economics_source="ledgers/momentum_m1_m2_economics/DELIVERY_STATUS.json")
+                         economics_source=str((me_root / "DELIVERY_STATUS.json").relative_to(runtime_root)))
+        if active_epoch:
+            latest_completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+            component["economic_freshness"] = freshness(me, latest_completed)
+            component["freshness"] = freshness(mom, latest_completed)
+            component.update(economic_epoch_id=active_epoch["epoch_id"],
+                             legacy_economic_status=(legacy_disposition or {}).get("status"),
+                             return_observations=(me or {}).get("return_observations", 0),
+                             first_eligible_economic_cutoff=(me or {}).get("first_eligible_cutoff"),
+                             economic_nav=(me or {}).get("nav"),
+                             latest_economics=(me or {}).get("latest_economics"),
+                             terminal_observation_target=None)
+            if component["economic_status"] == "WAITING_FIRST_POST_APPROVAL_CLOSE" and latest_completed >= iso(me["first_eligible_cutoff"]):
+                component["economic_status"] = "FAILED_MISSING_FIRST_ECONOMIC_CLOSE"
+                component["next_economic_action"] = "CHECK_AUTOMATIC_COLLECTION_NO_RESET_NO_BACKFILL"
         blocked = str(component["economic_status"]).startswith("BLOCKED")
         failed = str(component["economic_status"]).startswith("FAILED") or str(component["price_coverage_status"]).startswith("FAILED")
         if failed:
             component["collection_health_hint"] = "RED_FAILED_DELIVERY"
+        elif component["economic_status"] == "WAITING_FIRST_POST_APPROVAL_CLOSE":
+            component["economic_freshness"] = "CURRENT_CALENDAR_GATED"
+            component["collection_health_hint"] = "GREEN_ACTIVE" if component["freshness"] == "FRESH" else "AMBER_BLOCKED_DEPENDENCY"
         elif blocked or component["economic_freshness"] != "FRESH":
             component["collection_health_hint"] = "AMBER_BLOCKED_DEPENDENCY"
-        if blocked or failed:
+        if blocked or failed or active_epoch:
             component["status"] = component["economic_status"]
         current.setdefault("sources", {})["momentum_economic_delivery"] = source_meta(me_root / "DELIVERY_STATUS.json", md)
 

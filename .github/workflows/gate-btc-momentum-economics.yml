@@ -11,8 +11,11 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_momentum_economic_shadow.py
+      - tools/gate_btc_momentum_hold_epoch.py
       - tools/gate_btc_momentum_required_prices.py
       - tests/test_gate_btc_momentum_economics.py
+      - tests/test_gate_btc_momentum_hold_economics.py
+      - migration/reporting/momentum_m1m2_hold_epoch_20260928.json
       - migration/reporting/momentum_m1m2_economic_contract_v1.json
       - migration/reporting/momentum_m1m2_interruption_20260927.md
       - .github/workflows/gate-btc-momentum-economics.yml
@@ -43,7 +46,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install pandas==2.2.3 numpy==2.1.3
-      - run: python -m unittest discover -s tests -p test_gate_btc_momentum_economics.py -v
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_momentum_*economics.py' -v
       - run: |
           python - <<'PY'
           import json
@@ -97,7 +100,7 @@ jobs:
         continue-on-error: true
         working-directory: main_repo
         run: |
-          python tools/gate_btc_momentum_required_prices.py \
+          python tools/gate_btc_momentum_hold_epoch.py --phase prepare \
             --snapshot "../$MOMENTUM_SNAPSHOT" \
             --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics \
             --output-zip ../momentum_required_prices.zip
@@ -107,8 +110,8 @@ jobs:
         continue-on-error: true
         working-directory: main_repo
         run: |
-          python tools/gate_btc_momentum_economic_shadow.py \
-            --snapshot "../$MOMENTUM_SNAPSHOT" --v2a-zip ../momentum_required_prices.zip \
+          python tools/gate_btc_momentum_hold_epoch.py --phase append \
+            --snapshot "../$MOMENTUM_SNAPSHOT" --output-zip ../momentum_required_prices.zip \
             --ledger-dir ../runtime_repo/runtime/ledgers/momentum_m1_m2_economics
       - name: Verify preserved history and diagnostic safety
         id: integrity
@@ -120,12 +123,19 @@ jobs:
           root=Path('runtime_repo/runtime/ledgers/momentum_m1_m2_economics')
           seals=json.loads(Path('economic_pre_run_seals.json').read_text())
           for n,h in seals.items(): assert hashlib.sha256((root/n).read_bytes()).hexdigest()==h, n
-          for name in ('PRICE_COVERAGE_STATUS.json','DELIVERY_STATUS.json'):
-              p=root/name
+          paths=[root/n for n in ('PRICE_COVERAGE_STATUS.json','DELIVERY_STATUS.json')]
+          paths+=list((root/'epochs').glob('*/DELIVERY_STATUS.json'))
+          for p in paths:
               if p.exists():
                   s=json.loads(p.read_text())
                   assert s['research_only'] is True and s['shadow_only'] is True
                   assert s['orders']==s['real_capital']==0
+          import sys
+          sys.path.insert(0,'main_repo')
+          from tools.gate_btc_momentum_hold_epoch import setup,validate_ledger,APPROVAL,CONTRACT,load_json
+          config,contract=load_json(APPROVAL),load_json(CONTRACT)
+          epoch=setup(root,config,contract)
+          if (epoch/'LEDGER.json').exists():validate_ledger(load_json(epoch/'LEDGER.json'),config,contract)
           print('MOMENTUM_ORIGINAL_ECONOMIC_HISTORY_UNCHANGED=PASS')
           PY
       - name: Publish source evidence and actual economic blockage
