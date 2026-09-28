@@ -6,7 +6,7 @@ import csv
 import hashlib
 import json
 import math
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 STRATEGIES = ("QOS_Moderada", "QOS_Ultra")
@@ -55,8 +55,14 @@ def validate_contract(contract):
     require(definition["trailing_buffer_fraction_of_running_close_high"] == 0.10, "buffer drift")
     require(definition["same_bar_arm_and_exit"] is False, "same-bar guard drift")
     require(definition["parameter_retuning_before_gate"] is False, "retuning guard drift")
-    require(contract["first_eligible_signal_date"] == "2026-08-31", "signal start drift")
-    require(contract["first_eligible_execution_date"] == "2026-09-01", "execution start drift")
+    if contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
+        require(contract["derived_from_contract_sha256"] == "7447615444fa3d9a397e6e184dc8aff58e555f7e81e751dd8b5ea7afcf320ff9", "parent drift")
+        require(contract["first_eligible_signal_date"] == "2026-09-30", "signal start drift")
+        require(contract["first_eligible_execution_date"] == "2026-10-01", "execution start drift")
+        require(contract["prospective_gate"]["freeze_date"] == "2026-09-30", "new observation clock drift")
+    else:
+        require(contract["first_eligible_signal_date"] == "2026-08-31", "signal start drift")
+        require(contract["first_eligible_execution_date"] == "2026-09-01", "execution start drift")
     require(contract["retrospective_backfill"] == "PROHIBITED", "backfill guard drift")
     require(contract["eligible_assets"] == "ALT_PICKS_ONLY_EXCLUDING_BTC_ETH_BNB_CASH", "scope drift")
     require(contract["research_only"] is True and contract["engine_feed"] is False, "safety drift")
@@ -109,8 +115,8 @@ def initialize(contract_path, ledger_dir):
         "first_eligible_signal_date": contract["first_eligible_signal_date"],
         "first_eligible_execution_date": contract["first_eligible_execution_date"],
         "contract_sha256": file_sha(contract_path),
-        "historical_decision": contract["historical_evidence_freeze"]["qos_crosscheck"]["decision"],
-        "rule_search_status": contract["historical_evidence_freeze"]["qos_crosscheck"]["rule_search_status"],
+        "historical_decision": contract.get("historical_evidence_freeze", {}).get("qos_crosscheck", {}).get("decision", "ORIGINAL_INTERRUPTED_PRESERVED"),
+        "rule_search_status": contract.get("historical_evidence_freeze", {}).get("qos_crosscheck", {}).get("rule_search_status", "CLOSED_NO_RETUNING_ON_THIS_SAMPLE"),
         "research_only": True,
         "shadow_only": True,
         "not_approved": True,
@@ -216,10 +222,20 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         gap_from_previous = False
         skipped_calendar_days = 0
 
-    signals = parse_signals(read_csv(current_portfolios))
-    for strategy, signal in signals.items():
+    observed = parse_signals(read_csv(current_portfolios))
+    for strategy, signal in observed.items():
         require(date.fromisoformat(signal["signal_date"]) >= first_signal, f"pre-freeze signal still active for {strategy}; mid-cycle initialization prohibited")
         require(date.fromisoformat(signal["execution_eligible_from"]) > date.fromisoformat(signal["signal_date"]), "non-lagged signal")
+
+    if contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
+        if previous is None or snapshot_day.month != (snapshot_day + timedelta(days=1)).month:
+            require(all(signal["signal_date"] == snapshot_id for signal in observed.values()), "monthly signal date mismatch")
+            signals = observed
+        else:
+            signals = previous["signals"]
+            require(all(signal["signal_date"] <= snapshot_id for signal in signals.values()), "future frozen signal")
+    else:
+        signals = observed
 
     assets = {
         pick["asset"]
@@ -234,6 +250,7 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         "source_run_id": str(source_run_id),
         "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
         "signals": signals,
+        "observed_signals": observed if contract.get("authorization_id") else signals,
         "selected_alt_closes": prices,
         "current_portfolios_sha256": file_sha(current_portfolios),
         "master_daily_sha256": file_sha(master_daily),
