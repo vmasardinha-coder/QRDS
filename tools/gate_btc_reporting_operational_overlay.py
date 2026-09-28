@@ -338,6 +338,19 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             current.setdefault("sources", {})["d100_economic"] = source_meta(ep, economic)
 
 
+    qos = load(runtime_root / "ledgers/qos_three_track/STATUS.json")
+    qos_active = bool(qos and qos.get("schema") == "gate_btc.qos_covered_delivery.v1")
+    if qos_active:
+        safe("qos_three_track", qos)
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        waiting = qos.get("status") == "WAITING_NEXT_APPROVED_MONTH_END" and completed < iso(qos.get("next_signal_date"))
+        qfresh = "CURRENT_CALENDAR_GATED" if waiting else freshness(qos, completed, "latest_snapshot_date")
+        failed_qos = str(qos.get("status", "")).startswith(("FAILED", "BLOCKED"))
+        current["components"]["qos_three_track"] = {
+            **qos, "freshness": qfresh,
+            "collection_health_hint": "RED_FAILED_DELIVERY" if failed_qos else "GREEN_ACTIVE" if waiting or qfresh == "FRESH" else "AMBER_BLOCKED_DEPENDENCY",
+            "source": "ledgers/qos_three_track/STATUS.json"}
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
@@ -350,7 +363,12 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "d100"]
         failed = [x for x in failed if x != "d100"]
         blocked = [x for x in blocked if x != "d100"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()):
+    if qos_active:
+        stale = [x for x in stale if x != "qos_three_track"]
+        missing = [x for x in missing if x != "qos_three_track"]
+        failed = [x for x in failed if x != "qos_three_track"]
+        blocked = [x for x in blocked if x != "qos_three_track"]
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")
