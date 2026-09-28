@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,csv,hashlib,json
+import argparse,csv,hashlib,json,math
 from datetime import date,timedelta
 from pathlib import Path
 STRATEGIES=("QOS_Moderada","QOS_Ultra"); EXCLUDED={"BTC","ETH","CASH"}
@@ -51,7 +51,7 @@ def exact_prices(rows,assets,sid):
     f={}
     for r in rows:
         if r.get("date")==sid and r.get("symbol") in assets:
-            v=float(r["close_usd"]); require(v>0,f"invalid price {r.get('symbol')}"); f[r["symbol"]]=v
+            v=float(r["close_usd"]); require(math.isfinite(v) and v>0,f"invalid price {r.get('symbol')}"); require(r["symbol"] not in f or f[r["symbol"]]==v,"conflicting exact price"); f[r["symbol"]]=v
     miss=sorted(set(assets)-set(f)); require(not miss,f"missing exact snapshot prices: {miss}"); return dict(sorted(f.items()))
 def append(cp,d,port,master,sid,run):
     c=load_json(cp); validate_contract(c); d=Path(d); a=load_json(d/"ANCHOR.json"); require(a["contract_sha256"]==file_sha(cp),"contract differs from anchor"); sd=date.fromisoformat(sid); fs=date.fromisoformat(c["first_eligible_signal_date"])
@@ -65,10 +65,22 @@ def append(cp,d,port,master,sid,run):
         pd=date.fromisoformat(prev["snapshot_date"]); require(sd==pd+timedelta(days=1),f"daily gap/backfill prohibited: prev={pd} current={sd}"); require(prev["row_sha256"]==payload_sha(prev,"row_sha256"),"previous row hash invalid"); psha=prev["row_sha256"]
     obs=parse_signals(read_csv(port))
     for s,x in obs.items(): require(date.fromisoformat(x["signal_date"])>=fs,f"pre-freeze signal still active for {s}; mid-cycle initialization prohibited"); require(date.fromisoformat(x["execution_eligible_from"])>date.fromisoformat(x["signal_date"]),"non-lagged signal")
-    if prev is None or is_month_end(sd): active=obs; changed=True
+    if prev is None or is_month_end(sd):
+        require(all(x["signal_date"]==sid for x in obs.values()),"monthly signal date mismatch")
+        active=obs; changed=True
     else:
         active=prev.get("active_signals") or latest_month_end_signals(ps,sd); require(active,"missing active monthly signal"); changed=False
-    assets={p["asset"] for s in active.values() if date.fromisoformat(s["execution_eligible_from"])<=sd for p in s["picks"]}; prices=exact_prices(read_csv(master),assets,sid) if assets else {}
+    assets={p["asset"] for s in active.values() if date.fromisoformat(s["execution_eligible_from"])<=sd for p in s["picks"]}
+    # The old cohort must still be priced at month end AND its following exit close.
+    for old_path in reversed(ps):
+        old_row=load_json(old_path); old_day=date.fromisoformat(old_row["snapshot_date"])
+        if not is_month_end(old_day): continue
+        old_signals=old_row.get("active_signals") or old_row.get("signals")
+        if old_signals==active: continue
+        if old_signals and sd<=date.fromisoformat(next(iter(active.values()))["execution_eligible_from"]):
+            assets.update(p["asset"] for sig in old_signals.values() for p in sig["picks"])
+        break
+    prices=exact_prices(read_csv(master),assets,sid) if assets else {}
     row={"schema":"gate_btc.prl50_position_shadow_daily.v1","snapshot_date":sid,"source_run_id":str(run),"candidate_name":"PRL50_POSITION","signals":obs,"active_signals":active,"active_signal_changed":changed,"selected_alt_closes":prices,"current_portfolios_sha256":file_sha(port),"master_daily_sha256":file_sha(master),"previous_row_sha256":psha,"contract_sha256":a["contract_sha256"],"research_only":True,"shadow_only":True,"not_approved":True,"engine_feed":False,"orders_generated":0,"real_capital_used":0}; row["row_sha256"]=payload_sha(row,"row_sha256"); write_json(op,row); write_status(d,a); return {"result":"APPENDED","snapshot_date":sid,"row_sha256":row["row_sha256"],"price_count":len(prices),"active_signal_changed":changed}
 def main():
     p=argparse.ArgumentParser(); s=p.add_subparsers(dest="command",required=True); i=s.add_parser("initialize"); i.add_argument("--contract",required=True); i.add_argument("--ledger-dir",required=True); x=s.add_parser("append"); x.add_argument("--contract",required=True); x.add_argument("--ledger-dir",required=True); x.add_argument("--current-portfolios",required=True); x.add_argument("--master-daily",required=True); x.add_argument("--snapshot-id",required=True); x.add_argument("--source-run-id",required=True); a=p.parse_args(); r=initialize(a.contract,a.ledger_dir) if a.command=="initialize" else append(a.contract,a.ledger_dir,a.current_portfolios,a.master_daily,a.snapshot_id,a.source_run_id); print(json.dumps(r,sort_keys=True)); return 0
