@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -187,7 +187,7 @@ def discover_ledger_inventory(runtime_root: Path, current: dict) -> None:
     }
 
 
-def enrich(runtime_root: Path, current: dict) -> dict:
+def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     reference = iso(current.get("reference_data_date"))
     b3p = runtime_root / "ledgers/b3_h1/STATUS.json"
     v16p = runtime_root / "ledgers/v16b/STATUS.json"
@@ -261,6 +261,9 @@ def enrich(runtime_root: Path, current: dict) -> dict:
                          cost_status=(me or {}).get("cost_status"),
                          economics_source=str((me_root / "DELIVERY_STATUS.json").relative_to(runtime_root)))
         if active_epoch:
+            latest_completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+            component["economic_freshness"] = freshness(me, latest_completed)
+            component["freshness"] = freshness(mom, latest_completed)
             component.update(economic_epoch_id=active_epoch["epoch_id"],
                              legacy_economic_status=(legacy_disposition or {}).get("status"),
                              return_observations=(me or {}).get("return_observations", 0),
@@ -268,6 +271,9 @@ def enrich(runtime_root: Path, current: dict) -> dict:
                              economic_nav=(me or {}).get("nav"),
                              latest_economics=(me or {}).get("latest_economics"),
                              terminal_observation_target=None)
+            if component["economic_status"] == "WAITING_FIRST_POST_APPROVAL_CLOSE" and latest_completed >= iso(me["first_eligible_cutoff"]):
+                component["economic_status"] = "FAILED_MISSING_FIRST_ECONOMIC_CLOSE"
+                component["next_economic_action"] = "CHECK_AUTOMATIC_COLLECTION_NO_RESET_NO_BACKFILL"
         blocked = str(component["economic_status"]).startswith("BLOCKED")
         failed = str(component["economic_status"]).startswith("FAILED") or str(component["price_coverage_status"]).startswith("FAILED")
         if failed:

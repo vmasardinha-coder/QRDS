@@ -138,11 +138,14 @@ class HoldEpochTests(unittest.TestCase):
         h.save(eroot/'ACTIVE_EPOCH.json',{**h.SAFETY,'epoch_id':'hold_20260928','relative_path':'epochs/hold_20260928'})
         h.save(eroot/'ECONOMICS_STATUS.json',{'status':'LEGACY','data_as_of':'2026-09-13','nav':{'M1_TOP10':99}})
         h.report(eroot/'epochs/hold_20260928',self.config,'WAITING_FIRST_POST_APPROVAL_CLOSE')
-        result=enrich(self.root,{'reference_data_date':'2026-09-27'})['components']['momentum_m1_m2']
+        result=enrich(self.root,{'reference_data_date':'2026-09-27'},as_of_utc=datetime(2026,9,28,tzinfo=timezone.utc))['components']['momentum_m1_m2']
         self.assertEqual(result['economic_status'],'WAITING_FIRST_POST_APPROVAL_CLOSE')
         self.assertIsNone(result['economic_nav'])
         self.assertEqual(result['return_observations'],0)
         self.assertEqual(result['economic_freshness'],'CURRENT_CALENDAR_GATED')
+        expired=enrich(self.root,{'reference_data_date':'2026-09-27'},as_of_utc=datetime(2026,9,29,tzinfo=timezone.utc))['components']['momentum_m1_m2']
+        self.assertEqual(expired['economic_status'],'FAILED_MISSING_FIRST_ECONOMIC_CLOSE')
+        self.assertEqual(expired['collection_health_hint'],'RED_FAILED_DELIVERY')
 
     def test_full_capture_append_retry_and_corruption_rejection(self):
         import pandas as pd
