@@ -154,6 +154,8 @@ def process(contract_path: Path, v2a_zip: Path, delta_zip: Path, runtime_dir: Pa
     anchor = d(c["anchor_date"])
     first = d(c["first_return_date"])
     runtime_dir.mkdir(parents=True, exist_ok=True)
+    if (runtime_dir / "INTERRUPTION.json").exists():
+        raise LiveShadowError("interrupted original scoreboard cannot append")
     ledger_path = runtime_dir / "DAILY_LEDGER.csv"
     status_path = runtime_dir / "STATUS.json"
     anchor_path = runtime_dir / "ANCHOR.json"
