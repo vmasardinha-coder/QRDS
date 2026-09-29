@@ -1,0 +1,55 @@
+name: GATE BTC 2 System 11 LOB Replay Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system11_lob_replay.py'
+      - 'tests/test_gate_btc_2_system11_lob_replay.py'
+      - 'artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_BOUNDARY_20260929.json'
+      - '.github/workflows/gate-btc-2-system11-lob-replay-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system11_lob_replay.py'
+      - 'tests/test_gate_btc_2_system11_lob_replay.py'
+      - 'artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_BOUNDARY_20260929.json'
+      - '.github/workflows/gate-btc-2-system11-lob-replay-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RESEARCH_ONLY: "true"
+  SHADOW_ONLY: "true"
+  ORDERS: "0"
+  REAL_CAPITAL: "0"
+
+jobs:
+  fail-closed-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: |
+          python -m py_compile tools/gate_btc_2_system11_lob_replay.py
+          python -m unittest tests.test_gate_btc_2_system11_lob_replay -v
+      - name: Assert current prereg boundary blocks credit
+        run: |
+          python tools/gate_btc_2_system11_lob_replay.py             --boundary artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_BOUNDARY_20260929.json             --output system11_readiness.json
+          python - <<'PY'
+          import json
+          x=json.load(open('system11_readiness.json'))
+          assert x['status']=='BLOCKED_PENDING_FROZEN_NUMERIC_STRESS_ENVELOPE'
+          assert x['system11_complete'] is False
+          assert x['credit_awarded'] is False
+          assert x['orders']==0 and x['real_capital_brl']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-system11-lob-replay-readiness
+          path: system11_readiness.json
