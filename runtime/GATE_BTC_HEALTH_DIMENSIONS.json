@@ -1,5 +1,7 @@
 {
-  "amber_collection_components": [],
+  "amber_collection_components": [
+    "bull_replay_live_shadow"
+  ],
   "collection_delivery": "RED_INCOMPLETE_DELIVERY",
   "components": {
     "alt_trail": {
@@ -15,10 +17,10 @@
       "source_status": "ACTIVE_STRUCTURAL_COLLECTION"
     },
     "bull_replay_live_shadow": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "LIVE_DIAGNOSTIC_ACTIVE"
+      "collection_health": "AMBER_BLOCKED_DEPENDENCY",
+      "freshness": "INTERRUPTED_PRESERVED",
+      "scientific_state": "DEPENDENCY_BLOCKED_NOT_YET_EVALUABLE",
+      "source_status": "BLOCKED_NEW_DIAGNOSTIC_EPOCH_AUTHORIZATION_REQUIRED"
     },
     "d100": {
       "collection_health": "GREEN",
@@ -33,10 +35,10 @@
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "CURRENT"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "LATE_MISSING_OR_INVALID"
     },
     "delta": {
       "collection_health": "GREEN",
@@ -63,15 +65,15 @@
       "source_status": "ACTIVE"
     },
     "momentum_m1_m2": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "WAITING_FIRST_POST_APPROVAL_CLOSE"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "FAILED_MISSING_FIRST_ECONOMIC_CLOSE"
     },
     "momentum_m3_economics": {
-      "collection_health": "GREEN_PROTOCOL_WAITING",
-      "freshness": "CURRENT_CALENDAR_GATED",
-      "scientific_state": "VALID_PROTOCOL_WAITING",
+      "collection_health": "RED_MISSING_OR_INVALID",
+      "freshness": "UNKNOWN_DATE",
+      "scientific_state": "INSUFFICIENT_CURRENT_EVIDENCE",
       "source_status": "WAITING_FIRST_POST_IMPLEMENTATION_CLOSE"
     },
     "prl50": {
@@ -99,7 +101,7 @@
       "source_status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     }
   },
-  "generated_at_utc": "2026-09-28T23:38:56.874700+00:00",
+  "generated_at_utc": "2026-09-29T00:20:30.471898+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -107,8 +109,10 @@
   "real_capital_used": 0,
   "red_collection_components": [
     "b3_h1",
-    "bull_replay_live_shadow",
     "d50",
+    "daily_delivery_pointer",
+    "momentum_m1_m2",
+    "momentum_m3_economics",
     "v16b"
   ],
   "reference_data_date": "2026-09-27",
@@ -116,5 +120,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "9950c99be747eed2b9641e2306be88447cd3957f62b0bac7326d0a40e789b042"
+  "status_sha256": "70f632d4f82692e62fe733580ea7e9699cf66fb88138161b0229b0931644523f"
 }
