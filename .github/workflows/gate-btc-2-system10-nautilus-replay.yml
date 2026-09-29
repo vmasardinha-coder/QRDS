@@ -1,0 +1,75 @@
+name: GATE BTC 2 System 10 Nautilus Metadata Replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-system10-nautilus-replay.yml
+      - tools/gate_btc_2_system10_nautilus_replay.py
+      - tools/gate_btc_2_system10_event_envelope.py
+      - tools/gate_btc_2_stage9_admission_ledger.py
+      - tools/gate_btc_2_stage9_exit_gate.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  RESEARCH_ONLY: "true"
+  SHADOW_ONLY: "true"
+  NOT_APPROVED: "true"
+  ENGINE_FEED: "false"
+  ORDERS: "0"
+  REAL_CAPITAL: "0"
+  NO_RETUNE: "true"
+  NO_BACKFILL: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  replay-admitted-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: Install pinned independent engine
+        run: python -m pip install --disable-pip-version-check nautilus_trader==2.0.0rc5
+      - name: Fetch exact canonical Stage 9 ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HEAD=runtime_repo/runtime/system9/CANONICAL_LEDGER_HEAD.json
+          test -f "$HEAD"
+          RUN="$(jq -er '.ledger_run_id | select(type == "number" and . > 0)' "$HEAD")"
+          mkdir -p source
+          gh run download "$RUN" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${RUN}" --dir source
+          test -f source/evidence/stage9_admission_ledger.jsonl
+      - name: Execute real engine replay with zero order authority
+        run: |
+          set -euo pipefail
+          PYTHONPATH=main_repo python -m tools.gate_btc_2_system10_nautilus_replay \
+            --ledger source/evidence/stage9_admission_ledger.jsonl \
+            --head runtime_repo/runtime/system9/CANONICAL_LEDGER_HEAD.json \
+            --completion runtime_repo/runtime/system9/SYSTEM9_COMPLETE.json \
+            --output output/SYSTEM10_NAUTILUS_METADATA_REPLAY.json
+          jq -e '.decision == "PASS_ADMISSION_METADATA_REPLAY_PARITY" and
+                 .event_count > 0 and .engine_run == true and
+                 .system10_complete == false and .orders == 0 and
+                 .real_capital_brl == 0 and .economics_allowed == false' \
+            output/SYSTEM10_NAUTILUS_METADATA_REPLAY.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-system10-nautilus-metadata-replay-${{ github.run_id }}
+          path: output/SYSTEM10_NAUTILUS_METADATA_REPLAY.json
+          if-no-files-found: error
+          retention-days: 90
