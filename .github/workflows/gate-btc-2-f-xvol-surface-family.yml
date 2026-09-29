@@ -6,11 +6,19 @@ on:
       - 'artifacts/gate_btc_2/family_handoffs/F_XVOL_SURFACE_PREREG_20260921.md'
       - 'tools/gate_btc_2_f_xvol_surface_extractor.py'
       - 'tests/test_gate_btc_2_f_xvol_surface_extractor.py'
+      - 'tools/gate_btc_2_family_feature_cadence.py'
+      - 'tests/test_gate_btc_2_family_feature_cadence.py'
       - '.github/workflows/gate-btc-2-f-xvol-surface-family.yml'
+  schedule:
+    - cron: '35 12 * * *'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: family-f_xvol_surface-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
+  cancel-in-progress: false
 
 jobs:
   validate-family:
@@ -31,6 +39,8 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Archive safety tests
+        run: python -m unittest -v tests.test_gate_btc_2_family_feature_cadence
       - name: Unit tests
         run: python -m unittest -v tests/test_gate_btc_2_f_xvol_surface_extractor.py
 
@@ -46,11 +56,13 @@ jobs:
           test "$FACTORY_RUNTIME_UNTOUCHED" = true
 
       - name: Extract live family feature snapshot
+        if: github.event_name != 'pull_request'
         run: |
           python tools/gate_btc_2_f_xvol_surface_extractor.py \
             --output artifacts_live/f_xvol_surface
 
       - name: Assert tangible family artifact
+        if: github.event_name != 'pull_request'
         run: |
           python - <<'PY'
           import json
@@ -77,9 +89,35 @@ jobs:
           PY
 
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: github.event_name != 'pull_request' && always()
         with:
           name: gate-btc-f-xvol-surface-family
           path: artifacts_live/f_xvol_surface
           if-no-files-found: error
           retention-days: 90
+      - name: Checkout canonical runtime for scheduled capture
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Seal prospective feature and raw source
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_2_family_feature_cadence.py \
+            --family F-XVOL-SURFACE \
+            --capture artifacts_live/f_xvol_surface \
+            --ledger runtime_repo/runtime/gate_btc_2/family_features/f_xvol_surface \
+            --run-id "${{ github.run_id }}"
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/family_features/f_xvol_surface
+          git -C runtime_repo commit -m "Append prospective F-XVOL-SURFACE feature capture ${{ github.run_id }}"
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo pull --rebase origin gate-btc-runtime &&
+              git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
