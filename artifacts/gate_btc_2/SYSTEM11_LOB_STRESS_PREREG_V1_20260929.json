@@ -1,0 +1,65 @@
+{
+  "schema": "gate_btc.2_0.system11_lob_stress_prereg.v1",
+  "system": 11,
+  "system_key": "LOB",
+  "status": "FROZEN_APPROVED_FORWARD_COLLECTION_AUTHORIZED",
+  "approved_date": "2026-09-29",
+  "credit_enabled": true,
+  "market": "BTC_USDT_SPOT_L2",
+  "venues": ["BINANCE", "OKX"],
+  "book_depth": 10,
+  "causal_capture": {
+    "sampling_rule": "ONE_SYNCHRONIZED_ELIGIBLE_SNAPSHOT_PAIR_PER_SECOND",
+    "minimum_eligible_pairs": 10000,
+    "minimum_elapsed_calendar_days": 7,
+    "minimum_distinct_observation_days": 3,
+    "timestamp_rule": "RECEIPT_TIMESTAMP_CAUSAL_STRICTLY_INCREASING_PER_VENUE",
+    "gap_staleness_policy": "ABSTAIN_REJECT_NEVER_INTERPOLATE",
+    "backfill": false
+  },
+  "decision_to_execution_contract": {
+    "decision_time": "t",
+    "execution_book": "FIRST_CAUSALLY_AVAILABLE_ELIGIBLE_BOOK_AT_OR_AFTER_T_PLUS_LATENCY",
+    "side_rule": "BUY_AND_SELL_SYMMETRIC",
+    "virtual_order_size_grid_percent_of_observed_depth10_side_liquidity": [1,10,25,50,100],
+    "fill_model": "MARKETABLE_ORDER_CONSUMES_OBSERVED_LEVELS_SEQUENTIALLY",
+    "depth_consumption_rule": "NEVER_EXTRAPOLATE_BEYOND_OBSERVED_DEPTH10",
+    "insufficient_book_rule": "PARTIAL_FILL_REMAINDER_UNEXECUTED",
+    "latency_ms_grid": [0,50,100,250,500],
+    "slippage_measurement": "REALIZED_VWAP_VS_OBSERVED_BEST_QUOTE_AND_MID",
+    "fee_stress_bps_grid": [0,5,10],
+    "queue_position_model": "NOT_INCLUDED_IN_V1"
+  },
+  "replay": {
+    "minimum_effective_executions_per_primary_scenario": 1000,
+    "same_signal_logic_across_scenarios": true,
+    "same_research_parameters_across_scenarios": true,
+    "retune_after_first_credited_observation": false
+  },
+  "pass_fail_contract": {
+    "causal_integrity_required": true,
+    "all_fills_explainable_by_observed_depth10": true,
+    "deterministic_replay_required": true,
+    "size_monotonicity_rule": "INCREASING_SIZE_ON_SAME_SNAPSHOT_MUST_NOT_ARTIFICIALLY_IMPROVE_AVERAGE_EXECUTION_PRICE",
+    "mandatory_scenario_grid_must_be_executed_or_explicitly_unavailable": true,
+    "minimum_dataset_gate_required": true,
+    "mandatory_outputs": [
+      "baseline_execution_result","stressed_execution_results","fill_rate",
+      "fill_level_artifacts","vwap_slippage","size_impact","latency_impact",
+      "fee_impact","partial_fill_distribution","engine_and_version_provenance"
+    ],
+    "missing_required_evidence_result": "INCONCLUSIVE_ABSTAIN",
+    "structural_contract_violation_result": "FAIL",
+    "profitability_is_pass_criterion": false
+  },
+  "feature_geometry_source": "F-XMM-INVENTORY",
+  "execution_realism_gate": "AUDIT-XEXEC-01",
+  "forbidden_reuse": ["H_CF_LL_01","POSTHOC_REVERSE_LEAD_LAG"],
+  "safety": {
+    "RESEARCH_ONLY": true, "SHADOW_ONLY": true, "NO_BACKFILL": true,
+    "NO_RETUNE": true, "ENGINE_FEED": false, "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0, "FACTORY_MIGRATION_AUTHORIZED": false,
+    "ECONOMIC_CLAIM_AUTHORIZED": false
+  },
+  "completion_criterion": "CAUSAL_BOOK_DATASET_PLUS_EXECUTION_STRESS_REPLAY_PASSES_FROZEN_CONTRACT"
+}
