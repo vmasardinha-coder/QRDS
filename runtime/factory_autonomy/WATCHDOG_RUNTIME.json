@@ -2,6 +2,16 @@
   "actions": [
     {
       "backfill_allowed": false,
+      "blocker": "collection-delivery anomaly remains open; exact failing delivery/source step must be proven from current evidence",
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0,
+      "repair_mode": "RETRY_ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
+      "scientific_change_allowed": false,
+      "track": "MOMENTUM_M1_M2"
+    },
+    {
+      "backfill_allowed": false,
       "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
       "engine_feed": false,
       "orders": 0,
@@ -11,7 +21,7 @@
       "track": "GATE_BTC_2_CORE"
     }
   ],
-  "generated_at_utc": "2026-09-29T08:38:47.849691Z",
+  "generated_at_utc": "2026-09-29T12:46:06.680847Z",
   "runtime_frontier": {
     "authority": "gate-btc-runtime",
     "generation": "H2730-H2739",
@@ -44,7 +54,7 @@
       "authority": "gate-btc-runtime",
       "data_as_of": "2026-09-27",
       "eligible_observations": 34,
-      "status": "ACTIVE_PROSPECTIVE_SHADOW"
+      "status": "BLOCKED_SOURCE_RETRY_EXHAUSTED"
     },
     "V16B": {
       "authority": "gate-btc-runtime",
@@ -66,6 +76,7 @@
   },
   "schema": "qrds.factory.watchdog.v2",
   "stalled_tracks": [
+    "MOMENTUM_M1_M2",
     "GATE_BTC_2_CORE"
   ]
 }
