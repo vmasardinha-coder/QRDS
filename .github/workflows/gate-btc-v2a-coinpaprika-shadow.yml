@@ -10,6 +10,7 @@ on:
       - tools/gate_btc_v2a_coinpaprika_epoch.py
       - tools/gate_btc_v2a_coinpaprika_market_identity.py
       - tools/gate_btc_v2a_coinpaprika_closed_candles.py
+      - tools/gate_btc_v2a_coinpaprika_publish_ledger.py
       - tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
   pull_request:
     branches: [main]
@@ -18,11 +19,13 @@ on:
       - tools/gate_btc_v2a_coinpaprika_epoch.py
       - tools/gate_btc_v2a_coinpaprika_market_identity.py
       - tools/gate_btc_v2a_coinpaprika_closed_candles.py
+      - tools/gate_btc_v2a_coinpaprika_publish_ledger.py
       - tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
       - tests/test_gate_btc_v2a_coinpaprika_shadow.py
       - tests/test_gate_btc_v2a_coinpaprika_epoch.py
       - tests/test_gate_btc_v2a_coinpaprika_market_identity.py
       - tests/test_gate_btc_v2a_coinpaprika_closed_candles.py
+      - tests/test_gate_btc_v2a_coinpaprika_publish_ledger.py
       - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
   schedule:
     - cron: '17 14 * * *'
@@ -51,7 +54,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test keyless shadow contract without market calls
-        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow tests.test_gate_btc_v2a_coinpaprika_epoch tests.test_gate_btc_v2a_coinpaprika_market_identity tests.test_gate_btc_v2a_coinpaprika_closed_candles
+        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow tests.test_gate_btc_v2a_coinpaprika_epoch tests.test_gate_btc_v2a_coinpaprika_market_identity tests.test_gate_btc_v2a_coinpaprika_closed_candles tests.test_gate_btc_v2a_coinpaprika_publish_ledger
       - name: Assert isolation
         run: |
           test "$RESEARCH_ONLY" = true
@@ -111,3 +114,62 @@ jobs:
           path: evidence/
           if-no-files-found: warn
           retention-days: 90
+
+  publish-closed-candle-ledger:
+    needs: capture-shadow
+    if: github.event_name != 'pull_request' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v2a-coinpaprika-shadow-${{ github.run_id }}
+          path: evidence
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate and seal only complete latest prospective close
+        run: >-
+          python source/tools/gate_btc_v2a_coinpaprika_publish_ledger.py
+          --evidence evidence
+          --runtime runtime_repo
+          --genesis source/tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
+      - name: Publish immutable candle archive without touching canonical pointer
+        run: |
+          set -euo pipefail
+          ledger=runtime/data_quality/v2a/coinpaprika_v1/closed_candles
+          if [[ ! -d "runtime_repo/$ledger" ]]; then
+            echo 'No full prospective candle close to publish'
+            exit 0
+          fi
+          git -C runtime_repo config user.name 'gate-btc-actions'
+          git -C runtime_repo config user.email 'gate-btc-actions@users.noreply.github.com'
+          git -C runtime_repo add "$ledger"
+          if git -C runtime_repo diff --cached --quiet; then
+            echo 'Prospective candle close already sealed'
+            exit 0
+          fi
+          git -C runtime_repo commit -m 'Append isolated CoinPaprika prospective candle close'
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo fetch origin gate-btc-runtime
+            if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
+              git -C runtime_repo rebase --abort || true
+              exit 1
+            fi
+            if git -C runtime_repo push origin HEAD:gate-btc-runtime; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
