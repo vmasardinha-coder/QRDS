@@ -393,6 +393,66 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "collection_health_hint": "RED_FAILED_DELIVERY" if failed_prl else "AMBER_BLOCKED_DEPENDENCY" if blocked_prl or (not waiting and prl_fresh != "FRESH") else "GREEN_ACTIVE",
             "source": "ledgers/prl50_position/DELIVERY_STATUS.json"}
 
+    system9_path = runtime_root / "system9/STAGE9_EXIT_STATUS.json"
+    system9 = load(system9_path)
+    system9_active = bool(system9 and system9.get("schema") == "gate_btc.2_0.stage9_exit_gate_status.v1")
+    if system9_active:
+        effects = system9.get("completion_effect") or {}
+        if effects.get("engine_feed") is not False or effects.get("orders") != 0 or effects.get("real_capital") != 0:
+            raise SystemExit("unsafe system9 exit boundary")
+        gate_pass = system9.get("decision") == "PASS_STAGE9_EXIT_GATE" and system9.get("stage_9_complete") is True
+        current["components"]["system9_exit"] = {
+            "status": system9.get("decision"),
+            "stage_9_complete": system9.get("stage_9_complete"),
+            "current_N": (system9.get("exit_segment") or {}).get("current_N"),
+            "required_N": (system9.get("exit_segment") or {}).get("required_N"),
+            "distinct_utc_hours": len((system9.get("exit_segment") or {}).get("distinct_utc_hours", [])),
+            "distinct_utc_weekdays": len((system9.get("exit_segment") or {}).get("distinct_utc_weekdays", [])),
+            "checks": (system9.get("exit_segment") or {}).get("checks"),
+            "system10_research_dependency_released":
+                (system9.get("completion_effect") or {}).get("system_10_dependency_released_for_research_only_engine_parity"),
+            "automatic_promotion": False, "economics_allowed": False,
+            "engine_feed": False, "orders_generated": 0, "real_capital_used": 0,
+            "freshness": "GATE_RESULT_PRESERVED" if gate_pass else "GATE_COLLECTING",
+            "collection_health_hint": "GREEN_GATE_PASSED" if gate_pass else "AMBER_BLOCKED_DEPENDENCY",
+            "source": "system9/STAGE9_EXIT_STATUS.json",
+        }
+
+    v16b1_path = runtime_root / "ledgers/v16b1/STATUS.json"
+    v16b1_corpus_path = runtime_root / "evidence/v16b1/prospective_universe/STATUS.json"
+    v16b1 = load(v16b1_path)
+    v16b1_corpus = load(v16b1_corpus_path)
+    v16b1_active = bool(v16b1 and v16b1.get("schema") == "gate_btc.v16b1.status.v1")
+    if v16b1_active:
+        safe("v16b1", v16b1)
+        safe("v16b1_corpus", v16b1_corpus)
+        training_ready = (v16b1_corpus or {}).get("training_ready") is True
+        first = iso((v16b1_corpus or {}).get("first_eligible_thursday"))
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        calendar_wait = first is not None and completed < first
+        current["components"]["v16b1"] = {
+            "status": v16b1.get("status"),
+            "operational_blocker": v16b1.get("operational_blocker"),
+            "canonical_cycle_count": v16b1.get("canonical_cycle_count"),
+            "prospective_credit": v16b1.get("prospective_credit"),
+            "signal_date": v16b1.get("signal_date"),
+            "signal_seal": v16b1.get("signal_seal"),
+            "entry_seal": v16b1.get("entry_seal"),
+            "next_canonical_event": v16b1.get("next_canonical_event"),
+            "first_eligible_thursday": (v16b1_corpus or {}).get("first_eligible_thursday"),
+            "training_ready": training_ready,
+            "observed_week_count": (v16b1_corpus or {}).get("observed_week_count"),
+            "frozen_model_min_prior_weeks": (v16b1_corpus or {}).get("frozen_model_min_prior_weeks"),
+            "remaining_blocker": (v16b1_corpus or {}).get("remaining_blocker"),
+            "freshness": "CURRENT_CALENDAR_GATED" if calendar_wait else freshness(v16b1, completed),
+            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if not training_ready or
+                                      v16b1.get("operational_blocker") else "GREEN_ACTIVE",
+            "source": "ledgers/v16b1/STATUS.json",
+            "corpus_source": "evidence/v16b1/prospective_universe/STATUS.json",
+            "research_only": True, "shadow_only": True, "not_approved": True,
+            "engine_feed": False, "orders_generated": 0, "real_capital_used": 0,
+        }
+
     bull_path = runtime_root / "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json"
     bull = load(bull_path)
     bull_active = bool(bull and bull.get("schema") == "gate_btc.bull_replay_live_shadow.delivery.v1")
@@ -442,10 +502,13 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "prl50"]
         failed = [x for x in failed if x != "prl50"]
         blocked = [x for x in blocked if x != "prl50"]
+    if system9_active or v16b1_active:
+        for names in (stale, missing, failed, blocked):
+            names[:] = [x for x in names if x not in {"system9_exit", "v16b1"}]
     if bull_active:
         for names in (stale, missing, failed, blocked):
             names[:] = [x for x in names if x != "bull_replay_live_shadow"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()) + (("bull_replay_live_shadow",) if bull_active else ()):
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()) + (("bull_replay_live_shadow",) if bull_active else ()) + (("v16b1",) if v16b1_active else ()) + (("system9_exit",) if system9_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")
@@ -469,6 +532,11 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     sources["momentum_m1_m2"] = source_meta(momp, mom)
     if bull_active:
         sources["bull_replay_live_shadow"] = source_meta(bull_path, bull)
+    if v16b1_active:
+        sources["v16b1"] = source_meta(v16b1_path, v16b1)
+        sources["v16b1_corpus"] = source_meta(v16b1_corpus_path, v16b1_corpus)
+    if system9_active:
+        sources["system9_exit"] = source_meta(system9_path, system9)
 
     # Inventory is intentionally calculated after authoritative components so the
     # summary can expose which runtime ledgers are absent from executive health.
