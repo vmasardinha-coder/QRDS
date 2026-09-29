@@ -1,6 +1,11 @@
 name: GATE BTC V2A CoinPaprika Keyless Shadow
 
 on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
   pull_request:
     branches: [main]
     paths:
@@ -46,7 +51,7 @@ jobs:
 
   capture-shadow:
     needs: offline-contract
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
