@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
@@ -62,7 +62,9 @@ def build_epoch(raw: bytes, snapshot: dict, baseline: list[dict], registry: dict
         "family_id": FAMILY,
         "source": "https://api.coinpaprika.com/v1/tickers",
         "observed_at_utc": observed_at,
-        "first_possible_data_close_utc": observed_at[:10],
+        "first_full_after_this_observation_utc_date": (
+            datetime.fromisoformat(observed_at.replace("Z", "+00:00")).date() + timedelta(days=1)
+        ).isoformat(),
         "raw_sha256": digest(raw),
         "candidate_count": len(candidate),
         "mapping_counts": counts,
