@@ -1,0 +1,63 @@
+{
+  "schema": "gate_btc.2_0.system11_lob_stress_prereg_boundary.v1",
+  "system": 11,
+  "system_key": "LOB",
+  "status": "PREREG_BOUNDARY_DEFINED_PARAMETERS_NOT_YET_AUTHORIZED",
+  "credit_enabled": false,
+  "inherited_frozen_inputs": {
+    "source_market": "BTC_USDT_SPOT_L2",
+    "venues": ["BINANCE", "OKX"],
+    "book_depth": 10,
+    "feature_family": "F-XMM-INVENTORY",
+    "feature_set": [
+      "spread_bps",
+      "imbalance_l1",
+      "imbalance_l5",
+      "imbalance_l10",
+      "microprice_deviation_bps",
+      "bid_concentration_l1_l10",
+      "ask_concentration_l1_l10",
+      "imbalance_shape"
+    ],
+    "missing_feature_policy": "ABSTAIN",
+    "forbidden_reuse": ["H_CF_LL_01", "POSTHOC_REVERSE_LEAD_LAG"]
+  },
+  "required_new_preregistration_fields": {
+    "causal_capture": [
+      "capture_cadence_or_event_sampling_rule",
+      "minimum_independent_forward_sample",
+      "timestamp_and_ordering_rule",
+      "gap_and_staleness_policy"
+    ],
+    "execution_stress_replay": [
+      "virtual_order_size_or_size_grid",
+      "side_selection_rule",
+      "fill_model",
+      "depth_consumption_rule",
+      "latency_or_delay_grid",
+      "fee_and_slippage_accounting",
+      "pass_fail_metrics",
+      "minimum_effective_replay_count"
+    ]
+  },
+  "authorization_rule": "ALL_REQUIRED_NEW_PREREGISTRATION_FIELDS_MUST_BE_EXPLICITLY_FROZEN_BEFORE_FIRST_SYSTEM11_CREDITED_CAPTURE",
+  "existing_evidence_policy": {
+    "cryptofeed_capture_is_capability_evidence_only": true,
+    "f_xmm_live_validation_is_feature_extractor_evidence_only": true,
+    "existing_rows_receive_system11_credit": false,
+    "historical_rows_backfilled": 0
+  },
+  "completion_criterion": "Causal book dataset + execution stress/replay passes frozen contract",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0,
+    "FACTORY_MIGRATION_AUTHORIZED": false,
+    "ECONOMIC_CLAIM_AUTHORIZED": false
+  }
+}
