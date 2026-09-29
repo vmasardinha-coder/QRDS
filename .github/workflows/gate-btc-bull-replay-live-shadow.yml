@@ -7,12 +7,15 @@ on:
       - .github/workflows/gate-btc-bull-replay-live-shadow.yml
       - migration/reporting/bull_replay_contract.json
       - tools/gate_btc_bull_replay_live_shadow.py
+      - tools/gate_btc_bull_replay_delivery_audit.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tests/test_gate_btc_bull_replay_delivery_audit.py
       - tests/test_gate_btc_bull_replay_live_shadow.py
   workflow_dispatch:
     inputs:
       run_id:
         description: Eligible Daily Research workflow run ID
-        required: true
+        required: false
         type: string
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
@@ -52,9 +55,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Test live-shadow contract and append-only logic
-        run: python -m unittest -v tests.test_gate_btc_bull_replay_live_shadow
+        run: python -m unittest -v tests.test_gate_btc_bull_replay_live_shadow tests.test_gate_btc_bull_replay_delivery_audit
       - name: Compile live-shadow collector
-        run: python -m py_compile tools/gate_btc_bull_replay_live_shadow.py
+        run: python -m py_compile tools/gate_btc_bull_replay_live_shadow.py tools/gate_btc_bull_replay_delivery_audit.py tools/gate_btc_reporting_operational_overlay.py
 
   append-live-scoreboard:
     needs: contract-tests
@@ -78,7 +81,19 @@ jobs:
         with:
           ref: main
 
+      - name: Check out immutable runtime branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+
+      - name: Audit original scoreboard and plan delivery
+        id: plan
+        run: python -m tools.gate_btc_bull_replay_delivery_audit --plan --ledger-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
+
       - name: Resolve exact successful Daily Research source run
+        if: steps.plan.outputs.can_append == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
@@ -115,6 +130,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download exact Daily Research artifact
+        if: steps.plan.outputs.can_append == 'true'
         id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
@@ -151,13 +167,6 @@ jobs:
           assert m['components']['delta']['status'] == 'PASS'
           PY
 
-      - name: Check out immutable runtime branch
-        if: steps.daily_source.outputs.eligible == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: gate-btc-runtime
-          path: runtime_repo
-          fetch-depth: 0
 
       - name: Append exact daily live-shadow observation
         if: steps.daily_source.outputs.eligible == 'true'
@@ -188,7 +197,7 @@ jobs:
           PY
 
       - name: Commit live-shadow evidence only
-        if: steps.daily_source.outputs.eligible == 'true'
+        if: always() && steps.plan.outcome == 'success'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
@@ -200,7 +209,7 @@ jobs:
           fi
           git add runtime/ledgers/bull_replay_live_shadow
           git diff --cached --quiet && exit 0
-          git commit -m "Append Bull Replay live shadow ${SOURCE_RUN_ID}"
+          git commit -m "Audit Bull Replay delivery ${SOURCE_RUN_ID:-interrupted}"
           for attempt in 1 2 3 4 5; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then

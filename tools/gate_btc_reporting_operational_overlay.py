@@ -393,6 +393,19 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "collection_health_hint": "RED_FAILED_DELIVERY" if failed_prl else "AMBER_BLOCKED_DEPENDENCY" if blocked_prl or (not waiting and prl_fresh != "FRESH") else "GREEN_ACTIVE",
             "source": "ledgers/prl50_position/DELIVERY_STATUS.json"}
 
+    bull_path = runtime_root / "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json"
+    bull = load(bull_path)
+    bull_active = bool(bull and bull.get("schema") == "gate_btc.bull_replay_live_shadow.delivery.v1")
+    if bull_active:
+        safe("bull_replay_live_shadow", bull)
+        bull_blocked = str(bull.get("status", "")).startswith("BLOCKED")
+        current["components"]["bull_replay_live_shadow"] = {
+            **bull,
+            "freshness": "INTERRUPTED_PRESERVED" if bull_blocked else freshness(bull, reference),
+            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if bull_blocked else "GREEN_ACTIVE",
+            "source": "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
+        }
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
@@ -425,7 +438,10 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         missing = [x for x in missing if x != "prl50"]
         failed = [x for x in failed if x != "prl50"]
         blocked = [x for x in blocked if x != "prl50"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()):
+    if bull_active:
+        for names in (stale, missing, failed, blocked):
+            names[:] = [x for x in names if x != "bull_replay_live_shadow"]
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()) + (("bull_replay_live_shadow",) if bull_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")
@@ -447,6 +463,8 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     sources["b3_h1"] = source_meta(b3p, b3)
     sources["v16b"] = source_meta(v16p, v16)
     sources["momentum_m1_m2"] = source_meta(momp, mom)
+    if bull_active:
+        sources["bull_replay_live_shadow"] = source_meta(bull_path, bull)
 
     # Inventory is intentionally calculated after authoritative components so the
     # summary can expose which runtime ledgers are absent from executive health.
