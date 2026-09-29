@@ -9,15 +9,20 @@ on:
       - tools/gate_btc_v2a_coinpaprika_shadow.py
       - tools/gate_btc_v2a_coinpaprika_epoch.py
       - tools/gate_btc_v2a_coinpaprika_market_identity.py
+      - tools/gate_btc_v2a_coinpaprika_closed_candles.py
+      - tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
   pull_request:
     branches: [main]
     paths:
       - tools/gate_btc_v2a_coinpaprika_shadow.py
       - tools/gate_btc_v2a_coinpaprika_epoch.py
       - tools/gate_btc_v2a_coinpaprika_market_identity.py
+      - tools/gate_btc_v2a_coinpaprika_closed_candles.py
+      - tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
       - tests/test_gate_btc_v2a_coinpaprika_shadow.py
       - tests/test_gate_btc_v2a_coinpaprika_epoch.py
       - tests/test_gate_btc_v2a_coinpaprika_market_identity.py
+      - tests/test_gate_btc_v2a_coinpaprika_closed_candles.py
       - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
   schedule:
     - cron: '17 14 * * *'
@@ -46,7 +51,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test keyless shadow contract without market calls
-        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow tests.test_gate_btc_v2a_coinpaprika_epoch tests.test_gate_btc_v2a_coinpaprika_market_identity
+        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow tests.test_gate_btc_v2a_coinpaprika_epoch tests.test_gate_btc_v2a_coinpaprika_market_identity tests.test_gate_btc_v2a_coinpaprika_closed_candles
       - name: Assert isolation
         run: |
           test "$RESEARCH_ONLY" = true
@@ -93,6 +98,12 @@ jobs:
           --raw-tickers evidence/COINPAPRIKA_RAW.json
           --series evidence/coinpaprika_epoch_v1/SERIES.json
           --output evidence/coinpaprika_epoch_v1/market_identity
+      - name: Observe only latest completed full prospective UTC close
+        run: >-
+          python source/tools/gate_btc_v2a_coinpaprika_closed_candles.py
+          --genesis source/tools/gate_btc_v2a_coinpaprika_epoch_genesis_v1.json
+          --market-identity evidence/coinpaprika_epoch_v1/market_identity/MARKET_IDENTITY.json
+          --output evidence/coinpaprika_epoch_v1/closed_candles
       - uses: actions/upload-artifact@v4
         if: always()
         with:
