@@ -130,6 +130,24 @@ def previous_close(records: list[dict]) -> float | None:
     return None
 
 
+def spacing_gap_diagnostics(rows: list[dict]) -> list[dict]:
+    """Describe observed non-5m intervals without reconstructing missing bars."""
+    out = []
+    ts = [datetime.fromisoformat(r["timestamp"]) for r in rows]
+    for a, b in zip(ts, ts[1:]):
+        seconds = int((b - a).total_seconds())
+        if seconds == 300:
+            continue
+        missing = max(0, seconds // 300 - 1) if seconds > 300 and seconds % 300 == 0 else None
+        out.append({
+            "after": a.isoformat(),
+            "before": b.isoformat(),
+            "observed_spacing_seconds": seconds,
+            "missing_m5_slots": missing,
+        })
+    return out
+
+
 def enough_session_rows(rows: list[dict], max_window: int) -> bool:
     # latest required regular exit = next-bar entry + 120m horizon
     required_index = max_window // 5 + 120 // 5
@@ -350,6 +368,7 @@ def main() -> int:
                 "source_qa_pass": False,
                 "gap_reason": "SESSION_M5_SPACING_FAIL",
                 "required_spacing_seconds": 300,
+                "spacing_gap_diagnostics": spacing_gap_diagnostics(rows),
             },
             "active_family_count": len(contracts),
             "family_state_counts": counts,
