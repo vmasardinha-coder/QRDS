@@ -99,6 +99,11 @@ def session_or_raise():
         raise RuntimeError("requests is required outside fixture mode")
     session = requests.Session()
     session.headers.update({"User-Agent": "QOS-V2A-Integrity/0.3"})
+    # The same frozen CoinGecko Demo endpoint accepts an optional authenticated
+    # transport. Never place the key in query strings, artifacts, or logs.
+    demo_key = os.environ.get("COINGECKO_DEMO_API_KEY", "").strip()
+    if demo_key:
+        session.headers["x-cg-demo-api-key"] = demo_key
     return session
 
 
