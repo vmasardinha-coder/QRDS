@@ -43,8 +43,8 @@ def parse_candidate(raw: bytes) -> list[dict]:
                        "rank": rank, "market_cap_usd": market_cap})
     ranked.sort(key=lambda item: (item["rank"], item["id"]))
     top = ranked[:250]
-    if len(top) != 250 or len({item["rank"] for item in top}) != 250:
-        raise ValueError("incomplete or ambiguous top-250 ranks")
+    if len(top) != 250 or (len(ranked) > 250 and top[-1]["rank"] == ranked[250]["rank"]):
+        raise ValueError("incomplete or ambiguous top-250 boundary")
     return top
 
 
@@ -69,6 +69,8 @@ def compare(candidate: list[dict], baseline: list[dict], *, observed_at: str,
             baseline_date: str, raw_sha256: str) -> dict:
     candidate_symbols = {item["symbol"] for item in candidate}
     baseline_symbols = {row["symbol"].strip().upper() for row in baseline}
+    rank_counts = {rank: sum(item["rank"] == rank for item in candidate)
+                   for rank in {item["rank"] for item in candidate}}
     duplicate_symbols = sorted({symbol for symbol in candidate_symbols
                                 if sum(item["symbol"] == symbol for item in candidate) > 1})
     return {
@@ -86,6 +88,8 @@ def compare(candidate: list[dict], baseline: list[dict], *, observed_at: str,
         "candidate_only_symbols": sorted(candidate_symbols - baseline_symbols),
         "reference_only_symbols": sorted(baseline_symbols - candidate_symbols),
         "candidate_duplicate_symbols": duplicate_symbols,
+        "candidate_tied_rank_values": sorted(rank for rank, count in rank_counts.items() if count > 1),
+        "candidate_rank_gaps_to_cutoff": sorted(set(range(1, candidate[-1]["rank"] + 1)) - set(rank_counts)),
         "identity_equivalence_claim": False,
         "source_substitution_performed": False,
         "feeds_frozen_engine": False,
