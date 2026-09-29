@@ -74,7 +74,10 @@ jobs:
             --output output/SYSTEM10_NAUTILUS_METADATA_REPLAY.json
           jq -e '.decision == "PASS_ADMISSION_METADATA_REPLAY_PARITY" and
                  .event_count > 0 and .engine_run == true and
-                 .system10_complete == false and .orders == 0 and
+                 .system10_complete == true and
+                 .completion_criterion == "INDEPENDENT_EVENT_REPLAY_STATE_PARITY_DEMONSTRATED" and
+                 .system11_dependency_released_for_research_only_lob_work == true and
+                 .orders == 0 and
                  .real_capital_brl == 0 and .economics_allowed == false' \
             output/SYSTEM10_NAUTILUS_METADATA_REPLAY.json
       - uses: actions/upload-artifact@v4
