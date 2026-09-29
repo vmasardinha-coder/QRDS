@@ -1,0 +1,61 @@
+{
+  "schema": "gate_btc.2_0.system11_structural_readiness.v1",
+  "system": 11,
+  "system_key": "LOB",
+  "status": "STRUCTURAL_READY_WAITING_FROZEN_STRESS_REPLAY_PREREG",
+  "system11_complete": false,
+  "dependency": {
+    "system10_required_status": "COMPLETE_RESEARCH_PARITY",
+    "system10_main_sha": "235f713120c6bc04ea32dcad66af07913b05f133",
+    "system10_post_merge_workflow_run_id": 36563208582,
+    "system10_replay_events": 239,
+    "system10_parity_result": "PASS_ADMISSION_METADATA_REPLAY_PARITY"
+  },
+  "existing_lob_capability_evidence": {
+    "cryptofeed_pr": 886,
+    "cryptofeed_component_disposition": "CONCLUDED_RETAIN_AS_CROSS_VENUE_MICROSTRUCTURE_COMPONENT",
+    "capture_quality": "PASS",
+    "venues": ["BINANCE", "OKX"],
+    "market": "BTC_USDT_SPOT_L2",
+    "book_depth_available": 10,
+    "accepted_normalized_book_events": 2119,
+    "rejected_signal_hypothesis": "H_CF_LL_01",
+    "rejected_signal_result_reusable_for_system11_credit": false
+  },
+  "existing_forward_feature_handoff": {
+    "family_id": "F-XMM-INVENTORY",
+    "status": "HANDOFF_READY_AWAITING_ADMISSIBLE_FEATURE_HISTORY",
+    "feature_extractor_validated_live": true,
+    "historical_pit_panel_available": false,
+    "economic_claim_authorized": false,
+    "factory_migration_authorized": false
+  },
+  "frozen_master_completion_criterion": "Causal book dataset + execution stress/replay passes frozen contract",
+  "unresolved_before_capture_credit": [
+    "PREREGISTER_SYSTEM11_CAUSAL_BOOK_DATASET_CONTRACT",
+    "PREREGISTER_EXECUTION_STRESS_REPLAY_CONTRACT",
+    "BIND_PROSPECTIVE_CAPTURE_START_AFTER_PREREGISTRATION"
+  ],
+  "explicitly_not_authorized": [
+    "REUSE_H_CF_LL_01_AS_SYSTEM11_SUCCESS",
+    "POSTHOC_REVERSE_LEAD_LAG",
+    "RETROSPECTIVE_LOB_CREDIT",
+    "BACKFILL",
+    "RETUNE",
+    "ECONOMIC_PROMOTION",
+    "ENGINE_FEED",
+    "ORDERS",
+    "REAL_CAPITAL"
+  ],
+  "next_action": "FREEZE_SYSTEM11_DATASET_AND_STRESS_REPLAY_PREREG_BEFORE_ANY_SYSTEM11_CREDIT",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_RETUNE": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL_BRL": 0
+  }
+}
