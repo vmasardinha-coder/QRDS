@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 env:
@@ -102,30 +102,36 @@ jobs:
             --capture-dir captured \
             --review-out admitted/bitget_stage9_review.json \
             --admission-out admitted/bitget_stage9_admission.json
+      - name: Checkout runtime ledger authority
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
       - name: Restore prior canonical ledger head
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p evidence previous
-          PREV_RUN=""
-          while read -r CANDIDATE; do
-            [ -n "$CANDIDATE" ] || continue
-            EXPECTED="gate-btc-stage9-bitget-ledger-${CANDIDATE}"
-            HAS_ARTIFACT="$(gh api "repos/${{ github.repository }}/actions/runs/${CANDIDATE}/artifacts" --jq "[.artifacts[] | select(.name == \"${EXPECTED}\" and .expired == false)] | length")"
-            if [ "$HAS_ARTIFACT" -gt 0 ]; then
-              PREV_RUN="$CANDIDATE"
-              break
-            fi
-          done < <(gh run list --repo "${{ github.repository }}" --workflow gate-btc-2-stage9-bitget-ledger-bridge.yml --branch main --event workflow_run --status success --limit 50 --json databaseId --jq '.[].databaseId')
-          if [ -n "$PREV_RUN" ]; then
-            gh run download "$PREV_RUN" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${PREV_RUN}" --dir previous
-          else
-            gh run download 33293955248 --repo "${{ github.repository }}" --name gate-btc-stage9-bitget-ledger-33293955248 --dir previous
-          fi
+          HEAD=runtime_repo/runtime/system9/CANONICAL_LEDGER_HEAD.json
+          test -f "$HEAD"
+          PREV_RUN="$(jq -er '.ledger_run_id | select(type == "number" and . > 0)' "$HEAD")"
+          gh run download "$PREV_RUN" --repo "${{ github.repository }}" --name "gate-btc-stage9-bitget-ledger-${PREV_RUN}" --dir previous
           LEDGER="$(find previous -name stage9_admission_ledger.jsonl -type f -print -quit)"
           test -n "$LEDGER"
           cp "$LEDGER" evidence/stage9_admission_ledger.jsonl
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from tools.gate_btc_2_stage9_admission_ledger import parse_ledger, validate_ledger
+          head=json.loads(Path('runtime_repo/runtime/system9/CANONICAL_LEDGER_HEAD.json').read_text())
+          rows=parse_ledger(Path('evidence/stage9_admission_ledger.jsonl'))
+          validate_ledger(rows)
+          assert len(rows)==head['record_count'] and rows[-1]['record_sha256']==head['tip_sha256']
+          assert rows[-1]['captured_at_utc']==head['latest_captured_at_utc']
+          print('CANONICAL_LEDGER_HEAD_VERIFIED='+str(len(rows)))
+          PY
       - name: Append at most one canonical capture per UTC hour
         run: |
           set -euo pipefail
@@ -171,3 +177,38 @@ jobs:
             admitted/
           if-no-files-found: error
           retention-days: 30
+      - name: Persist canonical head after artifact upload
+        if: ${{ success() }}
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, '..')
+          from tools.gate_btc_2_stage9_admission_ledger import parse_ledger, validate_ledger
+          ledger=Path('../evidence/stage9_admission_ledger.jsonl')
+          rows=parse_ledger(ledger)
+          validate_ledger(rows)
+          old=json.loads(Path('runtime/system9/CANONICAL_LEDGER_HEAD.json').read_text())
+          assert len(rows)>=old['record_count']
+          assert rows[old['record_count']-1]['record_sha256']==old['tip_sha256']
+          head={'schema':'gate_btc.2_0.stage9_canonical_ledger_head.v1',
+                'ledger_run_id':int(os.environ['GITHUB_RUN_ID']),
+                'record_count':len(rows),
+                'tip_sha256':rows[-1]['record_sha256'],
+                'latest_captured_at_utc':rows[-1]['captured_at_utc']}
+          Path('runtime/system9/CANONICAL_LEDGER_HEAD.json').write_text(
+              json.dumps(head,indent=2,sort_keys=True)+'\n')
+          PY
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/system9/CANONICAL_LEDGER_HEAD.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Advance Stage 9 canonical ledger head to run ${GITHUB_RUN_ID}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((i*2))
+          done
+          exit 1
