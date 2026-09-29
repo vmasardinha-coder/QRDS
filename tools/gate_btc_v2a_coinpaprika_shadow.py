@@ -111,13 +111,13 @@ def main() -> None:
                                                     "User-Agent": "QRDS-V2A-Shadow/1"})
     with urllib.request.urlopen(request, timeout=45) as response:
         raw = response.read()
+    args.output.mkdir(parents=True, exist_ok=True)
+    (args.output / "COINPAPRIKA_RAW.json").write_bytes(raw)
     candidate = parse_candidate(raw)
     baseline_snapshot, baseline = read_baseline(args.baseline_snapshot, args.baseline_archive)
     report = compare(candidate, baseline, observed_at=now,
                      baseline_date=baseline_snapshot["source_data_as_of"],
                      raw_sha256=digest(raw))
-    args.output.mkdir(parents=True, exist_ok=True)
-    (args.output / "COINPAPRIKA_RAW.json").write_bytes(raw)
     (args.output / "COINPAPRIKA_TOP250.json").write_text(
         json.dumps(candidate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (args.output / "COMPARISON.json").write_text(
