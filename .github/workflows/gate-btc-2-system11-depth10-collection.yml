@@ -1,0 +1,58 @@
+name: GATE BTC 2 System 11 Prospective Depth10 Collection
+on:
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: system11-depth10-prospective
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contract and collector tests
+        run: python -m unittest -v tests.test_gate_btc_2_system11_approved_prereg_v1 tests.test_gate_btc_2_system11_collection_status tests.test_gate_btc_2_system11_depth10_collector
+      - name: Install Cryptofeed
+        run: python -m pip install --disable-pip-version-check 'cryptofeed==2.5.0'
+      - name: Capture five prospective minutes
+        run: python tools/gate_btc_2_system11_depth10_collector.py --duration 300 --output artifacts_live/system11
+      - name: Checkout canonical runtime
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Append causal pairs and publish progress
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/gate_btc_2/system11
+          LEDGER=runtime_repo/runtime/gate_btc_2/system11/DEPTH10_PAIRS.jsonl
+          touch "$LEDGER"
+          python tools/gate_btc_2_system11_append_pairs.py --source artifacts_live/system11/PAIRS.jsonl --ledger "$LEDGER"
+          python tools/gate_btc_2_system11_collection_status.py --prereg artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_V1_20260929.json --ledger "$LEDGER" --output runtime_repo/runtime/gate_btc_2/system11/COLLECTION_STATUS.json
+          cp artifacts_live/system11/SUMMARY.json runtime_repo/runtime/gate_btc_2/system11/LATEST_CAPTURE_SUMMARY.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/system11
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m "Append prospective System 11 depth10 capture"
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo pull --rebase origin gate-btc-runtime && git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-system11-depth10
+          path: artifacts_live/system11
+          if-no-files-found: error
+          retention-days: 90
