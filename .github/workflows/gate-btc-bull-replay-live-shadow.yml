@@ -6,7 +6,7 @@ on:
     paths:
       - .github/workflows/gate-btc-bull-replay-live-shadow.yml
       - migration/reporting/bull_replay_contract.json
-      - migration/reporting/bull_replay_live_shadow_epoch_20260929.json
+      - tools/gate_btc_bull_replay_epoch_contract_20260929.json
       - tools/gate_btc_bull_replay_live_shadow.py
       - tools/gate_btc_bull_replay_delivery_audit.py
       - tools/gate_btc_reporting_operational_overlay.py
@@ -176,7 +176,7 @@ jobs:
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_bull_replay_live_shadow.py
-          --contract migration/reporting/bull_replay_live_shadow_epoch_20260929.json
+          --contract tools/gate_btc_bull_replay_epoch_contract_20260929.json
           --v2a-zip source_artifact/qos_daily/qos_v2a_outputs.zip
           --delta-zip source_artifact/qos_daily/delta_walk_forward_outputs.zip
           --runtime-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow/epochs/independent_20260929

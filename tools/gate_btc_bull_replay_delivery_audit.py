@@ -84,7 +84,7 @@ def audit(root, at=None, activate=False):
             save(root / "STATUS.json", {**prior_status, **result})
     if activate or (root / "ACTIVE_EPOCH.json").exists():
         require(blocked, "ORIGINAL_NOT_INTERRUPTED")
-        epoch_contract = bull.load_contract(Path("migration/reporting/bull_replay_live_shadow_epoch_20260929.json"))
+        epoch_contract = bull.load_contract(Path("tools/gate_btc_bull_replay_epoch_contract_20260929.json"))
         require(epoch_contract["anchor_date"] == "2026-09-29" and
                 epoch_contract["first_return_date"] == "2026-09-30", "EPOCH_CONTRACT_CHANGED")
         epoch_rel = "epochs/independent_20260929"
