@@ -41,8 +41,7 @@ class CoinGeckoDemoAuthTests(unittest.TestCase):
         session.close()
 
     def test_missing_key_keeps_public_transport(self):
-        with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("COINGECKO_DEMO_API_KEY", None)
+        with patch.dict(os.environ, {"COINGECKO_DEMO_API_KEY": ""}, clear=False):
             session = self.v2a.session_or_raise()
         self.assertNotIn("x-cg-demo-api-key", session.headers)
         session.close()
