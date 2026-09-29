@@ -22,6 +22,7 @@ on:
       - tools/gate_btc_2_v2a_apply_registry_amendment.py
       - tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - tests/test_gate_btc_daily_research.py
+      - tests/test_v2a_coingecko_auth.py
       - tests/test_gate_btc_shadow_delivery.py
       - tests/test_gate_btc_lock_valuation_sidecar.py
       - tools/qos_orchestrator.py
@@ -58,6 +59,7 @@ on:
       - tools/gate_btc_daily_research.py
       - tools/gate_btc_shadow_delivery.py
       - tests/test_gate_btc_daily_research.py
+      - tests/test_v2a_coingecko_auth.py
       - tests/test_gate_btc_shadow_delivery.py
       - tests/test_gate_btc_lock_valuation_sidecar.py
       - tools/qos_orchestrator.py
@@ -123,6 +125,7 @@ jobs:
         run: >-
           python -m unittest -v
           tests/test_gate_btc_daily_research.py
+          tests/test_v2a_coingecko_auth.py
           tests/test_gate_btc_shadow_delivery.py
           tests/test_gate_btc_lock_valuation_sidecar.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
@@ -145,6 +148,8 @@ jobs:
           cat migration/canonical/gateway/payload/gateway_v010_canonical_source.zip.b64.part-*
           > migration/canonical/gateway/gateway_v010_canonical_source.zip.b64
       - name: Collect and freeze V2A and Delta
+        env:
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
         run: >-
           python tools/qos_orchestrator.py
           --public-data
