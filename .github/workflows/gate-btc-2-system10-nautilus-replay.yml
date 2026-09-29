@@ -1,6 +1,15 @@
 name: GATE BTC 2 System 10 Nautilus Metadata Replay
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-system10-nautilus-replay.yml
+      - tools/gate_btc_2_system10_nautilus_replay.py
+      - tools/gate_btc_2_system10_event_envelope.py
+      - tools/gate_btc_2_stage9_admission_ledger.py
+      - tools/gate_btc_2_prospective_counter_bridge.py
+      - tools/gate_btc_2_stage9_exit_gate.py
   pull_request:
     branches: [main]
     paths:
