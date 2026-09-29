@@ -76,7 +76,7 @@ def replay(ledger: Path, head_path: Path, completion_path: Path) -> dict:
     data_type = DataType("Stage9AdmittedCapture", metadata={"source": "QRDS_STAGE9"})
     class Observer(DataActor):
         def __init__(self):
-            super().__init__(DataActorConfig(actor_id="STAGE9-PARITY-OBSERVER"))
+            super().__init__(DataActorConfig())
             self.observed = []
 
         def on_start(self):
