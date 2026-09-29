@@ -50,6 +50,23 @@ class DeliveryAuditTests(unittest.TestCase):
         self.assertEqual(again["status"], result["status"])
         self.assertEqual(json.loads((self.root / "STATUS.json").read_text())["status"], result["status"])
 
+    def test_authorized_epoch_waits_for_exact_untouched_close(self):
+        before = (self.root / "DAILY_LEDGER.csv").read_bytes()
+        at = datetime(2026, 9, 29, tzinfo=timezone.utc)
+        state = audit.audit(self.root, at, activate=True)
+        self.assertEqual(state["status"], "WAITING_FIRST_ANCHOR_CLOSE")
+        self.assertFalse(state["can_append"])
+        self.assertEqual(state["anchor_date"], "2026-09-29")
+        self.assertEqual(state["inherited_scientific_credit"], 0)
+        self.assertEqual((self.root / "DAILY_LEDGER.csv").read_bytes(), before)
+        ready = audit.audit(self.root, datetime(2026, 9, 30, tzinfo=timezone.utc))
+        self.assertEqual(ready["status"], "READY_EXACT_DAILY_CLOSE")
+        self.assertTrue(ready["can_append"])
+        self.assertEqual(ready["expected_source_data_as_of"], "2026-09-29")
+        missed = audit.audit(self.root, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertEqual(missed["status"], "BLOCKED_EPOCH_DAILY_GAP_NO_BACKFILL")
+        self.assertFalse(missed["can_append"])
+
     def test_seal_rejects_changed_original(self):
         audit.audit(self.root, datetime(2026, 9, 29, tzinfo=timezone.utc))
         with (self.root / "DAILY_LEDGER.csv").open("a", encoding="utf-8") as file:

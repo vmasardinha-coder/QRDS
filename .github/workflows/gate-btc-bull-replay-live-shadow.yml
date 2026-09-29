@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/gate-btc-bull-replay-live-shadow.yml
       - migration/reporting/bull_replay_contract.json
+      - migration/reporting/bull_replay_live_shadow_epoch_20260929.json
       - tools/gate_btc_bull_replay_live_shadow.py
       - tools/gate_btc_bull_replay_delivery_audit.py
       - tools/gate_btc_reporting_operational_overlay.py
@@ -90,7 +91,7 @@ jobs:
 
       - name: Audit original scoreboard and plan delivery
         id: plan
-        run: python -m tools.gate_btc_bull_replay_delivery_audit --plan --ledger-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
+        run: python -m tools.gate_btc_bull_replay_delivery_audit --activate --plan --ledger-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
 
       - name: Resolve exact successful Daily Research source run
         if: steps.plan.outputs.can_append == 'true'
@@ -165,6 +166,9 @@ jobs:
           assert m['methodology_changes'] == 0
           assert m['components']['v2a']['status'] == 'PASS'
           assert m['components']['delta']['status'] == 'PASS'
+          delivery=json.load(open('runtime_repo/runtime/ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json', encoding='utf-8'))
+          assert m['data_as_of'] == delivery['expected_source_data_as_of'], (
+              f"expected untouched close {delivery['expected_source_data_as_of']}, got {m['data_as_of']}")
           PY
 
 
@@ -172,10 +176,10 @@ jobs:
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_bull_replay_live_shadow.py
-          --contract migration/reporting/bull_replay_contract.json
+          --contract migration/reporting/bull_replay_live_shadow_epoch_20260929.json
           --v2a-zip source_artifact/qos_daily/qos_v2a_outputs.zip
           --delta-zip source_artifact/qos_daily/delta_walk_forward_outputs.zip
-          --runtime-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
+          --runtime-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow/epochs/independent_20260929
           --source-run-id "$SOURCE_RUN_ID"
 
       - name: Verify runtime safety state when present
@@ -184,7 +188,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          p=Path('runtime_repo/runtime/ledgers/bull_replay_live_shadow/STATUS.json')
+          p=Path('runtime_repo/runtime/ledgers/bull_replay_live_shadow/epochs/independent_20260929/STATUS.json')
           if not p.exists():
               print('BULL_REPLAY_LIVE_SHADOW=BEFORE_ANCHOR_NO_RUNTIME_WRITE')
               raise SystemExit(0)
@@ -195,6 +199,10 @@ jobs:
           assert s['orders_generated'] == 0
           assert s['real_capital_used'] == 0
           PY
+
+      - name: Reconcile new epoch after source processing
+        if: steps.daily_source.outputs.eligible == 'true'
+        run: python -m tools.gate_btc_bull_replay_delivery_audit --ledger-dir runtime_repo/runtime/ledgers/bull_replay_live_shadow
 
       - name: Commit live-shadow evidence only
         if: always() && steps.plan.outcome == 'success'

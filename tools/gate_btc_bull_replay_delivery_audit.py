@@ -24,7 +24,7 @@ def save(path, value):
     path.write_text(json.dumps(value, sort_keys=True, indent=2) + "\n", encoding="utf-8")
 
 
-def audit(root, at=None):
+def audit(root, at=None, activate=False):
     root = Path(root)
     at = at or datetime.now(timezone.utc)
     contract = bull.load_contract(Path("migration/reporting/bull_replay_contract.json"))
@@ -79,7 +79,72 @@ def audit(root, at=None):
               "updated_at_utc": at.isoformat()}
     save(root / "DELIVERY_STATUS.json", result)
     if blocked:
-        save(root / "STATUS.json", {**json.loads((root / "STATUS.json").read_text(encoding="utf-8")), **result})
+        prior_status = json.loads((root / "STATUS.json").read_text(encoding="utf-8"))
+        if prior_status.get("status") != "BLOCKED_NEW_DIAGNOSTIC_EPOCH_AUTHORIZATION_REQUIRED":
+            save(root / "STATUS.json", {**prior_status, **result})
+    if activate or (root / "ACTIVE_EPOCH.json").exists():
+        require(blocked, "ORIGINAL_NOT_INTERRUPTED")
+        epoch_contract = bull.load_contract(Path("migration/reporting/bull_replay_live_shadow_epoch_20260929.json"))
+        require(epoch_contract["anchor_date"] == "2026-09-29" and
+                epoch_contract["first_return_date"] == "2026-09-30", "EPOCH_CONTRACT_CHANGED")
+        epoch_rel = "epochs/independent_20260929"
+        marker_path = root / "ACTIVE_EPOCH.json"
+        expected_marker = {**SAFE, "schema": "gate_btc.bull_replay_live_shadow.active_epoch.v1",
+                           "relative_path": epoch_rel,
+                           "anchor_date": epoch_contract["anchor_date"],
+                           "first_return_date": epoch_contract["first_return_date"],
+                           "original_evidence_sha256": seals, "inherited_scientific_credit": 0}
+        if marker_path.exists():
+            require(json.loads(marker_path.read_text(encoding="utf-8")) == expected_marker,
+                    "ACTIVE_EPOCH_MUTATED")
+        elif activate:
+            save(marker_path, expected_marker)
+        epoch_dir = root / epoch_rel
+        ep_anchor = epoch_dir / "ANCHOR.json"
+        ep_ledger = epoch_dir / "DAILY_LEDGER.csv"
+        require(not ep_ledger.exists() or ep_anchor.exists(), "EPOCH_LEDGER_WITHOUT_ANCHOR")
+        if ep_anchor.exists():
+            anchored = json.loads(ep_anchor.read_text(encoding="utf-8"))
+            require(anchored["anchor_date"] == epoch_contract["anchor_date"], "EPOCH_ANCHOR_CHANGED")
+        ep_rows = bull.load_ledger(ep_ledger)
+        ep_dates = sorted({r["date"] for r in ep_rows})
+        expected_series = set(bull.REQUIRED_V2A + bull.REQUIRED_DELTA)
+        require(not ep_dates or ep_dates[0] == epoch_contract["first_return_date"], "EPOCH_FIRST_RETURN_CHANGED")
+        require(len(ep_rows) == len(ep_dates) * len(expected_series), "EPOCH_INCOMPLETE_SERIES")
+        previous = bull.ZERO_HASH
+        for row in ep_rows:
+            require(row["prev_hash"] == previous and row["row_hash"] == bull.hash_row(row),
+                    "EPOCH_HASH_CHAIN_INVALID")
+            previous = row["row_hash"]
+        for day in ep_dates:
+            require({r["series"] for r in ep_rows if r["date"] == day} == expected_series,
+                    "EPOCH_MISSING_SERIES")
+        require(all(date.fromisoformat(ep_dates[i]) == date.fromisoformat(ep_dates[i-1]) + timedelta(days=1)
+                    for i in range(1, len(ep_dates))), "EPOCH_DATE_GAP")
+        expected = (date.fromisoformat(ep_dates[-1]) + timedelta(days=1) if ep_dates else
+                    date.fromisoformat(epoch_contract["first_return_date"]) if ep_anchor.exists() else
+                    date.fromisoformat(epoch_contract["anchor_date"]))
+        completed = at.date() - timedelta(days=1)
+        waiting = completed < expected
+        gap = completed > expected
+        epoch_status = ("WAITING_FIRST_ANCHOR_CLOSE" if not ep_anchor.exists() else
+                        "WAITING_FIRST_RETURN_CLOSE" if not ep_dates else
+                        "WAITING_NEXT_DAILY_CLOSE") if waiting else (
+                        "BLOCKED_EPOCH_DAILY_GAP_NO_BACKFILL" if gap else "READY_EXACT_DAILY_CLOSE")
+        result = {**SAFE, "schema": "gate_btc.bull_replay_live_shadow.delivery.v1",
+                  "status": epoch_status, "can_append": completed == expected,
+                  "data_as_of": ep_dates[-1] if ep_dates else None,
+                  "anchor_date": epoch_contract["anchor_date"],
+                  "first_return_date": epoch_contract["first_return_date"],
+                  "expected_source_data_as_of": expected.isoformat(),
+                  "observed_days": len(ep_dates), "scientific_credit": 0,
+                  "inherited_scientific_credit": 0,
+                  "original_observed_days_preserved": len(dates),
+                  "original_last_observation_date": dates[-1],
+                  "original_status": "INTERRUPTED_DESCRIPTIVE_ONLY",
+                  "active_epoch": epoch_rel, "formal_prospective_evidence": False,
+                  "updated_at_utc": at.isoformat()}
+        save(root / "DELIVERY_STATUS.json", result)
     return result
 
 
@@ -87,8 +152,9 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ledger-dir", type=Path, required=True)
     p.add_argument("--plan", action="store_true")
+    p.add_argument("--activate", action="store_true")
     args = p.parse_args()
-    result = audit(args.ledger_dir)
+    result = audit(args.ledger_dir, activate=args.activate)
     if args.plan and os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
             f.write("can_append=" + str(result["can_append"]).lower() + "\n")
