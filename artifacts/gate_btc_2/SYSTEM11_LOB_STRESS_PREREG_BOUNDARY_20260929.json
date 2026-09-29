@@ -6,7 +6,10 @@
   "credit_enabled": false,
   "inherited_frozen_inputs": {
     "source_market": "BTC_USDT_SPOT_L2",
-    "venues": ["BINANCE", "OKX"],
+    "venues": [
+      "BINANCE",
+      "OKX"
+    ],
     "book_depth": 10,
     "feature_family": "F-XMM-INVENTORY",
     "feature_set": [
@@ -20,7 +23,10 @@
       "imbalance_shape"
     ],
     "missing_feature_policy": "ABSTAIN",
-    "forbidden_reuse": ["H_CF_LL_01", "POSTHOC_REVERSE_LEAD_LAG"]
+    "forbidden_reuse": [
+      "H_CF_LL_01",
+      "POSTHOC_REVERSE_LEAD_LAG"
+    ]
   },
   "required_new_preregistration_fields": {
     "causal_capture": [
@@ -30,6 +36,7 @@
       "gap_and_staleness_policy"
     ],
     "execution_stress_replay": [
+      "decision_to_execution_contract",
       "virtual_order_size_or_size_grid",
       "side_selection_rule",
       "fill_model",
@@ -59,5 +66,26 @@
     "REAL_CAPITAL_BRL": 0,
     "FACTORY_MIGRATION_AUTHORIZED": false,
     "ECONOMIC_CLAIM_AUTHORIZED": false
-  }
+  },
+  "existing_execution_realism_gate": {
+    "gate_id": "AUDIT-XEXEC-01",
+    "status": "REGISTERED_VALIDATION_GATE",
+    "source_path": "tools/gate_btc_factory/EXECUTION_REALISM_STRESS_PREREG.v1.json",
+    "methodology_binding": "REQUIRED_FOR_SYSTEM11_EXECUTION_STRESS_REPLAY",
+    "inherited_stress_dimensions": [
+      "latency",
+      "fill_and_slippage_assumptions",
+      "fees_and_commissions",
+      "liquidity_and_order_size",
+      "order_sequencing_and_lifecycle",
+      "market_data_granularity",
+      "partial_fill_and_queue_assumptions_where_data_supports_them"
+    ],
+    "same_signal_logic_across_scenarios": true,
+    "same_research_parameters_across_scenarios": true,
+    "fail_closed_on_missing_execution_semantics": true,
+    "external_numeric_thresholds_imported": false,
+    "separate_scientific_decision_for_stress_envelope": true
+  },
+  "next_action": "FREEZE_SYSTEM11_NUMERIC_STRESS_ENVELOPE_AND_DECISION_TO_EXECUTION_CONTRACT_UNDER_AUDIT_XEXEC_01"
 }
