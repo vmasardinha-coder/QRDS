@@ -6,9 +6,10 @@ import io
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
-from tools.gate_btc_v2a_coinpaprika_shadow import compare, digest, parse_candidate, read_baseline
+from tools.gate_btc_v2a_coinpaprika_shadow import compare, digest, main, parse_candidate, read_baseline
 
 
 def sample_candidate():
@@ -37,6 +38,24 @@ class CoinPaprikaShadowTests(unittest.TestCase):
         rows[1]["rank"] = 1
         with self.assertRaisesRegex(ValueError, "ambiguous"):
             parse_candidate(json.dumps(rows).encode())
+
+    def test_invalid_live_response_is_archived_before_rejection(self):
+        raw = json.dumps(sample_candidate()[:10]).encode()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "evidence"
+            import sys
+            from unittest.mock import MagicMock
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = raw
+            argv = ["shadow", "--baseline-snapshot", "unused.json",
+                    "--baseline-archive", "unused.csv.gz", "--output", str(output)]
+            with patch.object(sys, "argv", argv), patch(
+                    "tools.gate_btc_v2a_coinpaprika_shadow.urllib.request.urlopen",
+                    return_value=response):
+                with self.assertRaisesRegex(ValueError, "incomplete"):
+                    main()
+            self.assertEqual((output / "COINPAPRIKA_RAW.json").read_bytes(), raw)
+            self.assertFalse((output / "COMPARISON.json").exists())
 
     def test_baseline_hash_is_required(self):
         with tempfile.TemporaryDirectory() as temporary:
