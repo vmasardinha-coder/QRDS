@@ -17,6 +17,13 @@ class T(unittest.TestCase):
         self.assertFalse(r["system11_complete"])
         self.assertFalse(x["existing_evidence_policy"]["existing_rows_receive_system11_credit"])
         self.assertEqual(x["existing_evidence_policy"]["historical_rows_backfilled"],0)
+        g=x["existing_execution_realism_gate"]
+        self.assertEqual(g["gate_id"],"AUDIT-XEXEC-01")
+        self.assertEqual(g["status"],"REGISTERED_VALIDATION_GATE")
+        self.assertTrue(g["fail_closed_on_missing_execution_semantics"])
+        self.assertFalse(g["external_numeric_thresholds_imported"])
+        self.assertTrue(g["separate_scientific_decision_for_stress_envelope"])
+        self.assertIn("decision_to_execution_contract",x["required_new_preregistration_fields"]["execution_stress_replay"])
 
 if __name__=="__main__":
     unittest.main()

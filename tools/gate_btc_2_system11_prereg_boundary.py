@@ -11,6 +11,7 @@ REQUIRED = {
         "gap_and_staleness_policy",
     },
     "execution_stress_replay": {
+        "decision_to_execution_contract",
         "virtual_order_size_or_size_grid",
         "side_selection_rule",
         "fill_model",
