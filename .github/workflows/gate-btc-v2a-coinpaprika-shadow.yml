@@ -1,0 +1,75 @@
+name: GATE BTC V2A CoinPaprika Keyless Shadow
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_v2a_coinpaprika_shadow.py
+      - tests/test_gate_btc_v2a_coinpaprika_shadow.py
+      - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
+  schedule:
+    - cron: '17 14 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-v2a-coinpaprika-shadow-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'scheduled' }}
+  cancel-in-progress: false
+
+env:
+  RESEARCH_ONLY: 'true'
+  SHADOW_ONLY: 'true'
+  ENGINE_FEED: 'false'
+  ORDERS: '0'
+  REAL_CAPITAL: '0'
+  NO_BACKFILL: 'true'
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test keyless shadow contract without market calls
+        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow
+      - name: Assert isolation
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+
+  capture-shadow:
+    needs: offline-contract
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: canonical_runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture independent candidate and compare with hashed last admitted universe
+        run: >-
+          python source/tools/gate_btc_v2a_coinpaprika_shadow.py
+          --baseline-snapshot canonical_runtime/runtime/data_quality/v2a/snapshots/2026-09-27-run-36381563210.json
+          --baseline-archive canonical_runtime/runtime/data_quality/v2a/archives/2026-09-27-run-36381563210.coingecko_current_universe.csv.gz
+          --output evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2a-coinpaprika-shadow-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 90
