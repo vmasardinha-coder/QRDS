@@ -112,7 +112,7 @@ def check(root: pathlib.Path, today: date):
                 if obj.get("first_eligible_signal_date") != first_clock:
                     raise ValueError("unexpected first eligible signal date")
             elif cfg["mode"] == "status_signal_execution":
-                if obj.get("first_eligible_signal_date") != cfg["expected_first"]:
+                if obj.get("first_eligible_signal_date") != first_clock:
                     raise ValueError("unexpected first eligible signal date")
                 if obj.get("first_eligible_execution_date") != execution_clock:
                     raise ValueError("unexpected first eligible execution date")
