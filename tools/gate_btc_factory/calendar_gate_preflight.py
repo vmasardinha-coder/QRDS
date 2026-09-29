@@ -6,7 +6,7 @@ status contracts and readiness dates. It is intentionally conservative: any miss
 status, malformed date, safety-boundary breach, or unexpected clock becomes RED.
 """
 from __future__ import annotations
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, re, sys
 from datetime import date, datetime
 
 SAFETY_DEFAULTS = {
@@ -60,13 +60,44 @@ def assert_safety(obj: dict, name: str):
 def parse_day(s: str) -> date:
     return datetime.strptime(s, "%Y-%m-%d").date()
 
+def epoch_clocks(root: pathlib.Path, track: str, status: dict, cfg: dict) -> tuple[str, str | None]:
+    """Read the active epoch's frozen anchor; retain legacy clocks only without an epoch."""
+    epoch = status.get("current_epoch")
+    if epoch is None:
+        return cfg["expected_first"], cfg.get("expected_execution")
+    if not isinstance(epoch, str) or not re.fullmatch(r"[a-z0-9_]+", epoch):
+        raise ValueError(f"{track}: invalid active epoch")
+    base = f"runtime/ledgers/{'prl50_position' if track == 'prl50' else 'alt_trail40_10'}/epochs/{epoch}"
+    anchor, _ = load_json(root, base + "/ANCHOR.json")
+    epoch_status, _ = load_json(root, base + "/STATUS.json")
+    for label, item in (("anchor", anchor), ("epoch status", epoch_status)):
+        assert_safety(item, f"{track} {label}")
+        if item.get("contract_sha256") != anchor.get("contract_sha256"):
+            raise ValueError(f"{track}: epoch contract hash mismatch")
+    first = anchor.get("first_eligible_signal_date")
+    execution = anchor.get("first_eligible_execution_date")
+    parse_day(first)
+    if track == "alt_trail":
+        parse_day(execution)
+    for label, item in (("runtime status", status), ("epoch status", epoch_status)):
+        if item.get("first_eligible_signal_date") != first:
+            raise ValueError(f"{track}: {label} signal date diverges from frozen epoch anchor")
+        if track == "alt_trail" and item.get("first_eligible_execution_date") != execution:
+            raise ValueError(f"{track}: {label} execution date diverges from frozen epoch anchor")
+    return first, execution
+
+
 def check(root: pathlib.Path, today: date):
     rows=[]
     for name,cfg in TRACKS.items():
         try:
             obj,p=load_json(root,cfg["path"])
             assert_safety(obj,name)
-            first=parse_day(cfg["expected_first"])
+            first_clock=cfg["expected_first"]
+            execution_clock=cfg.get("expected_execution")
+            if name in ("prl50", "alt_trail"):
+                first_clock, execution_clock = epoch_clocks(root, name, obj, cfg)
+            first=parse_day(first_clock)
             days=(first-today).days
             if cfg["mode"] == "measurement_qos":
                 qos_monthly=obj.get("qos_monthly")
@@ -78,12 +109,12 @@ def check(root: pathlib.Path, today: date):
                 if cfg["expected_first"] not in expected:
                     raise ValueError("frozen 2026-08-31 QOS close missing from qos_monthly.expected_closes")
             elif cfg["mode"] == "status_signal":
-                if obj.get("first_eligible_signal_date") != cfg["expected_first"]:
+                if obj.get("first_eligible_signal_date") != first_clock:
                     raise ValueError("unexpected first eligible signal date")
             elif cfg["mode"] == "status_signal_execution":
                 if obj.get("first_eligible_signal_date") != cfg["expected_first"]:
                     raise ValueError("unexpected first eligible signal date")
-                if obj.get("first_eligible_execution_date") != cfg["expected_execution"]:
+                if obj.get("first_eligible_execution_date") != execution_clock:
                     raise ValueError("unexpected first eligible execution date")
             elif cfg["mode"] == "v16b":
                 if obj.get("canonical_cycle_count", 0) < 0:
@@ -91,7 +122,7 @@ def check(root: pathlib.Path, today: date):
                 if obj.get("next_canonical_event") not in ("SIGNAL_2026-08-27", None):
                     raise ValueError("unexpected V16B next canonical event")
             phase="D-2" if days==2 else "D-1" if days==1 else "CLOCK" if days==0 else f"D{days:+d}"
-            rows.append({"track":name,"status":"PASS_PREFLIGHT","phase":phase,"source":str(p),"days_to_first_clock":days})
+            rows.append({"track":name,"status":"PASS_PREFLIGHT","phase":phase,"source":str(p),"days_to_first_clock":days,"first_eligible_signal_date":first_clock})
         except Exception as e:
             rows.append({"track":name,"status":"RED_FAIL_CLOSED","error":str(e)})
     overall="PASS" if all(r["status"]=="PASS_PREFLIGHT" for r in rows) else "RED_FAIL_CLOSED"
