@@ -7,11 +7,14 @@ on:
     paths:
       - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
       - tools/gate_btc_v2a_coinpaprika_shadow.py
+      - tools/gate_btc_v2a_coinpaprika_epoch.py
   pull_request:
     branches: [main]
     paths:
       - tools/gate_btc_v2a_coinpaprika_shadow.py
+      - tools/gate_btc_v2a_coinpaprika_epoch.py
       - tests/test_gate_btc_v2a_coinpaprika_shadow.py
+      - tests/test_gate_btc_v2a_coinpaprika_epoch.py
       - .github/workflows/gate-btc-v2a-coinpaprika-shadow.yml
   schedule:
     - cron: '17 14 * * *'
@@ -40,7 +43,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test keyless shadow contract without market calls
-        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow
+        run: python -m unittest -v tests.test_gate_btc_v2a_coinpaprika_shadow tests.test_gate_btc_v2a_coinpaprika_epoch
       - name: Assert isolation
         run: |
           test "$RESEARCH_ONLY" = true
@@ -72,6 +75,14 @@ jobs:
           --baseline-snapshot canonical_runtime/runtime/data_quality/v2a/snapshots/2026-09-27-run-36381563210.json
           --baseline-archive canonical_runtime/runtime/data_quality/v2a/archives/2026-09-27-run-36381563210.coingecko_current_universe.csv.gz
           --output evidence
+      - name: Start approved prospective source epoch with explicit identity gaps
+        run: >-
+          python source/tools/gate_btc_v2a_coinpaprika_epoch.py
+          --raw evidence/COINPAPRIKA_RAW.json
+          --baseline-snapshot canonical_runtime/runtime/data_quality/v2a/snapshots/2026-09-27-run-36381563210.json
+          --baseline-archive canonical_runtime/runtime/data_quality/v2a/archives/2026-09-27-run-36381563210.coingecko_current_universe.csv.gz
+          --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --output evidence/coinpaprika_epoch_v1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
