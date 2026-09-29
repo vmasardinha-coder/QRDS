@@ -399,10 +399,14 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     if bull_active:
         safe("bull_replay_live_shadow", bull)
         bull_blocked = str(bull.get("status", "")).startswith("BLOCKED")
+        bull_waiting = str(bull.get("status", "")).startswith("WAITING_")
+        bull_freshness = ("INTERRUPTED_PRESERVED" if bull_blocked else
+                          "CURRENT_CALENDAR_GATED" if bull_waiting else freshness(bull, reference))
         current["components"]["bull_replay_live_shadow"] = {
             **bull,
-            "freshness": "INTERRUPTED_PRESERVED" if bull_blocked else freshness(bull, reference),
-            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if bull_blocked else "GREEN_ACTIVE",
+            "freshness": bull_freshness,
+            "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY" if bull_blocked or
+                                      (not bull_waiting and bull_freshness != "FRESH") else "GREEN_ACTIVE",
             "source": "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
         }
 
