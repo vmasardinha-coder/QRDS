@@ -6,11 +6,19 @@ on:
       - 'artifacts/gate_btc_2/family_handoffs/F_XMM_INVENTORY_PREREG_20260921.md'
       - 'tools/gate_btc_2_f_xmm_inventory_extractor.py'
       - 'tests/test_gate_btc_2_f_xmm_inventory_extractor.py'
+      - 'tools/gate_btc_2_family_feature_cadence.py'
+      - 'tests/test_gate_btc_2_family_feature_cadence.py'
       - '.github/workflows/gate-btc-2-f-xmm-inventory-family.yml'
+  schedule:
+    - cron: '20 12 * * *'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: family-f_xmm_inventory-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
+  cancel-in-progress: false
 
 jobs:
   validate-family:
@@ -29,6 +37,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Archive safety tests
+        run: python -m unittest -v tests.test_gate_btc_2_family_feature_cadence
       - name: Unit tests
         run: python -m unittest -v tests/test_gate_btc_2_f_xmm_inventory_extractor.py
       - name: Install Cryptofeed
@@ -44,8 +54,10 @@ jobs:
           test "$NO_BACKFILL" = true
           test "$FACTORY_RUNTIME_UNTOUCHED" = true
       - name: Capture depth10 family features
+        if: github.event_name != 'pull_request'
         run: python tools/gate_btc_2_f_xmm_inventory_extractor.py --duration 60 --output artifacts_live/f_xmm_inventory
       - name: Assert tangible family artifact
+        if: github.event_name != 'pull_request'
         run: |
           python - <<'PY'
           import json
@@ -63,9 +75,35 @@ jobs:
           print(json.dumps(s,indent=2,sort_keys=True))
           PY
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: github.event_name != 'pull_request' && always()
         with:
           name: gate-btc-f-xmm-inventory-family
           path: artifacts_live/f_xmm_inventory
           if-no-files-found: error
           retention-days: 90
+      - name: Checkout canonical runtime for scheduled capture
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Seal prospective feature and raw source
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          python tools/gate_btc_2_family_feature_cadence.py \
+            --family F-XMM-INVENTORY \
+            --capture artifacts_live/f_xmm_inventory \
+            --ledger runtime_repo/runtime/gate_btc_2/family_features/f_xmm_inventory \
+            --run-id "${{ github.run_id }}"
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/family_features/f_xmm_inventory
+          git -C runtime_repo commit -m "Append prospective F-XMM-INVENTORY feature capture ${{ github.run_id }}"
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo pull --rebase origin gate-btc-runtime &&
+              git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
