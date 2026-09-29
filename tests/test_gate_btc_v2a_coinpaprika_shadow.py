@@ -33,9 +33,22 @@ class CoinPaprikaShadowTests(unittest.TestCase):
         self.assertEqual(report["scientific_credit"], 0)
         self.assertFalse(report["backfill"])
 
-    def test_ambiguous_rank_rejected(self):
+    def test_internal_rank_tie_is_reported_without_changing_provider_ranks(self):
         rows = sample_candidate()
         rows[1]["rank"] = 1
+        top = parse_candidate(json.dumps(rows).encode())
+        self.assertEqual([item["rank"] for item in top[:2]], [1, 1])
+        report = compare(top, [{"id": f"old-{n}", "symbol": f"C{n}"}
+                               for n in range(1, 251)],
+                         observed_at="2026-09-29T15:00:00Z",
+                         baseline_date="2026-09-27", raw_sha256="raw")
+        self.assertEqual(report["candidate_tied_rank_values"], [1])
+        self.assertEqual(report["candidate_rank_gaps_to_cutoff"], [2])
+        self.assertFalse(report["source_substitution_performed"])
+
+    def test_ambiguous_boundary_rejected(self):
+        rows = sample_candidate() + [{"id": "extra", "name": "Extra", "symbol": "EX",
+                                      "rank": 250, "quotes": {"USD": {"market_cap": 1}}}]
         with self.assertRaisesRegex(ValueError, "ambiguous"):
             parse_candidate(json.dumps(rows).encode())
 
