@@ -112,6 +112,59 @@ class CoinGeckoEndpointTests(unittest.TestCase):
 
 
 class CoinGeckoCallSiteTests(unittest.TestCase):
+    def test_backup_retries_the_whole_universe_without_mixing_pages(self) -> None:
+        module = _load()
+        from unittest.mock import patch
+        requests_seen = []
+
+        class FakeResponse:
+            def __init__(self, status, page):
+                self.status_code = status
+                self.page = page
+
+            def json(self):
+                return [{"symbol": "btc" if self.page == 1 else "eth", "id": str(self.page)}]
+
+        class FakeSession:
+            def get(self, url, params=None, headers=None, timeout=None):
+                requests_seen.append((params["page"], dict(headers)))
+                if headers.get("x-cg-demo-api-key") == "first" and params["page"] == 2:
+                    return FakeResponse(429, params["page"])
+                return FakeResponse(200, params["page"])
+
+        with patch.dict(os.environ, {
+            "COINGECKO_API_KEY": "first",
+            "COINGECKO_API_KEY_BACKUP": "second",
+            "COINGECKO_API_PLAN": "demo",
+        }), patch.object(module.time, "sleep"), patch.object(module, "save_df"):
+            frame = module.fetch_coingecko_universe(FakeSession(), 500)
+        self.assertEqual(
+            requests_seen,
+            [(1, {"x-cg-demo-api-key": "first"}),
+             (2, {"x-cg-demo-api-key": "first"}),
+             (1, {"x-cg-demo-api-key": "second"}),
+             (2, {"x-cg-demo-api-key": "second"})],
+        )
+        self.assertEqual(frame["symbol"].tolist(), ["BTC", "ETH"])
+
+    def test_backup_failure_stays_closed_without_exposing_keys(self) -> None:
+        module = _load()
+        from unittest.mock import patch
+
+        class FakeSession:
+            def get(self, url, params=None, headers=None, timeout=None):
+                return type("Response", (), {"status_code": 403})()
+
+        with patch.dict(os.environ, {
+            "COINGECKO_API_KEY": "first-secret",
+            "COINGECKO_API_KEY_BACKUP": "backup-secret",
+            "COINGECKO_API_PLAN": "demo",
+        }):
+            with self.assertRaisesRegex(RuntimeError, "CoinGecko universe failed: HTTP 403") as error:
+                module.fetch_coingecko_universe(FakeSession(), 1)
+        self.assertNotIn("first-secret", str(error.exception))
+        self.assertNotIn("backup-secret", str(error.exception))
+
     def test_the_universe_call_sends_the_header_and_keeps_the_frozen_params(self) -> None:
         # A chave nao pode virar desculpa para mexer no que e pedido. Os
         # parametros da chamada sao os mesmos de sempre; muda so a autenticacao.
