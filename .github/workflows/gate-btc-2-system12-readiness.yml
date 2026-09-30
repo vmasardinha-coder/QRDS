@@ -1,0 +1,72 @@
+name: GATE BTC 2 System12 Structural Readiness
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system12_readiness.py'
+      - 'tests/test_gate_btc_2_system12_readiness.py'
+      - '.github/workflows/gate-btc-2-system12-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system12_readiness.py'
+      - 'tests/test_gate_btc_2_system12_readiness.py'
+      - '.github/workflows/gate-btc-2-system12-readiness.yml'
+  workflow_run:
+    workflows: ['GATE BTC 2 System 11 Prospective Depth10 Collection']
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: system12-structural-readiness-${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+  cancel-in-progress: false
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prerequisite regression tests
+        run: python -m unittest -v tests.test_gate_btc_2_system12_readiness tests.test_gate_btc_2_system11_stress_replay_v1
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Bind canonical System11 evidence without replication credit
+        if: github.event_name != 'pull_request'
+        run: |
+          python tools/gate_btc_2_system12_readiness.py \
+            --system11-report runtime_repo/runtime/gate_btc_2/system11/REPLAY_RESULT.json \
+            --system11-ledger runtime_repo/runtime/gate_btc_2/system11/DEPTH10_PAIRS.jsonl \
+            --output out/SYSTEM12_READINESS.json
+      - name: Publish read-only structural readiness
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime_repo/runtime/gate_btc_2/system12
+          cp out/SYSTEM12_READINESS.json runtime_repo/runtime/gate_btc_2/system12/READINESS.json
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/system12/READINESS.json
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m 'Bind System12 structural readiness to canonical System11 report'
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo pull --rebase origin gate-btc-runtime && git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: gate-btc-2-system12-readiness
+          path: out
+          retention-days: 90

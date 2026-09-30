@@ -1,6 +1,6 @@
 # Gate BTC 2.0 — Canonical 16-System Master Plan
 
-Status: `RECONCILED_2026_09_07_STAGE9_EXIT_SEGMENT`
+Status: `RECONCILED_2026_09_30_SYSTEM11_REPLAY_ACTIVE`
 
 This document restores the original Gate BTC 2.0 technology roadmap without restarting or redesigning the program. The 16 numbered systems remain the canonical roadmap. The Research/Strategy Factory, Evidence Factory and Collector Supervisor are permanent cross-cutting layers; they are not a phase 17 and do not replace any numbered system.
 
@@ -40,10 +40,10 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 | 6 | PyBroker | Walk-forward/model/portfolio research reference | walk-forward, selection/replay and frozen research contracts | Automated hypothesis generation/elimination on top | FUNCTIONAL_PARTIAL | Stronger independent runner adapters | Frozen candidate reproducible by independent authority |
 | 7 | Freqtrade | Crypto backtest/paper/strategy lifecycle reference | shadow/paper semantics, costs, collectors, engine blocked | Survivors can receive prospective clocks without auto-trading | ADVANCED | Complete prospective evidence for active lines | Survivor advances only with valid collector and real forward clock |
 | 8 | Cryptofeed | Streaming/multiexchange market-data reference | 137-source exact registry, provenance/source identity, prospective PIT publisher, replacement Dataset Epoch and immutable D0 readiness chain | Factory/Collector Supervisor declare and monitor required sources | COMPLETE_PROSPECTIVE_EPOCH_ACTIVE | Preserve forward-only causal collection and regression guards | Authorized feeds prove 137/137 provenance/PIT readiness and immutable D0 exists without historical backfill |
-| 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled Bitget forward capture/admission/append-only ledger and prospective exit evaluator | Evidence Factory credits only admitted physical forward evidence | COLLECT_MORE_FORWARD_EVIDENCE | Accumulate the preregistered post-activation 24/7 weekly exit segment; legacy 50 observations receive zero exit-gate credit | At least 168 admitted captures at/after 2026-09-08T00:00:00Z cover all 24 UTC hours, all 7 UTC weekdays and at least 167 elapsed hours; the fail-closed evaluator emits `PASS_STAGE9_EXIT_GATE` |
+| 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled Bitget forward capture/admission/append-only ledger and prospective exit evaluator | Evidence Factory credits only admitted physical forward evidence | COMPLETE_RESEARCH_EXIT_GATE | Preserve canonical PASS_STAGE9_EXIT_GATE and append-only evidence; no economics or engine promotion | At least 168 admitted captures at/after 2026-09-08T00:00:00Z cover all 24 UTC hours, all 7 UTC weekdays and at least 167 elapsed hours; the fail-closed evaluator emits `PASS_STAGE9_EXIT_GATE` |
 | 10 | NautilusTrader | Institutional event-driven engine/reference | event/shadow/state boundaries partly internalized | Receives frozen candidates only; no execution authority | COMPLETE_RESEARCH_PARITY | Preserve the completed read-only parity proof under regression protection | Independent event replay/state parity demonstrated |
-| 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation plus validated Cryptofeed L2/depth10 capture capability; rejected H_CF_LL_01 is not reusable as success | Can be emitted as required evidence; never synthesized | STRUCTURAL_READY_WAITING_FROZEN_STRESS_REPLAY_PREREG | Freeze causal book dataset and execution stress/replay preregistration before any System 11 credit | Causal book dataset + execution stress/replay passes frozen contract |
-| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | STRUCTURALLY_ADVANCED_OPERATIONALLY_PARTIAL | Broader bound independent replication | Survivor requires hash-bound independent replication |
+| 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation plus validated Cryptofeed L2/depth10 capture capability; rejected H_CF_LL_01 is not reusable as success | Can be emitted as required evidence; never synthesized | FORWARD_COLLECTION_AND_FROZEN_V1_REPLAY_ACTIVE | Accumulate ≥10,000 eligible pairs, ≥7 calendar days and ≥3 observation days; ≥1,000 effective executions per frozen primary scenario | Causal book dataset + execution stress/replay passes frozen contract |
+| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | STRUCTURAL_HARNESS_UPSTREAM_SYSTEM11_BLOCKED | Hash-bind completed System11 evidence, then freeze the independent replication contract; readiness never awards completion | Survivor requires hash-bound independent replication |
 | 13 | Qlib | Quant/ML dataset-feature-model research reference | dataset/PIT/regime/experiment infrastructure | Factory provides controlled hypothesis generation and multiple-test discipline | PARTIAL | Mature ML track only after baseline/data gates | ML candidate beats frozen baseline OOS under same evidence contract |
 | 14 | Barter-rs | Performant event/execution engine reference | event/safety/shadow concepts partly absorbed | Factory remains disconnected from engine feed | REFERENCE_PARTIAL | Benchmark/parity or explicit non-adoption decision | Functional parity demonstrated or documented decision that integration adds no evidence value |
 | 15 | LEAN / B3 | Multiasset/B3 research and validation | B3 Factory, H1/H31, Hxxx families, prospective clocks and multiasset infrastructure | Major Factory integration: autonomous family generation, replication, survival and collector activation | ADVANCED_ACTIVE | Continue families while repairing operational gaps and accumulating prospective evidence | Continuous generation→replication→survivor→prospective pipeline with frozen gates |
@@ -73,17 +73,29 @@ Collector Supervisor owns operational health/freshness/expected-run/append/block
 
 ## Current priority / resume point
 
-The original roadmap is not restarted from system 1. Systems 1–8 are mature/closed enough to serve as foundation while remaining under regression protection. The highest-value unresolved chain is now:
+The original roadmap is not restarted from system 1. Systems 1–8 are mature/closed enough to serve as foundation while remaining under regression protection. Systems9 and10 are completed research dependencies. The highest-value unresolved chain is now:
 
-`9 hftbacktest/Stage 9 → 10 Nautilus/event parity → 11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`
+`11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`
 
 System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be paused by this technology roadmap. System 16 remains deliberately deferred.
 
-### Immediate bounded checkpoint
+### Immediate bounded checkpoint — 2026-09-30
 
-System 9 is now the primary unresolved dependency in the canonical chain. Its original forward ledger remains append-only and must never be reset: the 50 pre-audit observations are preserved as valid evidence. Because no numeric exit target had actually been preregistered before those observations, they receive zero credit toward the separately preregistered exit segment.
+System9 canonical runtime reports PASS_STAGE9_EXIT_GATE, stage_9_complete=true and N=194 in the frozen exit segment. Its safety boundaries remain unchanged. System10 is complete for independent Nautilus metadata/event-routing/state parity; this is not LOB fill parity.
 
-The Stage 9 exit segment activates at `2026-09-08T00:00:00Z` and is evaluated automatically after each successful canonical ledger append. Completion requires all frozen structural conditions simultaneously: `required_N=168`, 24 distinct UTC hour bins, 7 distinct UTC weekdays, at least 167 elapsed hours, and decision clock no earlier than `2026-09-14T23:00:00Z`. Until then the only valid state is `COLLECT_MORE_FORWARD_EVIDENCE`. On pass, only the research-only dependency into System 10 is released; economics, engine feed, orders, real capital and automatic promotion remain forbidden.
+System11 V1 is frozen and approved. PR #1046 repaired spot-only OKX discovery after the first real capture failed on unrelated futures metadata. PR #1047 implemented the full 300-scenario size×latency×fee virtual depth10 replay. Post-merge run 36705568174 succeeded on merge SHA d22ff81c74731d48980fe4842c0159c104663fb1. At that checkpoint, runtime held 900 eligible pairs over one observation day, with 892 minimum effective executions per scenario; deterministic replay passed and size-monotonicity violations were zero. Result remains INCONCLUSIVE_ABSTAIN: no dataset-gate completion, economics, promotion, orders or capital.
+
+The System12 structural harness reads the canonical System11 report and binds its dataset/prereg/source hashes and full scenario matrix before reporting upstream readiness. It never awards independent replication credit or releases System13. While System11 accumulates, maintain this fail-closed gate; the separate independent replication contract/adapter remains to be bound before scientific execution.
+
+Qlib already has a concluded standalone v0.9.7 sandbox, documented in artifacts/gate_btc_2/qlib_research/QLIB_CONCLUSION_20260921.md. Do not reinstall or import its CSI300 results. Integrated confrontation remains blocked by the missing QRDS-governed historical cross-sectional panel. Barter-rs remains a reference; no engine integration/non-adoption decision or dependency completion is implied.
+
+The frozen scientific dependency remains 8→9→10→11→12→13→14. Factory580 and Crypto745 continue their independent prospective collection. Historical-hypothesis reconciliation is recorded in artifacts/gate_btc_2/HISTORICAL_HYPOTHESIS_DEBT_AUDIT_20260930.json; no new family/source/scientific criteria are admitted by that audit.
+
+### Preserved historical dependency and exit authority
+
+The original prerequisite order remains: `9 hftbacktest/Stage 9 → 10 Nautilus/event parity → 11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`.
+
+The 50 pre-audit observations are preserved as valid evidence and receive zero credit toward the separately preregistered exit segment. Its frozen exit authority remains `required_N=168`, 24 distinct UTC hour bins, 7 distinct UTC weekdays and at least 167 elapsed hours. The canonical runtime now proves this original contract; none of these historical conditions was changed to obtain completion.
 
 ## Governance rule
 
