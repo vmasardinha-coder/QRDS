@@ -134,21 +134,36 @@ def coingecko_endpoint_and_headers() -> tuple[str, dict[str, str]]:
 
 def fetch_coingecko_universe(session, top_n: int) -> pd.DataFrame:
     base, headers = coingecko_endpoint_and_headers()
+    backup_key = os.environ.get("COINGECKO_API_KEY_BACKUP", "").strip()
+    attempts = [headers]
+    if backup_key and backup_key not in headers.values():
+        backup_header_name = "x-cg-pro-api-key" if "x-cg-pro-api-key" in headers else "x-cg-demo-api-key"
+        attempts.append({backup_header_name: backup_key})
     rows = []
-    for page in range(1, math.ceil(top_n / 250) + 1):
-        response = session.get(
-            f"{base}/coins/markets",
-            params={
-                "vs_currency": "usd", "order": "market_cap_desc", "per_page": 250,
-                "page": page, "sparkline": "false", "price_change_percentage": "24h,7d,30d",
-            },
-            headers=headers,
-            timeout=30,
-        )
-        if response.status_code != 200:
-            raise RuntimeError(f"CoinGecko universe failed: HTTP {response.status_code}")
-        rows.extend(response.json())
-        time.sleep(1.2)
+    last_status = None
+    for attempt_number, attempt_headers in enumerate(attempts):
+        rows = []
+        for page in range(1, math.ceil(top_n / 250) + 1):
+            response = session.get(
+                f"{base}/coins/markets",
+                params={
+                    "vs_currency": "usd", "order": "market_cap_desc", "per_page": 250,
+                    "page": page, "sparkline": "false", "price_change_percentage": "24h,7d,30d",
+                },
+                headers=attempt_headers,
+                timeout=30,
+            )
+            last_status = response.status_code
+            if last_status != 200:
+                break
+            rows.extend(response.json())
+            time.sleep(1.2)
+        if last_status == 200:
+            break
+        if last_status not in {401, 403, 429, 500, 502, 503, 504} or attempt_number == len(attempts) - 1:
+            raise RuntimeError(f"CoinGecko universe failed: HTTP {last_status}")
+        # Recollect all pages under one credential so no partial universe
+        # from the failed attempt enters the frozen selection.
     frame = pd.DataFrame(rows).head(top_n)
     if frame.empty:
         raise RuntimeError("CoinGecko returned an empty universe")

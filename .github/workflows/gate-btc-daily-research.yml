@@ -24,6 +24,7 @@ on:
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
       - tests/test_gate_btc_lock_valuation_sidecar.py
+      - tests/test_gate_btc_v2a_coingecko_api_key.py
       - tools/qos_orchestrator.py
       - tools/gate_btc_lock_valuation_sidecar.py
       # The sidecar's fail-closed guard lives in gate_btc_measurement_common
@@ -60,6 +61,7 @@ on:
       - tests/test_gate_btc_daily_research.py
       - tests/test_gate_btc_shadow_delivery.py
       - tests/test_gate_btc_lock_valuation_sidecar.py
+      - tests/test_gate_btc_v2a_coingecko_api_key.py
       - tools/qos_orchestrator.py
       - tools/gate_btc_lock_valuation_sidecar.py
       # The sidecar's fail-closed guard lives in gate_btc_measurement_common
@@ -121,6 +123,7 @@ jobs:
           tests/test_gate_btc_daily_research.py
           tests/test_gate_btc_shadow_delivery.py
           tests/test_gate_btc_lock_valuation_sidecar.py
+          tests/test_gate_btc_v2a_coingecko_api_key.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
 
   daily-research-collection:
@@ -154,6 +157,7 @@ jobs:
           tests/test_gate_btc_daily_research.py
           tests/test_gate_btc_shadow_delivery.py
           tests/test_gate_btc_lock_valuation_sidecar.py
+          tests/test_gate_btc_v2a_coingecko_api_key.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - name: Resolve most recent completed UTC close
         env:
@@ -183,6 +187,7 @@ jobs:
         # a variavel chega ao coletor por heranca.
         env:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          COINGECKO_API_KEY_BACKUP: ${{ secrets.COINGECKO_API_KEY_BACKUP }}
         run: >-
           python tools/qos_orchestrator.py
           --public-data
