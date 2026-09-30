@@ -18,16 +18,16 @@
       "source_status": "ACTIVE_STRUCTURAL_COLLECTION"
     },
     "bull_replay_live_shadow": {
-      "collection_health": "GREEN_PROTOCOL_WAITING",
-      "freshness": "CURRENT_CALENDAR_GATED",
-      "scientific_state": "VALID_PROTOCOL_WAITING",
-      "source_status": "WAITING_FIRST_ANCHOR_CLOSE"
+      "collection_health": "RED_MISSING_OR_INVALID",
+      "freshness": "UNKNOWN_DATE",
+      "scientific_state": "INSUFFICIENT_CURRENT_EVIDENCE",
+      "source_status": "READY_EXACT_DAILY_CLOSE"
     },
     "d100": {
       "collection_health": "GREEN",
       "freshness": "FRESH",
       "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ARMED_WAITING_FIRST_CAUSAL_BAR"
+      "source_status": "ACTIVE_SHADOW_N80"
     },
     "d50": {
       "collection_health": "RED_STALE",
@@ -66,16 +66,16 @@
       "source_status": "ACTIVE"
     },
     "momentum_m1_m2": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "FAILED_ECONOMIC_DELIVERY"
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY"
     },
     "momentum_m3_economics": {
-      "collection_health": "RED_MISSING_OR_INVALID",
-      "freshness": "UNKNOWN_DATE",
-      "scientific_state": "INSUFFICIENT_CURRENT_EVIDENCE",
-      "source_status": "FAILED_M3_ECONOMIC_DELIVERY"
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY"
     },
     "prl50": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
@@ -114,7 +114,7 @@
       "source_status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     }
   },
-  "generated_at_utc": "2026-09-29T10:05:24.320030+00:00",
+  "generated_at_utc": "2026-09-30T09:58:10.261488+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -122,10 +122,9 @@
   "real_capital_used": 0,
   "red_collection_components": [
     "b3_h1",
+    "bull_replay_live_shadow",
     "d50",
     "daily_delivery_pointer",
-    "momentum_m1_m2",
-    "momentum_m3_economics",
     "v16b"
   ],
   "reference_data_date": "2026-09-27",
@@ -133,5 +132,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "fbf723dbd8349a520db0428af86e5499871c9a01333b9a58688eff3148e64d91"
+  "status_sha256": "d4b302bebb1f0e781d23fe0f0df22005570683843da20e18d49fd7514a0ab83a"
 }
