@@ -11,6 +11,8 @@ on:
   workflow_run:
     workflows: ['GATE BTC Daily Research Collection']
     types: [completed]
+  schedule:
+    - cron: '30 3,7 * * *'
 
 permissions:
   actions: read
@@ -34,9 +36,10 @@ jobs:
   preserve-independent-source:
     needs: contract-tests
     if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
     permissions:
       actions: read
       contents: write
@@ -49,13 +52,42 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Resolve latest completed main Daily collection for today's UTC close
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          if test -n "$EVENT_RUN_ID"; then
+            echo "SOURCE_RUN_ID=$EVENT_RUN_ID" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&per_page=40" > candidate_runs.json
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          today=datetime.now(timezone.utc).date().isoformat()
+          runs=json.loads(Path("candidate_runs.json").read_text())["workflow_runs"]
+          eligible=[r for r in runs if r["created_at"].startswith(today)
+                    and r["head_branch"]=="main" and r["event"] in {"schedule","workflow_dispatch"}
+                    and r["status"]=="completed"]
+          with open(os.environ["GITHUB_ENV"],"a") as out:
+              out.write("SOURCE_RUN_ID="+(str(eligible[0]["id"]) if eligible else "")+chr(10))
+          print("DELTA_FALLBACK_SOURCE_RUN="+(str(eligible[0]["id"]) if eligible else "NONE"))
+          PY
       - name: Download same-run partial Daily artifact
         id: source
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
+          if test -z "${SOURCE_RUN_ID:-}"; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'DELTA_SOURCE=NO_COMPLETED_DAILY_RUN_CREDIT_0'
+            exit 0
+          fi
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > upstream.json
           python - <<'PY'
           import json
@@ -99,8 +131,6 @@ jobs:
           fetch-depth: 0
       - name: Seal same-close Delta evidence independently of CoinGecko
         if: steps.source.outputs.available == 'true'
-        env:
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: >-
           python tools/gate_btc_delta_isolated_source.py
           --contract migration/reporting/delta_paper_monitor_contract.json
