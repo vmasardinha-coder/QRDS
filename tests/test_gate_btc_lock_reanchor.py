@@ -39,6 +39,29 @@ class LockReanchorTests(unittest.TestCase):
             for day in ("2026-08-09", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-15"):
                 atomic_json(ledger / "diagnostics" / f"{day}.json", {"snapshot_id": day, "snapshot_appended": False})
 
+            prior_archive = ledger / "interrupted_series" / "FIRST"
+            prior_archive.mkdir(parents=True)
+            previous_interruption = {"cycle_id": "FIRST", "preserved_snapshot_count": 1}
+            previous_interruption["interruption_sha256"] = canonical_sha(
+                previous_interruption, "interruption_sha256"
+            )
+            atomic_json(prior_archive / "INTERRUPTION.json", previous_interruption)
+            earlier_history = {
+                "schema": "gate_btc.lock25_50_series_history.v1",
+                "active_cycle_id": "OLD",
+                "interrupted_series": [{
+                    "cycle_id": "FIRST",
+                    "path": "interrupted_series/FIRST",
+                    "interruption_sha256": previous_interruption["interruption_sha256"],
+                    "preserved_snapshot_dates": ["2026-07-01"],
+                }],
+                "retroactive_fill_prohibited_dates": ["2026-07-02"],
+            }
+            earlier_history["series_history_sha256"] = canonical_sha(
+                earlier_history, "series_history_sha256"
+            )
+            atomic_json(ledger / "SERIES_HISTORY.json", earlier_history)
+
             current = root / "current.csv"
             current.write_text(current_signal("2026-08-15", "2026-08-16"), encoding="utf-8")
             monthly = root / "monthly.csv"
@@ -87,6 +110,11 @@ class LockReanchorTests(unittest.TestCase):
             self.assertEqual(status["cycle_id"], "NEW")
             self.assertEqual(status["valid_snapshot_count"], 0)
             self.assertEqual(status["retroactive_fill_prohibited_dates"][-1], "2026-08-15")
+            history = json.loads((ledger / "SERIES_HISTORY.json").read_text(encoding="utf-8"))
+            self.assertEqual([entry["cycle_id"] for entry in history["interrupted_series"]], ["FIRST", "OLD"])
+            self.assertEqual(history["retroactive_fill_prohibited_dates"][0], "2026-07-02")
+            self.assertEqual(history["prior_series_history_sha256"], earlier_history["series_history_sha256"])
+            self.assertTrue((prior_archive / "INTERRUPTION.json").is_file())
             self.assertEqual(reanchor(args), result)
             incomplete = Namespace(**vars(args))
             incomplete.excluded_date = [
