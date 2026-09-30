@@ -1,0 +1,28 @@
+name: GATE BTC 2 System11 Frozen V1 Stress Replay Tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system11_stress_replay_v1.py'
+      - 'tests/test_gate_btc_2_system11_stress_replay_v1.py'
+      - '.github/workflows/gate-btc-2-system11-stress-replay-v1.yml'
+      - '.github/workflows/gate-btc-2-system11-depth10-collection.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_2_system11_stress_replay_v1.py'
+      - 'tests/test_gate_btc_2_system11_stress_replay_v1.py'
+      - '.github/workflows/gate-btc-2-system11-stress-replay-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-v1-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Frozen causal execution tests
+        run: python -m unittest -v tests.test_gate_btc_2_system11_stress_replay_v1 tests.test_gate_btc_2_system11_depth10_collector tests.test_gate_btc_2_system11_collection_status tests.test_gate_btc_2_system11_approved_prereg_v1
