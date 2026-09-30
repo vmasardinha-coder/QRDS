@@ -1,0 +1,134 @@
+name: GATE BTC Authorized LOCK Reanchor 2026-09-30
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-lock-reanchor-authorized-20260930.yml
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: gate-btc-lock-reanchor-authorized-20260930
+  cancel-in-progress: false
+
+jobs:
+  archive-and-reanchor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify reanchor contracts
+        run: python -m unittest -v tests.test_gate_btc_lock_reanchor tests.test_gate_btc_measurement_ledgers
+      - name: Fetch exact 2026-09-29 immutable V2A artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          artifact_id=$(gh api /repos/${GITHUB_REPOSITORY}/actions/runs/36673707162/artifacts --jq '.artifacts[] | select(.name == "gate-btc-daily-research-36673707162" and .expired == false) | .id')
+          test "$artifact_id" = '11078394213'
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > source.zip
+          echo '340483581c05e85265c3b9a00c27442952c81bba4a5c6ce9f1835b578d82110b  source.zip' | sha256sum -c -
+          mkdir -p source v2a
+          unzip -q source.zip -d source
+          test -f source/qos_daily/qos_v2a_outputs.zip
+          unzip -q source/qos_daily/qos_v2a_outputs.zip -d v2a
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('v2a')
+          manifest=json.loads((root/'outputs/v2a_run_manifest.json').read_text(encoding='utf-8-sig'))
+          assert manifest['data_as_of']=='2026-09-29'
+          assert manifest['technical_status']=='PASS'
+          assert manifest['operational_status']=='NOT_APPROVED'
+          for path in ('outputs/qos_v2a_current_portfolios.csv', 'outputs/qos_v2a_monthly_allocations.csv', 'outputs/qos_v2a_equity_curves.csv'):
+              assert (root/path).is_file(), path
+          PY
+      - name: Check out active runtime and verify the 43 intact closes
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Archive original bytes and open prospective cycle
+        run: |
+          set -euo pipefail
+          ledger=runtime_repo/runtime/ledgers/lock25_50
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/lock25_50')
+          status=json.loads((root/'STATUS.json').read_text())
+          assert status['cycle_id']=='QOS_CURRENT_COMPOSITION_2026-08-16'
+          assert status['valid_snapshot_count']==43
+          assert status['latest_snapshot_id']=='2026-09-27'
+          assert (root/'REANCHOR_DECISION_2026-09-30.json').is_file()
+          for day in ('2026-09-28','2026-09-29'):
+              assert (root/'diagnostics'/f'{day}_source_interruption.json').is_file()
+          PY
+          dates=()
+          day=2026-08-16
+          while [[ "$day" != 2026-09-28 ]]; do
+            dates+=(--preserved-date "$day")
+            day=$(date -u -d "$day + 1 day" +%F)
+          done
+          test "${#dates[@]}" -eq 86
+          python tools/gate_btc_lock_reanchor.py \
+            --ledger-dir "$ledger" \
+            --contract config/lock25_50_shadow_contract_v1.json \
+            --old-cycle-id QOS_CURRENT_COMPOSITION_2026-08-16 \
+            --new-cycle-id QOS_CURRENT_COMPOSITION_2026-09-30 \
+            --base-date 2026-09-29 \
+            --first-eligible-close 2026-09-30 \
+            "${dates[@]}" \
+            --excluded-date 2026-09-28 \
+            --excluded-date 2026-09-29 \
+            --authorized-at-utc 2026-09-30T18:38:55Z \
+            --authorization-text 'Essa é uma decisão científica, arquivar intactos. Sempre falar intacto, tá autorizado. Arquiva e começa.' \
+            --interruption-reason 'CoinGecko HTTP 403 on 2026-09-28; nonconsecutive LOCK close on 2026-09-29' \
+            --current-portfolios v2a/outputs/qos_v2a_current_portfolios.csv \
+            --monthly-allocations v2a/outputs/qos_v2a_monthly_allocations.csv \
+            --equity-curves v2a/outputs/qos_v2a_equity_curves.csv \
+            --v2a-config migration/canonical/v2a/config_v2a.json \
+            --source-run-id 36673707162 \
+            --source-artifact-sha256 340483581c05e85265c3b9a00c27442952c81bba4a5c6ce9f1835b578d82110b
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('runtime_repo/runtime/ledgers/lock25_50')
+          state=json.loads((root/'STATUS.json').read_text())
+          assert state['cycle_id']=='QOS_CURRENT_COMPOSITION_2026-09-30'
+          assert state['valid_snapshot_count']==0
+          assert state['historical_valid_snapshot_count']==46
+          assert state['cumulative_valid_snapshot_count']==46
+          assert state['cumulative_count_is_contiguous_gate'] is False
+          PY
+      - name: Publish verified archival transaction
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/lock25_50
+          git diff --cached --quiet && exit 1
+          git commit -m 'Archive intact LOCK series and open authorized 2026-09-30 cycle'
+          for attempt in 1 2 3; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then
+              echo 'LOCK_REANCHOR=PASS old43_intact=true historical_valid=46 new_cycle_valid=0'
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
