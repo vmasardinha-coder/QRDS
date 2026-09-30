@@ -199,6 +199,30 @@ def _write_status(ledger_dir: Path, anchor: dict[str, Any], source: dict[str, An
         )
         payload["series_history_sha256"] = history["series_history_sha256"]
         payload["interrupted_series_count"] = len(history.get("interrupted_series", []))
+        historical_count = 0
+        for entry in history.get("interrupted_series", []):
+            archive = ledger_dir / entry["path"]
+            dates = entry["preserved_snapshot_dates"]
+            require(
+                entry["path"] == f"interrupted_series/{entry['cycle_id']}"
+                and (archive / "INTERRUPTION.json").exists(),
+                "interrupted LOCK series archive unavailable",
+            )
+            record = load_json(archive / "INTERRUPTION.json")
+            require(
+                record.get("interruption_sha256") == entry["interruption_sha256"]
+                and record.get("preserved_snapshot_count") == len(dates)
+                and record.get("interruption_sha256") == canonical_sha(record, "interruption_sha256"),
+                "interrupted LOCK series evidence differs",
+            )
+            require(
+                sorted(path.stem for path in (archive / "snapshots").glob("*.json")) == dates,
+                "interrupted LOCK snapshot dates differ",
+            )
+            historical_count += len(dates)
+        payload["historical_valid_snapshot_count"] = historical_count
+        payload["cumulative_valid_snapshot_count"] = historical_count + payload["valid_snapshot_count"]
+        payload["cumulative_count_is_contiguous_gate"] = False
         payload["retroactive_fill_prohibited_dates"] = history.get("retroactive_fill_prohibited_dates", [])
         payload["reanchor_authorized_at_utc"] = history.get("reanchor_authorized_at_utc")
     atomic_json(ledger_dir / "STATUS.json", payload)
