@@ -110,6 +110,7 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
         "available": backlog is not None,
         "state": "NO_CANONICAL_BACKLOG_SIDECAR" if backlog is None else "REGISTERED_RESEARCH_BACKLOG_VISIBLE",
         "registered_hypothesis_documents": 0,
+        "registered_family_count": 0,
         "not_eligible_count": 0,
         "non_not_eligible_count": 0,
         "family_ids": [],
@@ -136,11 +137,14 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
             raise RuntimeError("RESEARCH_BACKLOG_SAFETY_BOUNDARY_FAIL")
         summary = backlog.get("summary") or {}
         families = list(backlog.get("families") or [])
-        if int(summary.get("registered_hypothesis_documents", -1)) != len(families):
+        if (int(summary.get("registered_hypothesis_documents", -1))
+                != len({str(row.get("document")) for row in families})
+                or int(summary.get("registered_family_count", -1)) != len(families)):
             raise RuntimeError("RESEARCH_BACKLOG_COUNT_MISMATCH")
         research_backlog.update({
             "state": "REGISTERED_RESEARCH_BACKLOG_VISIBLE",
-            "registered_hypothesis_documents": len(families),
+            "registered_hypothesis_documents": int(summary["registered_hypothesis_documents"]),
+            "registered_family_count": len(families),
             "not_eligible_count": int(summary.get("not_eligible_count", 0)),
             "non_not_eligible_count": int(summary.get("non_not_eligible_count", 0)),
             "family_ids": [str(row.get("family_id")) for row in families],
