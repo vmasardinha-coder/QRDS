@@ -71,7 +71,6 @@ jobs:
     # 'Resolve exact Daily Research run', sobre o job daily-research-collection,
     # e ele falha fechado.
     if: >-
-      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
