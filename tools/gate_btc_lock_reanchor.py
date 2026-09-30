@@ -185,17 +185,53 @@ def reanchor(args: argparse.Namespace) -> dict[str, Any]:
     else:
         atomic_json(interruption_path, interruption)
 
+    history_path = ledger_dir / "SERIES_HISTORY.json"
+    prior_history = load_json(history_path) if history_path.exists() else None
+    prior_series: list[dict[str, Any]] = []
+    prior_exclusions: list[str] = []
+    if prior_history is not None:
+        require(
+            prior_history.get("series_history_sha256") == canonical_sha(prior_history, "series_history_sha256"),
+            "invalid prior LOCK series history hash",
+        )
+        require(
+            prior_history.get("active_cycle_id") in (args.old_cycle_id, args.new_cycle_id),
+            "prior LOCK active cycle differs",
+        )
+        prior_series = list(prior_history.get("interrupted_series", []))
+        prior_exclusions = list(prior_history.get("retroactive_fill_prohibited_dates", []))
+        require(len(prior_exclusions) == len(set(prior_exclusions)), "duplicate prior LOCK gap exclusions")
+        for entry in prior_series:
+            prior_archive = ledger_dir / entry["path"]
+            require(
+                entry["path"] == f"interrupted_series/{entry['cycle_id']}"
+                and (prior_archive / "INTERRUPTION.json").exists(),
+                "prior interrupted LOCK archive unavailable",
+            )
+            archived_record = load_json(prior_archive / "INTERRUPTION.json")
+            require(
+                archived_record.get("interruption_sha256") == entry["interruption_sha256"]
+                and archived_record.get("interruption_sha256") == canonical_sha(archived_record, "interruption_sha256"),
+                "prior interrupted LOCK archive hash differs",
+            )
+    previous_entry = next((entry for entry in prior_series if entry["cycle_id"] == args.old_cycle_id), None)
+    new_entry = {
+        "cycle_id": args.old_cycle_id,
+        "path": f"interrupted_series/{args.old_cycle_id}",
+        "interruption_sha256": interruption["interruption_sha256"],
+        "preserved_snapshot_dates": preserved,
+    }
+    require(previous_entry is None or previous_entry == new_entry, "old LOCK archive history differs")
+    if prior_history is not None and prior_history.get("active_cycle_id") == args.new_cycle_id:
+        require(set(excluded).issubset(set(prior_exclusions)), "LOCK re-run exclusions differ")
+    else:
+        require(not (set(prior_exclusions) & set(excluded)), "LOCK interruption gap overlaps prior gap")
     history = {
         "schema": "gate_btc.lock25_50_series_history.v1",
         "active_cycle_id": args.new_cycle_id,
         "reanchor_authorized_at_utc": args.authorized_at_utc,
-        "retroactive_fill_prohibited_dates": excluded,
-        "interrupted_series": [{
-            "cycle_id": args.old_cycle_id,
-            "path": f"interrupted_series/{args.old_cycle_id}",
-            "interruption_sha256": interruption["interruption_sha256"],
-            "preserved_snapshot_dates": preserved,
-        }],
+        "retroactive_fill_prohibited_dates": sorted(set(prior_exclusions + excluded)),
+        "interrupted_series": prior_series if previous_entry else prior_series + [new_entry],
         "research_only": True,
         "shadow_only": True,
         "not_approved": True,
@@ -203,11 +239,14 @@ def reanchor(args: argparse.Namespace) -> dict[str, Any]:
         "real_capital_used": 0,
         "promotion_allowed": False,
     }
+    if prior_history is not None and prior_history.get("active_cycle_id") == args.old_cycle_id:
+        history["prior_series_history_sha256"] = prior_history["series_history_sha256"]
+    elif prior_history is not None and "prior_series_history_sha256" in prior_history:
+        history["prior_series_history_sha256"] = prior_history["prior_series_history_sha256"]
     history["series_history_sha256"] = canonical_sha(history, "series_history_sha256")
-    history_path = ledger_dir / "SERIES_HISTORY.json"
-    if history_path.exists():
-        require(load_json(history_path) == history, "LOCK series history differs")
-    else:
+    if prior_history != history:
+        require(prior_history is None or prior_history.get("active_cycle_id") == args.old_cycle_id,
+                "LOCK series history differs on re-run")
         atomic_json(history_path, history)
 
     initialize_lock(Namespace(
