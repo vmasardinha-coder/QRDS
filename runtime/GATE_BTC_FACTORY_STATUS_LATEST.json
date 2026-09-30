@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-30T13:34:31.086166+00:00",
+  "generated_at_utc": "2026-09-30T19:05:05.332398+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -174,10 +174,10 @@
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-09-30T08:59:55.771320Z",
+        "last_attempt_at_utc": "2026-09-30T16:04:54.895074Z",
         "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
         "last_error": null,
-        "last_heartbeat_utc": "2026-09-30T08:59:55.771320Z",
+        "last_heartbeat_utc": "2026-09-30T16:04:54.895074Z",
         "latest_market_data_observed_count": 71,
         "latest_physical_capture_at_utc": "2026-09-30T00:26:04.153949Z",
         "latest_raw_universe_count": 100,
@@ -208,11 +208,11 @@
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
         "successful_capture_days": 4,
         "track": "D100",
-        "workflow_run_id": "36693151597"
+        "workflow_run_id": "36741454175"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "1adb29299f62cf29e5363e37da682dcbc0d9d6e60acd0a4f33c71102af989496"
+      "sha256": "1dee56fdfedc6f9aba24921acf025df3febe4a4b7d5ecbb821adfc2aaae6470b"
     },
     "delta_paper": {
       "data": {
@@ -488,14 +488,14 @@
         "H31_CANONICAL_ELIGIBLE_OBSERVATIONS": 0,
         "H31_FRONT_CONTINUATION_POLICY": "EXACT_LAST_FROZEN_PAIR_WHILE_LIVE_NO_AUTO_ROLL",
         "H31_INTRADAY_MONITORING": true,
-        "H31_INTRADAY_SESSION": "2026-09-29",
+        "H31_INTRADAY_SESSION": "2026-09-30",
         "H31_INTRADAY_SHADOW_STATUS": "ACTIVE",
         "H31_MT5_READY": true,
-        "H31_PAPER_POSITION": "NONE",
-        "H31_SHADOW_SESSIONS": 16,
-        "H31_SHADOW_SIMULATED_TRADES": 3,
+        "H31_PAPER_POSITION": "CLOSED",
+        "H31_SHADOW_SESSIONS": 17,
+        "H31_SHADOW_SIMULATED_TRADES": 4,
         "H31_SOURCE_BINDING_SCOPE": "SHADOW_ONLY_ZERO_CANONICAL_CREDIT",
-        "H31_TRIGGER_STATE": "NO_TRIGGER",
+        "H31_TRIGGER_STATE": "TRIGGER",
         "INTRADAY_SHADOW": true,
         "MT5_READ_ONLY": true,
         "NO_BACKFILL": true,
@@ -512,11 +512,11 @@
           "WIN": "WINV26"
         },
         "schema": "gate_btc.b3.h31.intraday_shadow_status.v1",
-        "updated_at": "2026-09-29T11:39:37.459399-03:00"
+        "updated_at": "2026-09-30T11:39:56.507522-03:00"
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json",
-      "sha256": "42e5c71e526e0bc8e894aebacac7c7727420cd52b84e80d783a8025266e4021b"
+      "sha256": "2ffb797552e02ebe6b6907061c29a9596b3cb8b6b67065eb629474e9db17cb74"
     },
     "h31_prospective": {
       "data": {
@@ -586,17 +586,20 @@
     "lock25_50": {
       "data": {
         "config_sha256": "106f24cff9042d0a359b8f81efae3b10da215ac2661033f238b01703934bd5e4",
-        "cycle_id": "QOS_CURRENT_COMPOSITION_2026-08-16",
+        "cumulative_count_is_contiguous_gate": false,
+        "cumulative_valid_snapshot_count": 46,
+        "cycle_id": "QOS_CURRENT_COMPOSITION_2026-09-30",
         "execution_timing": "SIGNAL_AT_CONFIRMED_DAILY_CLOSE_EXECUTE_NEXT_ELIGIBLE_DAILY_BAR",
-        "first_eligible_close": "2026-08-16",
-        "interrupted_series_count": 1,
-        "latest_snapshot_id": "2026-09-27",
-        "latest_snapshot_sha256": "52c088041d1059a17aa8d9bd8b7f38c8a5509cf73b2d55579f73300780d02b7c",
+        "first_eligible_close": "2026-09-30",
+        "historical_valid_snapshot_count": 46,
+        "interrupted_series_count": 2,
+        "latest_snapshot_id": null,
+        "latest_snapshot_sha256": null,
         "not_approved": true,
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
-        "reanchor_authorized_at_utc": "2026-08-16T13:12:49Z",
+        "reanchor_authorized_at_utc": "2026-09-30T18:38:55Z",
         "research_only": true,
         "retroactive_fill_prohibited_dates": [
           "2026-08-09",
@@ -605,19 +608,21 @@
           "2026-08-12",
           "2026-08-13",
           "2026-08-14",
-          "2026-08-15"
+          "2026-08-15",
+          "2026-09-28",
+          "2026-09-29"
         ],
         "schema": "gate_btc.lock25_50_ledger_status.v2",
-        "series_history_sha256": "5f6c49bf450704d6a320610d3721248dc97a818bb83167c3a39e95937723e837",
+        "series_history_sha256": "67003f4d34972da48a74f085cea9d518b799531f26d3d12ee77395aeb9977665",
         "shadow_only": true,
-        "source_anchor_sha256": "9824572a3804a118e79a08777dd9a9f955c1f535625c2e35f61925435389395b",
-        "status": "ACTIVE",
+        "source_anchor_sha256": "5e1e7342a32789dd47eb66581cbf42df3a54e87caa8b1b02f2b926890194fd98",
+        "status": "READY_WAITING_FIRST_ELIGIBLE_CLOSE",
         "strategies": [
           "QOS_Moderada",
           "QOS_Ultra"
         ],
         "track_count": 6,
-        "valid_snapshot_count": 43,
+        "valid_snapshot_count": 0,
         "variants": [
           "NO_LOCK_CONTROL",
           "LOCK25",
@@ -626,7 +631,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/lock25_50/STATUS.json",
-      "sha256": "e5464c876ce4a6a4050d9dd7751037d5ebd835ef0db2ccbc7baec725a6f5bbc1"
+      "sha256": "ef9c9b2686ae92359552a73216e80198d0f949bcaa3b0ce5a937438b34ce352e"
     },
     "m1_m2": {
       "data": {
@@ -828,11 +833,11 @@
         "shadow_only": true,
         "snapshot_count": 0,
         "status": "WAITING_APPROVED_MONTH_END_2026_09_30",
-        "updated_at_utc": "2026-09-30T10:59:06.930514+00:00"
+        "updated_at_utc": "2026-09-30T18:56:37.956013+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/prl50_position/STATUS.json",
-      "sha256": "eb4107de8258821a51b9318699b6b7001dc1003d6a9375935334fcc3c9a9b1ab"
+      "sha256": "6f14ddd205b921aa96cba0e41f8b0e3425bb7cf5c5cb712ff3585f5fa7eaafc1"
     },
     "reporting_state": {
       "data": {
