@@ -102,15 +102,39 @@ def session_or_raise():
     return session
 
 
+def coingecko_endpoint_and_headers() -> tuple[str, dict[str, str]]:
+    """Base da CoinGecko e o header de chave, quando houver chave configurada.
+
+    Sem COINGECKO_API_KEY o retorno e identico ao que este coletor sempre fez:
+    o host publico e nenhum header. A chave existe porque a CoinGecko recusa
+    com HTTP 403 as chamadas anonimas vindas de IP de datacenter -- foi assim
+    que a coleta de 2026-09-28 caiu e levou junto o V11, que nao le um unico
+    numero desta fonte. O header vai SO nesta chamada, nunca na sessao, porque
+    a mesma sessao fala com outras exchanges e um header global vazaria a
+    chave para terceiros.
+    """
+    key = os.environ.get("COINGECKO_API_KEY", "").strip()
+    if not key:
+        return "https://api.coingecko.com/api/v3", {}
+    plan = os.environ.get("COINGECKO_API_PLAN", "demo").strip().lower()
+    if plan == "pro":
+        return "https://pro-api.coingecko.com/api/v3", {"x-cg-pro-api-key": key}
+    if plan != "demo":
+        raise RuntimeError(f"COINGECKO_API_PLAN must be 'demo' or 'pro', got {plan!r}")
+    return "https://api.coingecko.com/api/v3", {"x-cg-demo-api-key": key}
+
+
 def fetch_coingecko_universe(session, top_n: int) -> pd.DataFrame:
+    base, headers = coingecko_endpoint_and_headers()
     rows = []
     for page in range(1, math.ceil(top_n / 250) + 1):
         response = session.get(
-            "https://api.coingecko.com/api/v3/coins/markets",
+            f"{base}/coins/markets",
             params={
                 "vs_currency": "usd", "order": "market_cap_desc", "per_page": 250,
                 "page": page, "sparkline": "false", "price_change_percentage": "24h,7d,30d",
             },
+            headers=headers,
             timeout=30,
         )
         if response.status_code != 200:
