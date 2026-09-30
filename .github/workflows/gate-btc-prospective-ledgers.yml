@@ -34,7 +34,9 @@ env:
 
 jobs:
   upstream-daily-delivery:
-    if: github.event_name == 'workflow_run'
+    # Off-main Daily runs are qualification attempts, not eligible delivery.
+    # Skip before the propagator so they do not create false red fan-out.
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
