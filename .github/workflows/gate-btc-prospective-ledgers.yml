@@ -218,6 +218,21 @@ jobs:
           path: runtime_repo
           fetch-depth: 0
 
+      - name: Read the active frozen LOCK cycle from checked-out runtime
+        if: steps.daily_source.outputs.eligible == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          anchor=json.loads(Path("runtime_repo/runtime/ledgers/lock25_50/ANCHOR.json").read_text())
+          assert anchor["reset_rule"]=="EXPLICIT_USER_DECISION_ONLY"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as out:
+              out.write("GATE_BTC_LOCK_CYCLE_ID="+anchor["cycle_id"]+"\\n")
+              out.write("GATE_BTC_LOCK_FIRST_ELIGIBLE_CLOSE="+anchor["first_eligible_close"]+"\\n")
+          print("ACTIVE_LOCK_CYCLE="+anchor["cycle_id"])
+          PY
+
       - name: Preserve immutable V2A point-in-time data quality
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
