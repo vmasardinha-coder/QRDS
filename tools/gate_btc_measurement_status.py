@@ -170,6 +170,9 @@ def build_status(args) -> int:
         },
         "lock25_50_prospective_ledger": {
             "current": lock.get("valid_snapshot_count") if lock else None,
+            "historical_valid_snapshot_count": lock.get("historical_valid_snapshot_count") if lock else None,
+            "cumulative_valid_snapshot_count": lock.get("cumulative_valid_snapshot_count") if lock else None,
+            "cumulative_count_is_contiguous_gate": lock.get("cumulative_count_is_contiguous_gate") if lock else None,
             "status": lock.get("status", "UNVERIFIED") if lock else "UNVERIFIED",
             "first_eligible_close": lock.get("first_eligible_close") if lock else None,
             "latest_snapshot_id": lock.get("latest_snapshot_id") if lock else None,
