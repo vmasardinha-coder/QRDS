@@ -61,6 +61,7 @@ jobs:
         run: >-
           python -m unittest -v
           tests/test_gate_btc_measurement_ledgers.py
+          tests/test_gate_btc_gateway_isolated_source.py
           tests/test_gateway_measurement_status.py
           tests/test_gate_btc_d50_source_revision.py
           tests/test_gate_btc_d50_status_align.py
@@ -346,4 +347,114 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "RUNTIME_PUBLISH=FAILED_AFTER_RETRIES"
+          exit 1
+
+  append-gateway-with-lock-gap:
+    # A missing LOCK close must not suppress independent, prospectively captured
+    # Gateway evidence. This job never appends LOCK or publishes a daily handoff.
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve exactly one eligible source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/jobs?per_page=100" > source_jobs.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          jobs=json.load(open('source_jobs.json', encoding='utf-8'))['jobs']
+          producer=[j for j in jobs if j['name']=='daily-research-collection']
+          assert run['name']=='GATE BTC Daily Research Collection'
+          assert run['head_branch']=='main' and run['event'] in {'schedule','workflow_dispatch'}
+          assert run['status']=='completed' and len(producer)==1
+          assert producer[0]['status']=='completed' and producer[0]['conclusion']=='success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+      - name: Download same-run daily artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source_artifact extracted/gateway
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name == "gate-btc-daily-research-" + env.SOURCE_RUN_ID) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          unzip -q artifact.zip -d source_artifact
+          if test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json; then
+            echo "isolated=false" >> "$GITHUB_OUTPUT"
+            echo "GATEWAY_ISOLATED=NOOP_FULL_HANDOFF_PRESENT"
+            exit 0
+          fi
+          test -f source_artifact/gateway_daily/linux_offline_replay_outputs.zip
+          unzip -q source_artifact/gateway_daily/linux_offline_replay_outputs.zip -d extracted/gateway
+          python tools/gate_btc_gateway_isolated_source.py \
+            --daily-artifact source_artifact --gateway-outputs extracted/gateway/outputs
+          echo "isolated=true" >> "$GITHUB_OUTPUT"
+      - name: Check out immutable runtime branch
+        if: steps.source.outputs.isolated == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Append independent Gateway close
+        if: steps.source.outputs.isolated == 'true'
+        run: |
+          set -euo pipefail
+          snapshot_id=$(python -c 'import json; print(json.load(open("extracted/gateway/outputs/v2a1_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          echo "GATEWAY_SNAPSHOT_ID=$snapshot_id" >> "$GITHUB_ENV"
+          if test -f "runtime_repo/runtime/ledgers/gateway_dynamics/snapshots/${snapshot_id}.json"; then
+            echo "GATEWAY_ISOLATED=NOOP_DATE_ALREADY_IMMUTABLE"
+            exit 0
+          fi
+          python tools/gate_btc_measurement_ledgers.py append-gateway-safe \
+            --manifest extracted/gateway/outputs/v2a1_run_manifest.json \
+            --snapshot-status extracted/gateway/outputs/scanner_snapshot_status.json \
+            --compositions extracted/gateway/outputs/strategy_compositions.csv \
+            --execution-profiles extracted/gateway/outputs/strategy_execution_profiles.csv \
+            --snapshot-id "$snapshot_id" \
+            --ledger-dir runtime_repo/runtime/ledgers/gateway_dynamics
+      - name: Publish Gateway only with fail-closed rebase
+        if: steps.source.outputs.isolated == 'true'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/gateway_dynamics
+          git diff --cached --quiet && exit 0
+          git commit -m "Append independent Gateway close ${GATEWAY_SNAPSHOT_ID} (LOCK gap unchanged)"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              echo "GATEWAY_ISOLATED=RUNTIME_REBASE_CONFLICT_FAIL_CLOSED"
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then
+              echo "GATEWAY_ISOLATED=APPENDED source_run_id=${SOURCE_RUN_ID} snapshot=${GATEWAY_SNAPSHOT_ID} LOCK_CREDIT=0"
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
           exit 1
