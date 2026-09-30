@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   upstream-daily-delivery:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -58,7 +58,7 @@ jobs:
 
   append-prospective-evidence:
     needs: contract-tests
-    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main')
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
     permissions:
       actions: read
       contents: write
