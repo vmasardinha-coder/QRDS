@@ -56,8 +56,13 @@ def parse_doc(path: Path) -> dict:
 
 def build(main_root: Path) -> dict:
     docs_root = main_root / "crypto_decision_lab/docs"
-    paths = [p for p in sorted(docs_root.glob(DOC_GLOB)) if "REGISTRY" not in p.stem.upper()]
-    rows = [parse_doc(p) for p in paths]
+    paths = sorted(docs_root.glob(DOC_GLOB))
+    rows = []
+    for path in paths:
+        if "REGISTRY" in path.stem.upper():
+            rows.extend(parse_registry(path))
+        else:
+            rows.append(parse_doc(path))
     not_eligible = [r for r in rows if r["prospective_eligibility"].upper() == "NOT_ELIGIBLE"]
     eligible = [r for r in rows if r["prospective_eligibility"].upper() not in {"NOT_ELIGIBLE", "UNSPECIFIED"}]
     return {
@@ -65,7 +70,8 @@ def build(main_root: Path) -> dict:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "READ_ONLY_RESEARCH_BACKLOG",
         "summary": {
-            "registered_hypothesis_documents": len(rows),
+            "registered_hypothesis_documents": len(paths),
+            "registered_family_count": len(rows),
             "not_eligible_count": len(not_eligible),
             "non_not_eligible_count": len(eligible),
         },
@@ -90,6 +96,31 @@ def build(main_root: Path) -> dict:
     }
 
 
+def parse_registry(path: Path) -> list[dict]:
+    """Expose every original disposition row without treating registration as credit."""
+    text = path.read_text(encoding="utf-8")
+    header = re.search(r"^\|\s*Family\s*\|\s*Status\s*\|\s*Data-readiness\s*\|.*$", text, re.M | re.I)
+    if not header:
+        return []
+    registered = re.search(r"^Registered:\s*(.+?)\s*$", text, re.M | re.I)
+    rows = []
+    for line in text[header.end():].splitlines():
+        if not line.strip():
+            if rows:
+                break
+            continue
+        if not line.strip().startswith("|"):
+            break
+        cells = [strip_md(c) for c in line.strip().strip("|").split("|")]
+        if len(cells) != 5 or all(set(c) <= set("-:") for c in cells):
+            continue
+        rows.append({"family_id": cells[0], "document": path.as_posix(),
+            "status": cells[1], "data_readiness": cells[2], "engine_weight": cells[3],
+            "prospective_eligibility": cells[4],
+            "registered": strip_md(registered.group(1)) if registered else None})
+    return rows
+
+
 def render_md(x: dict) -> str:
     lines = [
         "# GATE BTC 2.0 — Factory Research Backlog",
@@ -97,6 +128,7 @@ def render_md(x: dict) -> str:
         f"Generated: `{x['generated_at_utc']}`",
         "",
         f"- Registered hypothesis documents: **{x['summary']['registered_hypothesis_documents']}**",
+        f"- Registered families: **{x['summary']['registered_family_count']}**",
         f"- Prospectively NOT_ELIGIBLE: **{x['summary']['not_eligible_count']}**",
         "",
         "| Family | Status | Data readiness | Prospective eligibility | Engine weight |",

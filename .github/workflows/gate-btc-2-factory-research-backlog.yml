@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'tools/gate_btc_2_factory_research_backlog.py'
+      - 'tests/test_gate_btc_2_factory_research_backlog.py'
       - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
       - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
   push:
     branches: [main]
     paths:
       - 'tools/gate_btc_2_factory_research_backlog.py'
+      - 'tests/test_gate_btc_2_factory_research_backlog.py'
       - '.github/workflows/gate-btc-2-factory-research-backlog.yml'
       - 'crypto_decision_lab/docs/GATE_BTC_2_HYPOTHESIS_*.md'
   schedule:
@@ -67,6 +69,7 @@ jobs:
           set -euo pipefail
           python -m py_compile main_repo/tools/gate_btc_2_factory_research_backlog.py
           python main_repo/tools/gate_btc_2_factory_research_backlog.py --self-test
+          python -m unittest discover -s main_repo/tests -p test_gate_btc_2_factory_research_backlog.py -v
       - name: Build read-only research backlog
         run: |
           set -euo pipefail
