@@ -146,6 +146,8 @@ jobs:
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
           git add runtime/delta_independent_sources
+          git add -f runtime/delta_independent_sources/snapshots/*.zip
+          git ls-files --error-unmatch runtime/delta_independent_sources/snapshots/*.zip >/dev/null
           git diff --cached --quiet && exit 0
           git commit -m "Preserve independent Delta source ${EXPECTED_CLOSE}"
           for attempt in 1 2 3; do
