@@ -48,6 +48,10 @@ jobs:
               'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_DECISION.md',
               'migration/GATE_BTC_INITIATIVE_EXECUTION_STATUS_LATEST.json',
               'migration/GATE_BTC_SHADOW_REPORTING_STANDARD_V1.md',
+              # O coletor V2A da coleta diaria. Nenhum prefixo o cobre, e sem esta
+              # entrada uma correcao nele nao consegue nem abrir PR -- foi o que
+              # aconteceu no #1042, que conserta a autenticacao da CoinGecko.
+              'migration/canonical/v2a/scripts/00_run_all_v2a.py',
               'migration/reporting/bull_replay_contract.json',
               'migration/reporting/delta_paper_monitor_contract.json',
               'migration/reporting/delta_v12_structural_audit_contract.json',
