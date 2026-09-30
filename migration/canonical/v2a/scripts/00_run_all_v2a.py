@@ -113,7 +113,15 @@ def coingecko_endpoint_and_headers() -> tuple[str, dict[str, str]]:
     a mesma sessao fala com outras exchanges e um header global vazaria a
     chave para terceiros.
     """
-    key = os.environ.get("COINGECKO_API_KEY", "").strip()
+    # Dois nomes sao aceitos porque os dois existem no repositorio: este ramo
+    # usa COINGECKO_API_KEY e o ramo ops/v2a-coingecko-demo-auth usa
+    # COINGECKO_DEMO_API_KEY. Ler so um deles deixaria o outro secret
+    # configurado sem efeito -- e o coletor voltaria ao anonimo em SILENCIO,
+    # que e precisamente o modo de falha que esta mudanca existe para fechar.
+    key = (
+        os.environ.get("COINGECKO_API_KEY", "").strip()
+        or os.environ.get("COINGECKO_DEMO_API_KEY", "").strip()
+    )
     if not key:
         return "https://api.coingecko.com/api/v3", {}
     plan = os.environ.get("COINGECKO_API_PLAN", "demo").strip().lower()

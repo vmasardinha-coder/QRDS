@@ -27,7 +27,10 @@ def _load():
 class CoinGeckoEndpointTests(unittest.TestCase):
     def setUp(self) -> None:
         self.module = _load()
-        self._saved = {k: os.environ.get(k) for k in ("COINGECKO_API_KEY", "COINGECKO_API_PLAN")}
+        self._saved = {
+            k: os.environ.get(k)
+            for k in ("COINGECKO_API_KEY", "COINGECKO_DEMO_API_KEY", "COINGECKO_API_PLAN")
+        }
         for key in self._saved:
             os.environ.pop(key, None)
 
@@ -52,6 +55,22 @@ class CoinGeckoEndpointTests(unittest.TestCase):
             base, headers = self.module.coingecko_endpoint_and_headers()
             self.assertEqual(headers, {}, blank)
             self.assertEqual(base, "https://api.coingecko.com/api/v3")
+
+    def test_the_alternate_secret_name_is_honoured(self) -> None:
+        # O repositorio tem dois nomes em uso para o mesmo segredo. Ler so um
+        # deixaria o outro configurado sem efeito, e o coletor voltaria ao
+        # anonimo sem erro nenhum -- o modo silencioso que custou dois dias ao
+        # V11. Os dois nomes valem.
+        os.environ["COINGECKO_DEMO_API_KEY"] = "CG-alt-999"
+        base, headers = self.module.coingecko_endpoint_and_headers()
+        self.assertEqual(base, "https://api.coingecko.com/api/v3")
+        self.assertEqual(headers, {"x-cg-demo-api-key": "CG-alt-999"})
+
+    def test_the_primary_name_wins_when_both_are_set(self) -> None:
+        os.environ["COINGECKO_API_KEY"] = "CG-primary"
+        os.environ["COINGECKO_DEMO_API_KEY"] = "CG-alternate"
+        _, headers = self.module.coingecko_endpoint_and_headers()
+        self.assertEqual(headers, {"x-cg-demo-api-key": "CG-primary"})
 
     def test_a_demo_key_uses_the_demo_header_on_the_public_host(self) -> None:
         os.environ["COINGECKO_API_KEY"] = "CG-demo-123"
@@ -82,9 +101,13 @@ class CoinGeckoEndpointTests(unittest.TestCase):
         # elas. Por isso o header e passado por chamada, e a sessao tem de
         # continuar limpa mesmo com a chave configurada.
         os.environ["COINGECKO_API_KEY"] = "CG-secret"
+        os.environ["COINGECKO_DEMO_API_KEY"] = "CG-secret-alt"
         session = self.module.session_or_raise()
         joined = " ".join(f"{k}:{v}" for k, v in session.headers.items())
         self.assertNotIn("CG-secret", joined)
+        self.assertNotIn("CG-secret-alt", joined)
+        # A mesma sessao chama cryptodatadownload.com e www.okx.com. Um header
+        # global mandaria a chave da CoinGecko para os dois.
         self.assertNotIn("x-cg-demo-api-key", {k.lower() for k in session.headers})
 
 
