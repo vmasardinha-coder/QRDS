@@ -183,6 +183,7 @@ jobs:
         # a variavel chega ao coletor por heranca.
         env:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          COINGECKO_API_KEY_BACKUP: ${{ secrets.COINGECKO_API_KEY_BACKUP }}
         run: >-
           python tools/qos_orchestrator.py
           --public-data
