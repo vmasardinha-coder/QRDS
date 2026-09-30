@@ -46,6 +46,7 @@ class LockReanchorTests(unittest.TestCase):
                 previous_interruption, "interruption_sha256"
             )
             atomic_json(prior_archive / "INTERRUPTION.json", previous_interruption)
+            atomic_json(prior_archive / "snapshots" / "2026-07-01.json", {"snapshot_id": "2026-07-01"})
             earlier_history = {
                 "schema": "gate_btc.lock25_50_series_history.v1",
                 "active_cycle_id": "OLD",
@@ -109,6 +110,9 @@ class LockReanchorTests(unittest.TestCase):
             status = json.loads((ledger / "STATUS.json").read_text(encoding="utf-8"))
             self.assertEqual(status["cycle_id"], "NEW")
             self.assertEqual(status["valid_snapshot_count"], 0)
+            self.assertEqual(status["historical_valid_snapshot_count"], 4)
+            self.assertEqual(status["cumulative_valid_snapshot_count"], 4)
+            self.assertFalse(status["cumulative_count_is_contiguous_gate"])
             self.assertEqual(status["retroactive_fill_prohibited_dates"][-1], "2026-08-15")
             history = json.loads((ledger / "SERIES_HISTORY.json").read_text(encoding="utf-8"))
             self.assertEqual([entry["cycle_id"] for entry in history["interrupted_series"]], ["FIRST", "OLD"])
