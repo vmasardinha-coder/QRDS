@@ -83,9 +83,11 @@ def main():
     from cryptofeed.connection import RestEndpoint, Routes, WebsocketEndpoint
     from cryptofeed.defines import L2_BOOK
     from cryptofeed.exchanges import Binance, OKX
+    from gate_btc_2_system11_depth10_collector import okx_spot_feed_class
     class BinancePublicMirror(Binance):
         websocket_endpoints = [WebsocketEndpoint("wss://data-stream.binance.vision:443")]
         rest_endpoints = [RestEndpoint("https://data-api.binance.vision", routes=Routes("/api/v3/exchangeInfo", l2book="/api/v3/depth?symbol={}&limit={}"))]
+    OKXSpotOnly = okx_spot_feed_class(OKX, RestEndpoint, Routes)
     ap=argparse.ArgumentParser(); ap.add_argument("--duration", type=int, default=60); ap.add_argument("--output", required=True); args=ap.parse_args()
     out=Path(args.output); out.mkdir(parents=True, exist_ok=True)
     events=[]; rejected=defaultdict(int)
@@ -99,7 +101,7 @@ def main():
             events.append({"venue":venue,"symbol":str(book.symbol),"receipt_ms":int(float(receipt_timestamp)*1000),"features":feats,"crossed":False})
         except Exception as exc:
             rejected[type(exc).__name__ + ":" + str(exc)] += 1
-    fh=FeedHandler(); fh.add_feed(BinancePublicMirror(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK:cb}, max_depth=10)); fh.add_feed(OKX(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK:cb}, max_depth=10))
+    fh=FeedHandler(); fh.add_feed(BinancePublicMirror(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK:cb}, max_depth=10)); fh.add_feed(OKXSpotOnly(symbols=["BTC-USDT"], channels=[L2_BOOK], callbacks={L2_BOOK:cb}, max_depth=10))
     loop=asyncio.new_event_loop(); asyncio.set_event_loop(loop); loop.call_later(args.duration, loop.stop); started=time.time(); fh.run(); ended=time.time()
     with (out/"FEATURE_EVENTS.jsonl").open("w", encoding="utf-8") as f:
         for e in events: f.write(json.dumps(e, sort_keys=True)+"\n")
