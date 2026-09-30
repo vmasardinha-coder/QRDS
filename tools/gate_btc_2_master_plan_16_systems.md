@@ -91,6 +91,12 @@ Qlib already has a concluded standalone v0.9.7 sandbox, documented in artifacts/
 
 The frozen scientific dependency remains 8→9→10→11→12→13→14. Factory580 and Crypto745 continue their independent prospective collection. Historical-hypothesis reconciliation is recorded in artifacts/gate_btc_2/HISTORICAL_HYPOTHESIS_DEBT_AUDIT_20260930.json; no new family/source/scientific criteria are admitted by that audit.
 
+### Preserved historical dependency and exit authority
+
+The original prerequisite order remains: `9 hftbacktest/Stage 9 → 10 Nautilus/event parity → 11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`.
+
+The 50 pre-audit observations are preserved as valid evidence and receive zero credit toward the separately preregistered exit segment. Its frozen exit authority remains `required_N=168`, 24 distinct UTC hour bins, 7 distinct UTC weekdays and at least 167 elapsed hours. The canonical runtime now proves this original contract; none of these historical conditions was changed to obtain completion.
+
 ## Governance rule
 
 Future work must update this 16-system map rather than inventing a replacement numbering. New infrastructure is mapped as a cross-cutting layer or as implementation inside one or more existing systems. A new numbered system requires an explicit roadmap revision, not incidental code growth.
