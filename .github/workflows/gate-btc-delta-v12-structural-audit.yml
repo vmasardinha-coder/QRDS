@@ -25,7 +25,7 @@ env:
 
 jobs:
   upstream-daily-delivery:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -75,6 +75,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
+       (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch') &&
        github.event.workflow_run.status == 'completed')
     runs-on: ubuntu-latest
     timeout-minutes: 20
