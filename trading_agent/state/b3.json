@@ -11,7 +11,7 @@
       "high_water": 26.1
     },
     "PETR4": {
-      "qty": 138.73574050847913,
+      "qty": 133.2260890168686,
       "avg_cost": 41.9419,
       "high_water": 50.43
     },
@@ -24,11 +24,6 @@
       "qty": 168.24510519428495,
       "avg_cost": 32.072039999999994,
       "high_water": 39.74
-    },
-    "VALE3": {
-      "qty": 89.88601183271149,
-      "avg_cost": 72.63601163809336,
-      "high_water": 80.8
     },
     "VBBR3": {
       "qty": 171.59330623221607,
@@ -44,13 +39,18 @@
       "qty": 436.9974170209728,
       "avg_cost": 15.315299999999999,
       "high_water": 15.34
+    },
+    "B3SA3": {
+      "qty": 363.93559974892213,
+      "avg_cost": 17.917899999999996,
+      "high_water": 17.917899999999996
     }
   },
   "benchmark": {
     "symbol": "^BVSP",
     "inception_price": 175546.359375
   },
-  "last_rebalance": "2026-09-23",
+  "last_rebalance": "2026-09-30",
   "last_regime": "risk_on",
   "history": [
     {
@@ -352,6 +352,12 @@
       "nav": 52455.03,
       "benchmark_nav": 52120.46,
       "benchmark2_nav": 50908.93
+    },
+    {
+      "date": "2026-09-30",
+      "nav": 52324.42,
+      "benchmark_nav": 52358.7,
+      "benchmark2_nav": 50934.78
     }
   ],
   "trades": [
@@ -1122,12 +1128,39 @@
       "qty": 2.92541175,
       "price": 60.92086,
       "value": 178.22
+    },
+    {
+      "date": "2026-09-30",
+      "symbol": "VALE3",
+      "side": "sell",
+      "qty": 89.88601183,
+      "price": 69.54039,
+      "value": 6250.71,
+      "reason": "stop: queda 13.8% > 8x sigma (13.3%); carencia ate 2026-10-30"
+    },
+    {
+      "date": "2026-09-30",
+      "symbol": "PETR4",
+      "side": "sell",
+      "qty": 5.50965149,
+      "price": 49.0509,
+      "value": 270.25
+    },
+    {
+      "date": "2026-09-30",
+      "symbol": "B3SA3",
+      "side": "buy",
+      "qty": 363.93559975,
+      "price": 17.9179,
+      "value": 6520.96
     }
   ],
   "benchmark2": {
     "symbol": "CDI"
   },
-  "cooldown": {},
+  "cooldown": {
+    "VALE3": "2026-10-30"
+  },
   "decision_log": [
     {
       "date": "2026-08-07",
@@ -11240,7 +11273,237 @@
       },
       "note": "",
       "cash_weight": 0.0
+    },
+    {
+      "date": "2026-09-30",
+      "regime": "risk_on",
+      "hurdle": "CDI",
+      "hurdle_score": 0.1323,
+      "rebalance_trigger": "desvio de peso em B3SA3: 0.0% vs alvo 12.5%",
+      "eligible_count": 10,
+      "selected": [
+        {
+          "symbol": "UGPA3",
+          "score": 0.5811,
+          "weight": 0.125
+        },
+        {
+          "symbol": "PRIO3",
+          "score": 0.5559,
+          "weight": 0.125
+        },
+        {
+          "symbol": "GGBR4",
+          "score": 0.4251,
+          "weight": 0.125
+        },
+        {
+          "symbol": "VBBR3",
+          "score": 0.3903,
+          "weight": 0.125
+        },
+        {
+          "symbol": "WEGE3",
+          "score": 0.3548,
+          "weight": 0.125
+        },
+        {
+          "symbol": "PETR4",
+          "score": 0.3351,
+          "weight": 0.125
+        },
+        {
+          "symbol": "ABEV3",
+          "score": 0.227,
+          "weight": 0.125
+        },
+        {
+          "symbol": "B3SA3",
+          "score": 0.2179,
+          "weight": 0.125
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ASAI3",
+          "reason": "nao bate o benchmark (-15.8% <= +13.2%)"
+        },
+        {
+          "symbol": "AXIA3",
+          "reason": "historico insuficiente"
+        },
+        {
+          "symbol": "BBAS3",
+          "reason": "nao bate o benchmark (-8.8% <= +13.2%)"
+        },
+        {
+          "symbol": "BBDC4",
+          "reason": "nao bate o benchmark (-3.6% <= +13.2%)"
+        },
+        {
+          "symbol": "BPAC11",
+          "reason": "nao bate o benchmark (+12.0% <= +13.2%)"
+        },
+        {
+          "symbol": "BRKM5",
+          "reason": "nao bate o benchmark (-49.5% <= +13.2%)"
+        },
+        {
+          "symbol": "CMIG4",
+          "reason": "nao bate o benchmark (-8.2% <= +13.2%)"
+        },
+        {
+          "symbol": "CMIN3",
+          "reason": "nao bate o benchmark (+12.6% <= +13.2%)"
+        },
+        {
+          "symbol": "CPFE3",
+          "reason": "nao bate o benchmark (+12.6% <= +13.2%)"
+        },
+        {
+          "symbol": "CSAN3",
+          "reason": "nao bate o benchmark (-43.7% <= +13.2%)"
+        },
+        {
+          "symbol": "CSNA3",
+          "reason": "nao bate o benchmark (-35.2% <= +13.2%)"
+        },
+        {
+          "symbol": "CYRE3",
+          "reason": "nao bate o benchmark (-24.3% <= +13.2%)"
+        },
+        {
+          "symbol": "EGIE3",
+          "reason": "nao bate o benchmark (-29.0% <= +13.2%)"
+        },
+        {
+          "symbol": "EMBJ3",
+          "reason": "historico insuficiente"
+        },
+        {
+          "symbol": "ENGI11",
+          "reason": "nao bate o benchmark (-6.7% <= +13.2%)"
+        },
+        {
+          "symbol": "EQTL3",
+          "reason": "nao bate o benchmark (-0.5% <= +13.2%)"
+        },
+        {
+          "symbol": "GOAU4",
+          "reason": "nao bate o benchmark (+8.5% <= +13.2%)"
+        },
+        {
+          "symbol": "HAPV3",
+          "reason": "nao bate o benchmark (-82.6% <= +13.2%)"
+        },
+        {
+          "symbol": "ITUB4",
+          "reason": "nao bate o benchmark (+1.0% <= +13.2%)"
+        },
+        {
+          "symbol": "KLBN11",
+          "reason": "nao bate o benchmark (+3.9% <= +13.2%)"
+        },
+        {
+          "symbol": "LREN3",
+          "reason": "nao bate o benchmark (-32.9% <= +13.2%)"
+        },
+        {
+          "symbol": "MBRF3",
+          "reason": "historico insuficiente"
+        },
+        {
+          "symbol": "MGLU3",
+          "reason": "nao bate o benchmark (-57.5% <= +13.2%)"
+        },
+        {
+          "symbol": "MULT3",
+          "reason": "nao bate o benchmark (-4.9% <= +13.2%)"
+        },
+        {
+          "symbol": "NATU3",
+          "reason": "nao bate o benchmark (-2.6% <= +13.2%)"
+        },
+        {
+          "symbol": "PSSA3",
+          "reason": "nao bate o benchmark (-4.5% <= +13.2%)"
+        },
+        {
+          "symbol": "RADL3",
+          "reason": "nao bate o benchmark (+5.9% <= +13.2%)"
+        },
+        {
+          "symbol": "RAIL3",
+          "reason": "nao bate o benchmark (-2.6% <= +13.2%)"
+        },
+        {
+          "symbol": "RDOR3",
+          "reason": "nao bate o benchmark (-14.3% <= +13.2%)"
+        },
+        {
+          "symbol": "RENT3",
+          "reason": "nao bate o benchmark (-14.2% <= +13.2%)"
+        },
+        {
+          "symbol": "SANB11",
+          "reason": "nao bate o benchmark (+3.9% <= +13.2%)"
+        },
+        {
+          "symbol": "SBSP3",
+          "reason": "nao bate o benchmark (-80.8% <= +13.2%)"
+        },
+        {
+          "symbol": "SLCE3",
+          "reason": "nao bate o benchmark (-5.0% <= +13.2%)"
+        },
+        {
+          "symbol": "SUZB3",
+          "reason": "nao bate o benchmark (-7.9% <= +13.2%)"
+        },
+        {
+          "symbol": "TAEE11",
+          "reason": "nao bate o benchmark (+7.3% <= +13.2%)"
+        },
+        {
+          "symbol": "TIMS3",
+          "reason": "nao bate o benchmark (-20.4% <= +13.2%)"
+        },
+        {
+          "symbol": "TOTS3",
+          "reason": "nao bate o benchmark (-25.2% <= +13.2%)"
+        },
+        {
+          "symbol": "VIVT3",
+          "reason": "nao bate o benchmark (-11.4% <= +13.2%)"
+        }
+      ],
+      "stops": [
+        {
+          "symbol": "VALE3",
+          "reason": "stop: queda 13.8% > 8x sigma (13.3%); carencia ate 2026-10-30"
+        }
+      ],
+      "cooldowns": {
+        "VALE3": "2026-10-30"
+      },
+      "data_failures": [],
+      "sources": {
+        "nasdaq": 101,
+        "coinbase": 119,
+        "binance": 31,
+        "brapi": 1,
+        "cotahist": 50
+      },
+      "source_failures": {},
+      "source_missing": {
+        "coinbase": {
+          "n": 31,
+          "motivo": "anularity=86400&start=2026-01-24T00:00:00Z&end=2026-10-01T00:00:00Z: HTTP 404 (definitivo)"
+        }
+      },
+      "note": "",
+      "cash_weight": 0.0
     }
   ],
-  "last_accrual_date": "2026-09-25"
+  "last_accrual_date": "2026-09-28"
 }
