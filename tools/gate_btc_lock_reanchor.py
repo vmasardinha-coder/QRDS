@@ -222,12 +222,15 @@ def reanchor(args: argparse.Namespace) -> dict[str, Any]:
         "preserved_snapshot_dates": preserved,
     }
     require(previous_entry is None or previous_entry == new_entry, "old LOCK archive history differs")
-    require(not (set(prior_exclusions) & set(excluded)), "LOCK interruption gap overlaps prior gap")
+    if prior_history is not None and prior_history.get("active_cycle_id") == args.new_cycle_id:
+        require(set(excluded).issubset(set(prior_exclusions)), "LOCK re-run exclusions differ")
+    else:
+        require(not (set(prior_exclusions) & set(excluded)), "LOCK interruption gap overlaps prior gap")
     history = {
         "schema": "gate_btc.lock25_50_series_history.v1",
         "active_cycle_id": args.new_cycle_id,
         "reanchor_authorized_at_utc": args.authorized_at_utc,
-        "retroactive_fill_prohibited_dates": sorted(prior_exclusions + excluded),
+        "retroactive_fill_prohibited_dates": sorted(set(prior_exclusions + excluded)),
         "interrupted_series": prior_series if previous_entry else prior_series + [new_entry],
         "research_only": True,
         "shadow_only": True,
