@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Contract and collector tests
-        run: python -m unittest -v tests.test_gate_btc_2_system11_approved_prereg_v1 tests.test_gate_btc_2_system11_collection_status tests.test_gate_btc_2_system11_depth10_collector
+        run: python -m unittest -v tests.test_gate_btc_2_system11_approved_prereg_v1 tests.test_gate_btc_2_system11_collection_status tests.test_gate_btc_2_system11_depth10_collector tests.test_gate_btc_2_system11_stress_replay_v1
       - name: Install Cryptofeed
         run: python -m pip install --disable-pip-version-check 'cryptofeed==2.5.0'
       - name: Capture five prospective minutes
@@ -38,6 +38,8 @@ jobs:
           touch "$LEDGER"
           python tools/gate_btc_2_system11_append_pairs.py --source artifacts_live/system11/PAIRS.jsonl --ledger "$LEDGER"
           python tools/gate_btc_2_system11_collection_status.py --prereg artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_V1_20260929.json --ledger "$LEDGER" --output runtime_repo/runtime/gate_btc_2/system11/COLLECTION_STATUS.json
+          python tools/gate_btc_2_system11_stress_replay_v1.py --ledger "$LEDGER" --output-dir artifacts_live/system11/replay
+          cp artifacts_live/system11/replay/REPLAY_RESULT.json runtime_repo/runtime/gate_btc_2/system11/REPLAY_RESULT.json
           cp artifacts_live/system11/SUMMARY.json runtime_repo/runtime/gate_btc_2/system11/LATEST_CAPTURE_SUMMARY.json
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
