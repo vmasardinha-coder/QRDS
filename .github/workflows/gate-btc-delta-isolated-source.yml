@@ -1,0 +1,127 @@
+name: GATE BTC Delta Isolated Source Retention
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-delta-isolated-source.yml
+      - tools/gate_btc_delta_isolated_source.py
+      - tools/gate_btc_delta_paper_monitor.py
+      - tests/test_gate_btc_delta_isolated_source.py
+  workflow_run:
+    workflows: ['GATE BTC Daily Research Collection']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: gate-btc-delta-isolated-source-${{ github.event.workflow_run.id || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v tests.test_gate_btc_delta_isolated_source
+
+  preserve-independent-source:
+    needs: contract-tests
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download same-run partial Daily artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > upstream.json
+          python - <<'PY'
+          import json
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+          run=json.loads(Path('upstream.json').read_text())
+          assert run['name']=='GATE BTC Daily Research Collection'
+          assert run['head_branch']=='main'
+          assert run['status']=='completed'
+          assert run['event'] in {'schedule','workflow_dispatch'}
+          day=(datetime.fromisoformat(run['created_at'].replace('Z','+00:00')).astimezone(timezone.utc).date()-timedelta(days=1)).isoformat()
+          with open(__import__('os').environ['GITHUB_ENV'],'a') as env:
+              env.write('EXPECTED_CLOSE='+day+chr(10))
+          PY
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name == "gate-btc-daily-research-" + env.SOURCE_RUN_ID) | .id' | head -1)
+          if test -z "$artifact_id"; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'DELTA_SOURCE=NO_DAILY_ARTIFACT_CREDIT_0'
+            exit 0
+          fi
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > source.zip
+          mkdir -p source
+          unzip -q source.zip -d source
+          if test -f source/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'DELTA_SOURCE=FULL_HANDOFF_ALREADY_ELIGIBLE'
+            exit 0
+          fi
+          if ! test -f source/qos_daily/delta_walk_forward_outputs.zip; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'DELTA_SOURCE=NOT_PRODUCED_CREDIT_0'
+            exit 0
+          fi
+          echo 'available=true' >> "$GITHUB_OUTPUT"
+      - name: Check out append-only runtime
+        if: steps.source.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Seal same-close Delta evidence independently of CoinGecko
+        if: steps.source.outputs.available == 'true'
+        env:
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: >-
+          python tools/gate_btc_delta_isolated_source.py
+          --contract migration/reporting/delta_paper_monitor_contract.json
+          --source-zip source/qos_daily/delta_walk_forward_outputs.zip
+          --runtime-dir runtime_repo/runtime/delta_independent_sources
+          --source-run-id "$SOURCE_RUN_ID"
+          --expected-close "$EXPECTED_CLOSE"
+      - name: Commit source archive only, without changing scientific ledger
+        if: steps.source.outputs.available == 'true'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/delta_independent_sources
+          git diff --cached --quiet && exit 0
+          git commit -m "Preserve independent Delta source ${EXPECTED_CLOSE}"
+          for attempt in 1 2 3; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
