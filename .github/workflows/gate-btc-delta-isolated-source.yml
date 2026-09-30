@@ -81,7 +81,6 @@ jobs:
         id: source
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if test -z "${SOURCE_RUN_ID:-}"; then
@@ -132,7 +131,6 @@ jobs:
           fetch-depth: 0
       - name: Seal same-close Delta evidence independently of CoinGecko
         if: steps.source.outputs.available == 'true'
-        env:
         run: >-
           python tools/gate_btc_delta_isolated_source.py
           --contract migration/reporting/delta_paper_monitor_contract.json
