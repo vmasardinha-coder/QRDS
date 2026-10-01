@@ -40,3 +40,15 @@ def test_generation2_channels_do_not_define_economic_parameters():
         assert "threshold" not in row
         assert "direction" not in row
         assert row["economics_read"] is False
+
+
+def test_prior_scout_history_does_not_self_suppress(tmp_path):
+    def fake(q):
+        return [{"openalex_id":"x:"+q,"doi":None,"title":"evidence "+q,"publication_year":2024,"source":"test"}]
+    prior={"proposals":[{"channel_id":"CRYPTO_MINER_HASHRATE_STRESS","status":"SCOUTED_NOT_PREREGISTERED"}]}
+    (tmp_path/"prior.json").write_text(__import__("json").dumps(prior))
+    d=scout(existing_dir=tmp_path,fetcher=fake)
+    row=next(p for p in d["proposals"] if p["channel_id"]=="CRYPTO_MINER_HASHRATE_STRESS")
+    assert row["status"]=="SCOUTED_NOT_PREREGISTERED"
+    assert row["previously_scouted"] is True
+    assert row["duplicate_authority"] is None
