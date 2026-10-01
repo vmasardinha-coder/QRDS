@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -41,11 +42,23 @@ def norm(value: Any) -> str:
 
 
 def fetch_ranked_active_rows(session: requests.Session, limit: int = 5000) -> list[dict]:
-    response = session.get(
-        ENDPOINT,
-        params={"listing_status": "active", "limit": int(limit), "sort": "cmc_rank", "aux": "status"},
-        timeout=45,
-    )
+    # The public endpoint is keyless and shares an IP rate pool. A 429 from a
+    # GitHub-hosted runner is transient; retry the same source and exact query,
+    # never substitute another provider's present-day identities for PIT rows.
+    for attempt in range(5):
+        response = session.get(
+            ENDPOINT,
+            params={"listing_status": "active", "limit": int(limit), "sort": "cmc_rank", "aux": "status"},
+            timeout=45,
+        )
+        if response.status_code != 429 or attempt == 4:
+            break
+        retry_after = response.headers.get("Retry-After", "")
+        try:
+            wait = float(retry_after)
+        except ValueError:
+            wait = 2 ** (attempt + 1)
+        time.sleep(min(60.0, max(1.0, wait)))
     response.raise_for_status()
     payload = response.json()
     data = payload.get("data") or payload.get("Data") or []
