@@ -67,10 +67,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Dispatch one current-time external collection only when stale
+      - name: Dispatch one current-time external collection before 4h cadence becomes stale
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           TARGET_WORKFLOW: gate-btc-external-family-forward-collector.yml
-          FRESHNESS_SECONDS: '14400'
+          FRESHNESS_SECONDS: '10800'
         run: python tools/gate_btc_factory/crypto_forward_schedule_guard.py
