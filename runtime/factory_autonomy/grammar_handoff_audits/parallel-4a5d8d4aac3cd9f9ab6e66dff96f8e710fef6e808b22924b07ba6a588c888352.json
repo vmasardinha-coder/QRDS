@@ -1,0 +1,46 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_MACRO_LIQUIDITY_RATES",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "4a5d8d4aac3cd9f9ab6e66dff96f8e710fef6e808b22924b07ba6a588c888352",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Lagged public macro-liquidity, rates and dollar states may provide an evidence channel distinct from crypto-native market microstructure.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "FRED",
+        "Federal Reserve",
+        "US Treasury"
+      ],
+      "required_new_data": [
+        "policy rates",
+        "Treasury yields",
+        "USD index or broad dollar proxy",
+        "BTC spot reference prices",
+        "publication timestamps"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}
