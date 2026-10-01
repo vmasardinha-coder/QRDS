@@ -5,10 +5,10 @@ from __future__ import annotations
 
 The frozen H31 rule is unchanged. Canonical prospective source binding is not
 modified and receives zero credit here. When the preregistered H1 structural
-schedule is exhausted, this SHADOW-ONLY entrypoint may continue only the exact
-last frozen WIN/WDO front pair while both symbols still have current MT5 ticks.
-It never auto-rolls to a new contract. A rollover therefore requires a separate
-prospective source-binding decision rather than an implicit retune.
+schedule is exhausted, this SHADOW-ONLY entrypoint preserves the last frozen
+front while it is live; if a root expires/stales, it may roll mechanically to
+the nearest live B3 mini contract for that same root. This changes source
+binding only, never signal, threshold, direction, timing, costs or credit.
 """
 
 import json
@@ -51,14 +51,52 @@ def bounded_shadow_schedule() -> dict[str, dict[str, str]]:
     if terminal is None or not bool(getattr(terminal, "connected", False)):
         raise RuntimeError("MT5_NOT_CONNECTED_FOR_FRONT_BINDING")
     now = datetime.now(TZ)
+
+    def current_or_nearest_live(root: str, preferred: str) -> tuple[str, str, datetime]:
+        def probe(symbol: str):
+            info = mt5.symbol_info(symbol)
+            if info is None or not mt5.symbol_select(symbol, True):
+                return None
+            try:
+                mode, tick_ts = clock.detect_time_mode(mt5, symbol, now)
+            except Exception:
+                return None
+            if abs((now - tick_ts).total_seconds()) > 6 * 3600:
+                return None
+            expiry = int(getattr(info, "expiration_time", 0) or 0)
+            return symbol, mode, tick_ts, expiry
+
+        preferred_probe = probe(preferred)
+        if preferred_probe is not None:
+            symbol, mode, tick_ts, _ = preferred_probe
+            return symbol, mode, tick_ts
+
+        candidates = []
+        for info in list(mt5.symbols_get(group=f"{root}*") or []):
+            symbol = str(info.name)
+            if not symbol.startswith(root) or len(symbol) != len(root) + 3:
+                continue
+            probed = probe(symbol)
+            if probed is None:
+                continue
+            sym, mode, tick_ts, expiry = probed
+            sort_expiry = expiry if expiry > 0 else 2**63 - 1
+            candidates.append((sort_expiry, sym, mode, tick_ts))
+        if not candidates:
+            raise RuntimeError(f"NO_LIVE_FRONT_FOR_ROOT root={root} preferred={preferred}")
+        candidates.sort(key=lambda x: (x[0], x[1]))
+        _, symbol, mode, tick_ts = candidates[0]
+        return symbol, mode, tick_ts
+
     for root in ("WIN", "WDO"):
-        symbol = front[root]
-        if mt5.symbol_info(symbol) is None or not mt5.symbol_select(symbol, True):
-            raise RuntimeError(f"LAST_FROZEN_FRONT_NOT_SELECTABLE root={root} symbol={symbol}")
-        mode, tick_ts = clock.detect_time_mode(mt5, symbol, now)
+        preferred = front[root]
+        symbol, mode, tick_ts = current_or_nearest_live(root, preferred)
+        front[root] = symbol
+        policy = "FROZEN_FRONT" if symbol == preferred else "MECHANICAL_ROOT_ROLL"
         print(
             f"H31_SHADOW_FRONT_CONTINUATION root={root} symbol={symbol} "
-            f"from_date={last_date} mode={mode} tick={tick_ts.isoformat()}",
+            f"preferred={preferred} binding={policy} from_date={last_date} "
+            f"mode={mode} tick={tick_ts.isoformat()}",
             flush=True,
         )
 
@@ -121,7 +159,7 @@ def annotate_status(shadow_dir: Path) -> None:
     except Exception:
         return
     status["H31_SOURCE_BINDING_SCOPE"] = "SHADOW_ONLY_ZERO_CANONICAL_CREDIT"
-    status["H31_FRONT_CONTINUATION_POLICY"] = "EXACT_LAST_FROZEN_PAIR_WHILE_LIVE_NO_AUTO_ROLL"
+    status["H31_FRONT_CONTINUATION_POLICY"] = "FROZEN_ROOT_WITH_MECHANICAL_LIVE_ROLL_SHADOW_ONLY"
     status["NO_BACKFILL"] = True
     status["NO_RETUNE"] = True
     status["ORDERS"] = 0
