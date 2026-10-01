@@ -61,7 +61,24 @@ jobs:
       - name: Compile terminal proof runner
         run: python -m py_compile tools/gate_btc_2_selector_alpha_terminal.py
 
+      - name: Verify sealed terminal record on every PR
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('migration')
+          manifest=json.loads((root/'GATE_BTC_2_SELECTOR_ALPHA_TERMINAL_MANIFEST.json').read_text())
+          assert manifest['inputs']['definitive_pit_artifact_sha256']=='e3b484f8797685547b7e59aa86f19e9080daaac551b1488b6ea0fac9f8fd5f81'
+          assert manifest['stop_gate_triggered'] is True and manifest['phase_4_authorized'] is False
+          for name, expected in manifest['outputs'].items():
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==expected, name
+          status=json.loads((root/'GATE_BTC_2_SELECTOR_ALPHA_STATUS.json').read_text())
+          assert status['CURRENT_GATE']=='FAIL_CLOSED_SELECTOR_ALPHA_REFUTED_NO_RETUNE'
+          print('SEALED_TERMINAL_RECORD=PASS; EXPIRED_SOURCE_ARTIFACT_NOT_REPRODUCED')
+          PY
+
       - name: Download immutable existing PIT artifact
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -71,6 +88,7 @@ jobs:
           unzip -q evidence.zip -d evidence
 
       - name: Reproduce terminal proof offline
+        if: github.event_name == 'workflow_dispatch'
         run: >-
           python tools/gate_btc_2_selector_alpha_terminal.py
           --evidence-dir evidence
@@ -78,6 +96,7 @@ jobs:
           --output-dir generated
 
       - name: Compare committed terminal artifacts byte for byte
+        if: github.event_name == 'workflow_dispatch'
         run: |
           for name in \
             GATE_BTC_2_SELECTOR_ALPHA_SOURCE_ADMISSION_LEDGER.json \
@@ -123,6 +142,7 @@ jobs:
           PY
 
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
           name: gate-btc-2-selector-alpha-terminal-${{ github.run_id }}
           path: generated/
