@@ -50,8 +50,11 @@ class CoveredDeliveryTests(unittest.TestCase):
         self.assertEqual(calls,['AAA']);self.assertEqual(set(frame.symbol),{'AAA','BBB','CCC'})
 
     def test_missing_selected_does_not_commit_a_successful_price_manifest(self):
-        with self.assertRaisesRegex(ValueError,'MISSING_LOCKED_SELECTED_PRICES:AAA'):
+        with self.assertRaisesRegex(q.MissingLockedSelectedPrices,'MISSING_LOCKED_SELECTED_PRICES:AAA') as captured:
             q.cover(self.state,self.master(['AAA']),self.day,self.root/'evidence','zip',self.at,{})
+        self.assertEqual(captured.exception.selected,['AAA'])
+        self.assertEqual(captured.exception.source_locks,{'AAA':'S'})
+        self.assertEqual(captured.exception.cutoff,self.day)
         self.assertFalse(list((self.root/'evidence').rglob('PRICES.json')))
         self.assertTrue(list((self.root/'evidence/failed_attempts').rglob('*.gz')))
 
