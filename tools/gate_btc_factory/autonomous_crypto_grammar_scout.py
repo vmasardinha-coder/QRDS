@@ -93,6 +93,12 @@ def search(q, per_page=5):
     return out
 
 def existing_ids(existing_dir:Path|None):
+    """Return prior scout sightings for audit continuity only.
+
+    A prior scout sighting is not canonical duplicate authority.  The scout
+    must never self-suppress a channel merely because it appeared in one of
+    its own earlier audit snapshots.
+    """
     ids=set()
     if not existing_dir or not existing_dir.exists(): return ids
     for p in existing_dir.glob("*.json"):
@@ -103,7 +109,7 @@ def existing_ids(existing_dir:Path|None):
     return ids
 
 def scout(existing_dir=None, fetcher=search):
-    existing=existing_ids(existing_dir)
+    prior_scout_ids=existing_ids(existing_dir)
     proposals=[]
     for ch in CHANNELS:
         rows=[]; errors=[]
@@ -115,15 +121,21 @@ def scout(existing_dir=None, fetcher=search):
             key=r.get("doi") or r.get("openalex_id") or r.get("title")
             if not key or key in seen: continue
             seen.add(key); uniq.append(r)
-        if ch["channel_id"] in existing:
-            status="DUPLICATE_CHANNEL_SUPPRESSED"
-        elif not uniq:
+        # Prior scout audits are append-only discovery history, not a
+        # canonical family/collector registry.  Self-history therefore cannot
+        # prove a duplicate.  Duplicate suppression requires a separately
+        # auditable canonical authority (not implemented by this ideation-only
+        # scout), so channels remain scouted or fail closed on evidence.
+        previously_scouted = ch["channel_id"] in prior_scout_ids
+        if not uniq:
             status="INSUFFICIENT_EXTERNAL_EVIDENCE_FAIL_CLOSED"
         else:
             status="SCOUTED_NOT_PREREGISTERED"
         pid=hashlib.sha256((ch["channel_id"]+"|"+"|".join(sorted(str(x.get("doi") or x.get("openalex_id") or "") for x in uniq))).encode()).hexdigest()[:16]
         proposals.append({
           "proposal_id":pid,"channel_id":ch["channel_id"],"status":status,
+          "previously_scouted":previously_scouted,
+          "duplicate_authority":None,
           "mechanism":ch["mechanism"],"required_new_data":ch["required_new_data"],
           "official_free_source_candidates":ch["official_free_source_candidates"],
           "literature_evidence":uniq[:12],"research_errors":errors,
