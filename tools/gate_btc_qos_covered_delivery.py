@@ -16,6 +16,15 @@ SAFE = dict(research_only=True, shadow_only=True, not_approved=True,
             engine_feed=False, orders_generated=0, real_capital_used=0)
 
 
+class MissingLockedSelectedPrices(ValueError):
+    def __init__(self, selected, state, day):
+        self.selected = sorted(selected)
+        self.source_locks = {symbol: state['candidate_source_lock'][symbol]
+                             for symbol in self.selected}
+        self.cutoff = day
+        super().__init__('MISSING_LOCKED_SELECTED_PRICES:'+','.join(self.selected))
+
+
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 def packed(obj): return (json.dumps(obj,sort_keys=True,indent=2,allow_nan=False)+'\n').encode()
 
@@ -113,7 +122,7 @@ def cover(state,master,day,evidence_root,upstream_sha,at,loaders=None):
     raw=gzip.compress(packed({'responses':getattr(session,'records',[]),'attempts':attempts}),mtime=0)
     if blocked:
         seal(evidence_root/'failed_attempts'/day/(sha(raw)+'.json.gz'),raw)
-        raise ValueError('MISSING_LOCKED_SELECTED_PRICES:'+','.join(blocked))
+        raise MissingLockedSelectedPrices(blocked,state,day)
     m={**SAFE,'signal_state_sha256':state['state_sha256'],'cutoff':day,
        'candidate_count':state['candidate_count'],'missing_candidates':missing,
        'quotes':quotes,'available_at_utc':at.isoformat(),'source_run_zip_sha256':upstream_sha,
@@ -204,7 +213,12 @@ def main():
         else:raise ValueError('WORKFLOW_UPSTREAM_OR_DELIVERY_FAILED')
         print(json.dumps(result,sort_keys=True));return 0
     except Exception as exc:
+        details=({'missing_selected_symbols':exc.selected,
+                  'missing_selected_source_locks':exc.source_locks,
+                  'missing_selected_cutoff':exc.cutoff,
+                  'scientific_credit':0} if isinstance(exc,MissingLockedSelectedPrices) else {})
         result=status(args.runtime_dir,config,'FAILED_QOS_DELIVERY',at,error=str(exc),
+                      **details,
                       requested_cutoff=(at.date()-timedelta(days=1)).isoformat())
         print(json.dumps(result,sort_keys=True));return 2
 
