@@ -227,6 +227,8 @@ class SelectorAlphaTerminalTests(unittest.TestCase):
         self.assertNotIn("\n  schedule:", workflow)
         self.assertIn('PIT_ARTIFACT_ID: "9027220602"', workflow)
         self.assertIn("actions/artifacts/${PIT_ARTIFACT_ID}/zip", workflow)
+        self.assertIn("SEALED_TERMINAL_RECORD=PASS; EXPIRED_SOURCE_ARTIFACT_NOT_REPRODUCED", workflow)
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", workflow)
         self.assertNotIn("binance.com/api", workflow.lower())
         self.assertNotIn("coinmarketcap.com/historical", workflow.lower())
 
