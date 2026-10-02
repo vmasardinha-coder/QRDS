@@ -67,6 +67,11 @@ def h1(args: argparse.Namespace) -> int:
     if status.get("status") == "STRUCTURAL_PASS" and status.get("qualified") is True:
         print("B3_GAP_CLASS=QUALIFIED_PASS")
         return 0
+    if status.get("status") == "NO_FROZEN_H1_SCHEDULE_FOR_DATE":
+        print("B3_GAP_CLASS=INELIGIBLE_NO_FROZEN_SCHEDULE")
+        print("SCIENTIFICALLY_QUALIFIED=0")
+        print("H1_INCREMENT=0")
+        return 0
     text = str(status.get("error") or "")
     ordinary, reason = classify(text)
     if not ordinary:
