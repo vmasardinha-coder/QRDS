@@ -1,10 +1,16 @@
 name: GATE BTC ALT Trail40 10 Shadow Archive
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_prl_alt_same_source_recovery.py
+      - .github/workflows/gate-btc-alt-trail40-10-shadow.yml
   pull_request:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-alt-trail40-10-shadow.yml
+      - tools/gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_alt_trail40_10_shadow_contract_v1.json
       - tools/gate_btc_alt_trail40_10_shadow_archive.py
       - tools/gate_btc_alt_trail40_10_rollover_guard.py
@@ -14,6 +20,7 @@ on:
       - tools/gate_btc_alt_trail40_10_cycle_20260930.json
       - tools/gate_btc_alt_trail40_10_shadow_contract_20260930.json
       - tests/test_gate_btc_alt_trail40_10_cycle.py
+      - tools/gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tests/test_gate_btc_alt_trail40_10_delivery_audit.py
       - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
@@ -114,6 +121,7 @@ jobs:
     # simbolo delistado segurou o V11 por quatro dias. O portao real esta no passo
     # que resolve a run, sobre o job daily-research-collection, e falha fechado.
     if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
     permissions:
@@ -230,13 +238,23 @@ jobs:
           PY
           echo "ALT_TRAIL_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
 
+      - name: Recover selected same-source exact closes from sealed QOS evidence
+        if: steps.daily_source.outputs.eligible == 'true'
+        run: >-
+          python -m tools.gate_btc_prl_alt_same_source_recovery
+          --master extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --qos-root runtime_repo/runtime/ledgers/qos_three_track
+          --day "$ALT_TRAIL_SNAPSHOT_ID"
+          --output recovered/qos_v2a_master_daily.csv
+          --receipt runtime_repo/runtime/ledgers/alt_trail40_10/source_evidence/"$ALT_TRAIL_SNAPSHOT_ID".json
+
       - name: Append approved independent monthly path
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python -m tools.gate_btc_alt_trail40_10_cycle --mode process
           --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
           --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
-          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --master-daily recovered/qos_v2a_master_daily.csv
           --snapshot-id "$ALT_TRAIL_SNAPSHOT_ID"
           --source-run-id "$SOURCE_RUN_ID"
 
