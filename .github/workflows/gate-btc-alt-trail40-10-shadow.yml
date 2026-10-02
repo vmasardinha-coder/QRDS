@@ -26,6 +26,9 @@ on:
       - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
       - tests/test_gate_btc_alt_trail40_10_rollover_guard.py
       - tests/test_gate_btc_alt_trail40_10_shadow_evaluator.py
+  schedule:
+    # Retry after QOS hourly same-source recovery, while the UTC cutoff is current.
+    - cron: '25 15,19,22 * * *'
   workflow_dispatch:
     inputs:
       run_id:
@@ -121,6 +124,7 @@ jobs:
     # simbolo delistado segurou o V11 por quatro dias. O portao real esta no passo
     # que resolve a run, sobre o job daily-research-collection, e falha fechado.
     if: >-
+      (github.event_name == 'schedule') ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
@@ -150,8 +154,27 @@ jobs:
         id: plan
         run: python -m tools.gate_btc_alt_trail40_10_cycle --mode plan --ledger-dir runtime_repo/runtime/ledgers/alt_trail40_10
 
+      - name: Check sealed QOS evidence on scheduled delayed retry
+        id: qos_ready
+        if: github.event_name == 'schedule' && steps.plan.outputs.can_append == 'true'
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          from pathlib import Path
+          target=(dt.datetime.now(dt.timezone.utc).date()-dt.timedelta(days=1)).isoformat()
+          root=Path('runtime_repo/runtime/ledgers/qos_three_track')
+          state=json.loads((root/'STATUS.json').read_text())
+          ready=(state.get('status')=='ACTIVE_PROSPECTIVE_THREE_TRACK'
+                 and state.get('latest_snapshot_date')==target
+                 and (root/'source_evidence'/'2026-09-30'/target/'PRICES.json').is_file())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('ready='+str(ready).lower()+'\n')
+          print('QOS_SAME_SOURCE_CURRENT='+str(ready), 'cutoff='+target)
+          PY
       - name: Resolve and validate Daily Research source run
-        if: steps.plan.outputs.can_append == 'true'
+        if: steps.plan.outputs.can_append == 'true' && (github.event_name != 'schedule' || steps.qos_ready.outputs.ready == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
