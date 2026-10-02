@@ -72,9 +72,7 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('tools/gate_btc_prl50_position_shadow_contract_v1.json', encoding='utf-8'))
-          assert p['authorization_id'] == 'PRL50_20260930_USER_20260928'
-          epoch=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/monthly_20260930/STATUS.json', encoding='utf-8'))
-          assert epoch['candidate_name'] == 'PRL50_POSITION'
+          assert p['candidate_name'] == 'PRL50_POSITION'
           assert p['candidate_definition']['activation_gain'] == 0.20
           assert p['candidate_definition']['giveback_fraction_of_peak_profit'] == 0.50
           assert p['first_eligible_signal_date'] == '2026-08-31'
@@ -234,7 +232,9 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/STATUS.json', encoding='utf-8'))
-          assert p['candidate_name'] == 'PRL50_POSITION'
+          assert p['authorization_id'] == 'PRL50_20260930_USER_20260928'
+          epoch=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/monthly_20260930/STATUS.json', encoding='utf-8'))
+          assert epoch['candidate_name'] == 'PRL50_POSITION'
           assert p['first_eligible_signal_date'] == '2026-09-30'
           assert p['legacy_economic_credit'] == 0
           assert p['research_only'] is True and p['shadow_only'] is True
