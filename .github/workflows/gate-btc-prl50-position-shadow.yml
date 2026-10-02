@@ -1,9 +1,15 @@
 name: GATE BTC PRL50 Position Shadow Archive
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_prl_alt_same_source_recovery.py
+      - .github/workflows/gate-btc-prl50-position-shadow.yml
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
       - tools/gate_btc_prl50_position_shadow_contract_v1.json
@@ -88,6 +94,7 @@ jobs:
     # simbolo delistado segurou o V11 por quatro dias. O portao real esta no passo
     # que resolve a run, sobre o job daily-research-collection, e falha fechado.
     if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
     permissions:
@@ -199,13 +206,23 @@ jobs:
           PY
           echo "PRL50_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
 
+      - name: Recover selected same-source exact closes from sealed QOS evidence
+        if: steps.daily_source.outputs.eligible == 'true'
+        run: >-
+          python -m tools.gate_btc_prl_alt_same_source_recovery
+          --master extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --qos-root runtime_repo/runtime/ledgers/qos_three_track
+          --day "$PRL50_SNAPSHOT_ID"
+          --output recovered/qos_v2a_master_daily.csv
+          --receipt runtime_repo/runtime/ledgers/prl50_position/source_evidence/"$PRL50_SNAPSHOT_ID".json
+
       - name: Append approved independent prospective cycle
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
           python -m tools.gate_btc_prl50_position_cycle --mode process
           --ledger-dir runtime_repo/runtime/ledgers/prl50_position
           --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
-          --master-daily extracted/v2a/data/processed/qos_v2a_master_daily.csv
+          --master-daily recovered/qos_v2a_master_daily.csv
           --snapshot-id "$PRL50_SNAPSHOT_ID"
           --source-run-id "$SOURCE_RUN_ID"
 
