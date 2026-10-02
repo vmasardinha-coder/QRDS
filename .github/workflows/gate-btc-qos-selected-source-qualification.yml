@@ -1,0 +1,85 @@
+name: GATE BTC QOS Selected Source Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-qos-selected-source-qualification.yml
+      - tools/gate_btc_qos_selected_source_probe.py
+      - tools/gate_btc_binance_spot_equivalence_probe.py
+      - tools/gate_btc_source_redundancy_probe.py
+      - tests/test_gate_btc_qos_selected_source_probe.py
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful Daily Research producer run for a completed cutoff
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  qualify-keyless-binance-spot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source probe contract
+        run: python -m unittest -q tests.test_gate_btc_qos_selected_source_probe
+      - name: Download immutable Daily V2A evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_RUN_ID: ${{ inputs.source_run_id || '36969563740' }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${REQUESTED_RUN_ID}" > source_run.json
+          python - <<'PY'
+          import json, os
+          r=json.load(open('source_run.json'))
+          assert r['name']=='GATE BTC Daily Research Collection'
+          assert r['head_branch']=='main' and r['conclusion']=='success'
+          assert r['event'] in ('schedule','workflow_dispatch')
+          PY
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${REQUESTED_RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          mkdir -p evidence
+          unzip -q artifact.zip -d evidence
+          test -f evidence/qos_daily/qos_v2a_outputs.zip
+          unzip -q evidence/qos_daily/qos_v2a_outputs.zip -d evidence/v2a
+          test -f evidence/v2a/data/processed/qos_v2a_master_daily.csv
+          python - <<'PY'
+          import json,os
+          m=json.load(open('evidence/v2a/outputs/v2a_run_manifest.json'))
+          assert m['technical_status']=='PASS' and m['real_orders']==0 and m['capital_used']==0
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('SOURCE_CUTOFF='+m['data_as_of']+'\n')
+          PY
+      - name: Qualify all eight selected prices and preceding CDD overlap
+        run: >-
+          python -m tools.gate_btc_qos_selected_source_probe
+          --master-daily evidence/v2a/data/processed/qos_v2a_master_daily.csv
+          --cutoff "$SOURCE_CUTOFF"
+          --output evidence/QOS_SELECTED_SOURCE_QUALIFICATION.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qos-selected-source-qualification-${{ github.run_id }}
+          path: evidence/QOS_SELECTED_SOURCE_QUALIFICATION.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Require physical qualification before any new source epoch
+        run: |
+          python - <<'PY'
+          import json
+          q=json.load(open('evidence/QOS_SELECTED_SOURCE_QUALIFICATION.json'))
+          assert q['status']=='PASS_PHYSICAL_QUALIFICATION', q['status']
+          assert q['source_admitted_to_existing_epoch'] is False
+          assert q['scientific_credit']==q['orders']==q['real_capital']==0
+          PY
