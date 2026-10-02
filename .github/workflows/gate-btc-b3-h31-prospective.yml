@@ -1,6 +1,11 @@
 name: GATE BTC B3 H31 Prospective
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_gap_classifier.py
+      - .github/workflows/gate-btc-b3-h31-prospective.yml
   schedule:
     - cron: "45 0,1,2 * * 2-6"
   workflow_dispatch:
@@ -9,6 +14,7 @@ on:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
       - "tools/gate_btc_b3_gap_classifier.py"
+      - "tests/test_gate_btc_b3_gap_classifier_source.py"
       - ".github/workflows/gate-btc-b3-h31-prospective.yml"
 
 permissions:
@@ -38,6 +44,7 @@ jobs:
         run: |
           python tools/gate_btc_b3_h31_prospective_collect.py --validate-contract-only
           python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
+          python -m unittest -v tests/test_gate_btc_b3_gap_classifier_source.py tests/test_gate_btc_b3_gap_classifier_schedule.py
 
   collect:
     needs: contract

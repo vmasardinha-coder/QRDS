@@ -9,14 +9,15 @@ from pathlib import Path
 
 COUNT_RE = re.compile(r"(?:WIN|WDO)_M5_COUNT got=(\d+) expected=(\d+)")
 LATTICE_RE = re.compile(r"(?:WIN|WDO)_M5_LATTICE_MISMATCH missing=(\d+) extra=(\d+)")
+SOURCE_UNAVAILABLE_RE = re.compile(r"RuntimeError: SOURCE_NOT_READY (\d{4}-\d{2}-\d{2}) SOURCE_RETRY_EXHAUSTED")
 
 
 def classify(text: str) -> tuple[bool, str | None]:
     """Return (ordinary_gap, matched_reason).
 
-    Only an incomplete expected M5 lattice is treated as an operational source gap.
-    Extra bars, schema/contract/tick/OHLC mismatches and processing errors remain hard
-    failures.  No coverage threshold is invented here and no incomplete observation is
+    An incomplete expected M5 lattice or an explicitly exhausted unavailable
+    source is an operational gap. Extra bars, schema/contract/tick/OHLC mismatches
+    and processing errors remain hard failures.  No coverage threshold is invented here and no incomplete observation is
     promoted to scientific eligibility.
     """
     m = COUNT_RE.search(text)
@@ -29,6 +30,9 @@ def classify(text: str) -> tuple[bool, str | None]:
         missing, extra = map(int, m.groups())
         if missing > 0 and extra == 0:
             return True, m.group(0)
+    m = SOURCE_UNAVAILABLE_RE.search(text)
+    if m:
+        return True, f"SOURCE_NOT_READY {m.group(1)} SOURCE_RETRY_EXHAUSTED"
     return False, None
 
 
