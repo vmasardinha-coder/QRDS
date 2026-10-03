@@ -181,7 +181,7 @@ jobs:
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Download V2A daily evidence
-        if: steps.plan.outputs.can_append == 'true'
+        if: steps.plan.outputs.can_append == 'true' && (github.event_name != 'schedule' || steps.qos_ready.outputs.ready == 'true')
         id: daily_source
         env:
           GH_TOKEN: ${{ github.token }}
