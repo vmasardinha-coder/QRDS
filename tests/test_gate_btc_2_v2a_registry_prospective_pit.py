@@ -103,5 +103,25 @@ class RegistryProspectivePitTests(unittest.TestCase):
         self.assertFalse(runtime["promotion_allowed"])
 
 
+    def test_geckoterminal_429_retries_same_frozen_source(self):
+        import io
+        import urllib.error
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+
+        entry = next(x for x in self.source["entries"] if x["symbol"] == "OHM")
+        url = "https://api.geckoterminal.com/api/v2/networks/" + entry["source_symbol"].split(":")[0]
+        transient = urllib.error.HTTPError(url, 429, "Too Many Requests", {"Retry-After": "120"}, None)
+        with patch.object(mod.urllib.request, "urlopen", side_effect=[transient, io.BytesIO(b'{"data":{}}')]) as fetch, \
+             patch.object(mod.time, "sleep") as pause:
+            captured_url, raw = mod._probe(entry, datetime(2026, 10, 3, tzinfo=timezone.utc))
+        self.assertIn(entry["source_symbol"].split(":")[1], captured_url)
+        self.assertEqual(raw, b'{"data":{}}')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(pause.call_args_list[0].args, (5.0,))
+        self.assertEqual(pause.call_args_list[1].args, (60.0,))
+
+
+
 if __name__ == "__main__":
     unittest.main()
