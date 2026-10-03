@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-10-03T05:23:54.007250+00:00`
+Generated: `2026-10-03T13:04:23.795716+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
@@ -8,7 +8,9 @@ Generated: `2026-10-03T05:23:54.007250+00:00`
 - Operational/scientific lanes tracked: **12**
 - Registered research backlog: **2**
 - Backlog currently NOT_ELIGIBLE: **5**
-- Canonical ledger sessions: **7**
+- Canonical ledger records: **7**
+- Valid non-gap sessions: **4**
+- Immutable observation gaps: **3**
 - Frozen warmup range: **10–252 prior sessions**
 - Nominal families lookback-satisfied for next session: **0**
 - Families with prospective trigger: **0**
@@ -28,7 +30,7 @@ Generated: `2026-10-03T05:23:54.007250+00:00`
 | 200 | 256 |
 | 252 | 256 |
 
-Nominal maturity uses only count of prior canonical ledger sessions. Actual z-score eligibility still requires complete finite feature history for the frozen family key; unavailable/gap observations never count as history.
+Nominal maturity uses only prior canonical non-gap sessions. observation_gap records remain immutable zero-credit evidence and never advance warmup. Actual z-score eligibility still requires complete finite feature history for the frozen family key.
 
 | Lane | State | Next gate |
 |---|---|---|

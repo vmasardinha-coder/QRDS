@@ -6,7 +6,7 @@
     "scientific_credit": 0,
     "source_admission_authority": false
   },
-  "generated_at_utc": "2026-10-03T05:23:54.007250+00:00",
+  "generated_at_utc": "2026-10-03T13:04:23.795716+00:00",
   "lanes": {
     "ECONOMICS_MATURITY": {
       "available": true,
@@ -62,10 +62,12 @@
         "FEATURE_UNAVAILABLE": 580
       },
       "latest_session": "2026-10-02",
-      "ledger_sessions": 7,
+      "ledger_records": 7,
       "next_gate": "FORWARD_TRIGGERS_AND_OUTCOMES",
+      "observation_gap_sessions": 3,
       "population": 580,
-      "state": "ACTIVE_AUTONOMOUS_PROSPECTIVE"
+      "state": "ACTIVE_AUTONOMOUS_PROSPECTIVE",
+      "valid_sessions": 4
     },
     "PARALLEL_FRONTIER": {
       "family_ids_allocated_at_dispatch": 0,
@@ -102,7 +104,7 @@
       "state": "AVAILABLE_SOURCE_CANDIDATE"
     },
     "WARMUP_MATURITY": {
-      "ledger_sessions_observed": 7,
+      "ledger_records_observed": 7,
       "lookback_family_counts": {
         "10": 5,
         "120": 26,
@@ -119,8 +121,10 @@
       "nominal_families_lookback_satisfied_for_next_session": 0,
       "nominal_families_still_warming_for_next_session": 580,
       "nominal_next_unlock_lookback_sessions": 10,
-      "note": "Nominal maturity uses only count of prior canonical ledger sessions. Actual z-score eligibility still requires complete finite feature history for the frozen family key; unavailable/gap observations never count as history.",
-      "state": "PROSPECTIVE_WARMUP_ACCUMULATING"
+      "note": "Nominal maturity uses only prior canonical non-gap sessions. observation_gap records remain immutable zero-credit evidence and never advance warmup. Actual z-score eligibility still requires complete finite feature history for the frozen family key.",
+      "observation_gap_sessions": 3,
+      "state": "PROSPECTIVE_WARMUP_ACCUMULATING",
+      "valid_sessions_observed": 4
     }
   },
   "mode": "READ_ONLY_CANONICAL_INVENTORY",
@@ -138,15 +142,17 @@
     "checkpoint_60_complete_cells": 0,
     "experimental_shadow_active": 580,
     "families_with_any_trigger": 0,
-    "ledger_sessions_observed": 7,
+    "ledger_records_observed": 7,
     "max_trigger_count": 0,
     "maximum_warmup_lookback_sessions": 252,
     "minimum_warmup_lookback_sessions": 10,
     "nominal_families_lookback_satisfied_for_next_session": 0,
+    "observation_gap_sessions": 3,
     "reclassified_total": 2560,
     "research_backlog_not_eligible": 5,
     "research_backlog_registered": 2,
     "tracked_lanes": 12,
-    "valid_scientific_rejections": 1980
+    "valid_scientific_rejections": 1980,
+    "valid_sessions_observed": 4
   }
 }
