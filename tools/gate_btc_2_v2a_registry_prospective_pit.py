@@ -38,7 +38,7 @@ def _json_bytes(obj: Any) -> bytes:
     return (json.dumps(obj, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
-def _get(url: str, retries: int = 3) -> bytes:
+def _get(url: str, retries: int = 3, retry_cap_seconds: float = 45.0) -> bytes:
     last: Exception | None = None
     for n in range(retries):
         try:
@@ -56,7 +56,7 @@ def _get(url: str, retries: int = 3) -> bytes:
                     delay = float(retry_after) if retry_after is not None else 5.0 * (2 ** n)
                 except ValueError:
                     delay = 5.0 * (2 ** n)
-                time.sleep(min(max(delay, 2.0), 45.0))
+                time.sleep(min(max(delay, 2.0), retry_cap_seconds))
             else:
                 time.sleep(1.5 * (n + 1))
         except Exception as exc:  # fail-closed after bounded retries
@@ -124,8 +124,8 @@ def _probe(entry: dict[str, Any], now: datetime) -> tuple[str, bytes]:
         )
         # Mechanical transport pacing only: keep the exact frozen pool/source,
         # but stay below burst limits and back off boundedly on HTTP 429.
-        time.sleep(2.5)
-        return u, _get(u, retries=8)
+        time.sleep(5.0)
+        return u, _get(u, retries=10, retry_cap_seconds=60.0)
     if upper.startswith("DERIBIT_SPOT"):
         end_ms = int(now.timestamp() * 1000)
         start_ms = int((now - timedelta(days=3)).timestamp() * 1000)
