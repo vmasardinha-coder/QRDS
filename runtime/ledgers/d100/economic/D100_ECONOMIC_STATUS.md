@@ -20,12 +20,12 @@
     "no_counter_reset": true,
     "no_backfill": true
   },
-  "updated_at_utc": "2026-10-03T01:11:51.871294Z",
+  "updated_at_utc": "2026-10-03T01:25:44.882890Z",
   "last_error": "RuntimeError: source request failed: HTTPError: HTTP Error 429: Too Many Requests",
   "scientific_blockers": [
     "TECHNICAL_SOURCE_OR_EVIDENCE_FAILURE"
   ],
-  "workflow_run_id": "37085093998",
+  "workflow_run_id": "37085962870",
   "status": "BLOCKED_TECHNICAL_QUALIFICATION",
   "next_action": "REPAIR_TECHNICAL_FAILURE_OR_EXPLICIT_INTERRUPTION_DISPOSITION"
 }
