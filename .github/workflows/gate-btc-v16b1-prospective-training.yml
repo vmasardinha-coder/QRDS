@@ -1,0 +1,89 @@
+name: GATE BTC V16B1 Prospective Training Corpus
+on:
+  schedule:
+    - cron: "35 0 * * 5"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v16b1-prospective-training.yml
+      - tools/gate_btc_v16b1_prospective_training.py
+      - tests/test_gate_btc_v16b1_prospective_training.py
+      - artifacts/gate_btc/v16b/GATE_BTC_V16B1_PROSPECTIVE_MODEL_TRAINING_ADMISSION_20261003.json
+permissions:
+  contents: write
+concurrency:
+  group: gate-btc-v16b1-prospective-training
+  cancel-in-progress: false
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+jobs:
+  seal-features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: canonical-runtime
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Test frozen prospective corpus plumbing
+        working-directory: source
+        run: |
+          pip install pandas numpy requests pytest scikit-learn
+          python -m pytest -q tests/test_gate_btc_v16b1_prospective_training.py
+      - name: Resolve latest untouched Thursday universe
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          root=pathlib.Path("canonical-runtime/runtime/evidence/v16b1/prospective_universe/weeks")
+          weeks=sorted([p for p in root.glob("*/UNIVERSE.json") if p.parent.name >= "2026-10-08"])
+          if not weeks: raise SystemExit("FAIL_CLOSED_NO_UNTOUCHED_THURSDAY_UNIVERSE")
+          p=weeks[-1]; u=json.loads(p.read_text())
+          cap=pathlib.Path("canonical-runtime")/u["snapshot_date"]
+          # Locate exact hash-bound raw/evidence in immutable capture corpus.
+          captures=pathlib.Path("canonical-runtime/runtime/evidence/v16b1/prospective_universe/captures")
+          found=[]
+          for c in captures.glob("run_*"):
+              meta=c/"CAPTURE.json"
+              if meta.exists() and json.loads(meta.read_text()).get("snapshot_id")==u["snapshot_id"]: found.append(c)
+          if len(found)!=1: raise SystemExit("FAIL_CLOSED_CAPTURE_NOT_UNIQUE")
+          pathlib.Path("/tmp/v16b1-week").write_text(p.parent.name)
+          pathlib.Path("/tmp/v16b1-capture").write_text(str(found[0]))
+          PY
+      - name: Build frozen source and feature panel
+        if: github.event_name != 'pull_request'
+        working-directory: source
+        run: |
+          WEEK="$(cat /tmp/v16b1-week)"; CAP="../$(cat /tmp/v16b1-capture)"
+          RAW="$(find "$CAP" -name '*.raw.json' -print -quit)"
+          EV="$(find "$CAP" -name '*.evidence.json' -print -quit)"
+          test -n "$RAW" && test -n "$EV"
+          python -m tools.gate_btc_v16b_signal_source --cmc-snapshot "$RAW" --cmc-evidence "$EV" --signal-date "$WEEK" --out-dir /tmp/v16b1-source
+          python -m tools.gate_btc_v16b_source_bound_panel --daily-prices /tmp/v16b1-source/daily_prices.csv --weekly-universe /tmp/v16b1-source/weekly_universe.csv --signal-market-source-manifest /tmp/v16b1-source/signal_market_source_manifest.json --output /tmp/v16b1-source/panel.csv --manifest /tmp/v16b1-source/panel_manifest.json
+          python -m tools.gate_btc_v16b1_prospective_training seal-features --panel /tmp/v16b1-source/panel.csv --manifest /tmp/v16b1-source/panel_manifest.json --runtime-root ../canonical-runtime --signal-date "$WEEK" --source-sha "$(git rev-parse HEAD)"
+      - name: Publish append-only feature seal
+        if: github.event_name != 'pull_request'
+        working-directory: canonical-runtime
+        run: |
+          set -euo pipefail
+          git add -- runtime/evidence/v16b1/prospective_training
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git commit -m "Persist V16B.1 prospective training feature seal"
+          git pull --rebase origin gate-btc-runtime
+          git push origin HEAD:gate-btc-runtime
+      - name: Safety boundary
+        run: |
+          test "$GATE_BTC_RESEARCH_ONLY" = true
+          test "$GATE_BTC_SHADOW_ONLY" = true
+          test "$GATE_BTC_NOT_APPROVED" = true
+          echo "ENGINE_FEED=false ORDERS=0 REAL_CAPITAL=0 NO_BACKFILL=true NO_RETUNE=true"
