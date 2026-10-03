@@ -1,0 +1,49 @@
+{
+  "api_key_supplied": false,
+  "capabilities": {
+    "availability_timestamps": true,
+    "explicit_flow_fields_observed": [],
+    "latest_history_time": "1790121600",
+    "stablecoin_circulating_supply": true,
+    "stablecoin_supply_history": true,
+    "stablecoin_transfer_or_exchange_flow_aggregate": false
+  },
+  "channel_id": "CRYPTO_STABLECOIN_LIQUIDITY_IMPULSE",
+  "circulating_supply_change_treated_as_flow": false,
+  "economic_outcomes_read": false,
+  "endpoints": {
+    "history": {
+      "http_status": 200,
+      "url": "https://stablecoins.llama.fi/stablecoincharts/all"
+    },
+    "stablecoins": {
+      "http_status": 200,
+      "url": "https://stablecoins.llama.fi/stablecoins"
+    }
+  },
+  "generated_at_utc": "2026-09-23T10:49:36.992660Z",
+  "grammar_signature": "f34d320d5a70b6c4e86791a526dc24e3956efad52d405e837587e1b0f732b873",
+  "historical_backfill_started": false,
+  "homegrown_exchange_labels_used": false,
+  "market_cap_change_treated_as_flow": false,
+  "namespace": "PF::f34d320d5a70b6c4",
+  "next_gate": "RETAIN_BLOCKER_OR_CREATE_NEW_PREREGISTRATION_FOR_A_DIFFERENT_EXPLICITLY_NAMED_SOURCE_OR_PROXY",
+  "provider": "DEFILLAMA_PUBLIC_STABLECOIN_API",
+  "proxy_substitution_used": false,
+  "qualification": {
+    "reason": "SUPPLY_AND_HISTORY_PUBLIC_BUT_NO_EXPLICIT_TRANSFER_OR_EXCHANGE_FLOW_AGGREGATE_OBSERVED",
+    "status": "BLOCKED_REQUIRED_FLOW_CAPABILITY_NOT_PUBLICLY_AVAILABLE"
+  },
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v1"
+}

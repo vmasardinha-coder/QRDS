@@ -1,0 +1,45 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_MINER_HASHRATE_STRESS",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "299cba4ee2c43c849903eadbcceeecb306221ae207b32750dd00103aacd152e7",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Lagged mining-network and miner-economics stress may capture forced-supply or network-security states that are structurally different from trading-venue signals.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "public Bitcoin blockchain data",
+        "Coin Metrics Community API",
+        "mempool.space public data"
+      ],
+      "required_new_data": [
+        "hashrate or difficulty",
+        "miner revenue or fee metrics",
+        "BTC spot reference prices",
+        "metric availability timestamps"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}
