@@ -1,5 +1,5 @@
 {
-  "blocked_semantics_count": 0,
+  "blocked_semantics_count": 3,
   "families": [
     {
       "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
@@ -81,6 +81,37 @@
       "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
       "status": "QUEUED_FOR_SOURCE_COST_QUALIFICATION"
+    },
+    {
+      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
+      "cost_applicability_proven": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_3BC1506DBCE5",
+      "grammar_signature": "3bc1506dbce5d9ddaf182da1e91f5dd08c7299b0d2b8be0d92d4d83d01806123",
+      "historical_testing_started": false,
+      "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
+      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "prereg_path": "runtime_repo/runtime/factory_autonomy/grammar_preregistrations/XAGRAMMAR_3BC1506DBCE5.json",
+      "prereg_sha256": "c6417a099707ad2eb74985ac603545c35779b1cde34f17b9f2ebcb89de03281f",
+      "required_frozen_semantics": [
+        "feature",
+        "window",
+        "lookback",
+        "target"
+      ],
+      "required_new_data": [
+        "B3 index preview/final portfolio files",
+        "announcement/effective dates",
+        "B3 security prices",
+        "exchange calendar"
+      ],
+      "semantic_preregistration_complete": false,
+      "source_qualified": false,
+      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
     },
     {
       "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
@@ -282,6 +313,69 @@
       "status": "QUEUED_FOR_SOURCE_COST_QUALIFICATION"
     },
     {
+      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
+      "cost_applicability_proven": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_AEEC63B0F807",
+      "grammar_signature": "aeec63b0f807f90ef3a325130938ca756093aaa9fad8c864e6640c4fb3f584c5",
+      "historical_testing_started": false,
+      "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
+      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "prereg_path": "runtime_repo/runtime/factory_autonomy/grammar_preregistrations/XAGRAMMAR_AEEC63B0F807.json",
+      "prereg_sha256": "f3e193c0a4e96fbdbf4a337df71e7602c488fcf952a5e166450e140275ca2661",
+      "required_frozen_semantics": [
+        "feature",
+        "window",
+        "lookback",
+        "target"
+      ],
+      "required_new_data": [
+        "B3 listed option chain",
+        "underlying B3 asset",
+        "expiry/strike metadata"
+      ],
+      "semantic_preregistration_complete": false,
+      "source_qualified": false,
+      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+    },
+    {
+      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
+      "cost_applicability_proven": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_D30E657A4920",
+      "grammar_signature": "d30e657a4920a06d7cb03a359edc0e8e3a39ee9a1c59045c384e0ab38db51b80",
+      "historical_testing_started": false,
+      "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
+      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "prereg_path": "runtime_repo/runtime/factory_autonomy/grammar_preregistrations/XAGRAMMAR_D30E657A4920.json",
+      "prereg_sha256": "ece42c881f15cbe4675a39a09fe4d81538a3cd18dd02dd4f2dfb597188b3ffe8",
+      "required_frozen_semantics": [
+        "feature",
+        "window",
+        "lookback",
+        "target"
+      ],
+      "required_new_data": [
+        "BCB FX-swap auction announcements/results",
+        "official event timing",
+        "BRL market data",
+        "B3 market data",
+        "calendars"
+      ],
+      "semantic_preregistration_complete": false,
+      "source_qualified": false,
+      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+    },
+    {
       "channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
       "cost_applicability_proven": false,
       "economics_read": false,
@@ -360,7 +454,7 @@
       "status": "QUEUED_FOR_SOURCE_COST_QUALIFICATION"
     }
   ],
-  "generated_at_utc": "2026-10-03T13:06:19.050899Z",
+  "generated_at_utc": "2026-10-03T15:14:35.126088Z",
   "mode": "CUMULATIVE_PREREG_TO_SOURCE_COST_GATE_ONLY",
   "next_stage": "SOURCE_COST_QUALIFICATION_THEN_EXISTING_FACTORY",
   "safety": {
@@ -379,5 +473,5 @@
   "schema": "qrds.factory.grammar_source_cost_intake_runtime.v1",
   "semantic_prereg_applied_count": 9,
   "semantic_ready_count": 9,
-  "transported_count": 9
+  "transported_count": 12
 }
