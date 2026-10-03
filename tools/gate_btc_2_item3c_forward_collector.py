@@ -148,6 +148,23 @@ def spacing_gap_diagnostics(rows: list[dict]) -> list[dict]:
     return out
 
 
+def spacing_gap_source_evidence(rows: list[dict]) -> list[dict]:
+    """Preserve observed neighbors around spacing gaps; never synthesize missing bars."""
+    out = []
+    for i, (a, b) in enumerate(zip(rows, rows[1:])):
+        ta = datetime.fromisoformat(a["timestamp"])
+        tb = datetime.fromisoformat(b["timestamp"])
+        if int((tb - ta).total_seconds()) == 300:
+            continue
+        out.append({
+            "after_observed_row": a,
+            "before_observed_row": b,
+            "after_index": i,
+            "before_index": i + 1,
+        })
+    return out
+
+
 def enough_session_rows(rows: list[dict], max_window: int) -> bool:
     # latest required regular exit = next-bar entry + 120m horizon
     required_index = max_window // 5 + 120 // 5
@@ -369,6 +386,7 @@ def main() -> int:
                 "gap_reason": "SESSION_M5_SPACING_FAIL",
                 "required_spacing_seconds": 300,
                 "spacing_gap_diagnostics": spacing_gap_diagnostics(rows),
+                "spacing_gap_source_evidence": spacing_gap_source_evidence(rows),
             },
             "active_family_count": len(contracts),
             "family_state_counts": counts,
