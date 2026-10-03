@@ -61,19 +61,29 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
     if not lookbacks or any(x <= 0 for x in lookbacks):
         raise RuntimeError("INVALID_STANDARDIZATION_LOOKBACK")
     lookback_counts = Counter(lookbacks)
+    ledger_files = sorted((shadow_root / "ledger").glob("*.json"))
     ledger_sessions = int(cr["collection"]["ledger_session_count"])
-    nominal_next_session_ready = sum(count for lb, count in lookback_counts.items() if lb <= ledger_sessions)
-    remaining_lookbacks = sorted(lb for lb in lookback_counts if lb > ledger_sessions)
+    if ledger_sessions != len(ledger_files):
+        raise RuntimeError("LEDGER_FILE_COUNT_MISMATCH")
+    ledger_rows = [load_json(p) for p in ledger_files]
+    valid_sessions = sum(1 for row in ledger_rows if row.get("observation_gap") is not True)
+    gap_sessions = sum(1 for row in ledger_rows if row.get("observation_gap") is True)
+    if valid_sessions + gap_sessions != ledger_sessions:
+        raise RuntimeError("LEDGER_SESSION_CLASSIFICATION_MISMATCH")
+    nominal_next_session_ready = sum(count for lb, count in lookback_counts.items() if lb <= valid_sessions)
+    remaining_lookbacks = sorted(lb for lb in lookback_counts if lb > valid_sessions)
     warmup_maturity = {
         "state": "PROSPECTIVE_WARMUP_ACCUMULATING" if nominal_next_session_ready < eligible else "NOMINAL_LOOKBACKS_SATISFIED",
-        "ledger_sessions_observed": ledger_sessions,
+        "ledger_records_observed": ledger_sessions,
+        "valid_sessions_observed": valid_sessions,
+        "observation_gap_sessions": gap_sessions,
         "lookback_family_counts": {str(k): lookback_counts[k] for k in sorted(lookback_counts)},
         "minimum_lookback_sessions": min(lookbacks),
         "maximum_lookback_sessions": max(lookbacks),
         "nominal_families_lookback_satisfied_for_next_session": nominal_next_session_ready,
         "nominal_families_still_warming_for_next_session": eligible - nominal_next_session_ready,
         "nominal_next_unlock_lookback_sessions": remaining_lookbacks[0] if remaining_lookbacks else None,
-        "note": "Nominal maturity uses only count of prior canonical ledger sessions. Actual z-score eligibility still requires complete finite feature history for the frozen family key; unavailable/gap observations never count as history.",
+        "note": "Nominal maturity uses only prior canonical non-gap sessions. observation_gap records remain immutable zero-credit evidence and never advance warmup. Actual z-score eligibility still requires complete finite feature history for the frozen family key.",
         "next_gate": "ACCUMULATE_FROZEN_PROSPECTIVE_SESSION_HISTORY",
     }
 
@@ -155,7 +165,9 @@ def build(runtime_root: Path, main_root: Path) -> dict[str, Any]:
         "ITEM3_EXPERIMENTAL_SHADOW": {
             "state": "ACTIVE_AUTONOMOUS_PROSPECTIVE",
             "population": int(cr["population"]["active"]),
-            "ledger_sessions": ledger_sessions,
+            "ledger_records": ledger_sessions,
+            "valid_sessions": valid_sessions,
+            "observation_gap_sessions": gap_sessions,
             "latest_session": cr["collection"]["latest_ledger_session"],
             "latest_family_states": cr["collection"]["latest_family_state_counts"],
             "next_gate": "FORWARD_TRIGGERS_AND_OUTCOMES",
@@ -258,7 +270,7 @@ def render_md(x: dict[str, Any]) -> str:
         f"- Operational/scientific lanes tracked: **{s['tracked_lanes']}**",
         f"- Registered research backlog: **{s['research_backlog_registered']}**",
         f"- Backlog currently NOT_ELIGIBLE: **{s['research_backlog_not_eligible']}**",
-        f"- Canonical ledger sessions: **{s['ledger_sessions_observed']}**",
+        f"- Canonical ledger records: **{s['ledger_records_observed']}**",\n        f"- Valid non-gap sessions: **{s['valid_sessions_observed']}**",\n        f"- Immutable observation gaps: **{s['observation_gap_sessions']}**",
         f"- Frozen warmup range: **{s['minimum_warmup_lookback_sessions']}–{s['maximum_warmup_lookback_sessions']} prior sessions**",
         f"- Nominal families lookback-satisfied for next session: **{s['nominal_families_lookback_satisfied_for_next_session']}**",
         f"- Families with prospective trigger: **{s['families_with_any_trigger']}**",
