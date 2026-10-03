@@ -104,7 +104,8 @@ jobs:
           cp source_repo/tools/gate_btc_factory/GRAMMAR_007_SEMANTIC_PREREG.v1.json "$ROOT/GRAMMAR_007_SEMANTIC_PREREG.v1.json"
           mkdir -p "$ROOT/grammar_source_cost_evidence"
           python source_repo/tools/gate_btc_factory/grammar_source_cost_qualifier.py --intake GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json --protocol source_repo/tools/gate_btc_factory/GRAMMAR_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json --evidence-dir "$ROOT/grammar_source_cost_evidence" --output "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json"
-          python source_repo/tools/gate_btc_factory/grammar_existing_factory_intake.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --output "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json"\n          python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
+          python source_repo/tools/gate_btc_factory/grammar_existing_factory_intake.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --output "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json"
+          python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
           python - <<'PY'
           import json
           h=json.load(open('GRAMMAR_HANDOFF_RUNTIME.json'))
