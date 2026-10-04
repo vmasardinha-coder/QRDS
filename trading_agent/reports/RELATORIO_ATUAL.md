@@ -10,49 +10,55 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-03-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $53,472.63 |
-| Retorno do dia | +1.11% |
-| Retorno desde inicio (2026-08-06) | +6.95% |
-| Benchmark SPY | -0.75% |
-| **Alfa vs SPY** | **+7.70%** |
-| Caixa | $22.55 |
+| NAV | $53,941.76 |
+| Retorno do dia | +2.00% |
+| Retorno desde inicio (2026-08-06) | +7.88% |
+| Benchmark SPY | -0.02% |
+| **Alfa vs SPY** | **+7.90%** |
+| Caixa | $0.00 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| AMAT | 10.6875 | $529.30 | $5,656.92 | 10.6% |
-| LRCX | 16.1 | $340.10 | $5,475.60 | 10.2% |
-| INTC | 45.4629 | $120.00 | $5,455.55 | 10.2% |
-| AMD | 8.81939 | $615.73 | $5,430.36 | 10.2% |
-| MU | 4.94041 | $1,097.39 | $5,421.55 | 10.1% |
-| CAT | 6.52327 | $826.35 | $5,390.50 | 10.1% |
-| SLB | 108.559 | $48.66 | $5,282.48 | 9.9% |
-| PANW | 13.312 | $396.25 | $5,274.89 | 9.9% |
-| MRK | 36.398 | $143.81 | $5,234.40 | 9.8% |
-| TGT | 30.8094 | $156.70 | $4,827.84 | 9.0% |
+| LRCX | 16.1 | $347.49 | $5,594.58 | 10.4% |
+| AMD | 8.81939 | $633.91 | $5,590.70 | 10.4% |
+| CAT | 6.52327 | $845.42 | $5,514.90 | 10.2% |
+| INTC | 45.4629 | $119.33 | $5,425.09 | 10.1% |
+| AMAT | 9.98954 | $540.04 | $5,394.75 | 10.0% |
+| CSCO | 48.0816 | $112.20 | $5,394.75 | 10.0% |
+| MU | 4.94041 | $1,074.89 | $5,310.39 | 9.8% |
+| SLB | 108.559 | $48.74 | $5,291.17 | 9.8% |
+| MRK | 36.398 | $144.30 | $5,252.24 | 9.7% |
+| TGT | 33.1616 | $156.00 | $5,173.20 | 9.6% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| AMAT | VENDA | 0.698006 | $539.77 | $376.76 | rebalanceio |
+| PANW | VENDA | 13.312 | $403.04 | $5,365.25 | rebalanceio |
+| CSCO | COMPRA | 48.0816 | $112.26 | $5,397.45 | rebalanceio |
+| TGT | COMPRA | 2.35214 | $156.08 | $367.12 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (SPY):** momentum de +14.3% — so entram ativos acima disto
-- **Candidatos elegiveis:** 44
+- **Gatilho:** desvio de peso em CSCO: 0.0% vs alvo 10.0%
+- **Obstaculo (SPY):** momentum de +14.5% — so entram ativos acima disto
+- **Candidatos elegiveis:** 46
 - **Fontes usadas:** nasdaq: 101
 
 | Rejeitado | Motivo |
 |---|---|
-| ABBV | nao bate o benchmark (+12.3% <= +14.4%) |
-| ABT | nao bate o benchmark (-18.7% <= +14.4%) |
-| ACN | nao bate o benchmark (-23.7% <= +14.4%) |
-| ADBE | nao bate o benchmark (-18.9% <= +14.4%) |
-| AMT | nao bate o benchmark (-8.5% <= +14.4%) |
-| AVGO | nao bate o benchmark (+12.1% <= +14.4%) |
-| AXP | nao bate o benchmark (-2.4% <= +14.4%) |
-| BA | nao bate o benchmark (-4.7% <= +14.4%) |
-| _(+48 outros)_ | |
+| ABBV | nao bate o benchmark (+7.1% <= +14.5%) |
+| ABT | nao bate o benchmark (-17.2% <= +14.5%) |
+| ACN | nao bate o benchmark (-23.0% <= +14.5%) |
+| ADBE | nao bate o benchmark (-18.6% <= +14.5%) |
+| AMT | nao bate o benchmark (-10.6% <= +14.5%) |
+| AVGO | nao bate o benchmark (+10.2% <= +14.5%) |
+| AXP | nao bate o benchmark (+0.4% <= +14.5%) |
+| BA | nao bate o benchmark (-2.9% <= +14.5%) |
+| _(+46 outros)_ | |
 
 </details>
 
@@ -60,37 +66,30 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $63,863.61 |
-| Retorno do dia | -6.36% |
-| Retorno desde inicio (2026-08-06) | +27.73% |
-| Benchmark BTC | +31.35% |
-| **Alfa vs BTC** | **-3.62%** |
+| NAV | $64,227.58 |
+| Retorno do dia | -5.83% |
+| Retorno desde inicio (2026-08-06) | +28.46% |
+| Benchmark BTC | +31.57% |
+| **Alfa vs BTC** | **-3.11%** |
 | Caixa | $3,174.99 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.377512 | $84,610.30 | $31,941.38 | 50.0% |
-| ENA | 40736.4 | $0.24 | $9,582.41 | 15.0% |
-| NEAR | 2032.76 | $4.71 | $9,582.41 | 15.0% |
-| UNI | 1058.94 | $9.05 | $9,582.41 | 15.0% |
+| BTC | 0.377512 | $84,753.17 | $31,995.31 | 49.8% |
+| NEAR | 2032.76 | $4.79 | $9,736.29 | 15.2% |
+| ENA | 40736.4 | $0.24 | $9,732.32 | 15.2% |
+| UNI | 1058.94 | $9.05 | $9,588.66 | 14.9% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BTC | VENDA | 0.0249501 | $84,525.69 | $2,108.92 | rebalanceio |
-| ENA | VENDA | 1570.83 | $0.23 | $369.14 | rebalanceio |
-| MOVR | VENDA | 3412.22 | $1.91 | $6,527.88 | rebalanceio |
-| NEAR | VENDA | 116.528 | $4.71 | $548.76 | rebalanceio |
-| UNI | COMPRA | 1058.94 | $9.06 | $9,592.00 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em UNI: 0.0% vs alvo 15.0%
-- **Obstaculo (BTC):** momentum de +18.6% — so entram ativos acima disto
-- **Candidatos elegiveis:** 32
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de +18.8% — so entram ativos acima disto
+- **Candidatos elegiveis:** 33
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -105,7 +104,7 @@ _Sem movimentacoes hoje._
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.2M < 1M) |
 | ATOM | liquidez baixa (0.9M < 1M) |
-| _(+98 outros)_ | |
+| _(+97 outros)_ | |
 
 </details>
 
