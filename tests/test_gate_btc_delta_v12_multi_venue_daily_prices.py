@@ -2,7 +2,7 @@ import csv
 import json
 import tempfile
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -28,17 +28,18 @@ def bybit_payload(count=40, price=200.0):
         "list": [[str(ms(d)), price, price, price, price, 1.0] for d in days(count)]}}).encode()
 
 
-def okx_payload(count=40, price=300.0, include_open_bar=False):
-    rows = [[str(ms(d)), price, price, price, price, 1.0, 1.0, 1.0, "1"] for d in days(count)]
+def okx_payload(count=40, price=300.0, include_open_bar=False, end=date(2026, 8, 20)):
+    rows = [[str(ms(d)), price, price, price, price, 1.0, 1.0, 1.0, "1"]
+            for d in days(count, end)]
     if include_open_bar:
         rows.insert(0, [str(ms(TODAY)), price, price, price, price, 1.0, 1.0, 1.0, "0"])
     return json.dumps({"code": "0", "data": rows}).encode()
 
 
-def hyperliquid_payload(count=40, price=400.0):
+def hyperliquid_payload(count=40, price=400.0, end=date(2026, 8, 20)):
     return json.dumps([
         {"t": ms(d), "T": ms(d) + 86_399_999, "o": price, "h": price, "l": price,
-         "c": price, "v": 1.0} for d in reversed(days(count))]).encode()
+         "c": price, "v": 1.0} for d in reversed(days(count, end))]).encode()
 
 
 def router(binance=None, bybit=None, okx=None, hyper=None):
@@ -295,6 +296,124 @@ class RotatingUniverseTests(unittest.TestCase):
         self.assertEqual(stored["GONE"]["venue"], "HYPERLIQUID")
         self.assertEqual(stored["GONE"]["pinned_at"], "2026-08-01")
         self.assertEqual(stored["BTC"]["venue"], "OKX_SWAP")
+
+
+class StaleFeedTests(unittest.TestCase):
+    """A venue answers a dead instrument with its last bars, not an error.
+
+    ARK was admitted on 2026-09-26 with 100 bars that ended 2026-06-25 and was
+    pinned, because meets_min_history only checked bar COUNT. Its dead tail sat
+    three months behind the live panel. The live feeds' rolling window covered
+    the hole until 2026-10-04 and then rolled past it, so the engine's
+    whole-panel gap guard refused run 37279031874 and every run after it. The
+    book never held ARK and no committed row ever used it.
+    """
+
+    DEAD_END = date(2026, 5, 20)  # 93 days behind TODAY
+
+    def dead_entrant(self, url, payload=None):
+        """BTC is live on OKX; DEAD is served only by Hyperliquid, and stale."""
+        if "okx.com" in url and "BTC-USDT-SWAP" in url:
+            return okx_payload(count=100)
+        if "hyperliquid.xyz" in url and payload and b"DEAD" in payload:
+            return hyperliquid_payload(count=100, end=self.DEAD_END)
+        raise adapter.PriceAdapterError("instrument not served")
+
+    def build(self, root, bases=("BTC", "DEAD"), pins=None):
+        pins_path = root / "PINS.json"
+        if pins is not None:
+            pins_path.write_text(json.dumps({"pins": pins}))
+        with mock.patch.object(adapter, "fetch_url", side_effect=self.dead_entrant):
+            coverage = adapter.build(universe(root, bases), root / "out", pins_path, TODAY)
+        with (root / "out" / "DAILY_PRICES.csv").open(encoding="utf-8") as handle:
+            panel = list(csv.DictReader(handle))
+        return coverage, pins_path, panel
+
+    def test_a_dead_feed_is_excluded_even_with_plenty_of_bars(self):
+        # 100 bars clears min_history by a wide margin; recency is the question.
+        with tempfile.TemporaryDirectory() as td:
+            coverage, _, panel = self.build(Path(td))
+        self.assertEqual(coverage["excluded_stale_new_entrants"], 1)
+        self.assertEqual(coverage["unpriced_new_entrants"], 1)
+        self.assertEqual(coverage["unpriced_pinned_assets"], 0)
+        self.assertNotIn("DEAD", {row["base"] for row in panel})
+        record = next(r for r in coverage["unpriced_detail"] if r["base"] == "DEAD")
+        self.assertEqual(record["reason"], "stale_feed")
+        self.assertEqual(record["last_date"], self.DEAD_END.isoformat())
+        self.assertEqual(record["stale_by_days"], 93)
+
+    def test_a_dead_feed_is_never_pinned(self):
+        # Pinning it is what made the defect permanent: every later run then
+        # carried the stale tail forward as an already-pinned asset.
+        with tempfile.TemporaryDirectory() as td:
+            _, pins_path, _ = self.build(Path(td))
+            stored = json.loads(pins_path.read_text())["pins"]
+        self.assertNotIn("DEAD", stored)
+        self.assertEqual(stored["BTC"]["venue"], "OKX_SWAP")
+
+    def test_the_written_panel_has_no_calendar_hole(self):
+        # The regression the engine actually refused: a stale tail three months
+        # back leaves a one-day hole once the live window rolls past it.
+        with tempfile.TemporaryDirectory() as td:
+            _, _, panel = self.build(Path(td))
+        dates = sorted({row["date"] for row in panel})
+        gaps = [(a, b) for a, b in zip(dates, dates[1:])
+                if date.fromisoformat(b) != date.fromisoformat(a) + timedelta(days=1)]
+        self.assertEqual(gaps, [])
+
+    def test_the_universe_accounting_still_balances(self):
+        with tempfile.TemporaryDirectory() as td:
+            coverage, _, _ = self.build(Path(td))
+        self.assertEqual(adapter.verify_coverage(coverage), [])
+
+    def test_a_feed_inside_the_tolerance_is_admitted(self):
+        # The latest completed close is today-1, and a live feed may miss a bar
+        # transiently, so the tolerance is days rather than zero.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            edge = date.fromordinal(TODAY.toordinal() - adapter.MAX_FEED_STALENESS_DAYS)
+            def fetch(url, payload=None):
+                if "okx.com" in url:
+                    return okx_payload(count=100, end=edge)
+                raise adapter.PriceAdapterError("not served")
+            pins = root / "PINS.json"
+            with mock.patch.object(adapter, "fetch_url", side_effect=fetch):
+                coverage = adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+        self.assertEqual(coverage["excluded_stale_new_entrants"], 0)
+        self.assertEqual(coverage["universe_priced"], 1)
+
+    def test_one_day_past_the_tolerance_is_excluded(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            over = date.fromordinal(TODAY.toordinal() - adapter.MAX_FEED_STALENESS_DAYS - 1)
+            def fetch(url, payload=None):
+                if "okx.com" in url:
+                    return okx_payload(count=100, end=over)
+                raise adapter.PriceAdapterError("not served")
+            pins = root / "PINS.json"
+            with mock.patch.object(adapter, "fetch_url", side_effect=fetch):
+                coverage = adapter.build(universe(root, ("BTC",)), root / "out", pins, TODAY)
+        self.assertEqual(coverage["excluded_stale_new_entrants"], 1)
+
+    def test_an_already_pinned_asset_that_goes_stale_stays_in_the_panel(self):
+        # The book may still hold it, and an unmarked holding is worse than a
+        # stale mark. It is counted, never dropped silently.
+        with tempfile.TemporaryDirectory() as td:
+            coverage, _, panel = self.build(
+                Path(td), pins={"DEAD": {"venue": "HYPERLIQUID", "pinned_at": "2026-05-01"}})
+        self.assertIn("DEAD", {row["base"] for row in panel})
+        self.assertEqual(coverage["stale_pinned_assets"], 1)
+        self.assertEqual(coverage["stale_pinned_detail"], ["DEAD"])
+        self.assertEqual(coverage["excluded_stale_new_entrants"], 0)
+
+    def test_an_already_pinned_stale_asset_refuses_the_day(self):
+        with tempfile.TemporaryDirectory() as td:
+            coverage, _, _ = self.build(
+                Path(td), pins={"DEAD": {"venue": "HYPERLIQUID", "pinned_at": "2026-05-01"}})
+        problems = adapter.verify_coverage(coverage)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("stale price feed", problems[0])
+        self.assertIn("DEAD", problems[0])
 
 
 class CoverageVerificationTests(unittest.TestCase):

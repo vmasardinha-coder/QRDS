@@ -41,6 +41,22 @@ VENUE_ORDER = ("OKX_SWAP", "HYPERLIQUID", "BINANCE_FUTURES", "BYBIT_LINEAR")
 # cannot see both is degraded and must not freeze pins.
 REQUIRED_VENUES = ("OKX_SWAP", "HYPERLIQUID")
 DAILY_BAR_LIMIT = 100
+
+# A venue answers a dead instrument with its last surviving bars rather than an
+# error, so bar COUNT alone cannot tell a live feed from a delisted one. ARK was
+# admitted on 2026-09-26 carrying 100 bars that ended 2026-06-25 and was pinned,
+# because meets_min_history only ever checked len(bars) >= min_history. Its dead
+# tail sat three months behind the live panel; the live feeds' rolling window
+# bridged the hole until 2026-10-04 and then rolled past it, so the engine's
+# whole-panel gap guard refused run 37279031874 and every run after it.
+#
+# The contract already prescribes the answer for an asset no venue serves a
+# current price for: exclude it from that day's selection and record it
+# (universe.rotation.new_entrant_no_venue_serves). This is that check, not a new
+# rule. The tolerance is 3 days rather than 1 because the latest completed close
+# is today-1 and a live feed may legitimately miss a bar transiently; it is a
+# plumbing tolerance, not a selection or risk parameter.
+MAX_FEED_STALENESS_DAYS = 3
 USER_AGENT = "QRDS-GATE-BTC-Research/1.0"
 
 SAFETY = {
@@ -218,7 +234,8 @@ def price_one(base: str, pinned: str | None, today: date) -> dict[str, Any]:
 
 
 def build(universe_csv: Path, out_dir: Path, pins_path: Path,
-          today: date | None = None, min_history: int = 30) -> dict[str, Any]:
+          today: date | None = None, min_history: int = 30,
+          max_staleness: int = MAX_FEED_STALENESS_DAYS) -> dict[str, Any]:
     today = today or datetime.now(timezone.utc).date()
     in_universe = read_universe(universe_csv)
     pins = load_pins(pins_path)
@@ -245,9 +262,24 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
                              "was_pinned": bool(pinned),
                              "in_universe_today": base in universe_set})
             continue
+        days = sorted(r["date"] for r in result["bars"])
+        stale_by = (today - date.fromisoformat(days[-1])).days
+        is_stale = stale_by > max_staleness
+
+        # A never-pinned asset whose feed is dead is the case the contract calls
+        # an entrant no venue serves: excluded from today's selection, recorded,
+        # and crucially NOT pinned. Admitting it would park a stale tail in the
+        # panel for every future run.
+        if is_stale and not pinned:
+            unpriced.append({"base": base, "attempts": result["attempts"],
+                             "was_pinned": False,
+                             "in_universe_today": base in universe_set,
+                             "reason": "stale_feed",
+                             "last_date": days[-1], "stale_by_days": stale_by})
+            continue
+
         for row in result["bars"]:
             panel.append({**row, "base": base, "venue": result["venue"]})
-        days = sorted(r["date"] for r in result["bars"])
         provenance[base] = {
             "venue": result["venue"],
             "bars": len(days),
@@ -257,6 +289,13 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
             "pinned_at": (pins.get(base) or {}).get("pinned_at", today.isoformat()),
             "failed_attempts": result["attempts"],
         }
+        # An ALREADY PINNED asset that went stale stays in the panel, because the
+        # book may still hold it and an unmarked holding is worse than a stale
+        # mark. It is never dropped silently: it is counted and verify_coverage
+        # refuses the day, so a decision is made by a person and recorded.
+        if is_stale:
+            provenance[base]["stale_feed"] = True
+            provenance[base]["stale_by_days"] = stale_by
         if result["venue_changed"]:
             change = {"base": base, "from_venue": pinned, "to_venue": result["venue"],
                       "changed_on": today.isoformat(), "reason": result["attempts"]}
@@ -277,6 +316,8 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
 
     lost_pins = [u for u in unpriced if u["was_pinned"]]
     new_excluded = [u for u in unpriced if not u["was_pinned"]]
+    stale_excluded = [u for u in new_excluded if u.get("reason") == "stale_feed"]
+    stale_pinned = sorted(b for b, p in provenance.items() if p.get("stale_feed"))
     universe_priced = sum(1 for b in provenance if b in universe_set)
 
     coverage = {
@@ -294,6 +335,12 @@ def build(universe_csv: Path, out_dir: Path, pins_path: Path,
         # priced is a different animal: the book may still hold it.
         "unpriced_new_entrants": len(new_excluded),
         "unpriced_pinned_assets": len(lost_pins),
+        # A venue serves a delisted instrument's last bars instead of erroring,
+        # so recency is checked separately from bar count.
+        "excluded_stale_new_entrants": len(stale_excluded),
+        "stale_pinned_assets": len(stale_pinned),
+        "stale_pinned_detail": stale_pinned,
+        "max_feed_staleness_days": max_staleness,
         "meets_min_history": sum(1 for p in provenance.values() if p["meets_min_history"]),
         "min_history_required": min_history,
         "venue_counts": by_venue,
@@ -337,6 +384,16 @@ def verify_coverage(coverage: dict[str, Any]) -> list[str]:
     if coverage.get("unpriced_pinned_assets"):
         problems.append(
             f"{coverage['unpriced_pinned_assets']} already-pinned asset(s) could not be priced")
+    # A pinned asset whose feed died still prices, from bars that stopped moving.
+    # It stays in the panel because the book may hold it, but the day is not
+    # committed on it: a stale tail drifts away from the live panel one day at a
+    # time and eventually opens a calendar hole the engine refuses.
+    if coverage.get("stale_pinned_assets"):
+        named = ", ".join(coverage.get("stale_pinned_detail", [])[:5]) or "unnamed"
+        problems.append(
+            f"{coverage['stale_pinned_assets']} already-pinned asset(s) have a stale "
+            f"price feed ({named}); the book may hold them, so this needs a recorded "
+            "decision rather than a silent drop")
     priced, size = coverage.get("universe_priced"), coverage.get("universe_size")
     excluded = coverage.get("unpriced_new_entrants", 0)
     if priced is None or size is None:
@@ -361,7 +418,8 @@ def verify(path: Path) -> int:
     print(json.dumps({k: coverage.get(k) for k in (
         "universe_size", "universe_priced", "priced_including_held_dropouts",
         "carried_pins_outside_universe", "unpriced_new_entrants",
-        "unpriced_pinned_assets", "meets_min_history", "venue_counts")},
+        "unpriced_pinned_assets", "excluded_stale_new_entrants",
+        "stale_pinned_assets", "meets_min_history", "venue_counts")},
         indent=2, sort_keys=True))
     for problem in problems:
         print(f"FAIL_CLOSED: {problem}")
@@ -379,6 +437,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pins", type=Path)
     parser.add_argument("--today", type=str)
     parser.add_argument("--min-history", type=int, default=30)
+    parser.add_argument("--max-staleness", type=int, default=MAX_FEED_STALENESS_DAYS,
+                        help="days a feed's last bar may trail the run date before the "
+                             "instrument counts as dead")
     args = parser.parse_args(argv)
     if args.verify:
         return verify(args.verify)
@@ -388,19 +449,24 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         parser.error(f"{', '.join(missing)} required unless --verify is given")
     today = date.fromisoformat(args.today) if args.today else None
-    coverage = build(args.universe_csv, args.out_dir, args.pins, today, args.min_history)
+    coverage = build(args.universe_csv, args.out_dir, args.pins, today, args.min_history,
+                     args.max_staleness)
     print(json.dumps({k: coverage[k] for k in (
         "universe_size", "universe_priced", "priced_including_held_dropouts",
         "carried_pins_outside_universe", "unpriced_new_entrants",
-        "unpriced_pinned_assets", "meets_min_history", "venue_counts",
+        "unpriced_pinned_assets", "excluded_stale_new_entrants",
+        "stale_pinned_assets", "meets_min_history", "venue_counts",
         "research_only", "orders", "real_capital")}, indent=2, sort_keys=True))
     for record in coverage["unpriced_detail"]:
         print(f"UNPRICED {record['base']} was_pinned={record['was_pinned']} "
-              f"in_universe_today={record['in_universe_today']}")
+              f"in_universe_today={record['in_universe_today']}"
+              f"{' reason=' + record['reason'] if record.get('reason') else ''}")
+    for base in coverage["stale_pinned_detail"]:
+        print(f"STALE_PINNED {base}")
     # A rotating universe brings in names no venue here serves; excluding them
     # from a day's selection is normal and recorded. Losing an asset that was
     # already pinned is not: the book may hold it and it can no longer be marked.
-    return 1 if coverage["unpriced_pinned_assets"] else 0
+    return 1 if coverage["unpriced_pinned_assets"] or coverage["stale_pinned_assets"] else 0
 
 
 if __name__ == "__main__":
