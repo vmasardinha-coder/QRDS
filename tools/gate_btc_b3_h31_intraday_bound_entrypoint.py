@@ -53,6 +53,19 @@ def bounded_shadow_schedule() -> dict[str, dict[str, str]]:
     now = datetime.now(TZ)
 
     def current_or_nearest_live(root: str, preferred: str) -> tuple[str, str, datetime]:
+        causal_start = datetime(now.year, now.month, now.day, 9, 0, tzinfo=TZ)
+        require_wdo_window = root == "WDO" and now >= causal_start + timedelta(minutes=30)
+
+        def has_complete_wdo_window(symbol: str, mode: str) -> bool:
+            if not require_wdo_window:
+                return True
+            rows = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 2500)
+            if rows is None:
+                return False
+            stamps = {clock.decode_epoch(int(r["time"]), mode) for r in rows}
+            required = {causal_start + timedelta(minutes=5 * i) for i in range(6)}
+            return required.issubset(stamps)
+
         def probe(symbol: str):
             info = mt5.symbol_info(symbol)
             if info is None or not mt5.symbol_select(symbol, True):
@@ -62,6 +75,8 @@ def bounded_shadow_schedule() -> dict[str, dict[str, str]]:
             except Exception:
                 return None
             if abs((now - tick_ts).total_seconds()) > 6 * 3600:
+                return None
+            if not has_complete_wdo_window(symbol, mode):
                 return None
             expiry = int(getattr(info, "expiration_time", 0) or 0)
             return symbol, mode, tick_ts, expiry
