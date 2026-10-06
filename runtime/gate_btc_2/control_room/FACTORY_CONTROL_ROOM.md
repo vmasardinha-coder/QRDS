@@ -1,20 +1,21 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-06T18:25:37.733882+00:00`
+Generated: `2026-10-06T22:08:42.941049+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **8**
-- Latest ledger: **2026-10-05**
-- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-05`)
+- Ledger sessions: **9**
+- Latest ledger: **2026-10-06**
+- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-10-06`)
 - Triggered cells: **0**
 - Cells at 60/60: **0**
 - Trigger range: **0–0 / 60**
 
 ## Latest prospective session states
-- `FEATURE_UNAVAILABLE`: **580**
+- `FEATURE_UNAVAILABLE`: **64**
+- `WARMUP_PENDING`: **516**
 
 ## 3D family states
 - `CONTINUE_EXPERIMENTAL_SHADOW`: **580**
@@ -25,11 +26,11 @@ Generated: `2026-10-06T18:25:37.733882+00:00`
 ## Source
 - Binding: `FORWARD_SOURCE_BOUND` / `WINV26`
 - Waiting source semantics: **0**
-- Discovery: `AVAILABLE_SOURCE_CANDIDATE` (43 records; admitted=False)
+- Discovery: `AVAILABLE_SOURCE_CANDIDATE` (41 records; admitted=False)
 
 ## External prospective lanes
-- `F-XMM-INVENTORY`: **78** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-10-06T18:24:55.944349Z`
-- `F-XVOL-SURFACE`: **78** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-10-06T18:24:55.903348Z`
+- `F-XMM-INVENTORY`: **79** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-10-06T21:36:40.641177Z`
+- `F-XVOL-SURFACE`: **79** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-10-06T21:36:40.599795Z`
 
 ## Boundary
 `RESEARCH_ONLY=true` · `SHADOW_ONLY=true` · `NO_BACKFILL=true` · `NO_RETUNE=true` · `ENGINE_FEED=false` · `ORDERS=0` · `REAL_CAPITAL=0`
