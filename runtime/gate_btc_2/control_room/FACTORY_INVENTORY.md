@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-10-05T17:12:59.025368+00:00`
+Generated: `2026-10-06T17:40:22.718609+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
@@ -8,9 +8,9 @@ Generated: `2026-10-05T17:12:59.025368+00:00`
 - Operational/scientific lanes tracked: **12**
 - Registered research backlog: **2**
 - Backlog currently NOT_ELIGIBLE: **5**
-- Canonical ledger records: **7**
+- Canonical ledger records: **8**
 - Valid non-gap sessions: **4**
-- Immutable observation gaps: **3**
+- Immutable observation gaps: **4**
 - Frozen warmup range: **10–252 prior sessions**
 - Nominal families lookback-satisfied for next session: **0**
 - Families with prospective trigger: **0**
@@ -39,7 +39,7 @@ Nominal maturity uses only prior canonical non-gap sessions. observation_gap rec
 | `ITEM3D_FORWARD_ADJUDICATION` | `ACTIVE_AUTONOMOUS_ADJUDICATION_WATCH` | `FIRST_60_FORWARD_TRIGGER_OUTCOMES_PER_FAMILY_HORIZON` |
 | `ECONOMICS_MATURITY` | `DESCRIPTIVE_PARTIAL_MONITOR_ACTIVE` | `FIRST_TRIGGER_THEN_PROGRESS_TO_60_PER_FAMILY_HORIZON` |
 | `SOURCE_BINDING` | `FORWARD_SOURCE_BOUND` | `KEEP_CANONICAL_SOURCE_QA_INTACT` |
-| `SOURCE_DISCOVERY` | `MT5_UNAVAILABLE_FAIL_OPEN_TO_OTHER_SOURCES` | `NORMAL_SOURCE_ADMISSION_HUMAN_AUTHORITY_REQUIRED` |
+| `SOURCE_DISCOVERY` | `AVAILABLE_SOURCE_CANDIDATE` | `NORMAL_SOURCE_ADMISSION_HUMAN_AUTHORITY_REQUIRED` |
 | `F-XMM-INVENTORY` | `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` | `ACCUMULATE_PROSPECTIVE_FEATURE_HISTORY` |
 | `F-XVOL-SURFACE` | `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` | `ACCUMULATE_PROSPECTIVE_FEATURE_HISTORY` |
 | `GRAMMAR_007` | `TERMINAL_CURRENT_HYPOTHESIS` | `MATERIALLY_DISTINCT_PREREGISTERED_HYPOTHESIS_ONLY` |
