@@ -38,7 +38,7 @@ class CurrentSignalRecoveryTests(unittest.TestCase):
             manifest['manifest_sha256']=recovery.sha(recovery.packed(manifest))
             (evidence/'PRICES.json').write_text(json.dumps(manifest))
             master=root/'master.csv'
-            master.write_text('date,symbol,close_usd,source\\n'+day+',AR,100,cdd\\n')
+            master.write_text('date,symbol,close_usd,source\n'+day+',AR,100,cdd\n')
             out=root/'out.csv'
             result=recovery.recover(master,qos,day,out,root/'receipt.json')
             self.assertEqual(result['qos_signal_date'],day)
