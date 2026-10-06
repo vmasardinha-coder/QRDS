@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_prl_alt_same_source_recovery.py
+      - tools/gate_btc_prl_alt_next_epoch.py
+      - tests/test_gate_btc_prl_alt_next_epoch.py
       - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
   pull_request:
@@ -21,6 +23,7 @@ on:
       - tools/gate_btc_prl50_position_cycle.py
       - tools/gate_btc_prl50_cycle_20260930.json
       - tools/gate_btc_prl50_position_shadow_contract_20260930.json
+      - tools/gate_btc_prl50_position_shadow_contract_20261031.json
       - tests/test_gate_btc_prl50_position_cycle.py
   schedule:
     # Retry after QOS hourly same-source recovery, while the UTC cutoff is current.
@@ -87,7 +90,7 @@ jobs:
           print('PRL50_POSITION_CONTRACT=PASS')
           PY
       - name: Test fail-closed prospective archive
-        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py tests/test_gate_btc_prl50_position_economics.py tests/test_gate_btc_prl50_position_cycle.py tests/test_gate_btc_prl_alt_same_source_recovery.py
+        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py tests/test_gate_btc_prl50_position_economics.py tests/test_gate_btc_prl50_position_cycle.py tests/test_gate_btc_prl_alt_same_source_recovery.py tests/test_gate_btc_prl_alt_next_epoch.py
 
   append-prospective-path:
     needs: contract-tests
@@ -121,7 +124,7 @@ jobs:
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - name: Audit existing path before any new append
         id: plan
-        run: python -m tools.gate_btc_prl50_position_cycle --mode plan --ledger-dir runtime_repo/runtime/ledgers/prl50_position
+        run: python -m tools.gate_btc_prl_alt_next_epoch --lane prl50 --mode plan --ledger-dir runtime_repo/runtime/ledgers/prl50_position
       - name: Check sealed QOS evidence for current cutoff
         id: qos_ready
         if: steps.plan.outputs.can_append == 'true'
@@ -246,7 +249,7 @@ jobs:
       - name: Append approved independent prospective cycle
         if: steps.daily_source.outputs.eligible == 'true'
         run: >-
-          python -m tools.gate_btc_prl50_position_cycle --mode process
+          python -m tools.gate_btc_prl_alt_next_epoch --lane prl50 --mode process
           --ledger-dir runtime_repo/runtime/ledgers/prl50_position
           --current-portfolios extracted/v2a/outputs/qos_v2a_current_portfolios.csv
           --master-daily recovered/qos_v2a_master_daily.csv
@@ -259,10 +262,10 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/STATUS.json', encoding='utf-8'))
-          assert p['authorization_id'] == 'PRL50_20260930_USER_20260928'
-          epoch=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/monthly_20260930/STATUS.json', encoding='utf-8'))
+          assert p['authorization_id'] in {'PRL50_20260930_USER_20260928', 'PRL50_20261031_USER_20261006'}
+          epoch=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/' + p['current_epoch'] + '/STATUS.json', encoding='utf-8'))
           assert epoch['candidate_name'] == 'PRL50_POSITION'
-          assert p['first_eligible_signal_date'] == '2026-09-30'
+          assert p['first_eligible_signal_date'] in {'2026-09-30','2026-10-31'}
           assert p['legacy_economic_credit'] == 0
           assert p['research_only'] is True and p['shadow_only'] is True
           assert p['not_approved'] is True and p['engine_feed'] is False

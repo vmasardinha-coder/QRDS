@@ -55,7 +55,17 @@ def validate_contract(contract):
     require(definition["trailing_buffer_fraction_of_running_close_high"] == 0.10, "buffer drift")
     require(definition["same_bar_arm_and_exit"] is False, "same-bar guard drift")
     require(definition["parameter_retuning_before_gate"] is False, "retuning guard drift")
-    if contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
+    if contract.get("authorization_id") == "ALT_TRAIL40_10_20261031_USER_20261006":
+        previous=load_json(Path("tools/gate_btc_alt_trail40_10_shadow_contract_20260930.json"))
+        expected=json.loads(json.dumps(previous))
+        expected.update(first_eligible_signal_date="2026-10-31",
+                        first_eligible_execution_date="2026-11-01",
+                        authorization_id="ALT_TRAIL40_10_20261031_USER_20261006",
+                        previous_epoch_contract_blob_sha=contract.get("previous_epoch_contract_blob_sha"))
+        expected["prospective_gate"]["freeze_date"]="2026-10-31"
+        require(contract==expected,"NEXT_EPOCH_SCIENCE_DRIFT")
+        require(contract["previous_epoch_contract_blob_sha"]=="b5a804d1e6e73c01770f2da427d78727840cab80","PREVIOUS_EPOCH_BLOB_DRIFT")
+    elif contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
         require(contract["derived_from_contract_sha256"] == "7447615444fa3d9a397e6e184dc8aff58e555f7e81e751dd8b5ea7afcf320ff9", "parent drift")
         require(contract["first_eligible_signal_date"] == "2026-09-30", "signal start drift")
         require(contract["first_eligible_execution_date"] == "2026-10-01", "execution start drift")
