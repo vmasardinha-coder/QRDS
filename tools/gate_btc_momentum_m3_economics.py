@@ -167,10 +167,11 @@ def run(root,signals,sources,at=None,collector=collect):
         raise
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--runtime-root',type=Path,required=True);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--runtime-root',type=Path,required=True)
+    p.add_argument('--economic-ledger-dir',type=Path);args=p.parse_args()
     base=args.runtime_root/'runtime/ledgers'
     try:
-        s=run(base/'momentum_m3_economics',base/'momentum_m3',base/'momentum_m1_m2')
+        s=run(args.economic_ledger_dir or base/'momentum_m3_economics',base/'momentum_m3',base/'momentum_m1_m2')
         print(json.dumps({'status':s['status'],'return_observations':s['return_observations']}));return 0
     except (Exception,SystemExit) as e: print(str(e));return 2
 if __name__=='__main__':raise SystemExit(main())
