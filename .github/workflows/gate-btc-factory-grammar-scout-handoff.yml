@@ -110,7 +110,12 @@ jobs:
           python source_repo/tools/gate_btc_factory/grammar_source_cost_qualifier.py --intake GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json --protocol source_repo/tools/gate_btc_factory/GRAMMAR_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json --evidence-dir "$ROOT/grammar_source_cost_evidence" --output "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json"
           python source_repo/tools/gate_btc_factory/grammar_existing_factory_intake.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --output "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json"
           python source_repo/tools/gate_btc_factory/grammar_family_briefing.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --intake "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json" --output "$ROOT/GRAMMAR_FAMILY_BRIEFING_RUNTIME.json"
-          python source_repo/tools/gate_btc_factory/qualified_materializer_readiness.py --intake "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json" --output "$ROOT/GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json"
+          EVIDENCE="$ROOT/GRAMMAR_007_CAUSAL_FEATURE_MATERIALIZATION_RUNTIME.json"
+          if [ -f "$EVIDENCE" ]; then
+            python source_repo/tools/gate_btc_factory/qualified_materializer_readiness.py --intake "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json" --evidence "$EVIDENCE" --output "$ROOT/GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json"
+          else
+            python source_repo/tools/gate_btc_factory/qualified_materializer_readiness.py --intake "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json" --output "$ROOT/GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json"
+          fi
           python source_repo/tools/gate_btc_factory/grammar_pipeline_status.py --root "$ROOT" --output "$ROOT/GRAMMAR_PIPELINE_STATUS.json"
           python - <<'PY'
           import json
