@@ -104,6 +104,44 @@ class CoveredDeliveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'UPSTREAM_NOT_CURRENT'):
             q.process(self.root,self.config,z,'run',self.at,{})
 
+    def test_expired_selected_gap_archives_original_cycle_once(self):
+        q.disposition(self.root,self.config)
+        cycle=self.root/'cycles/2026-09-30'
+        state=fixtures.state()
+        state['signal_date']='2026-09-30'
+        state['state_sha256']=q.core.sharow(state)
+        q.core.write(cycle/'SIGNAL_STATE.json',state)
+        q.core.write(cycle/'STATUS.json',{'status':'WAITING_CYCLE_COMPLETION'})
+        q.core.write(self.root/'STATUS.json',{'status':'FAILED_QOS_DELIVERY',
+            'latest_snapshot_date':'2026-10-04','missing_selected_cutoff':'2026-10-05'})
+        before={p:p.read_bytes() for p in cycle.rglob('*') if p.is_file()}
+        now=datetime(2026,10,7,8,tzinfo=timezone.utc)
+        need,status=q.plan(self.root,self.config,now)
+        self.assertFalse(need)
+        self.assertEqual(status['status'],'WAITING_NEXT_APPROVED_MONTH_END')
+        self.assertEqual(status['next_signal_date'],'2026-10-31')
+        self.assertEqual(before,{p:p.read_bytes() for p in before})
+        marker=(cycle/'BLOCKED.json').read_bytes()
+        q.plan(self.root,self.config,now)
+        self.assertEqual(marker,(cycle/'BLOCKED.json').read_bytes())
+        self.assertEqual(q.core.load(cycle/'BLOCKED.json')['economic_credit'],0)
+
+    def test_source_epoch_remaps_only_prequalified_symbols_after_signal_date(self):
+        from unittest.mock import patch
+        state=fixtures.state()
+        state['candidate_source_lock']={'AR':'cdd','LINK':'cdd','AAA':'cdd'}
+        state['candidate_symbols']=['AR','LINK','AAA']
+        state['state_sha256']=q.core.sharow(state)
+        with patch.object(q,'ORIGINAL_CAPTURE',return_value=state):
+            before=q.epoch_capture(None,None,'2026-09-30','source')
+            after=q.epoch_capture(None,None,'2026-10-31','source')
+        self.assertEqual(before['candidate_source_lock']['AR'],'cdd')
+        self.assertEqual(after['candidate_source_lock']['AR'],'binance_spot_daily_archive')
+        self.assertEqual(after['candidate_source_lock']['LINK'],'binance_spot_daily_archive')
+        self.assertEqual(after['candidate_source_lock']['AAA'],'cdd')
+        self.assertEqual(state['candidate_source_lock']['AR'],'cdd')
+        self.assertEqual(after['state_sha256'],q.core.sharow(after))
+
     def test_report_shows_closed_legacy_and_calendar_wait_then_stale(self):
         from tools.gate_btc_reporting_operational_overlay import enrich
         runtime=Path(self.tmp.name)/'runtime';target=runtime/'ledgers/qos_three_track'
