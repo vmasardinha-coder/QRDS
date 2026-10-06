@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Approved interruption disposition and same-source frozen-cohort delivery."""
 from __future__ import annotations
-import argparse, gzip, hashlib, importlib.util, io, json, math, os, shutil, sys, tempfile, zipfile
+import argparse, copy, gzip, hashlib, importlib.util, io, json, math, os, shutil, sys, tempfile, zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pandas as pd
@@ -23,7 +23,7 @@ def epoch_policy():
     return policy
 
 def epoch_capture(v2a, contract, day, upstream):
-    state=ORIGINAL_CAPTURE(v2a, contract, day, upstream)
+    state=copy.deepcopy(ORIGINAL_CAPTURE(v2a, contract, day, upstream))
     policy=epoch_policy()
     if pd.Timestamp(day).date().isoformat() < policy['effective_signal_date']:
         return state
