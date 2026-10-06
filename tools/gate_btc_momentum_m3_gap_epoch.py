@@ -35,7 +35,7 @@ def prepare(base: Path, cutoff: str, at=None):
                 'last_valid_economic_cutoff':last,'legacy_ledger_sha256':econ.sha(legacy.read_bytes()),
                 'economic_credit':0,'retrospective_credit':0,'backfill':False}
         econ.immutable(marker,record)
-        first=(date.fromisoformat(cutoff)+timedelta(days=1)).isoformat()
+        first=max(date.fromisoformat(cutoff)+timedelta(days=1),at.date()).isoformat()
         epoch=economic/'epochs'/('after_gap_'+cutoff)
         c=econ.read(econ.CONTRACT)
         econ.immutable(epoch/'CONTRACT.json',c)
@@ -44,10 +44,16 @@ def prepare(base: Path, cutoff: str, at=None):
            'contract_sha256':econ.sha(econ.packed(c)),
            'authority':'PRESERVED_SOURCE_GAP_NEW_FORWARD_EPOCH',
            'historical_signal_credit':0}
-        econ.immutable(epoch/'ACTIVATION.json',a)
+        if (epoch/'ACTIVATION.json').exists():
+            existing=econ.read(epoch/'ACTIVATION.json')
+            if existing['contract_sha256']!=a['contract_sha256'] or existing['first_eligible_cutoff']<first:
+                raise ValueError('M3_NEW_EPOCH_AUTHORITY_CHANGED')
+        else:
+            econ.immutable(epoch/'ACTIVATION.json',a)
         old_status=economic/'STATUS.json'
-        if old_status.exists():
-            econ.immutable(economic/'preserved'/'STATUS_before_gap.json',econ.read(old_status))
+        preserved=economic/'preserved'/'STATUS_before_gap.json'
+        if old_status.exists() and not preserved.exists():
+            econ.immutable(preserved,econ.read(old_status))
         result={'can_compute':False,'source_gap':True,'economic_dir':str(epoch),
                 'missing_source_cutoffs':missing,'cutoff':cutoff}
     else:
