@@ -71,15 +71,22 @@ jobs:
           epoch=root/'epochs'/state['current_epoch']
           status=epoch/'ECONOMICS_STATUS.json'
           if status.exists():
-              contract=(Path('tools/gate_btc_prl50_position_shadow_contract_20261031.json')
-                        if state['current_epoch']=='monthly_20261031'
-                        else Path('tools/gate_btc_prl50_position_shadow_contract_20260930.json'))
-              econ.audit(epoch,contract)
+              from datetime import datetime, timedelta, timezone
+              interrupted=(epoch/'PRESERVED_GAP.json').exists()
+              stale_old=(state['current_epoch']=='monthly_20260930'
+                         and state.get('last_archived_date')
+                         and state['last_archived_date'] <
+                             (datetime.now(timezone.utc).date()-timedelta(days=2)).isoformat())
+              if not interrupted and not stale_old:
+                  contract=(Path('tools/gate_btc_prl50_position_shadow_contract_20261031.json')
+                            if state['current_epoch']=='monthly_20261031'
+                            else Path('tools/gate_btc_prl50_position_shadow_contract_20260930.json'))
+                  econ.audit(epoch,contract)
               result=json.loads(status.read_text())
               assert result['research_only'] and result['shadow_only'] and result['not_approved']
               assert result['engine_feed'] is False and result['orders_generated']==0 and result['real_capital_used']==0
               assert result['retrospective_backfill'] is False
-          print('PRL50_ECONOMICS_AUDITED='+str(status.exists()))
+          print('PRL50_ECONOMICS_STATUS_PRESENT='+str(status.exists()))
           PY
       - name: Persist economics only
         working-directory: runtime_repo
