@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Preserve an unfillable M3 source gap and arm an independent forward epoch."""
 from __future__ import annotations
-import argparse, json, os
+import argparse, json, os, sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import gate_btc_momentum_m3_economics as econ
 
 SAFE = econ.SAFETY
