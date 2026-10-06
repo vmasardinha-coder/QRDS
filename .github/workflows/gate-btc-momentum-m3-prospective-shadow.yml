@@ -1,6 +1,12 @@
 name: GATE BTC Momentum M3 Prospective Shadow
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
+      - tools/gate_btc_momentum_m3_gap_epoch.py
+      - tools/gate_btc_momentum_m3_economics.py
   workflow_run:
     workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
     types: [completed]
@@ -11,6 +17,7 @@ on:
       - tools/gate_btc_momentum_m3_persistence.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_momentum_m3_economics.py
+      - tools/gate_btc_momentum_m3_gap_epoch.py
       - tools/gate_btc_momentum_required_prices.py
       - tools/gate_btc_momentum_economic_shadow.py
       - migration/reporting/momentum_m3_persistence_contract.json
@@ -41,7 +48,7 @@ jobs:
   collect-m3:
     needs: causality-and-accounting-tests
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_dispatch' || github.event_name == 'push' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -107,9 +114,17 @@ jobs:
           echo 'ORDERS=0'
           echo 'REAL_CAPITAL=0'
 
+      - name: Prepare preserved source-gap epoch
+        id: gap
+        if: steps.cutoff.outputs.eligible == 'true'
+        run: |
+          python tools/gate_btc_momentum_m3_gap_epoch.py \
+            --runtime-root runtime_repo \
+            --cutoff '${{ steps.cutoff.outputs.cutoff }}'
+
       - name: Compute append-only M3 prospective signal
         id: m3
-        if: steps.cutoff.outputs.eligible == 'true'
+        if: steps.cutoff.outputs.eligible == 'true' && steps.gap.outputs.can_compute == 'true'
         run: |
           set -euo pipefail
           mkdir -p artifacts/momentum_m3
@@ -163,8 +178,17 @@ jobs:
 
       - name: Deliver independent prospective M3 economics
         id: economics
-        if: always() && steps.cutoff.outcome == 'success'
-        run: python tools/gate_btc_momentum_m3_economics.py --runtime-root runtime_repo
+        if: steps.m3.outcome == 'success'
+        run: python tools/gate_btc_momentum_m3_economics.py --runtime-root runtime_repo --economic-ledger-dir '${{ steps.gap.outputs.economic_dir }}'
+
+      - name: Publish cumulative M3 gap-aware status
+        if: always() && steps.gap.outcome == 'success' && steps.gap.outputs.can_compute == 'true'
+        env:
+          ECONOMIC_DIR: ${{ steps.gap.outputs.economic_dir }}
+        run: |
+          if [ "$ECONOMIC_DIR" != "runtime_repo/runtime/ledgers/momentum_m3_economics" ]; then
+            python tools/gate_btc_momentum_m3_gap_epoch.py --runtime-root runtime_repo --mode summarize --economic-dir "$ECONOMIC_DIR"
+          fi
 
       - name: Upload M3 evidence
         if: always()
