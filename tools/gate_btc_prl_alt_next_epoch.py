@@ -67,10 +67,11 @@ def publish(root,lane,status,at,target=None):
             'first_eligible_signal_date':NEXT.isoformat(),
             'first_eligible_execution_date':'2026-11-01',
             'interrupted_epoch':OLD_EPOCH,'interrupted_epoch_snapshot_count':old_count,
-            'interrupted_epoch_economic_credit':0,
+            'interrupted_epoch_economic_credit':0,'legacy_economic_credit':0,
             'current_epoch_snapshot_count':len(new_paths),
             'snapshot_count':old_count+len(new_paths),
             'last_archived_date':new_paths[-1].stem if new_paths else None,
+            'latest_snapshot_date':new_paths[-1].stem if new_paths else None,
             'next_required_cutoff':target,'can_append':status=='NEEDS_CURRENT_SOURCE',
             'economic_result_valid':False,'updated_at_utc':at.isoformat()}
     if lane=='alt':
