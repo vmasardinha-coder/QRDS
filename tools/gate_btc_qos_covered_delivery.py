@@ -13,6 +13,7 @@ from tools import gate_btc_qos_prospective_three_track as core
 APPROVAL = ROOT/'tools/gate_btc_qos_interruption_20260928.json'
 CONTRACT = ROOT/'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json'
 SOURCE_EPOCH = ROOT/'migration/GATE_BTC_QOS_SOURCE_EPOCH_20261031.json'
+ORIGINAL_CAPTURE = core.capture
 
 def epoch_policy():
     policy=core.load(SOURCE_EPOCH)
@@ -22,7 +23,7 @@ def epoch_policy():
     return policy
 
 def epoch_capture(v2a, contract, day, upstream):
-    state=core.capture(v2a, contract, day, upstream)
+    state=ORIGINAL_CAPTURE(v2a, contract, day, upstream)
     policy=epoch_policy()
     if pd.Timestamp(day).date().isoformat() < policy['effective_signal_date']:
         return state
