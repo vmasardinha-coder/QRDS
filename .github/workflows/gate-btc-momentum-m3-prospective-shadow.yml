@@ -24,6 +24,7 @@ on:
       - migration/reporting/momentum_m3_persistence_clarification_20260909.json
       - tests/test_gate_btc_momentum_m3_persistence.py
       - tests/test_gate_btc_momentum_m3_economics.py
+      - tests/test_gate_btc_momentum_m3_gap_epoch.py
 
 permissions:
   contents: write
@@ -44,7 +45,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install pandas numpy requests pytest
-      - run: python -m pytest -q tests/test_gate_btc_momentum_m3_persistence.py tests/test_gate_btc_momentum_m3_economics.py
+      - run: python -m pytest -q tests/test_gate_btc_momentum_m3_persistence.py tests/test_gate_btc_momentum_m3_economics.py tests/test_gate_btc_momentum_m3_gap_epoch.py
   collect-m3:
     needs: causality-and-accounting-tests
     if: >-
