@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_prl_alt_same_source_recovery.py
+      - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
   pull_request:
     branches: [main]
     paths:
       - tools/gate_btc_prl_alt_same_source_recovery.py
+      - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
       - tools/gate_btc_prl50_position_shadow_contract_v1.json
@@ -21,6 +23,7 @@ on:
       - tools/gate_btc_prl50_cycle_20260930.json
       - tools/gate_btc_prl50_position_shadow_contract_20260930.json
       - tests/test_gate_btc_prl50_position_cycle.py
+      - tests/test_gate_btc_prl_alt_same_source_recovery.py
   schedule:
     # Retry after QOS hourly same-source recovery, while the UTC cutoff is current.
     - cron: '25 15,19,22 * * *'
@@ -133,9 +136,12 @@ jobs:
           target=(dt.datetime.now(dt.timezone.utc).date()-dt.timedelta(days=1)).isoformat()
           root=Path('runtime_repo/runtime/ledgers/qos_three_track')
           state=json.loads((root/'STATUS.json').read_text())
+          active=sorted(p.parent for p in (root/'cycles').glob('*/SIGNAL_STATE.json')
+                        if p.parent.name<=target and not (p.parent/'BLOCKED.json').exists())
           ready=(state.get('status')=='ACTIVE_PROSPECTIVE_THREE_TRACK'
                  and state.get('latest_snapshot_date')==target
-                 and (root/'source_evidence'/'2026-09-30'/target/'PRICES.json').is_file())
+                 and bool(active)
+                 and (root/'source_evidence'/active[-1].name/target/'PRICES.json').is_file())
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
               out.write('ready='+str(ready).lower()+'\n')
           print('QOS_SAME_SOURCE_CURRENT='+str(ready), 'cutoff='+target)
