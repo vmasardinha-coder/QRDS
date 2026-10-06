@@ -11,7 +11,6 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_prl_alt_same_source_recovery.py
-      - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
       - tools/gate_btc_prl50_position_shadow_contract_v1.json
@@ -23,7 +22,6 @@ on:
       - tools/gate_btc_prl50_cycle_20260930.json
       - tools/gate_btc_prl50_position_shadow_contract_20260930.json
       - tests/test_gate_btc_prl50_position_cycle.py
-      - tests/test_gate_btc_prl_alt_same_source_recovery.py
   schedule:
     # Retry after QOS hourly same-source recovery, while the UTC cutoff is current.
     - cron: '25 15,19,22 * * *'
@@ -89,7 +87,7 @@ jobs:
           print('PRL50_POSITION_CONTRACT=PASS')
           PY
       - name: Test fail-closed prospective archive
-        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py tests/test_gate_btc_prl50_position_economics.py tests/test_gate_btc_prl50_position_cycle.py
+        run: python -m unittest -v tests/test_gate_btc_prl50_position_shadow_archive.py tests/test_gate_btc_prl50_position_economics.py tests/test_gate_btc_prl50_position_cycle.py tests/test_gate_btc_prl_alt_same_source_recovery.py
 
   append-prospective-path:
     needs: contract-tests
