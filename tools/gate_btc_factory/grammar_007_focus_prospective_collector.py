@@ -7,7 +7,7 @@ BASE="https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/Expe
 FID="XAGRAMMAR_728DC88D691B"
 def query(ind):
  f=urllib.parse.quote(f"Indicador eq '{ind}' and baseCalculo eq 0",safe="")
- u=f"{BASE}?$format=json&$top=200&$orderby=Data desc&$filter={f}"
+ u=f"{BASE}?$format=json&$top=200&$orderby=Data%20desc&$filter={f}"
  with urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"QRDS-GATE-BTC-RESEARCH-ONLY/1.0"}),timeout=60) as r:return json.loads(r.read())["value"],u
 def series(rows,ref):
  d={}
