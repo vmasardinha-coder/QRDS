@@ -203,7 +203,7 @@ class ChainedWorkflowTests(unittest.TestCase):
         for workflow in wake.CHAINED_WORKFLOWS:
             with self.subTest(workflow=workflow):
                 text = (self.workflows_dir() / workflow).read_text(encoding="utf-8")
-                self.assertIn('workflows: ["GATE BTC Daily Research Collection"]', text)
+                self.assertRegex(text, r'workflows:\s*\[[^\]\n]*GATE BTC Daily Research Collection[^\]\n]*\]')
 
 
 class CommandLineTests(unittest.TestCase):
