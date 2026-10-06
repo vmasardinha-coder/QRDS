@@ -1,0 +1,57 @@
+name: GATE BTC Factory 007 Focus Prospective Collector
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 12 * * 1'
+  pull_request:
+    branches: [main]
+    paths: ['artifacts/gate_btc_2/GRAMMAR_007_FOCUS_PROSPECTIVE_PREREG_20261006.json','tools/gate_btc_factory/grammar_007_focus_prospective_collector.py','tests/test_gate_btc_grammar_007_focus_prospective_collector.py','.github/workflows/gate-btc-factory-007-focus-prospective-collector.yml']
+  push:
+    branches: [main]
+    paths: ['artifacts/gate_btc_2/GRAMMAR_007_FOCUS_PROSPECTIVE_PREREG_20261006.json','tools/gate_btc_factory/grammar_007_focus_prospective_collector.py','tests/test_gate_btc_grammar_007_focus_prospective_collector.py','.github/workflows/gate-btc-factory-007-focus-prospective-collector.yml']
+permissions: {contents: write}
+concurrency: {group: gate-btc-factory-007-focus-prospective, cancel-in-progress: false}
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source_repo}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Contract tests
+        working-directory: source_repo
+        run: python -m unittest -v tests/test_gate_btc_grammar_007_focus_prospective_collector.py
+      - name: Checkout runtime
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - name: Capture official Focus prospectively
+        if: github.event_name != 'pull_request'
+        run: |
+          python source_repo/tools/gate_btc_factory/grammar_007_focus_prospective_collector.py --prereg source_repo/artifacts/gate_btc_2/GRAMMAR_007_FOCUS_PROSPECTIVE_PREREG_20261006.json --out capture.json
+          python - <<'PY'
+          import json
+          x=json.load(open('capture.json'))
+          assert x['family_id']=='XAGRAMMAR_728DC88D691B'
+          assert x['activation_utc']=='2026-10-06T00:00:00Z'
+          assert x['scientific_credit']==0 and x['prospective_credit']==0
+          assert x['outcomes_read'] is False and x['economics_read'] is False
+          assert all(o['publication_data_date'] >= '2026-10-06' for o in x['observations'])
+          PY
+      - name: Persist append-only capture
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          ROOT=runtime_repo/runtime/factory_autonomy/grammar_007_focus_prospective
+          mkdir -p "$ROOT/audits"
+          cp capture.json "$ROOT/audits/$GITHUB_RUN_ID.json"
+          cp capture.json "$ROOT/LATEST.json"
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_autonomy/grammar_007_focus_prospective
+          git commit -m "Factory 007 Focus prospective capture $GITHUB_RUN_ID" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime; if git push origin HEAD:gate-btc-runtime; then exit 0; fi; sleep $((i*2)); done
+          exit 1
