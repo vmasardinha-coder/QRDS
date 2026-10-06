@@ -38,10 +38,17 @@ class CoveredDeliveryTests(unittest.TestCase):
         self.assertFalse(need);self.assertEqual(s['status'],'WAITING_NEXT_APPROVED_MONTH_END')
         self.assertFalse((self.root/'retry_budget.json').exists())
 
-    def test_bound_current_day_retry_attempts(self):
-        for _ in range(6):self.assertTrue(q.plan(self.root,self.config,self.at)[0])
-        need,s=q.plan(self.root,self.config,self.at)
-        self.assertFalse(need);self.assertEqual(s['status'],'BLOCKED_DAILY_RETRY_BUDGET')
+    def test_retry_opportunities_remain_available_after_early_attempts(self):
+        from datetime import timedelta
+        for hour in range(8,14):
+            now=self.at+timedelta(hours=hour-8)
+            self.assertTrue(q.plan(self.root,self.config,now)[0])
+            need,s=q.plan(self.root,self.config,now)
+            self.assertFalse(need)
+            self.assertEqual(s['status'],'WAITING_NEXT_HOURLY_RETRY')
+        late=self.at+timedelta(hours=14)
+        self.assertTrue(q.plan(self.root,self.config,late)[0])
+        self.assertEqual(q.core.load(self.root/'retry_budget.json')['attempts'],7)
 
     def test_removed_selected_asset_is_requested_from_same_locked_source(self):
         calls=[]

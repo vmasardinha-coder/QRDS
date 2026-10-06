@@ -279,10 +279,19 @@ def plan(root,config,at):
     if s.get('status')=='ACTIVE_PROSPECTIVE_THREE_TRACK' and s.get('latest_snapshot_date')==day:
         return False,s
     budget_path=root/'retry_budget.json';b=core.load(budget_path) if budget_path.exists() else {}
-    today=at.date().isoformat();attempts=b.get('attempts',0) if b.get('utc_day')==today else 0
-    if attempts>=6:
-        return False,status(root,config,'BLOCKED_DAILY_RETRY_BUDGET',at,requested_cutoff=day,attempts=attempts)
-    save(budget_path,packed({'utc_day':today,'attempts':attempts+1}))
+    today=at.date().isoformat();hour=at.strftime('%Y-%m-%dT%H')
+    attempts=b.get('attempts',0) if b.get('utc_day')==today else 0
+    if b.get('utc_day')==today and b.get('last_attempt_hour')==hour:
+        return False,status(root,config,'WAITING_NEXT_HOURLY_RETRY',at,
+                            requested_cutoff=day,attempts=attempts)
+    # One attempt per UTC hour preserves late-day opportunities after the
+    # Daily Research artifact becomes available. Workflow-run bursts cannot
+    # exhaust the day's retry allowance before that happens.
+    if attempts>=24:
+        return False,status(root,config,'BLOCKED_DAILY_RETRY_BUDGET',at,
+                            requested_cutoff=day,attempts=attempts)
+    save(budget_path,packed({'utc_day':today,'last_attempt_hour':hour,
+                             'attempts':attempts+1}))
     return True,{'status':'NEEDS_CURRENT_SOURCE','target':day,'attempts':attempts+1}
 
 
