@@ -18,7 +18,15 @@ def read_csv(p):
 def validate_contract(c):
     require(c["schema"]=="gate_btc.prl50_position_shadow_contract.v1","bad contract schema"); require(c["candidate_name"]=="PRL50_POSITION","candidate drift")
     require(c["candidate_definition"]["activation_gain"]==0.20,"activation drift"); require(c["candidate_definition"]["giveback_fraction_of_peak_profit"]==0.50,"giveback drift")
-    if c.get("authorization_id")=="PRL50_20260930_USER_20260928":
+    if c.get("authorization_id")=="PRL50_20261031_USER_20261006":
+        previous=load_json(Path("tools/gate_btc_prl50_position_shadow_contract_20260930.json"))
+        expected=dict(previous)
+        expected.update(first_eligible_signal_date="2026-10-31",
+                        first_eligible_execution_date="2026-11-01",
+                        authorization_id="PRL50_20261031_USER_20261006",
+                        previous_epoch_contract_blob_sha=c.get("previous_epoch_contract_blob_sha"))
+        require(c==expected,"NEXT_EPOCH_SCIENCE_DRIFT")
+    elif c.get("authorization_id")=="PRL50_20260930_USER_20260928":
         require(c["derived_from_contract_sha256"]=="cd17139f9d52382c9f23881d0e5867b6f1eebc1cd79f0b9b5954384aad569d0a","parent contract drift")
         require(c["first_eligible_signal_date"]=="2026-09-30" and c["first_eligible_execution_date"]=="2026-10-01","independent cycle start drift")
     else:
