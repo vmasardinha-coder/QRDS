@@ -26,6 +26,7 @@ def validate_contract(c):
                         authorization_id="PRL50_20261031_USER_20261006",
                         previous_epoch_contract_blob_sha=c.get("previous_epoch_contract_blob_sha"))
         require(c==expected,"NEXT_EPOCH_SCIENCE_DRIFT")
+        require(c["previous_epoch_contract_blob_sha"]=="2856d7983420bb69626899ccd03b4116dde3fc15","PREVIOUS_EPOCH_BLOB_DRIFT")
     elif c.get("authorization_id")=="PRL50_20260930_USER_20260928":
         require(c["derived_from_contract_sha256"]=="cd17139f9d52382c9f23881d0e5867b6f1eebc1cd79f0b9b5954384aad569d0a","parent contract drift")
         require(c["first_eligible_signal_date"]=="2026-09-30" and c["first_eligible_execution_date"]=="2026-10-01","independent cycle start drift")
