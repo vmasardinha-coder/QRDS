@@ -64,6 +64,7 @@ def validate_contract(contract):
                         previous_epoch_contract_blob_sha=contract.get("previous_epoch_contract_blob_sha"))
         expected["prospective_gate"]["freeze_date"]="2026-10-31"
         require(contract==expected,"NEXT_EPOCH_SCIENCE_DRIFT")
+        require(contract["previous_epoch_contract_blob_sha"]=="b5a804d1e6e73c01770f2da427d78727840cab80","PREVIOUS_EPOCH_BLOB_DRIFT")
     elif contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
         require(contract["derived_from_contract_sha256"] == "7447615444fa3d9a397e6e184dc8aff58e555f7e81e751dd8b5ea7afcf320ff9", "parent drift")
         require(contract["first_eligible_signal_date"] == "2026-09-30", "signal start drift")
