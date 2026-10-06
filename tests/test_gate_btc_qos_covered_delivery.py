@@ -112,6 +112,9 @@ class CoveredDeliveryTests(unittest.TestCase):
         state['state_sha256']=q.core.sharow(state)
         q.core.write(cycle/'SIGNAL_STATE.json',state)
         q.core.write(cycle/'STATUS.json',{'status':'WAITING_CYCLE_COMPLETION'})
+        row={'snapshot_date':'2026-10-04','signal_date':'2026-09-30'}
+        row['row_sha256']=q.core.sharow(row)
+        q.core.write(cycle/'path/snapshots/2026-10-04.json',row)
         q.core.write(self.root/'STATUS.json',{'status':'FAILED_QOS_DELIVERY',
             'latest_snapshot_date':'2026-10-04','missing_selected_cutoff':'2026-10-05'})
         before={p:p.read_bytes() for p in cycle.rglob('*') if p.is_file()}
