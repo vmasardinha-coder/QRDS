@@ -8,10 +8,13 @@ on:
       - tools/gate_btc_prl50_position_economics.py
       - tools/gate_btc_prl50_position_shadow_archive.py
       - tools/gate_btc_prl50_position_cycle.py
+      - tools/gate_btc_prl_alt_next_epoch.py
+      - tools/gate_btc_prl50_position_shadow_contract_20261031.json
       - tools/gate_btc_prl50_cycle_20260930.json
       - tools/gate_btc_prl50_position_shadow_contract_20260930.json
       - tests/test_gate_btc_prl50_position_cycle.py
       - tests/test_gate_btc_prl50_position_economics.py
+      - tests/test_gate_btc_prl_alt_next_epoch.py
       - .github/workflows/gate-btc-prl50-economics.yml
   workflow_dispatch:
   workflow_run:
@@ -41,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: python -m unittest tests.test_gate_btc_prl50_position_economics tests.test_gate_btc_prl50_position_cycle
+      - run: python -m unittest tests.test_gate_btc_prl50_position_economics tests.test_gate_btc_prl50_position_cycle tests.test_gate_btc_prl_alt_next_epoch
       - run: python -m py_compile tools/gate_btc_prl50_position_shadow_archive.py tools/gate_btc_prl50_position_economics.py tools/gate_btc_prl50_position_cycle.py
 
   economics:
@@ -54,19 +57,29 @@ jobs:
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - name: Refresh approved PRL50 cycle economics and delivery
+      - name: Audit the active PRL50 epoch without rewriting delivery state
         working-directory: main_repo
-        run: >-
-          python -m tools.gate_btc_prl50_position_cycle --mode plan
-          --ledger-dir ../runtime_repo/runtime/ledgers/prl50_position
-      - name: Assert immutable safety boundary
         run: |
           python - <<'PY'
           import json
-          p=json.load(open('runtime_repo/runtime/ledgers/prl50_position/epochs/monthly_20260930/ECONOMICS_STATUS.json'))
-          assert p['research_only'] and p['shadow_only'] and p['not_approved']
-          assert p['engine_feed'] is False and p['orders_generated']==0 and p['real_capital_used']==0
-          assert p['retrospective_backfill'] is False
+          from pathlib import Path
+          from tools import gate_btc_prl50_position_economics as econ
+          root=Path('../runtime_repo/runtime/ledgers/prl50_position')
+          state=json.loads((root/'STATUS.json').read_text())
+          assert state['research_only'] and state['shadow_only'] and state['not_approved']
+          assert state['engine_feed'] is False and state['orders_generated']==0 and state['real_capital_used']==0
+          epoch=root/'epochs'/state['current_epoch']
+          status=epoch/'ECONOMICS_STATUS.json'
+          if status.exists():
+              contract=(Path('tools/gate_btc_prl50_position_shadow_contract_20261031.json')
+                        if state['current_epoch']=='monthly_20261031'
+                        else Path('tools/gate_btc_prl50_position_shadow_contract_20260930.json'))
+              econ.audit(epoch,contract)
+              result=json.loads(status.read_text())
+              assert result['research_only'] and result['shadow_only'] and result['not_approved']
+              assert result['engine_feed'] is False and result['orders_generated']==0 and result['real_capital_used']==0
+              assert result['retrospective_backfill'] is False
+          print('PRL50_ECONOMICS_AUDITED='+str(status.exists()))
           PY
       - name: Persist economics only
         working-directory: runtime_repo
