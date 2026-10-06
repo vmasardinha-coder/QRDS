@@ -8,46 +8,83 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-06-grafico
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
-> ERRO nesta execucao: `Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)`
+| Indicador | Valor |
+|---|---|
+| NAV | $53,662.79 |
+| Retorno do dia | -0.52% |
+| Retorno desde inicio (2026-08-06) | +7.33% |
+| Benchmark SPY | +0.65% |
+| **Alfa vs SPY** | **+6.67%** |
+| Caixa | $0.00 |
+| Regime | risco ligado |
 
-O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenhum dado foi estimado para cobrir a falha.
+### Posicoes
+| Ativo | Qtd | Preco | Valor | Peso |
+|---|---|---|---|---|
+| AMD | 8.81939 | $631.75 | $5,571.65 | 10.4% |
+| LRCX | 16.1 | $345.80 | $5,567.37 | 10.4% |
+| CAT | 6.52327 | $848.14 | $5,532.64 | 10.3% |
+| SLB | 108.559 | $50.28 | $5,458.35 | 10.2% |
+| CSCO | 48.0816 | $112.82 | $5,424.56 | 10.1% |
+| AMAT | 9.98954 | $542.28 | $5,417.13 | 10.1% |
+| INTC | 45.4629 | $116.19 | $5,282.33 | 9.8% |
+| MU | 4.94041 | $1,063.96 | $5,256.39 | 9.8% |
+| MRK | 36.398 | $139.54 | $5,078.98 | 9.5% |
+| TGT | 33.1616 | $152.99 | $5,073.39 | 9.5% |
+
+_Sem movimentacoes hoje._
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (SPY):** momentum de +15.5% — so entram ativos acima disto
+- **Candidatos elegiveis:** 45
+- **Fontes usadas:** nasdaq: 101
+
+| Rejeitado | Motivo |
+|---|---|
+| ABBV | nao bate o benchmark (+10.0% <= +15.5%) |
+| ABT | nao bate o benchmark (-18.2% <= +15.5%) |
+| ACN | nao bate o benchmark (-21.0% <= +15.5%) |
+| ADBE | nao bate o benchmark (-18.7% <= +15.5%) |
+| AMT | nao bate o benchmark (-7.0% <= +15.5%) |
+| AVGO | nao bate o benchmark (+5.6% <= +15.5%) |
+| AXP | nao bate o benchmark (-0.2% <= +15.5%) |
+| BA | nao bate o benchmark (-3.2% <= +15.5%) |
+| _(+47 outros)_ | |
+
+</details>
 
 ## Crypto (objetivo: bater o BTC)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $65,898.14 |
-| Retorno do dia | +1.10% |
-| Retorno desde inicio (2026-08-06) | +31.80% |
-| Benchmark BTC | +33.00% |
-| **Alfa vs BTC** | **-1.20%** |
+| NAV | $65,829.20 |
+| Retorno do dia | +1.00% |
+| Retorno desde inicio (2026-08-06) | +31.66% |
+| Benchmark BTC | +33.84% |
+| **Alfa vs BTC** | **-2.18%** |
 | Caixa | $3,274.83 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.384706 | $85,674.95 | $32,959.63 | 50.0% |
-| NEAR | 1867.61 | $5.29 | $9,887.89 | 15.0% |
-| ENA | 39745.5 | $0.25 | $9,887.89 | 15.0% |
-| ZEC | 7.32453 | $1,349.97 | $9,887.89 | 15.0% |
+| BTC | 0.384706 | $86,215.01 | $33,167.40 | 50.4% |
+| ZEC | 7.32453 | $1,365.15 | $9,999.08 | 15.2% |
+| NEAR | 1867.61 | $5.26 | $9,822.34 | 14.9% |
+| ENA | 39745.5 | $0.24 | $9,565.55 | 14.5% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| ENA | VENDA | 990.836 | $0.25 | $246.25 | rebalanceio |
-| NEAR | VENDA | 165.143 | $5.29 | $873.46 | rebalanceio |
-| UNI | VENDA | 1058.94 | $8.97 | $9,494.86 | rebalanceio |
-| BTC | COMPRA | 0.00719394 | $85,760.62 | $616.96 | rebalanceio |
-| ZEC | COMPRA | 7.32453 | $1,351.32 | $9,897.78 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ZEC: 0.0% vs alvo 15.0%
-- **Obstaculo (BTC):** momentum de +22.1% — so entram ativos acima disto
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de +22.9% — so entram ativos acima disto
 - **Candidatos elegiveis:** 35
-- **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 86
+- **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
 
@@ -60,7 +97,7 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 | APE | liquidez baixa (0.5M < 1M) |
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.3M < 1M) |
-| ATOM | nao bate o benchmark (+13.6% <= +22.1%) |
+| ATOM | nao bate o benchmark (+13.7% <= +22.9%) |
 | _(+95 outros)_ | |
 
 </details>
@@ -90,24 +127,15 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 | CPLE3 | 410.018 | R$ 17.25 | R$ 7,072.81 | 12.5% |
 | PRIO3 | 109.151 | R$ 64.15 | R$ 7,002.05 | 12.4% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| B3SA3 | VENDA | 363.936 | R$ 23.28 | R$ 8,471.22 | rebalanceio |
-| PETR4 | VENDA | 5.29819 | R$ 55.30 | R$ 293.01 | rebalanceio |
-| ABEV3 | COMPRA | 429.218 | R$ 16.52 | R$ 7,089.17 | rebalanceio |
-| GGBR4 | COMPRA | 12.5458 | R$ 25.82 | R$ 323.88 | rebalanceio |
-| UGPA3 | COMPRA | 13.1144 | R$ 39.09 | R$ 512.63 | rebalanceio |
-| VBBR3 | COMPRA | 13.0765 | R$ 38.39 | R$ 501.99 | rebalanceio |
-| WEGE3 | COMPRA | 7.66074 | R$ 51.30 | R$ 393.01 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ABEV3: 0.0% vs alvo 12.5%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 15
-- **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 86
+- **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Em carencia por stop:** VALE3 (ate 2026-10-30)
 
@@ -146,16 +174,12 @@ O estado anterior mantem-se inalterado; nova tentativa na proxima execucao. Nenh
 
 > Volatilidade usada na call (GARCH(1,1)): 61.1% a.a. | realizada 30d: 25.9% a.a. | CDI: 0.0508% a.d.
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| CALL 187.40 (venc.) | LIQUIDACAO | 290.34 | R$ 204.35 | R$ -4,921.26 | rebalanceio |
-| CALL 210.48 venc. 2026-11-05 | VENDA | 290.34 | R$ 12.53 | R$ 3,637.10 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** liquidacao da call vencida; venda de nova call coberta
+- **Gatilho:** nenhum (call em curso)
 - **Candidatos elegiveis:** 0
 
 </details>
