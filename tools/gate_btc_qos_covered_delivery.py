@@ -85,6 +85,40 @@ def disposition(root, config):
     seal(old/'BLOCKED.json',packed(marker))
 
 
+
+def archive_expired_gap(root, at):
+    """Close an irrecoverable daily gap without changing any scientific row."""
+    policy=epoch_policy()
+    cycle=root/'cycles'/'2026-09-30'
+    marker=cycle/'BLOCKED.json'
+    if marker.exists():
+        return
+    status_path=root/'STATUS.json'
+    if not status_path.exists() or not (cycle/'SIGNAL_STATE.json').exists():
+        return
+    prior=core.load(status_path)
+    gap=prior.get('missing_selected_cutoff')
+    latest=prior.get('latest_snapshot_date')
+    if prior.get('status')!='FAILED_QOS_DELIVERY' or not gap or not latest:
+        return
+    # A same-UTC-day retry remains available; the next UTC cutoff cannot
+    # legally bridge the missing daily row under the frozen contract.
+    if gap >= (at.date()-timedelta(days=1)).isoformat():
+        return
+    signal=core.load(cycle/'SIGNAL_STATE.json')
+    original={str(p.relative_to(cycle)):sha(p.read_bytes())
+              for p in sorted(cycle.rglob('*')) if p.is_file() and p!=marker}
+    record={**SAFE,'schema':'gate-btc.qos-prospective-three-track.blocked.v1',
+            'status':'CLOSED_INTERRUPTED_NO_ECONOMIC_RESULT',
+            'signal_state_sha256':signal['state_sha256'],
+            'missing_cutoff':gap,'last_valid_path_date':latest,
+            'original_files_sha256':original,'economic_credit':0,
+            'scientific_credit':0,'backfill_performed':False,
+            'next_source_epoch_signal_date':policy['effective_signal_date']}
+    record['blocked_sha256']=core.sharow(record)
+    seal(marker,packed(record))
+
+
 def status(root, config, code, at, **extra):
     cycles=[]
     for p in sorted((root/'cycles').glob('*/SIGNAL_STATE.json')):
@@ -220,12 +254,16 @@ def process(root, config, zip_path, runid, at, loaders=None):
 
 def plan(root,config,at):
     disposition(root,config)
+    archive_expired_gap(root,at)
     day=(at.date()-timedelta(days=1)).isoformat()
     if day<config['next_signal_date']:
         return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at)
     newer=[p.parent for p in (root/'cycles').glob('*/SIGNAL_STATE.json') if p.parent.name>=config['next_signal_date']]
-    if any((p/'BLOCKED.json').exists() for p in newer):
-        return False,status(root,config,'BLOCKED_CYCLE_REVIEW_REQUIRED',at)
+    interrupted=[p for p in newer if (p/'BLOCKED.json').exists()]
+    if interrupted and day<epoch_policy()['effective_signal_date']:
+        return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at,
+                            next_signal_date=epoch_policy()['effective_signal_date'],
+                            interrupted_cycle_economic_credit=0)
     if newer and all((p/'FINAL_RESULT.json').exists() for p in newer) and pd.Timestamp(day)!=core.me(day):
         return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at,
                             next_signal_date=core.me(day).date().isoformat())
