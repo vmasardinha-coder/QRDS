@@ -74,8 +74,14 @@ def publish(root,lane,status,at,target=None):
             'latest_snapshot_date':new_paths[-1].stem if new_paths else None,
             'next_required_cutoff':target,'can_append':status=='NEEDS_CURRENT_SOURCE',
             'economic_result_valid':False,'updated_at_utc':at.isoformat()}
+    if lane=='prl50' and (new/'ECONOMICS_STATUS.json').exists():
+        economics=archive.load_json(new/'ECONOMICS_STATUS.json')
+        result['completed_valid_cycles']=sum(c.get('status')=='COMPLETED_VALID_CYCLE_GROSS_ONLY'
+                                             for c in economics.get('cycles',[]))
+        result['economic_result_valid']=result['completed_valid_cycles']>0
     if lane=='alt':
         evaluation=archive.load_json(new/'EVALUATION.json') if (new/'EVALUATION.json').exists() else {}
+        result['economic_result_valid']=bool(evaluation.get('completed_journeys',[]))
         result.update(armed_completed_journeys=evaluation.get('armed_completed_journeys',0),
                       gate_eligible=evaluation.get('gate_eligible',False),
                       earliest_calendar_gate_date=(NEXT+timedelta(days=120)).isoformat())
