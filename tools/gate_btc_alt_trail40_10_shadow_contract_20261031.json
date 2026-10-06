@@ -1,0 +1,72 @@
+{
+  "schema": "gate_btc.alt_trail40_10_shadow_contract.v1",
+  "status": "AUTHORIZED_INDEPENDENT_PROSPECTIVE_CYCLE",
+  "candidate_name": "ALT_TRAIL40_10_CLOSE_LAG1_V1",
+  "candidate_definition": {
+    "scope": "EACH_SELECTED_SPECULATIVE_ALT_POSITION_INDEPENDENTLY",
+    "activation_gain": 0.4,
+    "trailing_buffer_fraction_of_running_close_high": 0.1,
+    "trigger_observation": "CONFIRMED_DAILY_CLOSE",
+    "arming_effective": "NEXT_ELIGIBLE_DAILY_BAR",
+    "running_high_definition": "MAX_COMPLETED_DAILY_CLOSE_THROUGH_PREVIOUS_BAR",
+    "stop_definition": "0.90_X_RUNNING_HIGH",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_TRIGGER_CLOSE",
+    "same_bar_arm_and_exit": false,
+    "partial_take_profit": false,
+    "automatic_reentry": false,
+    "post_exit_state_until_next_monthly_signal": "VIRTUAL_CASH_ZERO_RETURN",
+    "parameter_retuning_before_gate": false
+  },
+  "control_definition": {
+    "name": "MONTH_END_EXEC_CONTROL",
+    "entry_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_MONTHLY_SIGNAL",
+    "exit_execution": "FIRST_ELIGIBLE_DAILY_CLOSE_AFTER_NEXT_MONTHLY_SIGNAL"
+  },
+  "strategies": [
+    "QOS_Moderada",
+    "QOS_Ultra"
+  ],
+  "eligible_assets": "ALT_PICKS_ONLY_EXCLUDING_BTC_ETH_BNB_CASH",
+  "first_eligible_signal_date": "2026-10-31",
+  "first_eligible_execution_date": "2026-11-01",
+  "mid_cycle_initialization": "PROHIBITED",
+  "retrospective_backfill": "PROHIBITED",
+  "daily_gap_policy": "FAIL_CLOSED_INVALIDATE_CYCLE_IF_A_CONFIRMED_DAILY_SNAPSHOT_IS_MISSING_AFTER_ENTRY",
+  "source": {
+    "workflow": "GATE BTC Daily Research Collection",
+    "current_portfolios": "qos_v2a_current_portfolios.csv",
+    "master_daily": "qos_v2a_master_daily.csv",
+    "required_execution_lag_daily_bars": 1,
+    "price_field": "close_usd"
+  },
+  "prospective_gate": {
+    "freeze_date": "2026-10-31",
+    "evaluation_cohort": "ARMED_COMPLETED_JOURNEYS",
+    "minimum_armed_completed_journeys": 30,
+    "minimum_calendar_days_since_freeze": 120,
+    "bootstrap_reps": 20000,
+    "bootstrap_seed": 20260812,
+    "trim_top_positive_fraction": 0.05,
+    "max_single_case_positive_benefit_share": 0.2,
+    "requirements_all": [
+      "execution_aware_mean_advantage_gt_0",
+      "median_advantage_gt_0",
+      "paired_bootstrap_95pct_ci_low_gt_0",
+      "aggregate_benefit_gt_aggregate_regret",
+      "mean_advantage_after_removing_top_5pct_positive_cases_gt_0",
+      "no_single_case_dominates_total_positive_benefit"
+    ],
+    "failure_action": "NO_PROMOTION_AND_NO_RETUNING_ON_SAME_SAMPLE",
+    "success_action": "PROMOTION_CANDIDATE_ONLY_REQUIRES_SEPARATE_REAL_CAPITAL_APPROVAL"
+  },
+  "kaito": "DIAGNOSTIC_HOLDOUT_ONLY_NOT_PARAMETER_SELECTION",
+  "research_only": true,
+  "shadow_only": true,
+  "not_approved": true,
+  "engine_feed": false,
+  "orders_generated": 0,
+  "real_capital_used": 0,
+  "derived_from_contract_sha256": "7447615444fa3d9a397e6e184dc8aff58e555f7e81e751dd8b5ea7afcf320ff9",
+  "authorization_id": "ALT_TRAIL40_10_20261031_USER_20261006",
+  "previous_epoch_contract_sha256": "b5a804d1e6e73c01770f2da427d78727840cab80"
+}
