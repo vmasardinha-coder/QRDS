@@ -114,6 +114,39 @@ def _http_get(url: str, timeout: float = 30.0,
 STOOQ_HOSTS = ("https://stooq.com", "https://stooq.pl")
 
 
+def _get_json(url: str, **kwargs):
+    """GET + JSON numa so chamada, porque separa-los abria um buraco.
+
+    Duas coisas que o padrao anterior — json.loads(_http_get(url).decode("utf-8"))
+    — nao fazia:
+
+    1. 'utf-8' rebenta com um BOM a cabeca. A Nasdaq serviu um a 2026-09-26 e
+       outra vez a 2026-10-06, e o erro era literalmente 'Unexpected UTF-8 BOM
+       (decode using utf-8-sig)'. 'utf-8-sig' tira o BOM quando ele la esta e e
+       identico a 'utf-8' quando nao esta, por isso nao custa nada aos dias bons.
+
+    2. json.JSONDecodeError e ValueError, nao DataSourceError. Todos os sitios
+       que chamavam isto apanhavam DataSourceError — logo o erro passava ao lado
+       do 'tenta a proxima classe de ativo', ao lado da cascata
+       Nasdaq->Stooq->Yahoo, e matava a carteira inteira do dia. Duas fontes
+       boas ficaram por consultar porque a primeira respondeu com tres bytes a
+       mais. Um corpo ilegivel e a FONTE a falhar, e tem de ser classificado
+       como tal para a cascata poder fazer o seu trabalho.
+    """
+    raw = _http_get(url, **kwargs)
+    try:
+        return json.loads(raw.decode("utf-8-sig"))
+    except ValueError as err:   # JSONDecodeError e UnicodeDecodeError
+        # Mensagem curta de proposito: o relatorio guarda so os ultimos 90
+        # caracteres do motivo, e o chamador ja diz de que fonte se trata. Com
+        # a URL e o texto do json aqui dentro, o corte caia a meio da palavra
+        # e sobrava "egivel (13 bytes)" — ruido onde devia estar o diagnostico.
+        bom = " com BOM," if raw[:3] == b"\xef\xbb\xbf" else ""
+        raise SourceUnavailable(
+            f"corpo ilegivel ({len(raw)} bytes,{bom} "
+            f"{type(err).__name__})") from err
+
+
 def fetch_stooq_daily(ticker: str) -> list[tuple[str, float, float]]:
     """Serie diaria de fecho para um ticker dos EUA via Stooq."""
     symbol = ticker.lower().replace(".", "-") + ".us"
@@ -208,7 +241,7 @@ def fetch_yahoo_daily(ticker: str,
         url = (f"{host}/v8/finance/chart/{symbol}"
                f"?range=2y&interval=1d&events=div%2Csplit")
         try:
-            data = json.loads(_http_get(url, retries=retries).decode("utf-8"))
+            data = _get_json(url, retries=retries)
             _yahoo_rate_limit_hits = 0
             break
         except RateLimited as err:
@@ -271,12 +304,17 @@ def fetch_nasdaq_daily(ticker: str) -> list[tuple[str, float, float]]:
     start = end - timedelta(days=NASDAQ_HISTORY_DAYS)
     classes = ("etf", "stocks") if symbol in NASDAQ_ETFS else ("stocks", "etf")
     errors: list[str] = []
+    fonte_em_baixo = False
     for assetclass in classes:
         url = (f"https://api.nasdaq.com/api/quote/{urllib.parse.quote(symbol)}"
                f"/historical?assetclass={assetclass}"
                f"&fromdate={start}&todate={end}&limit=9999")
         try:
-            payload = json.loads(_http_get(url).decode("utf-8"))
+            payload = _get_json(url)
+        except SourceUnavailable as err:
+            fonte_em_baixo = True
+            errors.append(f"{assetclass}: {str(err)[-60:]}")
+            continue
         except DataSourceError as err:
             errors.append(f"{assetclass}: {str(err)[-60:]}")
             continue
@@ -297,6 +335,15 @@ def fetch_nasdaq_daily(ticker: str) -> list[tuple[str, float, float]]:
             rows.sort(key=lambda r: r[0])
             return rows
         errors.append(f"{assetclass}: {len(rows)} pregoes")
+    # 'a Nasdaq esta avariada' e 'a Nasdaq nao lista este papel' sao coisas
+    # diferentes, e o relatorio trata-as de maneira diferente de proposito: a
+    # segunda nem conta como falha, porque a fonte seguinte serve. Devolver as
+    # duas como DataSourceError fazia uma avaria aparecer sob 'nao tem N ativos
+    # (servidos pela fonte seguinte)' — exatamente o alarme escondido que a
+    # separacao entre FAILURE_TALLY e MISSING_TALLY existe para evitar.
+    if fonte_em_baixo:
+        raise SourceUnavailable(
+            f"Nasdaq em baixo para {symbol} [{'; '.join(errors)}]")
     raise DataSourceError(f"Nasdaq sem serie para {symbol} [{'; '.join(errors)}]")
 
 
@@ -382,7 +429,7 @@ def fetch_coinbase_daily(asset: str, days: int = 420) -> list[tuple[str, float, 
             f"?granularity=86400&start={cursor_start.strftime('%Y-%m-%dT%H:%M:%SZ')}"
             f"&end={cursor_end.strftime('%Y-%m-%dT%H:%M:%SZ')}"
         )
-        data = json.loads(_http_get(url).decode("utf-8"))
+        data = _get_json(url)
         if not isinstance(data, list):
             raise DataSourceError(f"Coinbase: resposta inesperada para {product}: {data!r}")
         for candle in data:
@@ -404,7 +451,7 @@ def fetch_coingecko_daily(coin_id: str, days: int = 365) -> list[tuple[str, floa
         f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
         f"?vs_currency=usd&days={days}"
     )
-    data = json.loads(_http_get(url).decode("utf-8"))
+    data = _get_json(url)
     prices = data.get("prices")
     if not prices:
         raise DataSourceError(f"CoinGecko devolveu serie vazia para {coin_id}")
@@ -438,7 +485,7 @@ def fetch_binance_daily(asset: str, days: int = 500) -> list[tuple[str, float, f
         url = (f"{host}/api/v3/klines?symbol={symbol}"
                f"&interval=1d&limit={min(days, 1000)}")
         try:
-            data = json.loads(_http_get(url).decode("utf-8"))
+            data = _get_json(url)
         except DataSourceError as err:
             last = err
             continue
@@ -505,9 +552,7 @@ def fetch_brapi_daily(ticker: str,
     for range_ in ranges:
         try:
             headers = {"Authorization": f"Bearer {token}"} if token else None
-            payload = json.loads(
-                _http_get(_brapi_url(symbol, range_),
-                          headers=headers).decode("utf-8"))
+            payload = _get_json(_brapi_url(symbol, range_), headers=headers)
         except DataSourceError as err:
             errors.append(f"{range_}: {str(err)[-60:]}")
             continue
@@ -728,8 +773,16 @@ def _save_cdi_cache(rows: list[tuple[str, float]]) -> None:
 
 
 def _parse_sgs(payload: bytes) -> list[tuple[str, float]]:
+    # Mesmo cuidado do '_get_json': um corpo ilegivel e a fonte a falhar, e tem
+    # de o dizer em DataSourceError. Em ValueError passava ao lado do 'tenta a
+    # proxima' do chamador e levava consigo as quatro formas de consultar o SGS.
+    try:
+        itens = json.loads(payload.decode("utf-8-sig"))
+    except ValueError as err:
+        raise SourceUnavailable(
+            f"SGS: corpo ilegivel ({len(payload)} bytes): {str(err)[:80]}") from err
     rows: list[tuple[str, float]] = []
-    for item in json.loads(payload.decode("utf-8")):
+    for item in itens:
         try:
             day, month, year = item["data"].split("/")
             rows.append((f"{year}-{month}-{day}", float(item["valor"])))

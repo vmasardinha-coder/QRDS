@@ -1948,3 +1948,117 @@ class TestPortal(unittest.TestCase):
             [l for l in ontem.splitlines() if "<title>" in l],
             [l for l in hoje.splitlines() if "<title>" in l])
         self.assertIn("Ciclo de 2026-09-27", hoje)
+
+
+class TestMalformedJsonBody(unittest.TestCase):
+    """O defeito de 2026-09-26 e 2026-10-06: a Nasdaq serviu um BOM.
+
+    O erro era 'Unexpected UTF-8 BOM (decode using utf-8-sig)'. Duas falhas
+    independentes, e a segunda e a grave:
+
+      1. '.decode("utf-8")' nao tolera um BOM a cabeca.
+      2. json.JSONDecodeError e ValueError, nao DataSourceError — por isso
+         passava ao lado da cascata Nasdaq->Stooq->Yahoo e matava a carteira
+         de acoes EUA do dia, com duas fontes boas por consultar.
+    """
+
+    BOM = b"\xef\xbb\xbf"
+
+    def _nasdaq_body(self, prefixo=b""):
+        linhas = [{"date": f"09/{d:02d}/2026", "close": f"${100 + d}.00",
+                   "volume": "1,000,000"} for d in range(1, 29)]
+        corpo = json.dumps({"data": {"tradesTable": {"rows": linhas}}})
+        return prefixo + corpo.encode("utf-8")
+
+    def test_a_byte_order_mark_no_longer_breaks_the_parse(self):
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=self._nasdaq_body(self.BOM)):
+            serie = data_sources.fetch_nasdaq_daily("SPY")
+        self.assertEqual(len(serie), 28)
+        self.assertEqual(serie[0][0], "2026-09-01")
+
+    def test_a_body_with_no_mark_is_unaffected(self):
+        # 'utf-8-sig' tem de ser transparente nos dias bons, que sao todos menos dois.
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=self._nasdaq_body()):
+            serie = data_sources.fetch_nasdaq_daily("SPY")
+        self.assertEqual(len(serie), 28)
+
+    def test_an_unreadable_body_is_a_source_failure_not_a_ValueError(self):
+        # Esta e a asserção que fecha o buraco: tem de sair DataSourceError,
+        # porque e so isso que a cascata apanha.
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=b"<html>nope</html>"):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources.fetch_nasdaq_daily("SPY")
+
+    def test_a_mangled_first_source_still_lets_the_cascade_run(self):
+        # O teste que importa. Se este passar, o dia 06/10 nao se repete:
+        # a Nasdaq devolve lixo e a Stooq serve a serie na mesma.
+        data_sources.FAILURE_TALLY.clear()
+        data_sources.SOURCE_TALLY.clear()
+        esperado = [("2026-09-01", 101.0, 1_000_000.0)]
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=self.BOM + b"nao e json"), \
+             mock.patch.object(data_sources, "fetch_stooq_daily",
+                               return_value=esperado) as stooq, \
+             mock.patch.object(config, "FETCH_DELAY_S", 0):
+            serie = data_sources.fetch_equity_daily("SPY")
+        self.assertEqual(serie, esperado)
+        stooq.assert_called_once()
+        # e a falha da Nasdaq fica registada, em vez de desaparecer
+        self.assertIn("nasdaq", data_sources.FAILURE_TALLY)
+        self.assertIn("ilegivel", data_sources.FAILURE_TALLY["nasdaq"]["motivo"])
+
+    def test_the_other_sources_are_protected_by_the_same_helper(self):
+        # O padrao estava em sete sitios; nenhum deles pode voltar a deixar
+        # escapar um ValueError.
+        for nome, chamada in (
+            ("binance", lambda: data_sources.fetch_binance_daily("BTC")),
+            ("coingecko", lambda: data_sources.fetch_coingecko_daily("bitcoin")),
+            ("coinbase", lambda: data_sources.fetch_coinbase_daily("BTC")),
+        ):
+            with self.subTest(fonte=nome):
+                with mock.patch.object(data_sources, "_http_get",
+                                       return_value=self.BOM + b"{lixo"):
+                    with self.assertRaises(data_sources.DataSourceError):
+                        chamada()
+
+    def test_the_cdi_chain_survives_an_unreadable_body(self):
+        # O SGS tem quatro formas de consulta; um corpo mau nao pode levar as
+        # quatro a frente.
+        with self.assertRaises(data_sources.DataSourceError):
+            data_sources._parse_sgs(self.BOM + b"nao e json")
+        rows = data_sources._parse_sgs(
+            self.BOM + b'[{"data":"01/09/2026","valor":"0.05"}]')
+        self.assertEqual(rows, [("2026-09-01", 0.05)])
+
+    def test_a_broken_nasdaq_is_not_filed_as_a_missing_ticker(self):
+        # 'avariada' e 'nao lista este papel' sao coisas diferentes: a segunda
+        # nem conta como falha no relatorio, porque a fonte seguinte serve.
+        # Uma avaria arquivada como ausencia e um alarme que nunca toca.
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=self.BOM + b"nao e json"):
+            with self.assertRaises(data_sources.SourceUnavailable):
+                data_sources.fetch_nasdaq_daily("SPY")
+
+    def test_a_ticker_nasdaq_simply_does_not_carry_is_still_a_plain_miss(self):
+        vazio = json.dumps({"data": {"tradesTable": {"rows": []}}}).encode()
+        with mock.patch.object(data_sources, "_http_get", return_value=vazio):
+            with self.assertRaises(data_sources.DataSourceError) as ctx:
+                data_sources.fetch_nasdaq_daily("XYZQ")
+        self.assertNotIsInstance(ctx.exception, data_sources.SourceUnavailable)
+
+    def test_the_reason_survives_the_report_truncation(self):
+        # O relatorio guarda os ultimos 90 caracteres do motivo. Se a mensagem
+        # for longa, o que sobra e a cauda — e a cauda nao diagnostica nada.
+        data_sources.FAILURE_TALLY.clear()
+        with mock.patch.object(data_sources, "_http_get",
+                               return_value=self.BOM + b"nao e json"), \
+             mock.patch.object(data_sources, "fetch_stooq_daily",
+                               return_value=[("2026-09-01", 1.0, 1.0)]), \
+             mock.patch.object(config, "FETCH_DELAY_S", 0):
+            data_sources.fetch_equity_daily("SPY")
+        motivo = data_sources.FAILURE_TALLY["nasdaq"]["motivo"]
+        self.assertIn("corpo ilegivel", motivo)
+        self.assertIn("com BOM", motivo)
