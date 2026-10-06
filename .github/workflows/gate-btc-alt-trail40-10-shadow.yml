@@ -300,9 +300,9 @@ jobs:
           p=json.load(open(root / 'DELIVERY_STATUS.json', encoding='utf-8'))
           assert p['authorization_id'] in {'ALT_TRAIL40_10_20260930_USER_20260928', 'ALT_TRAIL40_10_20261031_USER_20261006'}
           assert p['first_eligible_signal_date'] in {'2026-09-30','2026-10-31'}
-          assert p['first_eligible_execution_date'] == '2026-10-01'
+          assert p['first_eligible_execution_date'] in {'2026-10-01','2026-11-01'}
           assert p['legacy_economic_credit'] == 0
-          epoch=root / 'epochs/monthly_20260930'
+          epoch=root / 'epochs' / p['current_epoch']
           assert p['research_only'] is True and p['shadow_only'] is True
           assert p['not_approved'] is True and p['engine_feed'] is False
           assert p['orders_generated'] == 0 and p['real_capital_used'] == 0
