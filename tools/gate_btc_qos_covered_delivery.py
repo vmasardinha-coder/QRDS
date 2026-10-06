@@ -12,6 +12,32 @@ from tools import gate_btc_qos_prospective_three_track as core
 
 APPROVAL = ROOT/'tools/gate_btc_qos_interruption_20260928.json'
 CONTRACT = ROOT/'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json'
+SOURCE_EPOCH = ROOT/'migration/GATE_BTC_QOS_SOURCE_EPOCH_20261031.json'
+
+def epoch_policy():
+    policy=core.load(SOURCE_EPOCH)
+    assert policy['qualification']['status']=='PASS_PHYSICAL_QUALIFICATION'
+    assert policy['qualification']['close_equivalence_8_of_8'] and policy['qualification']['exact_current_8_of_8']
+    assert policy['historical_backfill'] is False and policy['mid_cycle_source_substitution'] is False
+    return policy
+
+def epoch_capture(v2a, contract, day, upstream):
+    state=core.capture(v2a, contract, day, upstream)
+    policy=epoch_policy()
+    if pd.Timestamp(day).date().isoformat() < policy['effective_signal_date']:
+        return state
+    remapped=[]
+    for symbol in policy['symbols']:
+        if state['candidate_source_lock'].get(symbol)=='cdd':
+            state['candidate_source_lock'][symbol]=policy['source_lock']
+            remapped.append(symbol)
+    state['source_epoch']={'schema':policy['schema'],
+        'qualification_run_id':policy['qualification']['run_id'],
+        'effective_signal_date':policy['effective_signal_date'],
+        'source_lock':policy['source_lock'],'remapped_symbols':remapped,
+        'prior_source_lock':'cdd'}
+    state['state_sha256']=core.sharow(state)
+    return state
 SAFE = dict(research_only=True, shadow_only=True, not_approved=True,
             engine_feed=False, orders_generated=0, real_capital_used=0)
 
@@ -91,9 +117,22 @@ def canonical_loaders(day):
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     module.START_DATE=pd.Timestamp(day)
     session=RecordingSession(requests.Session(),lambda:datetime.now(timezone.utc))
+    def archive(symbol):
+        from tools.gate_btc_qos_selected_source_probe import archive_quote
+        receipt=archive_quote(symbol,day)
+        if receipt['status']!='PASS_EXACT_DAY':
+            raise ValueError('ARCHIVE_EXACT_DAY_UNAVAILABLE:'+symbol+':'+receipt['status'])
+        session.records.append({'transport':'binance_spot_daily_archive',
+            'symbol':symbol,'cutoff':day,'url':receipt['url'],
+            'archive_sha256':receipt['archive_sha256'],
+            'close_usd':receipt['close_usd']})
+        return pd.DataFrame([{'date':day,'symbol':symbol,
+            'close_usd':receipt['close_usd'],
+            'source':epoch_policy()['source_lock']}])
     return {'cdd':lambda symbol:module.fetch_cdd_symbol(session,symbol),
             'binance':lambda symbol:module.fetch_binance_klines(PublicMarketSession(session),symbol),
-            'okx':lambda symbol:module.fetch_okx_candles(session,symbol)},session
+            'okx':lambda symbol:module.fetch_okx_candles(session,symbol),
+            epoch_policy()['source_lock']:archive},session
 
 
 def cover(state,master,day,evidence_root,upstream_sha,at,loaders=None):
@@ -147,6 +186,7 @@ def process(root, config, zip_path, runid, at, loaders=None):
         seal(frozen,Path(zip_path).read_bytes())
     effective=frozen if frozen.exists() else zip_path
     original_append=core.append_path
+    original_capture=core.capture
     def covered_append(state,cd,master,target,rid):
         ds=pd.Timestamp(target).date().isoformat()
         frame=cover(state,master,ds,root/'source_evidence',sha(Path(effective).read_bytes()),at,loaders)
@@ -158,8 +198,11 @@ def process(root, config, zip_path, runid, at, loaders=None):
         shutil.copytree(root,stage,ignore=shutil.ignore_patterns('source_evidence','signal_inputs','retry_budget.json'))
         try:
             core.append_path=covered_append
+            core.capture=epoch_capture
             result=core.process(Path(effective),core.contract(CONTRACT),stage,day,runid)
-        finally:core.append_path=original_append
+        finally:
+            core.append_path=original_append
+            core.capture=original_capture
         old_prefix=Path('cycles')/config['interrupted_signal_date']
         for p in stage.rglob('*'):
             if not p.is_file():continue
