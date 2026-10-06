@@ -12,7 +12,7 @@ from tools import gate_btc_qos_prospective_three_track as core
 
 APPROVAL = ROOT/'tools/gate_btc_qos_interruption_20260928.json'
 CONTRACT = ROOT/'migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json'
-SOURCE_EPOCH = ROOT/'migration/GATE_BTC_QOS_SOURCE_EPOCH_20261031.json'
+SOURCE_EPOCH = ROOT/'tools/gate_btc_qos_source_epoch_20261031.json'
 ORIGINAL_CAPTURE = core.capture
 
 def epoch_policy():
