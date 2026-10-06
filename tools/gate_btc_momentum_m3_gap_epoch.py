@@ -18,6 +18,10 @@ def prepare(base: Path, cutoff: str, at=None):
     missing=[d for d in required(cutoff) if not (source/(d+'.json')).exists()]
     gaps=economic/'gaps'
     markers=sorted(gaps.glob('*.json'))
+    if cutoff in missing:
+        return {'can_compute':False,'source_gap':False,
+                'economic_dir':str(economic),'cutoff':cutoff,
+                'status':'NEEDS_CURRENT_CANONICAL_SOURCE'}
     if missing:
         legacy=economic/'LEDGER.json'
         if not legacy.exists():
