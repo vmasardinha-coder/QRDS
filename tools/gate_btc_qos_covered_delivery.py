@@ -2,7 +2,7 @@
 """Approved interruption disposition and same-source frozen-cohort delivery."""
 from __future__ import annotations
 import argparse, copy, gzip, hashlib, importlib.util, io, json, math, os, shutil, sys, tempfile, zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import pandas as pd
 
@@ -97,14 +97,21 @@ def archive_expired_gap(root, at):
     if not status_path.exists() or not (cycle/'SIGNAL_STATE.json').exists():
         return
     prior=core.load(status_path)
-    gap=prior.get('missing_selected_cutoff')
-    latest=prior.get('latest_snapshot_date')
-    if prior.get('status')!='FAILED_QOS_DELIVERY' or not gap or not latest:
+    snaps=sorted((cycle/'path'/'snapshots').glob('*.json'))
+    if not snaps or (cycle/'FINAL_RESULT.json').exists():
         return
-    # A same-UTC-day retry remains available; the next UTC cutoff cannot
-    # legally bridge the missing daily row under the frozen contract.
-    if gap >= (at.date()-timedelta(days=1)).isoformat():
+    last=core.load(snaps[-1])
+    if last.get('snapshot_date')!=snaps[-1].stem or last.get('row_sha256')!=core.sharow(last):
+        raise ValueError('LAST_QOS_SNAPSHOT_SEAL_INVALID')
+    latest=snaps[-1].stem
+    gap=(date.fromisoformat(latest)+timedelta(days=1)).isoformat()
+    current=(at.date()-timedelta(days=1)).isoformat()
+    # Today's expected close can still arrive. Once the next cutoff passes
+    # it, no append can bridge that missing row under the frozen contract.
+    if gap>=current:
         return
+    if prior.get('latest_snapshot_date')!=latest:
+        raise ValueError('QOS_STATUS_AND_SEALED_PATH_DISAGREE')
     signal=core.load(cycle/'SIGNAL_STATE.json')
     original={str(p.relative_to(cycle)):sha(p.read_bytes())
               for p in sorted(cycle.rglob('*')) if p.is_file() and p!=marker}
