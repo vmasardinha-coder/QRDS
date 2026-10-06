@@ -21,9 +21,7 @@ on:
       - tools/gate_btc_alt_trail40_10_cycle_20260930.json
       - tools/gate_btc_alt_trail40_10_shadow_contract_20260930.json
       - tests/test_gate_btc_alt_trail40_10_cycle.py
-      - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_prl_alt_same_source_recovery.py
-      - tests/test_gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tests/test_gate_btc_alt_trail40_10_delivery_audit.py
       - tests/test_gate_btc_alt_trail40_10_shadow_archive.py
@@ -117,6 +115,7 @@ jobs:
           tests/test_gate_btc_alt_trail40_10_shadow_evaluator.py
           tests/test_gate_btc_alt_trail40_10_delivery_audit.py
           tests/test_gate_btc_alt_trail40_10_cycle.py
+          tests/test_gate_btc_prl_alt_same_source_recovery.py
 
   append-prospective-path:
     needs: contract-tests
