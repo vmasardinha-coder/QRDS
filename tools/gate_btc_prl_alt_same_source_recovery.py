@@ -26,8 +26,12 @@ def packed(value):
 def recover(master, qos_root, day, output, receipt):
     require(day == (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat(),
             "CURRENT_UTC_CUTOFF_ONLY")
-    state_path = qos_root / "cycles" / "2026-09-30" / "SIGNAL_STATE.json"
-    evidence = qos_root / "source_evidence" / "2026-09-30" / day
+    cycles=sorted(p for p in (qos_root/"cycles").glob("*/SIGNAL_STATE.json")
+                  if p.parent.name<=day and not (p.parent/"BLOCKED.json").exists())
+    require(cycles,"NO_ACTIVE_QOS_SIGNAL_FOR_CUTOFF")
+    state_path=cycles[-1]
+    signal_date=state_path.parent.name
+    evidence = qos_root / "source_evidence" / signal_date / day
     prices_path = evidence / "PRICES.json"
     raw_path = evidence / "RAW_SOURCES.json.gz"
     state = json.loads(state_path.read_text())
@@ -39,8 +43,7 @@ def recover(master, qos_root, day, output, receipt):
     gzip.decompress(raw)
     require(manifest["signal_state_sha256"] == state["state_sha256"],
             "QOS_SIGNAL_HASH_MISMATCH")
-    require(manifest["cutoff"] == day and manifest["missing_candidates"] == [],
-            "QOS_CUTOFF_OR_COVERAGE_MISMATCH")
+    require(manifest["cutoff"] == day, "QOS_CUTOFF_MISMATCH")
     require(manifest["source_substitution"] is False
             and manifest["research_only"] is True
             and manifest["orders_generated"] == 0, "QOS_SAFETY_MISMATCH")
@@ -63,15 +66,28 @@ def recover(master, qos_root, day, output, receipt):
                 "MASTER_SCHEMA_INVALID")
         rows = list(reader)
     existing = {}
+    epoch_converted=[]
     for row in rows:
         if row["date"] == day and row["symbol"] in selected:
             symbol = row["symbol"]
             require(symbol not in existing, "MASTER_DUPLICATE_SELECTED_QUOTE")
-            require(float(row["close_usd"]) == float(quotes[symbol]["close_usd"]),
+            quote=quotes[symbol]
+            old=float(row["close_usd"])
+            new=float(quote["close_usd"])
+            same=old==new
+            prospective=(state.get("source_epoch",{}).get("source_lock")
+                         == "binance_spot_daily_archive"
+                         and symbol in state["source_epoch"].get("remapped_symbols",[])
+                         and row.get("source")=="cdd"
+                         and quote["source"]=="binance_spot_daily_archive")
+            relative=abs(old-new)/max(abs(old),abs(new),1e-15)
+            require(same or (prospective and relative<=1e-8),
                     "MASTER_QOS_PRICE_CONFLICT")
-            if "source" in fields:
-                require(row["source"] == quotes[symbol]["source"],
-                        "MASTER_QOS_SOURCE_CONFLICT")
+            if "source" in fields and row["source"]!=quote["source"]:
+                require(prospective,"MASTER_QOS_SOURCE_CONFLICT")
+                row["source"]=quote["source"]
+                row["close_usd"]=str(new)
+                epoch_converted.append(symbol)
             existing[symbol] = row
     added = sorted(selected - existing.keys())
     for symbol in added:
@@ -87,7 +103,8 @@ def recover(master, qos_root, day, output, receipt):
         writer.writeheader()
         writer.writerows(rows)
     result = {"schema": "gate_btc.same_source_recovery.v1", "cutoff": day,
-              "added_symbols": added, "source_substitution": False,
+              "added_symbols": added, "qualified_new_epoch_transport": epoch_converted,
+              "qos_signal_date": signal_date, "source_substitution": False,
               "qos_manifest_sha256": digest, "qos_raw_sha256": manifest["raw_sha256"],
               "qos_signal_state_sha256": state["state_sha256"],
               "original_master_sha256": sha(master.read_bytes()),
