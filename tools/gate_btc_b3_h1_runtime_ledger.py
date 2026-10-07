@@ -14,6 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+AMENDMENT_FILE = Path(__file__).resolve().parent / "gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_AMENDMENT_20261007.v1.json"
+AMENDMENT_SHA256 = "9a78b234c6f00d64af9e9de1ad2d9aa3b6a28018965f35dcbbd1b0f58f3cdb3a"
+LEGACY_END = "2026-09-04"
+
 
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -46,6 +50,22 @@ def validate_source(s: dict[str, Any]) -> None:
         raise RuntimeError("B3 H1 zero-order/zero-capital lock changed")
     if s.get("economics_locked") is not True or s.get("economic_functions_called") is not False:
         raise RuntimeError("B3 H1 economics lock changed")
+    day = str(s.get("date", ""))
+    if day > LEGACY_END:
+        raw = AMENDMENT_FILE.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != AMENDMENT_SHA256:
+            raise RuntimeError("H1_AMENDMENT_SEAL_CHANGED")
+        amendment = json.loads(raw)
+        declared = {row["date"]: row for row in amendment["sessions"]}
+        row = declared.get(day)
+        if row is None or s.get("front_contracts") != {"WIN": row["WIN"], "WDO": row["WDO"]}:
+            raise RuntimeError("H1_UNDECLARED_PROSPECTIVE_SESSION_OR_CONTRACT")
+        if s.get("freeze_status") != amendment["freeze_status"] or s.get("schedule_amendment_sha256") != AMENDMENT_SHA256:
+            raise RuntimeError("H1_PROSPECTIVE_AMENDMENT_EVIDENCE_MISSING")
+        if s.get("full_frozen_schedule_sha256") != amendment["legacy_full_frozen_schedule_sha256"] or s.get("h1_schedule_prefix_sha256") != amendment["legacy_schedule_prefix_sha256"]:
+            raise RuntimeError("H1_LEGACY_SEALS_CHANGED")
+    elif s.get("freeze_status") != "FROZEN_BEFORE_H1":
+        raise RuntimeError("H1_LEGACY_FREEZE_STATUS_MISSING")
     qa = s.get("qa") or {}
     if qa.get("m1_to_m5_exact") is not True or qa.get("tick_grid") != "PASS" or qa.get("ohlc_integrity") != "PASS":
         raise RuntimeError("B3 H1 structural QA did not pass")
@@ -64,6 +84,7 @@ def canonical_entry(source: dict[str, Any], status_path: Path, run_id: str) -> d
         "status_sha256": sha(status_path),
         "source_run_id": str(run_id),
         "freeze_status": source.get("freeze_status"),
+        **({"schedule_amendment_sha256": source["schedule_amendment_sha256"]} if source.get("schedule_amendment_sha256") else {}),
         "upstream_engine_sha256": source.get("upstream_engine_sha256"),
         "full_frozen_schedule_sha256": source.get("full_frozen_schedule_sha256"),
         "h1_schedule_prefix_sha256": source.get("h1_schedule_prefix_sha256"),
