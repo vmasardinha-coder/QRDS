@@ -8,8 +8,9 @@
   "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
+  "error": "MISSING_REQUIRED_PRICES: OKB",
+  "failure_evidence": "failures/2026-10-06/5888ffdfcce40fbf8e0c36d67a74073158c72254d9e08bf19797270ed65571d7.json.gz",
   "first_eligible_cutoff": "2026-09-28",
-  "idempotent": true,
   "latest_economics": {
     "btc_daily_return_gross": -0.00881925343811385,
     "btc_nav": 1.025138871524387,
@@ -107,7 +108,7 @@
     "M2_TOP10": 1.1243434523347366
   },
   "net_return": null,
-  "next_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
+  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
   "not_approved": true,
   "orders": 0,
   "promotion_allowed": false,
@@ -116,9 +117,23 @@
   "return_observations": 6,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+  "source_failures": {
+    "OKB": [
+      {
+        "error": "HTTPSConnectionPool(host='www.cryptodatadownload.com', port=443): Max retries exceeded with url: /cdd/Binance_OKBUSDT_d.csv (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)')))",
+        "source": "cdd",
+        "symbol": "OKB"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "OKB"
+      }
+    ]
+  },
+  "status": "FAILED_ECONOMIC_DELIVERY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-06T10:45:31.439386+00:00",
+  "updated_at_utc": "2026-10-07T10:14:14.763246+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
