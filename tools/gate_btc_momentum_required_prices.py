@@ -57,6 +57,36 @@ class PublicMarketSession:
         return self.session.get(url,**kwargs)
 
 
+def fetch_okx_okb_utc_close(session, symbol, cutoff):
+    """Qualified, confirmed UTC spot candle for OKB only; never use an open bar."""
+    if symbol != 'OKB':
+        raise ValueError('OKX_FALLBACK_RESTRICTED_TO_OKB')
+    import pandas as pd
+    response = session.get(
+        'https://www.okx.com/api/v5/market/candles',
+        params={'instId': 'OKB-USDT', 'bar': '1Dutc', 'limit': '10'},
+        timeout=20,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if payload.get('code') != '0' or not isinstance(payload.get('data'), list):
+        raise ValueError('OKX_INVALID_CANDLE_RESPONSE')
+    matches = []
+    for row in payload['data']:
+        if not isinstance(row, list) or len(row) < 9:
+            raise ValueError('OKX_INVALID_CANDLE_ROW')
+        bar_date = datetime.fromtimestamp(int(row[0]) / 1000, timezone.utc)
+        if bar_date.hour or bar_date.minute or bar_date.second:
+            raise ValueError('OKX_NON_UTC_DAILY_BAR')
+        if bar_date.date().isoformat() == cutoff:
+            if str(row[8]) != '1':
+                raise ValueError('OKX_CANDLE_NOT_CONFIRMED')
+            matches.append(float(row[4]))
+    if len(matches) != 1 or not math.isfinite(matches[0]) or matches[0] <= 0:
+        raise ValueError('OKX_MISSING_OR_INVALID_CONFIRMED_CLOSE')
+    return pd.DataFrame([{'date': cutoff, 'symbol': symbol, 'close_usd': matches[0]}])
+
+
 class MissingRequiredPrices(ValueError):
     def __init__(self,failures,evidence_path):
         super().__init__('MISSING_REQUIRED_PRICES: '+','.join(sorted(failures)))
@@ -92,7 +122,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
         session=RecordingSession(requests.Session(),clock)
     prices=[];failures={};attempts=[]
     for symbol in required:
-        for name,loader in loaders:
+        alternatives = loaders + ([('okx_okb_utc_confirmed', lambda s,sym: fetch_okx_okb_utc_close(s,sym,cutoff))] if symbol == 'OKB' else [])
+        for name,loader in alternatives:
             try:
                 frame=loader(session,symbol);value=choose_quote(frame,symbol,cutoff)
                 prices.append({'date':cutoff,'symbol':symbol,'close_usd':value,'source':name})
@@ -116,7 +147,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
     manifest={'schema':'gate_btc.momentum_required_prices.v1','cutoff':cutoff,'required_assets':required,
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
-              'source_priority':[name for name,_ in loaders],'okx_policy':'NOT_USED_HERE_UNTIL_UTC_DAILY_ALIGNMENT_IS_QUALIFIED',
+              'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
               'evidence_role':'CURRENT_SOURCE_EVIDENCE_ONLY_NOT_BACKFILLED_ECONOMICS',
               'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0}
     dest.mkdir(parents=True,exist_ok=True)
