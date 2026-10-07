@@ -6,7 +6,7 @@ import hashlib
 import io
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -21,6 +21,8 @@ UPSTREAM_ENGINE_SHA256 = "1e313614e4f8dd318488e3abdde1d56848c076f9e57bb47a4fd5ce
 FULL_FROZEN_SCHEDULE_SHA256 = "5fd7314f55fb1c6394628d94227fdc0ed375016a57453a07f05828ffd5a9282f"
 H1_PREFIX_SHA256 = "c9ff28b4d1b6c8e2aceb3281da51bc41858780493c99a0eeac148f2bdd0bc4f6"
 BLIND_LOCK_SHA256 = "ceb5ed9b48f2c4f616eee82a78942f39deceb41272369be02ad207b49425cbf1"
+AMENDMENT_FILE = Path(__file__).resolve().parent / "gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_AMENDMENT_20261007.v1.json"
+AMENDMENT_SHA256 = "9a78b234c6f00d64af9e9de1ad2d9aa3b6a28018965f35dcbbd1b0f58f3cdb3a"
 EXPECTED_M5 = 102
 TICK = {"WIN": 5.0, "WDO": 0.5}
 SCHEDULE_PREFIX = """date,WIN,WDO,freeze_status
@@ -64,6 +66,34 @@ def load_schedule() -> dict[str, dict[str, str]]:
         str(r.date): {"WIN": str(r.WIN), "WDO": str(r.WDO)}
         for r in df.itertuples(index=False)
     }
+
+
+def load_amendment_schedule() -> dict[str, dict[str, str]]:
+    raw = AMENDMENT_FILE.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != AMENDMENT_SHA256:
+        raise RuntimeError("H1_AMENDMENT_HASH_MISMATCH")
+    amendment = json.loads(raw)
+    if amendment["schema"] != "qrds.h1.prospective_schedule_amendment.v1":
+        raise RuntimeError("H1_AMENDMENT_SCHEMA_MISMATCH")
+    if amendment["legacy_schedule_prefix_sha256"] != H1_PREFIX_SHA256 or amendment["legacy_full_frozen_schedule_sha256"] != FULL_FROZEN_SCHEDULE_SHA256:
+        raise RuntimeError("H1_LEGACY_SCHEDULE_SEAL_MISMATCH")
+    if amendment["legacy_counter_qualified_preserved"] != 12 or amendment["safety"]["no_backfill"] is not True:
+        raise RuntimeError("H1_AMENDMENT_SAFETY_MISMATCH")
+    if amendment["continuity_policy"] != "ADD_ONLY_UNIQUE_FUTURE_STRUCTURAL_PASS_TO_CANONICAL_12_OF_20":
+        raise RuntimeError("H1_AMENDMENT_CONTINUITY_MISMATCH")
+    rows = amendment["sessions"]
+    dates = [row["date"] for row in rows]
+    if len(rows) != 8 or dates != sorted(set(dates)) or dates[0] != amendment["first_eligible_session"]:
+        raise RuntimeError("H1_AMENDMENT_SESSION_LIST_INVALID")
+    approved = datetime.fromisoformat(amendment["approved_at_utc"].replace("Z", "+00:00"))
+    if approved >= datetime.fromisoformat(dates[0] + "T12:00:00+00:00"):
+        raise RuntimeError("H1_AMENDMENT_NOT_FROZEN_BEFORE_FIRST_SESSION")
+    legacy = load_schedule()
+    if any(day in legacy or day <= "2026-10-07" for day in dates):
+        raise RuntimeError("H1_AMENDMENT_OVERLAPS_HISTORY")
+    if amendment["freeze_status"] != "FROZEN_BEFORE_SESSION_AMENDMENT_V1":
+        raise RuntimeError("H1_AMENDMENT_FREEZE_STATUS_MISMATCH")
+    return {row["date"]: {"WIN": row["WIN"], "WDO": row["WDO"]} for row in rows}
 
 
 def parse_ts(series: pd.Series) -> pd.Series:
@@ -247,15 +277,28 @@ def main() -> int:
 
     try:
         schedule = load_schedule()
-        if date not in schedule:
+        prospective = load_amendment_schedule()
+        if date in prospective:
+            target = datetime.fromisoformat(date).date()
+            elapsed = (datetime.now(ZoneInfo(TZ)).date() - target).days
+            if elapsed not in (0, 1):
+                state.update(status="PROSPECTIVE_WINDOW_EXPIRED_OR_NOT_OPEN", qualified=False, h1_increment_candidate=0)
+                dump(out / "H1_STRUCTURAL_STATUS.json", state)
+                print(json.dumps(state, indent=2, ensure_ascii=False))
+                return 0
+            front = prospective[date]
+            state["freeze_status"] = "FROZEN_BEFORE_SESSION_AMENDMENT_V1"
+            state["schedule_amendment_sha256"] = AMENDMENT_SHA256
+            state["schedule_amendment_id"] = "h1_20261007_eight_sessions"
+        elif date in schedule:
+            front = schedule[date]
+            state["freeze_status"] = "FROZEN_BEFORE_H1"
+        else:
             state.update(status="NO_FROZEN_H1_SCHEDULE_FOR_DATE", qualified=False, h1_increment_candidate=0)
             dump(out / "H1_STRUCTURAL_STATUS.json", state)
             print(json.dumps(state, indent=2, ensure_ascii=False))
             return 0
-
-        front = schedule[date]
         state["front_contracts"] = front
-        state["freeze_status"] = "FROZEN_BEFORE_H1"
 
         if args.source_file:
             raw = Path(args.source_file).read_bytes()
