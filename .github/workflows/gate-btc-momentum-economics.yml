@@ -15,6 +15,7 @@ on:
       - tools/gate_btc_momentum_required_prices.py
       - tests/test_gate_btc_momentum_economics.py
       - tests/test_gate_btc_momentum_hold_economics.py
+      - tests/test_gate_btc_momentum_required_prices_okb.py
       - migration/reporting/momentum_m1m2_hold_epoch_20260928.json
       - migration/reporting/momentum_m1m2_economic_contract_v1.json
       - migration/reporting/momentum_m1m2_interruption_20260927.md
@@ -47,6 +48,7 @@ jobs:
         with: {python-version: '3.12'}
       - run: pip install pandas==2.2.3 numpy==2.1.3
       - run: python -m unittest discover -s tests -p 'test_gate_btc_momentum_*economics.py' -v
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_momentum_required_prices_okb.py' -v
       - run: |
           python - <<'PY'
           import json
