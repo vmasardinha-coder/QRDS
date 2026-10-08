@@ -84,10 +84,10 @@ def audit(root, at=None, activate=False):
             save(root / "STATUS.json", {**prior_status, **result})
     if activate or (root / "ACTIVE_EPOCH.json").exists():
         require(blocked, "ORIGINAL_NOT_INTERRUPTED")
-        epoch_contract = bull.load_contract(Path("tools/gate_btc_bull_replay_epoch_contract_20260929.json"))
-        require(epoch_contract["anchor_date"] == "2026-09-29" and
-                epoch_contract["first_return_date"] == "2026-09-30", "EPOCH_CONTRACT_CHANGED")
-        epoch_rel = "epochs/independent_20260929"
+        epoch_contract = bull.load_contract(Path("tools/gate_btc_bull_replay_epoch_contract_20261009.json"))
+        require(epoch_contract["anchor_date"] == "2026-10-09" and
+                epoch_contract["first_return_date"] == "2026-10-10", "EPOCH_CONTRACT_CHANGED")
+        epoch_rel = "epochs/independent_20261009"
         marker_path = root / "ACTIVE_EPOCH.json"
         expected_marker = {**SAFE, "schema": "gate_btc.bull_replay_live_shadow.active_epoch.v1",
                            "relative_path": epoch_rel,
@@ -95,8 +95,14 @@ def audit(root, at=None, activate=False):
                            "first_return_date": epoch_contract["first_return_date"],
                            "original_evidence_sha256": seals, "inherited_scientific_credit": 0}
         if marker_path.exists():
-            require(json.loads(marker_path.read_text(encoding="utf-8")) == expected_marker,
-                    "ACTIVE_EPOCH_MUTATED")
+            prior_marker = json.loads(marker_path.read_text(encoding="utf-8"))
+            if prior_marker != expected_marker:
+                require(activate and prior_marker.get("relative_path") == "epochs/independent_20260929",
+                        "ACTIVE_EPOCH_MUTATED")
+                prior_dir = root / prior_marker["relative_path"]
+                require(not (prior_dir / "ANCHOR.json").exists() and not (prior_dir / "DAILY_LEDGER.csv").exists(),
+                        "PRIOR_EPOCH_HAS_EVIDENCE_DO_NOT_REPLACE")
+                save(marker_path, expected_marker)
         elif activate:
             save(marker_path, expected_marker)
         epoch_dir = root / epoch_rel
