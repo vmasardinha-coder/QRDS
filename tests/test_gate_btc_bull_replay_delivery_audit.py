@@ -52,18 +52,18 @@ class DeliveryAuditTests(unittest.TestCase):
 
     def test_authorized_epoch_waits_for_exact_untouched_close(self):
         before = (self.root / "DAILY_LEDGER.csv").read_bytes()
-        at = datetime(2026, 9, 29, tzinfo=timezone.utc)
+        at = datetime(2026, 10, 9, tzinfo=timezone.utc)
         state = audit.audit(self.root, at, activate=True)
         self.assertEqual(state["status"], "WAITING_FIRST_ANCHOR_CLOSE")
         self.assertFalse(state["can_append"])
-        self.assertEqual(state["anchor_date"], "2026-09-29")
+        self.assertEqual(state["anchor_date"], "2026-10-09")
         self.assertEqual(state["inherited_scientific_credit"], 0)
         self.assertEqual((self.root / "DAILY_LEDGER.csv").read_bytes(), before)
-        ready = audit.audit(self.root, datetime(2026, 9, 30, tzinfo=timezone.utc))
+        ready = audit.audit(self.root, datetime(2026, 10, 10, tzinfo=timezone.utc))
         self.assertEqual(ready["status"], "READY_EXACT_DAILY_CLOSE")
         self.assertTrue(ready["can_append"])
-        self.assertEqual(ready["expected_source_data_as_of"], "2026-09-29")
-        missed = audit.audit(self.root, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertEqual(ready["expected_source_data_as_of"], "2026-10-09")
+        missed = audit.audit(self.root, datetime(2026, 10, 11, tzinfo=timezone.utc))
         self.assertEqual(missed["status"], "BLOCKED_EPOCH_DAILY_GAP_NO_BACKFILL")
         self.assertFalse(missed["can_append"])
 
