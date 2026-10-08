@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-08T02:15:00.843599+00:00`
+Generated: `2026-10-08T02:18:37.787734+00:00`
 
 ## Funnel
 - Reclassified: **2560**
