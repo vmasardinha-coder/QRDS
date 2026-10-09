@@ -1,13 +1,21 @@
 name: GATE BTC B3 H1 Daily Structural
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_b3_h1_parser.py
+      - tests/test_gate_btc_b3_h1_cancel_identity.py
+      - .github/workflows/gate-btc-b3-h1-daily.yml
   pull_request:
     branches: [main]
     paths:
       - tools/gate_btc_b3_h1_daily.py
+      - tools/gate_btc_b3_h1_parser.py
       - tools/gate_btc_b3_h1_runtime_ledger.py
       - tools/gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_AMENDMENT_20261007.v1.json
       - tests/test_gate_btc_h1_prospective_schedule.py
+      - tests/test_gate_btc_b3_h1_cancel_identity.py
       - .github/workflows/gate-btc-b3-h1-daily.yml
   schedule:
     # Primary publication windows: 21:30, 22:30 and 23:30 America/Sao_Paulo
@@ -49,6 +57,7 @@ jobs:
           python-version: "3.12"
       - run: pip install requests pandas numpy
       - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_prospective_schedule.py' -v
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_h1_cancel_identity.py' -v
 
   b3-h1-structural:
     if: github.event_name != 'pull_request'
