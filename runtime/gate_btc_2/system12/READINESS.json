@@ -2,6 +2,7 @@
   "automatic_promotion": false,
   "engine_feed": false,
   "independent_replication_executed": false,
+  "next_action": "BIND_INDEPENDENT_REPLICATION_CONTRACT_WITHOUT_AUTO_COMPLETION",
   "no_backfill": true,
   "no_retune": true,
   "orders": 0,
@@ -10,11 +11,25 @@
   "schema": "gate_btc.2_0.system12_readiness.v1",
   "scientific_credit": 0,
   "shadow_only": true,
-  "status": "BLOCKED_UPSTREAM_SYSTEM11_INCOMPLETE",
+  "status": "STRUCTURAL_READY_PENDING_FROZEN_INDEPENDENT_REPLICATION_CONTRACT",
   "structural_harness_available": true,
   "system": 12,
-  "system11_report_sha256": "d602321584968e9e071b28d2009f641d4b662bd5fbee180c94590d44dbd7bf9b",
+  "system11_report_sha256": "ba531504ce268148cb5989e0ae8fbcbc2308fdea92a46070e8cf06fa238655c2",
   "system12_complete": false,
   "system13_dependency_released": false,
-  "upstream_system11_ready": false
+  "upstream_checks": {
+    "causal": true,
+    "dataset_gate": true,
+    "dataset_hash": true,
+    "deterministic": true,
+    "fill_artifact_receipt": true,
+    "minimum_executions": true,
+    "monotonicity": true,
+    "observed_fills": true,
+    "prereg_hash": true,
+    "safety": true,
+    "scenario_grid": true,
+    "source_binding": true
+  },
+  "upstream_system11_ready": true
 }
