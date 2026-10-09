@@ -87,3 +87,8 @@ def test_conflicting_rank_alias_fails_closed(tmp_path):
     p.write_text(json.dumps({"data":[{"id":1,"symbol":"BTC","slug":"bitcoin","rank":1,"cmc_rank":2}]}))
     with pytest.raises(ValueError,match="conflicting CMC rank"):
         src.load_cmc_assets(p)
+
+
+def test_price_lookback_covers_frozen_shifted_residual_momentum():
+    from tools import gate_btc_v16b_feature_panel as frozen
+    assert src.DAILY_LOOKBACK_DAYS >= max(frozen.REL_HORIZONS) + 1 + max(frozen.MOM_HORIZONS)
