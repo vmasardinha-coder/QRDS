@@ -87,6 +87,35 @@ def epoch_clocks(root: pathlib.Path, track: str, status: dict, cfg: dict) -> tup
     return first, execution
 
 
+def pending_anchor(root: pathlib.Path, track: str, status: dict, today: date) -> str | None:
+    """Recognize an unmaterialized future epoch without granting a signal or credit.
+
+    The frozen epoch must exist and pass epoch_clocks on its signal date. A
+    partial epoch, malformed status, or a missing past/due anchor stays RED.
+    """
+    first = status.get("first_eligible_signal_date")
+    if not isinstance(first, str):
+        return None
+    signal = parse_day(first)
+    epoch = status.get("current_epoch")
+    if (signal <= today or epoch != f"monthly_{signal:%Y%m%d}"
+            or status.get("status") != "WAITING_NEXT_APPROVED_MONTH_END"
+            or status.get("can_append") is not False
+            or status.get("current_epoch_snapshot_count") != 0
+            or status.get("next_required_cutoff") != first
+            or status.get("economic_result_valid") is not False):
+        return None
+    if track == "alt_trail":
+        execution = status.get("first_eligible_execution_date")
+        if not isinstance(execution, str) or parse_day(execution) <= signal:
+            return None
+    folder = "prl50_position" if track == "prl50" else "alt_trail40_10"
+    base = root / "runtime/ledgers" / folder / "epochs" / epoch
+    if (base / "ANCHOR.json").exists() or (base / "STATUS.json").exists():
+        return None
+    return first
+
+
 def check(root: pathlib.Path, today: date):
     rows=[]
     for name,cfg in TRACKS.items():
@@ -96,6 +125,14 @@ def check(root: pathlib.Path, today: date):
             first_clock=cfg["expected_first"]
             execution_clock=cfg.get("expected_execution")
             if name in ("prl50", "alt_trail"):
+                waiting_clock = pending_anchor(root, name, obj, today)
+                if waiting_clock is not None:
+                    days = (parse_day(waiting_clock)-today).days
+                    rows.append({"track":name,"status":"WAITING_FROZEN_ANCHOR",
+                                 "source":str(p),"days_to_first_clock":days,
+                                 "first_eligible_signal_date":waiting_clock,
+                                 "scientific_credit":0})
+                    continue
                 first_clock, execution_clock = epoch_clocks(root, name, obj, cfg)
             first=parse_day(first_clock)
             days=(first-today).days
@@ -125,7 +162,9 @@ def check(root: pathlib.Path, today: date):
             rows.append({"track":name,"status":"PASS_PREFLIGHT","phase":phase,"source":str(p),"days_to_first_clock":days,"first_eligible_signal_date":first_clock})
         except Exception as e:
             rows.append({"track":name,"status":"RED_FAIL_CLOSED","error":str(e)})
-    overall="PASS" if all(r["status"]=="PASS_PREFLIGHT" for r in rows) else "RED_FAIL_CLOSED"
+    statuses = {r["status"] for r in rows}
+    overall = ("RED_FAIL_CLOSED" if "RED_FAIL_CLOSED" in statuses else
+               "WAITING_SAFE" if "WAITING_FROZEN_ANCHOR" in statuses else "PASS")
     return {"schema":"gate_btc.calendar_gate_preflight.v1","generated_at_utc":datetime.utcnow().isoformat(timespec="seconds")+"Z","today_utc":today.isoformat(),"overall_status":overall,"rows":rows,"research_only":True,"shadow_only":True,"not_approved":True,"orders":0,"real_capital":0,"engine_feed":False}
 
 def main():
@@ -137,7 +176,8 @@ def main():
     result=check(pathlib.Path(args.runtime_root),parse_day(args.today))
     pathlib.Path(args.output).write_text(json.dumps(result,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(json.dumps(result,indent=2,sort_keys=True))
-    return 0 if result["overall_status"]=="PASS" else 2
+    return 0 if result["overall_status"] in ("PASS", "WAITING_SAFE") else 2
 
 if __name__=="__main__":
     raise SystemExit(main())
+
