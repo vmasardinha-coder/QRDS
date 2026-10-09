@@ -90,5 +90,10 @@ def test_conflicting_rank_alias_fails_closed(tmp_path):
 
 
 def test_price_lookback_covers_frozen_shifted_residual_momentum():
-    from tools import gate_btc_v16b_feature_panel as frozen
-    assert src.DAILY_LOOKBACK_DAYS >= max(frozen.REL_HORIZONS) + 1 + max(frozen.MOM_HORIZONS)
+    import ast
+    from pathlib import Path
+    tree = ast.parse(Path("tools/gate_btc_v16b_feature_panel.py").read_text())
+    horizons = {node.targets[0].id: ast.literal_eval(node.value) for node in tree.body
+                if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id in {"REL_HORIZONS", "MOM_HORIZONS"}}
+    assert src.DAILY_LOOKBACK_DAYS >= max(horizons["REL_HORIZONS"]) + 1 + max(horizons["MOM_HORIZONS"])
