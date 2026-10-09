@@ -100,6 +100,43 @@ def dataframe_from_store(store,date,front):
         })
     return pd.DataFrame(rows)
 
+
+def cancellation_identity_audit(raw, member, cancellations, front):
+    """Inspect original execution identities without changing any M1/M5 bar.
+
+    A cancel record alone does not establish that its original execution can be
+    removed. This second scan supplies bounded evidence for a later adjudication.
+    """
+    if len(cancellations) > 20:
+        return {"status": "TOO_MANY_CANCELLATIONS_FOR_BOUNDED_AUDIT",
+                "count": len(cancellations)}
+    targets = {(row["symbol"], row["trade_id"]) for row in cancellations}
+    if any(not trade_id or trade_id.lower() == "nan" for _, trade_id in targets):
+        return {"status": "MISSING_CANCELLATION_IDENTITY", "count": len(cancellations)}
+    matches = {key: [] for key in targets}
+    with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        with z.open(member) as fh:
+            for ch in pd.read_csv(fh, sep=";", encoding="iso-8859-1", usecols=USECOLS,
+                                  dtype=str, chunksize=CHUNK, low_memory=False):
+                symbols = ch["CodigoInstrumento"].astype(str).str.strip().str.upper()
+                ids = ch["CodigoIdentificadorNegocio"].astype(str).str.strip()
+                action = pd.to_numeric(ch["AcaoAtualizacao"], errors="coerce")
+                hit = ch.loc[symbols.isin(front.values()) & ids.isin({x[1] for x in targets}) & action.eq(0)]
+                for row in hit.itertuples(index=False):
+                    key = (str(row.CodigoInstrumento).strip().upper(), str(row.CodigoIdentificadorNegocio).strip())
+                    if key in matches:
+                        matches[key].append({"time": str(row.HoraFechamento),
+                                             "price": str(row.PrecoNegocio),
+                                             "quantity": str(row.QuantidadeNegociada),
+                                             "session": str(row.TipoSessaoPregao)})
+    evidence = []
+    for cancel in cancellations:
+        originals = matches[(cancel["symbol"], cancel["trade_id"])]
+        evidence.append({"cancel": cancel, "matched_original_count": len(originals),
+                         "matched_originals": originals[:3]})
+    return {"status": "IDENTITIES_INSPECTED_ZERO_CREDIT", "count": len(cancellations),
+            "evidence": evidence}
+
 def process_zip(raw,date,front):
     z=zipfile.ZipFile(io.BytesIO(raw))
     files=[x for x in z.infolist() if not x.is_dir()]
@@ -109,7 +146,7 @@ def process_zip(raw,date,front):
     if "_NEGOCIOSAVISTA.TXT" not in m.filename.upper():
         z.close(); raise RuntimeError(f"unexpected member {m.filename}")
 
-    s1={}; s5={}
+    s1={}; s5={}; cancellations=[]
     stats={"source_rows":0,"front_rows":0,"kept_rows":0,"cancel_rows":0,
            "unknown_actions":[],"off_lattice":0}
     with z.open(m) as fh:
@@ -129,6 +166,13 @@ def process_zip(raw,date,front):
             if len(bad):
                 stats["unknown_actions"].extend(sorted(set(bad.astype(str).tolist())))
             stats["cancel_rows"] += int((act==2).sum())
+            for row in x.loc[act.eq(2)].head(max(0, 21-len(cancellations))).itertuples(index=False):
+                cancellations.append({"symbol": str(row.CodigoInstrumento),
+                                      "trade_id": str(row.CodigoIdentificadorNegocio).strip(),
+                                      "time": str(row.HoraFechamento),
+                                      "price": str(row.PrecoNegocio),
+                                      "quantity": str(row.QuantidadeNegociada),
+                                      "session": str(row.TipoSessaoPregao)})
             x=x[act.eq(0)].copy()
 
             sess=pd.to_numeric(x["TipoSessaoPregao"],errors="coerce")
@@ -155,6 +199,9 @@ def process_zip(raw,date,front):
             merge_agg(s5, aggregate_chunk(x,5))
     z.close()
 
+    if stats["cancel_rows"]:
+        stats["cancellation_identity_audit"] = cancellation_identity_audit(raw, m.filename, cancellations, front)
+        stats["cancellation_audit_truncated"] = stats["cancel_rows"] > len(cancellations)
     if stats["cancel_rows"] or stats["unknown_actions"] or stats["off_lattice"]:
         raise RuntimeError(f"fail-closed front update/lattice: {stats}")
 
