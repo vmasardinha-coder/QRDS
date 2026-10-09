@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse, io, json, zipfile, hashlib, re, time
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import requests
 import pandas as pd
@@ -137,7 +138,40 @@ def cancellation_identity_audit(raw, member, cancellations, front):
     return {"status": "IDENTITIES_INSPECTED_ZERO_CREDIT", "count": len(cancellations),
             "evidence": evidence}
 
-def process_zip(raw,date,front):
+
+def validated_cancel_keys(audit):
+    """Accept only exact one-to-one B3 delete/new pairs for a second aggregation.
+
+    The B3 NEGOCIOSAVISTA glossary defines action 0 as new and action 2 as
+    delete. A different identity, price, quantity, session or event order must
+    retain the original fail-closed behavior.
+    """
+    if audit.get("status") != "IDENTITIES_INSPECTED_ZERO_CREDIT":
+        return None
+    keys = set()
+    try:
+        for item in audit["evidence"]:
+            cancel = item["cancel"]
+            if item["matched_original_count"] != 1:
+                return None
+            original = item["matched_originals"][0]
+            key = (cancel["symbol"], cancel["trade_id"])
+            if key in keys or cancel["session"] != "1" or original["session"] != "1":
+                return None
+            for field in ("price", "quantity"):
+                a = Decimal(cancel[field].replace(".", "").replace(",", "."))
+                b = Decimal(original[field].replace(".", "").replace(",", "."))
+                if a <= 0 or a != b:
+                    return None
+            times = time_ms(pd.Series([str(original["time"]), str(cancel["time"])]))
+            if not (0 <= int(times.iloc[0]) < int(times.iloc[1]) < 24*60*60*1000):
+                return None
+            keys.add(key)
+    except (KeyError, IndexError, InvalidOperation, TypeError, ValueError):
+        return None
+    return keys if len(keys) == audit["count"] and keys else None
+
+def process_zip(raw,date,front,_cancel_keys=None,_cancel_audit=None):
     z=zipfile.ZipFile(io.BytesIO(raw))
     files=[x for x in z.infolist() if not x.is_dir()]
     if len(files)!=1:
@@ -149,6 +183,8 @@ def process_zip(raw,date,front):
     s1={}; s5={}; cancellations=[]
     stats={"source_rows":0,"front_rows":0,"kept_rows":0,"cancel_rows":0,
            "unknown_actions":[],"off_lattice":0}
+    if _cancel_keys is not None:
+        stats["cancelled_original_rows_removed"] = 0
     with z.open(m) as fh:
         for ch in pd.read_csv(
             fh, sep=";", encoding="iso-8859-1", usecols=USECOLS,
@@ -174,6 +210,12 @@ def process_zip(raw,date,front):
                                       "quantity": str(row.QuantidadeNegociada),
                                       "session": str(row.TipoSessaoPregao)})
             x=x[act.eq(0)].copy()
+            if _cancel_keys is not None and not x.empty:
+                ids=x["CodigoIdentificadorNegocio"].astype(str).str.strip()
+                keys=list(zip(x["CodigoInstrumento"],ids))
+                remove=pd.Series([key in _cancel_keys for key in keys],index=x.index)
+                stats["cancelled_original_rows_removed"] += int(remove.sum())
+                x=x.loc[~remove].copy()
 
             sess=pd.to_numeric(x["TipoSessaoPregao"],errors="coerce")
             x=x[sess.isna() | sess.eq(1)].copy()
@@ -199,9 +241,23 @@ def process_zip(raw,date,front):
             merge_agg(s5, aggregate_chunk(x,5))
     z.close()
 
+    if _cancel_keys is not None:
+        stats["cancellation_identity_audit"] = _cancel_audit
+        if (stats["cancel_rows"] != len(_cancel_keys)
+                or stats["cancelled_original_rows_removed"] != len(_cancel_keys)
+                or stats["unknown_actions"] or stats["off_lattice"]):
+            raise RuntimeError(f"fail-closed cancellation reconciliation: {stats}")
+        stats["cancellation_reconciliation"] = "EXACT_ONE_TO_ONE_DELETE_NEW"
+        return dataframe_from_store(s1,date,front), dataframe_from_store(s5,date,front), stats, m.filename
+
     if stats["cancel_rows"]:
         stats["cancellation_identity_audit"] = cancellation_identity_audit(raw, m.filename, cancellations, front)
         stats["cancellation_audit_truncated"] = stats["cancel_rows"] > len(cancellations)
+        keys=validated_cancel_keys(stats["cancellation_identity_audit"])
+        if (keys is not None and not stats["cancellation_audit_truncated"]
+                and not stats["unknown_actions"] and not stats["off_lattice"]):
+            return process_zip(raw,date,front,_cancel_keys=keys,
+                               _cancel_audit=stats["cancellation_identity_audit"])
     if stats["cancel_rows"] or stats["unknown_actions"] or stats["off_lattice"]:
         raise RuntimeError(f"fail-closed front update/lattice: {stats}")
 
