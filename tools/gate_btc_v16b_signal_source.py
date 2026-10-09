@@ -22,6 +22,9 @@ BASE_URL = "https://data-api.binance.vision"
 CONTRACT_PATH = Path("artifacts/gate_btc/v16b/GATE_BTC_V16B_SIGNAL_SOURCE_CONTRACT_FREEZE_20260909.json")
 PRODUCER_VERSION = "V16B_SIGNAL_SOURCE_V2_20260909"
 HISTORICAL_MODEL_ONLY = "HISTORICAL_OFFICIAL_SNAPSHOT_MODEL_ONLY"
+# Frozen beta60 shifted one day feeds residual momentum90: 60 + 1 + 90
+# prior daily returns plus a buffer for calendar gaps. Source depth only.
+DAILY_LOOKBACK_DAYS = 180
 PROSPECTIVE_PIT = "CURRENT_PROSPECTIVE_PIT"
 UNIVERSE_COLUMNS = ["signal_date", "symbol", "evidence_class", "snapshot_effective_date", "retrieved_at_utc", "source_ref", "snapshot_sha256"]
 
@@ -218,7 +221,7 @@ def build_live(snapshot: Path, evidence_path: Path, signal_date: pd.Timestamp, o
 
     required_symbols = sorted(set(universe["symbol"].astype(str).str.upper()) | {"BTCUSDT"})
     earliest_signal = pd.to_datetime(universe["signal_date"]).min()
-    start = (earliest_signal - pd.Timedelta(days=100)).tz_localize("UTC")
+    start = (earliest_signal - pd.Timedelta(days=DAILY_LOOKBACK_DAYS)).tz_localize("UTC")
     start_ms = int(start.timestamp() * 1000); end_ms = int(cutoff.timestamp() * 1000) - 1
     daily_parts: list[pd.DataFrame] = []; raw_hashes: dict[str, str] = {}
     for symbol in required_symbols:
