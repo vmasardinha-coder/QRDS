@@ -57,6 +57,51 @@ class CalendarEpochTests(unittest.TestCase):
         result = check(self.root, date(2026, 9, 29))
         self.assertEqual(result["overall_status"], "RED_FAIL_CLOSED")
 
+    def future_epoch(self):
+        for folder, execution in (("prl50_position", False), ("alt_trail40_10", True)):
+            status = {
+                "current_epoch": "monthly_20261031",
+                "status": "WAITING_NEXT_APPROVED_MONTH_END",
+                "can_append": False,
+                "current_epoch_snapshot_count": 0,
+                "next_required_cutoff": "2026-10-31",
+                "first_eligible_signal_date": "2026-10-31",
+                "economic_result_valid": False,
+            }
+            if execution:
+                status["first_eligible_execution_date"] = "2026-11-01"
+            write(self.root, f"runtime/ledgers/{folder}/STATUS.json", status)
+
+    def test_future_epoch_without_anchor_waits_without_credit(self):
+        self.future_epoch()
+        result = check(self.root, date(2026, 10, 9))
+        self.assertEqual(result["overall_status"], "WAITING_SAFE")
+        rows = {r["track"]: r for r in result["rows"]}
+        for name in ("prl50", "alt_trail"):
+            self.assertEqual(rows[name]["status"], "WAITING_FROZEN_ANCHOR")
+            self.assertEqual(rows[name]["scientific_credit"], 0)
+            self.assertEqual(rows[name]["days_to_first_clock"], 22)
+
+    def test_due_epoch_without_anchor_fails_closed(self):
+        self.future_epoch()
+        result = check(self.root, date(2026, 10, 31))
+        self.assertEqual(result["overall_status"], "RED_FAIL_CLOSED")
+
+    def test_partial_or_appendable_epoch_fails_closed(self):
+        self.future_epoch()
+        folder = "runtime/ledgers/prl50_position"
+        write(self.root, folder + "/epochs/monthly_20261031/STATUS.json", {})
+        result = check(self.root, date(2026, 10, 9))
+        self.assertEqual(result["overall_status"], "RED_FAIL_CLOSED")
+        (self.root / folder / "epochs/monthly_20261031/STATUS.json").unlink()
+        path = self.root / folder / "STATUS.json"
+        status = json.loads(path.read_text())
+        status["can_append"] = True
+        path.write_text(json.dumps(status))
+        result = check(self.root, date(2026, 10, 9))
+        self.assertEqual(result["overall_status"], "RED_FAIL_CLOSED")
+
 
 if __name__ == "__main__":
     unittest.main()
+
