@@ -1,0 +1,91 @@
+name: GATE BTC Local Sync QMASTER Repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-local-sync-qmaster-repair.yml
+      - tools/gate_btc_local_sync_qmaster.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-local-sync-qmaster-repair
+  cancel-in-progress: false
+
+jobs:
+  local-sync:
+    runs-on: self-hosted
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_src
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Locate the existing local supervisor clones
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bases = @('C:\actions-runner\qrds-local-shadow', 'C:\GATE_BTC_PROJECT')
+          $dirs = New-Object System.Collections.Generic.List[string]
+          foreach ($base in $bases) {
+            if (-not (Test-Path $base)) { continue }
+            $dirs.Add($base)
+            foreach ($a in @(Get-ChildItem $base -Directory -ErrorAction SilentlyContinue)) {
+              if ($a.Name -in @('spool', '_work', '.git', 'node_modules', 'venv', '.venv')) { continue }
+              $dirs.Add($a.FullName)
+              foreach ($b in @(Get-ChildItem $a.FullName -Directory -ErrorAction SilentlyContinue)) {
+                if ($b.Name -in @('spool', '_work', '.git', 'node_modules', 'venv', '.venv')) { continue }
+                $dirs.Add($b.FullName)
+              }
+            }
+          }
+          $repos = @()
+          foreach ($p in @($dirs | Select-Object -Unique)) {
+            if (-not (Test-Path (Join-Path $p '.git'))) { continue }
+            $branch = (& git -C $p symbolic-ref --quiet --short HEAD 2>$null)
+            if ($LASTEXITCODE -ne 0) { continue }
+            $head = (& git -C $p rev-parse HEAD 2>$null)
+            if ($LASTEXITCODE -ne 0) { continue }
+            $repos += [pscustomobject]@{ path=$p; branch="$branch".Trim(); head="$head".Trim() }
+          }
+          $main = @($repos | Where-Object { $_.branch -eq 'main' })
+          $runtime = @($repos | Where-Object { $_.branch -eq 'gate-btc-runtime' })
+          if ($main.Count -ne 1) {
+            $exact = @($main | Where-Object { $_.head -eq '3670b026d37b3718b0a39731ccf16144936978a6' })
+            if ($exact.Count -eq 1) { $main = $exact }
+          }
+          if ($runtime.Count -ne 1) {
+            $exact = @($runtime | Where-Object { $_.head -eq '337901048a83c21d349b901f5fd324f90350ae33' })
+            if ($exact.Count -eq 1) { $runtime = $exact }
+          }
+          $discovery = [ordered]@{ schema='gate_btc.local_clone_discovery.v1'; repos=$repos;
+            main_count=$main.Count; runtime_count=$runtime.Count; research_only=$true; orders=0; real_capital=0 }
+          $discovery | ConvertTo-Json -Depth 6 | Set-Content -Path clone_discovery.json -Encoding UTF8
+          if ($main.Count -ne 1 -or $runtime.Count -ne 1) {
+            throw "LOCAL_CLONE_DISCOVERY_AMBIGUOUS main=$($main.Count) runtime=$($runtime.Count)"
+          }
+          "MAIN_REPO=$($main[0].path)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "RUNTIME_REPO=$($runtime[0].path)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Safe fast-forward and canonical QMASTER hash receipt
+        shell: powershell
+        run: |
+          python main_src/tools/gate_btc_local_sync_qmaster.py `
+            --main-root "$env:MAIN_REPO" --runtime-root "$env:RUNTIME_REPO" `
+            --expected-date 2026-10-08 --apply-ff `
+            --output local_sync_qmaster_audit.json
+          if ($LASTEXITCODE -ne 0) { throw "LOCAL_SYNC_QMASTER_AUDIT_FAILED=$LASTEXITCODE" }
+      - name: Upload local sync receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-local-sync-qmaster-${{ github.run_id }}
+          path: |
+            clone_discovery.json
+            local_sync_qmaster_audit.json
+          if-no-files-found: warn
