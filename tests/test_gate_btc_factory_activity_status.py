@@ -35,3 +35,13 @@ def test_stale_source_search_degrades_status(tmp_path: Path):
     out = build(root, now=now)
     assert out["overall_status"] == "DEGRADED_WARMUP_OR_STALE"
     assert out["components"]["source_qualification_search"]["freshness"] == "STALE_OR_UNDATED"
+
+
+def test_zero_incremental_transport_preserves_cumulative_intake(tmp_path: Path):
+    root = tmp_path / "runtime"
+    write(root, "factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json", {"transported_count": 0})
+    write(root, "factory_autonomy/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json", {"transported_count": 12})
+    out = build(root)
+    counts = out["executive_counters"]["grammar_pipeline"]
+    assert counts["transported_current"] == 12
+    assert counts["transported_incremental_last_handoff"] == 0

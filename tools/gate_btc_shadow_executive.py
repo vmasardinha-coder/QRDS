@@ -284,6 +284,7 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
             },
             "momentum": momentum or ledgers.get("momentum_m1_m2") or nd("momentum absent"),
             "declared_tracks": declared,
+            "system12": component(state, "system12") or nd("system12 implementation receipt absent"),
             "scientific_authority": False,
         },
         "13_factory_externo": {

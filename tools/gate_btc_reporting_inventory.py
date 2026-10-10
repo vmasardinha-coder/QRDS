@@ -16,9 +16,9 @@ import json
 from pathlib import Path
 
 try:
-    from .gate_btc_reporting_authority import active_status_path
+    from .gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status
 except ImportError:
-    from gate_btc_reporting_authority import active_status_path
+    from gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status
 from typing import Any
 
 STATUS_CANDIDATES = (
@@ -94,7 +94,7 @@ def represented_ledger_dirs(report: dict[str, Any]) -> set[str]:
 
 def record_for(runtime_root: Path, ledger_dir: Path) -> dict[str, Any]:
     status_path = (active_status_path(ledger_dir) if ledger_dir.name == "bull_replay_live_shadow"
-                   else infer_status_file(ledger_dir))
+                   else h1_status_path(ledger_dir) if ledger_dir.name == "b3_h1" else infer_status_file(ledger_dir))
     status = load_json(status_path) if status_path else None
     rel_dir = ledger_dir.relative_to(runtime_root).as_posix()
     record: dict[str, Any] = {
@@ -109,6 +109,14 @@ def record_for(runtime_root: Path, ledger_dir: Path) -> dict[str, Any]:
         "top_level_files": sorted(p.name for p in ledger_dir.iterdir() if p.is_file()),
     }
     if status:
+        if ledger_dir.name == "delta_v12_engine":
+            projected = closed_v12_status(status)
+            for key in ("status", "raw_status_preserved", "reporting_disposition", "closure_source", "closure_sha256", "closure_date", "scientific_credit", "promotion_allowed"):
+                if key in projected:
+                    record[key] = projected[key]
+        if ledger_dir.name == "b3_h1":
+            record["canonical_checkpoint_count"] = status.get("qualified")
+            record["remaining"] = status.get("remaining")
         for key in INVENTORY_FIELDS:
             if key in status:
                 record[key] = status[key]
@@ -120,7 +128,7 @@ def complete_inventory(runtime_root: Path, state: dict[str, Any]) -> dict[str, A
     inventory = dict(state.get("ledger_inventory") or {})
     if ledgers_root.is_dir():
         for ledger_dir in sorted((p for p in ledgers_root.iterdir() if p.is_dir()), key=lambda p: p.name):
-            if ledger_dir.name == "bull_replay_live_shadow":
+            if ledger_dir.name in {"bull_replay_live_shadow", "b3_h1", "delta_v12_engine"}:
                 inventory[ledger_dir.name] = record_for(runtime_root, ledger_dir)
             else:
                 inventory.setdefault(ledger_dir.name, record_for(runtime_root, ledger_dir))
@@ -178,4 +186,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

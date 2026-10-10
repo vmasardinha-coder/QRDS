@@ -28,9 +28,9 @@ def capture():
     p={"schema":"qrds.factory.crypto_forward_capture.v1","captured_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),"frontier":"CRYPTO_FORWARD_UNSEEN_V1","scientific_credit":0,"historical_backfill_credit":0,"economics_feedback_allowed":False,"records":[],"errors":[],"safety":{"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":True,"NO_BACKFILL":True,"FAIL_CLOSED":True}}
     for asset in ("BTC","ETH"):
       bs=asset+"USDT"
-      for market,url in (("SPOT","https://api.binance.com/api/v3/klines"),("PERPETUAL","https://fapi.binance.com/fapi/v1/klines")):
+      for market,url in (("SPOT","https://data-api.binance.vision/api/v3/klines"),("PERPETUAL","https://fapi.binance.com/fapi/v1/klines")):
         try:
-          raw,obj=raw_get(url,{"symbol":bs,"interval":"5m","limit":3});p["records"].append({"venue":"BINANCE","asset":asset,"market":market,"symbol":bs,"bar":pick_binance(obj),"raw_sha256":h(raw)})
+          raw,obj=raw_get(url,{"symbol":bs,"interval":"5m","limit":3});p["records"].append({"venue":"BINANCE","asset":asset,"market":market,"symbol":bs,"transport_url":url,"bar":pick_binance(obj),"raw_sha256":h(raw)})
         except Exception as e:p["errors"].append({"venue":"BINANCE","asset":asset,"market":market,"error":type(e).__name__+":"+str(e)})
       try:
         raw,obj=raw_get("https://fapi.binance.com/fapi/v1/premiumIndex",{"symbol":bs});p["records"].append({"venue":"BINANCE","asset":asset,"market":"FUNDING","symbol":bs,"funding_rate":obj.get("lastFundingRate"),"next_funding_time":obj.get("nextFundingTime"),"exchange_time":obj.get("time"),"raw_sha256":h(raw)})
