@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from .gate_btc_reporting_authority import active_status_path
+    from .gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status
 except ImportError:
-    from gate_btc_reporting_authority import active_status_path
+    from gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status
 
 TRACKS = {
     "h31_prospective": "runtime/ledgers/b3_h31_prospective/STATUS.json",
@@ -20,7 +20,9 @@ TRACKS = {
     "lock25_50": "runtime/ledgers/lock25_50/STATUS.json",
     "bull_replay": "runtime/ledgers/bull_replay_live_shadow/STATUS.json",
     "delta_paper": "runtime/ledgers/delta_paper_monitor/STATUS.json",
-    "h1": "runtime/ledgers/b3_h1/STATUS.json",
+    "h1": "runtime/ledgers/b3_h1/CANONICAL_STATUS.json",
+    "h1_structural": "runtime/ledgers/b3_h1/STATUS.json",
+    "v12": "runtime/ledgers/delta_v12_engine/STATUS.json",
     "d100": "runtime/ledgers/d100/economic/STATUS.json",
     "d100_physical": "runtime/ledgers/d100/STATUS.json",
     "reporting_state": "runtime/GATE_BTC_REPORTING_CURRENT_STATE.json",
@@ -53,7 +55,12 @@ def load(root: Path, rel: str):
 def export_tracks(root: Path):
     paths = dict(TRACKS)
     paths["bull_replay"] = active_status_path(root / "runtime/ledgers/bull_replay_live_shadow").relative_to(root).as_posix()
-    return {k: load(root, v) for k, v in paths.items()}
+    paths["h1"] = h1_status_path(root / "runtime/ledgers/b3_h1").relative_to(root).as_posix()
+    tracks = {k: load(root, v) for k, v in paths.items()}
+    if tracks["v12"].get("data"):
+        tracks["v12"]["data"] = closed_v12_status(tracks["v12"]["data"])
+    tracks["system12"] = {"reporting_only": True, "data": system12_summary(root / "runtime/gate_btc_2/system12")}
+    return tracks
 
 
 def main():
@@ -108,4 +115,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

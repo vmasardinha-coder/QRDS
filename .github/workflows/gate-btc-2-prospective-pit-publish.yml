@@ -167,6 +167,13 @@ jobs:
           path: runtime_repo
           fetch-depth: 0
 
+      - name: Check out cumulative inventory helper
+        if: steps.pit_gate.outputs.eligible == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main_repo
+
       - name: Publish isolated prospective PIT to runtime branch
         if: steps.pit_gate.outputs.eligible == 'true'
         run: |
@@ -180,6 +187,9 @@ jobs:
           cp daily_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
           cp daily_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
           cp daily_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
+          python main_repo/tools/gate_btc_registry_pit_inventory.py \
+            --root runtime_repo/runtime/data_quality/v2a_registry_pit \
+            --output runtime_repo/runtime/data_quality/v2a_registry_pit/PUBLISHED_SNAPSHOT_INVENTORY.json
           git -C runtime_repo add runtime/data_quality/v2a_registry_pit
           if git -C runtime_repo diff --cached --quiet; then
             echo "Prospective PIT already current"

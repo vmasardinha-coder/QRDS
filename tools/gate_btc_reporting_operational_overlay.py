@@ -13,9 +13,9 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 try:
-    from .gate_btc_reporting_authority import active_status_path
+    from .gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status, system12_summary
 except ImportError:
-    from gate_btc_reporting_authority import active_status_path
+    from gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status, system12_summary
 
 
 def load(path: Path):
@@ -164,6 +164,11 @@ def discover_ledger_inventory(runtime_root: Path, current: dict) -> None:
                 "inventory_only": True,
                 "health_authority": False,
             }
+            if ledger_id == "delta_v12_engine":
+                projected = closed_v12_status(obj)
+                for field in ("status", "raw_status_preserved", "reporting_disposition", "closure_source", "closure_sha256", "closure_date", "scientific_credit"):
+                    if field in projected:
+                        record[field] = projected[field]
             for key in INVENTORY_FIELDS:
                 if key in obj:
                     record[key] = obj[key]
@@ -194,7 +199,7 @@ def discover_ledger_inventory(runtime_root: Path, current: dict) -> None:
 
 def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     reference = iso(current.get("reference_data_date"))
-    b3p = runtime_root / "ledgers/b3_h1/STATUS.json"
+    b3p = h1_status_path(runtime_root / "ledgers/b3_h1")
     v16p = runtime_root / "ledgers/v16b/STATUS.json"
     momp = runtime_root / "ledgers/momentum_m1_m2/STATUS.json"
     b3 = load(b3p)
@@ -207,13 +212,17 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     expected_b3_session = latest_weekday(reference)
     current.setdefault("components", {})["b3_h1"] = component_with_hint({
         "status": (b3 or {}).get("status", "MISSING"),
-        "freshness": b3_freshness(b3, reference),
-        "latest_valid_date": (b3 or {}).get("latest_valid_date"),
+        "freshness": b3_freshness({**(b3 or {}), "latest_valid_date": (b3 or {}).get("last_qualified_session", (b3 or {}).get("latest_valid_date"))}, reference),
+        "latest_valid_date": (b3 or {}).get("last_qualified_session", (b3 or {}).get("latest_valid_date")),
         "expected_session_weekday_proxy": expected_b3_session.isoformat() if expected_b3_session else None,
-        "valid_observation_count": (b3 or {}).get("valid_observation_count"),
+        "valid_observation_count": (b3 or {}).get("qualified", (b3 or {}).get("valid_observation_count")),
+        "canonical_checkpoint_count": (b3 or {}).get("qualified"),
+        "structural_observation_count": (load(runtime_root / "ledgers/b3_h1/STATUS.json") or {}).get("valid_observation_count"),
+        "remaining": (b3 or {}).get("remaining"),
+        "counter_scope": "CANONICAL_CHECKPOINT" if b3p.name == "CANONICAL_STATUS.json" else "STRUCTURAL_ONLY_NO_CANONICAL_AUTHORITY",
         "economics_locked": (b3 or {}).get("economics_locked"),
         "backfill_automatically_created": (b3 or {}).get("backfill_automatically_created"),
-        "source": "ledgers/b3_h1/STATUS.json",
+        "source": b3p.relative_to(runtime_root).as_posix(),
     }, collection_health_hint("b3_h1", b3))
     current["components"]["v16b"] = component_with_hint({
         "status": (v16 or {}).get("status", "MISSING"),
@@ -482,6 +491,8 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             "source": "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
         }
 
+    current["components"]["system12"] = system12_summary(runtime_root / "gate_btc_2/system12")
+
     warnings = current.setdefault("warnings", {})
     stale = list(warnings.get("stale_components", []))
     missing = list(warnings.get("missing_or_undated_components", []))
@@ -580,4 +591,3 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,0 +1,65 @@
+name: GATE BTC Reporting and Source Followups
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_2_master_plan_16_systems.md
+      - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_reporting_inventory.py
+      - tools/gate_btc_factory_status_export.py
+      - tools/gate_btc_shadow_executive.py
+      - tools/gate_btc_factory/factory_activity_status.py
+      - tools/gate_btc_factory/crypto_forward_public_capture.py
+      - tools/gate_btc_registry_pit_inventory.py
+      - tools/gate_btc_momentum_cost_diagnostic.py
+      - tests/test_gate_btc_reporting_authorities.py
+      - tests/test_gate_btc_factory_activity_status.py
+      - tests/test_gate_btc_registry_pit_inventory.py
+      - tests/test_gate_btc_crypto_forward_public_transport.py
+      - tests/test_gate_btc_momentum_cost_diagnostic.py
+      - .github/workflows/gate-btc-reporting-source-followups.yml
+      - .github/workflows/gate-btc-2-prospective-pit-publish.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_2_master_plan_16_systems.md
+      - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_registry_pit_inventory.py
+      - tools/gate_btc_momentum_cost_diagnostic.py
+      - tools/gate_btc_factory/crypto_forward_public_capture.py
+      - tools/gate_btc_factory/factory_activity_status.py
+      - .github/workflows/gate-btc-reporting-source-followups.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate immutable authorities and diagnostic accounting
+        run: >-
+          python -m unittest -v
+          tests.test_gate_btc_reporting_authorities
+          tests.test_gate_btc_reporting_inventory
+          tests.test_gate_btc_shadow_executive
+          tests.test_gate_btc_registry_pit_inventory
+          tests.test_gate_btc_crypto_forward_public_transport
+          tests.test_gate_btc_momentum_cost_diagnostic
+          tests.test_gate_btc_2_master_plan_16_systems
+      - name: Validate Grammar cumulative versus incremental counters
+        run: |
+          python - <<'PY'
+          import tempfile
+          from pathlib import Path
+          from tests import test_gate_btc_factory_activity_status as t
+          for name in sorted(n for n in dir(t) if n.startswith('test_')):
+              with tempfile.TemporaryDirectory() as tmp:
+                  getattr(t, name)(Path(tmp))
+              print(name + '=PASS')
+          PY

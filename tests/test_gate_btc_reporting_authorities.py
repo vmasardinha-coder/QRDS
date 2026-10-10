@@ -4,7 +4,7 @@ import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from tools.gate_btc_reporting_authority import active_status_path
+from tools.gate_btc_reporting_authority import active_status_path, system12_summary, closed_v12_status
 from tools.gate_btc_reporting_current_state import reconcile
 from tools.gate_btc_reporting_inventory import complete_inventory
 from tools.gate_btc_reporting_operational_overlay import enrich
@@ -13,6 +13,60 @@ from tools.gate_btc_shadow_executive import build
 
 
 class ReportingAuthoritiesTest(unittest.TestCase):
+    def test_h1_canonical_and_structural_counters_are_never_added(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            root = repo / "runtime"
+            self.fixture(root)
+            self.write(root, "ledgers/b3_h1/STATUS.json", {"status": "ACTIVE_STRUCTURAL_COLLECTION", "valid_observation_count": 8, "latest_valid_date": "2026-10-08"})
+            self.write(root, "ledgers/b3_h1/CANONICAL_STATUS.json", {"status": "H1_13_OF_20_CANONICAL", "qualified": 13, "remaining": 7, "last_qualified_session": "2026-10-08", "economics_locked": True})
+            before = {p: p.read_bytes() for p in root.rglob("*.json")}
+            state = complete_inventory(root, enrich(root, reconcile(root, date(2026, 10, 10))))
+            h1 = state["components"]["b3_h1"]
+            self.assertEqual(h1["valid_observation_count"], 13)
+            self.assertEqual(h1["structural_observation_count"], 8)
+            self.assertEqual(h1["freshness"], "STALE")
+            self.assertTrue(h1["economics_locked"])
+            self.assertEqual(state["ledger_inventory"]["b3_h1"]["canonical_checkpoint_count"], 13)
+            self.assertEqual(export_tracks(repo)["h1"]["data"]["qualified"], 13)
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.json")})
+
+    def test_v12_terminal_decision_does_not_reopen_or_rewrite_ledger(self):
+        raw = {"status": "ACTIVE_PROSPECTIVE_SHADOW", "observed_days": 12}
+        out = closed_v12_status(raw)
+        self.assertEqual(raw["status"], "ACTIVE_PROSPECTIVE_SHADOW")
+        self.assertEqual(out["status"], "CLOSED_NO_FURTHER_OBSERVATIONS_POSSIBLE")
+        self.assertEqual(out["raw_status_preserved"], raw["status"])
+        self.assertEqual(out["scientific_credit"], 0)
+        with self.assertRaises(ValueError):
+            closed_v12_status({**raw, "observed_days": 13})
+
+    def test_system12_readiness_alone_never_claims_replication(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.write(root, "READINESS.json", {"status": "STRUCTURAL_READY"})
+            out = system12_summary(root)
+            self.assertFalse(out["implementation_replication_pass"])
+            self.assertFalse(out["system12_complete"])
+
+    def test_system12_bound_parity_does_not_release_adjudication_gate(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            contract = {"schema": "gate_btc.2_0.system12_implementation_replication_contract.v1", "bindings": {"dataset": "fixed"}, "required_scenario_count": 300}
+            h = hashlib.sha256(json.dumps(contract, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            names = ("all_events_compared", "dataset_gate", "deterministic_independent_executor", "event_parity", "minimum_executions", "reference_semantic_digest", "scenario_count", "scenario_parity", "size_monotonicity")
+            report = {"schema": "gate_btc.2_0.system12_implementation_replication.v1", "contract_sha256": h, "bindings": contract["bindings"], "status": "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION", "implementation_replication_pass": True, "independent_replication_executed": True, "event_mismatches": 0, "scenario_mismatches": [], "scenario_count": 300, "checks": dict.fromkeys(names, True), "system12_complete": False, "system13_dependency_released": False, "independent_adjudication_executed": False, "scientific_credit": 0, "orders": 0, "real_capital_brl": 0, "engine_feed": False}
+            self.write(root, "IMPLEMENTATION_REPLICATION_CONTRACT.json", contract)
+            self.write(root, "IMPLEMENTATION_REPLICATION.json", report)
+            out = system12_summary(root)
+            self.assertTrue(out["implementation_replication_pass"])
+            self.assertFalse(out["system13_dependency_released"])
+            self.assertFalse(out["independent_adjudication_executed"])
+            for broken in ({**report, "contract_sha256": "changed"}, {**report, "checks": {}}, {**report, "orders": 1}):
+                self.write(root, "IMPLEMENTATION_REPLICATION.json", broken)
+                self.assertFalse(system12_summary(root)["implementation_replication_pass"])
+
     def write(self, root, path, obj):
         p = root / path
         p.parent.mkdir(parents=True, exist_ok=True)
