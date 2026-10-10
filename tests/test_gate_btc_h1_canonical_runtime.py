@@ -19,6 +19,7 @@ def test_next_unique_pass_increments_once():
     assert o["qualified"]==9 and o["remaining"]==11
     o2=h1.build(ANCHOR,o,"2026-08-31","qualified","STRUCTURAL_PASS","3")
     assert o2["qualified"]==9
+    assert o2 == o  # exact replay must not alter timestamp or runtime bytes
 
 
 def test_gap_never_increments():
