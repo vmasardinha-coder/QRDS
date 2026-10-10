@@ -51,6 +51,9 @@ jobs:
       - name: Run embedded deterministic semantics test
         shell: powershell
         run: python tools/gate_btc_2_item3c_forward_collector.py --self-test
+      - name: Test physical M5 range reconciliation
+        shell: powershell
+        run: python -m unittest discover -s tests -p 'test_gate_btc_2_item3c_gap_diagnostics.py' -v
       - name: Assert preregistration safety and Bridge relocation
         shell: powershell
         run: |
