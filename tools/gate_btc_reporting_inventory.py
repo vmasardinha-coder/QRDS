@@ -14,6 +14,11 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+
+try:
+    from .gate_btc_reporting_authority import active_status_path
+except ImportError:
+    from gate_btc_reporting_authority import active_status_path
 from typing import Any
 
 STATUS_CANDIDATES = (
@@ -88,7 +93,8 @@ def represented_ledger_dirs(report: dict[str, Any]) -> set[str]:
 
 
 def record_for(runtime_root: Path, ledger_dir: Path) -> dict[str, Any]:
-    status_path = infer_status_file(ledger_dir)
+    status_path = (active_status_path(ledger_dir) if ledger_dir.name == "bull_replay_live_shadow"
+                   else infer_status_file(ledger_dir))
     status = load_json(status_path) if status_path else None
     rel_dir = ledger_dir.relative_to(runtime_root).as_posix()
     record: dict[str, Any] = {
@@ -96,7 +102,7 @@ def record_for(runtime_root: Path, ledger_dir: Path) -> dict[str, Any]:
         "status": (status or {}).get("status", "NO_CANONICAL_STATUS_FIELD"),
         "schema": (status or {}).get("schema"),
         "source": status_path.relative_to(runtime_root).as_posix() if status_path else rel_dir,
-        "sha256": sha256(status_path) if status_path else None,
+        "sha256": sha256(status_path) if status_path and status_path.is_file() else None,
         "inventory_only": True,
         "health_authority": False,
         "status_authority_file": status_path.name if status_path else None,
@@ -114,7 +120,10 @@ def complete_inventory(runtime_root: Path, state: dict[str, Any]) -> dict[str, A
     inventory = dict(state.get("ledger_inventory") or {})
     if ledgers_root.is_dir():
         for ledger_dir in sorted((p for p in ledgers_root.iterdir() if p.is_dir()), key=lambda p: p.name):
-            inventory.setdefault(ledger_dir.name, record_for(runtime_root, ledger_dir))
+            if ledger_dir.name == "bull_replay_live_shadow":
+                inventory[ledger_dir.name] = record_for(runtime_root, ledger_dir)
+            else:
+                inventory.setdefault(ledger_dir.name, record_for(runtime_root, ledger_dir))
 
     represented = represented_ledger_dirs(state)
     all_ids = set(inventory)
@@ -169,3 +178,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

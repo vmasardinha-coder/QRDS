@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-reporting-current-state.yml
+      - tools/gate_btc_reporting_authority.py
+      - tests/test_gate_btc_reporting_authorities.py
       - tools/gate_btc_reporting_current_state.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_reporting_inventory.py
@@ -51,6 +53,7 @@ jobs:
       - name: Test runtime delivery health gates and executive catalog
         run: >-
           python -m unittest -v
+          tests.test_gate_btc_reporting_authorities
           tests.test_gate_btc_runtime_delivery_health
           tests.test_gate_btc_collection_health_item1
           tests.test_gate_btc_executive_track_catalog
@@ -210,3 +213,4 @@ jobs:
               print('FAILED_DELIVERY=' + ','.join(s['warnings']['failed_delivery_components']))
               print('BLOCKED_DEPENDENCIES=' + ','.join(s['warnings']['blocked_dependency_components']))
           PY
+

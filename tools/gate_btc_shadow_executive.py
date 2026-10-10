@@ -171,6 +171,9 @@ def semantic_projection(state: dict[str, Any]) -> dict[str, Any]:
                 "source_status_preserved": True,
             }
         out[semantic_id] = entry
+    economic_d100 = component(state, "d100")
+    if economic_d100:
+        out["d100"]["component"] = economic_d100
     qos_component = component(state, "qos_monthly")
     if qos_component:
         out["qos"]["component"] = qos_component
@@ -386,3 +389,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
