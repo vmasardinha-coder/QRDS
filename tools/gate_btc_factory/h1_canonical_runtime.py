@@ -38,7 +38,9 @@ def build(anchor: dict, existing: dict|None, date: str, mode: str, reason: str, 
         prior_e=by_date[date]
         if prior_e.get("candidate_status") != ("STRUCTURAL_PASS" if mode=="qualified" else mode.upper()):
             raise RuntimeError(f"conflicting canonical H1 evidence for {date}")
-        final_reason="DUPLICATE"
+        # A replay of the same candidate is a true no-op, including metadata.
+        # Rewriting updated_at here causes concurrent runtime push conflicts.
+        return prior
     elif mode=="qualified":
         if q >= 20: raise RuntimeError("H1 already at 20/20; collection must be frozen")
         q += 1
