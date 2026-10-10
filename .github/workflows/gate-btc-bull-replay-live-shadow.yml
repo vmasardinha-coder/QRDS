@@ -169,8 +169,8 @@ jobs:
           assert m['components']['v2a']['status'] == 'PASS'
           assert m['components']['delta']['status'] == 'PASS'
           delivery=json.load(open('runtime_repo/runtime/ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json', encoding='utf-8'))
-          assert m['data_as_of'] == delivery['expected_source_data_as_of'], (
-              f"expected untouched close {delivery['expected_source_data_as_of']}, got {m['data_as_of']}")
+          assert m['data_cutoff'] == delivery['expected_source_data_as_of'], (
+              f"expected untouched close {delivery['expected_source_data_as_of']}, got {m['data_cutoff']}")
           PY
 
 
