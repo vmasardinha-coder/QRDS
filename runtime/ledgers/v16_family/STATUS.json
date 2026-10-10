@@ -1,0 +1,67 @@
+{
+  "schema": "gate_btc.v16_family.status.v1",
+  "generated_at_utc": "2026-09-09T15:57:00Z",
+  "status": "DEFINITION_COMPLETE_PROSPECTIVE_EVIDENCE_PENDING",
+  "terminal_version": "V16E",
+  "family_complete_definitionally": true,
+  "family_complete_scientifically": false,
+  "components": {
+    "V16B": {
+      "role": "FROZEN_BASELINE",
+      "definition": "COMPLETE",
+      "prospective_state": "SCIENTIFIC_BLOCK",
+      "completed_cycles": 0,
+      "block": "MISSING_CAUSAL_FEATURE_PANEL_PRODUCER",
+      "source": "runtime/ledgers/v16b/STATUS.json"
+    },
+    "V16C": {
+      "role": "STRUCTURAL_CHALLENGER",
+      "definition": "COMPLETE_PREREGISTERED",
+      "prospective_state": "WAIT_INDEPENDENT_CAUSAL_LEDGER",
+      "completed_cycles": 0,
+      "source": "artifacts/gate_btc/v16b/GATE_BTC_V16C_STRUCTURAL_PREREG_20260815.json"
+    },
+    "V16D": {
+      "role": "RISK_ENGINE_CHALLENGER",
+      "definition": "COMPLETE_PREREGISTERED",
+      "prospective_state": "WAIT_INDEPENDENT_CAUSAL_LEDGER",
+      "completed_cycles": 0,
+      "source": "artifacts/gate_btc/v16b/GATE_BTC_V16D_RISK_PREREG_20260909.json"
+    },
+    "V16E": {
+      "role": "ALLOCATION_READY_FINAL",
+      "definition": "COMPLETE_DECISION_CONTRACT_FROZEN",
+      "prospective_state": "WAIT_52_PAIRED_COMPLETED_CYCLES",
+      "completed_cycles": 0,
+      "selected_candidate": null,
+      "source": "artifacts/gate_btc/v16b/GATE_BTC_V16E_FINAL_SELECTION_CONTRACT_20260909.json"
+    }
+  },
+  "next_checkpoint": {
+    "type": "FIRST_VALID_FUTURE_SIGNAL_WINDOW_AFTER_V16B_CAUSAL_PRODUCER_UNBLOCK",
+    "calendar_date": null,
+    "cycle_checkpoint": 13,
+    "final_selection_checkpoint": 52
+  },
+  "work_remaining_before_leaving_family_design": [],
+  "work_remaining_before_scientific_completion": [
+    "V16B causal feature-panel producer verification/repair",
+    "V16C independent append-only ledger instantiation and collection",
+    "V16D independent append-only ledger instantiation and collection",
+    "paired 13/26/52-cycle evaluations",
+    "V16E final-selection review at 52 cycles"
+  ],
+  "safe_to_move_to_other_families_now": true,
+  "reason_safe_to_move": "All V16 variants through terminal V16E now have frozen definitions or frozen decision contracts; remaining work is future-data-gated rather than unresolved family design.",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "FAIL_CLOSED": true
+  }
+}

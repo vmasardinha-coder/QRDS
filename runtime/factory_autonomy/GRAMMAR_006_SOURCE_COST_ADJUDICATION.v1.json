@@ -1,0 +1,161 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_adjudication.v1",
+  "authorization": "USER_CONTINUE_2026-09-19",
+  "semantic_prereg_sha256": "4c9673c25a1207819136da9c237f5ead6d155b7a7f8833cce54bfda376e42a8d",
+  "outcomes_read": false,
+  "economics_read": false,
+  "retune": false,
+  "decision_rule": "Use only preregistered official/free source-capability evidence already recorded under protocol v1. Every required source check must be affirmatively proven; an unproven requirement is false and produces terminal fail-closed source/cost rejection. Frozen semantics are never modified in response to evidence.",
+  "evidence_authorities": [
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_BCB_CVM_B3_20260919.json",
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_SEC_CVM_PIT_20260919.json",
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_FRED_EIA_CFTC_20260919.json"
+  ],
+  "families": [
+    {
+      "family_id": "XAGRAMMAR_12FCBCB3731A",
+      "grammar_signature": "12fcbcb3731a5ee40c2b1066b8e2627a9bb2ddb69bca9c827e01130e0237a141",
+      "qualified_sources": ["B3", "BCB", "EIA"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": false,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "BCB PTAX and official B3 capability are documented, but the preregistered evidence does not prove a specific WTI official series with the frozen completed-return frequency/publication timestamp semantics. Required coverage, PIT and granularity therefore remain unproven."
+    },
+    {
+      "family_id": "XAGRAMMAR_3823D2BDF6CD",
+      "grammar_signature": "3823d2bdf6cddc5dee2c4bbfba21862c2d31961e5ec0068ac83c9d9e62472e4e",
+      "qualified_sources": ["B3", "BCB"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": false,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "B3 daily bulletin capability is documented but the evidence does not affirmatively prove the exact official DI1 settlement fields for the mechanically selected first two expiries, their publication timing, and the two-session curve history required by the frozen feature."
+    },
+    {
+      "family_id": "XAGRAMMAR_62FFE168F205",
+      "grammar_signature": "62ffe168f205da241327911323a03fc8a0664553688559868c301c51e64addf3",
+      "qualified_sources": ["B3"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": false,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "The recorded B3 evidence explicitly does not establish historical intraday closing-auction prices together with the immediately preceding continuous-trading endpoint and required timestamps. The frozen auction displacement cannot be reconstructed from the proven source surface."
+    },
+    {
+      "family_id": "XAGRAMMAR_846E12566757",
+      "grammar_signature": "846e1256675729b65cee6498f109dded1970e086210a8173d8e4c921ad906759",
+      "qualified_sources": ["B3", "CVM", "SEC EDGAR", "BCB"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": false,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": false,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "The preregistered official candidates can support issuer/cross-listing and FX metadata, but the recorded evidence provides no official US ADR market-price series for the frozen B3-close-to-US-close return. Required data coverage and cross-market timestamp/calendar semantics are therefore unproven."
+    },
+    {
+      "family_id": "XAGRAMMAR_8CAF61E121A1",
+      "grammar_signature": "8caf61e121a192ed4cf390b173636b3500b054efe3a5e0d9c280887ebc4664f3",
+      "qualified_sources": ["B3"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": false,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "The recorded B3 surface proves daily historical price/bulletin availability, not an auditable intraday IND pre-cash interval plus Ibovespa cash open and 30-minute observation. Frozen intraday granularity and PIT timing are not proven."
+    },
+    {
+      "family_id": "XAGRAMMAR_F587F5854A51",
+      "grammar_signature": "f587f5854a5176fe38fc1dda1457bb218d5ea7890be21488743482d4f2699f85",
+      "qualified_sources": ["CVM", "B3"],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": true,
+        "pit_timestamps": false,
+        "granularity_sufficient": false,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "outcomes_read": false,
+      "economics_read": false,
+      "decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+      "reason": "CVM IPE and B3 data are official/free, but the recorded CVM evidence explicitly does not prove the exact first-public dissemination timestamp needed to enforce the frozen intersession cutoff. Weekly dataset publication cannot substitute for event-time PIT."
+    }
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

@@ -1,0 +1,354 @@
+{
+  "families": [
+    {
+      "blocker": null,
+      "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_12FCBCB3731A",
+      "frozen_semantics": {
+        "feature": "Two-component sign-preserving vector observed before the target B3 session: previous completed business-day simple return of USD/BRL and previous completed market/publication-day simple return of WTI crude oil spot/reference; no thresholding, weighting optimization or outcome-based component selection.",
+        "lookback": "Exactly one completed return observation per component; if either component is unavailable causally, the observation is ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the feature is fully observable.",
+        "window": "Only observations whose official timestamp is complete before the target B3 regular session opens; same-session or later observations are forbidden."
+      },
+      "mechanism": "Brazilian equities, BRL and commodity-linked assets may exhibit clock-respecting information transmission.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3",
+        "BCB",
+        "CFTC",
+        "EIA",
+        "FRED"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 equities/futures",
+        "BRL",
+        "commodity reference"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_3823D2BDF6CD",
+      "frozen_semantics": {
+        "feature": "One-session change in the DI1 front-curve slope, where slope is the official settlement annualized rate of the second-nearest eligible DI1 expiry minus the nearest eligible DI1 expiry; expiries are selected mechanically by calendar order, never by realized performance or liquidity ranking.",
+        "lookback": "Two completed B3 sessions are required to compute the one-session slope change; missing required settlements make the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the slope-change feature is fully observable.",
+        "window": "Use only official B3 DI1 settlement values from sessions completed before the target B3 session opens."
+      },
+      "mechanism": "Lagged changes in the B3 DI futures curve may transmit monetary-policy and discount-rate information to later equity/index returns.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3",
+        "BCB"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 DI futures expiry curve",
+        "B3 equity/index series",
+        "BCB policy calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_3BC1506DBCE5",
+      "frozen_semantics": null,
+      "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
+      "next_action": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "operational_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 index preview/final portfolio files",
+        "announcement/effective dates",
+        "B3 security prices",
+        "exchange calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+    },
+    {
+      "blocker": null,
+      "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_62943307741A",
+      "frozen_semantics": {
+        "feature": "Aggregate net flow for CVM-classified equity funds on the latest official report date available before the target B3 session, defined mechanically as total subscriptions minus total redemptions divided by the prior officially reported aggregate net asset value for the same eligible fund set; no fund ranking, threshold or performance-based subset selection.",
+        "lookback": "Exactly one latest eligible official flow report plus the immediately prior officially reported aggregate net asset value needed for scaling; missing required fields make the date ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the fund-flow feature is officially observable.",
+        "window": "Use only CVM fund-report data whose official availability timestamp is strictly before the target B3 regular-session open; later reports roll prospectively to the next eligible session."
+      },
+      "mechanism": "Lagged Brazilian investment-fund subscriptions and redemptions, observed only after official publication, may transmit institutional flow pressure to subsequent B3 returns.",
+      "next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "qualified_sources": [
+        "B3",
+        "CVM"
+      ],
+      "required_new_data": [
+        "CVM daily fund reports",
+        "fund classification",
+        "official publication timing",
+        "B3 prices",
+        "exchange calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "SOURCE_COST_QUALIFIED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "B3_AUCTION_IMBALANCE_OPEN_CLOSE_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_62FFE168F205",
+      "frozen_semantics": {
+        "feature": "Closing-auction price-discovery displacement for Ibovespa constituent securities, defined as official closing-auction price divided by the last eligible continuous-trading price immediately before the closing auction minus one; no threshold or ranked subset is permitted.",
+        "lookback": "Exactly one completed closing auction and its immediately preceding continuous-trading endpoint.",
+        "target": "Same-security simple return from the next eligible B3 regular-session open to that session close.",
+        "window": "The completed B3 closing auction of the session immediately preceding the target session; only official prices timestamped within that auction and the immediately preceding continuous-trading endpoint may be used."
+      },
+      "mechanism": "Opening and closing auction states may concentrate price discovery and transmit information only to subsequent eligible observations.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 auction trades/quotes or official auction fields",
+        "B3 calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_728DC88D691B",
+      "frozen_semantics": {
+        "feature": "Two-component revision vector from the latest officially published BCB Focus survey available before the target B3 session: change versus the immediately preceding Focus publication in the median IPCA expectation for the current calendar year and change in the median Selic expectation for the end of the current calendar year; no thresholding, reweighting, component selection or outcome-based transformation.",
+        "lookback": "Exactly two consecutive official Focus publications are required to compute the publication-to-publication revisions; missing either required series makes the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the revised Focus vector is officially observable.",
+        "window": "Only the latest completed official BCB Focus publication whose publication timestamp precedes the target B3 regular-session open; publications at or after the open roll prospectively to the next eligible session."
+      },
+      "mechanism": "Published Brazilian central-bank market-expectation revisions may transmit macro expectation information to strictly subsequent B3 returns.",
+      "next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "qualified_sources": [
+        "B3",
+        "BCB"
+      ],
+      "required_new_data": [
+        "BCB Focus expectations statistics",
+        "official publication timing",
+        "B3 market data",
+        "exchange calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "SOURCE_COST_QUALIFIED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "B3_ADR_CROSS_LISTING_PRICE_DISCOVERY",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_846E12566757",
+      "frozen_semantics": {
+        "feature": "For each mechanically identifier-matched Brazilian ADR/underlying pair, the FX-adjusted ADR simple return observed from the B3 underlying regular close until the US primary-market close on the same date; pair inclusion is based only on contemporaneous B3/CVM/SEC identifiers and cross-listing status, with no performance ranking.",
+        "lookback": "Exactly one completed cross-market interval per matched pair; missing ADR, FX or calendar observations make that pair-date ineligible rather than imputed.",
+        "target": "Same-underlying next eligible B3 opening gap, defined as next B3 regular-session open divided by the prior B3 regular close minus one.",
+        "window": "The cross-market interval beginning at the completed B3 underlying close and ending at the subsequent US primary-market close, using only timestamps available before the next B3 open."
+      },
+      "mechanism": "Cross-listed Brazilian shares and US ADRs can transmit information across distinct market clocks.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3",
+        "CVM",
+        "SEC EDGAR",
+        "BCB"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 underlying",
+        "US ADR",
+        "FX timing",
+        "exchange calendars"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_8CAF61E121A1",
+      "frozen_semantics": {
+        "feature": "Simple return of the nearest unexpired standard B3 Ibovespa futures contract (IND), selected mechanically by expiry calendar, during the futures trading interval that is fully observable before Ibovespa cash continuous trading begins on the same B3 session; no contract ranking or thresholding is permitted.",
+        "lookback": "Exactly the current session's completed pre-cash futures interval; no prior-session optimization or rolling window.",
+        "target": "Ibovespa simple return from the cash continuous-trading open to 30 minutes after that open on the same eligible B3 session.",
+        "window": "From the first eligible IND futures observation of the target B3 session through the final eligible futures observation strictly before Ibovespa cash continuous trading begins."
+      },
+      "mechanism": "Index futures and cash may incorporate common information at different speeds.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3",
+        "CVM"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 index futures",
+        "B3 cash index",
+        "auction/calendar metadata"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_AEEC63B0F807",
+      "frozen_semantics": null,
+      "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
+      "next_action": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "operational_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 listed option chain",
+        "underlying B3 asset",
+        "expiry/strike metadata"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+    },
+    {
+      "blocker": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
+      "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_D30E657A4920",
+      "frozen_semantics": null,
+      "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
+      "next_action": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "operational_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "qualified_sources": [],
+      "required_new_data": [
+        "BCB FX-swap auction announcements/results",
+        "official event timing",
+        "BRL market data",
+        "B3 market data",
+        "calendars"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+    },
+    {
+      "blocker": null,
+      "channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_DD9F1F0501B3",
+      "frozen_semantics": {
+        "feature": "Latest officially published B3 foreign-investor net movement for the cash-equity market, defined mechanically as foreign-investor purchase value minus sale value divided by foreign-investor purchase value plus sale value for the same official reference period; no thresholding, smoothing, ranking or outcome-based normalization.",
+        "lookback": "Exactly one latest eligible official foreign-investor movement reference period; missing purchase, sale or publication-timing fields make the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the foreign-investor flow feature is officially observable.",
+        "window": "Use only an official B3 foreign-investor movement release whose publication timestamp is strictly before the target B3 regular-session open; releases at or after the open roll prospectively to the next eligible session."
+      },
+      "mechanism": "Officially published lagged foreign-investor movement aggregates may transmit capital-flow pressure to strictly later B3 observations.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "B3 foreign investor movement data",
+        "official publication timing",
+        "B3 index/security prices",
+        "exchange calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    },
+    {
+      "blocker": null,
+      "channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+      "collection_started": false,
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_F587F5854A51",
+      "frozen_semantics": {
+        "feature": "Binary presence plus official CVM disclosure category for a timestamped issuer disclosure; disclosure text sentiment, future-price labels and outcome-derived category regrouping are forbidden.",
+        "lookback": "Exactly one intersession disclosure window; multiple disclosures for the same issuer within the window remain separate timestamped events and are not selected by outcome.",
+        "target": "Absolute simple return magnitude of the affected B3 security from the next eligible regular-session open to that session close.",
+        "window": "Disclosures officially timestamped after the affected security's previous eligible B3 regular close and no later than 30 minutes before the next eligible B3 regular open; later disclosures roll prospectively to the following eligible session."
+      },
+      "mechanism": "Timestamped corporate disclosures can define ex-ante event grammars whose post-publication response is evaluated only after the public timestamp.",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
+      "qualified_sources": [],
+      "required_new_data": [
+        "CVM timestamped disclosures",
+        "B3 underlying prices",
+        "exchange calendar"
+      ],
+      "scientific_credit": 0,
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
+    }
+  ],
+  "family_count": 12,
+  "generated_at_utc": "2026-10-10T17:19:01.051052+00:00",
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.family_briefing_runtime.v1"
+}
