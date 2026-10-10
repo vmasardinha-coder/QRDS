@@ -11,6 +11,7 @@ COUNT_RE = re.compile(r"(?:WIN|WDO)_M5_COUNT got=(\d+) expected=(\d+)")
 LATTICE_RE = re.compile(r"(?:WIN|WDO)_M5_LATTICE_MISMATCH missing=(\d+) extra=(\d+)")
 SOURCE_UNAVAILABLE_RE = re.compile(r"RuntimeError: SOURCE_NOT_READY (\d{4}-\d{2}-\d{2}) SOURCE_RETRY_EXHAUSTED")
 
+MISSING_ROOT_RE = re.compile(r"M1_(WIN|WDO)_MISSING")
 
 def classify(text: str) -> tuple[bool, str | None]:
     """Return (ordinary_gap, matched_reason).
@@ -20,6 +21,11 @@ def classify(text: str) -> tuple[bool, str | None]:
     and processing errors remain hard failures.  No coverage threshold is invented here and no incomplete observation is
     promoted to scientific eligibility.
     """
+    # A frozen required root absent from the captured file is incomplete source data.
+    # Keep zero scientific credit; do not infer or swap the contract here.
+    m = MISSING_ROOT_RE.search(text)
+    if m:
+        return True, f"M1_{m.group(1)}_MISSING"
     m = COUNT_RE.search(text)
     if m:
         got, expected = map(int, m.groups())
