@@ -10,9 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from gate_btc_2_system11_stress_replay_v1 import execute_grid
-from gate_btc_2_system12_vector_replication import reproduce, compare_scenarios, validate, run, AUTHORITY
+HAS_NUMPY = importlib.util.find_spec("numpy") is not None
+if HAS_NUMPY:
+    from gate_btc_2_system12_vector_replication import reproduce, compare_scenarios, validate, run, AUTHORITY
 
 
+@unittest.skipUnless(HAS_NUMPY, "NumPy required; mandatory installed suite runs in System12 workflow")
 class VectorReplicationTest(unittest.TestCase):
     def fixture(self):
         prereg = json.loads((ROOT / "artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_V1_20260929.json").read_text())
