@@ -6,7 +6,7 @@ import hashlib
 import json
 import math
 import statistics
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -163,6 +163,19 @@ def spacing_gap_source_evidence(rows: list[dict]) -> list[dict]:
             "before_index": i + 1,
         })
     return out
+
+
+def merge_observed_m5_rows(positional: list[dict], ranged: list[dict]) -> list[dict]:
+    """Merge two physical MT5 reads; reject conflicting bars and invent none."""
+    by_timestamp = {r["timestamp"]: r for r in positional}
+    if len(by_timestamp) != len(positional):
+        raise RuntimeError("POSITIONAL_M5_DUPLICATE_TIMESTAMP")
+    for row in ranged:
+        ts = row["timestamp"]
+        if ts in by_timestamp and by_timestamp[ts] != row:
+            raise RuntimeError(f"MT5_M5_SOURCE_CONFLICT:{ts}")
+        by_timestamp[ts] = row
+    return [by_timestamp[k] for k in sorted(by_timestamp)]
 
 
 def enough_session_rows(rows: list[dict], max_window: int) -> bool:
@@ -347,6 +360,24 @@ def main() -> int:
         err = mt5.last_error()
         all_rows = source.normalize(rr, mode)
         rows = source.closed_session_rows(all_rows, now.date(), now)
+        range_evidence = {"attempted": False, "added_observed_bars": 0}
+        if len(rows) >= 2 and not source.exact_spacing(rows):
+            # A positional MT5 read has omitted an observed M5 candle in prior
+            # sessions. Ask the same broker for the same closed session by time.
+            # Only physical returned rows may fill a slot; conflicting values
+            # fail closed and a still-incomplete session remains a zero-credit gap.
+            first = datetime.fromtimestamp(rows[0]["epoch"] - 300, tz=timezone.utc)
+            last = datetime.fromtimestamp(rows[-1]["epoch"] + 300, tz=timezone.utc)
+            ranged_raw = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M5, first, last)
+            ranged_error = str(mt5.last_error())
+            ranged = source.closed_session_rows(source.normalize(ranged_raw, mode), now.date(), now)
+            before = len(rows)
+            rows = merge_observed_m5_rows(rows, ranged)
+            range_evidence = {
+                "attempted": True, "added_observed_bars": len(rows) - before,
+                "copy_rates_range_error": ranged_error,
+                "ranged_rows": len(ranged),
+            }
     finally:
         mt5.shutdown()
 
@@ -377,6 +408,7 @@ def main() -> int:
                 "symbol": symbol,
                 "time_mode": mode,
                 "copy_rates_error": str(err),
+                "range_recovery": range_evidence,
                 "bar_count": len(rows),
                 "first_bar": rows[0]["timestamp"] if rows else None,
                 "last_bar": rows[-1]["timestamp"] if rows else None,
@@ -459,6 +491,7 @@ def main() -> int:
             "symbol": symbol,
             "time_mode": mode,
             "copy_rates_error": str(err),
+            "range_recovery": range_evidence,
             "bar_count": len(rows),
             "first_bar": rows[0]["timestamp"],
             "last_bar": rows[-1]["timestamp"],
