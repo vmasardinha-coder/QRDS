@@ -218,14 +218,14 @@
   "bull_replay_live_shadow": {
     "active_epoch": "epochs/independent_20261009",
     "anchor_date": "2026-10-09",
-    "can_append": true,
-    "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
+    "can_append": false,
+    "collection_health_hint": "GREEN_ACTIVE",
     "data_as_of": null,
     "engine_feed": false,
-    "expected_source_data_as_of": "2026-10-09",
+    "expected_source_data_as_of": "2026-10-10",
     "first_return_date": "2026-10-10",
     "formal_prospective_evidence": false,
-    "freshness": "UNKNOWN_DATE",
+    "freshness": "CURRENT_CALENDAR_GATED",
     "inherited_scientific_credit": 0,
     "not_approved": true,
     "observed_days": 0,
@@ -240,8 +240,8 @@
     "scientific_credit": 0,
     "shadow_only": true,
     "source": "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
-    "status": "READY_EXACT_DAILY_CLOSE",
-    "updated_at_utc": "2026-10-10T05:58:59.163910+00:00"
+    "status": "WAITING_FIRST_RETURN_CLOSE",
+    "updated_at_utc": "2026-10-10T20:27:45.875831+00:00"
   },
   "claim_boundary": "DESCRIPTIVE_SHADOW_ONLY_NOT_REAL_CAPITAL",
   "proxy_series": "Victor_proxy"
@@ -367,7 +367,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b1.status.v1",
-        "sha256": "d39829e3a9cb7f58044fdcc0af6f93f5ef071525c86e30cac64677a095b267d0",
+        "sha256": "111e1cb87cf0425e94aff084aa252278a98f1021133abca6db2028c99331154a",
         "source": "ledgers/v16b1/STATUS.json",
         "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
       }
@@ -549,14 +549,12 @@
   "delivery_complete": false,
   "freshness_warnings": {
     "blocked_dependency_components": [
-      "bull_replay_live_shadow",
       "v16b1"
     ],
     "failed_delivery_components": [],
     "missing_or_undated_components": [
       "prl50",
-      "alt_trail",
-      "bull_replay_live_shadow"
+      "alt_trail"
     ],
     "semantic_projection_ledger_ids": [
       "d100",
@@ -772,6 +770,31 @@
   "scientific_authority": false,
   "semantic_projection": {
     "d100": {
+      "component": {
+        "anchor_bar_date": "2026-09-29",
+        "collection_health_hint": "GREEN_ACTIVE",
+        "distinct_capture_days": 14,
+        "economic_freshness": "FRESH",
+        "economic_source": "ledgers/d100/economic/STATUS.json",
+        "economic_status": "ACTIVE_SHADOW_N80",
+        "first_possible_bar_date": "2026-09-29",
+        "freshness": "FRESH",
+        "latest_eligible_asset_count": 39,
+        "latest_market_data_observed_count": 71,
+        "latest_physical_capture_at_utc": "2026-10-10T00:49:14.182127Z",
+        "latest_raw_universe_count": 100,
+        "latest_signal_available_at_utc": "2026-10-10T00:49:29.150206Z",
+        "next_action": "AUTOMATIC_DAILY_CAPTURE_AND_PAIRED_ADVANCEMENT_UNTIL_N80",
+        "physical_snapshot_count": 14,
+        "physical_status": "ACTIVE_PHYSICAL_DATA_FEED",
+        "protocol_approved": true,
+        "remaining_scientific_observations": 69,
+        "scientific_blockers": [],
+        "scientific_observations_credited": 11,
+        "scientific_target": 80,
+        "source": "ledgers/d100/STATUS.json",
+        "status": "ACTIVE_SHADOW_N80"
+      },
       "display_name": "D100",
       "economics_authority": false,
       "health_authority": false,
@@ -794,7 +817,7 @@
           "scientific_blockers": [],
           "scientific_observations_credited": 0,
           "scientific_target": null,
-          "sha256": "a3efea0420e0cf1453152c3019460a904e371e56a6d08cdb55b7bcc2907a7ab7",
+          "sha256": "df2436dcb1bd7a8b06bf9f8c67e1a14a1404934fda3954de3c5b4dcf67b9327a",
           "source": "ledgers/d100/STATUS.json",
           "status": "ACTIVE_PHYSICAL_DATA_FEED"
         }
@@ -861,7 +884,7 @@
           "orders_generated": 0,
           "real_capital_used": 0,
           "schema": "gate_btc.qos_covered_delivery.v1",
-          "sha256": "f6df15313baed5618587ede030125da5e6fced1b732c8a2c252b00dcd4a86721",
+          "sha256": "f7d130459cbf55b600fd7522154cc0827cdc50af64a3396bd328f7fec1fb342c",
           "source": "ledgers/qos_three_track/STATUS.json",
           "status": "WAITING_NEXT_APPROVED_MONTH_END"
         }
@@ -933,7 +956,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "a3efea0420e0cf1453152c3019460a904e371e56a6d08cdb55b7bcc2907a7ab7",
+      "sha256": "df2436dcb1bd7a8b06bf9f8c67e1a14a1404934fda3954de3c5b4dcf67b9327a",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
