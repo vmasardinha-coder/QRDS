@@ -1,6 +1,12 @@
 name: GATE BTC B3 H1 Runtime Publisher
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-b3-h1-runtime-publisher.yml
+      - tools/gate_btc_factory/h1_canonical_runtime.py
+      - tests/test_gate_btc_h1_canonical_runtime.py
   workflow_run:
     workflows: ["GATE BTC B3 H1 Daily Structural"]
     types: [completed]
@@ -26,6 +32,17 @@ env:
   H1_ECONOMICS_READ: "false"
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: python -m pytest -q tests/test_gate_btc_h1_canonical_runtime.py
+
   publish-qualified-h1:
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -128,9 +145,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p runtime_repo/runtime/ledgers/b3_h1/gaps
-          GAP=$(find b3_evidence -name H1_OPERATIONAL_GAP.json -print -quit)
-          test -n "$GAP"
-          cp "$GAP" "runtime_repo/runtime/ledgers/b3_h1/gaps/${{ steps.payload.outputs.date }}.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          matches=list(Path('b3_evidence').rglob('H1_OPERATIONAL_GAP.json'))
+          assert len(matches)==1, matches
+          new=json.loads(matches[0].read_text(encoding='utf-8'))
+          target=Path('runtime_repo/runtime/ledgers/b3_h1/gaps')/(new['date']+'.json')
+          if target.exists():
+              old=json.loads(target.read_text(encoding='utf-8'))
+              assert old['reason']==new['reason'], 'conflicting H1 gap reason'
+              assert old.get('source',{}).get('sha256')==new.get('source',{}).get('sha256'), 'conflicting H1 official source'
+              print('H1_GAP_ALREADY_PUBLISHED_SAME_SOURCE=true')
+          else:
+              target.write_bytes(matches[0].read_bytes())
+          PY
 
       - name: Advance canonical /20 reporting clock exactly once
         if: steps.payload.outputs.mode != 'noop' && steps.gate.outputs.frozen != 'true'
