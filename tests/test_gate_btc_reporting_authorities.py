@@ -28,7 +28,8 @@ class ReportingAuthoritiesTest(unittest.TestCase):
                    {"status": "ARMED_WAITING_FIRST_RETURN", "data_as_of": "2026-10-09"})
         self.write(root, "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
                    {"schema": "gate_btc.bull_replay_live_shadow.delivery.v1",
-                    "status": "WAITING_FIRST_RETURN_CLOSE", "observed_days": 0})
+                    "status": "WAITING_FIRST_RETURN_CLOSE", "observed_days": 0,
+                    "active_epoch": "epochs/independent_20261009"})
         self.write(root, "ledgers/d100/STATUS.json",
                    {"schema": "qrds.d100.forward_collection.v2", "status": "PHYSICAL",
                     "physical_snapshot_count": 14, "scientific_observations_credited": 0,
@@ -68,6 +69,9 @@ class ReportingAuthoritiesTest(unittest.TestCase):
             p.unlink()
             state = reconcile(root, date(2026, 10, 10))
             self.assertNotEqual(state["components"]["bull_replay_live_shadow"].get("observed_days"), 26)
+            state = enrich(root, state, datetime(2026, 10, 10, tzinfo=timezone.utc))
+            self.assertFalse(state["delivery_complete"])
+            self.assertIn("bull_replay_live_shadow", state["warnings"]["blocked_dependency_components"])
             inv = complete_inventory(root, state)["ledger_inventory"]["bull_replay_live_shadow"]
             self.assertEqual(inv["source"], "ledgers/bull_replay_live_shadow/epochs/independent_20261009/STATUS.json")
             self.assertEqual(inv["status"], "NO_CANONICAL_STATUS_FIELD")
