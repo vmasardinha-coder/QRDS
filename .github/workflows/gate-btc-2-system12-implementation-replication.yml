@@ -1,0 +1,126 @@
+name: GATE BTC 2 System12 Implementation Replication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-system12-implementation-replication.yml
+      - tools/gate_btc_2_system12_vector_replication.py
+      - tests/test_gate_btc_2_system12_vector_replication.py
+      - artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-2-system12-implementation-replication.yml
+      - tools/gate_btc_2_system12_vector_replication.py
+      - tests/test_gate_btc_2_system12_vector_replication.py
+      - artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: system12-implementation-replication-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5
+      - run: python -m unittest -v tests.test_gate_btc_2_system12_vector_replication
+      - name: Validate immutable executor binding and restricted independence claim
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json')
+          c=json.loads(p.read_text())
+          assert c['bindings']['independent_executor_source_sha256']==hashlib.sha256(pathlib.Path('tools/gate_btc_2_system12_vector_replication.py').read_bytes()).hexdigest()
+          assert c['required_scenario_count']==300
+          assert c['independence_scope']['organizational_independence_claim'] is False
+          assert c['safety']['system12_completion_authorized'] is False
+          assert c['safety']['system13_release_authorized'] is False
+          PY
+
+  replicate-frozen-input:
+    needs: contract-test
+    if: github.event_name != 'pull_request' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          ref: 05520a7aecd2ed7e70d3cb3011920a083a2c655f
+          path: frozen_runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '11681515958'
+          github-token: ${{ github.token }}
+          repository: vmasardinha-coder/QRDS
+          run-id: '38082205441'
+          path: system11_artifact
+          merge-multiple: true
+      - name: Replicate all frozen events and scenarios without baseline-engine imports
+        run: |
+          python main_repo/tools/gate_btc_2_system12_vector_replication.py \
+            --prereg main_repo/artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_V1_20260929.json \
+            --ledger frozen_runtime/runtime/gate_btc_2/system11/DEPTH10_PAIRS.jsonl \
+            --system11-report frozen_runtime/runtime/gate_btc_2/system11/REPLAY_RESULT.json \
+            --system11-fills system11_artifact/replay/FILL_LEVELS.jsonl.gz \
+            --output out/IMPLEMENTATION_REPLICATION.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-btc-2-system12-implementation-replication
+          path: out
+          if-no-files-found: warn
+          retention-days: 90
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Publish implementation receipt without completion or dependency release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,pathlib,shutil
+          p=pathlib.Path('out/IMPLEMENTATION_REPLICATION.json')
+          r=json.loads(p.read_text())
+          assert r['implementation_replication_pass'] is True
+          assert r['system12_complete'] is False and r['system13_dependency_released'] is False
+          assert r['scientific_credit']==0 and r['orders']==0 and r['real_capital_brl']==0
+          r['workflow_run_url']='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']
+          r['execution_commit']=os.environ['GITHUB_SHA']
+          dest=pathlib.Path('runtime_repo/runtime/gate_btc_2/system12')
+          dest.mkdir(parents=True,exist_ok=True)
+          (dest/'IMPLEMENTATION_REPLICATION.json').write_text(json.dumps(r,sort_keys=True,indent=2)+'\n')
+          shutil.copyfile('main_repo/artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json',dest/'IMPLEMENTATION_REPLICATION_CONTRACT.json')
+          PY
+          git -C runtime_repo config user.name gate-btc-research-bot
+          git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
+          git -C runtime_repo add runtime/gate_btc_2/system12/IMPLEMENTATION_REPLICATION.json runtime/gate_btc_2/system12/IMPLEMENTATION_REPLICATION_CONTRACT.json
+          git -C runtime_repo diff --cached --quiet && exit 0
+          git -C runtime_repo commit -m 'Publish bounded System12 implementation parity receipt'
+          for attempt in 1 2 3 4 5; do
+            git -C runtime_repo pull --rebase origin gate-btc-runtime && git -C runtime_repo push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1

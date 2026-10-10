@@ -1,6 +1,6 @@
 # Gate BTC 2.0 — Canonical 16-System Master Plan
 
-Status: `RECONCILED_2026_09_30_SYSTEM11_REPLAY_ACTIVE`
+Status: `RECONCILED_2026_10_10_SYSTEM11_COMPLETE_SYSTEM12_IMPLEMENTATION_CONTRACT`
 
 This document restores the original Gate BTC 2.0 technology roadmap without restarting or redesigning the program. The 16 numbered systems remain the canonical roadmap. The Research/Strategy Factory, Evidence Factory and Collector Supervisor are permanent cross-cutting layers; they are not a phase 17 and do not replace any numbered system.
 
@@ -42,8 +42,8 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 | 8 | Cryptofeed | Streaming/multiexchange market-data reference | 137-source exact registry, provenance/source identity, prospective PIT publisher, replacement Dataset Epoch and immutable D0 readiness chain | Factory/Collector Supervisor declare and monitor required sources | COMPLETE_PROSPECTIVE_EPOCH_ACTIVE | Preserve forward-only causal collection and regression guards | Authorized feeds prove 137/137 provenance/PIT readiness and immutable D0 exists without historical backfill |
 | 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled Bitget forward capture/admission/append-only ledger and prospective exit evaluator | Evidence Factory credits only admitted physical forward evidence | COMPLETE_RESEARCH_EXIT_GATE | Preserve canonical PASS_STAGE9_EXIT_GATE and append-only evidence; no economics or engine promotion | At least 168 admitted captures at/after 2026-09-08T00:00:00Z cover all 24 UTC hours, all 7 UTC weekdays and at least 167 elapsed hours; the fail-closed evaluator emits `PASS_STAGE9_EXIT_GATE` |
 | 10 | NautilusTrader | Institutional event-driven engine/reference | event/shadow/state boundaries partly internalized | Receives frozen candidates only; no execution authority | COMPLETE_RESEARCH_PARITY | Preserve the completed read-only parity proof under regression protection | Independent event replay/state parity demonstrated |
-| 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation plus validated Cryptofeed L2/depth10 capture capability; rejected H_CF_LL_01 is not reusable as success | Can be emitted as required evidence; never synthesized | FORWARD_COLLECTION_AND_FROZEN_V1_REPLAY_ACTIVE | Accumulate ≥10,000 eligible pairs, ≥7 calendar days and ≥3 observation days; ≥1,000 effective executions per frozen primary scenario | Causal book dataset + execution stress/replay passes frozen contract |
-| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | STRUCTURAL_HARNESS_UPSTREAM_SYSTEM11_BLOCKED | Hash-bind completed System11 evidence, then freeze the independent replication contract; readiness never awards completion | Survivor requires hash-bound independent replication |
+| 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation plus validated Cryptofeed L2/depth10 capture capability; rejected H_CF_LL_01 is not reusable as success | Can be emitted as required evidence; never synthesized | COMPLETE_RESEARCH_STRESS_REPLAY | Preserve hash-bound PASS: 11,072 pairs, 11 days, 300 scenarios; no economic claim | Causal book dataset + execution stress/replay passes frozen contract |
+| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | FROZEN_IMPLEMENTATION_REPLICATION_PENDING_RUN_AND_INDEPENDENT_ADJUDICATION | Run separate NumPy prefix-depth executor on pinned System11 evidence, then obtain independent adjudication; implementation parity alone never completes12 | Survivor requires hash-bound independent replication |
 | 13 | Qlib | Quant/ML dataset-feature-model research reference | dataset/PIT/regime/experiment infrastructure | Factory provides controlled hypothesis generation and multiple-test discipline | PARTIAL | Mature ML track only after baseline/data gates | ML candidate beats frozen baseline OOS under same evidence contract |
 | 14 | Barter-rs | Performant event/execution engine reference | event/safety/shadow concepts partly absorbed | Factory remains disconnected from engine feed | REFERENCE_PARTIAL | Benchmark/parity or explicit non-adoption decision | Functional parity demonstrated or documented decision that integration adds no evidence value |
 | 15 | LEAN / B3 | Multiasset/B3 research and validation | B3 Factory, H1/H31, Hxxx families, prospective clocks and multiasset infrastructure | Major Factory integration: autonomous family generation, replication, survival and collector activation | ADVANCED_ACTIVE | Continue families while repairing operational gaps and accumulating prospective evidence | Continuous generation→replication→survivor→prospective pipeline with frozen gates |
@@ -79,6 +79,14 @@ The original roadmap is not restarted from system 1. Systems 1–8 are mature/cl
 
 System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be paused by this technology roadmap. System 16 remains deliberately deferred.
 
+### Current bounded checkpoint — 2026-10-10
+
+System11 run38082205441 completed its frozen stress replay: 11,072 eligible pairs, 11 observation days, 300 scenarios and causal/deterministic gates PASS. No profitability, strategy-survivor or capital claim follows.
+
+System12 implementation parity now has a pre-execution contract in `artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json`. It binds runtime commit05520a7aecd2ed7e70d3cb3011920a083a2c655f, dataset/prereg/report/fills and the standalone executor source. The NumPy implementation uses prefix-depth allocation and imports no System11 execution code. Every recorded fill event and scenario is compared under fixed numeric tolerances; discrete receipt times, identities, counts and abstentions must match exactly. No input substitution or post-result tolerance adjustment is allowed.
+
+This proves implementation independence only: same operator, no clean-room, external or organizational-independence claim. A separate independent adjudication is still required to complete System12 or evaluate the System13 dependency. The implementation receipt keeps `system12_complete=false`, `system13_dependency_released=false`, scientific_credit0, engine_feedfalse, orders0 and capital0 regardless of parity PASS.
+
 ### Immediate bounded checkpoint — 2026-09-30
 
 System9 canonical runtime reports PASS_STAGE9_EXIT_GATE, stage_9_complete=true and N=194 in the frozen exit segment. Its safety boundaries remain unchanged. System10 is complete for independent Nautilus metadata/event-routing/state parity; this is not LOB fill parity.
@@ -100,3 +108,4 @@ The 50 pre-audit observations are preserved as valid evidence and receive zero c
 ## Governance rule
 
 Future work must update this 16-system map rather than inventing a replacement numbering. New infrastructure is mapped as a cross-cutting layer or as implementation inside one or more existing systems. A new numbered system requires an explicit roadmap revision, not incidental code growth.
+
