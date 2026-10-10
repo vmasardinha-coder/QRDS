@@ -5,12 +5,24 @@ on:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-shadow-executive.yml
+      - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_reporting_inventory.py
+      - tools/gate_btc_factory_status_export.py
+      - tests/test_gate_btc_reporting_authorities.py
       - tools/gate_btc_shadow_executive.py
       - tests/test_gate_btc_shadow_executive.py
   push:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-shadow-executive.yml
+      - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_reporting_operational_overlay.py
+      - tools/gate_btc_reporting_inventory.py
+      - tools/gate_btc_factory_status_export.py
+      - tests/test_gate_btc_reporting_authorities.py
       - tools/gate_btc_shadow_executive.py
       - tests/test_gate_btc_shadow_executive.py
   workflow_dispatch:
@@ -39,7 +51,7 @@ jobs:
       - name: Compile generator
         run: python -m py_compile tools/gate_btc_shadow_executive.py
       - name: Test fixed 13-block contract
-        run: python -m unittest -v tests.test_gate_btc_shadow_executive
+        run: python -m unittest -v tests.test_gate_btc_shadow_executive tests.test_gate_btc_reporting_authorities
       - name: Assert immutable reporting boundary
         run: |
           python - <<'PY'
@@ -93,6 +105,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Refresh reporting authorities from this runtime checkout
+        run: |
+          python main_repo/tools/gate_btc_reporting_current_state.py --runtime-root runtime_repo/runtime --output runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          python main_repo/tools/gate_btc_reporting_operational_overlay.py --runtime-root runtime_repo/runtime --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          python main_repo/tools/gate_btc_reporting_inventory.py --runtime-root runtime_repo/runtime --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+          python main_repo/tools/gate_btc_executive_track_catalog.py --state runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json --artifact-root runtime_repo/artifacts --requirements main_repo/tools/gate_btc_executive_reporting_requirements.json
       - name: Require canonical reporting state
         run: |
           test -f runtime_repo/runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
@@ -141,7 +159,7 @@ jobs:
           set -euo pipefail
           git config user.name gate-btc-reporting-bot
           git config user.email gate-btc-reporting-bot@users.noreply.github.com
-          git add runtime/executive/
+          git add runtime/executive/ runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
           git diff --cached --quiet && exit 0
           git commit -m "Publish 13-block GATE BTC shadow executive"
           for attempt in 1 2 3 4 5; do
@@ -154,3 +172,4 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+

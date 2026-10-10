@@ -3,6 +3,11 @@ import argparse, json, hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from .gate_btc_reporting_authority import active_status_path
+except ImportError:
+    from gate_btc_reporting_authority import active_status_path
+
 TRACKS = {
     "h31_prospective": "runtime/ledgers/b3_h31_prospective/STATUS.json",
     "h31_shadow_paper": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
@@ -16,7 +21,8 @@ TRACKS = {
     "bull_replay": "runtime/ledgers/bull_replay_live_shadow/STATUS.json",
     "delta_paper": "runtime/ledgers/delta_paper_monitor/STATUS.json",
     "h1": "runtime/ledgers/b3_h1/STATUS.json",
-    "d100": "runtime/ledgers/d100/STATUS.json",
+    "d100": "runtime/ledgers/d100/economic/STATUS.json",
+    "d100_physical": "runtime/ledgers/d100/STATUS.json",
     "reporting_state": "runtime/GATE_BTC_REPORTING_CURRENT_STATE.json",
     "measurement": "runtime/GATE_BTC_MEASUREMENT_STATUS.json",
 }
@@ -44,13 +50,19 @@ def load(root: Path, rel: str):
         return {"exists": True, "path": rel, "status": "INVALID_JSON", "error": str(exc), "sha256": hashlib.sha256(raw).hexdigest()}
     return {"exists": True, "path": rel, "sha256": hashlib.sha256(raw).hexdigest(), "data": data}
 
+def export_tracks(root: Path):
+    paths = dict(TRACKS)
+    paths["bull_replay"] = active_status_path(root / "runtime/ledgers/bull_replay_live_shadow").relative_to(root).as_posix()
+    return {k: load(root, v) for k, v in paths.items()}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runtime-root", required=True)
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
     root = Path(args.runtime_root)
-    tracks = {k: load(root, v) for k, v in TRACKS.items()}
+    tracks = export_tracks(root)
 
     # Canonical reporting semantics: a newer track status overrides stale aggregate hints.
     corrections = []
@@ -71,7 +83,7 @@ def main():
         corrections.append("PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING")
     d100 = tracks["d100"]
     if d100.get("exists") and isinstance(d100.get("data"), dict):
-        if d100["data"].get("status") == "ACTIVE_FORWARD_COLLECTION":
+        if d100["data"].get("status") == "ACTIVE_SHADOW_N80":
             corrections.append("D100_CANONICAL_RUNTIME_OVERRIDES_STALE_FROZEN_DORMANT_HINT")
 
     out = {
@@ -96,3 +108,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

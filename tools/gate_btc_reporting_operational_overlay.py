@@ -12,6 +12,11 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+try:
+    from .gate_btc_reporting_authority import active_status_path
+except ImportError:
+    from gate_btc_reporting_authority import active_status_path
+
 
 def load(path: Path):
     return json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
@@ -455,6 +460,13 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
 
     bull_path = runtime_root / "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json"
     bull = load(bull_path)
+    bull_root = runtime_root / "ledgers/bull_replay_live_shadow"
+    if (bull_root / "ACTIVE_EPOCH.json").is_file() and bull:
+        epoch_status = active_status_path(bull_root)
+        selected_epoch = epoch_status.parent.relative_to(bull_root).as_posix()
+        if not epoch_status.is_file() or bull.get("active_epoch") != selected_epoch:
+            bull = {**bull, "status": "BLOCKED_ACTIVE_EPOCH_EVIDENCE_MISSING_OR_MISMATCH",
+                    "observed_days": None}
     bull_active = bool(bull and bull.get("schema") == "gate_btc.bull_replay_live_shadow.delivery.v1")
     if bull_active:
         safe("bull_replay_live_shadow", bull)
@@ -568,3 +580,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

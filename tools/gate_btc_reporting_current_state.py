@@ -11,6 +11,11 @@ import hashlib
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+try:
+    from .gate_btc_reporting_authority import active_status_path
+except ImportError:
+    from gate_btc_reporting_authority import active_status_path
 from typing import Any
 
 SCHEMA = "gate_btc.reporting_current_state.v1"
@@ -121,7 +126,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
         "lock25_50": runtime_root / "ledgers" / "lock25_50" / "STATUS.json",
         "prl50": runtime_root / "ledgers" / "prl50_position" / "STATUS.json",
         "alt_trail": runtime_root / "ledgers" / "alt_trail40_10" / "STATUS.json",
-        "bull_replay": runtime_root / "ledgers" / "bull_replay_live_shadow" / "STATUS.json",
+        "bull_replay": active_status_path(runtime_root / "ledgers" / "bull_replay_live_shadow"),
         "delta_paper_monitor": runtime_root / "ledgers" / "delta_paper_monitor" / "STATUS.json",
     }
     data = {name: load_json(path) for name, path in paths.items()}
@@ -288,10 +293,10 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
     bull = data["bull_replay"]
     if bull is None:
         bull_component = {
-            "status": "PENDING_INITIALIZATION",
-            "freshness": "PENDING_NOT_YET_WRITTEN",
-            "observed_days": 0,
-            "source": "ledgers/bull_replay_live_shadow/STATUS.json",
+            "status": "MISSING_ACTIVE_EPOCH_STATUS" if (runtime_root / "ledgers/bull_replay_live_shadow/ACTIVE_EPOCH.json").is_file() else "PENDING_INITIALIZATION",
+            "freshness": "MISSING" if (runtime_root / "ledgers/bull_replay_live_shadow/ACTIVE_EPOCH.json").is_file() else "PENDING_NOT_YET_WRITTEN",
+            "observed_days": None if (runtime_root / "ledgers/bull_replay_live_shadow/ACTIVE_EPOCH.json").is_file() else 0,
+            "source": paths["bull_replay"].relative_to(runtime_root).as_posix(),
         }
     else:
         bull_component = {
@@ -300,7 +305,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
             "observed_days": bull.get("observed_days", 0),
             "data_as_of": bull.get("data_as_of"),
             "leaderboard_descriptive_only": bull.get("leaderboard_descriptive_only"),
-            "source": "ledgers/bull_replay_live_shadow/STATUS.json",
+            "source": paths["bull_replay"].relative_to(runtime_root).as_posix(),
         }
     components["bull_replay_live_shadow"] = bull_component
 
@@ -400,3 +405,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
