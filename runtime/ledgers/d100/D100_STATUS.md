@@ -1,7 +1,7 @@
 # D100 — operational evidence
 
 Status: ACTIVE_PHYSICAL_DATA_FEED
-Last attempt: CAPTURED
+Last attempt: IDEMPOTENT_ALREADY_CAPTURED_TODAY
 Physical captures: 15; distinct days: 15
 Latest physical capture: 2026-10-11T01:51:51.893162Z
 Raw universe: 100; market data observed: 71
