@@ -1,0 +1,18 @@
+name: GATE BTC MEXC qualification cutoff
+on:
+  pull_request:
+    branches: [main]
+    paths: ['tools/gate_btc_2_v2a_bgb_mexc_qualification_runner.py', 'tools/gate_btc_2_v2a_bdx_mexc_qualification_runner.py', 'tools/gate_btc_2_v2a_xdc_mexc_qualification_runner.py', 'tests/test_gate_btc_mexc_qualification_cutoff.py', '.github/workflows/gate-btc-mexc-cutoff.yml']
+  push:
+    branches: [main]
+    paths: ['tools/gate_btc_2_v2a_bgb_mexc_qualification_runner.py', 'tools/gate_btc_2_v2a_bdx_mexc_qualification_runner.py', 'tools/gate_btc_2_v2a_xdc_mexc_qualification_runner.py', 'tests/test_gate_btc_mexc_qualification_cutoff.py', '.github/workflows/gate-btc-mexc-cutoff.yml']
+permissions:
+  contents: read
+jobs:
+  cutoff-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_gate_btc_mexc_qualification_cutoff.py -v
