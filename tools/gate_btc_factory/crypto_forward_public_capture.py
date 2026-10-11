@@ -27,6 +27,9 @@ def pick_coinbase(rows,delay_seconds=0):
 def capture(full_source_contract=False):
     delay_seconds=120 if full_source_contract else 0
     p={"schema":"qrds.factory.crypto_forward_capture.v1","captured_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),"frontier":"CRYPTO_FORWARD_UNSEEN_V1","scientific_credit":0,"historical_backfill_credit":0,"economics_feedback_allowed":False,"records":[],"errors":[],"safety":{"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"NOT_APPROVED":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":True,"NO_BACKFILL":True,"FAIL_CLOSED":True}}
+    if full_source_contract:
+        p["capture_profile"]="full-source-contract"
+        p["frozen_capture_delay_seconds"]=120
     for asset in ("BTC","ETH"):
       bs=asset+"USDT"
       for market,url in (("SPOT","https://data-api.binance.vision/api/v3/klines"),("PERPETUAL","https://fapi.binance.com/fapi/v1/klines")):

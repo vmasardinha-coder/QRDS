@@ -7,6 +7,8 @@ on:
       - 'tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'
       - 'tools/gate_btc_factory/crypto_forward_public_capture.py'
       - 'tools/gate_btc_factory/crypto_forward_source_admission.py'
+      - 'tools/gate_btc_factory/crypto_full_local_publication.py'
+      - 'tools/gate_btc_publish_local_crypto.ps1'
       - 'tools/gate_btc_factory/CRYPTO_ACCESSIBLE_FORWARD_PREREG.v1.json'
       - 'tools/gate_btc_factory/crypto_accessible_source_admission.py'
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
@@ -14,6 +16,7 @@ on:
       - 'tests/test_crypto_prospective_pair_capture.py'
       - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - 'tests/test_gate_btc_crypto_full_source_admission.py'
+      - 'tests/test_gate_btc_crypto_full_local_publication.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   push:
     branches: [main]
@@ -21,6 +24,8 @@ on:
       - 'tools/gate_btc_factory/CRYPTO_FORWARD_PUBLIC_SOURCE_CONTRACT.v1.json'
       - 'tools/gate_btc_factory/crypto_forward_public_capture.py'
       - 'tools/gate_btc_factory/crypto_forward_source_admission.py'
+      - 'tools/gate_btc_factory/crypto_full_local_publication.py'
+      - 'tools/gate_btc_publish_local_crypto.ps1'
       - 'tools/gate_btc_factory/CRYPTO_ACCESSIBLE_FORWARD_PREREG.v1.json'
       - 'tools/gate_btc_factory/crypto_accessible_source_admission.py'
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
@@ -28,6 +33,7 @@ on:
       - 'tests/test_crypto_prospective_pair_capture.py'
       - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - 'tests/test_gate_btc_crypto_full_source_admission.py'
+      - 'tests/test_gate_btc_crypto_full_local_publication.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   schedule:
     - cron: '7-57/10 * * * *'
@@ -56,6 +62,7 @@ jobs:
           python -m unittest -v tests/test_crypto_prospective_pair_capture.py
           python -m unittest -v tests/test_gate_btc_crypto_capture_reporting.py
           python -m unittest -v tests/test_gate_btc_crypto_full_source_admission.py
+          python -m unittest -v tests/test_gate_btc_crypto_full_local_publication.py
       - run: |
           python - <<'PY'
           import json
@@ -102,9 +109,8 @@ jobs:
           cp out/pair/T_PLUS_1.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
           cp out/pair/T.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T.json"
           cp out/pair/T_PLUS_1.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T1.json"
-          python tools/gate_btc_factory/crypto_forward_source_admission.py \
-            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
-            --out runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json
+          python tools/gate_btc_factory/crypto_full_local_publication.py \
+            --root runtime-tree/runtime/factory_sources/crypto_forward
           python tools/gate_btc_factory/crypto_accessible_source_admission.py \
             --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
             --previous runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
