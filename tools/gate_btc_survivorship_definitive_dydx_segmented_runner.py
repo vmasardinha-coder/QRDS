@@ -39,7 +39,15 @@ def _segment_snapshots(snapshots: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
     dates = pd.to_datetime(out["snapshot_date"], errors="raise").dt.tz_localize(None)
     slugs = out.get("cmc_slug", pd.Series("", index=out.index)).astype(str).map(continuity._norm)
     symbols = out["symbol"].astype(str)
-    mask = symbols.eq(NATIVE_SYMBOL) & slugs.eq(LEGACY_CMC_SLUG) & dates.lt(CHAIN_GENESIS)
+    # Lazy historical rows keep their exact legacy slug even when the current
+    # keyless metadata map is unavailable. Apply the existing curated era
+    # identity directly to unresolved audit keys; never overwrite another
+    # resolved ticker, infer from a name, or accept a native/post-genesis slug.
+    unresolved = (
+        ~out.get("identity_resolved", pd.Series(True, index=out.index)).astype(bool)
+        & out.get("symbol_resolution", pd.Series("", index=out.index)).eq("UNRESOLVED_AUDIT_KEY")
+    )
+    mask = (symbols.eq(NATIVE_SYMBOL) | unresolved) & slugs.eq(LEGACY_CMC_SLUG) & dates.lt(CHAIN_GENESIS)
 
     touched = out.loc[mask, [c for c in ["snapshot_date", "rank", "name", "symbol", "cmc_slug"] if c in out.columns]].copy()
     if not touched.empty:

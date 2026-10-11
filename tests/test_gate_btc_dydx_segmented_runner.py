@@ -26,6 +26,29 @@ class DydxSegmentedRunnerTests(unittest.TestCase):
         self.assertEqual(out.iloc[2]["symbol"], "DYDX")
         self.assertEqual(out.iloc[0]["symbol_resolution"], "CURATED_DYDX_PRE_GENESIS_SEGMENT")
 
+    def test_lazy_legacy_slug_resolves_without_current_metadata(self):
+        frame = pd.DataFrame([
+            {"snapshot_date": "2021-09-30", "rank": 76, "name": "dYdX", "symbol": "U84812447", "cmc_slug": "dydx", "symbol_resolution": "UNRESOLVED_AUDIT_KEY", "identity_resolved": False},
+            {"snapshot_date": "2023-10-26", "rank": 80, "name": "dYdX", "symbol": "U84812447", "cmc_slug": "dydx", "symbol_resolution": "UNRESOLVED_AUDIT_KEY", "identity_resolved": False},
+            {"snapshot_date": "2023-09-30", "rank": 80, "name": "dYdX", "symbol": "U84812447", "cmc_slug": "dydxchain", "symbol_resolution": "UNRESOLVED_AUDIT_KEY", "identity_resolved": False},
+            {"snapshot_date": "2023-09-30", "rank": 80, "name": "dYdX", "symbol": "U84812447", "cmc_slug": "", "symbol_resolution": "UNRESOLVED_AUDIT_KEY", "identity_resolved": False},
+        ])
+        before = frame.copy(deep=True)
+        out, touched = runner._segment_snapshots(frame)
+        self.assertEqual(len(touched), 1)
+        self.assertEqual(out.iloc[0]["symbol"], "DYDXERC20")
+        self.assertTrue(bool(out.iloc[0]["identity_resolved"]))
+        pd.testing.assert_frame_equal(out.iloc[1:], frame.iloc[1:])
+        pd.testing.assert_frame_equal(frame, before)
+
+    def test_legacy_slug_does_not_overwrite_conflicting_resolved_ticker(self):
+        frame = pd.DataFrame([
+            {"snapshot_date": "2023-09-30", "rank": 76, "name": "dYdX", "symbol": "OTHER", "cmc_slug": "dydx", "symbol_resolution": "PAGE_MATERIALIZED", "identity_resolved": True},
+        ])
+        out, touched = runner._segment_snapshots(frame)
+        self.assertTrue(touched.empty)
+        pd.testing.assert_frame_equal(out, frame)
+
     def test_bounded_exchange_history_never_crosses_genesis(self):
         raw = pd.DataFrame({
             "date": pd.to_datetime(["2023-10-25", "2023-10-26", "2023-10-27"]),
