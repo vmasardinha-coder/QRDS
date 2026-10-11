@@ -270,21 +270,25 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
         & ~universe["is_blocked"]
     ].head(int(CFG["max_assets_to_fetch"]))
     symbols = list(dict.fromkeys(["BTC", "ETH"] + candidates["symbol"].tolist()))
-    histories, failures = [], []
+    histories, failures, source_attempts = [], [], []
     for symbol in tqdm(symbols, desc="public candles"):
         last_error = "not_attempted"
         selected = None
+        attempts = []
         for name, loader in (("cdd", fetch_cdd_symbol), ("binance", fetch_binance_klines), ("okx", fetch_okx_candles)):
             try:
                 candidate = loader(session, symbol)
+                attempts.append({"source": name, "status": "SELECTED" if len(candidate) >= 200 else "SHORT_HISTORY", "observed_rows": len(candidate)})
                 if len(candidate) >= 200:
                     selected = candidate
                     break
                 last_error = f"{name}: only {len(candidate)} rows"
             except Exception as exc:
                 last_error = f"{name}: {type(exc).__name__}: {str(exc)[:160]}"
+                attempts.append({"source": name, "status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]})
+        source_attempts.append({"symbol": symbol, "selected_source": None if selected is None else name, "attempts": attempts})
         if selected is None:
-            failures.append({"symbol": symbol, "reason": last_error})
+            failures.append({"symbol": symbol, "reason": last_error, "source_attempts": json.dumps(attempts, sort_keys=True)})
         else:
             histories.append(selected)
         time.sleep(0.08)
@@ -292,8 +296,9 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
     if not master.empty:
         master["date"] = pd.to_datetime(master["date"]).dt.tz_localize(None).dt.normalize()
         master = master[master["date"] >= START_DATE].drop_duplicates(["date", "symbol"]).sort_values(["symbol", "date"])
-    failure_frame = pd.DataFrame(failures, columns=["symbol", "reason"])
+    failure_frame = pd.DataFrame(failures, columns=["symbol", "reason", "source_attempts"])
     save_df(failure_frame, OUT / "download_failures_v2a.csv")
+    save_json({"schema": "gate_btc.v2a_source_attempts.v1", "reporting_only": True, "source_priority": ["cdd", "binance", "okx"], "history_requirement_rows": 200, "source_substitution_performed": False, "orders_generated": 0, "real_capital_used": 0, "rows": source_attempts}, OUT / "source_attempts_v2a.json")
     save_df(master, DATA_PROCESSED / "qos_v2a_master_daily.csv")
     return master, failure_frame
 

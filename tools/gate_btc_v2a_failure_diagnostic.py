@@ -75,6 +75,16 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
     for failure in failure_rows:
         symbol = str(failure.get("symbol", "")).upper().strip()
         reason = str(failure.get("reason", "")).strip()
+        attempts_raw = failure.get("source_attempts", "")
+        attempts = json.loads(attempts_raw) if attempts_raw else None
+        if attempts is not None:
+            if not isinstance(attempts, list) or not attempts:
+                raise RuntimeError(f"invalid source_attempts for {symbol}")
+            observed_sources = [attempt.get("source") for attempt in attempts if isinstance(attempt, dict)]
+            if observed_sources != ["cdd", "binance", "okx"]:
+                raise RuntimeError(f"failed source_attempts must preserve all three sources for {symbol}")
+            if any(attempt.get("status") not in {"ERROR", "SHORT_HISTORY"} for attempt in attempts):
+                raise RuntimeError(f"failed source_attempts contains a selected source for {symbol}")
         source = by_symbol.get(symbol)
         if source is None:
             action_class = "UNMAPPED_FAILURE"
@@ -111,6 +121,8 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
             "observed_history_rows": history_rows,
             "semantic_flags": flags,
             "action_class": action_class,
+            "source_attempts": attempts,
+            "source_attempts_available": attempts is not None,
         })
 
     attempted = int(manifest.get("attempted_symbols", 0))
