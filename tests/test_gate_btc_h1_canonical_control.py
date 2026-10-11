@@ -1,9 +1,11 @@
 from pathlib import Path
 import importlib.util
+import sys
 
 MOD = Path(__file__).parents[1] / "tools/gate_btc_factory/h1_canonical_control.py"
 spec = importlib.util.spec_from_file_location("h1_control", MOD)
 h1 = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = h1
 spec.loader.exec_module(h1)
 
 
