@@ -1,0 +1,58 @@
+{
+  "schema": "gate_btc.crypto_local_transport_qualification.v1",
+  "status": "PASS_LOCAL_FROZEN_FULL_SOURCE_QUALIFICATION",
+  "capture_profile": "full-source-contract",
+  "qualification_gate": {
+    "schema": "qrds.factory.crypto_forward_source_admission.v1",
+    "required_complete_consecutive_packets": 3,
+    "observed_packet_count": 3,
+    "complete_consecutive_streak": 3,
+    "complete_streak_counts_unique_5m_buckets": true,
+    "frozen_capture_delay_seconds": 120,
+    "latest_packet_qualification": "QUALIFIED_PACKET",
+    "source_admitted_forward_only": true,
+    "family_state": "READY_FORWARD",
+    "historical_backfill_credit": 0,
+    "economics_read": false,
+    "promotion_allowed": false,
+    "orders": 0,
+    "real_capital": 0
+  },
+  "evidence": [
+    {
+      "file": "QUALIFICATION_T_PLUS_2.json",
+      "packet_sha256": "9afe36b5c2d97d4d8650c985e87235f5fabfac07ce2b1156a7c0fface44feae2",
+      "original_file_sha256": "67006a3fd3321109bbef1055f8f46813c5889a7671f59f0ab56475c49f2769f1",
+      "bucket_start_ms": 1791745200000,
+      "capture_delay_seconds": 123.58447098731995,
+      "records": 14,
+      "qualification": "QUALIFIED_PACKET"
+    },
+    {
+      "file": "T.json",
+      "packet_sha256": "6158517049ed7575aea05cc96b767ecd0b06f5b518b8890251f24b5b06332527",
+      "original_file_sha256": "28b6ccd0871a9687fbb04b2a106e240f1ece62bacbbd6fd1d9a6d60ba48353a6",
+      "bucket_start_ms": 1791744600000,
+      "capture_delay_seconds": 139.4315700531006,
+      "records": 14,
+      "qualification": "QUALIFIED_PACKET"
+    },
+    {
+      "file": "T_PLUS_1.json",
+      "packet_sha256": "a4d6aae9a3e829936c024d5eb4312cbfa793d0778e65a70fd74babc38d011918",
+      "original_file_sha256": "8e9f459652148034b7f497a5073a5fec9a560caf366508f4d86b4c50859c5441",
+      "bucket_start_ms": 1791744900000,
+      "capture_delay_seconds": 121.69470405578613,
+      "records": 14,
+      "qualification": "QUALIFIED_PACKET"
+    }
+  ],
+  "source_contract_sha256": "4e325494e16e14dff806d3d0f98821350e731c7942baf7d2a683ea0891201671",
+  "canonical_source_admission_changed": false,
+  "canonical_pipeline_integrated": false,
+  "historical_credit": 0,
+  "scientific_credit": 0,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0
+}
