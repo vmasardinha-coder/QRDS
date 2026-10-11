@@ -207,7 +207,7 @@ def fetch_binance_klines(session, symbol: str) -> pd.DataFrame:
     rows = []
     while True:
         response = session.get(
-            "https://api.binance.com/api/v3/klines",
+            "https://data-api.binance.vision/api/v3/klines",
             params={"symbol": symbol + "USDT", "interval": "1d", "startTime": start_ms, "limit": 1000},
             timeout=30,
         )
