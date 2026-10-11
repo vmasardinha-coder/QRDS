@@ -18,6 +18,11 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from tools.gate_btc_local_d50_reporting_authority import load_local_d50
+except ModuleNotFoundError:
+    from gate_btc_local_d50_reporting_authority import load_local_d50
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -147,7 +152,8 @@ def sync_qmaster_from_runtime() -> tuple[Path | None, str]:
 
 
 def load_state() -> dict:
-    d50p = newest("GATE_BTC_D50_DAILY_LATEST*.txt")
+    d50_authority = load_local_d50(ROOTS[-1])
+    d50p = Path(d50_authority["source_file"]) if d50_authority["status"] == "LOCAL_D50_AUTHORITY_PASS" else None
     readyp = newest("GATE_BTC_DATA_READINESS_REPORT_*.txt")
     coordp = newest("GATE_BTC_COLLECTION_COORDINATOR_LATEST*.txt")
     qmp, qsync = sync_qmaster_from_runtime()
@@ -168,8 +174,9 @@ def load_state() -> dict:
         "coordinator_path": str(coordp or ""),
         "qmaster_path": str(qmp or ""),
         "qmaster_sync_status": qsync,
-        "d50_obs": rex(d50, r"PROSPECTIVE_OBSERVATIONS=(\d+)", int),
-        "d50_next": rex(d50, r"NEXT_CHECKPOINT=(\d+)", int),
+        "d50_obs": d50_authority["observations"],
+        "d50_authority": d50_authority,
+        "d50_next": d50_authority["next_checkpoint"],
         "coord_status": rex(coord, r"^STATUS=([A-Z0-9_]+)"),
         "ready_consecutive": rex(ready, r'"latest_consecutive_pass_count":\s*(\d+)', int),
         "ready_required": rex(ready, r'"required_consecutive_pass_count":\s*(\d+)', int),
@@ -183,15 +190,10 @@ def load_state() -> dict:
         "ENGINE_FEED": False,
     }
 
-    for key in ["D50_CONTROL", "D50_COST_AWARE", "D50_EXIT_2SIGMA"]:
-        block = re.search(r'"' + key + r'"\s*:\s*\{(.*?)\n\s*\}', d50, re.S)
-        if block:
-            b = block.group(1)
-            s[key] = {
-                "ret": rex(b, r'"total_return":\s*([-0-9.eE]+)', float),
-                "dd": rex(b, r'"max_drawdown":\s*([-0-9.eE]+)', float),
-                "cost": rex(b, r'"cumulative_cost_bps":\s*([-0-9.eE]+)', float),
-            }
+    for key, summary in d50_authority['summaries'].items():
+        s[key] = {'ret': summary.get('total_return'),
+                  'dd': summary.get('max_drawdown'),
+                  'cost': summary.get('cumulative_cost_bps')}
 
     required = [d50p, readyp, coordp, qmp]
     q_ok = bool(qstate and qstate.get("status") == "PASS")
@@ -288,3 +290,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

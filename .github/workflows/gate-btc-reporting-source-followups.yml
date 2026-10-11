@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/GATE_BTC_DAILY_EXECUTIVE_RECONCILER_V2.py
+      - tools/gate_btc_local_d50_reporting_authority.py
+      - tests/test_gate_btc_local_d50_reporting_authority.py
       - tools/gate_btc_2_master_plan_16_systems.md
       - tools/gate_btc_reporting_authority.py
       - tools/gate_btc_reporting_operational_overlay.py
@@ -24,6 +27,9 @@ on:
   push:
     branches: [main]
     paths:
+      - tools/GATE_BTC_DAILY_EXECUTIVE_RECONCILER_V2.py
+      - tools/gate_btc_local_d50_reporting_authority.py
+      - tests/test_gate_btc_local_d50_reporting_authority.py
       - tools/gate_btc_2_master_plan_16_systems.md
       - tools/gate_btc_reporting_authority.py
       - tools/gate_btc_registry_pit_inventory.py
@@ -52,6 +58,7 @@ jobs:
           tests.test_gate_btc_crypto_forward_public_transport
           tests.test_gate_btc_momentum_cost_diagnostic
           tests.test_gate_btc_2_master_plan_16_systems
+          tests.test_gate_btc_local_d50_reporting_authority
       - name: Validate Grammar cumulative versus incremental counters
         run: |
           python - <<'PY'
