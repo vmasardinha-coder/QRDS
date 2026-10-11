@@ -12,6 +12,7 @@ on:
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
       - 'tests/test_crypto_prospective_pair_capture.py'
+      - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   push:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
       - 'tests/test_crypto_prospective_pair_capture.py'
+      - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - '.github/workflows/gate-btc-crypto-forward-public-capture.yml'
   schedule:
     - cron: '7-57/10 * * * *'
@@ -50,6 +52,7 @@ jobs:
           python -m py_compile tools/gate_btc_factory/crypto_family_state_runtime.py
           python -m py_compile tools/gate_btc_factory/crypto_accessible_blind_evaluator.py
           python -m unittest -v tests/test_crypto_prospective_pair_capture.py
+          python -m unittest -v tests/test_gate_btc_crypto_capture_reporting.py
       - run: |
           python - <<'PY'
           import json
