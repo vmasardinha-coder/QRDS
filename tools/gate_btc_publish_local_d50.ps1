@@ -35,7 +35,8 @@ try {
     }
     Start-Transcript -Path $Log -Force | Out-Null
     Run-Git $RuntimeRepo @('fetch','origin','gate-btc-runtime')
-    $Worktree = Join-Path $LocalRoot ('audit\mirror_publish_' + [guid]::NewGuid().ToString('N'))
+    # A short path also works on Windows installations without long paths enabled.
+    $Worktree = Join-Path (Split-Path -Parent $RuntimeRepo) ('mirror_' + [guid]::NewGuid().ToString('N').Substring(0,8))
     Run-Git $RuntimeRepo @('worktree','add','--detach',$Worktree,'origin/gate-btc-runtime')
     $Runtime = Join-Path $Worktree 'runtime'
     $State = Join-Path $Runtime 'GATE_BTC_REPORTING_CURRENT_STATE.json'
@@ -43,7 +44,7 @@ try {
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_reporting_current_state.py'),'--runtime-root',$Runtime,'--output',$State)
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_reporting_operational_overlay.py'),'--runtime-root',$Runtime,'--state',$State)
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_reporting_inventory.py'),'--runtime-root',$Runtime,'--state',$State)
-    Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_executive_track_catalog.py'),'--runtime-root',$Runtime,'--state',$State,'--artifact-root',(Join-Path $Worktree 'artifacts'),'--requirements',(Join-Path $CodeRoot 'tools\gate_btc_executive_reporting_requirements.json'))
+    Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_executive_track_catalog.py'),'--state',$State,'--artifact-root',(Join-Path $Worktree 'artifacts'),'--requirements',(Join-Path $CodeRoot 'tools\gate_btc_executive_reporting_requirements.json'))
     Run-Git $Worktree @('add','runtime/GATE_BTC_MEASUREMENT_STATUS.json','runtime/ledgers/d50/STATUS.json','runtime/ledgers/d50/LOCAL_MIRROR_AUDIT.json','runtime/GATE_BTC_REPORTING_CURRENT_STATE.json')
     & git -C $Worktree diff --cached --quiet
     if ($LASTEXITCODE -eq 0) { Write-Host 'D50_REPORTING_MIRROR=NO_CHANGE'; exit 0 }
