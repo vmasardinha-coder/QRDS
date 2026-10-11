@@ -139,6 +139,15 @@ def complete_inventory(runtime_root: Path, state: dict[str, Any]) -> dict[str, A
     unrepresented = sorted(all_ids - represented)
 
     state["ledger_inventory"] = inventory
+    # Every ledger is visible without turning an inventory record into a health
+    # or scientific authority. Existing component coverage warnings remain true.
+    state["ledger_reporting_summary"] = {
+        ledger_id: {
+            key: value for key, value in record.items()
+            if key not in {"top_level_files"}
+        }
+        for ledger_id, record in sorted(inventory.items())
+    }
     state["inventory_summary"] = {
         "ledger_count": len(inventory),
         "ledger_ids": sorted(inventory),
@@ -149,6 +158,8 @@ def complete_inventory(runtime_root: Path, state: dict[str, Any]) -> dict[str, A
         "does_not_change_delivery_health": True,
         "complete_directory_enumeration": ledgers_root.is_dir(),
         "status_authority_candidates": list(STATUS_CANDIDATES),
+        "reported_ledger_count": len(state["ledger_reporting_summary"]),
+        "unreported_ledger_ids": sorted(all_ids - set(state["ledger_reporting_summary"])),
     }
     state.setdefault("warnings", {})["unrepresented_runtime_ledgers"] = unrepresented
     return state

@@ -24,6 +24,28 @@ class ReportTests(EngineRunMixin, unittest.TestCase):
         status = json.loads((ledger / "STATUS.json").read_text())
         return document, status
 
+    def test_v13_report_uses_authoritative_version_in_title_heading_and_gate(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.run_engine(root)
+            path = root / 'ledger' / 'STATUS.json'
+            status = json.loads(path.read_text())
+            status['engine_version'] = 'DELTA_V13_ENGINE_1.0'
+            status['books'] = {k.replace('V12_', 'V13_'): v for k,v in status['books'].items()}
+            path.write_text(json.dumps(status))
+            before = {p:p.read_bytes() for p in (root/'ledger').rglob('*') if p.is_file()}
+            document = rep.build_html(root/'ledger')
+            self.assertIn('<title>Delta V13 Engine', document)
+            self.assertIn('<h1>GATE BTC — Delta V13 Engine</h1>', document)
+            self.assertIn('No V13 a janela do portao', document)
+            self.assertNotIn('Delta V12 Engine', document)
+            self.assertEqual(rep.short_name('V13_LS_70_30_StopVol'), '70 30 StopVol')
+            self.assertEqual(before, {p:p.read_bytes() for p in (root/'ledger').rglob('*') if p.is_file()})
+
+    def test_unknown_engine_version_does_not_guess_v12(self):
+        self.assertEqual(rep.engine_label({}), 'Delta Engine')
+        self.assertEqual(rep.engine_label({'engine_version':'<script>'}), 'Delta Engine')
+
     def test_the_anchor_day_renders_and_says_it_is_waiting(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

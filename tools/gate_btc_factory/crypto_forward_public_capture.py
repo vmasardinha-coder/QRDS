@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json,time,urllib.parse,urllib.request,uuid
+import argparse,hashlib,json,os,time,urllib.parse,urllib.request,uuid
 from datetime import datetime,timezone
 from pathlib import Path
 UA={"User-Agent":"QRDS-research-only/1.0"}
@@ -81,12 +81,27 @@ def capture_prospective_pair(capture_fn=capture,sleep_fn=time.sleep,max_wait_sec
     raise RuntimeError("EXACT_NEXT_BUCKET_TIMEOUT_FAIL_CLOSED")
 def write_packet(path,packet):
     q=Path(path);q.parent.mkdir(parents=True,exist_ok=True);q.write_text(json.dumps(packet,indent=2)+"\n")
+def pair_summary(p0,p1):
+    complete=all(p.get("status")=="COMPLETE_PROSPECTIVE_PACKET" and p.get("record_count")==p.get("required_record_count")==14 and not p.get("errors") for p in (p0,p1))
+    return {"status":"COMPLETE_PROSPECTIVE_PAIR" if complete else "INCOMPLETE_SOURCE_PROSPECTIVE_PAIR",
+      "pair_status":"SEALED_EXACT_NEXT_BUCKET_PAIR", "source_status":"COMPLETE" if complete else "INCOMPLETE_FAIL_CLOSED",
+      "pair_id":p0["prospective_pair"]["pair_id"],"t":accessible_bucket_start_ms(p0),"t1":accessible_bucket_start_ms(p1),
+      "t_records":p0.get("record_count"),"t1_records":p1.get("record_count"),"required_records":14,
+      "t_errors":len(p0.get("errors",[])),"t1_errors":len(p1.get("errors",[])),"source_admission_inferred":False,"orders":0,"real_capital":0}
+def write_pair_step_summary(summary):
+    target=os.environ.get("GITHUB_STEP_SUMMARY")
+    if target:
+        with open(target,"a",encoding="utf-8") as h:
+            h.write("\n### Crypto prospective capture\n\n")
+            h.write(f"Pair: **{summary['pair_status']}**. Full source: **{summary['source_status']}**.\n\n")
+            h.write(f"T: {summary['t_records']}/14, errors={summary['t_errors']}; T+1: {summary['t1_records']}/14, errors={summary['t1_errors']}.\n\n")
+            h.write("Publication success does not imply source admission. Admission is read from SOURCE_ADMISSION.json; orders=0, real capital=0.\n")
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--out");ap.add_argument("--pair-dir");ap.add_argument("--max-wait-seconds",type=int,default=420);ap.add_argument("--poll-seconds",type=int,default=15);a=ap.parse_args()
     if bool(a.out)==bool(a.pair_dir): raise SystemExit("exactly one of --out or --pair-dir is required")
     if a.pair_dir:
         p0,p1=capture_prospective_pair(max_wait_seconds=a.max_wait_seconds,poll_seconds=a.poll_seconds)
         root=Path(a.pair_dir);write_packet(root/"T.json",p0);write_packet(root/"T_PLUS_1.json",p1)
-        print(json.dumps({"status":"COMPLETE_PROSPECTIVE_PAIR","pair_id":p0["prospective_pair"]["pair_id"],"t":accessible_bucket_start_ms(p0),"t1":accessible_bucket_start_ms(p1),"orders":0,"real_capital":0},sort_keys=True));return
+        summary=pair_summary(p0,p1);write_pair_step_summary(summary);print(json.dumps(summary,sort_keys=True));return
     p=capture();write_packet(a.out,p);print(json.dumps({"status":p["status"],"records":p["record_count"],"errors":len(p["errors"]),"orders":0,"real_capital":0},sort_keys=True))
 if __name__=="__main__":main()

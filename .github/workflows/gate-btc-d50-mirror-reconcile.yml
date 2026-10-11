@@ -9,6 +9,10 @@ on:
     paths:
       - ".github/workflows/gate-btc-d50-mirror-reconcile.yml"
       - "tools/gate_btc_d50_mirror_reconcile.py"
+      - "tools/gate_btc_d50_local_mirror.py"
+      - "tools/gate_btc_d50_runtime_authority.py"
+      - "tools/gate_btc_publish_local_d50.ps1"
+      - "tests/test_gate_btc_d50_local_mirror.py"
       - "tools/gate_btc_d50_checkpoint_pack.py"
       - "tools/gate_btc_d50_status_align.py"
       # imported transitively by gate_btc_d50_status_align.py
@@ -40,6 +44,7 @@ jobs:
         run: >-
           python -m py_compile
           tools/gate_btc_d50_mirror_reconcile.py
+          tools/gate_btc_d50_local_mirror.py
           tools/gate_btc_d50_checkpoint_pack.py
           tools/gate_btc_d50_status_align.py
           tools/gate_btc_d50_delivery_replay.py
@@ -48,6 +53,7 @@ jobs:
         run: >-
           python -m unittest -v
           tests/test_gate_btc_d50_mirror_reconcile.py
+          tests/test_gate_btc_d50_local_mirror.py
           tests/test_gate_btc_d50_checkpoint_pack.py
           tests/test_gate_btc_d50_status_align.py
           tests/test_gate_btc_d50_delivery_replay.py
@@ -57,6 +63,7 @@ jobs:
           set -euo pipefail
           test "$GATE_BTC_RESEARCH_ONLY" = "true"
           python tools/gate_btc_d50_mirror_reconcile.py --help >/dev/null
+          python tools/gate_btc_d50_local_mirror.py --help >/dev/null
           python tools/gate_btc_d50_checkpoint_pack.py --help >/dev/null
           python tools/gate_btc_d50_status_align.py --help >/dev/null
           python tools/gate_btc_d50_delivery_replay.py --help >/dev/null

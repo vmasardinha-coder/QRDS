@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -81,7 +82,13 @@ def assert_safe(status: dict[str, Any]) -> None:
 
 
 def short_name(name: str) -> str:
-    return name.replace("V12_LS_", "").replace("_", " ")
+    return re.sub(r"^V\d+_LS_", "", name).replace("_", " ")
+
+
+def engine_label(status: dict[str, Any]) -> str:
+    version = str(status.get("engine_version") or "")
+    match = re.fullmatch(r"DELTA_(V\d+)_ENGINE_[\d.]+", version)
+    return f"Delta {match.group(1)} Engine" if match else "Delta Engine"
 
 
 def book_order(nav_rows: list[dict[str, str]], books: dict[str, Any]) -> list[str]:
@@ -179,6 +186,8 @@ def build_html(runtime: Path) -> str:
     summary = status.get("books") or {}
     books = book_order(nav_rows, summary)
     as_of = str(status.get("data_as_of", ""))
+    label = engine_label(status)
+    version_label = label.removeprefix("Delta ").removesuffix(" Engine")
     selection = status.get("selection") or {}
     minimum = status.get("evidence_gate_min_observations", 60)
     observed = int(status.get("observed_days") or 0)
@@ -189,7 +198,7 @@ def build_html(runtime: Path) -> str:
     head = [
         "<div class='wrap'>",
         "<header class='top'>",
-        "<h1>GATE BTC — Delta V12 Engine</h1>",
+        f"<h1>GATE BTC — {esc(label)}</h1>",
         f"<p class='sub'>Relatorio executivo diario · motor <strong>{esc(status.get('engine_version', ''))}</strong> "
         f"· universo {esc(UNIVERSE_LABEL)}</p>",
         "<ul class='pills'>",
@@ -284,7 +293,7 @@ def build_html(runtime: Path) -> str:
         # decided on the engine's expanding window, not on the shadow sample. Here
         # the two are the same series, and saying so is what keeps "elegivel" from
         # meaning two different things across the two reports.
-        + " No V12 a janela do portao E esta mesma serie prospectiva, contada desde a ancora: "
+        + f" No {version_label} a janela do portao E esta mesma serie prospectiva, contada desde a ancora: "
         "o contador acima e o mesmo que o portao testa. No V11 nao e assim — la o portao e "
         "decidido pelo motor congelado numa janela propria, anterior a ancora da sombra. "
         "Por isso 'elegivel' nos dois relatorios nao significa a mesma coisa, e as duas series "
@@ -387,7 +396,7 @@ def build_html(runtime: Path) -> str:
         f"<meta name='generator' content='{SCHEMA}'>"
         f"<meta name='data-as-of' content='{esc(as_of)}'>"
         f"<meta name='generated-at-utc' content='{generated}'>"
-        f"<title>Delta V12 Engine — {esc(as_of)}</title>"
+        f"<title>{esc(label)} — {esc(as_of)}</title>"
         f"<style>{STYLE}</style></head><body>"
         + "".join(head + body + foot)
         + "</body></html>\n"
