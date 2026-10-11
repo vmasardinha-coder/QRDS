@@ -124,6 +124,11 @@ class ReportingLedgerInventoryTest(unittest.TestCase):
                 {"d100", "momentum_m1_m2_economics", "delta_v12_prices"},
             )
             self.assertEqual(out["inventory_summary"]["ledger_count"], 3)
+            self.assertEqual(out['inventory_summary']['reported_ledger_count'], 3)
+            self.assertEqual(out['inventory_summary']['unreported_ledger_ids'], [])
+            self.assertEqual(set(out['ledger_reporting_summary']), set(out['ledger_inventory']))
+            self.assertTrue(out['ledger_reporting_summary']['momentum_m1_m2_economics']['inventory_only'])
+            self.assertFalse(out['ledger_reporting_summary']['momentum_m1_m2_economics']['health_authority'])
             self.assertTrue(out["inventory_summary"]["complete_directory_enumeration"])
             self.assertEqual(
                 out["ledger_inventory"]["momentum_m1_m2_economics"]["status_authority_file"],
