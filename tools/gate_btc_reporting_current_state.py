@@ -110,10 +110,20 @@ def d50_runtime_is_newer(
     )
 
 
-def calendar_waiting(data: dict[str, Any] | None) -> bool:
+def calendar_waiting(data: dict[str, Any] | None, now: date | None = None) -> bool:
     if not data:
         return False
-    return str(data.get("status", "")).startswith("WAITING_FIRST_UNTOUCHED_SIGNAL")
+    now = now or datetime.now(timezone.utc).date()
+    status = str(data.get("status", ""))
+    if not (status.startswith("WAITING_FIRST_UNTOUCHED_SIGNAL") or status == "WAITING_NEXT_APPROVED_MONTH_END"):
+        return False
+    signal = iso_date(data.get("first_eligible_signal_date"))
+    execution = iso_date(data.get("first_eligible_execution_date"))
+    if signal is None or signal <= now or (execution is not None and execution < signal):
+        return False
+    if data.get("can_append") is True or data.get("economic_result_valid") is True:
+        return False
+    return True
 
 
 def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
@@ -275,7 +285,7 @@ def reconcile(runtime_root: Path, now: date | None = None) -> dict[str, Any]:
 
     for key, src_name in (("prl50", "prl50"), ("alt_trail", "alt_trail")):
         obj = data[src_name]
-        if calendar_waiting(obj):
+        if calendar_waiting(obj, now):
             freshness = "CURRENT_CALENDAR_GATED"
         elif obj is None:
             freshness = "MISSING"

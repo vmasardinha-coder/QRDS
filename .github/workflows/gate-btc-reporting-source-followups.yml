@@ -9,6 +9,9 @@ on:
       - tests/test_gate_btc_local_d50_reporting_authority.py
       - tools/gate_btc_2_master_plan_16_systems.md
       - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_health_dimensions.py
+      - tests/test_gate_btc_reporting_calendar_wait.py
       - tools/gate_btc_reporting_operational_overlay.py
       - tools/gate_btc_reporting_inventory.py
       - tools/gate_btc_factory_status_export.py
@@ -32,6 +35,9 @@ on:
       - tests/test_gate_btc_local_d50_reporting_authority.py
       - tools/gate_btc_2_master_plan_16_systems.md
       - tools/gate_btc_reporting_authority.py
+      - tools/gate_btc_reporting_current_state.py
+      - tools/gate_btc_health_dimensions.py
+      - tests/test_gate_btc_reporting_calendar_wait.py
       - tools/gate_btc_registry_pit_inventory.py
       - tools/gate_btc_momentum_cost_diagnostic.py
       - tools/gate_btc_factory/crypto_forward_public_capture.py
@@ -51,6 +57,7 @@ jobs:
       - name: Validate immutable authorities and diagnostic accounting
         run: >-
           python -m unittest -v
+          tests.test_gate_btc_reporting_calendar_wait
           tests.test_gate_btc_reporting_authorities
           tests.test_gate_btc_reporting_inventory
           tests.test_gate_btc_shadow_executive

@@ -62,6 +62,7 @@ jobs:
         run: |
           python - <<'PY'
           import json, tempfile
+          from datetime import date
           from pathlib import Path
           from tools.gate_btc_reporting_current_state import reconcile
           from tools.gate_btc_reporting_operational_overlay import enrich
@@ -83,7 +84,7 @@ jobs:
               w('ledgers/v16b/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"WAITING_NEXT_CANONICAL_WINDOW","canonical_cycle_count":0,"v16b_preflight":"WAITING","v16b_rehearsal":"READY","signal_producer":"WAITING","signal_seal":"WAITING","entry_seal":"WAITING","next_canonical_event":"SIGNAL_2026-08-27"})
               w('ledgers/momentum_m1_m2/STATUS.json',{**safe,"engine_feed":False,"promotion_allowed":False,"data_as_of":"2026-08-12","status":"ACTIVE_PROSPECTIVE_SHADOW","observed_snapshots":1,"methodology_failure":False})
               w('ledgers/delta_v12_prices/COVERAGE.json',{"schema":"test.coverage.v1","status":"AUDIT_ONLY"})
-              out=reconcile(r)
+              out=reconcile(r, date(2026,8,14))
               assert out['components']['d50']['display_current'] is None
               assert out['components']['d50']['freshness']=='STALE_REMOTE_DO_NOT_REPORT_AS_CURRENT'
               assert out['components']['gateway']['freshness']=='FRESH'
