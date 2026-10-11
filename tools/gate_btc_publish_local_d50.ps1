@@ -45,7 +45,10 @@ try {
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_reporting_operational_overlay.py'),'--runtime-root',$Runtime,'--state',$State)
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_reporting_inventory.py'),'--runtime-root',$Runtime,'--state',$State)
     Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_executive_track_catalog.py'),'--state',$State,'--artifact-root',(Join-Path $Worktree 'artifacts'),'--requirements',(Join-Path $CodeRoot 'tools\gate_btc_executive_reporting_requirements.json'))
+    Run-Python @((Join-Path $CodeRoot 'tools\gate_btc_shadow_executive.py'),'--state',$State,'--output-dir',(Join-Path $Runtime 'executive'))
     Run-Git $Worktree @('add','runtime/GATE_BTC_MEASUREMENT_STATUS.json','runtime/ledgers/d50/STATUS.json','runtime/ledgers/d50/LOCAL_MIRROR_AUDIT.json','runtime/GATE_BTC_REPORTING_CURRENT_STATE.json')
+    $ReportingDate = (Get-Content -LiteralPath $State -Raw | ConvertFrom-Json).reporting_date_utc
+    Run-Git $Worktree @('add','runtime/executive/SHADOW_EXECUTIVE_LATEST.json','runtime/executive/SHADOW_EXECUTIVE_LATEST.md',"runtime/executive/SHADOW_EXECUTIVE_$ReportingDate.json","runtime/executive/SHADOW_EXECUTIVE_$ReportingDate.md")
     & git -C $Worktree diff --cached --quiet
     if ($LASTEXITCODE -eq 0) { Write-Host 'D50_REPORTING_MIRROR=NO_CHANGE'; exit 0 }
     Run-Git $Worktree @('-c','user.name=gate-btc-reporting-bot','-c','user.email=gate-btc-reporting-bot@users.noreply.github.com','commit','-m','Reconcile existing local D50 reporting evidence')
