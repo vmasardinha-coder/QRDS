@@ -115,13 +115,18 @@ def main() -> int:
             raw = request_bytes(params)
             digest = hashlib.sha256(raw).hexdigest()
             (out / f"RAW_{idx:03d}.json").write_bytes(raw)
-            parsed = parse_payload(raw)
+            parsed_raw = parse_payload(raw)
+            # Public responses can ignore endTime. Retain the raw receipt,
+            # but admit only candles within this page's requested UTC bound.
+            parsed = [r for r in parsed_raw if r["timestamp_ms"] <= cursor]
             pages.append(
                 {
                     "page": idx,
                     "request": params,
                     "sha256": digest,
                     "rows": len(parsed),
+                    "rows_raw": len(parsed_raw),
+                    "boundary_rows_excluded": len(parsed_raw) - len(parsed),
                 }
             )
             if not parsed:
@@ -135,7 +140,7 @@ def main() -> int:
             if next_cursor >= cursor:
                 raise ValueError("nondecreasing pagination cursor")
             cursor = next_cursor
-            if len(parsed) < LIMIT:
+            if len(parsed_raw) < LIMIT:
                 break
 
         dedup = {r["timestamp_ms"]: r for r in all_rows}
@@ -200,6 +205,8 @@ def main() -> int:
         "requested_end_utc": args.end,
         "timezone": "UTC",
         "pages": pages,
+        "boundary_rows_excluded": sum(p["boundary_rows_excluded"] for p in pages),
+        "cutoff_guard": "CANDLES_AT_OR_BEFORE_REQUESTED_PAGE_END_UTC",
         "physical_rows_ok": len(rows),
         "earliest_day": rows[0]["day"] if rows else None,
         "latest_day": rows[-1]["day"] if rows else None,
