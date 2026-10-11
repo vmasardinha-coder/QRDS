@@ -1,36 +1,36 @@
-# Relatorio diario do agente — 2026-10-10
+# Relatorio diario do agente — 2026-10-11
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-10-10-grafico.svg)
+![Historico das carteiras](2026-10-11-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-10-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-11-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $52,195.21 |
-| Retorno do dia | +0.00% |
-| Retorno desde inicio (2026-08-06) | +4.39% |
-| Benchmark SPY | +0.54% |
-| **Alfa vs SPY** | **+3.85%** |
+| NAV | $51,967.80 |
+| Retorno do dia | -0.44% |
+| Retorno desde inicio (2026-08-06) | +3.94% |
+| Benchmark SPY | +1.14% |
+| **Alfa vs SPY** | **+2.80%** |
 | Caixa | $414.76 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| TGT | 35.1721 | $154.76 | $5,443.24 | 10.4% |
-| SLB | 108.559 | $48.98 | $5,317.22 | 10.2% |
-| KLAC | 26.9683 | $196.72 | $5,305.21 | 10.2% |
-| CAT | 6.52327 | $796.18 | $5,193.69 | 10.0% |
-| MRK | 36.398 | $142.38 | $5,182.35 | 9.9% |
-| LRCX | 16.1 | $320.59 | $5,161.49 | 9.9% |
-| MU | 4.94041 | $1,035.84 | $5,117.47 | 9.8% |
-| AMD | 8.21878 | $620.68 | $5,101.23 | 9.8% |
-| AMAT | 9.98954 | $509.57 | $5,090.37 | 9.8% |
-| INTC | 45.4629 | $107.08 | $4,868.16 | 9.3% |
+| TGT | 35.1721 | $153.64 | $5,403.85 | 10.4% |
+| SLB | 108.559 | $48.95 | $5,313.97 | 10.2% |
+| MRK | 36.398 | $145.60 | $5,299.55 | 10.2% |
+| KLAC | 26.9683 | $195.57 | $5,274.20 | 10.1% |
+| CAT | 6.52327 | $800.47 | $5,221.68 | 10.0% |
+| LRCX | 16.1 | $318.84 | $5,133.31 | 9.9% |
+| MU | 4.94041 | $1,029.00 | $5,083.68 | 9.8% |
+| AMAT | 9.98954 | $507.03 | $5,065.00 | 9.7% |
+| AMD | 8.21878 | $608.10 | $4,997.84 | 9.6% |
+| INTC | 45.4629 | $104.70 | $4,759.96 | 9.2% |
 
 _Sem movimentacoes hoje._
 
@@ -38,21 +38,21 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (SPY):** momentum de +13.9% — so entram ativos acima disto
-- **Candidatos elegiveis:** 41
+- **Obstaculo (SPY):** momentum de +12.6% — so entram ativos acima disto
+- **Candidatos elegiveis:** 44
 - **Fontes usadas:** nasdaq: 101
 
 | Rejeitado | Motivo |
 |---|---|
-| ABBV | nao bate o benchmark (+7.8% <= +13.9%) |
-| ABT | nao bate o benchmark (-20.9% <= +13.9%) |
-| ACN | nao bate o benchmark (-30.0% <= +13.9%) |
-| ADBE | nao bate o benchmark (-26.8% <= +13.9%) |
-| AMT | nao bate o benchmark (-6.2% <= +13.9%) |
-| AMZN | nao bate o benchmark (+13.8% <= +13.9%) |
-| AVGO | nao bate o benchmark (+8.3% <= +13.9%) |
-| AXP | nao bate o benchmark (-1.9% <= +13.9%) |
-| _(+51 outros)_ | |
+| ABBV | nao bate o benchmark (+10.3% <= +12.6%) |
+| ABT | nao bate o benchmark (-23.0% <= +12.6%) |
+| ACN | nao bate o benchmark (-29.7% <= +12.6%) |
+| ADBE | nao bate o benchmark (-28.7% <= +12.6%) |
+| AMT | nao bate o benchmark (-6.8% <= +12.6%) |
+| AMZN | nao bate o benchmark (+11.8% <= +12.6%) |
+| AVGO | nao bate o benchmark (+4.4% <= +12.6%) |
+| AXP | nao bate o benchmark (-1.0% <= +12.6%) |
+| _(+48 outros)_ | |
 
 </details>
 
@@ -60,21 +60,21 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $61,213.43 |
-| Retorno do dia | +1.78% |
-| Retorno desde inicio (2026-08-06) | +22.43% |
-| Benchmark BTC | +28.09% |
-| **Alfa vs BTC** | **-5.67%** |
+| NAV | $62,095.02 |
+| Retorno do dia | +1.44% |
+| Retorno desde inicio (2026-08-06) | +24.19% |
+| Benchmark BTC | +28.71% |
+| **Alfa vs BTC** | **-4.52%** |
 | Caixa | $2,987.86 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.368712 | $82,515.25 | $30,424.34 | 49.7% |
-| NEAR | 2003.84 | $4.93 | $9,879.53 | 16.1% |
-| ENA | 42643.9 | $0.22 | $9,170.99 | 15.0% |
-| ONE | 4.14529e+06 | $0.00 | $8,750.71 | 14.3% |
+| BTC | 0.368712 | $82,909.98 | $30,569.88 | 49.2% |
+| NEAR | 2003.84 | $5.28 | $10,587.69 | 17.1% |
+| ENA | 42643.9 | $0.22 | $9,397.86 | 15.1% |
+| ONE | 4.14529e+06 | $0.00 | $8,551.73 | 13.8% |
 
 _Sem movimentacoes hoje._
 
@@ -82,8 +82,8 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +18.6% — so entram ativos acima disto
-- **Candidatos elegiveis:** 36
+- **Obstaculo (BTC):** momentum de +20.3% — so entram ativos acima disto
+- **Candidatos elegiveis:** 38
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -97,8 +97,8 @@ _Sem movimentacoes hoje._
 | APE | liquidez baixa (0.6M < 1M) |
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.3M < 1M) |
-| ATOM | nao bate o benchmark (+18.6% <= +18.6%) |
-| _(+94 outros)_ | |
+| AUDIO | liquidez baixa (0.0M < 1M) |
+| _(+92 outros)_ | |
 
 </details>
 
@@ -107,9 +107,9 @@ _Sem movimentacoes hoje._
 | Indicador | Valor |
 |---|---|
 | NAV | R$ 56,557.60 |
-| Retorno do dia | +0.74% |
+| Retorno do dia | +0.00% |
 | Retorno desde inicio (2026-08-06) | +13.12% |
-| Benchmark IBOV | +19.09% |
+| Benchmark IBOV | +19.10% |
 | Benchmark CDI | +2.28% |
 | **Alfa vs o maior (IBOV)** | **-5.98%** |
 | Caixa | R$ 0.00 |
@@ -157,20 +157,20 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 56,613.27 |
-| Retorno do dia | +1.33% |
-| Retorno desde inicio (2026-08-06) | +13.23% |
-| Benchmark IBOV | +19.09% |
+| NAV | R$ 56,665.05 |
+| Retorno do dia | +0.09% |
+| Retorno desde inicio (2026-08-06) | +13.33% |
+| Benchmark IBOV | +19.10% |
 | Benchmark CDI | +2.28% |
-| **Alfa vs o maior (IBOV)** | **-5.87%** |
+| **Alfa vs o maior (IBOV)** | **-5.76%** |
 | Caixa | R$ -1,238.29 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 205.55 | R$ 59,679.34 | 105.4% |
+| BOVA11 | 290.34 | R$ 205.55 | R$ 59,679.34 | 105.3% |
 
-> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 1,827.78
+> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 1,775.99
 
 > Volatilidade usada na call (GARCH(1,1)): 35.0% a.a. | realizada 30d: 26.3% a.a. | CDI: 0.0508% a.d.
 
