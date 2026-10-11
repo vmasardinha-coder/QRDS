@@ -16,6 +16,9 @@ def zmake(path, asof, eqdates, delta_dates, cost_day=None):
     with zipfile.ZipFile(path, "w") as z:
         z.writestr("outputs/v2a_run_manifest.json", json.dumps({"data_as_of": asof}))
         z.writestr("outputs/delta_v11_run_manifest.json", json.dumps({"data_as_of": asof}))
+        prices = [{"date": str(live.d(asof)-live.timedelta(days=i)), "symbol": symbol, "close_usd": "100"} for symbol in ("BTC","ETH") for i in (1,0)]
+        price_buf=io.StringIO(); price_writer=csv.DictWriter(price_buf,fieldnames=prices[0]); price_writer.writeheader(); price_writer.writerows(prices)
+        z.writestr("data/processed/qos_v2a_master_daily.csv",price_buf.getvalue())
         rows = []
         for strategy in live.REQUIRED_V2A:
             base = 100.0 + len(strategy)
@@ -43,6 +46,26 @@ def zmake(path, asof, eqdates, delta_dates, cost_day=None):
 
 
 class LiveShadowTests(unittest.TestCase):
+    def test_raw_benchmark_closes_fail_closed(self):
+        rows=[{"date":day,"symbol":symbol,"close_usd":"100"} for day in ("2026-10-09","2026-10-10") for symbol in ("BTC","ETH")]
+        live.validate_core_closes(rows,"2026-10-10")
+        for bad in (rows[:-1], rows+[dict(rows[0])], [dict(r,close_usd="nan") for r in rows], [dict(r,close_usd="0") for r in rows]):
+            with self.assertRaises(live.LiveShadowError):
+                live.validate_core_closes(bad,"2026-10-10")
+
+    def test_missing_core_close_cannot_create_runtime_or_ledger(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp=Path(tmp); v=tmp/"v.zip"; delta=tmp/"d.zip"; runtime=tmp/"runtime"
+            zmake(v,"2026-08-14",["2026-08-13","2026-08-14"],["2026-08-13","2026-08-14"])
+            zmake(delta,"2026-08-14",["2026-08-13","2026-08-14"],["2026-08-13","2026-08-14"])
+            with zipfile.ZipFile(v) as z: entries={n:z.read(n) for n in z.namelist()}
+            entries["data/processed/qos_v2a_master_daily.csv"]=b"date,symbol,close_usd\n2026-08-13,BTC,100\n"
+            with zipfile.ZipFile(v,"w") as z:
+                for n,raw in entries.items(): z.writestr(n,raw)
+            with self.assertRaises(live.LiveShadowError):
+                live.process(CONTRACT,v,delta,runtime,"bad")
+            self.assertFalse(runtime.exists())
+
     def test_contract(self):
         self.assertEqual(live.load_contract(CONTRACT)["schema"], "gate_btc.bull_replay_live_shadow.v1")
 

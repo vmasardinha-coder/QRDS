@@ -6,7 +6,7 @@ No private APIs, no orders, no capital, no frozen-engine changes.
 """
 from __future__ import annotations
 
-import argparse, csv, hashlib, io, json, zipfile
+import argparse, csv, hashlib, io, json, math, zipfile
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -65,6 +65,21 @@ def load_contract(path: Path) -> dict:
         raise LiveShadowError("anchor/first date mismatch")
     return c
 
+def validate_core_closes(rows: list[dict[str, str]], asof: str) -> None:
+    """Reject forward-filled benchmark closes before any ledger mutation."""
+    days = {asof, str(d(asof) - timedelta(days=1))}
+    for symbol in ("BTC", "ETH"):
+        for day in sorted(days):
+            matches = [r for r in rows if r.get("symbol") == symbol and r.get("date") == day]
+            if len(matches) != 1:
+                raise LiveShadowError(f"missing/ambiguous raw benchmark close {symbol} {day}: {len(matches)} rows")
+            try:
+                price = float(matches[0]["close_usd"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise LiveShadowError(f"invalid raw benchmark close {symbol} {day}") from exc
+            if not math.isfinite(price) or price <= 0:
+                raise LiveShadowError(f"invalid raw benchmark close {symbol} {day}")
+
 def parse_source(v2a_zip: Path, delta_zip: Path) -> dict:
     vb = v2a_zip.read_bytes()
     db = delta_zip.read_bytes()
@@ -74,6 +89,8 @@ def parse_source(v2a_zip: Path, delta_zip: Path) -> dict:
         asof = str(vm.get("data_as_of"))
         if asof != str(dm.get("data_as_of")):
             raise LiveShadowError(f"matched-close mismatch V2A={asof} Delta={dm.get('data_as_of')}")
+        raw_prices = read_csv_zip(vz, "data/processed/qos_v2a_master_daily.csv")
+        validate_core_closes(raw_prices, asof)
         eq = read_csv_zip(vz, "outputs/qos_v2a_equity_curves.csv")
         trades = read_csv_zip(vz, "outputs/qos_v2a_buy_sell_log.csv")
         dr = read_csv_zip(dz, "outputs/delta_daily_returns.csv")
