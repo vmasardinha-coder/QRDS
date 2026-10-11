@@ -60,21 +60,21 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $62,095.02 |
-| Retorno do dia | +1.44% |
-| Retorno desde inicio (2026-08-06) | +24.19% |
-| Benchmark BTC | +28.71% |
-| **Alfa vs BTC** | **-4.52%** |
+| NAV | $63,683.85 |
+| Retorno do dia | +4.04% |
+| Retorno desde inicio (2026-08-06) | +27.37% |
+| Benchmark BTC | +29.82% |
+| **Alfa vs BTC** | **-2.45%** |
 | Caixa | $2,987.86 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.368712 | $82,909.98 | $30,569.88 | 49.2% |
-| NEAR | 2003.84 | $5.28 | $10,587.69 | 17.1% |
-| ENA | 42643.9 | $0.22 | $9,397.86 | 15.1% |
-| ONE | 4.14529e+06 | $0.00 | $8,551.73 | 13.8% |
+| BTC | 0.368712 | $83,628.12 | $30,834.67 | 48.4% |
+| NEAR | 2003.84 | $5.68 | $11,374.60 | 17.9% |
+| ENA | 42643.9 | $0.24 | $10,121.52 | 15.9% |
+| ONE | 4.14529e+06 | $0.00 | $8,365.19 | 13.1% |
 
 _Sem movimentacoes hoje._
 
@@ -82,7 +82,7 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +20.3% — so entram ativos acima disto
+- **Obstaculo (BTC):** momentum de +21.3% — so entram ativos acima disto
 - **Candidatos elegiveis:** 38
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
@@ -162,13 +162,18 @@ _Sem movimentacoes hoje._
 | Retorno desde inicio (2026-08-06) | +13.33% |
 | Benchmark IBOV | +19.10% |
 | Benchmark CDI | +2.28% |
-| **Alfa vs o maior (IBOV)** | **-5.76%** |
+| **Alfa vs objetivo (CDI)** | **+11.05%** |
+| Alfa vs IBOV (comparador informativo) | -5.76% |
 | Caixa | R$ -1,238.29 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
 | BOVA11 | 290.34 | R$ 205.55 | R$ 59,679.34 | 105.3% |
+
+> Conciliacao do NAV: ativos R$ 59,679.34 + caixa R$ -1,238.29 - obrigacao da call R$ 1,776.00 = R$ 56,665.05.
+
+> Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.
 
 > Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 1,775.99
 
