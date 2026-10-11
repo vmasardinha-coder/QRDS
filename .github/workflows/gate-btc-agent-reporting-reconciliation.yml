@@ -1,0 +1,18 @@
+name: Agent reporting reconciliation
+on:
+  pull_request:
+    branches: [main, claude/autonomous-trading-agent-h1asy9]
+    paths: ['trading_agent/report.py', 'tests/test_trading_agent_reporting_reconciliation.py', '.github/workflows/gate-btc-agent-reporting-reconciliation.yml']
+  push:
+    branches: [claude/autonomous-trading-agent-h1asy9]
+    paths: ['trading_agent/report.py', 'tests/test_trading_agent_reporting_reconciliation.py', '.github/workflows/gate-btc-agent-reporting-reconciliation.yml']
+permissions:
+  contents: read
+jobs:
+  report-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest -v tests.test_trading_agent_reporting_reconciliation tests.test_trading_agent

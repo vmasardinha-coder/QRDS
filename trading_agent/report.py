@@ -29,7 +29,8 @@ def _money(value: float, cur: str) -> str:
 def _performance_table(state: dict, entry: dict, benchmark_name: str,
                        benchmark2_name: str | None, regime: str,
                        regime_avaliado: bool = True,
-                       regime_fonte: str | None = None) -> list[str]:
+                       regime_fonte: str | None = None,
+                       objective_benchmark_name: str | None = None) -> list[str]:
     cur = state.get("currency", "USD")
     nav_now = entry["nav"]
     initial = state["initial_capital"]
@@ -51,12 +52,15 @@ def _performance_table(state: dict, entry: dict, benchmark_name: str,
     if benchmark2_name and "benchmark2_nav" in entry:
         bench2_ret = entry["benchmark2_nav"] / initial - 1.0
         lines.append(f"| Benchmark {benchmark2_name} | {_pct(bench2_ret)} |")
-        # a Carta manda bater o MAIOR dos dois: e esse o alfa que conta
+        # Acoes B3 use the larger hurdle; Estruturadas keep their fixed CDI objective.
         harder_name, harder_ret = ((benchmark_name, bench_ret)
                                    if bench_ret >= bench2_ret
                                    else (benchmark2_name, bench2_ret))
-        lines.append(f"| **Alfa vs o maior ({harder_name})** | "
-                     f"**{_pct(total_ret - harder_ret)}** |")
+        if objective_benchmark_name == benchmark2_name:
+            lines.append(f"| **Alfa vs objetivo ({benchmark2_name})** | **{_pct(total_ret - bench2_ret)}** |")
+            lines.append(f"| Alfa vs {benchmark_name} (comparador informativo) | {_pct(total_ret - bench_ret)} |")
+        else:
+            lines.append(f"| **Alfa vs o maior ({harder_name})** | **{_pct(total_ret - harder_ret)}** |")
     else:
         lines.append(f"| **Alfa vs {benchmark_name}** | {'**' + _pct(total_ret - bench_ret) + '**'} |")
 
@@ -71,8 +75,6 @@ def _performance_table(state: dict, entry: dict, benchmark_name: str,
             estado = (f"{estado} — filtro NAO avaliado "
                       f"(serie sem {config.SMA_REGIME_DAYS} pregoes)")
         elif regime_fonte and regime_fonte != benchmark_name:
-            # Avaliado, mas noutra serie que nao a do benchmark. Quem le tem de
-            # saber que o numero do regime e o do alfa nao vem do mesmo sitio.
             estado = f"{estado} — avaliado por proxy ({regime_fonte})"
         lines.append(f"| Regime | {estado} |")
     return lines
@@ -161,7 +163,8 @@ def _audit_block(log: dict) -> list[str]:
 
 
 def _sleeve_section(title: str, benchmark_name: str, result: dict,
-                    benchmark2_name: str | None = None) -> str:
+                    benchmark2_name: str | None = None,
+                    objective_benchmark_name: str | None = None) -> str:
     state = result["state"]
     entry = result["entry"]
     cur = state.get("currency", "USD")
@@ -170,10 +173,16 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
     lines = [f"## {title}", ""]
     lines += _performance_table(state, entry, benchmark_name, benchmark2_name,
                                result.get("regime", "-"),
-                               result.get("regime_avaliado", True),
-                               result.get("regime_fonte"))
+                               result.get("regime_avaliado", True), result.get("regime_fonte"), objective_benchmark_name)
     lines.append("")
     lines += _positions_table(state, result["prices"], entry["nav"], cur)
+
+    if objective_benchmark_name == "CDI":
+        gross = sum(pos["qty"] * result["prices"].get(symbol, pos["avg_cost"]) for symbol, pos in state["positions"].items())
+        liability = gross + state["cash"] - entry["nav"]
+        lines += [f"> Conciliacao do NAV: ativos {_money(gross, cur)} + caixa {_money(state['cash'], cur)} - obrigacao da call {_money(liability, cur)} = {_money(entry['nav'], cur)}.", ""]
+        if state["cash"] < 0:
+            lines += ["> Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.", ""]
 
     for extra in result.get("extra_lines", []):
         lines += [f"> {extra}", ""]
@@ -233,7 +242,8 @@ def build_report(date: str, results: dict[str, dict],
     parts.append("")
     for key, title, _short, bench, bench2 in SLEEVES:
         if key in results:
-            parts.append(_sleeve_section(title, bench, results[key], bench2))
+            parts.append(_sleeve_section(title, bench, results[key], bench2,
+                                        "CDI" if key == "b3_estruturadas" else None))
         elif key in errors:
             parts.append(_error_section(title, errors[key],
                                         source_failures.get(key)))
