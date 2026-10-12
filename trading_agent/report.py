@@ -7,6 +7,7 @@ rejeitado e porque, e o estado do filtro de regime no momento.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from . import config
@@ -24,6 +25,18 @@ def _pct(value: float) -> str:
 
 def _money(value: float, cur: str) -> str:
     return f"{CURRENCY_SYMBOL.get(cur, '$')}{value:,.2f}"
+
+
+def _price(value: float, cur: str) -> str:
+    """Keep nonzero sub-cent quotes visible without changing monetary totals."""
+    magnitude = abs(value)
+    if not math.isfinite(value) or magnitude == 0 or magnitude >= 0.01:
+        return _money(value, cur)
+    decimals = 3 - math.floor(math.log10(magnitude))
+    symbol = CURRENCY_SYMBOL.get(cur, '$')
+    if decimals > 12:
+        return f"{symbol}{value:.4g}"
+    return f"{symbol}{value:.{decimals}f}"
 
 
 def _performance_table(state: dict, entry: dict, benchmark_name: str,
@@ -93,7 +106,7 @@ def _positions_table(state: dict, prices: dict, nav_now: float,
     rows.sort(key=lambda r: -r[3])
     for symbol, qty, price, value in rows:
         weight = value / nav_now if nav_now > 0 else 0.0
-        lines.append(f"| {symbol} | {qty:.6g} | {_money(price, cur)} | "
+        lines.append(f"| {symbol} | {qty:.6g} | {_price(price, cur)} | "
                      f"{_money(value, cur)} | {weight * 100:.1f}% |")
     return lines + [""]
 
@@ -108,7 +121,7 @@ def _trades_table(trades: list[dict], cur: str) -> list[str]:
     for t in trades:
         side = side_label.get(t["side"], t["side"].upper())
         lines.append(f"| {t['symbol']} | {side} | {t['qty']:.6g} | "
-                     f"{_money(t['price'], cur)} | {_money(t['value'], cur)} | "
+                     f"{_price(t['price'], cur)} | {_money(t['value'], cur)} | "
                      f"{t.get('reason', 'rebalanceio')} |")
     return lines + [""]
 
