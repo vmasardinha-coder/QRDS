@@ -5,8 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 from datetime import date
 from pathlib import Path
+
+# A direct script invocation puts tools/, rather than the repository root,
+# on sys.path. Keep the documented workflow command usable from any cwd.
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.gate_btc_delta_paper_monitor import MonitorError, h, load
 
@@ -75,3 +81,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
