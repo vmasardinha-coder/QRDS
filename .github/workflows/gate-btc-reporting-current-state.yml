@@ -20,6 +20,7 @@ on:
       - tests/test_gate_btc_executive_track_catalog.py
       - tests/test_gate_btc_reporting_inventory.py
       - tests/test_gate_btc_momentum_inventory_authority.py
+      - tests/test_gate_btc_reporting_terminal_parent.py
   workflow_dispatch:
   schedule:
     - cron: "30 3 * * *"
@@ -60,6 +61,7 @@ jobs:
           tests.test_gate_btc_executive_track_catalog
           tests.test_gate_btc_reporting_inventory
           tests.test_gate_btc_momentum_inventory_authority
+          tests.test_gate_btc_reporting_terminal_parent
       - name: Smoke-test stale-counter suppression and operational overlay
         run: |
           python - <<'PY'
@@ -216,5 +218,3 @@ jobs:
               print('FAILED_DELIVERY=' + ','.join(s['warnings']['failed_delivery_components']))
               print('BLOCKED_DEPENDENCIES=' + ','.join(s['warnings']['blocked_dependency_components']))
           PY
-
-
