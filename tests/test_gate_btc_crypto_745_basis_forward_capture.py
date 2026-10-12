@@ -2,6 +2,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 PATH=Path('tools/gate_btc_factory/crypto_745_basis_forward_capture.py')
@@ -16,6 +17,63 @@ def pair(spot_ts,perp_ts):
     return {'spot':ticker('BTC-USDT',spot_ts),'perp':ticker('BTC-USDT-SWAP',perp_ts),'captured_at_ms':max(spot_ts,perp_ts)}
 
 class BasisForwardTests(unittest.TestCase):
+    def simulated_attempt(self, now_ms, max_wait_seconds):
+        settlement = 2000000
+        clock = [now_ms / 1000]
+        def sleep(seconds):
+            clock[0] += seconds
+        def funding():
+            return b'funding', {
+                'funding_time_ms': settlement,
+                'ts_ms': int(clock[0] * 1000),
+                'funding_rate': '0.0001',
+            }
+        def quote_pair():
+            stamp = int(clock[0] * 1000)
+            return pair(stamp, stamp)
+        with patch.object(b, 'qualified_source_cost', return_value=({}, 'sealed-source')), \
+             patch.object(b, 'fetch_funding', side_effect=funding), \
+             patch.object(b, 'fetch_quote_pair', side_effect=quote_pair) as quotes, \
+             patch.object(b.time, 'time', side_effect=lambda: clock[0]), \
+             patch.object(b.time, 'sleep', side_effect=sleep):
+            out = b.capture_attempt(Path('unused-admission'), max_wait_seconds, 0.5)
+            return out, quotes.call_count
+
+    def test_operational_runway_arms_future_window_without_moving_clocks(self):
+        # Equivalent to starting at 07:40 for an 08:00 settlement.
+        out, calls = self.simulated_attempt(800000, 1800)
+        self.assertEqual(out['status'], 'SEALED_ELIGIBLE_OBSERVATION')
+        self.assertTrue(out['attempted_window'])
+        self.assertGreater(calls, 0)
+        self.assertEqual(out['decision_ms'], 1700000)
+        self.assertEqual(out['settlement_ms'], 2000000)
+        self.assertLessEqual(out['observation']['predecision_pair']['spot']['ts_ms'], 1700000)
+        self.assertGreaterEqual(out['observation']['entry_pair']['spot']['ts_ms'], 1700000)
+        self.assertGreaterEqual(out['observation']['exit_pair']['spot']['ts_ms'], 2000000)
+        self.assertLessEqual(out['observation']['exit_pair']['spot']['ts_ms'], 2060000)
+        self.assertFalse(out['economics_read'])
+        self.assertEqual(out['scientific_credit'], 0)
+
+    def test_original_short_runway_returns_waiting_without_capture(self):
+        out, calls = self.simulated_attempt(800000, 420)
+        self.assertEqual(out['status'], 'WAITING_FUTURE_DECISION_WINDOW')
+        self.assertFalse(out['attempted_window'])
+        self.assertEqual(calls, 0)
+
+    def test_longer_wait_never_reconstructs_missed_predecision(self):
+        out, calls = self.simulated_attempt(1702000, 1800)
+        self.assertEqual(out['status'], 'MISSED_PREDECISION_WINDOW_ZERO_CREDIT')
+        self.assertFalse(out['attempted_window'])
+        self.assertEqual(out['eligible_observation_count'], 0)
+        self.assertEqual(calls, 0)
+
+    def test_longer_wait_does_not_reinterpret_past_funding_time(self):
+        out, calls = self.simulated_attempt(2001000, 1800)
+        self.assertEqual(out['status'], 'NONFUTURE_FUNDING_TIME_FAIL_CLOSED')
+        self.assertFalse(out['attempted_window'])
+        self.assertEqual(out['eligible_observation_count'], 0)
+        self.assertEqual(calls, 0)
+
     def test_normalize_funding_binds_funding_time(self):
         obj={'code':'0','data':[{'instId':'BTC-USDT-SWAP','fundingRate':'0.0001','fundingTime':'200000','nextFundingTime':'300000','ts':'100000','settState':'settled'}]}
         x=b.normalize_funding(obj)
@@ -79,3 +137,4 @@ class BasisForwardTests(unittest.TestCase):
         self.assertTrue(b.SAFETY['FAIL_CLOSED'])
 
 if __name__=='__main__':unittest.main()
+
