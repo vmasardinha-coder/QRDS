@@ -43,6 +43,33 @@ class RecoveryPolicyTests(unittest.TestCase):
         self.state['status']='RED_TRUE_PROCESSING_FAILURE'
         self.assertTrue(assess(self.state,[],self.at)['dispatch'])
 
+    def stale_active_state(self):
+        return {'schema':'gate_btc.momentum_m1_m2.status.v1',
+                'status':'ACTIVE_PROSPECTIVE_SHADOW','data_as_of':'2026-09-26',
+                'research_only':True,'shadow_only':True,'not_approved':True,
+                'engine_feed':False,'promotion_allowed':False,
+                'orders_generated':0,'real_capital_used':0}
+
+    def test_missed_schedule_recovers_one_current_close_from_safe_active_state(self):
+        result=assess(self.stale_active_state(),[],self.at)
+        self.assertTrue(result['dispatch'])
+        self.assertEqual(result['target'],'2026-09-27')
+        self.assertEqual(result['reason'],'RETRY_STALE_ACTIVE_CURRENT_CUTOFF')
+
+    def test_stale_active_recovery_preserves_overlap_and_daily_budget(self):
+        state=self.stale_active_state()
+        self.assertEqual(assess(state,[self.run_record(1,'queued')],self.at)['reason'],'SKIP_ACTIVE_RUN')
+        self.assertEqual(assess(state,[self.run_record(i) for i in range(6)],self.at)['reason'],'ATTEMPT_BUDGET_EXHAUSTED')
+
+    def test_current_older_unsafe_or_scientifically_failed_active_state_is_not_retried(self):
+        original=self.stale_active_state()
+        for key,value in (('data_as_of','2026-09-27'),('data_as_of','2026-09-25'),
+                          ('schema',None),('engine_feed',True),('research_only',False),
+                          ('orders_generated',1),('real_capital_used',1),
+                          ('promotion_allowed',True),('methodology_failure',True)):
+            with self.subTest(key=key,value=value):
+                self.assertFalse(assess(dict(original,**{key:value}),[],self.at)['dispatch'])
+
     def test_previous_day_runs_do_not_consume_current_budget(self):
         old=self.run_record(1);old['createdAt']='2026-09-27T07:00:00Z'
         result=assess(self.state,[old,self.run_record(2),self.run_record(2)],self.at)
