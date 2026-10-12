@@ -1,10 +1,10 @@
 # D100 — operational evidence
 
 Status: ACTIVE_PHYSICAL_DATA_FEED
-Last attempt: IDEMPOTENT_ALREADY_CAPTURED_TODAY
-Physical captures: 15; distinct days: 15
-Latest physical capture: 2026-10-11T01:51:51.893162Z
-Raw universe: 100; market data observed: 71
+Last attempt: CAPTURED
+Physical captures: 16; distinct days: 16
+Latest physical capture: 2026-10-12T00:32:14.184388Z
+Raw universe: 100; market data observed: 70
 Physical feed scientific credit: 0. Approved economic authority: economic/STATUS.json.
 Physical source captures do not count toward a scientific gate. Symbol matching does not admit an execution source.
 
