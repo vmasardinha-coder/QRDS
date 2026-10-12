@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
       - tools/gate_btc_momentum_m3_gap_epoch.py
+      - tools/gate_btc_retain_m3_price_evidence.py
+      - tests/test_gate_btc_retain_m3_price_evidence.py
       - tools/gate_btc_momentum_m3_economics.py
   workflow_run:
     workflows: ['GATE BTC Momentum M1 M2 Shadow Collection']
@@ -45,7 +47,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install pandas numpy requests pytest
-      - run: python -m pytest -q tests/test_gate_btc_momentum_m3_persistence.py tests/test_gate_btc_momentum_m3_economics.py tests/test_gate_btc_momentum_m3_gap_epoch.py
+      - run: python -m pytest -q tests/test_gate_btc_momentum_m3_persistence.py tests/test_gate_btc_momentum_m3_economics.py tests/test_gate_btc_momentum_m3_gap_epoch.py tests/test_gate_btc_retain_m3_price_evidence.py
       - run: python tools/gate_btc_momentum_m3_gap_epoch.py --help
   collect-m3:
     needs: causality-and-accounting-tests
@@ -209,6 +211,7 @@ jobs:
           set -euo pipefail
           git -C runtime_repo config user.name 'gate-btc-actions'
           git -C runtime_repo config user.email 'gate-btc-actions@users.noreply.github.com'
+          python tools/gate_btc_retain_m3_price_evidence.py --runtime-root runtime_repo
           git -C runtime_repo add runtime/ledgers/momentum_m3 runtime/ledgers/momentum_m3_economics
           if git -C runtime_repo diff --cached --quiet; then
             echo 'M3 runtime already current'
