@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.activity_status.v2",
-  "generated_at_utc": "2026-10-12T13:58:01.834255Z",
+  "generated_at_utc": "2026-10-12T13:59:01.491010Z",
   "overall_status": "DEGRADED_WARMUP_OR_STALE",
   "monitor_cadence_minutes": 15,
   "executive_counters": {
@@ -48,7 +48,7 @@
       "name": "grammar_scout",
       "active": true,
       "freshness": "FRESH",
-      "age_hours": 21.22,
+      "age_hours": 21.24,
       "status": "IDEATION_ONLY_NO_ECONOMICS",
       "path": "runtime_repo/runtime/factory_autonomy/GRAMMAR_SCOUT_RUNTIME.json"
     },
@@ -56,21 +56,23 @@
       "name": "source_qualification_search",
       "active": false,
       "freshness": "STALE_OR_UNDATED",
-      "age_hours": 4.64,
+      "age_hours": 4.66,
       "status": "ACTIVE_SEARCHING_QUALIFICATION",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/SOURCE_SEARCH_RUNTIME.json"
     },
     "invalidated_family_requalification": {
       "name": "invalidated_family_requalification",
       "active": false,
-      "freshness": "STALE_OR_UNDATED",
-      "age_hours": 548.63,
+      "freshness": "NOT_APPLICABLE_CLOSED",
+      "age_hours": 548.65,
       "status": "SOURCE_GATE_NOT_GREEN:qualified",
       "path": "runtime_repo/runtime/factory_autonomy/invalidated_requalification/QUEUE.json",
       "affected_family_count": 768,
       "completed_family_count": 768,
       "survivor_count": 0,
-      "source_gate_green": false
+      "source_gate_green": false,
+      "lifecycle": "COMPLETED_NO_SURVIVORS",
+      "source_gate_status": "SOURCE_GATE_NOT_GREEN:qualified"
     }
   },
   "safety": {
