@@ -26,6 +26,24 @@ def h1_status_path(ledger_root: Path) -> Path:
     return canonical if canonical.is_file() else ledger_root / "STATUS.json"
 
 
+def m3_status_path(ledger_root: Path) -> Path:
+    """M3 declares its active epoch in the root status, not ACTIVE_EPOCH.json."""
+    root_status = ledger_root / "STATUS.json"
+    if not root_status.is_file():
+        return root_status
+    obj = json.loads(root_status.read_text(encoding="utf-8-sig"))
+    if "active_epoch" not in obj:
+        return root_status
+    relative = obj["active_epoch"]
+    if not isinstance(relative, str) or not re.fullmatch(r"epochs/[A-Za-z0-9_-]+", relative):
+        raise ValueError("INVALID_M3_REPORTING_ACTIVE_EPOCH_PATH")
+    target = ledger_root / relative / "STATUS.json"
+    if not target.resolve().is_relative_to(ledger_root.resolve()):
+        raise ValueError("M3_REPORTING_ACTIVE_EPOCH_ESCAPES_LEDGER")
+    # Missing selected evidence stays missing; never use the mixed legacy total.
+    return target
+
+
 def closed_v12_status(raw: dict, closure_path: Path | None = None) -> dict:
     """Project a main-branch terminal decision without rewriting the old ledger."""
     path = closure_path or Path(__file__).resolve().parents[1] / "migration/reporting/delta_v12_engine_closure.json"
@@ -88,3 +106,4 @@ def system12_summary(root: Path) -> dict:
             "scenario_count": report.get("scenario_count"), "workflow_run_url": report.get("workflow_run_url"),
             "contract_sha256": report.get("contract_sha256"),
             "next_action": "INDEPENDENT_ADJUDICATION_OF_HASH_BOUND_IMPLEMENTATION_REPLICATION"}
+

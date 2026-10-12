@@ -16,9 +16,9 @@ import json
 from pathlib import Path
 
 try:
-    from .gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status
+    from .gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status, m3_status_path
 except ImportError:
-    from gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status
+    from gate_btc_reporting_authority import active_status_path, h1_status_path, closed_v12_status, m3_status_path
 from typing import Any
 
 STATUS_CANDIDATES = (
@@ -40,6 +40,9 @@ INVENTORY_FIELDS = (
     "snapshot_count",
     "observed_snapshots",
     "observed_days",
+    "return_observations",
+    "cost_status",
+    "net_return",
     "canonical_cycle_count",
     "economics_locked",
     "promotion_allowed",
@@ -95,6 +98,7 @@ def represented_ledger_dirs(report: dict[str, Any]) -> set[str]:
 def record_for(runtime_root: Path, ledger_dir: Path) -> dict[str, Any]:
     status_path = (active_status_path(ledger_dir) if ledger_dir.name == "bull_replay_live_shadow"
                    else active_status_path(ledger_dir, "ECONOMICS_STATUS.json") if ledger_dir.name == "momentum_m1_m2_economics"
+                   else m3_status_path(ledger_dir) if ledger_dir.name == "momentum_m3_economics"
                    else h1_status_path(ledger_dir) if ledger_dir.name == "b3_h1" else infer_status_file(ledger_dir))
     status = load_json(status_path) if status_path else None
     rel_dir = ledger_dir.relative_to(runtime_root).as_posix()
@@ -129,7 +133,7 @@ def complete_inventory(runtime_root: Path, state: dict[str, Any]) -> dict[str, A
     inventory = dict(state.get("ledger_inventory") or {})
     if ledgers_root.is_dir():
         for ledger_dir in sorted((p for p in ledgers_root.iterdir() if p.is_dir()), key=lambda p: p.name):
-            if ledger_dir.name in {"bull_replay_live_shadow", "b3_h1", "delta_v12_engine", "momentum_m1_m2_economics"}:
+            if ledger_dir.name in {"bull_replay_live_shadow", "b3_h1", "delta_v12_engine", "momentum_m1_m2_economics", "momentum_m3_economics"}:
                 inventory[ledger_dir.name] = record_for(runtime_root, ledger_dir)
             else:
                 inventory.setdefault(ledger_dir.name, record_for(runtime_root, ledger_dir))
@@ -198,3 +202,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
