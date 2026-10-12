@@ -31,10 +31,26 @@ def grammar_counts(fa):
 def xawin_counts(fa):
  q=load(fa/'win_wdo/MT5_QUALIFICATION.json') or {}; m=load(fa/'win_wdo/WIN_WDO_MATERIALIZED_SPLITS.json') or {}
  return {'qualified':q.get('qualified',False),'qualification_status':q.get('status','WAITING_FIRST_RUNTIME'),'mt5_record_count':q.get('record_count',0),'materialization_next_stage':m.get('next_stage','WAITING_FIRST_RUNTIME'),'aligned_session_count':m.get('aligned_session_count',0),'usable_return_count':m.get('usable_return_count',0),'split_counts':m.get('split_counts',{})}
+def terminal_rejected_queue(q):
+ affected=q.get('affected_family_count')
+ rows=q.get('families')
+ if type(affected) is not int or affected<=0 or not isinstance(rows,list):return False
+ if q.get('completed_family_count')!=affected or len(rows)!=affected:return False
+ if any(q.get(k)!=0 for k in ('survivor_count','waiting_source_count','inconclusive_count')):return False
+ ids=[r.get('original_family_id') for r in rows if isinstance(r,dict)]
+ return (len(ids)==affected and all(isinstance(i,str) and i for i in ids)
+         and len(set(ids))==affected
+         and all(r.get('status')=='SCIENTIFIC_REJECTION' for r in rows))
 def build(runtime_root,now=None):
  t=now or now_utc(); fa=runtime_root/'factory_autonomy'; grammar=component('grammar_scout',fa/'GRAMMAR_SCOUT_RUNTIME.json',('generated_at_utc',),36,t); source=component('source_qualification_search',fa/'invalidated_requalification/SOURCE_SEARCH_RUNTIME.json',('generated_at_utc',),4,t); queue=component('invalidated_family_requalification',fa/'invalidated_requalification/QUEUE.json',('updated_at_utc',),12,t,status_key='source_gate_status'); qd=load(fa/'invalidated_requalification/QUEUE.json') or {}
  queue.update({'affected_family_count':qd.get('affected_family_count'),'completed_family_count':qd.get('completed_family_count',0),'survivor_count':qd.get('survivor_count',0),'source_gate_green':qd.get('source_gate_green',False)})
- components={'grammar_scout':grammar,'source_qualification_search':source,'invalidated_family_requalification':queue}; overall='ACTIVE' if source['active'] and queue['active'] and (grammar['active'] or grammar['status']=='WAITING_FIRST_RUNTIME') else 'DEGRADED_WARMUP_OR_STALE'
+ closed=terminal_rejected_queue(qd)
+ queue['lifecycle']='COMPLETED_NO_SURVIVORS' if closed else 'OPEN_OR_UNVERIFIED'
+ queue['source_gate_status']=qd.get('source_gate_status')
+ if closed:queue.update({'active':False,'freshness':'NOT_APPLICABLE_CLOSED'})
+ components={'grammar_scout':grammar,'source_qualification_search':source,'invalidated_family_requalification':queue}
+ loops_active=source['active'] and (grammar['active'] or grammar['status']=='WAITING_FIRST_RUNTIME')
+ overall=('ACTIVE_WITH_CLOSED_LEGACY' if closed else 'ACTIVE') if loops_active and (closed or queue['active']) else 'DEGRADED_WARMUP_OR_STALE'
  return {'schema':SCHEMA,'generated_at_utc':t.isoformat().replace('+00:00','Z'),'overall_status':overall,'monitor_cadence_minutes':15,'executive_counters':{'xawinwdo_correlation':xawin_counts(fa),'grammar_pipeline':grammar_counts(fa),'legacy_requalification':{'affected':qd.get('affected_family_count',0),'completed':qd.get('completed_family_count',0),'remaining':max(0,int(qd.get('affected_family_count',0) or 0)-int(qd.get('completed_family_count',0) or 0)),'survivors':qd.get('survivor_count',0),'source_gate_green':qd.get('source_gate_green',False)}},'cadence_policy':{'grammar_scout_hours':24,'source_qualification_search_hours':2,'requalification_hours':6,'factory_status_monitor_minutes':15},'components':components,'safety':{'research_only':True,'shadow_only':True,'not_approved':True,'engine_feed':False,'orders':0,'real_capital':0,'no_retune':True,'no_backfill':True,'no_counter_reset':True,'fail_closed':True,'scientific_change_allowed':False}}
 def markdown(d):
  e=d['executive_counters']; g=e['grammar_pipeline']; x=e['xawinwdo_correlation']; l=e['legacy_requalification']
