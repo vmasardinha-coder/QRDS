@@ -4,10 +4,19 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '7 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_factory_status_export.py'
+      - 'tools/gate_btc_reporting_authority.py'
+      - 'tests/test_gate_btc_factory_track_coverage.py'
+      - '.github/workflows/gate-btc-factory-status-export.yml'
   pull_request:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory_status_export.py'
+      - 'tools/gate_btc_reporting_authority.py'
+      - 'tests/test_gate_btc_factory_track_coverage.py'
       - '.github/workflows/gate-btc-factory-status-export.yml'
 
 env:
@@ -32,6 +41,10 @@ jobs:
         with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - name: Verify independent track authorities and missing evidence
+        run: |
+          cd main_repo
+          python -m unittest -v tests.test_gate_btc_factory_track_coverage
       - name: Build canonical multi-track status
         run: |
           python main_repo/tools/gate_btc_factory_status_export.py \
@@ -63,3 +76,4 @@ jobs:
             sleep $((i*2))
           done
           exit 1
+

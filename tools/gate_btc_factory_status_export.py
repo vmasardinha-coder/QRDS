@@ -4,16 +4,25 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from .gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status
+    from .gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status, m3_status_path
 except ImportError:
-    from gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status
+    from gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status, m3_status_path
 
 TRACKS = {
     "h31_prospective": "runtime/ledgers/b3_h31_prospective/STATUS.json",
     "h31_shadow_paper": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
     "h31_intraday": "runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json",
     "m1_m2": "runtime/ledgers/momentum_m1_m2/STATUS.json",
+    "m1_m2_economics": "runtime/ledgers/momentum_m1_m2_economics/ECONOMICS_STATUS.json",
+    "m3_signal": "runtime/ledgers/momentum_m3/STATUS.json",
+    "m3_economics": "runtime/ledgers/momentum_m3_economics/STATUS.json",
+    "v13": "runtime/ledgers/delta_v13_engine/STATUS.json",
+    "v16_family": "runtime/ledgers/v16_family/STATUS.json",
     "v16b": "runtime/ledgers/v16b/STATUS.json",
+    "v16b1": "runtime/ledgers/v16b1/STATUS.json",
+    "v16c": "runtime/ledgers/v16c/STATUS.json",
+    "v16d": "runtime/ledgers/v16d/STATUS.json",
+    "v16e": "runtime/ledgers/v16e/STATUS.json",
     "prl50": "runtime/ledgers/prl50_position/STATUS.json",
     "alt_trail": "runtime/ledgers/alt_trail40_10/STATUS.json",
     "gateway": "runtime/ledgers/gateway_dynamics/STATUS.json",
@@ -56,6 +65,8 @@ def export_tracks(root: Path):
     paths = dict(TRACKS)
     paths["bull_replay"] = active_status_path(root / "runtime/ledgers/bull_replay_live_shadow").relative_to(root).as_posix()
     paths["h1"] = h1_status_path(root / "runtime/ledgers/b3_h1").relative_to(root).as_posix()
+    paths["m1_m2_economics"] = active_status_path(root / "runtime/ledgers/momentum_m1_m2_economics", "ECONOMICS_STATUS.json").relative_to(root).as_posix()
+    paths["m3_economics"] = m3_status_path(root / "runtime/ledgers/momentum_m3_economics").relative_to(root).as_posix()
     tracks = {k: load(root, v) for k, v in paths.items()}
     if tracks["v12"].get("data"):
         tracks["v12"]["data"] = closed_v12_status(tracks["v12"]["data"])
@@ -115,3 +126,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
