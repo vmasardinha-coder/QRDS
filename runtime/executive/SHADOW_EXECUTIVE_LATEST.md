@@ -552,7 +552,6 @@
   "delivery_complete": false,
   "freshness_warnings": {
     "blocked_dependency_components": [
-      "momentum_m1_m2",
       "v16b1"
     ],
     "failed_delivery_components": [],
@@ -567,7 +566,6 @@
     "stale_components": [
       "b3_h1",
       "v16b",
-      "momentum_m1_m2",
       "v16b1"
     ],
     "unrepresented_runtime_ledgers": [
@@ -613,39 +611,38 @@
 {
   "declared_tracks": {},
   "momentum": {
-    "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
     "cost_status": "N_D",
     "economic_epoch_id": "hold_20260928",
-    "economic_freshness": "STALE",
+    "economic_freshness": "FRESH",
     "economic_gaps": [],
     "economic_nav": {
-      "M1_TOP10": 1.1788850547643739,
-      "M2_TOP10": 1.1775370598143668
+      "M1_TOP10": 1.2545936231469774,
+      "M2_TOP10": 1.2467006948243204
     },
     "economic_status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
     "economics_source": "ledgers\\momentum_m1_m2_economics\\epochs\\hold_20260928\\DELIVERY_STATUS.json",
     "first_eligible_economic_cutoff": "2026-09-28",
-    "freshness": "STALE",
-    "last_economic_cutoff": "2026-10-10",
+    "freshness": "FRESH",
+    "last_economic_cutoff": "2026-10-11",
     "last_run_state": null,
     "latest_economics": {
-      "btc_daily_return_gross": 0.004269469979929941,
-      "btc_nav": 0.9919283951957157,
+      "btc_daily_return_gross": 0.009456265914882467,
+      "btc_nav": 1.001308333869209,
       "cost_status": "N_D",
-      "cutoff": "2026-10-10",
+      "cutoff": "2026-10-11",
       "daily_return_gross": {
-        "M1_TOP10": 0.09074546629532398,
-        "M2_TOP10": 0.08428299623615465
+        "M1_TOP10": 0.06422048364820054,
+        "M2_TOP10": 0.0587358456648972
       },
       "event": "HOLD",
       "evidence": {
-        "price_manifest_sha256": "6552f74f78c59a55c7c805ab7bb39fe815e76642344df9e0df8c1dbb907c4132",
-        "snapshot_sha256": "9dead13691509e0bc58ac5c6880b5b4ac850b92be4d1146caa4d9610104aca63",
-        "source_available_at_utc": "2026-10-11T09:58:13.902756+00:00"
+        "price_manifest_sha256": "b3b8f0f48ae412c598ad13195479194854709d0de774ac2bf97cf58554fb714d",
+        "snapshot_sha256": "1e1d2259fe87ac6e0037b443800a3313e0be30e7f914995d83b0115e5316e6cf",
+        "source_available_at_utc": "2026-10-12T10:26:59.276031+00:00"
       },
       "excess_vs_btc_percentage_points": {
-        "M1_TOP10": 18.695665956865813,
-        "M2_TOP10": 18.56086646186511
+        "M1_TOP10": 25.328528927776837,
+        "M2_TOP10": 24.539236095511143
       },
       "holdings_after_close": {
         "M1_TOP10": [
@@ -674,19 +671,19 @@
         ]
       },
       "illustrative_brl_pnl": {
-        "M1_TOP10": 32199.3098575873,
-        "M2_TOP10": 31956.670766586034
+        "M1_TOP10": 45826.85216645594,
+        "M2_TOP10": 44406.12506837768
       },
       "illustrative_brl_value": {
-        "M1_TOP10": 212199.3098575873,
-        "M2_TOP10": 211956.67076658603
+        "M1_TOP10": 225826.85216645594,
+        "M2_TOP10": 224406.12506837767
       },
       "nav": {
-        "M1_TOP10": 1.1788850547643739,
-        "M2_TOP10": 1.1775370598143668
+        "M1_TOP10": 1.2545936231469774,
+        "M2_TOP10": 1.2467006948243204
       },
       "net_return": null,
-      "observed_at_utc": "2026-10-11T09:58:14.102706+00:00",
+      "observed_at_utc": "2026-10-12T10:26:59.436300+00:00",
       "quantities_after_close": {
         "M1_TOP10": {
           "AAVE": 0.0006104876598310474,
@@ -714,51 +711,51 @@
         }
       },
       "reporting_currency_note": "FIXED_NOTIONAL_ILLUSTRATION_NOT_REALIZED_BRL_OR_FX_ADJUSTED",
-      "return_observations": 11,
+      "return_observations": 12,
       "total_return_gross": {
-        "M1_TOP10": 0.17888505476437389,
-        "M2_TOP10": 0.17753705981436685
+        "M1_TOP10": 0.2545936231469774,
+        "M2_TOP10": 0.24670069482432044
       }
     },
     "legacy_economic_status": "CLOSED_INTERRUPTED_DIAGNOSTIC_ONLY",
     "m1_summary": {
-      "breadth_pct_m1_gt_zero": 29.473684210526315,
-      "cross_sectional_dispersion_m1": 0.790744494653763,
-      "cutoff": "2026-10-10",
-      "delta_breadth_pct_points": -3.1578947368421026,
+      "breadth_pct_m1_gt_zero": 34.0,
+      "cross_sectional_dispersion_m1": 0.7657655528671851,
+      "cutoff": "2026-10-11",
+      "delta_breadth_pct_points": 4.526315789473685,
       "engine_feed": false,
-      "lookback_14_date": "2026-09-26",
-      "lookback_30_date": "2026-09-10",
-      "median_m1": -0.22784948849365466,
-      "negative_median_distance_to_zero": 0.3193005039419725,
+      "lookback_14_date": "2026-09-27",
+      "lookback_30_date": "2026-09-11",
+      "median_m1": -0.15661478918444527,
+      "negative_median_distance_to_zero": 0.32020127729558295,
       "orders": 0,
       "real_capital": 0,
       "status": "SHADOW_ONLY_NOT_APPROVED",
-      "universe_n": 95
+      "universe_n": 100
     },
     "m2_summary": {
-      "breadth_pct_m2_gt_zero": 45.26315789473684,
-      "cross_sectional_dispersion_m2": 3.6091439428870875,
-      "cutoff": "2026-10-10",
-      "delta_breadth_pct_points": -4.210526315789473,
+      "breadth_pct_m2_gt_zero": 48.0,
+      "cross_sectional_dispersion_m2": 3.3039037829885354,
+      "cutoff": "2026-10-11",
+      "delta_breadth_pct_points": 2.7368421052631575,
       "engine_feed": false,
       "excluded_incomplete_history": 2,
-      "median_m2": -0.5651945422264035,
+      "median_m2": -0.047108335610025275,
       "orders": 0,
       "real_capital": 0,
       "reference_calendar": "BTC_COMPLETED_UTC_DAILY_BARS",
       "reference_window_bars": 31,
-      "reference_window_end": "2026-10-10",
-      "reference_window_start": "2026-09-10",
+      "reference_window_end": "2026-10-11",
+      "reference_window_start": "2026-09-11",
       "status": "PROSPECTIVE_SHADOW_ONLY_NOT_APPROVED",
-      "universe_n": 95
+      "universe_n": 100
     },
     "methodology_failure": null,
     "next_economic_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
-    "observed_snapshots": 46,
-    "price_coverage_cutoff": "2026-10-10",
+    "observed_snapshots": 47,
+    "price_coverage_cutoff": "2026-10-11",
     "price_coverage_status": "PASS_REQUIRED_PRICE_COVERAGE",
-    "return_observations": 11,
+    "return_observations": 12,
     "signal_status": "ACTIVE_PROSPECTIVE_SHADOW",
     "source": "ledgers/momentum_m1_m2/STATUS.json",
     "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
@@ -839,14 +836,14 @@
       "promotion_authority": false,
       "records": {
         "momentum_m3": {
-          "data_as_of": "2026-10-10",
+          "data_as_of": "2026-10-11",
           "engine_feed": false,
           "health_authority": false,
           "inventory_only": true,
           "ledger_id": "momentum_m3",
-          "observed_snapshots": 27,
+          "observed_snapshots": 28,
           "schema": "gate_btc.momentum_m3.status.v1",
-          "sha256": "0b9bd1cc6d066f767446e4d0035b01f081523fbbf43f10bb7af97057eb7351f5",
+          "sha256": "c37c352ee43f2eb4ee3e25d0c527186b7a7cc41d13a96bfe7b57b2f6bd63ba46",
           "source": "ledgers/momentum_m3/STATUS.json",
           "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
         }
