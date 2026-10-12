@@ -32,11 +32,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-12-grafico
 | AMAT | 9.98954 | $507.03 | $5,065.00 | 9.7% |
 | AMD | 8.21878 | $608.10 | $4,997.84 | 9.6% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| TGT | VENDA | 1.34775 | $153.56 | $206.96 | rebalanceio |
-| INTC | COMPRA | 4.17208 | $104.75 | $437.04 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
@@ -64,36 +60,34 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-12-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $64,011.45 |
-| Retorno do dia | +0.51% |
-| Retorno desde inicio (2026-08-06) | +28.02% |
-| Benchmark BTC | +30.04% |
-| **Alfa vs BTC** | **-2.01%** |
-| Caixa | $3,195.35 |
+| NAV | $62,947.80 |
+| Retorno do dia | -1.16% |
+| Retorno desde inicio (2026-08-06) | +25.90% |
+| Benchmark BTC | +29.37% |
+| **Alfa vs BTC** | **-3.47%** |
+| Caixa | $3,222.47 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.382115 | $83,766.59 | $32,008.48 | 50.0% |
-| ENA | 39658.6 | $0.24 | $9,602.54 | 15.0% |
-| NEAR | 1639.75 | $5.86 | $9,602.54 | 15.0% |
-| ONE | 4.92438e+06 | $0.00 | $9,602.54 | 15.0% |
+| BTC | 0.377679 | $83,335.89 | $31,474.26 | 50.0% |
+| ONE | 4.92438e+06 | $0.001926 | $9,484.36 | 15.1% |
+| ENA | 41148.2 | $0.23 | $9,442.28 | 15.0% |
+| NEAR | 1639.75 | $5.69 | $9,324.44 | 14.8% |
 
 ### Movimentacoes de hoje
 | Ativo | Operacao | Qtd | Preco | Valor | Motivo |
 |---|---|---|---|---|---|
-| ENA | VENDA | 2985.24 | $0.24 | $722.09 | rebalanceio |
-| NEAR | VENDA | 364.09 | $5.85 | $2,130.01 | rebalanceio |
-| BTC | COMPRA | 0.0134033 | $83,850.36 | $1,123.87 | rebalanceio |
-| ONE | COMPRA | 779092 | $0.00 | $1,520.75 | rebalanceio |
+| BTC | VENDA | 0.00443557 | $83,252.55 | $369.27 | rebalanceio |
+| ENA | COMPRA | 1489.57 | $0.23 | $342.15 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** cadencia semanal (segunda-feira)
-- **Obstaculo (BTC):** momentum de +18.7% — so entram ativos acima disto
-- **Candidatos elegiveis:** 38
+- **Obstaculo (BTC):** momentum de +18.1% — so entram ativos acima disto
+- **Candidatos elegiveis:** 37
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -108,7 +102,7 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-12-grafico
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.3M < 1M) |
 | AUDIO | liquidez baixa (0.0M < 1M) |
-| _(+92 outros)_ | |
+| _(+93 outros)_ | |
 
 </details>
 
