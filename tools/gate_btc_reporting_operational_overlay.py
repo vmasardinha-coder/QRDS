@@ -95,6 +95,22 @@ def collection_health_hint(name, obj):
     return None
 
 
+def v16b_terminal_closed(obj, reference):
+    """Recognize the preserved zero-cycle closure, never an active blocked run."""
+    observed = iso((obj or {}).get("data_as_of"))
+    return bool(obj and reference and observed and observed <= reference
+        and obj.get("schema") == "gate_btc.v16b.status.v1"
+        and obj.get("status") == "TERMINAL_BLOCKED_NOT_PROMOTABLE"
+        and obj.get("terminal_disposition") == "CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK"
+        and obj.get("parent_reopened") is False
+        and obj.get("canonical_cycle_count") == 0
+        and "next_canonical_event" in obj and obj["next_canonical_event"] is None
+        and obj.get("promotion_allowed") is False
+        and obj.get("economic_claim_allowed") is False
+        and obj.get("prospective_credit") == 0
+        and obj.get("engine_feed") is False)
+
+
 def source_meta(path: Path, obj):
     result = {"exists": path.is_file(), "path": str(path)}
     if path.is_file():
@@ -224,9 +240,11 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
         "backfill_automatically_created": (b3 or {}).get("backfill_automatically_created"),
         "source": b3p.relative_to(runtime_root).as_posix(),
     }, collection_health_hint("b3_h1", b3))
+    v16b_closed = v16b_terminal_closed(v16, reference)
     current["components"]["v16b"] = component_with_hint({
         "status": (v16 or {}).get("status", "MISSING"),
-        "freshness": freshness(v16, reference),
+        "freshness": "CLOSED_NOT_APPLICABLE" if v16b_closed else freshness(v16, reference),
+        "terminal_disposition": (v16 or {}).get("terminal_disposition"),
         "canonical_cycle_count": (v16 or {}).get("canonical_cycle_count"),
         "v16b_preflight": (v16 or {}).get("v16b_preflight"),
         "v16b_rehearsal": (v16 or {}).get("v16b_rehearsal"),
@@ -498,6 +516,10 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     missing = list(warnings.get("missing_or_undated_components", []))
     failed = list(warnings.get("failed_delivery_components", []))
     blocked = list(warnings.get("blocked_dependency_components", []))
+    if v16b_closed:
+        # Reconcile only the retired parent; successor and other clocks remain.
+        for names in (stale, missing, failed, blocked):
+            names[:] = [x for x in names if x != "v16b"]
     if d100_active:
         # Reconcile prior D100 warnings against the current economic authority.
         # Other fronts retain their existing reconciliation behavior.
