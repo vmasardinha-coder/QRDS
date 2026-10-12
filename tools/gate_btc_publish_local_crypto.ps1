@@ -40,7 +40,11 @@ try {
     Run-Python @($Capture,'--full-source-contract','--out',$Packet)
     Run-Git $RuntimeRepo @('fetch','origin','gate-btc-runtime')
     $Worktree = Join-Path (Split-Path -Parent $RuntimeRepo) ('crypto_'+[guid]::NewGuid().ToString('N').Substring(0,8))
-    Run-Git $RuntimeRepo @('worktree','add','--detach',$Worktree,'origin/gate-btc-runtime')
+    Run-Git $RuntimeRepo @('worktree','add','--no-checkout','--detach',$Worktree,'origin/gate-btc-runtime')
+    # Materialize only this publication lane in the disposable worktree.
+    # Source journals and all Git history remain intact; incumbent checkout is untouched.
+    Run-Git $Worktree @('sparse-checkout','set','--cone','runtime/factory_sources/crypto_forward')
+    Run-Git $Worktree @('checkout','--force','HEAD')
     for ($Attempt=1; $Attempt -le 4; $Attempt++) {
         if ($Attempt -gt 1) {
             Run-Git $Worktree @('fetch','origin','gate-btc-runtime')
