@@ -263,6 +263,24 @@ def fetch_okx_candles(session, symbol: str) -> pd.DataFrame:
     return frame[["date", "symbol", "close_usd", "volume_usd", "source"]].drop_duplicates(["date", "symbol"]).sort_values("date")
 
 
+def validate_daily_core_candidate(candidate: pd.DataFrame, symbol: str) -> None:
+    """Enforce the requested Daily Research raw benchmark closes before selection."""
+    requested = os.environ.get("GATE_BTC_DATA_CUTOFF", "").strip()
+    if symbol not in {"BTC", "ETH"} or not requested:
+        return
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", requested):
+        raise RuntimeError("invalid requested daily core cutoff")
+    cutoff = pd.Timestamp(requested)
+    dates = pd.to_datetime(candidate["date"], errors="raise", utc=True).dt.tz_localize(None).dt.normalize()
+    for day in (cutoff - pd.Timedelta(days=1), cutoff):
+        rows = candidate.loc[dates.eq(day)]
+        if len(rows) != 1:
+            raise RuntimeError(f"missing/ambiguous required raw core close {symbol} {day.date()}: {len(rows)} rows")
+        close = float(rows.iloc[0]["close_usd"])
+        if not math.isfinite(close) or close <= 0:
+            raise RuntimeError(f"invalid required raw core close {symbol} {day.date()}")
+
+
 def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     candidates = universe[
         universe["standard_ticker"]
@@ -278,6 +296,8 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
         for name, loader in (("cdd", fetch_cdd_symbol), ("binance", fetch_binance_klines), ("okx", fetch_okx_candles)):
             try:
                 candidate = loader(session, symbol)
+                if len(candidate) >= 200:
+                    validate_daily_core_candidate(candidate, symbol)
                 attempts.append({"source": name, "status": "SELECTED" if len(candidate) >= 200 else "SHORT_HISTORY", "observed_rows": len(candidate)})
                 if len(candidate) >= 200:
                     selected = candidate
@@ -298,7 +318,7 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
         master = master[master["date"] >= START_DATE].drop_duplicates(["date", "symbol"]).sort_values(["symbol", "date"])
     failure_frame = pd.DataFrame(failures, columns=["symbol", "reason", "source_attempts"])
     save_df(failure_frame, OUT / "download_failures_v2a.csv")
-    save_json({"schema": "gate_btc.v2a_source_attempts.v1", "reporting_only": True, "source_priority": ["cdd", "binance", "okx"], "history_requirement_rows": 200, "source_substitution_performed": False, "orders_generated": 0, "real_capital_used": 0, "rows": source_attempts}, OUT / "source_attempts_v2a.json")
+    save_json({"schema": "gate_btc.v2a_source_attempts.v1", "reporting_only": True, "source_priority": ["cdd", "binance", "okx"], "history_requirement_rows": 200, "required_daily_core_close": os.environ.get("GATE_BTC_DATA_CUTOFF") or None, "source_substitution_performed": False, "orders_generated": 0, "real_capital_used": 0, "rows": source_attempts}, OUT / "source_attempts_v2a.json")
     save_df(master, DATA_PROCESSED / "qos_v2a_master_daily.csv")
     return master, failure_frame
 
