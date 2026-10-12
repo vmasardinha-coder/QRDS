@@ -399,12 +399,13 @@
     "v16b": {
       "canonical_cycle_count": 0,
       "entry_seal": "NONE_CANONICAL",
-      "freshness": "STALE",
+      "freshness": "CLOSED_NOT_APPLICABLE",
       "next_canonical_event": null,
       "signal_producer": "IMPLEMENTED_AND_SOURCE_BOUND_BUT_NO_CANONICAL_SIGNAL_CREATED",
       "signal_seal": "NONE_CANONICAL",
       "source": "ledgers/v16b/STATUS.json",
       "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE",
+      "terminal_disposition": "CLOSED_FAIL_CLOSED_EXTERNAL_ENTRY_INFRASTRUCTURE_BLOCK",
       "v16b_preflight": null,
       "v16b_rehearsal": null
     },
@@ -910,7 +911,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-10-12T18:57:28.950082+00:00",
+  "generated_at_utc": "2026-10-12T20:19:53.019241+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 18,
@@ -1895,7 +1896,6 @@
     ],
     "stale_components": [
       "b3_h1",
-      "v16b",
       "v16b1"
     ],
     "unrepresented_runtime_ledgers": [
