@@ -1,4 +1,7 @@
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +12,31 @@ from tools.gate_btc_delta_paper_monitor import MonitorError
 
 
 class DeltaIsolatedSourceTests(unittest.TestCase):
+    def test_direct_cli_from_other_directory_without_pythonpath(self):
+        script = Path('tools/gate_btc_delta_isolated_source.py').resolve()
+        contract = CONTRACT.resolve()
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / 'source.zip'
+            runtime = root / 'isolated'
+            fixture(source, '2026-10-01')
+            env = dict(os.environ)
+            env.pop('PYTHONPATH', None)
+            command = [sys.executable, str(script), '--contract', str(contract),
+                       '--source-zip', str(source), '--runtime-dir', str(runtime),
+                       '--source-run-id', '100', '--expected-close', '2026-10-01']
+            first = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(json.loads(first.stdout)['status'], 'PRESERVED_UNCREDITED_SOURCE')
+            zip_before = (runtime / 'snapshots/2026-10-01.zip').read_bytes()
+            receipt_before = (runtime / 'snapshots/2026-10-01.json').read_bytes()
+            second = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertEqual(second.returncode, 0, second.stderr)
+            self.assertEqual(json.loads(second.stdout)['status'], 'DUPLICATE_IDENTICAL')
+            self.assertEqual((runtime / 'snapshots/2026-10-01.zip').read_bytes(), zip_before)
+            self.assertEqual((runtime / 'snapshots/2026-10-01.json').read_bytes(), receipt_before)
+            self.assertFalse((runtime / 'DAILY_NAV.csv').exists())
+
     def test_preserves_same_close_without_changing_paper_nav(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -47,3 +75,4 @@ class DeltaIsolatedSourceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
