@@ -5,7 +5,7 @@
   "frontier_generation": "H2730-H2739",
   "frontier_next_generation_start": 2730,
   "frontier_status": "WAITING_OFFICIAL_TICK_SOURCE",
-  "generated_at_utc": "2026-10-12T09:20:44.645260Z",
+  "generated_at_utc": "2026-10-12T13:57:38.906776Z",
   "next_expected_action": "OPERATIONAL_REPAIR",
   "planned_actions": [],
   "runtime_authority": {
@@ -20,14 +20,14 @@
       "status": "ACTIVE_PROSPECTIVE"
     },
     "D50_DATA_QUALIFICATION": {
-      "observations": 47,
-      "qualified": true,
-      "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_47_OF_7",
+      "observations": 0,
+      "qualified": false,
+      "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_0_OF_7",
       "target": 7
     },
     "MOMENTUM_M1_M2": {
-      "latest_date": "2026-10-10",
-      "observations": 46,
+      "latest_date": "2026-10-11",
+      "observations": 47,
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
     "V16B": {
@@ -51,12 +51,17 @@
   "schema": "qrds.factory.self_audit.v2",
   "scientific_blockers": [
     {
+      "blocker": "qualification chain remains 0/7 with synchronized failure and stale source evidence; exact source/symbol/time/schema boundary unresolved",
+      "track": "D50_DATA_QUALIFICATION"
+    },
+    {
       "blocker": "official dataset seal/readiness and full causal evidence remain incomplete",
       "track": "GATE_BTC_2_CORE"
     }
   ],
   "source_freshness": "FRESH",
   "stalled_tracks": [
+    "D50_DATA_QUALIFICATION",
     "GATE_BTC_2_CORE"
   ],
   "survivor_health_count": 3,
