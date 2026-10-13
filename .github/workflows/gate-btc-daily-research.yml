@@ -450,6 +450,13 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+      - name: Check out reconciliation code from this producer revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: source_code
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
       - name: Publish prospective V2A registry PIT to runtime branch
         run: |
           set -euo pipefail
@@ -462,7 +469,14 @@ jobs:
           cp pit_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
           cp pit_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
           cp pit_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
-          git -C runtime_repo add runtime/data_quality/v2a_registry_pit
+          diagnostic=$(find runtime_repo/runtime/data_quality/v2a/diagnostics -name '*.json' | sort | tail -1)
+          test -n "$diagnostic"
+          python source_code/tools/gate_btc_pit150_source_crosswalk.py \
+            --diagnostic "$diagnostic" \
+            --registry runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json \
+            --structural-registry source_code/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --output runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
+          git -C runtime_repo add runtime/data_quality/v2a_registry_pit runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
           if git -C runtime_repo diff --cached --quiet; then
             echo "Prospective V2A registry PIT already current"
           else
@@ -477,3 +491,4 @@ jobs:
             done
             exit 1
           fi
+
