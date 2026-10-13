@@ -1,0 +1,101 @@
+import copy
+import json
+import tempfile
+import unittest
+from datetime import datetime,timezone,timedelta
+from tools.gate_btc_pit150_qualified_history import ROUTES,route_for_member,check_identity,normalize_history,collect_history
+
+class QualifiedHistoryTests(unittest.TestCase):
+    def candles(self, count=200):
+        last=datetime(2026,10,13,tzinfo=timezone.utc)
+        return [[str(int((last-timedelta(days=i)).timestamp())),"10","2","3","1","2"] for i in range(count)]
+
+    def test_past_cutoffs_and_wrong_identity_never_activate(self):
+        self.assertIsNone(route_for_member("DRV","derive","2026-10-12"))
+        self.assertIsNone(route_for_member("DRV","wrong-token","2026-10-13"))
+        self.assertIsNone(route_for_member("PRL","pearl-2","2026-10-13"))
+        self.assertIsNotNone(route_for_member("DRV","derive","2026-10-13"))
+
+    def test_future_partial_candle_is_excluded(self):
+        rows=self.candles()+[[str(int(datetime(2026,10,14,tzinfo=timezone.utc).timestamp())),"10","2","3","1","2"]]
+        out=normalize_history("DRV",ROUTES["DRV"],rows,"2026-10-13")
+        self.assertEqual(len(out),200)
+        self.assertEqual(out[-1]["date"],"2026-10-13")
+
+    def test_short_duplicate_missing_and_stale_history_are_rejected(self):
+        variants=[self.candles(199),self.candles()+[self.candles()[0]],self.candles(201)[:50]+self.candles(201)[51:],self.candles()[1:]]
+        for rows in variants:
+            with self.assertRaises(ValueError):normalize_history("DRV",ROUTES["DRV"],rows,"2026-10-13")
+
+    def test_nonphysical_prices_volumes_and_nonUTC_buckets_rejected(self):
+        for index,value in [(0,str(int(self.candles()[0][0])+3600)),(1,"-1"),(2,"NaN"),(3,"0.1"),(4,"5")]:
+            rows=self.candles();rows[0][index]=value
+            with self.assertRaises(ValueError):normalize_history("DRV",ROUTES["DRV"],rows,"2026-10-13")
+
+    def test_same_ticker_wrong_contract_or_name_is_not_identity(self):
+        route=ROUTES["BP"]
+        meta={"symbols":[{"symbol":"BPUSDT","quoteAsset":"USDT","fullName":"Backpack","contractAddress":route["contract"],"isSpotTradingAllowed":True}]}
+        check_identity(route,meta)
+        for key,value in [("contractAddress","other-mint"),("fullName","Other BP"),("isSpotTradingAllowed",False)]:
+            bad=copy.deepcopy(meta);bad["symbols"][0][key]=value
+            with self.assertRaises(ValueError):check_identity(route,bad)
+
+    def test_wrong_xt_contract_is_rejected(self):
+        meta={"rc":0,"result":{"symbols":[{"symbol":"shfl_usdt","baseCurrency":"shfl","quoteCurrency":"usdt","state":"ONLINE","chainRelation":[{"contract":ROUTES["SHFL"]["contract"].upper()}]}]}}
+        check_identity(ROUTES["SHFL"],meta)
+        meta["result"]["symbols"][0]["chainRelation"][0]["contract"]="0xwrong"
+        with self.assertRaises(ValueError):check_identity(ROUTES["SHFL"],meta)
+
+    def test_quote_volume_uses_mexc_quote_field(self):
+        rows=[[int(x[0])*1000,"2","3","1","2","900",int(x[0])*1000+86399999,"42"] for x in self.candles()]
+        out=normalize_history("BP",ROUTES["BP"],rows,"2026-10-13")
+        self.assertEqual(out[-1]["volume_usd"],42)
+
+    def test_raw_identity_and_price_bytes_are_preserved(self):
+        meta={"id":"DRV_USDT","base":"DRV","quote":"USDT","base_name":"Derive","trade_status":"tradable"}
+        responses=[json.dumps(meta).encode(),json.dumps(self.candles()).encode()]
+        class Session:
+            def get(self,url,timeout):
+                class Response:status_code=200
+                obj=Response();obj.content=responses.pop(0);return obj
+        with tempfile.TemporaryDirectory()as root:
+            rows,e=collect_history(Session(),"DRV","derive","2026-10-13",root,now=datetime(2026,10,14,tzinfo=timezone.utc))
+            from pathlib import Path
+            self.assertEqual(json.loads((Path(root)/"DRV/identity.json").read_bytes()),meta)
+            self.assertEqual(e["closed_rows"],200)
+            self.assertEqual(e["historical_scientific_credit"],0)
+
+    def test_unfinished_utc_cutoff_never_fetches(self):
+        class Session:
+            def get(self,*args,**kwargs):raise AssertionError("must not fetch unfinished day")
+        with tempfile.TemporaryDirectory()as root:
+            with self.assertRaises(ValueError):
+                collect_history(Session(),"DRV","derive","2026-10-13",root,now=datetime(2026,10,13,20,tzinfo=timezone.utc))
+
+    def test_collector_preserves_legacy_attempts_and_records_extension(self):
+        import importlib.util,os
+        import pandas as pd
+        from pathlib import Path
+        from unittest.mock import patch
+        script=Path(__file__).resolve().parents[1]/"migration/canonical/v2a/scripts/00_run_all_v2a.py"
+        spec=importlib.util.spec_from_file_location("qualified_collector_test",script)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        universe=pd.DataFrame([{"symbol":"DRV","id":"derive","standard_ticker":True,"is_stable":False,"is_blocked":False}])
+        rows=normalize_history("DRV",ROUTES["DRV"],self.candles(),"2026-10-13")
+        with tempfile.TemporaryDirectory()as tmp:
+            with patch.dict(os.environ,{"GATE_BTC_DATA_CUTOFF":"2026-10-13"}),patch.object(module,"OUT",Path(tmp)),patch.object(module,"DATA_PROCESSED",Path(tmp)),patch.object(module.time,"sleep"),patch.object(module,"fetch_cdd_symbol",side_effect=RuntimeError("unavailable")),patch.object(module,"fetch_binance_klines",side_effect=RuntimeError("unavailable")),patch.object(module,"fetch_okx_candles",side_effect=RuntimeError("unavailable")),patch("tools.gate_btc_pit150_qualified_history.collect_history",return_value=(rows,{"source":"gate","coin_id":"derive"})):
+                master,failures=module.fetch_candles_for_universe(None,universe)
+                trace=json.loads((Path(tmp)/"source_attempts_v2a.json").read_text())
+        self.assertEqual(set(master.symbol),{"DRV"})
+        self.assertEqual(set(failures.symbol),{"BTC","ETH"})
+        row=next(x for x in trace["rows"]if x["symbol"]=="DRV")
+        self.assertEqual([x["source"]for x in row["attempts"]],["cdd","binance","okx"])
+        self.assertEqual(row["selected_source"],"gate")
+        self.assertEqual(trace["qualified_extension_selected_count"],1)
+        self.assertTrue(trace["source_substitution_performed"])
+        from tools.gate_btc_v2a_failure_diagnostic import build_diagnostic
+        report=build_diagnostic([{"symbol":"BTC","id":"bitcoin"},{"symbol":"ETH","id":"ethereum"}],failures.to_dict("records"),{"attempted_symbols":3,"loaded_symbols":1,"failed_symbols":2,"qualified_source_extension":1})
+        self.assertTrue(report["source_substitution_performed"])
+        self.assertEqual(report["qualified_source_extension_selected_count"],1)
+
+if __name__=="__main__":unittest.main()

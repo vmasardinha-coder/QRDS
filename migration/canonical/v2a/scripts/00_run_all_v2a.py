@@ -289,6 +289,7 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
     ].head(int(CFG["max_assets_to_fetch"]))
     symbols = list(dict.fromkeys(["BTC", "ETH"] + candidates["symbol"].tolist()))
     histories, failures, source_attempts = [], [], []
+    extension_selected_count = 0
     for symbol in tqdm(symbols, desc="public candles"):
         last_error = "not_attempted"
         selected = None
@@ -306,7 +307,32 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
             except Exception as exc:
                 last_error = f"{name}: {type(exc).__name__}: {str(exc)[:160]}"
                 attempts.append({"source": name, "status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]})
-        source_attempts.append({"symbol": symbol, "selected_source": None if selected is None else name, "attempts": attempts})
+        extension_attempt = None
+        cutoff = os.environ.get("GATE_BTC_DATA_CUTOFF", "").strip()
+        if selected is None and symbol in {"DRV", "CARDS", "BP", "SHFL"} and cutoff >= "2026-10-13":
+            try:
+                repo_root = str(Path(__file__).resolve().parents[4])
+                if repo_root not in sys.path:
+                    sys.path.insert(0, repo_root)
+                from tools.gate_btc_pit150_qualified_history import collect_history
+                members = candidates.loc[candidates["symbol"].eq(symbol)]
+                if len(members) != 1 or "id" not in members:
+                    raise RuntimeError("qualified fallback requires one exact universe coin_id")
+                result = collect_history(session, symbol, str(members.iloc[0]["id"]), cutoff,
+                                         OUT / "qualified_source_extensions")
+                if result is None:
+                    raise RuntimeError("universe coin_id does not match qualified fallback")
+                rows, evidence = result
+                selected = pd.DataFrame(rows)
+                name = evidence["source"]
+                extension_attempt = {"source": name, "status": "SELECTED", "observed_rows": len(rows),
+                                     "coin_id": evidence["coin_id"], "qualification": evidence}
+                extension_selected_count += 1
+            except Exception as exc:
+                extension_attempt = {"status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]}
+                last_error = f"qualified_extension: {type(exc).__name__}: {str(exc)[:160]}"
+        source_attempts.append({"symbol": symbol, "selected_source": None if selected is None else name,
+                               "attempts": attempts, "qualified_extension_attempt": extension_attempt})
         if selected is None:
             failures.append({"symbol": symbol, "reason": last_error, "source_attempts": json.dumps(attempts, sort_keys=True)})
         else:
@@ -318,7 +344,13 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
         master = master[master["date"] >= START_DATE].drop_duplicates(["date", "symbol"]).sort_values(["symbol", "date"])
     failure_frame = pd.DataFrame(failures, columns=["symbol", "reason", "source_attempts"])
     save_df(failure_frame, OUT / "download_failures_v2a.csv")
-    save_json({"schema": "gate_btc.v2a_source_attempts.v1", "reporting_only": True, "source_priority": ["cdd", "binance", "okx"], "history_requirement_rows": 200, "required_daily_core_close": os.environ.get("GATE_BTC_DATA_CUTOFF") or None, "source_substitution_performed": False, "orders_generated": 0, "real_capital_used": 0, "rows": source_attempts}, OUT / "source_attempts_v2a.json")
+    save_json({"schema": "gate_btc.v2a_source_attempts.v1", "reporting_only": True,
+               "source_priority": ["cdd", "binance", "okx"], "history_requirement_rows": 200,
+               "required_daily_core_close": os.environ.get("GATE_BTC_DATA_CUTOFF") or None,
+               "qualified_extensions_effective_cutoff": "2026-10-13",
+               "qualified_extension_selected_count": extension_selected_count,
+               "source_substitution_performed": extension_selected_count > 0,
+               "orders_generated": 0, "real_capital_used": 0, "rows": source_attempts}, OUT / "source_attempts_v2a.json")
     save_df(master, DATA_PROCESSED / "qos_v2a_master_daily.csv")
     return master, failure_frame
 
@@ -736,6 +768,8 @@ def main(argv: list[str] | None = None) -> int:
             "technical_status": "PASS", "data_quality_status": data_status,
             "data_as_of": str(data_as_of.date()), "attempted_symbols": attempted,
             "loaded_symbols": loaded_symbols, "failed_symbols": len(failures), "coverage_ratio": coverage,
+            "qualified_source_extension": json.loads((OUT / "source_attempts_v2a.json").read_text()).get("qualified_extension_selected_count", 0)
+                                          if (OUT / "source_attempts_v2a.json").exists() else 0,
             "historical_signal_rows": len(features), "current_feature_rows": len(current_features),
             "equity_rows": len(equity), "current_portfolio_rows": len(current),
             "reference_composition_rows": len(references),
@@ -780,3 +814,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
