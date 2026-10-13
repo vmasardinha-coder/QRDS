@@ -46,6 +46,25 @@ class QualifiedHistoryTests(unittest.TestCase):
         meta["result"]["symbols"][0]["chainRelation"][0]["contract"]="0xwrong"
         with self.assertRaises(ValueError):check_identity(ROUTES["SHFL"],meta)
 
+    def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
+        previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
+        self.assertEqual(len(ROUTES),14)
+        for symbol in previous:
+            route=ROUTES[symbol]
+            self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
+            self.assertIsNone(route_for_member(symbol,"other-coin","2026-10-13"))
+            meta={"symbols":[{"symbol":route["pair"],"quoteAsset":"USDT","fullName":route["name"],"contractAddress":route["contract"],"isSpotTradingAllowed":True}]}
+            check_identity(route,meta)
+            meta["symbols"][0]["fullName"]="different project"
+            with self.assertRaises(ValueError):check_identity(route,meta)
+
+    def test_explicit_issuer_name_aliases_are_not_generic_fuzzy_matching(self):
+        self.assertEqual(ROUTES["KCS"]["coin_id"],"kucoin-shares")
+        self.assertEqual(ROUTES["KCS"]["name"],"KuCoin Token")
+        self.assertEqual(ROUTES["AKE"]["name"],"AKEDO")
+        self.assertEqual(ROUTES["BSV"]["name"],"BitcoinSV")
+        self.assertEqual(ROUTES["APEPE"]["name"],"APE and PEPE")
+
     def test_quote_volume_uses_mexc_quote_field(self):
         rows=[[int(x[0])*1000,"2","3","1","2","900",int(x[0])*1000+86399999,"42"] for x in self.candles()]
         out=normalize_history("BP",ROUTES["BP"],rows,"2026-10-13")

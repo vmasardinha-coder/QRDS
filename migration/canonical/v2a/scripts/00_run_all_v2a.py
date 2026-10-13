@@ -309,25 +309,26 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
                 attempts.append({"source": name, "status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]})
         extension_attempt = None
         cutoff = os.environ.get("GATE_BTC_DATA_CUTOFF", "").strip()
-        if selected is None and symbol in {"DRV", "CARDS", "BP", "SHFL"} and cutoff >= "2026-10-13":
+        if selected is None and cutoff >= "2026-10-13":
             try:
                 repo_root = str(Path(__file__).resolve().parents[4])
                 if repo_root not in sys.path:
                     sys.path.insert(0, repo_root)
-                from tools.gate_btc_pit150_qualified_history import collect_history
-                members = candidates.loc[candidates["symbol"].eq(symbol)]
-                if len(members) != 1 or "id" not in members:
-                    raise RuntimeError("qualified fallback requires one exact universe coin_id")
-                result = collect_history(session, symbol, str(members.iloc[0]["id"]), cutoff,
-                                         OUT / "qualified_source_extensions")
-                if result is None:
-                    raise RuntimeError("universe coin_id does not match qualified fallback")
-                rows, evidence = result
-                selected = pd.DataFrame(rows)
-                name = evidence["source"]
-                extension_attempt = {"source": name, "status": "SELECTED", "observed_rows": len(rows),
-                                     "coin_id": evidence["coin_id"], "qualification": evidence}
-                extension_selected_count += 1
+                from tools.gate_btc_pit150_qualified_history import collect_history, ROUTES
+                if symbol in ROUTES:
+                    members = candidates.loc[candidates["symbol"].eq(symbol)]
+                    if len(members) != 1 or "id" not in members:
+                        raise RuntimeError("qualified fallback requires one exact universe coin_id")
+                    result = collect_history(session, symbol, str(members.iloc[0]["id"]), cutoff,
+                                             OUT / "qualified_source_extensions")
+                    if result is None:
+                        raise RuntimeError("universe coin_id does not match qualified fallback")
+                    rows, evidence = result
+                    selected = pd.DataFrame(rows)
+                    name = evidence["source"]
+                    extension_attempt = {"source": name, "status": "SELECTED", "observed_rows": len(rows),
+                                         "coin_id": evidence["coin_id"], "qualification": evidence}
+                    extension_selected_count += 1
             except Exception as exc:
                 extension_attempt = {"status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]}
                 last_error = f"qualified_extension: {type(exc).__name__}: {str(exc)[:160]}"
