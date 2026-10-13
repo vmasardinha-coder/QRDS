@@ -9,6 +9,8 @@ from pathlib import Path
 
 EFFECTIVE_CUTOFF = "2026-10-13"
 GATE_FOLLOWUP_ROUTES = {
+    'GRAM': {'coin_id':'the-open-network','name':'GRAM (prev. Toncoin)','source':'gate','pair':'GRAM_USDT','contract':'','contract_chain':'TON','rename_evidence':'https://www.gate.com/pt-br/announcements/article/100181'},
+    'GRASS': {'coin_id':'grass','name':'Grass','source':'gate','pair':'GRASS_USDT','contract':'Grass7B4RdKfBCjTKgSqnXkqjwiGvQyFbuSCUJr3XXjs','contract_chain':'SOL'},
     'GT': {'coin_id':'gatechain-token','name':'GateToken','source':'gate','pair':'GT_USDT'},
     'GHO': {'coin_id':'gho','name':'GHO','source':'gate','pair':'GHO_USDT'},
     'PIEVERSE': {'coin_id':'pieverse','name':'Pieverse','source':'gate','pair':'PIEVERSE_USDT'},
@@ -74,6 +76,7 @@ ROUTES = {'DRV': {'coin_id': 'derive', 'name': 'Derive', 'source': 'gate', 'pair
            'pair': 'APEPEUSDT',
            'contract': '0xA3f751662e282E83EC3cBc387d225Ca56dD63D3A'}}
 ROUTES.update(GATE_FOLLOWUP_ROUTES)
+ROUTES['BTW'] = {'coin_id':'bitway','name':'Bitway','source':'bitget','pair':'BTWUSDT','contract':'0x444045b0ee1ee319a660a5e3d604ca0ffa35acaa','contract_chain':'BEP20'}
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -103,6 +106,14 @@ def check_identity(route, payload):
                 and entry.get("contractAddress") == route["contract"]
                 and entry.get("isSpotTradingAllowed") is True):
             raise ValueError("exact MEXC identity/contract mismatch")
+    elif provider == "bitget":
+        rows = payload.get('data', [])
+        if payload.get('code') != '00000' or len(rows) != 1:
+            raise ValueError('ambiguous Bitget spot identity')
+        entry = rows[0]
+        if not (entry.get('symbol') == route['pair'] and entry.get('baseCoin') == 'BTW'
+                and entry.get('quoteCoin') == 'USDT' and entry.get('status') == 'online'):
+            raise ValueError('exact Bitget spot identity mismatch')
     elif provider == "xt":
         rows = payload.get("result", {}).get("symbols", [])
         if payload.get("rc") != 0 or len(rows) != 1:
@@ -118,17 +129,34 @@ def check_identity(route, payload):
 
 def check_gate_contract(route, payload):
     expected_base = route['pair'].split('_')[0]
+    def same_contract(value):
+        actual = str(value)
+        expected = route['contract']
+        return actual.lower() == expected.lower() if expected.startswith('0x') else actual == expected
     matches = [entry for entry in payload.get('chains', [])
                if entry.get('name') == route['contract_chain']
-               and str(entry.get('addr', '')).lower() == route['contract'].lower()]
+               and same_contract(entry.get('addr', ''))]
     if not (payload.get('currency') == expected_base and payload.get('name') == route['name']
             and payload.get('delisted') is False and payload.get('trade_disabled') is False
             and len(matches) == 1):
         raise ValueError('exact Gate chain/token contract mismatch')
 
+def check_bitget_contract(route, payload):
+    rows = payload.get('data', [])
+    if payload.get('code') != '00000' or len(rows) != 1 or rows[0].get('coin') != 'BTW':
+        raise ValueError('ambiguous Bitget currency identity')
+    matches = [x for x in rows[0].get('chains', []) if x.get('chain') == route['contract_chain']
+               and str(x.get('contractAddress', '')).lower() == route['contract'].lower()]
+    if len(matches) != 1:
+        raise ValueError('exact Bitget chain/token contract mismatch')
+
 def normalize_history(symbol, route, payload, cutoff):
     provider = route["source"]
-    if provider == "xt":
+    if provider == 'bitget':
+        if payload.get('code') != '00000':
+            raise ValueError('Bitget history transport/schema failure')
+        raw_rows = payload.get('data', [])
+    elif provider == "xt":
         if payload.get("rc") != 0:
             raise ValueError("XT history transport/schema failure")
         raw_rows = payload.get("result", [])
@@ -140,6 +168,8 @@ def normalize_history(symbol, route, payload, cutoff):
     for entry in raw_rows:
         if provider == "gate":
             ts = int(entry[0]);o,h,l,c,v = map(float, [entry[5],entry[3],entry[4],entry[2],entry[1]])
+        elif provider == 'bitget':
+            ts = int(entry[0]) // 1000;o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
         elif provider == "mexc":
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float, [entry[1],entry[2],entry[3],entry[4],entry[7]])
         else:
@@ -172,15 +202,20 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     provider,pair = route["source"],route["pair"]
     if provider == "gate":
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
-        if route.get('contract'):
+        if route.get('contract_chain'):
             urls.insert(1, f"https://api.gateio.ws/api/v4/spot/currencies/{symbol}")
+    elif provider == 'bitget':
+        end_ms = int((datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)).timestamp()*1000)
+        urls = [f'https://api.bitget.com/api/v2/spot/public/symbols?symbol={pair}',
+                f'https://api.bitget.com/api/v2/spot/public/coins?coin={symbol}',
+                f'https://api.bitget.com/api/v2/spot/market/history-candles?symbol={pair}&granularity=1Dutc&limit=200&endTime={end_ms}']
     elif provider == "mexc":
         urls = [f"https://api.mexc.com/api/v3/exchangeInfo?symbol={pair}",f"https://api.mexc.com/api/v3/klines?symbol={pair}&interval=1d&limit=1000"]
     else:
         urls = [f"https://sapi.xt.com/v4/public/symbol?symbol={pair}",f"https://sapi.xt.com/v4/public/kline?symbol={pair}&interval=1d&limit=1000"]
     output = Path(evidence_dir)/symbol;output.mkdir(parents=True,exist_ok=True)
     payloads,hashes = [],[]
-    labels = ['identity','currency','candles'] if provider == 'gate' and route.get('contract') else ['identity','candles']
+    labels = ['identity','currency','candles'] if (provider == 'gate' and route.get('contract_chain')) or provider == 'bitget' else ['identity','candles']
     for label,url in zip(labels,urls):
         response = session.get(url,timeout=30)
         if response.status_code != 200:
@@ -191,13 +226,15 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         if label == "identity":
             check_identity(route,payloads[-1])
         elif label == 'currency':
-            check_gate_contract(route,payloads[-1])
+            (check_bitget_contract if provider == 'bitget' else check_gate_contract)(route,payloads[-1])
     rows = normalize_history(symbol,route,payloads[-1],cutoff)
     evidence = {"symbol":symbol,"coin_id":coin_id,"source":provider,"source_pair":pair,
                 "cutoff":cutoff,"effective_cutoff":EFFECTIVE_CUTOFF,"closed_rows":len(rows),
                 "identity_sha256":hashes[0],"candles_sha256":hashes[-1],
                 "public_execution_ohlcv":True,"historical_scientific_credit":0,
                 "research_only":True,"orders":0,"real_capital":0}
+    if route.get('rename_evidence'):
+        evidence['rename_evidence'] = route['rename_evidence']
     if 'currency' in labels:
         evidence['currency_identity_sha256'] = hashes[1]
     (output/"qualification.json").write_text(json.dumps(evidence,indent=2)+"\n")
