@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),14)
+        self.assertEqual(len(ROUTES),17)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -64,6 +64,18 @@ class QualifiedHistoryTests(unittest.TestCase):
         self.assertEqual(ROUTES["AKE"]["name"],"AKEDO")
         self.assertEqual(ROUTES["BSV"]["name"],"BitcoinSV")
         self.assertEqual(ROUTES["APEPE"]["name"],"APE and PEPE")
+
+    def test_gate_followup_identities_are_exact_and_short_usdy_is_not_admitted(self):
+        self.assertNotIn('USDY',ROUTES)
+        for symbol in ['GT','GHO','PIEVERSE']:
+            route=ROUTES[symbol]
+            self.assertIsNotNone(route_for_member(symbol,route['coin_id'],'2026-10-13'))
+            self.assertIsNone(route_for_member(symbol,'different-token','2026-10-13'))
+            meta={'id':route['pair'],'base':symbol,'quote':'USDT','base_name':route['name'],'trade_status':'tradable'}
+            check_identity(route,meta)
+            for key,value in [('base','DRV'),('base_name','wrong issuer'),('id','other_USDT'),('trade_status','untradable')]:
+                bad=dict(meta);bad[key]=value
+                with self.assertRaises(ValueError):check_identity(route,bad)
 
     def test_quote_volume_uses_mexc_quote_field(self):
         rows=[[int(x[0])*1000,"2","3","1","2","900",int(x[0])*1000+86399999,"42"] for x in self.candles()]

@@ -8,6 +8,11 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 EFFECTIVE_CUTOFF = "2026-10-13"
+GATE_FOLLOWUP_ROUTES = {
+    'GT': {'coin_id':'gatechain-token','name':'GateToken','source':'gate','pair':'GT_USDT'},
+    'GHO': {'coin_id':'gho','name':'GHO','source':'gate','pair':'GHO_USDT'},
+    'PIEVERSE': {'coin_id':'pieverse','name':'Pieverse','source':'gate','pair':'PIEVERSE_USDT'},
+}
 ROUTES = {'DRV': {'coin_id': 'derive', 'name': 'Derive', 'source': 'gate', 'pair': 'DRV_USDT'},
  'CARDS': {'coin_id': 'collector-crypt',
            'name': 'Collector Crypt',
@@ -66,6 +71,7 @@ ROUTES = {'DRV': {'coin_id': 'derive', 'name': 'Derive', 'source': 'gate', 'pair
            'source': 'mexc',
            'pair': 'APEPEUSDT',
            'contract': '0xA3f751662e282E83EC3cBc387d225Ca56dD63D3A'}}
+ROUTES.update(GATE_FOLLOWUP_ROUTES)
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -81,7 +87,7 @@ def route_for_member(symbol, coin_id, cutoff):
 def check_identity(route, payload):
     provider = route["source"]
     if provider == "gate":
-        if not (payload.get("id") == route["pair"] and payload.get("base") == "DRV"
+        if not (payload.get("id") == route["pair"] and payload.get("base") == route["pair"].split('_')[0]
                 and payload.get("quote") == "USDT" and payload.get("base_name") == route["name"]
                 and payload.get("trade_status") == "tradable"):
             raise ValueError("exact Gate identity/market mismatch")
