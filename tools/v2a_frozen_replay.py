@@ -105,7 +105,7 @@ def _load_source(package: Path) -> dict[str, Any]:
             if extension.get("status") != "SELECTED":
                 continue
             matched = raw_master.loc[raw_master["symbol"].eq(row["symbol"])]
-            if (matched.empty or extension.get("source") not in {"gate","mexc","xt"}
+            if (matched.empty or extension.get("source") not in {"gate","mexc","xt","bitget"}
                     or set(matched["source"].astype(str)) != {extension["source"]}):
                 raise RuntimeError("qualified source trace/master mismatch")
 

@@ -17,6 +17,7 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
         extension_count: int = 0,
         trace: dict | None = None,
         with_drv: bool = False,
+        drv_source: str = "gate",
     ) -> None:
         manifest = {
             "technical_status": "PASS",
@@ -29,7 +30,7 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
             archive.writestr(
                 "data/processed/qos_v2a_master_daily.csv",
                 "date,symbol,close_usd,volume_usd,source\n2026-07-31,BTC,1,1,test\n" +
-                ("2026-07-31,DRV,2,3,gate\n" if with_drv else ""),
+                (f"2026-07-31,DRV,2,3,{drv_source}\n" if with_drv else ""),
             )
             archive.writestr(
                 "data/raw/coingecko_current_universe_v04.csv",
@@ -77,6 +78,21 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
             self.assertEqual(old["member_hashes"],new["member_hashes"])
             self.assertEqual(new["qualified_source_extension"],1)
             self.assertEqual(json.loads(new["source_trace_raw"]),trace)
+
+    def test_bitget_extension_round_trip_preserves_hashes_and_rejects_mismatch(self):
+        trace={'qualified_extension_selected_count':1,'rows':[{'symbol':'DRV','qualified_extension_attempt':{'status':'SELECTED','source':'bitget'}}]}
+        with tempfile.TemporaryDirectory() as directory:
+            legacy=Path(directory)/'legacy.zip';extended=Path(directory)/'extended.zip'
+            self._source(legacy,with_drv=True,drv_source='bitget')
+            self._source(extended,with_drv=True,drv_source='bitget',extension_count=1,trace=trace)
+            old,new=_load_source(legacy),_load_source(extended)
+            self.assertEqual(old['member_hashes'],new['member_hashes'])
+            self.assertEqual(json.loads(new['source_trace_raw']),trace)
+            self._source(extended,with_drv=True,drv_source='gate',extension_count=1,trace=trace)
+            with self.assertRaisesRegex(RuntimeError,'trace/master'):_load_source(extended)
+            trace['rows'][0]['qualified_extension_attempt']['source']='unverified'
+            self._source(extended,with_drv=True,drv_source='unverified',extension_count=1,trace=trace)
+            with self.assertRaisesRegex(RuntimeError,'trace/master'):_load_source(extended)
 
     def test_extension_missing_mismatched_or_duplicate_trace_is_rejected(self):
         bad=[None,{"qualified_extension_selected_count":0,"rows":[]},
