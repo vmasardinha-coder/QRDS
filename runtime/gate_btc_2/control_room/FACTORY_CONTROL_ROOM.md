@@ -1,14 +1,14 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-13T19:22:00.294030+00:00`
+Generated: `2026-10-13T22:07:44.850348+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **12**
-- Latest ledger: **2026-10-09**
-- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-09`)
+- Ledger sessions: **13**
+- Latest ledger: **2026-10-13**
+- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-13`)
 - Triggered cells: **0**
 - Cells at 60/60: **0**
 - Trigger range: **0–0 / 60**
@@ -25,7 +25,7 @@ Generated: `2026-10-13T19:22:00.294030+00:00`
 ## Source
 - Binding: `FORWARD_SOURCE_BOUND` / `WINV26`
 - Waiting source semantics: **0**
-- Discovery: `AVAILABLE_SOURCE_CANDIDATE` (41 records; admitted=False)
+- Discovery: `AVAILABLE_SOURCE_CANDIDATE` (43 records; admitted=False)
 
 ## External prospective lanes
 - `F-XMM-INVENTORY`: **131** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-10-13T19:20:05.116621Z`
