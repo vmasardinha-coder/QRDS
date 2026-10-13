@@ -14,17 +14,22 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
         *,
         operational_status: str = "NOT_APPROVED",
         orders: int = 0,
+        extension_count: int = 0,
+        trace: dict | None = None,
+        with_drv: bool = False,
     ) -> None:
         manifest = {
             "technical_status": "PASS",
             "operational_status": operational_status,
             "real_orders": orders,
             "capital_used": 0,
+            "qualified_source_extension": extension_count,
         }
         with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr(
                 "data/processed/qos_v2a_master_daily.csv",
-                "date,symbol,close_usd,volume_usd,source\n2026-07-31,BTC,1,1,test\n",
+                "date,symbol,close_usd,volume_usd,source\n2026-07-31,BTC,1,1,test\n" +
+                ("2026-07-31,DRV,2,3,gate\n" if with_drv else ""),
             )
             archive.writestr(
                 "data/raw/coingecko_current_universe_v04.csv",
@@ -38,6 +43,8 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
                 "outputs/v2a_run_manifest.json",
                 json.dumps(manifest),
             )
+            if trace is not None:
+                archive.writestr("outputs/source_attempts_v2a.json",json.dumps(trace))
 
     def test_safe_source_is_admitted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -61,6 +68,41 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
             with self.assertRaises(zipfile.BadZipFile):
                 _load_source(package)
 
+    def test_extension_trace_survives_without_changing_price_hashes(self):
+        trace={"qualified_extension_selected_count":1,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED","source":"gate"}}]}
+        with tempfile.TemporaryDirectory()as directory:
+            legacy=Path(directory)/"legacy.zip";extended=Path(directory)/"extended.zip"
+            self._source(legacy,with_drv=True);self._source(extended,extension_count=1,trace=trace,with_drv=True)
+            old,new=_load_source(legacy),_load_source(extended)
+            self.assertEqual(old["member_hashes"],new["member_hashes"])
+            self.assertEqual(new["qualified_source_extension"],1)
+            self.assertEqual(json.loads(new["source_trace_raw"]),trace)
+
+    def test_extension_missing_mismatched_or_duplicate_trace_is_rejected(self):
+        bad=[None,{"qualified_extension_selected_count":0,"rows":[]},
+             {"qualified_extension_selected_count":2,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED"}}]*2}]
+        with tempfile.TemporaryDirectory()as directory:
+            for i,trace in enumerate(bad):
+                path=Path(directory)/f"bad{i}.zip"
+                self._source(path,extension_count=2 if i==2 else 1,trace=trace)
+                with self.assertRaises(RuntimeError):_load_source(path)
+
+    def test_source_trace_cannot_claim_missing_asset_or_wrong_provider(self):
+        with tempfile.TemporaryDirectory()as directory:
+            for source,with_drv in [("gate",False),("mexc",True)]:
+                path=Path(directory)/f"bad-{source}-{with_drv}.zip"
+                trace={"qualified_extension_selected_count":1,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED","source":source}}]}
+                self._source(path,extension_count=1,trace=trace,with_drv=with_drv)
+                with self.assertRaisesRegex(RuntimeError,"trace/master"):_load_source(path)
+
+    def test_manifest_cannot_silently_drop_a_used_extension(self):
+        with tempfile.TemporaryDirectory()as directory:
+            path=Path(directory)/"omitted.zip"
+            trace={"qualified_extension_selected_count":1,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED","source":"gate"}}]}
+            self._source(path,extension_count=0,trace=trace,with_drv=True)
+            with self.assertRaisesRegex(RuntimeError,"omitted"):_load_source(path)
+
 
 if __name__ == "__main__":
     unittest.main()
+
