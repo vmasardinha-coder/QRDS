@@ -67,6 +67,10 @@ def _load_source(package: Path) -> dict[str, Any]:
             "run_manifest": _single_member(archive, "outputs/v2a_run_manifest.json"),
         }
         payloads = {key: archive.read(name) for key, name in names.items()}
+        trace_names = [name for name in archive.namelist() if name.endswith("outputs/source_attempts_v2a.json")]
+        if len(trace_names) > 1:
+            raise RuntimeError("source package has ambiguous source-attempt trace")
+        source_trace_raw = archive.read(trace_names[0]) if trace_names else None
         prior_input_names = [name for name in archive.namelist() if name.endswith("outputs/v2a_input_manifest.json")]
         prior_input_manifest = None
         if len(prior_input_names) == 1:
@@ -81,6 +85,29 @@ def _load_source(package: Path) -> dict[str, Any]:
         raise RuntimeError("source package operational status is not NOT_APPROVED")
     if run_manifest.get("real_orders", 0) != 0 or run_manifest.get("capital_used", 0) != 0:
         raise RuntimeError("source package violates zero-order / zero-capital lock")
+    extension_count = int(run_manifest.get("qualified_source_extension", 0))
+    if extension_count < 0:
+        raise RuntimeError("negative qualified source extension count")
+    if source_trace_raw is not None and json.loads(source_trace_raw).get("qualified_extension_selected_count",0) != extension_count:
+        raise RuntimeError("qualified source extension omitted or mismatched in manifest")
+    if extension_count:
+        if source_trace_raw is None:
+            raise RuntimeError("qualified source extension has no immutable source trace")
+        trace = json.loads(source_trace_raw)
+        selected = [row["symbol"] for row in trace.get("rows", [])
+                    if (row.get("qualified_extension_attempt") or {}).get("status") == "SELECTED"]
+        if (trace.get("qualified_extension_selected_count") != extension_count
+                or len(selected) != extension_count or len(set(selected)) != extension_count):
+            raise RuntimeError("qualified source extension trace/count mismatch")
+        raw_master = pd.read_csv(io.BytesIO(payloads["master"]))
+        for row in trace.get("rows", []):
+            extension = row.get("qualified_extension_attempt") or {}
+            if extension.get("status") != "SELECTED":
+                continue
+            matched = raw_master.loc[raw_master["symbol"].eq(row["symbol"])]
+            if (matched.empty or extension.get("source") not in {"gate","mexc","xt"}
+                    or set(matched["source"].astype(str)) != {extension["source"]}):
+                raise RuntimeError("qualified source trace/master mismatch")
 
     member_hashes = {
         "data/processed/qos_v2a_master_daily.csv": _sha256_bytes(payloads["master"]),
@@ -106,6 +133,8 @@ def _load_source(package: Path) -> dict[str, Any]:
         "prior_input_manifest": prior_input_manifest,
         "prior_input_manifest_verified": verified_prior_manifest,
         "member_hashes": member_hashes,
+        "source_trace_raw": source_trace_raw,
+        "qualified_source_extension": extension_count,
     }
 
 
@@ -173,6 +202,8 @@ def replay(source_package: Path, output_zip: Path, data_cutoff: str | None,
         master_path.write_bytes(source["payloads"]["master"])
         universe_path.write_bytes(source["payloads"]["universe"])
         failures_path.write_bytes(source["payloads"]["failures"])
+        if source["source_trace_raw"] is not None:
+            (canonical.OUT / "source_attempts_v2a.json").write_bytes(source["source_trace_raw"])
 
         master = pd.read_csv(io.BytesIO(source["payloads"]["master"]))
         universe = pd.read_csv(io.BytesIO(source["payloads"]["universe"]))
@@ -226,6 +257,8 @@ def replay(source_package: Path, output_zip: Path, data_cutoff: str | None,
             "data_as_of": master["date"].max().date().isoformat(),
             "attempted_symbols": attempted,
             "loaded_symbols": int(master["symbol"].nunique()),
+            "qualified_source_extension": source["qualified_source_extension"],
+            "source_trace_sha256": _sha256_bytes(source["source_trace_raw"]) if source["source_trace_raw"] else None,
             "failed_symbols": int(len(failures)),
             "source_package_sha256": source["package_sha256"],
             "source_package_input_manifest_verified": source["prior_input_manifest_verified"],
@@ -256,6 +289,8 @@ def replay(source_package: Path, output_zip: Path, data_cutoff: str | None,
             "data_as_of": str(data_as_of.date()),
             "attempted_symbols": attempted,
             "loaded_symbols": loaded_symbols,
+            "qualified_source_extension": source["qualified_source_extension"],
+            "source_trace_sha256": _sha256_bytes(source["source_trace_raw"]) if source["source_trace_raw"] else None,
             "failed_symbols": int(len(failures)),
             "coverage_ratio": coverage,
             "input_snapshot_id": input_snapshot_id,
@@ -334,3 +369,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
