@@ -3,7 +3,7 @@ import json
 import tempfile
 import unittest
 from datetime import datetime,timezone,timedelta
-from tools.gate_btc_pit150_qualified_history import ROUTES,route_for_member,check_identity,check_gate_contract,normalize_history,collect_history
+from tools.gate_btc_pit150_qualified_history import ROUTES,route_for_member,check_identity,check_gate_contract,check_bitget_contract,normalize_history,collect_history
 
 class QualifiedHistoryTests(unittest.TestCase):
     def candles(self, count=200):
@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),19)
+        self.assertEqual(len(ROUTES),22)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -95,6 +95,46 @@ class QualifiedHistoryTests(unittest.TestCase):
                 with self.assertRaises(ValueError):check_gate_contract(route,bad)
             bad=copy.deepcopy(meta);bad['chains']*=2
             with self.assertRaises(ValueError):check_gate_contract(route,bad)
+
+    def test_bitget_exact_contract_utc_history_and_quote_turnover(self):
+        route=ROUTES['BTW']
+        pair={'code':'00000','data':[{'symbol':'BTWUSDT','baseCoin':'BTW','quoteCoin':'USDT','status':'online'}]}
+        currency={'code':'00000','data':[{'coin':'BTW','chains':[{'chain':'BEP20','contractAddress':route['contract']}]}]}
+        check_identity(route,pair);check_bitget_contract(route,currency)
+        wrong=copy.deepcopy(currency);wrong['data'][0]['chains'][0]['contractAddress']='0xwrong'
+        with self.assertRaises(ValueError):check_bitget_contract(route,wrong)
+        payload={'code':'00000','data':[[int(x[0])*1000,'2','3','1','2','900','42','42'] for x in self.candles()]}
+        self.assertEqual(normalize_history('BTW',route,payload,'2026-10-13')[-1]['volume_usd'],42)
+        offset=copy.deepcopy(payload)
+        for row in offset['data']:row[0]+=57600000
+        with self.assertRaises(ValueError):normalize_history('BTW',route,offset,'2026-10-13')
+        responses=[json.dumps(x).encode() for x in [pair,currency,payload]]
+        urls=[]
+        class Session:
+            def get(self,url,timeout):
+                urls.append(url)
+                class Response:status_code=200
+                obj=Response();obj.content=responses.pop(0);return obj
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=collect_history(Session(),'BTW','bitway','2026-10-13',root,now=datetime(2026,10,14,tzinfo=timezone.utc))
+            self.assertEqual(len(rows),200)
+            self.assertEqual(len(e['currency_identity_sha256']),64)
+            self.assertIn('granularity=1Dutc',urls[-1])
+        bad=copy.deepcopy(pair);bad['data'][0]['status']='offline'
+        with self.assertRaises(ValueError):check_identity(route,bad)
+
+    def test_native_gram_and_case_sensitive_solana_identity(self):
+        for symbol in ['GRAM','GRASS']:
+            route=ROUTES[symbol]
+            meta={'currency':symbol,'name':route['name'],'delisted':False,'trade_disabled':False,'chains':[{'name':route['contract_chain'],'addr':route['contract']}]}
+            check_gate_contract(route,meta)
+            meta['chains'][0]['addr']='wrong'
+            with self.assertRaises(ValueError):check_gate_contract(route,meta)
+        route=ROUTES['GRASS']
+        meta={'currency':'GRASS','name':route['name'],'delisted':False,'trade_disabled':False,'chains':[{'name':'SOL','addr':route['contract'].lower()}]}
+        with self.assertRaises(ValueError):check_gate_contract(route,meta)
+        self.assertEqual(ROUTES['GRAM']['coin_id'],'the-open-network')
+        self.assertTrue(ROUTES['GRAM']['rename_evidence'].endswith('/100181'))
 
     def test_gate_currency_provenance_survives_three_response_collection(self):
         from pathlib import Path
