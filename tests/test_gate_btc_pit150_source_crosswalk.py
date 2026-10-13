@@ -44,6 +44,36 @@ class CrosswalkTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_crosswalk(self.diagnostic, self.registry)
 
+    def test_prior_exclusion_is_visible_but_never_repairs_legacy_gap(self):
+        report = build_crosswalk(self.diagnostic, {"entry_count": 0, "entries": []}, ["BTW"])
+        row = report["assets"][0]
+        self.assertEqual(row["worklist_state"], "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED")
+        self.assertFalse(row["legacy_gap_resolved"])
+        self.assertFalse(row["prior_exclusion_identity_revalidated"])
+        self.assertEqual(report["legacy_failed_symbols"], 1)
+        self.assertEqual(report["pit150_denominator_preserved"], 150)
+
+    def test_qualified_contract_has_its_own_state_without_legacy_admission(self):
+        self.registry["entries"][0].update(qa_pass=True, qualification="QUALIFIED_EXACT_SOURCE")
+        report = build_crosswalk(self.diagnostic, self.registry)
+        row = report["assets"][0]
+        self.assertEqual(row["worklist_state"], "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN")
+        self.assertFalse(row["pit150_source_substitution_authorized"])
+        self.assertEqual(row["identity_evidence"], "REGISTRY_COIN_ID_MISSING")
+
+    def test_unqualified_ticker_candidate_is_not_reported_as_qualified(self):
+        row = build_crosswalk(self.diagnostic, self.registry)["assets"][0]
+        self.assertEqual(row["worklist_state"], "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING")
+
+    def test_conflicting_or_malformed_prior_inventory_fails_closed(self):
+        self.registry["entries"][0].update(qa_pass=True, qualification="QUALIFIED_EXACT_SOURCE")
+        with self.assertRaises(ValueError):
+            build_crosswalk(self.diagnostic, self.registry, ["BTW"])
+        for bad in ["BTW", ["BTW", "BTW"], [None], [""]]:
+            with self.assertRaises(ValueError):
+                build_crosswalk(self.diagnostic, self.registry, bad)
+
 
 if __name__ == "__main__":
     unittest.main()
+
