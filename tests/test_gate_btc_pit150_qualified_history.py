@@ -3,7 +3,7 @@ import json
 import tempfile
 import unittest
 from datetime import datetime,timezone,timedelta
-from tools.gate_btc_pit150_qualified_history import ROUTES,route_for_member,check_identity,normalize_history,collect_history
+from tools.gate_btc_pit150_qualified_history import ROUTES,route_for_member,check_identity,check_gate_contract,normalize_history,collect_history
 
 class QualifiedHistoryTests(unittest.TestCase):
     def candles(self, count=200):
@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),17)
+        self.assertEqual(len(ROUTES),19)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -81,6 +81,36 @@ class QualifiedHistoryTests(unittest.TestCase):
         rows=[[int(x[0])*1000,"2","3","1","2","900",int(x[0])*1000+86399999,"42"] for x in self.candles()]
         out=normalize_history("BP",ROUTES["BP"],rows,"2026-10-13")
         self.assertEqual(out[-1]["volume_usd"],42)
+
+    def test_gate_new_tokens_require_exact_chain_and_contract(self):
+        for symbol in ['AERO','SPX']:
+            route=ROUTES[symbol]
+            meta={'currency':symbol,'name':route['name'],'delisted':False,'trade_disabled':False,'chains':[{'name':route['contract_chain'],'addr':route['contract']}]}
+            check_gate_contract(route,meta)
+            for key,value in [('currency','OTHER'),('name','Other Project'),('delisted',True),('trade_disabled',True)]:
+                bad=copy.deepcopy(meta);bad[key]=value
+                with self.assertRaises(ValueError):check_gate_contract(route,bad)
+            for key,value in [('name','OTHER_CHAIN'),('addr','0xwrong')]:
+                bad=copy.deepcopy(meta);bad['chains'][0][key]=value
+                with self.assertRaises(ValueError):check_gate_contract(route,bad)
+            bad=copy.deepcopy(meta);bad['chains']*=2
+            with self.assertRaises(ValueError):check_gate_contract(route,bad)
+
+    def test_gate_currency_provenance_survives_three_response_collection(self):
+        from pathlib import Path
+        route=ROUTES['AERO']
+        pair={'id':route['pair'],'base':'AERO','quote':'USDT','base_name':route['name'],'trade_status':'tradable'}
+        currency={'currency':'AERO','name':route['name'],'delisted':False,'trade_disabled':False,'chains':[{'name':route['contract_chain'],'addr':route['contract']}]}
+        responses=[json.dumps(x).encode() for x in [pair,currency,self.candles()]]
+        class Session:
+            def get(self,url,timeout):
+                class Response:status_code=200
+                obj=Response();obj.content=responses.pop(0);return obj
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=collect_history(Session(),'AERO',route['coin_id'],'2026-10-13',root,now=datetime(2026,10,14,tzinfo=timezone.utc))
+            self.assertEqual(len(rows),200)
+            self.assertEqual(json.loads((Path(root)/'AERO/currency.json').read_bytes()),currency)
+            self.assertEqual(len(e['currency_identity_sha256']),64)
 
     def test_raw_identity_and_price_bytes_are_preserved(self):
         meta={"id":"DRV_USDT","base":"DRV","quote":"USDT","base_name":"Derive","trade_status":"tradable"}

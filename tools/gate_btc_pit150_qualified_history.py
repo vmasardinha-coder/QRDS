@@ -12,6 +12,8 @@ GATE_FOLLOWUP_ROUTES = {
     'GT': {'coin_id':'gatechain-token','name':'GateToken','source':'gate','pair':'GT_USDT'},
     'GHO': {'coin_id':'gho','name':'GHO','source':'gate','pair':'GHO_USDT'},
     'PIEVERSE': {'coin_id':'pieverse','name':'Pieverse','source':'gate','pair':'PIEVERSE_USDT'},
+    'AERO': {'coin_id':'aerodrome-finance','name':'Aerodrome','source':'gate','pair':'AERO_USDT','contract':'0x940181a94A35A4569E4529A3CDfB74e38FD98631','contract_chain':'BASEEVM'},
+    'SPX': {'coin_id':'spx6900','name':'SPX6900','source':'gate','pair':'SPX_USDT','contract':'0xe0f63a424a4439cbe457d80e4f4b51ad25b2c56c','contract_chain':'ETH'},
 }
 ROUTES = {'DRV': {'coin_id': 'derive', 'name': 'Derive', 'source': 'gate', 'pair': 'DRV_USDT'},
  'CARDS': {'coin_id': 'collector-crypt',
@@ -114,6 +116,16 @@ def check_identity(route, payload):
     else:
         raise ValueError("unsupported qualified route")
 
+def check_gate_contract(route, payload):
+    expected_base = route['pair'].split('_')[0]
+    matches = [entry for entry in payload.get('chains', [])
+               if entry.get('name') == route['contract_chain']
+               and str(entry.get('addr', '')).lower() == route['contract'].lower()]
+    if not (payload.get('currency') == expected_base and payload.get('name') == route['name']
+            and payload.get('delisted') is False and payload.get('trade_disabled') is False
+            and len(matches) == 1):
+        raise ValueError('exact Gate chain/token contract mismatch')
+
 def normalize_history(symbol, route, payload, cutoff):
     provider = route["source"]
     if provider == "xt":
@@ -160,13 +172,16 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     provider,pair = route["source"],route["pair"]
     if provider == "gate":
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
+        if route.get('contract'):
+            urls.insert(1, f"https://api.gateio.ws/api/v4/spot/currencies/{symbol}")
     elif provider == "mexc":
         urls = [f"https://api.mexc.com/api/v3/exchangeInfo?symbol={pair}",f"https://api.mexc.com/api/v3/klines?symbol={pair}&interval=1d&limit=1000"]
     else:
         urls = [f"https://sapi.xt.com/v4/public/symbol?symbol={pair}",f"https://sapi.xt.com/v4/public/kline?symbol={pair}&interval=1d&limit=1000"]
     output = Path(evidence_dir)/symbol;output.mkdir(parents=True,exist_ok=True)
     payloads,hashes = [],[]
-    for label,url in zip(["identity","candles"],urls):
+    labels = ['identity','currency','candles'] if provider == 'gate' and route.get('contract') else ['identity','candles']
+    for label,url in zip(labels,urls):
         response = session.get(url,timeout=30)
         if response.status_code != 200:
             raise ValueError(f"qualified {provider} {label} HTTP {response.status_code}")
@@ -175,11 +190,15 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         payloads.append(json.loads(raw));hashes.append(hashlib.sha256(raw).hexdigest())
         if label == "identity":
             check_identity(route,payloads[-1])
-    rows = normalize_history(symbol,route,payloads[1],cutoff)
+        elif label == 'currency':
+            check_gate_contract(route,payloads[-1])
+    rows = normalize_history(symbol,route,payloads[-1],cutoff)
     evidence = {"symbol":symbol,"coin_id":coin_id,"source":provider,"source_pair":pair,
                 "cutoff":cutoff,"effective_cutoff":EFFECTIVE_CUTOFF,"closed_rows":len(rows),
-                "identity_sha256":hashes[0],"candles_sha256":hashes[1],
+                "identity_sha256":hashes[0],"candles_sha256":hashes[-1],
                 "public_execution_ohlcv":True,"historical_scientific_credit":0,
                 "research_only":True,"orders":0,"real_capital":0}
+    if 'currency' in labels:
+        evidence['currency_identity_sha256'] = hashes[1]
     (output/"qualification.json").write_text(json.dumps(evidence,indent=2)+"\n")
     return rows,evidence
