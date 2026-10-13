@@ -56,7 +56,8 @@ def refresh(root, now=None):
     if local.exists():
         latest = None
         try:
-            packets = [json.loads(p.read_text(encoding="utf-8")) for p in local.glob("*.json")]
+            # Keep only the current candidate instead of retaining every raw packet.
+            packets = (json.loads(p.read_text(encoding="utf-8")) for p in local.glob("*.json"))
             latest = max(packets, key=lambda p: datetime.fromisoformat(p["captured_at_utc"].replace("Z", "+00:00")))
             captured = datetime.fromisoformat(latest["captured_at_utc"].replace("Z", "+00:00"))
             age = (now-captured).total_seconds()
@@ -93,3 +94,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -86,4 +86,24 @@ class FullLocalPublicationTests(unittest.TestCase):
         self.assertEqual(result['source_route'],'GITHUB_HOSTED_PUBLIC')
         self.assertFalse(result['source_admitted_forward_only'])
 
+    def test_large_journal_does_not_retain_all_raw_packets_in_memory(self):
+        import tracemalloc
+        for i in range(80):
+            p=self.live(self.bucket+(i-79)*300000)
+            p['raw_test_padding']='x'*(256*1024)
+            p=seal(p)
+            append_packet(self.root,p,now=datetime.fromisoformat(p['captured_at_utc']))
+        tracemalloc.start()
+        try:
+            result=refresh(self.root,now=self.now)
+            _,peak=tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        self.assertTrue(result['source_admitted_forward_only'])
+        self.assertEqual(result['observed_packet_count'],80)
+        self.assertEqual(result['complete_consecutive_streak'],80)
+        self.assertEqual(json.loads((self.root/'FULL_LOCAL_LATEST.json').read_text())['captured_at_utc'],p['captured_at_utc'])
+        self.assertLess(peak,4*1024*1024)
+
 if __name__=='__main__':unittest.main()
+
