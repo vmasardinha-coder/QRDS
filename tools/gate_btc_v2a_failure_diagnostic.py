@@ -132,6 +132,9 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
         raise RuntimeError(f"failure row count differs from manifest: {len(failure_rows)} != {failed}")
     if attempted != loaded + failed:
         raise RuntimeError(f"attempted != loaded + failed: {attempted} != {loaded} + {failed}")
+    extension_count = int(manifest.get("qualified_source_extension", 0))
+    if extension_count < 0 or extension_count > loaded:
+        raise RuntimeError("qualified source extension count exceeds loaded evidence")
 
     return {
         "schema": "gate_btc.v2a_failure_diagnostic.v1",
@@ -153,7 +156,8 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
         "denominator_changed": False,
         "universe_changed": False,
         "source_order_changed": False,
-        "source_substitution_performed": False,
+        "source_substitution_performed": extension_count > 0,
+        "qualified_source_extension_selected_count": extension_count,
         "feeds_frozen_engine": False,
         "methodology_changes": 0,
         "research_only": True,
@@ -206,3 +210,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
