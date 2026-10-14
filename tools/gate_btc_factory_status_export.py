@@ -68,6 +68,26 @@ def export_tracks(root: Path):
     paths["m1_m2_economics"] = active_status_path(root / "runtime/ledgers/momentum_m1_m2_economics", "ECONOMICS_STATUS.json").relative_to(root).as_posix()
     paths["m3_economics"] = m3_status_path(root / "runtime/ledgers/momentum_m3_economics").relative_to(root).as_posix()
     tracks = {k: load(root, v) for k, v in paths.items()}
+    # A declared zero-credit source gap is operational evidence, not a current
+    # economic receipt. Expose its lifecycle without borrowing legacy NAV/N.
+    m3 = tracks['m3_economics']
+    if not m3['exists']:
+        lifecycle = load(root, TRACKS['m3_economics'])
+        data = lifecycle.get('data', {})
+        if (data.get('schema') == 'gate_btc.momentum_m3_economics_status.v2'
+                and data.get('status') == 'SOURCE_GAP_ZERO_CREDIT'
+                and data.get('current_epoch_return_observations') == 0
+                and data.get('current_epoch_nav') is None
+                and data.get('active_epoch')):
+            m3['status'] = 'WAIT_ACTIVE_EPOCH_ECONOMIC_EVIDENCE'
+            m3['epoch_lifecycle'] = {
+                'source_path': lifecycle['path'], 'source_sha256': lifecycle['sha256'],
+                'status': data['status'], 'active_epoch': data['active_epoch'],
+                'gap_cutoff': data.get('gap_cutoff'),
+                'current_epoch_return_observations': 0,
+                'economic_receipt_present': False,
+                'historical_credit_transferred': False,
+            }
     if tracks["v12"].get("data"):
         tracks["v12"]["data"] = closed_v12_status(tracks["v12"]["data"])
     tracks["system12"] = {"reporting_only": True, "data": system12_summary(root / "runtime/gate_btc_2/system12")}
@@ -126,4 +146,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

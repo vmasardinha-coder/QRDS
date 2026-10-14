@@ -67,6 +67,30 @@ class FactoryTrackCoverageTests(unittest.TestCase):
                 self.assertEqual(tracks[key]['status'], 'MISSING')
                 self.assertNotIn('data', tracks[key])
 
+    def test_declared_zero_credit_m3_gap_is_visible_without_legacy_economics(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);self.fixture(root)
+            base='runtime/ledgers/momentum_m3_economics/'
+            (root/base/'epochs/after_gap_2026-10-05/STATUS.json').unlink()
+            self.write(root,base+'STATUS.json',{
+                'schema':'gate_btc.momentum_m3_economics_status.v2',
+                'status':'SOURCE_GAP_ZERO_CREDIT','active_epoch':'epochs/after_gap_2026-10-05',
+                'current_epoch_return_observations':0,'current_epoch_nav':None,
+                'legacy_return_observations':99,'legacy_nav':123,'gap_cutoff':'2026-10-05'})
+            before={p:p.read_bytes() for p in root.rglob('*.json')}
+            entry=export_tracks(root)['m3_economics']
+            self.assertFalse(entry['exists']);self.assertNotIn('data',entry)
+            self.assertEqual(entry['status'],'WAIT_ACTIVE_EPOCH_ECONOMIC_EVIDENCE')
+            self.assertEqual(entry['epoch_lifecycle']['current_epoch_return_observations'],0)
+            self.assertFalse(entry['epoch_lifecycle']['historical_credit_transferred'])
+            self.assertNotIn('legacy_nav',entry['epoch_lifecycle'])
+            self.assertEqual(before,{p:p.read_bytes() for p in root.rglob('*.json')})
+            # A pointer alone or a nonzero missing epoch never becomes evidence.
+            state=json.loads((root/base/'STATUS.json').read_text())
+            state['current_epoch_return_observations']=1
+            self.write(root,base+'STATUS.json',state)
+            self.assertEqual(export_tracks(root)['m3_economics']['status'],'MISSING')
+
     def test_absent_new_track_is_reported_missing(self):
         with tempfile.TemporaryDirectory() as td:
             tracks = export_tracks(Path(td))
@@ -78,3 +102,4 @@ class FactoryTrackCoverageTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
