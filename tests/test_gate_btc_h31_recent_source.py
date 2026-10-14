@@ -87,6 +87,20 @@ class RecentSourceTests(unittest.TestCase):
         self.assertEqual(len(rows),20)
         self.assertEqual(sum(r['source']=='FROZEN_COMMUNITY_WARMUP' for r in rows),8)
         self.assertEqual(sum(r['source']=='RECENT_OFFICIAL_B3_INPUT_ONLY' for r in rows),12)
+    def test_frozen_binding_path_seed_hash_and_cache_leave_counter_untouched(self):
+        from types import SimpleNamespace
+        dates=[d for d in pd.bdate_range('2025-11-03',periods=25) if d.strftime('%Y-%m-%d')!='2025-11-20'][:20]
+        lines=['Data;Hora;Abertura;Fechamento']
+        for day in dates:
+            for minute in range(0,30,5):lines.append(day.strftime('%d/%m/%Y')+f';09:{minute:02d};5.000,0;5.000,5')
+        raw=('\n'.join(lines)+'\n').encode('cp1252')
+        response=SimpleNamespace(content=raw,raise_for_status=lambda:None)
+        with tempfile.TemporaryDirectory() as d, patch('requests.get',return_value=response) as fetch:
+            status=Path(d)/'STATUS.json';status.write_text('immutable-counter')
+            rows=s.frozen_seed(d);again=s.frozen_seed(d)
+            self.assertEqual(len(rows),20);self.assertEqual(rows,again)
+            self.assertEqual(fetch.call_count,1);self.assertEqual(status.read_text(),'immutable-counter')
+            self.assertTrue(all(r['source']=='FROZEN_COMMUNITY_WARMUP' for r in rows))
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.

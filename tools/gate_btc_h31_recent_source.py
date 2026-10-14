@@ -164,7 +164,7 @@ def frozen_seed(ledger_dir):
     """Reuse the approved immutable community source, never WIN economics."""
     import requests
     from gate_btc_b3_h31_prospective_collect import parse_frozen_historical_wdo
-    binding=json.loads(CONTRACT.with_name('gate_btc_b3_h31_source_binding_contract_v1.json').read_text())
+    binding=json.loads((CONTRACT.parent.parent / 'gate_btc_b3_h31_source_binding_contract_v1.json').read_text())
     src=binding['historical_warmup'];p=Path(ledger_dir)/'source_continuation'/'FROZEN_COMMUNITY_SEED.json'
     if p.exists():
         rec=json.loads(p.read_text());body=dict(rec);seal=body.pop('receipt_sha256',None)
