@@ -121,12 +121,38 @@ def usd_volume(panel, dates, bases):
 
 
 # ------------------------------------------------------------------ Fama-MacBeth
-def fama_macbeth(dates, bases, score, ret1, keep=None, min_names=MIN_NAMES_PER_DAY):
+def _ranks(v):
+    """Postos medios, com empates compartilhando o posto medio."""
+    order = sorted(range(len(v)), key=lambda i: v[i])
+    r = [0.0] * len(v)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+            j += 1
+        avg = (i + j) / 2.0
+        for k in range(i, j + 1):
+            r[order[k]] = avg
+        i = j + 1
+    return r
+
+
+def fama_macbeth(dates, bases, score, ret1, keep=None, min_names=MIN_NAMES_PER_DAY,
+                 winsor=None, rank=False):
     """Inclinacao transversal por dia do escore(t) contra o retorno(t+1).
 
     O retorno e DEMEANADO dentro do dia, o que torna o teste neutro a mercado
     por construcao: mede o sinal, nao a direcao do BTC. Testar a media das
     inclinacoes no tempo trata a correlacao transversal do dia corretamente.
+
+    winsor: limite absoluto de retorno diario (ex. 0.50 = +-50%). Minimos
+        quadrados sao dominados por caudas: num painel que inclui micro-caps,
+        um unico retorno de +13.254% num dia reescreve a inclinacao daquele dia
+        e, por tabela, a media da serie. Winsorizar apara isso SEM descartar a
+        observacao, que continua contando como "subiu muito".
+    rank: se True, usa postos em vez de niveis (equivalente a Spearman). Nao tem
+        unidade economica, mas e imune a outlier: responde so "o escore ordena
+        o retorno do dia seguinte?".
     """
     out = []
     for i, d in enumerate(dates[:-1]):
@@ -139,6 +165,10 @@ def fama_macbeth(dates, bases, score, ret1, keep=None, min_names=MIN_NAMES_PER_D
             continue
         xs = [p[1] for p in pr]
         ys = [p[2] for p in pr]
+        if winsor is not None:
+            ys = [max(-winsor, min(winsor, y)) for y in ys]
+        if rank:
+            xs, ys = _ranks(xs), _ranks(ys)
         my = st.fmean(ys)
         ys = [y - my for y in ys]
         mx = st.fmean(xs)

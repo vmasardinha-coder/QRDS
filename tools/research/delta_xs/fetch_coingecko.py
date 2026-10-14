@@ -61,18 +61,24 @@ def universe(top, key, sleep):
     continua listada com valor residual, entao a fuga e muito menor que na OKX.
     Quanto maior o `top`, menor o residuo.
     """
-    out = []
-    for page in range(1, top // 250 + 2):
-        per = min(250, top - len(out))
-        if per <= 0:
-            break
+    # per_page tem que ser FIXO entre as paginas: a pagina N cobre
+    # [(N-1)*per_page, N*per_page). Encolher per_page na ultima pagina faz a
+    # pagina 2 devolver os ranks 151-300 em vez de 251-400, com 100 duplicados.
+    per = 250
+    out: list[str] = []
+    for page in range(1, (top + per - 1) // per + 1):
         d = get(f"{BASE}/coins/markets?vs_currency=usd&order=market_cap_desc"
                 f"&per_page={per}&page={page}", key)
         if not d:
             break
         out.extend([c["id"] for c in d])
         time.sleep(sleep)
-    return out[:top]
+    seen, uniq = set(), []
+    for cid in out:                       # a ordem e o ranking; preserva-la importa
+        if cid not in seen:
+            seen.add(cid)
+            uniq.append(cid)
+    return uniq[:top]
 
 
 def main():

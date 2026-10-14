@@ -52,8 +52,8 @@ def load_cg(path):
     return panel, mcap
 
 
-def report(tag, dates, bases, score, ret1, keep=None):
-    lam = X.fama_macbeth(dates, bases, score, ret1, keep=keep)
+def report(tag, dates, bases, score, ret1, keep=None, winsor=None, rank=False):
+    lam = X.fama_macbeth(dates, bases, score, ret1, keep=keep, winsor=winsor, rank=rank)
     v = [l for _, l, _ in lam]
     ns = [k for _, _, k in lam]
     m, t = X.tstat(v)
@@ -87,30 +87,46 @@ def main():
           f"{okx_dates[0]} -> {okx_dates[-1]}")
 
     print()
-    print("=== COMPARACAO DIRETA — mesma janela, mesmo escore, mesmo teste ===")
-    m_okx, t_okx, _ = report("OKX (sobreviventes)", okx_dates, okx_bases, okx_score, okx_ret1)
-    m_cg, t_cg, _ = report("CoinGecko (com mortos)", cg_dates, cg_bases, cg_score, cg_ret1)
-    if m_okx:
+    print("=== DISTRIBUICAO DOS RETORNOS (por que o estimador importa) ===")
+    for tag, dd, bb, rr in (("OKX", okx_dates, okx_bases, okx_ret1),
+                            ("CoinGecko", cg_dates, cg_bases, cg_ret1)):
+        v = sorted(x for d in dd for x in rr[d].values() if x is not None)
+        n = len(v)
+        print(f"  {tag:<10} n={n:6d}  min={v[0]*100:8.1f}%  max={v[-1]*100:9.1f}%  "
+              f"|r|>100%: {sum(1 for x in v if abs(x) > 1.0)}")
+    print("  Minimos quadrados sao dominados por essas caudas; por isso as tres")
+    print("  variantes abaixo. A winsorizada e a de postos sao as que valem.")
+
+    for lbl, kw in (("CRU (minimos quadrados)", {}),
+                    ("WINSORIZADO a +-50%/dia", {"winsor": 0.50}),
+                    ("POSTOS (Spearman)", {"rank": True})):
         print()
-        print(f"  --> lambda CoinGecko / lambda OKX = {m_cg/m_okx:.2f}")
-        print(f"      inflacao atribuivel a sobrevivencia: "
-              f"{(1 - m_cg/m_okx)*100:+.0f}% do lambda da OKX")
+        print(f"=== COMPARACAO — {lbl} ===")
+        m_okx, t_okx, _ = report("OKX (sobreviventes)", okx_dates, okx_bases,
+                                 okx_score, okx_ret1, **kw)
+        m_cg, t_cg, _ = report("CoinGecko (com mortos)", cg_dates, cg_bases,
+                               cg_score, cg_ret1, **kw)
+        if m_okx:
+            print(f"  --> razao CoinGecko/OKX = {m_cg/m_okx:+.2f}")
 
     # ranking ponto-no-tempo por market cap, na fonte que retem mortos
     print()
     print("=== COINGECKO, universo ponto-no-tempo por market cap ===")
-    rank = {}
+    mrank = {}
     for d in cg_dates:
         order = sorted(cg_mcap.get(d, {}), key=lambda k: -cg_mcap[d][k])
-        rank[d] = {b: i for i, b in enumerate(order)}
+        mrank[d] = {b: i for i, b in enumerate(order)}
     for N in (200, 100, 50, 30):
-        report(f"top {N} naquele dia", cg_dates, cg_bases, cg_score, cg_ret1,
-               keep=lambda d, b, N=N: rank[d].get(b, 10**9) < N)
+        report(f"top {N} winsorizado", cg_dates, cg_bases, cg_score, cg_ret1,
+               keep=lambda d, b, N=N: mrank[d].get(b, 10**9) < N, winsor=0.50)
+    print("  e a comparacao pareada por numero de nomes, contra a OKX:")
+    report("OKX inteiro winsorizado", okx_dates, okx_bases, okx_score, okx_ret1,
+           winsor=0.50)
 
     # concentracao, a regra que reprova no contrato
     print()
     print("=== CONCENTRACAO na fonte limpa (regra do contrato: 2% dos dias) ===")
-    lam = X.fama_macbeth(cg_dates, cg_bases, cg_score, cg_ret1)
+    lam = X.fama_macbeth(cg_dates, cg_bases, cg_score, cg_ret1, winsor=0.50)
     v = sorted(l for _, l, _ in lam)
     for frac in (0.01, 0.02, 0.05):
         k = max(1, int(round(frac * len(v))))
