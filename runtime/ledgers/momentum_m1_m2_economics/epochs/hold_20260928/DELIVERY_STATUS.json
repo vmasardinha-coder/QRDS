@@ -8,8 +8,9 @@
   "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
+  "error": "MISSING_REQUIRED_PRICES: BTW,CARDS,DRV,GRASS,KCS",
+  "failure_evidence": "failures/2026-10-13/4492ae77baef9632a5ed68fd4459d5e1be3857511be1875591cefc7cc7774b8d.json.gz",
   "first_eligible_cutoff": "2026-09-28",
-  "idempotent": true,
   "latest_economics": {
     "btc_daily_return_gross": -0.02295628955922846,
     "btc_nav": 0.9783220098188389,
@@ -107,7 +108,7 @@
     "M2_TOP10": 1.091650785847267
   },
   "net_return": null,
-  "next_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
+  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
   "not_approved": true,
   "orders": 0,
   "promotion_allowed": false,
@@ -116,9 +117,71 @@
   "return_observations": 13,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+  "source_failures": {
+    "BTW": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "BTW"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "BTW"
+      }
+    ],
+    "CARDS": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "CARDS"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "CARDS"
+      }
+    ],
+    "DRV": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "DRV"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "DRV"
+      }
+    ],
+    "GRASS": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "GRASS"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "GRASS"
+      }
+    ],
+    "KCS": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "KCS"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "KCS"
+      }
+    ]
+  },
+  "status": "FAILED_ECONOMIC_DELIVERY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-13T11:03:13.607362+00:00",
+  "updated_at_utc": "2026-10-14T08:40:13.543961+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
