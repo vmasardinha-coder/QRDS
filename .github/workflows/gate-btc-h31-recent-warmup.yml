@@ -48,11 +48,13 @@ jobs:
           PR_PROBE: ${{ github.event_name == 'pull_request' }}
         run: |
           PYTHONPATH=tools python - <<'PY'
-          import os, json
+          import os, json, hashlib
           from pathlib import Path
           from datetime import datetime
           from zoneinfo import ZoneInfo
           from gate_btc_h31_recent_source import load_contract, qualify
+          canonical=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json')
+          canonical_before=canonical.read_bytes() if canonical.exists() else None
           dates=load_contract()['warmup_dates']
           now=datetime.now(ZoneInfo('America/Sao_Paulo'))
           failed=[]
@@ -74,8 +76,9 @@ jobs:
           status={'schema':'qrds.h31.recent_warmup_status.v1','updated_at':now.isoformat(),'qualified_input_count':len(qualified),'required_input_count':20,'qualified_inputs':qualified,'unqualified_dates':failed,'pending_session_close_dates':pending,'ready_for_first_prospective_target':len(qualified)>=20,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False,'orders':0,'real_capital':0}
           status['selected_trailing_inputs']=qualified[-20:]
           status['state']='READY_INPUTS_CANONICAL_OBSERVATION_STILL_REQUIRED' if status['ready_for_first_prospective_target'] else 'BLOCKED_INSUFFICIENT_20_STRUCTURAL_PASS_INPUTS'
-          if os.environ['PR_PROBE']=='true': status['publication']='PR_VALIDATION_ARTIFACT_ONLY_ZERO_CANONICAL_CREDIT'
+          if os.environ['PR_PROBE']=='true': status['publication']='VALIDATED_INPUT_CACHE_ONLY_ZERO_CANONICAL_CREDIT'
           p=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/source_continuation/SOURCE_STATUS.json');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          assert (canonical.read_bytes() if canonical.exists() else None)==canonical_before, 'CANONICAL_STATUS_MUTATION_FORBIDDEN'
           print(json.dumps(status),flush=True)
           if len(qualified)<20: raise SystemExit('H31_WARMUP_NEEDS_20_PASS_INPUTS got='+str(len(qualified)))
           PY
@@ -85,7 +88,7 @@ jobs:
           name: h31-recent-official-warmup
           path: runtime_repo/runtime/ledgers/b3_h31_prospective/source_continuation
       - name: Publish only new warmup receipts without canonical credit
-        if: always() && github.event_name != 'pull_request'
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         working-directory: runtime_repo
         run: |
           set -euo pipefail
