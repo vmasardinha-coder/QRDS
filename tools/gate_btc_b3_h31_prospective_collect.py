@@ -16,7 +16,7 @@ import requests
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
 from gate_btc_h31_source_preflight import source_preflight
-from gate_btc_h31_recent_source import source_schedule, trailing, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
+from gate_btc_h31_recent_source import source_schedule, trailing, choose_wdo, frozen_seed as load_original_seed, validate_receipt as validate_recent_input, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
 
 CONTRACT_PATH = Path('tools/gate_btc_b3_h31_source_binding_contract_v1.json')
 FREEZE_PATH = Path('tools/gate_btc_b3_h31_prospective_freeze.json')
@@ -96,7 +96,12 @@ def load_frozen_historical_wdo(contract: dict) -> list[dict]:
     )
     r = requests.get(url, timeout=180)
     r.raise_for_status()
-    x = pd.read_csv(io.StringIO(r.text), sep=';', dtype=str)
+    return parse_frozen_historical_wdo(r.text, contract)
+
+
+def parse_frozen_historical_wdo(text: str, contract: dict) -> list[dict]:
+    src = contract['historical_warmup']
+    x = pd.read_csv(io.StringIO(text), sep=';', dtype=str)
     cols = {z.lower().strip(): z for z in x.columns}
     ts = pd.to_datetime(
         x[cols['data']].str.strip() + ' ' + x[cols['hora']].str.strip(),
@@ -149,7 +154,12 @@ def fetch_official_session(session_date: str, schedule: dict[str, dict[str, str]
     raw, source = fetch_raw(session_date)
     if raw is None:
         raise RuntimeError(f"SOURCE_NOT_READY {session_date} {source.get('state')}")
-    front = schedule[session_date]
+    front = dict(schedule[session_date])
+    if front.get('WDO_candidates'):
+        selected, volumes = choose_wdo(raw)
+        if selected not in front['WDO_candidates']:
+            raise RuntimeError('H31_TARGET_WDO_CANDIDATE_MISMATCH')
+        front['WDO'] = selected
     m1, m5, stats, member = process_zip(raw, session_date, front)
     qa = structural_qa(session_date, front, m1, m5)
     evidence = {
@@ -256,6 +266,8 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         'previous_event_hash': previous_hash,
         'source': evidence,
         'source_continuation_sha256': CONTINUATION_SHA256 if recent else None,
+        'source_input_qualification_sha256': load_continuation()['input_qualification_sha256'] if recent else None,
+        'source_calendar_extension_sha256': load_continuation()['calendar_extension_sha256'] if recent and target_date >= '2026-10-21' else None,
         'warmup': {
             'trailing_session_dates': [r['date'] for r in trailing],
             'trailing_20_median_abs_30m_bps': scale,
@@ -321,11 +333,32 @@ def main() -> int:
         receipt = source_preflight(args.date, source_schedule(load_schedule()) if args.date >= load_continuation()['first_eligible_session'] else load_schedule(), ledger_dir)
         if args.date >= load_continuation()['first_eligible_session']:
             c = load_continuation()
-            required = sorted(d for d in c['warmup_dates'] + [r['date'] for r in c['sessions']] if d < args.date)[-20:]
-            receipt['required_official_warmup_dates'] = required
-            receipt['warmup_cache_missing_dates'] = [d for d in required if not (ledger_dir/'source_continuation'/'warmup'/(d+'.json')).is_file()]
-            receipt['source_continuation_sha256'] = CONTINUATION_SHA256
-            receipt['warmup_cache_presence_is_not_qualification'] = True
+            candidates = sorted(d for d in c['warmup_dates'] + [r['date'] for r in c['sessions']] if d < args.date)
+            qualified=[]
+            for d in candidates:
+                p=ledger_dir/'source_continuation'/'warmup'/(d+'.json')
+                if p.is_file():
+                    try:
+                        validate_recent_input(load_json(p),d);qualified.append(d)
+                    except RuntimeError:
+                        pass
+            receipt['warmup_candidate_dates']=candidates
+            receipt['warmup_required_input_count']=20
+            receipt['warmup_qualified_input_count']=len(qualified)
+            receipt['warmup_selected_input_dates']=qualified[-20:]
+            receipt['required_official_warmup_dates']=qualified[-20:] if len(qualified)>=20 else []
+            receipt['warmup_cache_missing_dates']=[d for d in candidates if not (ledger_dir/'source_continuation'/'warmup'/(d+'.json')).is_file()]
+            receipt['warmup_cache_presence_is_not_qualification']=True
+            receipt['source_continuation_sha256']=CONTINUATION_SHA256
+            receipt['source_input_qualification_sha256']=c['input_qualification_sha256']
+            seed=load_original_seed(ledger_dir) if (ledger_dir/'source_continuation'/'FROZEN_COMMUNITY_SEED.json').is_file() else []
+            mixed=sorted([r['date'] for r in seed]+qualified)[-20:]
+            receipt['warmup_qualified_official_input_count']=len(qualified)
+            receipt['warmup_qualified_input_count']=len(mixed)
+            receipt['warmup_selected_input_dates']=mixed
+            receipt['warmup_selected_frozen_community_input_count']=sum(d not in qualified for d in mixed)
+            receipt['required_official_warmup_dates']=[d for d in mixed if d in qualified]
+            receipt['warmup_dependency_status']='READY_20_QUALIFIED_INPUTS' if len(mixed)==20 else 'BLOCKED_INSUFFICIENT_20_STRUCTURAL_PASS_INPUTS'
         if not args.operations_status_out:
             raise RuntimeError("OPERATIONS_STATUS_OUT_REQUIRED")
         p = Path(args.operations_status_out)

@@ -8,6 +8,10 @@ from gate_btc_b3_h1_daily import fetch_raw, recompute_m5
 from gate_btc_b3_h1_parser import process_zip, time_ms, brnum, CHUNK
 
 CONTRACT = Path(__file__).resolve().parent / 'gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json'
+CALENDAR_EXTENSION = CONTRACT.with_name('H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json')
+CALENDAR_EXTENSION_SHA256 = 'd668fa662548719128772886530938e3cef2914075d0c21c82cd965ffa13e08c'
+INPUT_QUALIFICATION = CONTRACT.with_name('H31_SOURCE_INPUT_QUALIFICATION_20261015.v1.json')
+INPUT_QUALIFICATION_SHA256 = '7286e91b02e3cec819da3335a62f80c9038da5519d20a63ec1ac5bd7d95c6397'
 CONTRACT_SHA256 = '613a94bc8ceeb9067add0a0b5ec324f1ce5d2f599d51a0316a42102021ae89e7'
 
 def digest(obj):
@@ -22,11 +26,32 @@ def load_contract():
         raise RuntimeError('H31_CONTINUATION_BOUNDARY_MISMATCH')
     if datetime.fromisoformat(c['sealed_at_utc'].replace('Z','+00:00')) >= datetime.fromisoformat('2026-10-15T12:00:00+00:00'):
         raise RuntimeError('H31_CONTINUATION_NOT_PRESEALED')
+    extension_raw=CALENDAR_EXTENSION.read_bytes().replace(b'\r\n',b'\n')
+    if hashlib.sha256(extension_raw).hexdigest()!=CALENDAR_EXTENSION_SHA256:
+        raise RuntimeError('H31_CALENDAR_EXTENSION_SEAL_MISMATCH')
+    extension=json.loads(extension_raw)
+    if extension['base_continuation_sha256']!=CONTRACT_SHA256 or extension['freeze_rule_hash_sha256']!=c['freeze_rule_hash_sha256']:
+        raise RuntimeError('H31_CALENDAR_EXTENSION_BINDING_MISMATCH')
+    extra=extension['sessions']; dates=[r['date'] for r in extra]
+    if len(extra)!=36 or dates!=sorted(set(dates)) or dates[0]!='2026-10-21' or dates[-1]!='2026-12-11' or any(d in dates for d in ['2026-11-02','2026-11-20']):
+        raise RuntimeError('H31_CALENDAR_EXTENSION_DATES_INVALID')
+    if datetime.fromisoformat(extension['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat(dates[0]+'T12:00:00+00:00'):
+        raise RuntimeError('H31_CALENDAR_EXTENSION_NOT_PRESEALED')
+    c['sessions']=c['sessions']+extra
+    c['calendar_extension_sha256']=CALENDAR_EXTENSION_SHA256
+    qraw=INPUT_QUALIFICATION.read_bytes().replace(b'\r\n',b'\n')
+    if hashlib.sha256(qraw).hexdigest()!=INPUT_QUALIFICATION_SHA256: raise RuntimeError('H31_INPUT_QUALIFICATION_SEAL_MISMATCH')
+    q=json.loads(qraw)
+    if q['base_continuation_sha256']!=CONTRACT_SHA256 or q['frozen_h31_m5_qa_unchanged'] is not True: raise RuntimeError('H31_INPUT_QUALIFICATION_BINDING_MISMATCH')
+    if datetime.fromisoformat(q['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat('2026-10-15T12:00:00+00:00'): raise RuntimeError('H31_INPUT_QUALIFICATION_NOT_PRESEALED')
+    c['warmup_dates']=sorted(q['supplemental_prior_candidate_dates']+c['warmup_dates'])
+    c['input_qualification_sha256']=INPUT_QUALIFICATION_SHA256
+    c['compatible_negative_qa_policy_sha256']=q['compatible_negative_qa_policy_sha256']
     return c
 
 def source_schedule(legacy):
     c = load_contract()
-    return dict(legacy, **{r['date']: {'WIN':r['WIN'], 'WDO':r['WDO']} for r in c['sessions']})
+    return dict(legacy, **{r['date']: {'WIN':r['WIN'], 'WDO':r['WDO'], **({'WDO_candidates':r['WDO_candidates']} if 'WDO_candidates' in r else {})} for r in c['sessions']})
 
 def choose_wdo(raw):
     """Rank only new WDO executions in 09:00-09:30; no WIN/outcome reads."""
@@ -63,7 +88,9 @@ def validate_bars(day, symbol, m1, m5):
         x['timestamp']=ts.loc[x.index]
         x=x.sort_values('timestamp').reset_index(drop=True)
         expected=pd.date_range(day+' 09:00', periods=n, freq=freq,tz='America/Sao_Paulo')
-        if not pd.DatetimeIndex(x.timestamp).equals(expected): raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH '+str({'rows':len(x),'expected':n,'missing':[str(v) for v in expected.difference(pd.DatetimeIndex(x.timestamp))],'extra':[str(v) for v in pd.DatetimeIndex(x.timestamp).difference(expected)]}))
+        got=pd.DatetimeIndex(x.timestamp)
+        if got.has_duplicates or len(got)==0 or len(got.difference(expected)) or (n==6 and not got.equals(expected)):
+            raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH '+str({'rows':len(x),'expected':n,'missing':[str(v) for v in expected.difference(got)],'extra':[str(v) for v in got.difference(expected)]}))
         if set(x.symbol)!={symbol} or set(x.root)!={'WDO'}: raise RuntimeError('H31_WARMUP_IDENTITY_MISMATCH')
         vals=x[['open','high','low','close','volume','trades']]
         if not all(math.isfinite(float(v)) for v in vals.to_numpy().flat): raise RuntimeError('H31_WARMUP_NONFINITE')
@@ -99,10 +126,13 @@ def prepare(day, ledger_dir):
     if raw is None: raise RuntimeError('H31_WARMUP_SOURCE_NOT_READY '+json.dumps(source))
     symbol, volumes=choose_wdo(raw)
     fixed={r['date']:r['WDO'] for r in c['sessions']}
-    if day in fixed and symbol!=fixed[day]: raise RuntimeError('H31_FUTURE_WDO_BINDING_MISMATCH')
+    candidates={r['date']:r.get('WDO_candidates') for r in c['sessions']}
+    if candidates.get(day):
+        if symbol not in candidates[day]: raise RuntimeError('H31_FUTURE_WDO_CANDIDATE_MISMATCH')
+    elif day in fixed and symbol!=fixed[day]: raise RuntimeError('H31_FUTURE_WDO_BINDING_MISMATCH')
     m1,m5,stats,member=process_zip(raw,day,{'WIN':'__H31_NO_WIN_WARMUP__','WDO':symbol})
     first=validate_bars(day,symbol,m1,m5)
-    rec={'schema':'qrds.h31.recent_official_warmup.v1','date':day,'contract_sha256':CONTRACT_SHA256,
+    rec={'schema':'qrds.h31.recent_official_warmup.v1','date':day,'contract_sha256':CONTRACT_SHA256,'input_qualification_sha256':INPUT_QUALIFICATION_SHA256,
          'source_sha256':source['sha256'],'source_url':source['url'],'source_bytes':source['bytes'],
          'source_member':member,'WDO':symbol,'selection_first30_new_execution_volume':volumes,
          'ret30_bps':(float(first.iloc[-1]['close'])/float(first.iloc[0]['open'])-1)*10000,
@@ -115,11 +145,61 @@ def prepare(day, ledger_dir):
     p.write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
     return rec
 
+def qualify(day, ledger_dir):
+    """Quality-only exclusion mirrors frozen historical loader; never a scored event."""
+    qpath=Path(ledger_dir)/'source_continuation'/'unqualified_warmup'/(day+'.json')
+    if day<'2026-10-15' and qpath.exists():
+        old=json.loads(qpath.read_text())
+        if old.get('input_qualification_sha256') in [INPUT_QUALIFICATION_SHA256]+load_contract()['compatible_negative_qa_policy_sha256']:
+            return None
+    try:
+        return prepare(day,ledger_dir)
+    except RuntimeError as exc:
+        if 'SESSION_NOT_CLOSED' in str(exc): return None
+        rec={'date':day,'input_qualification_sha256':INPUT_QUALIFICATION_SHA256,'structural_qa':'FAIL_CLOSED','error':str(exc),'prospective_scored':False,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False}
+        qpath.parent.mkdir(parents=True,exist_ok=True);qpath.write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
+        return None
+
+def frozen_seed(ledger_dir):
+    """Reuse the approved immutable community source, never WIN economics."""
+    import requests
+    from gate_btc_b3_h31_prospective_collect import parse_frozen_historical_wdo
+    binding=json.loads((CONTRACT.parent.parent / 'gate_btc_b3_h31_source_binding_contract_v1.json').read_text())
+    src=binding['historical_warmup'];p=Path(ledger_dir)/'source_continuation'/'FROZEN_COMMUNITY_SEED.json'
+    if p.exists():
+        rec=json.loads(p.read_text());body=dict(rec);seal=body.pop('receipt_sha256',None)
+        if digest(body)!=seal or rec['source_commit']!=src['source_commit'] or rec['source_repo']!=src['source_repo'] or rec['source_file']!=src['file'] or rec['cutoff_exclusive']!=src['cutoff_exclusive']:
+            raise RuntimeError('H31_FROZEN_SEED_RECEIPT_MISMATCH')
+    else:
+        url=f"https://raw.githubusercontent.com/{src['source_repo']}/{src['source_commit']}/{src['file']}"
+        response=requests.get(url,timeout=180);response.raise_for_status();raw=response.content
+        rows=parse_frozen_historical_wdo(raw.decode('cp1252'),binding)[-20:]
+        rec={'schema':'qrds.h31.original_frozen_community_seed.v1','source_repo':src['source_repo'],'source_commit':src['source_commit'],'source_file':src['file'],'source_sha256':hashlib.sha256(raw).hexdigest(),'source_bytes':len(raw),'cutoff_exclusive':src['cutoff_exclusive'],'source_url':url,'rows':rows,'prospective_scored':False,'eligible_observation_increment':0,'h1_economics_read':False,'orders':0,'real_capital':0}
+        rec['receipt_sha256']=digest(rec);p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
+    if len(rec['rows'])!=20 or rec.get('eligible_observation_increment')!=0 or rec.get('prospective_scored') is not False:
+        raise RuntimeError('H31_FROZEN_SEED_BOUNDARY_MISMATCH')
+    dates=[row['date'] for row in rec['rows']]
+    if dates!=sorted(set(dates)) or len(rec.get('source_sha256',''))!=64: raise RuntimeError('H31_FROZEN_SEED_IDENTITY_MISMATCH')
+    rows=[]
+    for row in rec['rows']:
+        if row['date']>=src['cutoff_exclusive'] or not math.isfinite(float(row['ret30_bps'])): raise RuntimeError('H31_FROZEN_SEED_DATE_OR_VALUE_MISMATCH')
+        rows.append(dict(row,receipt_sha256=rec['receipt_sha256'],source_sha256=rec['source_sha256']))
+    return rows
+
 def trailing(target, ledger_dir):
     c=load_contract()
-    dates=sorted(d for d in c['warmup_dates']+[r['date'] for r in c['sessions']] if d<target)[-20:]
-    if len(dates)!=20: raise RuntimeError('H31_RECENT_WARMUP_NEEDS_20')
-    return [{'date':d,'ret30_bps':prepare(d,ledger_dir)['ret30_bps'],'source':'RECENT_OFFICIAL_B3_INPUT_ONLY'} for d in dates]
+    dates=sorted(d for d in c['warmup_dates']+[r['date'] for r in c['sessions']] if d<target)
+    selected=[]
+    for day in reversed(dates):
+        rec=qualify(day,ledger_dir)
+        if rec is not None:
+            selected.append({'date':day,'ret30_bps':rec['ret30_bps'],'source':'RECENT_OFFICIAL_B3_INPUT_ONLY','receipt_sha256':rec['receipt_sha256']})
+        if len(selected)==20: break
+    if len(selected)<20:
+        historic=[r for r in frozen_seed(ledger_dir) if r['date']<target]
+        selected=sorted(historic+selected,key=lambda r:r['date'],reverse=True)[:20]
+    if len(selected)!=20: raise RuntimeError('H31_RECENT_WARMUP_NEEDS_20_STRUCTURAL_PASS_INPUTS got='+str(len(selected)))
+    return list(reversed(selected))
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--date',required=True);ap.add_argument('--ledger-dir',required=True)
