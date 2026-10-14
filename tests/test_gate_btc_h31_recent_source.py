@@ -1,8 +1,11 @@
 import sys, unittest, tempfile, json, io, zipfile
 from pathlib import Path
 import pandas as pd
+from datetime import datetime
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import gate_btc_h31_recent_source as s
+import gate_btc_b3_h31_prospective_collect as collector
 
 class RecentSourceTests(unittest.TestCase):
     def test_continuation_is_future_only_and_preserves_legacy(self):
@@ -39,6 +42,13 @@ class RecentSourceTests(unittest.TestCase):
         with zipfile.ZipFile(data,'w') as z:z.writestr('2026-10-21_NEGOCIOSAVISTA.TXT',text)
         front,volumes=s.choose_wdo(data.getvalue())
         self.assertEqual(front,'WDOX26');self.assertEqual(volumes,{'WDOX26':100.,'WDOZ26':50.})
+    def test_future_target_cannot_download_or_credit_before_its_session(self):
+        contract={'first_eligible_date':'2026-08-25'}
+        with tempfile.TemporaryDirectory() as d, patch.object(collector,'datetime') as clock, patch.object(collector,'trailing') as warmup, patch.object(collector,'fetch_official_session') as fetch:
+            clock.now.return_value=datetime(2026,10,14,tzinfo=s.ZoneInfo('America/Sao_Paulo'))
+            with self.assertRaisesRegex(RuntimeError,'WINDOW_EXPIRED_OR_NOT_OPEN'):
+                collector.compute_event('2026-10-15',contract,Path(d))
+            warmup.assert_not_called();fetch.assert_not_called();self.assertEqual(list(Path(d).iterdir()),[])
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.
