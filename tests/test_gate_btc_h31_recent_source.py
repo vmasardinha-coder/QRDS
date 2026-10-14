@@ -31,13 +31,25 @@ class RecentSourceTests(unittest.TestCase):
         def frame(periods,freq):
             ts=pd.date_range('2026-09-16 09:00',periods=periods,freq=freq,tz='America/Sao_Paulo')
             return pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':5.,'trades':1})
-        with self.assertRaisesRegex(RuntimeError,'LATTICE'):s.validate_bars('2026-09-16','WDOV26',frame(29,'min'),frame(6,'5min'))
+        with self.assertRaisesRegex(RuntimeError,'M1_M5_MISMATCH'):s.validate_bars('2026-09-16','WDOV26',frame(29,'min'),frame(6,'5min'))
     def test_fixed_offset_b3_timestamps_normalize_before_lattice_comparison(self):
         def frame(periods,freq,volume,trades):
             ts=pd.date_range('2026-09-16 09:00',periods=periods,freq=freq,tz='UTC-03:00')
             return pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':volume,'trades':trades})
         result=s.validate_bars('2026-09-16','WDOV26',frame(30,'min',5.,1),frame(6,'5min',25.,5))
         self.assertEqual(len(result),6)
+    def test_auction_delayed_first_trade_preserves_observed_m5_without_fill(self):
+        ts=pd.date_range('2026-09-16 09:04',periods=26,freq='min',tz='UTC-03:00')
+        observed=pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':5.,'trades':1})
+        m5=s.recompute_m5(observed);m5['date']='2026-09-16';m5.timestamp=m5.timestamp.astype(str)
+        result=s.validate_bars('2026-09-16','WDOV26',observed,m5)
+        self.assertEqual(len(result),6);self.assertEqual(result.iloc[0].trades,1)
+    def test_missing_first_m5_bucket_still_fails(self):
+        ts=pd.date_range('2026-09-16 09:06',periods=24,freq='min',tz='UTC-03:00')
+        observed=pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':5.,'trades':1})
+        m5=s.recompute_m5(observed);m5['date']='2026-09-16';m5.timestamp=m5.timestamp.astype(str)
+        with self.assertRaisesRegex(RuntimeError,'LATTICE'):
+            s.validate_bars('2026-09-16','WDOV26',observed,m5)
     def test_front_selection_cannot_read_later_volume_or_win_outcome(self):
         text='CodigoInstrumento;AcaoAtualizacao;QuantidadeNegociada;HoraFechamento;TipoSessaoPregao\nWDOX26;0;100;09:00:00;1\nWDOZ26;0;50;09:00:00;1\nWDOZ26;0;10000;09:30:00;1\nWINZ26;0;90000;09:00:00;1\n'
         data=io.BytesIO()

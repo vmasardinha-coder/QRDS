@@ -11,7 +11,7 @@ CONTRACT = Path(__file__).resolve().parent / 'gate_btc_factory/H31_SOURCE_CONTIN
 CALENDAR_EXTENSION = CONTRACT.with_name('H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json')
 CALENDAR_EXTENSION_SHA256 = 'd668fa662548719128772886530938e3cef2914075d0c21c82cd965ffa13e08c'
 INPUT_QUALIFICATION = CONTRACT.with_name('H31_SOURCE_INPUT_QUALIFICATION_20261015.v1.json')
-INPUT_QUALIFICATION_SHA256 = '2992018a955eccbc7f5064bb426c97c3f541db07890c543197f35b455a0ccb6e'
+INPUT_QUALIFICATION_SHA256 = '096c2c764807506ff2cf74501823b16abba115730154595ba1b78bb65ca8f7a2'
 CONTRACT_SHA256 = '613a94bc8ceeb9067add0a0b5ec324f1ce5d2f599d51a0316a42102021ae89e7'
 
 def digest(obj):
@@ -42,7 +42,7 @@ def load_contract():
     qraw=INPUT_QUALIFICATION.read_bytes().replace(b'\r\n',b'\n')
     if hashlib.sha256(qraw).hexdigest()!=INPUT_QUALIFICATION_SHA256: raise RuntimeError('H31_INPUT_QUALIFICATION_SEAL_MISMATCH')
     q=json.loads(qraw)
-    if q['base_continuation_sha256']!=CONTRACT_SHA256 or q['structural_qa_unchanged'] is not True: raise RuntimeError('H31_INPUT_QUALIFICATION_BINDING_MISMATCH')
+    if q['base_continuation_sha256']!=CONTRACT_SHA256 or q['frozen_h31_m5_qa_unchanged'] is not True: raise RuntimeError('H31_INPUT_QUALIFICATION_BINDING_MISMATCH')
     if datetime.fromisoformat(q['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat('2026-10-15T12:00:00+00:00'): raise RuntimeError('H31_INPUT_QUALIFICATION_NOT_PRESEALED')
     c['warmup_dates']=sorted(q['supplemental_prior_candidate_dates']+c['warmup_dates'])
     c['input_qualification_sha256']=INPUT_QUALIFICATION_SHA256
@@ -87,7 +87,9 @@ def validate_bars(day, symbol, m1, m5):
         x['timestamp']=ts.loc[x.index]
         x=x.sort_values('timestamp').reset_index(drop=True)
         expected=pd.date_range(day+' 09:00', periods=n, freq=freq,tz='America/Sao_Paulo')
-        if not pd.DatetimeIndex(x.timestamp).equals(expected): raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH '+str({'rows':len(x),'expected':n,'missing':[str(v) for v in expected.difference(pd.DatetimeIndex(x.timestamp))],'extra':[str(v) for v in pd.DatetimeIndex(x.timestamp).difference(expected)]}))
+        got=pd.DatetimeIndex(x.timestamp)
+        if got.has_duplicates or len(got)==0 or len(got.difference(expected)) or (n==6 and not got.equals(expected)):
+            raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH '+str({'rows':len(x),'expected':n,'missing':[str(v) for v in expected.difference(got)],'extra':[str(v) for v in got.difference(expected)]}))
         if set(x.symbol)!={symbol} or set(x.root)!={'WDO'}: raise RuntimeError('H31_WARMUP_IDENTITY_MISMATCH')
         vals=x[['open','high','low','close','volume','trades']]
         if not all(math.isfinite(float(v)) for v in vals.to_numpy().flat): raise RuntimeError('H31_WARMUP_NONFINITE')
@@ -129,7 +131,7 @@ def prepare(day, ledger_dir):
     elif day in fixed and symbol!=fixed[day]: raise RuntimeError('H31_FUTURE_WDO_BINDING_MISMATCH')
     m1,m5,stats,member=process_zip(raw,day,{'WIN':'__H31_NO_WIN_WARMUP__','WDO':symbol})
     first=validate_bars(day,symbol,m1,m5)
-    rec={'schema':'qrds.h31.recent_official_warmup.v1','date':day,'contract_sha256':CONTRACT_SHA256,
+    rec={'schema':'qrds.h31.recent_official_warmup.v1','date':day,'contract_sha256':CONTRACT_SHA256,'input_qualification_sha256':INPUT_QUALIFICATION_SHA256,
          'source_sha256':source['sha256'],'source_url':source['url'],'source_bytes':source['bytes'],
          'source_member':member,'WDO':symbol,'selection_first30_new_execution_volume':volumes,
          'ret30_bps':(float(first.iloc[-1]['close'])/float(first.iloc[0]['open'])-1)*10000,
