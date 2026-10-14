@@ -18,6 +18,18 @@ class BybitSpotRecoveryProbeTests(unittest.TestCase):
             "advisory_only": True,
             "feeds_frozen_engine": False,
             "source_substitution_performed": False,
+            "qualified_source_extension_selected_count": 0,
+            "loaded_symbols": 126,
+            "denominator_changed": False,
+            "universe_changed": False,
+            "source_order_changed": False,
+            "methodology_changes": 0,
+            "research_only": True,
+            "shadow_only": True,
+            "not_approved": True,
+            "orders_generated": 0,
+            "real_capital_used": 0,
+            "promotion_allowed": False,
             "data_as_of": "2026-08-06",
             "rows": [
                 {"symbol": "JASMY", "action_class": "SOURCE_RECOVERY_CANDIDATE"},
@@ -54,6 +66,18 @@ class BybitSpotRecoveryProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "engine-feed boundary changed"):
             candidates(bad)
 
+    def test_upstream_selected_extensions_do_not_change_probe_authority(self):
+        diagnostic = {**self.diagnostic(), 'source_substitution_performed': True,
+                      'qualified_source_extension_selected_count': 24}
+        self.assertEqual(candidates(diagnostic), ['JASMY', 'NEXO'])
+        report = run('2026-10-13', diagnostic, fetcher=lambda url: make_archive(), max_workers=1)
+        self.assertFalse(report['source_substitution_performed'])
+        self.assertFalse(report['feeds_frozen_engine'])
+        self.assertEqual(report['orders_generated'], 0)
+        with self.assertRaises(ValueError):
+            candidates({**diagnostic, 'qualified_source_extension_selected_count': 0})
+
 
 if __name__ == "__main__":
     unittest.main()
+
