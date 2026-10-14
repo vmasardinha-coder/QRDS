@@ -256,6 +256,7 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         'previous_event_hash': previous_hash,
         'source': evidence,
         'source_continuation_sha256': CONTINUATION_SHA256 if recent else None,
+        'source_calendar_extension_sha256': load_continuation()['calendar_extension_sha256'] if recent and target_date >= '2026-10-21' else None,
         'warmup': {
             'trailing_session_dates': [r['date'] for r in trailing],
             'trailing_20_median_abs_30m_bps': scale,

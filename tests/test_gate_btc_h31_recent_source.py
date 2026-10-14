@@ -13,6 +13,9 @@ class RecentSourceTests(unittest.TestCase):
         self.assertEqual(new['2026-10-15'],{'WIN':'WINZ26','WDO':'WDOX26'})
         c=s.load_contract();self.assertEqual(len(c['warmup_dates']),20)
         self.assertEqual(c['warmup_credit'],0)
+        self.assertEqual(len(c['sessions']),12)
+        self.assertEqual(new['2026-10-30'],{'WIN':'WINZ26','WDO':'WDOX26'})
+        self.assertNotIn('2026-11-02',new)
         self.assertFalse(c['h1_economics_read'])
     def test_warmup_rejects_a_rehashed_credit(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':1,'source_sha256':'a'*64}

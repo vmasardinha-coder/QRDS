@@ -8,6 +8,8 @@ from gate_btc_b3_h1_daily import fetch_raw, recompute_m5
 from gate_btc_b3_h1_parser import process_zip, time_ms, brnum, CHUNK
 
 CONTRACT = Path(__file__).resolve().parent / 'gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json'
+CALENDAR_EXTENSION = CONTRACT.with_name('H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json')
+CALENDAR_EXTENSION_SHA256 = 'b096f2a8c6bb609a17186d58d60ffd1bd0dc585ef76e3103daa061a30776380e'
 CONTRACT_SHA256 = '613a94bc8ceeb9067add0a0b5ec324f1ce5d2f599d51a0316a42102021ae89e7'
 
 def digest(obj):
@@ -22,6 +24,19 @@ def load_contract():
         raise RuntimeError('H31_CONTINUATION_BOUNDARY_MISMATCH')
     if datetime.fromisoformat(c['sealed_at_utc'].replace('Z','+00:00')) >= datetime.fromisoformat('2026-10-15T12:00:00+00:00'):
         raise RuntimeError('H31_CONTINUATION_NOT_PRESEALED')
+    extension_raw=CALENDAR_EXTENSION.read_bytes().replace(b'\r\n',b'\n')
+    if hashlib.sha256(extension_raw).hexdigest()!=CALENDAR_EXTENSION_SHA256:
+        raise RuntimeError('H31_CALENDAR_EXTENSION_SEAL_MISMATCH')
+    extension=json.loads(extension_raw)
+    if extension['base_continuation_sha256']!=CONTRACT_SHA256 or extension['freeze_rule_hash_sha256']!=c['freeze_rule_hash_sha256']:
+        raise RuntimeError('H31_CALENDAR_EXTENSION_BINDING_MISMATCH')
+    extra=extension['sessions']; dates=[r['date'] for r in extra]
+    if len(extra)!=8 or dates!=sorted(set(dates)) or dates[0]!='2026-10-21' or dates[-1]!='2026-10-30':
+        raise RuntimeError('H31_CALENDAR_EXTENSION_DATES_INVALID')
+    if datetime.fromisoformat(extension['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat(dates[0]+'T12:00:00+00:00'):
+        raise RuntimeError('H31_CALENDAR_EXTENSION_NOT_PRESEALED')
+    c['sessions']=c['sessions']+extra
+    c['calendar_extension_sha256']=CALENDAR_EXTENSION_SHA256
     return c
 
 def source_schedule(legacy):
