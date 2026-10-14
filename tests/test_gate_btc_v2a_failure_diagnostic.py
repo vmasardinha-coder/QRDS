@@ -3,10 +3,31 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.gate_btc_v2a_failure_diagnostic import build_diagnostic
+from tools.gate_btc_v2a_failure_diagnostic import build_diagnostic, validate_advisory_diagnostic
 
 
 class V2AFailureDiagnosticTests(unittest.TestCase):
+    def test_upstream_qualified_extension_remains_read_only_advisory(self):
+        for count in (0, 24):
+            manifest = {'attempted_symbols': 126, 'loaded_symbols': 126,
+                        'failed_symbols': 0, 'qualified_source_extension': count}
+            report = build_diagnostic([], [], manifest)
+            original = json.dumps(report, sort_keys=True)
+            validate_advisory_diagnostic(report)
+            self.assertEqual(json.dumps(report, sort_keys=True), original)
+
+    def test_inconsistent_extension_or_engine_authority_is_rejected(self):
+        report = build_diagnostic([], [], {'attempted_symbols': 126, 'loaded_symbols': 126,
+                                           'failed_symbols': 0, 'qualified_source_extension': 24})
+        for field, value in [('feeds_frozen_engine', True), ('universe_changed', True),
+                             ('source_order_changed', True), ('orders_generated', 1),
+                             ('real_capital_used', 1), ('methodology_changes', 1),
+                             ('promotion_allowed', True), ('qualified_source_extension_selected_count', 127),
+                             ('qualified_source_extension_selected_count', True),
+                             ('source_substitution_performed', False)]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                validate_advisory_diagnostic({**report, field: value})
+
     def manifest(self):
         return {"data_as_of": "2026-08-06", "attempted_symbols": 4, "loaded_symbols": 1, "failed_symbols": 3}
 
@@ -58,3 +79,4 @@ class V2AFailureDiagnosticTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
