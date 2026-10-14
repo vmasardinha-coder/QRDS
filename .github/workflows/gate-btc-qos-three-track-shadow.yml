@@ -14,6 +14,7 @@ on:
       - tools/gate_btc_binance_spot_equivalence_probe.py
       - tools/gate_btc_source_redundancy_probe.py
       - tools/gate_btc_momentum_required_prices.py
+      - tools/gate_btc_pit150_qualified_history.py
       - tools/gate_btc_momentum_economic_shadow.py
       - tests/test_gate_btc_qos_prospective_three_track.py
       - tests/test_gate_btc_qos_covered_delivery.py
@@ -178,3 +179,4 @@ jobs:
           if os.environ['NEEDS_SOURCE']=='true':
               assert os.environ['INPUT_OUTCOME']==os.environ['PROCESS_OUTCOME']=='success'
           PY
+
