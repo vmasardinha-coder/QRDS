@@ -1,6 +1,10 @@
 name: GATE BTC Momentum M1 M2 Shadow Collection
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/gate-btc-momentum-shadow.yml
+      - tests/test_gate_btc_v2a_daily_core_close.py
   workflow_dispatch:
   schedule:
     - cron: '10 3 * * *'
@@ -18,7 +22,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-cutoff-binding:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r migration/canonical/v2a/requirements.txt
+      - run: python -m unittest -v tests.test_gate_btc_v2a_daily_core_close
   collect:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -70,6 +84,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          export GATE_BTC_DATA_CUTOFF="$MOMENTUM_CUTOFF"
           mkdir -p artifacts/momentum_qos artifacts/momentum_diagnostics artifacts/momentum
           ok=0
           for attempt in 1 2 3; do
@@ -278,3 +293,4 @@ jobs:
           echo 'RESEARCH_ONLY=true'
           echo 'ORDERS=0'
           echo 'REAL_CAPITAL=0'
+
