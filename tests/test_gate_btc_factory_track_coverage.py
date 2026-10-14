@@ -1,6 +1,9 @@
 import json
 import tempfile
 import unittest
+import os
+import shutil
+import subprocess
 from pathlib import Path
 
 from tools.gate_btc_factory_status_export import export_tracks
@@ -90,6 +93,51 @@ class FactoryTrackCoverageTests(unittest.TestCase):
             state['current_epoch_return_observations']=1
             self.write(root,base+'STATUS.json',state)
             self.assertEqual(export_tracks(root)['m3_economics']['status'],'MISSING')
+
+    @unittest.skipUnless(os.name == 'posix', 'Publication workflow executes on Linux')
+    def test_publication_recomputes_after_concurrent_writer_without_losing_ledgers(self):
+        repo=Path(__file__).resolve().parents[1]
+        workflow=(repo/'.github/workflows/gate-btc-factory-status-export.yml').read_text()
+        part=workflow.split('- name: Persist status only',1)[1].split('run: |',1)[1]
+        script='\n'.join(line[10:] for line in part.splitlines() if line.startswith('          '))
+        script=script.replace('${{ github.run_id }}','1234')
+        real_git=shutil.which('git')
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);remote=root/'remote.git';producer=root/'producer';runtime=root/'runtime_repo'
+            def git(*args,cwd=None):
+                return subprocess.run([real_git,*map(str,args)],cwd=cwd,check=True,capture_output=True,text=True).stdout.strip()
+            git('init','--bare',remote);git('clone',remote,producer)
+            git('config','user.name','test',cwd=producer);git('config','user.email','test@example.invalid',cwd=producer)
+            git('checkout','-b','gate-btc-runtime',cwd=producer)
+            self.write(producer,'runtime/ledgers/momentum_m1_m2/STATUS.json',{'observed_snapshots':1})
+            git('add','.',cwd=producer);git('commit','-m','anchor',cwd=producer);git('push','origin','gate-btc-runtime',cwd=producer)
+            git('clone','--branch','gate-btc-runtime',remote,runtime)
+            main=root/'main_repo';(main/'tools').mkdir(parents=True)
+            for name in ['gate_btc_factory_status_export.py','gate_btc_reporting_authority.py']:
+                shutil.copyfile(repo/'tools'/name,main/'tools'/name)
+            bin_dir=root/'bin';bin_dir.mkdir();wrapper=bin_dir/'git';marker=root/'raced'
+            # The first push races with a real writer changing a ledger and the
+            # same derived report. The next attempt must use the new parent/data.
+            wrapper.write_text('#!/bin/sh\nif [ "$1" = "push" ] && [ ! -f "$RACE_MARKER" ]; then\n'
+                '  touch "$RACE_MARKER"\n'
+                "  printf '%s\\n' '{\"observed_snapshots\":2}' > \"$RACE_PRODUCER/runtime/ledgers/momentum_m1_m2/STATUS.json\"\n"
+                "  printf '%s\\n' '{\"other_writer\":true}' > \"$RACE_PRODUCER/runtime/GATE_BTC_FACTORY_STATUS_LATEST.json\"\n"
+                '  "$REAL_GIT" -C "$RACE_PRODUCER" add .\n'
+                '  "$REAL_GIT" -C "$RACE_PRODUCER" commit -m competing-writer >/dev/null\n'
+                '  "$REAL_GIT" -C "$RACE_PRODUCER" push origin gate-btc-runtime >/dev/null\n'
+                'fi\nexec "$REAL_GIT" "$@"\n')
+            wrapper.chmod(0o755)
+            env={**os.environ,'PATH':str(bin_dir)+os.pathsep+os.environ['PATH'],
+                 'REAL_GIT':real_git,'RACE_MARKER':str(marker),'RACE_PRODUCER':str(producer)}
+            result=subprocess.run(['bash','-euo','pipefail','-c',script],cwd=runtime,env=env,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            report=json.loads(git('show','gate-btc-runtime:runtime/GATE_BTC_FACTORY_STATUS_LATEST.json',cwd=remote))
+            ledger=json.loads(git('show','gate-btc-runtime:runtime/ledgers/momentum_m1_m2/STATUS.json',cwd=remote))
+            self.assertEqual(ledger['observed_snapshots'],2)
+            self.assertEqual(report['tracks']['m1_m2']['data']['observed_snapshots'],2)
+            ancestor=git('rev-parse','HEAD',cwd=producer)
+            git('merge-base','--is-ancestor',ancestor,'gate-btc-runtime',cwd=remote)
+            self.assertTrue(marker.is_file())
 
     def test_absent_new_track_is_reported_missing(self):
         with tempfile.TemporaryDirectory() as td:
