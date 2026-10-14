@@ -6,12 +6,14 @@ on:
       - tools/gate_btc_h31_recent_source.py
       - tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json
       - tools/gate_btc_factory/H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json
+      - tools/gate_btc_factory/H31_SOURCE_INPUT_QUALIFICATION_20261015.v1.json
       - .github/workflows/gate-btc-h31-recent-warmup.yml
   pull_request:
     paths:
       - tools/gate_btc_h31_recent_source.py
       - tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json
       - tools/gate_btc_factory/H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json
+      - tools/gate_btc_factory/H31_SOURCE_INPUT_QUALIFICATION_20261015.v1.json
       - tests/test_gate_btc_h31_recent_source.py
       - .github/workflows/gate-btc-h31-recent-warmup.yml
   schedule:
@@ -50,9 +52,8 @@ jobs:
           from pathlib import Path
           from datetime import datetime
           from zoneinfo import ZoneInfo
-          from gate_btc_h31_recent_source import load_contract, prepare
+          from gate_btc_h31_recent_source import load_contract, qualify
           dates=load_contract()['warmup_dates']
-          if os.environ['PR_PROBE']=='true': dates=dates[:1]
           now=datetime.now(ZoneInfo('America/Sao_Paulo'))
           failed=[]
           qualified=[]
@@ -63,17 +64,20 @@ jobs:
                   print(json.dumps({'date':d,'status':'WAIT_SESSION_CLOSE','eligible_observation_increment':0}),flush=True)
                   continue
               try:
-                  r=prepare(d,'runtime_repo/runtime/ledgers/b3_h31_prospective')
+                  r=qualify(d,'runtime_repo/runtime/ledgers/b3_h31_prospective')
+                  if r is None:
+                      failed.append(d);print(json.dumps({'date':d,'status':'UNQUALIFIED_INPUT_EXCLUDED_ZERO_CREDIT'}),flush=True);continue
                   qualified.append({'date':d,'WDO':r['WDO'],'receipt_sha256':r['receipt_sha256'],'source_sha256':r['source_sha256']})
                   print(json.dumps({'date':d,'status':'PASS','WDO':r['WDO'],'receipt_sha256':r['receipt_sha256'],'eligible_observation_increment':0}),flush=True)
               except Exception as e:
                   failed.append(d);print(json.dumps({'date':d,'status':'FAIL_CLOSED','error':str(e),'eligible_observation_increment':0}),flush=True)
-          status={'schema':'qrds.h31.recent_warmup_status.v1','updated_at':now.isoformat(),'qualified_input_count':len(qualified),'required_input_count':len(dates),'qualified_inputs':qualified,'unqualified_dates':failed,'pending_session_close_dates':pending,'ready_for_first_prospective_target':len(qualified)==20 and not failed and not pending,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False,'orders':0,'real_capital':0}
-          status['state']='BLOCKED_WARMUP_QA_OR_SOURCE' if failed else ('READY_INPUTS_CANONICAL_OBSERVATION_STILL_REQUIRED' if status['ready_for_first_prospective_target'] else 'WAITING_LAST_WARMUP_SESSION_CLOSE_OR_PUBLICATION')
-          if os.environ['PR_PROBE']=='true': status['state']='PR_SINGLE_SOURCE_PROBE_ZERO_CREDIT'
+          status={'schema':'qrds.h31.recent_warmup_status.v1','updated_at':now.isoformat(),'qualified_input_count':len(qualified),'required_input_count':20,'qualified_inputs':qualified,'unqualified_dates':failed,'pending_session_close_dates':pending,'ready_for_first_prospective_target':len(qualified)>=20,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False,'orders':0,'real_capital':0}
+          status['selected_trailing_inputs']=qualified[-20:]
+          status['state']='READY_INPUTS_CANONICAL_OBSERVATION_STILL_REQUIRED' if status['ready_for_first_prospective_target'] else 'BLOCKED_INSUFFICIENT_20_STRUCTURAL_PASS_INPUTS'
+          if os.environ['PR_PROBE']=='true': status['publication']='PR_VALIDATION_ARTIFACT_ONLY_ZERO_CANONICAL_CREDIT'
           p=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/source_continuation/SOURCE_STATUS.json');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
           print(json.dumps(status),flush=True)
-          if failed: raise SystemExit('H31_WARMUP_FAILED '+','.join(failed))
+          if len(qualified)<20: raise SystemExit('H31_WARMUP_NEEDS_20_PASS_INPUTS got='+str(len(qualified)))
           PY
       - uses: actions/upload-artifact@v4
         if: always()

@@ -16,7 +16,7 @@ import requests
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
 from gate_btc_h31_source_preflight import source_preflight
-from gate_btc_h31_recent_source import source_schedule, trailing, choose_wdo, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
+from gate_btc_h31_recent_source import source_schedule, trailing, choose_wdo, validate_receipt as validate_recent_input, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
 
 CONTRACT_PATH = Path('tools/gate_btc_b3_h31_source_binding_contract_v1.json')
 FREEZE_PATH = Path('tools/gate_btc_b3_h31_prospective_freeze.json')
@@ -261,6 +261,7 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         'previous_event_hash': previous_hash,
         'source': evidence,
         'source_continuation_sha256': CONTINUATION_SHA256 if recent else None,
+        'source_input_qualification_sha256': load_continuation()['input_qualification_sha256'] if recent else None,
         'source_calendar_extension_sha256': load_continuation()['calendar_extension_sha256'] if recent and target_date >= '2026-10-21' else None,
         'warmup': {
             'trailing_session_dates': [r['date'] for r in trailing],
@@ -327,11 +328,25 @@ def main() -> int:
         receipt = source_preflight(args.date, source_schedule(load_schedule()) if args.date >= load_continuation()['first_eligible_session'] else load_schedule(), ledger_dir)
         if args.date >= load_continuation()['first_eligible_session']:
             c = load_continuation()
-            required = sorted(d for d in c['warmup_dates'] + [r['date'] for r in c['sessions']] if d < args.date)[-20:]
-            receipt['required_official_warmup_dates'] = required
-            receipt['warmup_cache_missing_dates'] = [d for d in required if not (ledger_dir/'source_continuation'/'warmup'/(d+'.json')).is_file()]
-            receipt['source_continuation_sha256'] = CONTINUATION_SHA256
-            receipt['warmup_cache_presence_is_not_qualification'] = True
+            candidates = sorted(d for d in c['warmup_dates'] + [r['date'] for r in c['sessions']] if d < args.date)
+            qualified=[]
+            for d in candidates:
+                p=ledger_dir/'source_continuation'/'warmup'/(d+'.json')
+                if p.is_file():
+                    try:
+                        validate_recent_input(load_json(p),d);qualified.append(d)
+                    except RuntimeError:
+                        pass
+            receipt['warmup_candidate_dates']=candidates
+            receipt['warmup_required_input_count']=20
+            receipt['warmup_qualified_input_count']=len(qualified)
+            receipt['warmup_selected_input_dates']=qualified[-20:]
+            receipt['required_official_warmup_dates']=qualified[-20:] if len(qualified)>=20 else []
+            receipt['warmup_cache_missing_dates']=[d for d in candidates if not (ledger_dir/'source_continuation'/'warmup'/(d+'.json')).is_file()]
+            receipt['warmup_cache_presence_is_not_qualification']=True
+            receipt['source_continuation_sha256']=CONTINUATION_SHA256
+            receipt['source_input_qualification_sha256']=c['input_qualification_sha256']
+            receipt['warmup_dependency_status']='READY_20_QUALIFIED_INPUTS' if len(qualified)>=20 else 'BLOCKED_INSUFFICIENT_20_STRUCTURAL_PASS_INPUTS'
         if not args.operations_status_out:
             raise RuntimeError("OPERATIONS_STATUS_OUT_REQUIRED")
         p = Path(args.operations_status_out)

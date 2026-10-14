@@ -14,12 +14,14 @@ class RecentSourceTests(unittest.TestCase):
         self.assertEqual(new['2026-08-10'],old['2026-08-10'])
         self.assertNotIn('2026-10-14',new)
         self.assertEqual(new['2026-10-15'],{'WIN':'WINZ26','WDO':'WDOX26'})
-        c=s.load_contract();self.assertEqual(len(c['warmup_dates']),20)
+        c=s.load_contract();self.assertEqual(len(c['warmup_dates']),30)
         self.assertEqual(c['warmup_credit'],0)
-        self.assertEqual(len(c['sessions']),12)
+        self.assertEqual(len(c['sessions']),40)
         self.assertEqual(new['2026-10-30']['WIN'],'WINZ26')
         self.assertEqual(new['2026-10-30']['WDO_candidates'],['WDOX26','WDOZ26'])
         self.assertNotIn('2026-11-02',new)
+        self.assertNotIn('2026-11-20',new)
+        self.assertEqual(new['2026-12-11']['WDO_candidates'],['WDOZ26','WDOF27'])
         self.assertFalse(c['h1_economics_read'])
     def test_warmup_rejects_a_rehashed_credit(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':1,'source_sha256':'a'*64}
@@ -49,6 +51,21 @@ class RecentSourceTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'WINDOW_EXPIRED_OR_NOT_OPEN'):
                 collector.compute_event('2026-10-15',contract,Path(d))
             warmup.assert_not_called();fetch.assert_not_called();self.assertEqual(list(Path(d).iterdir()),[])
+    def test_warmup_selection_uses_quality_then_dates_not_return_size(self):
+        candidates=s.load_contract()['warmup_dates']
+        def quality(day,ledger):
+            if day=='2026-09-22':return None
+            return {'ret30_bps':1e9 if day=='2026-09-01' else 1.,'receipt_sha256':day}
+        with patch.object(s,'qualify',side_effect=quality):
+            selected=s.trailing('2026-10-15',Path('unused'))
+        self.assertEqual([r['date'] for r in selected],[d for d in candidates if d!='2026-09-22'][-20:])
+        self.assertNotIn('2026-09-01',[r['date'] for r in selected])
+    def test_twelve_valid_inputs_cannot_start_canonical_warmup(self):
+        dates=set(s.load_contract()['warmup_dates'][-12:])
+        def quality(day,ledger):return {'ret30_bps':1.,'receipt_sha256':day} if day in dates else None
+        with patch.object(s,'qualify',side_effect=quality):
+            with self.assertRaisesRegex(RuntimeError,'NEEDS_20_STRUCTURAL_PASS_INPUTS got=12'):
+                s.trailing('2026-10-15',Path('unused'))
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.

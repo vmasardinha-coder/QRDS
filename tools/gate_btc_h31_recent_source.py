@@ -9,7 +9,9 @@ from gate_btc_b3_h1_parser import process_zip, time_ms, brnum, CHUNK
 
 CONTRACT = Path(__file__).resolve().parent / 'gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json'
 CALENDAR_EXTENSION = CONTRACT.with_name('H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json')
-CALENDAR_EXTENSION_SHA256 = 'ccd8da077b38995b42bbf95c0f3e4c980218274a1b0b121a3c9d6fc492d34cf1'
+CALENDAR_EXTENSION_SHA256 = 'd668fa662548719128772886530938e3cef2914075d0c21c82cd965ffa13e08c'
+INPUT_QUALIFICATION = CONTRACT.with_name('H31_SOURCE_INPUT_QUALIFICATION_20261015.v1.json')
+INPUT_QUALIFICATION_SHA256 = '2992018a955eccbc7f5064bb426c97c3f541db07890c543197f35b455a0ccb6e'
 CONTRACT_SHA256 = '613a94bc8ceeb9067add0a0b5ec324f1ce5d2f599d51a0316a42102021ae89e7'
 
 def digest(obj):
@@ -31,12 +33,19 @@ def load_contract():
     if extension['base_continuation_sha256']!=CONTRACT_SHA256 or extension['freeze_rule_hash_sha256']!=c['freeze_rule_hash_sha256']:
         raise RuntimeError('H31_CALENDAR_EXTENSION_BINDING_MISMATCH')
     extra=extension['sessions']; dates=[r['date'] for r in extra]
-    if len(extra)!=8 or dates!=sorted(set(dates)) or dates[0]!='2026-10-21' or dates[-1]!='2026-10-30':
+    if len(extra)!=36 or dates!=sorted(set(dates)) or dates[0]!='2026-10-21' or dates[-1]!='2026-12-11' or any(d in dates for d in ['2026-11-02','2026-11-20']):
         raise RuntimeError('H31_CALENDAR_EXTENSION_DATES_INVALID')
     if datetime.fromisoformat(extension['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat(dates[0]+'T12:00:00+00:00'):
         raise RuntimeError('H31_CALENDAR_EXTENSION_NOT_PRESEALED')
     c['sessions']=c['sessions']+extra
     c['calendar_extension_sha256']=CALENDAR_EXTENSION_SHA256
+    qraw=INPUT_QUALIFICATION.read_bytes().replace(b'\r\n',b'\n')
+    if hashlib.sha256(qraw).hexdigest()!=INPUT_QUALIFICATION_SHA256: raise RuntimeError('H31_INPUT_QUALIFICATION_SEAL_MISMATCH')
+    q=json.loads(qraw)
+    if q['base_continuation_sha256']!=CONTRACT_SHA256 or q['structural_qa_unchanged'] is not True: raise RuntimeError('H31_INPUT_QUALIFICATION_BINDING_MISMATCH')
+    if datetime.fromisoformat(q['sealed_at_utc'].replace('Z','+00:00'))>=datetime.fromisoformat('2026-10-15T12:00:00+00:00'): raise RuntimeError('H31_INPUT_QUALIFICATION_NOT_PRESEALED')
+    c['warmup_dates']=sorted(q['supplemental_prior_candidate_dates']+c['warmup_dates'])
+    c['input_qualification_sha256']=INPUT_QUALIFICATION_SHA256
     return c
 
 def source_schedule(legacy):
@@ -133,11 +142,32 @@ def prepare(day, ledger_dir):
     p.write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
     return rec
 
+def qualify(day, ledger_dir):
+    """Quality-only exclusion mirrors frozen historical loader; never a scored event."""
+    qpath=Path(ledger_dir)/'source_continuation'/'unqualified_warmup'/(day+'.json')
+    if day<'2026-10-15' and qpath.exists():
+        old=json.loads(qpath.read_text())
+        if old.get('input_qualification_sha256')==INPUT_QUALIFICATION_SHA256:
+            return None
+    try:
+        return prepare(day,ledger_dir)
+    except RuntimeError as exc:
+        if 'SESSION_NOT_CLOSED' in str(exc): return None
+        rec={'date':day,'input_qualification_sha256':INPUT_QUALIFICATION_SHA256,'structural_qa':'FAIL_CLOSED','error':str(exc),'prospective_scored':False,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False}
+        qpath.parent.mkdir(parents=True,exist_ok=True);qpath.write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
+        return None
+
 def trailing(target, ledger_dir):
     c=load_contract()
-    dates=sorted(d for d in c['warmup_dates']+[r['date'] for r in c['sessions']] if d<target)[-20:]
-    if len(dates)!=20: raise RuntimeError('H31_RECENT_WARMUP_NEEDS_20')
-    return [{'date':d,'ret30_bps':prepare(d,ledger_dir)['ret30_bps'],'source':'RECENT_OFFICIAL_B3_INPUT_ONLY'} for d in dates]
+    dates=sorted(d for d in c['warmup_dates']+[r['date'] for r in c['sessions']] if d<target)
+    selected=[]
+    for day in reversed(dates):
+        rec=qualify(day,ledger_dir)
+        if rec is not None:
+            selected.append({'date':day,'ret30_bps':rec['ret30_bps'],'source':'RECENT_OFFICIAL_B3_INPUT_ONLY','receipt_sha256':rec['receipt_sha256']})
+        if len(selected)==20: break
+    if len(selected)!=20: raise RuntimeError('H31_RECENT_WARMUP_NEEDS_20_STRUCTURAL_PASS_INPUTS got='+str(len(selected)))
+    return list(reversed(selected))
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--date',required=True);ap.add_argument('--ledger-dir',required=True)
