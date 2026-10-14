@@ -11,7 +11,7 @@ TZ = ZoneInfo("America/Sao_Paulo")
 
 
 def session_phase_qa(rows, session, expiration_local, max_window):
-    raw = CONTRACT_PATH.read_bytes()
+    raw = CONTRACT_PATH.read_bytes().replace(b"\r\n", b"\n")
     if hashlib.sha256(raw).hexdigest() != CONTRACT_SHA256:
         raise RuntimeError("SESSION_PHASE_CONTRACT_HASH_MISMATCH")
     c = json.loads(raw)
