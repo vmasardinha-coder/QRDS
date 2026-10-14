@@ -17,8 +17,10 @@ from typing import Callable
 
 try:
     from tools.gate_btc_bybit_public_archive_probe import fetch_bytes, probe_pair
+    from tools.gate_btc_v2a_failure_diagnostic import validate_advisory_diagnostic
 except ModuleNotFoundError:
     from gate_btc_bybit_public_archive_probe import fetch_bytes, probe_pair
+    from gate_btc_v2a_failure_diagnostic import validate_advisory_diagnostic
 
 
 def candidates(diagnostic: dict) -> list[str]:
@@ -28,8 +30,7 @@ def candidates(diagnostic: dict) -> list[str]:
         raise RuntimeError("diagnostic is not advisory-only")
     if diagnostic.get("feeds_frozen_engine") is not False:
         raise RuntimeError("diagnostic engine-feed boundary changed")
-    if diagnostic.get("source_substitution_performed") is not False:
-        raise RuntimeError("diagnostic source-substitution boundary changed")
+    validate_advisory_diagnostic(diagnostic)
     out = []
     for row in diagnostic.get("rows", []):
         if row.get("action_class") != "SOURCE_RECOVERY_CANDIDATE":
@@ -121,3 +122,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
