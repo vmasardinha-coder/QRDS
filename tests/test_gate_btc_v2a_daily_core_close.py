@@ -1,4 +1,4 @@
-import importlib.util,json,os,tempfile,unittest
+import importlib.util,json,os,tempfile,unittest,subprocess
 from pathlib import Path
 from unittest.mock import patch
 import pandas as pd
@@ -30,6 +30,22 @@ class DailyCoreCloseTests(unittest.TestCase):
             self.assertTrue(master.empty);self.assertEqual(len(failures),2)
             trace=json.loads((Path(tmp)/"source_attempts_v2a.json").read_text())
             self.assertTrue(all(len(row["attempts"])==3 and row["selected_source"] is None for row in trace["rows"]))
+    @unittest.skipUnless(os.name == 'posix', 'Momentum collection workflow executes on Linux')
+    def test_momentum_collection_passes_the_resolved_cutoff_to_source_loader(self):
+        root=Path(__file__).resolve().parents[1]
+        workflow=(root/'.github/workflows/gate-btc-momentum-shadow.yml').read_text()
+        part=workflow.split('- name: Collect canonical public V2A input with bounded retry',1)[1].split('- name: Freeze V2A evidence',1)[0]
+        script='\n'.join(line[10:] for line in part.split('run: |',1)[1].splitlines() if line.startswith('          '))
+        with tempfile.TemporaryDirectory() as td:
+            work=Path(td);stub=work/'migration/canonical/v2a/scripts/00_run_all_v2a.py'
+            stub.parent.mkdir(parents=True)
+            stub.write_text("import os,json,pathlib\npathlib.Path('seen_cutoff.json').write_text(json.dumps({'cutoff':os.environ.get('GATE_BTC_DATA_CUTOFF')}))\npathlib.Path('artifacts/momentum_qos/qos_v2a_public_collection.zip').write_bytes(b'collected')\n")
+            output=work/'github_output'
+            result=subprocess.run(['bash','-c',script],cwd=work,env={**os.environ,'MOMENTUM_CUTOFF':'2026-10-13','GITHUB_OUTPUT':str(output)},capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(json.loads((work/'seen_cutoff.json').read_text())['cutoff'],'2026-10-13')
+            self.assertIn('source_ok=true',output.read_text())
+
     def test_duplicate_and_invalid_core_endpoints_rejected(self):
         m=self.load()
         with patch.dict(os.environ,{"GATE_BTC_DATA_CUTOFF":"2025-07-19"}):
@@ -40,3 +56,4 @@ class DailyCoreCloseTests(unittest.TestCase):
             duplicate=pd.concat([frame,frame.tail(1)])
             with self.assertRaises(RuntimeError):m.validate_daily_core_candidate(duplicate,"BTC")
 if __name__=="__main__":unittest.main()
+
