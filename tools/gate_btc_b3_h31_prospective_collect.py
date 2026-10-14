@@ -14,6 +14,7 @@ import requests
 
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
+from gate_btc_h31_source_preflight import source_preflight
 
 CONTRACT_PATH = Path('tools/gate_btc_b3_h31_source_binding_contract_v1.json')
 FREEZE_PATH = Path('tools/gate_btc_b3_h31_prospective_freeze.json')
@@ -197,6 +198,8 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         raise RuntimeError(f'BACKFILL_FORBIDDEN target={target_date} first_eligible={first_eligible.isoformat()}')
 
     schedule = load_schedule()
+    if target_date not in schedule:
+        raise RuntimeError(f"BLOCKED_H31_SOURCE_CALENDAR target={target_date} last_bound={max(schedule) if schedule else None}")
     hist = load_frozen_historical_wdo(contract)
     official_warm = load_or_build_official_warmup(ledger_dir, schedule, target_date)
     prior = sorted(hist + official_warm, key=lambda x: x['date'])
@@ -291,6 +294,8 @@ def main() -> int:
     ap.add_argument('--date')
     ap.add_argument('--ledger-dir', default='runtime/ledgers/b3_h31_prospective')
     ap.add_argument('--validate-contract-only', action='store_true')
+    ap.add_argument('--source-preflight-only', action='store_true')
+    ap.add_argument('--operations-status-out')
     args = ap.parse_args()
 
     contract, _ = validate_contract()
@@ -301,6 +306,15 @@ def main() -> int:
         raise SystemExit('FAIL --date is required unless --validate-contract-only')
 
     ledger_dir = Path(args.ledger_dir)
+    if args.source_preflight_only:
+        receipt = source_preflight(args.date, load_schedule(), ledger_dir)
+        if not args.operations_status_out:
+            raise RuntimeError("OPERATIONS_STATUS_OUT_REQUIRED")
+        p = Path(args.operations_status_out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        print(json.dumps(receipt, sort_keys=True))
+        return 0
     ledger_dir.mkdir(parents=True, exist_ok=True)
     event_path = ledger_dir / 'events' / f'{args.date}.json'
     event_path.parent.mkdir(parents=True, exist_ok=True)
