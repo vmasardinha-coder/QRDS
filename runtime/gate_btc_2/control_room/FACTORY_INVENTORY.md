@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-10-14T20:16:44.909539+00:00`
+Generated: `2026-10-14T22:08:51.984073+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
@@ -8,8 +8,8 @@ Generated: `2026-10-14T20:16:44.909539+00:00`
 - Operational/scientific lanes tracked: **12**
 - Registered research backlog: **2**
 - Backlog currently NOT_ELIGIBLE: **5**
-- Canonical ledger records: **13**
-- Valid non-gap sessions: **7**
+- Canonical ledger records: **14**
+- Valid non-gap sessions: **8**
 - Immutable observation gaps: **6**
 - Frozen warmup range: **10–252 prior sessions**
 - Nominal families lookback-satisfied for next session: **0**
