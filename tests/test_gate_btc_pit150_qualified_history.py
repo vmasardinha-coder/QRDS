@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),22)
+        self.assertEqual(len(ROUTES),23)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -95,6 +95,39 @@ class QualifiedHistoryTests(unittest.TestCase):
                 with self.assertRaises(ValueError):check_gate_contract(route,bad)
             bad=copy.deepcopy(meta);bad['chains']*=2
             with self.assertRaises(ValueError):check_gate_contract(route,bad)
+
+    def test_deribit_exact_product_and_complete_hourly_aggregation(self):
+        route=ROUTES['USYC']
+        meta={'jsonrpc':'2.0','testnet':False,'result':{'instrument_name':'USYC_USDC','instrument_id':377252,'base_currency_uuid':route['base_currency_uuid'],'kind':'spot','state':'open','is_active':True,'base_currency':'USYC','quote_currency':'USDC','counter_currency':'USDC'}}
+        check_identity(route,meta)
+        for key,value in [('instrument_id',999),('base_currency_uuid','other'),('kind','future'),('quote_currency','BTC'),('is_active',False)]:
+            bad=copy.deepcopy(meta);bad['result'][key]=value
+            with self.assertRaises(ValueError):check_identity(route,bad)
+        end=datetime(2026,10,14,tzinfo=timezone.utc)
+        ticks=[int((end-timedelta(hours=i)).timestamp()*1000) for i in range(4800,0,-1)]
+        data={'ticks':ticks,'open':[2]*4800,'high':[3]*4800,'low':[1]*4800,'close':[2]*4800,'volume':[900]*4800,'cost':[42]*4800,'status':'ok'}
+        payload={'jsonrpc':'2.0','testnet':False,'result':data}
+        rows=normalize_history('USYC',route,payload,'2026-10-13')
+        self.assertEqual(len(rows),200);self.assertEqual(rows[-1]['date'],'2026-10-13')
+        self.assertEqual(rows[-1]['volume_usd'],24*42)
+        for kind in ['gap','duplicate','offset','badprice','badcost','testnet']:
+            bad=copy.deepcopy(payload)
+            if kind=='gap':bad['result']['ticks'].pop()
+            elif kind=='duplicate':bad['result']['ticks'][1]=bad['result']['ticks'][0]
+            elif kind=='offset':bad['result']['ticks'][0]+=1000
+            elif kind=='badprice':bad['result']['low'][0]=4
+            elif kind=='badcost':bad['result']['cost'][0]=-1
+            else:bad['testnet']=True
+            with self.assertRaises(ValueError):normalize_history('USYC',route,bad,'2026-10-13')
+        responses=[json.dumps(x).encode() for x in [meta,payload]]
+        class Session:
+            def get(self,url,timeout):
+                class Response:status_code=200
+                obj=Response();obj.content=responses.pop(0);return obj
+        with tempfile.TemporaryDirectory() as root:
+            out,e=collect_history(Session(),'USYC','hashnote-usyc','2026-10-13',root,now=end)
+            self.assertEqual(len(out),200);self.assertEqual(e['hourly_rows'],4800)
+            self.assertEqual(e['quote_currency'],'USDC')
 
     def test_bitget_exact_contract_utc_history_and_quote_turnover(self):
         route=ROUTES['BTW']
