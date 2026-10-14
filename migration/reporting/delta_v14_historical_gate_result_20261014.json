@@ -1,0 +1,108 @@
+{
+  "schema": "gate_btc.delta_v14_historical_gate_result.v1",
+  "evaluated_at_utc": "2026-10-14",
+  "contract": "migration/reporting/delta_v14_engine_contract.json",
+  "contract_sha256_verified": "66a7fda3723a86c0faf598e519bceb53d8c4286487cd00995db3079bf0f8fe26",
+  "verdict": "REPROVADO",
+
+  "_o_que_isto_e": [
+    "Avaliacao do portao historico do contrato V14, congelado em 2026-10-14.",
+    "Os criterios NAO foram escolhidos aqui: run_gate.py os le do contrato e",
+    "aborta se o sha256 nao bater. Afrouxar o teste exigiria violar o hash.",
+    "PESQUISA. Nenhum ledger lido ou escrito, nenhum parametro congelado tocado,",
+    "nenhuma ancora fixada. NAO aplicavel ao V11 nem ao V13."
+  ],
+
+  "panel": {
+    "source": "data.binance.vision — arquivo publico, sem chave, RETEM DESLISTADOS",
+    "instrument": "perpetuos USDT margem em USDT (futures/um)",
+    "symbols_ever_listed": 898,
+    "symbols_delisted_within_window": 29,
+    "days": 2009,
+    "start": "2021-04-01",
+    "end": "2026-09-30",
+    "_nota_fim": "arquivos mensais param em 2026-09-30; irrelevante para 1912 dias",
+    "estimator": "Fama-MacBeth, retorno demeanado no dia, winsorizado a +-50%/dia"
+  },
+
+  "criteria": [
+    {"criterio": "min_days >= 1000", "observado": 1912, "resultado": "PASSA"},
+    {"criterio": "t >= 3.0", "observado": 0.92, "resultado": "FALHA"},
+    {"criterio": "1a metade t >= 1.8", "observado": 1.41, "resultado": "FALHA"},
+    {"criterio": "2a metade t >= 1.8", "observado": 0.28, "resultado": "FALHA"},
+    {"criterio": "sem 2% dos dias (38) t >= 1.8", "observado": -1.56, "resultado": "FALHA"}
+  ],
+  "lambda": 0.000534,
+  "name_day_pairs": 55317,
+  "median_names_per_day": 29,
+
+  "_por_que_difere_do_indicio_de_2026_10_13": {
+    "resumo": "O t=3.36 medido sobre a OKX era, em boa parte, artefato de selecao de universo.",
+    "isolamento": {
+      "OKX_universo_inteiro_cru": 3.36,
+      "OKX_universo_inteiro_winsorizado": 3.27,
+      "OKX_top30_pit_cru": 3.20,
+      "OKX_top30_pit_winsorizado": 3.25,
+      "Binance_universo_inteiro_cru": -0.09,
+      "Binance_universo_inteiro_winsorizado": -1.54,
+      "Binance_top30_pit_cru": 0.28,
+      "Binance_top30_pit_winsorizado": 0.92
+    },
+    "conclusao_do_isolamento": [
+      "A winsorizacao nao explica (OKX 3.36 -> 3.27; Binance 0.28 -> 0.92).",
+      "A escolha de universo nao explica (top30 e universo inteiro andam juntos).",
+      "A FONTE explica: tudo na OKX fica entre 3.2 e 3.4, tudo na Binance entre -1.5 e 0.9."
+    ],
+    "mecanismo_medido": [
+      "O painel da OKX tinha 140 simbolos escolhidos pelo volume DE HOJE.",
+      "343 nomes ja estiveram no top 30 por volume em algum dia da janela.",
+      "249 desses 343 NAO EXISTEM no painel da OKX.",
+      "A fracao do top30 do dia ausente do painel da OKX cresce para tras:",
+      "12.4% em 2026, 22.9% em 2025, 32.7% em 2024, 36.4% em 2023, 41.5% em 2022, 39.5% em 2021.",
+      "Ou seja: em 2021-2022 faltavam ~40% dos nomes liquidos da epoca, e os que",
+      "faltavam sao exatamente os que depois desapareceram do topo."
+    ]
+  },
+
+  "_correcao_de_afirmacao_anterior": [
+    "Em 2026-10-13 eu afirmei que o canal de 'ranking do universo aplicado para",
+    "tras' estava RESOLVIDO, porque usar ranking ponto-no-tempo dentro do painel",
+    "da OKX nao mudava o resultado (t=3.35 contra 3.36). A afirmacao estava ERRADA.",
+    "O vies nao estava no ranking: estava em QUAIS 140 simbolos foram baixados.",
+    "Nenhum teste feito dentro daquele painel poderia detecta-lo, porque a selecao",
+    "acontecia antes do dado existir. So uma fonte que retem tudo revela o efeito."
+  ],
+
+  "_o_que_este_resultado_significa": [
+    "A hipotese nao sobreviveu ao proprio criterio preregistrado. Isso e um",
+    "resultado, nao uma falha de execucao: o portao fez o que foi congelado",
+    "para fazer, e barrou uma hipotese que o indicio anterior fazia parecer forte.",
+    "A regra de concentracao, escrita de proposito sabendo que o escore",
+    "provavelmente reprovaria, foi a que falhou mais feio: sem 2% dos dias o t",
+    "vai a -1.56.",
+    "Consequencia pratica: a ancora da V14 NAO deve ser fixada, e nenhuma serie",
+    "prospectiva comeca. Economizaram-se os anos de coleta que a confirmacao",
+    "exigiria."
+  ],
+
+  "_o_que_este_resultado_NAO_significa": [
+    "Nao diz nada sobre o V11 nem sobre o V13, que sao series proprias com",
+    "universo, custo e funding diferentes, e que seguem exatamente como estao.",
+    "Nao prova que o escore nao tem valor em nenhuma forma: prova que ESTE escore,",
+    "com ESTE universo e ESTE horizonte de um dia, nao passa NESTE criterio.",
+    "Nao autoriza retunar nada: mexer no escore agora, depois de ver o resultado,",
+    "seria exatamente o que a preregistracao existe para impedir."
+  ],
+
+  "governance": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "promotion_allowed": false,
+    "anchor_fixed_by_this_result": false,
+    "applies_to_v11": false,
+    "applies_to_v13": false
+  }
+}

@@ -40,9 +40,13 @@ def load(path: str | None = None) -> dict[str, dict[str, dict]]:
                          f"rode fetch_okx.py primeiro, ou aponte DELTA_XS_DATA.")
     panel: dict[str, dict[str, dict]] = defaultdict(dict)
     for fn in sorted(os.listdir(d)):
-        if not fn.endswith(".json"):
+        # "_" prefixa metadados do coletor (_universe.json), que nao sao painel
+        if not fn.endswith(".json") or fn.startswith("_"):
             continue
-        base = fn.split("-")[0].upper()
+        stem = fn[:-5]
+        # OKX vem como "BTC-USDT-SWAP"; Binance Vision como "BTCUSDT"
+        base = (stem.split("-")[0] if "-" in stem
+                else (stem[:-4] if stem.endswith("USDT") else stem)).upper()
         for r in json.load(open(os.path.join(d, fn))):
             if r.get("close") and r["close"] > 0:
                 panel[r["date"]][base] = r
