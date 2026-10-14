@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_b3_gap_classifier.py
+      - tools/gate_btc_b3_h31_prospective_collect.py
+      - tools/gate_btc_h31_source_preflight.py
+      - tests/test_gate_btc_h31_source_preflight.py
       - .github/workflows/gate-btc-b3-h31-prospective.yml
   schedule:
     - cron: "45 0,1,2 * * 2-6"
@@ -13,6 +16,8 @@ on:
     paths:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
+      - "tools/gate_btc_h31_source_preflight.py"
+      - "tests/test_gate_btc_h31_source_preflight.py"
       - "tools/gate_btc_b3_gap_classifier.py"
       - "tests/test_gate_btc_b3_gap_classifier_source.py"
       - ".github/workflows/gate-btc-b3-h31-prospective.yml"
@@ -45,6 +50,9 @@ jobs:
           python tools/gate_btc_b3_h31_prospective_collect.py --validate-contract-only
           python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
           python -m unittest -v tests/test_gate_btc_b3_gap_classifier_source.py tests/test_gate_btc_b3_gap_classifier_schedule.py
+          python -m unittest discover -s tests -p 'test_gate_btc_h31_source_preflight.py' -v
+          python tools/gate_btc_b3_h31_prospective_collect.py --source-preflight-only --date 2099-01-01 --operations-status-out /tmp/H31_SOURCE_PREFLIGHT.json
+          python -c "import json; p=json.load(open('/tmp/H31_SOURCE_PREFLIGHT.json')); assert p['target_session_bound'] is False; assert p['eligible_observation_increment']==0"
 
   collect:
     needs: contract
@@ -78,7 +86,25 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
+      - name: Check immutable source calendar before historical downloads
+        id: source_preflight
+        run: |
+          python tools/gate_btc_b3_h31_prospective_collect.py \
+            --date "${{ steps.target.outputs.date }}" \
+            --ledger-dir runtime_repo/runtime/ledgers/b3_h31_prospective \
+            --source-preflight-only \
+            --operations-status-out runtime_repo/runtime/ledgers/b3_h31_prospective/OPERATIONS_STATUS.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = json.loads(Path('runtime_repo/runtime/ledgers/b3_h31_prospective/OPERATIONS_STATUS.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('bound=' + str(p['target_session_bound']).lower() + '\n')
+          print('H31_CANONICAL_COLLECTION=' + p['operational_status'])
+          print('ELIGIBLE_OBSERVATION_INCREMENT=0')
+          PY
       - name: Collect H31 prospective observation or record ordinary gap
+        if: steps.source_preflight.outputs.bound == 'true'
         run: |
           set -uo pipefail
           set +e
