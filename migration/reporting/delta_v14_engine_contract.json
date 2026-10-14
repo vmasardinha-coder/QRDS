@@ -1,24 +1,32 @@
 {
-  "_STATUS": "RASCUNHO — NAO CONGELADO, NAO VALE COMO PREREGISTRO",
+  "_STATUS": "CONGELADO EM 2026-10-14 — SEM ANCORA. Nenhum valor abaixo pode mudar.",
   "_aviso": [
-    "Este arquivo nao e um contrato ate ser commitado, ter o sha256 do proprio",
-    "conteudo registrado e a data de congelamento fixada por quem e dono do",
-    "repositorio. Enquanto for rascunho, qualquer numero aqui pode ser discutido.",
-    "Depois de congelado, nenhum numero aqui pode mudar, e um numero que mude",
-    "encerra a serie em vez de ajusta-la.",
-    "Escrito em 2026-10-14 DEPOIS de eu ter visto o teste historico de 5 anos.",
-    "Por isso ele NAO pode ser aplicado ao V11 nem ao V13, que ja tem retorno",
-    "observado: seria retune contra resultado conhecido."
+    "Contrato CONGELADO. A partir daqui nenhum numero, limiar, peso ou regra",
+    "pode ser alterado. Um valor que mude ENCERRA a serie e exige contrato novo;",
+    "nao existe edicao de contrato congelado.",
+    "anchor_date segue NULO de proposito: o contrato vale, mas NENHUMA serie",
+    "comeca a contar. Fixar a ancora e um segundo ato, deliberado e separado.",
+    "MOTIVO DE NAO HAVER ANCORA: a evidencia primaria deste contrato e o teste",
+    "HISTORICO, e ele ainda nao foi avaliado sobre dado admissivel. O teste de",
+    "2026-10-13/14 rodou sobre a API da OKX, que PURGA instrumentos deslistados",
+    "(FTT-USDT-SWAP e SRM-USDT-SWAP retornam 51001). Por evidence.historical_test",
+    ".survivorship_handling deste proprio contrato, aquele teste e INVALIDO como",
+    "evidencia. Ele e indicio, nao resultado admissivel.",
+    "Escrito DEPOIS de eu ter visto aquele teste. Por isso NAO e aplicavel ao V11",
+    "nem ao V13, que ja tem retorno observado: seria retune contra resultado",
+    "conhecido. Essa proibicao e permanente e nao depende de pedido."
   ],
-
   "schema": "gate_btc.delta_v14_contract.v1",
   "engine_version": "DELTA_V14_ENGINE_1.0_DRAFT",
-  "freeze_date": null,
+  "freeze_date": "2026-10-14",
   "anchor_date": null,
-  "contract_sha256": null,
+  "contract_sha256": "66a7fda3723a86c0faf598e519bceb53d8c4286487cd00995db3079bf0f8fe26",
   "inherits_observations_from_predecessors": false,
-  "predecessors_non_comparable": ["DELTA_WALK_FORWARD_1.1", "DELTA_V12_ENGINE_1.0", "DELTA_V13_ENGINE_1.0"],
-
+  "predecessors_non_comparable": [
+    "DELTA_WALK_FORWARD_1.1",
+    "DELTA_V12_ENGINE_1.0",
+    "DELTA_V13_ENGINE_1.0"
+  ],
   "governance": {
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true,
@@ -37,7 +45,6 @@
     "promotion_allowed": false,
     "retrospective_winner_selection_forbidden": true
   },
-
   "_mudanca_estrutural": [
     "A diferenca central em relacao ao V11/V12/V13 e DE ONDE VEM A EVIDENCIA.",
     "Naqueles, a evidencia viria do periodo prospectivo. Medido: para atingir",
@@ -49,7 +56,6 @@
     "historico se sustenta fora da amostra — com banda de tolerancia preregistrada,",
     "nao com teste de significancia que a amostra prospectiva nunca alcancaria."
   ],
-
   "data_layer": {
     "_requisito_critico": "A fonte DEVE reter ativos deslistados.",
     "_motivo": [
@@ -60,7 +66,10 @@
       "estatistico — e ausencia de dado, nao ruido."
     ],
     "source_must_retain_delisted": true,
-    "candidate_sources": ["coingecko_full_history_including_dead_assets", "exchange_archive_with_delisted_retained"],
+    "candidate_sources": [
+      "coingecko_full_history_including_dead_assets",
+      "exchange_archive_with_delisted_retained"
+    ],
     "universe_membership_recorded_daily": true,
     "universe_membership_append_only": true,
     "point_in_time_universe_required": true,
@@ -72,7 +81,6 @@
       "que sao amostra selecionada pelos stops e enviesada para baixo."
     ]
   },
-
   "universe": {
     "stratum": "TOP30_BY_POINT_IN_TIME_MEDIAN_USD_VOLUME_30D",
     "size": 30,
@@ -88,7 +96,6 @@
       "e robustez, nao por resultado."
     ]
   },
-
   "signal": {
     "_herdado_verbatim_do_motor_congelado": "gate_btc_delta_v12_engine.py:265-332",
     "formula": "0.20*z(ret7) + 0.35*z(ret14) + 0.35*z(ret30) - 0.10*z(vol30) + 0.05*z(liq14)",
@@ -99,7 +106,6 @@
     "partial_score_is_undefined": true,
     "_nota": "Nenhum peso e alterado. Alterar qualquer um exigiria contrato novo."
   },
-
   "evidence": {
     "primary_source": "HISTORICAL",
     "historical_test": {
@@ -141,9 +147,11 @@
       ]
     }
   },
-
   "execution": {
-    "selection": {"top_n": 10, "bottom_n": 10},
+    "selection": {
+      "top_n": 10,
+      "bottom_n": 10
+    },
     "weight_per_name_fixed": true,
     "net_exposure_is_consequence_not_parameter": true,
     "_nota_exposicao": [
@@ -154,7 +162,11 @@
       "conhecida do desenho, nao como defeito a corrigir no meio da serie."
     ],
     "reentry_cooldown_days": 2,
-    "cooldown_armed_by": ["STOP_INTRADAY", "TAKE_PROFIT_INTRADAY", "STOP_GAP"],
+    "cooldown_armed_by": [
+      "STOP_INTRADAY",
+      "TAKE_PROFIT_INTRADAY",
+      "STOP_GAP"
+    ],
     "cooldown_blind_to_pnl": true,
     "_nota_cooldown": [
       "Mantido em 2 dias, igual ao predecessor. O diagnostico de 2026-10-08",
@@ -173,19 +185,22 @@
       "mercado, que cresce com tamanho e nao esta medido."
     ]
   },
-
   "ledger": {
     "append_only": true,
     "sha256_chain": true,
     "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
     "required_files": [
-      "STATUS.json", "ANCHOR.json", "DAILY_NAV.csv", "POSITIONS_HISTORY.csv",
-      "SELECTIONS_HISTORY.csv", "TRADE_EVENTS.csv", "UNIVERSE_MEMBERSHIP.csv",
+      "STATUS.json",
+      "ANCHOR.json",
+      "DAILY_NAV.csv",
+      "POSITIONS_HISTORY.csv",
+      "SELECTIONS_HISTORY.csv",
+      "TRADE_EVENTS.csv",
+      "UNIVERSE_MEMBERSHIP.csv",
       "PER_NAME_DAILY_RETURNS.csv"
     ],
     "_novo": "PER_NAME_DAILY_RETURNS.csv nao existe nos predecessores e e obrigatorio aqui."
   },
-
   "_o_que_este_contrato_NAO_autoriza": [
     "Nao autoriza capital real, ordens, nem conexao a endpoint privado.",
     "Nao autoriza aplicar qualquer regra daqui ao V11 ou ao V13.",
@@ -193,5 +208,8 @@
     "Passar em todos os criterios aqui significa apenas que a hipotese",
     "sobreviveu a este teste. Nao significa que existe vantagem explorada,",
     "nem que o tamanho dela justifica risco."
-  ]
+  ],
+  "frozen_by": "dono do repositorio, nesta sessao",
+  "_anchor_pending_reason": "Aguardando fonte de dados que retenha ativos deslistados, para que o portao historico possa ser avaliado de forma admissivel. Sem isso a ancora nao e fixada.",
+  "_contract_sha256_method": "sha256 do JSON canonico deste objeto com contract_sha256 definido como null: json.dumps(obj, sort_keys=True, separators=(',',':'), ensure_ascii=False).encode('utf-8'). Para verificar: carregue o arquivo, ponha contract_sha256=null, serialize assim, e compare. Um contrato nao pode conter o hash de si mesmo, entao o campo e excluido do calculo por construcao."
 }

@@ -19,7 +19,7 @@ chega a **t = 3,36** porque não joga fora a variação entre nomes.
 teste foi desenhado depois de eu ver a curva deles — aplicá-lo agora seria
 retune contra resultado conhecido. O uso legítimo é especificar uma sucessora,
 congelada antes da primeira observação: ver
-`migration/reporting/delta_v14_engine_contract_DRAFT.json`.
+`migration/reporting/delta_v14_engine_contract.json`.
 
 ## O limite sério: viés de sobrevivência
 
@@ -40,7 +40,7 @@ canais de viés:
 | Ativos mortos ausentes | **Não resolvido.** O teste 4 limita: nos 32 nomes que decaíram no ranking o λ é 76% do conjunto, com t = 1,87. É um limite, não uma prova. |
 
 Para um teste que valha como evidência, a fonte precisa reter ativos mortos.
-Está escrito como requisito crítico no contrato rascunho.
+Está escrito como requisito crítico no contrato congelado.
 
 ## Uso
 
@@ -90,9 +90,9 @@ de zero — sem o ajuste, o teste mediria BTC.
 - giro medido de 24,2%/dia, livro de 9,5 nomes, empate de custo em **74 bps por
   perna** (corretagem e spread; **não** inclui impacto de mercado)
 
-**E a parte que condena:** pela regra de concentração do contrato rascunho —
+**E a parte que condena:** pela regra de concentração do contrato congelado —
 remover 2% dos dias (39 de 1.968) — o *t* vai a **−0,06**. O escore atual
-**reprovaria** no critério que o próprio rascunho define. A regra foi escrita
+**reprovaria** no critério que o próprio contrato define. A regra foi escrita
 assim de propósito, para barrar exatamente o padrão que o V11 e este teste
 exibiram.
 
