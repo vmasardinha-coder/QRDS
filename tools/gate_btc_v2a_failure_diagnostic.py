@@ -169,6 +169,28 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
     }
 
 
+def validate_advisory_diagnostic(report: dict) -> None:
+    """Accept observed upstream source extensions without granting probe authority."""
+    if report.get('schema') != 'gate_btc.v2a_failure_diagnostic.v1':
+        raise ValueError('V2A_DIAGNOSTIC_SCHEMA_MISMATCH')
+    for field in ('advisory_only', 'research_only', 'shadow_only', 'not_approved'):
+        if report.get(field) is not True:
+            raise ValueError('V2A_DIAGNOSTIC_BOUNDARY:' + field)
+    for field in ('feeds_frozen_engine', 'denominator_changed', 'universe_changed',
+                  'source_order_changed', 'promotion_allowed'):
+        if report.get(field) is not False:
+            raise ValueError('V2A_DIAGNOSTIC_BOUNDARY:' + field)
+    for field in ('orders_generated', 'real_capital_used', 'methodology_changes'):
+        if report.get(field) != 0:
+            raise ValueError('V2A_DIAGNOSTIC_BOUNDARY:' + field)
+    count = report.get('qualified_source_extension_selected_count', 0)
+    loaded = report.get('loaded_symbols')
+    if type(count) is not int or type(loaded) is not int or not 0 <= count <= loaded:
+        raise ValueError('V2A_DIAGNOSTIC_EXTENSION_COUNT_MISMATCH')
+    if report.get('source_substitution_performed') is not (count > 0):
+        raise ValueError('V2A_DIAGNOSTIC_SUBSTITUTION_FLAG_MISMATCH')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, required=True)
@@ -210,4 +232,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
