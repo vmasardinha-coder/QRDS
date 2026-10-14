@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Economics Monitor
 
-Generated: `2026-10-14T04:58:31.820929+00:00`
+Generated: `2026-10-14T13:47:30.111468+00:00`
 
 - Ledger sessions: **13**
 - Families with any trigger: **0**
