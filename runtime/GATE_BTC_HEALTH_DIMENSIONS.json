@@ -1,6 +1,5 @@
 {
   "amber_collection_components": [
-    "momentum_m1_m2",
     "system12",
     "system9_exit",
     "v16b"
@@ -32,9 +31,9 @@
       "source_status": "ACTIVE_SHADOW_N80"
     },
     "d50": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
@@ -68,10 +67,10 @@
       "source_status": "ACTIVE"
     },
     "momentum_m1_m2": {
-      "collection_health": "AMBER_BLOCKED_DEPENDENCY",
+      "collection_health": "RED_FAILED_DELIVERY",
       "freshness": "FRESH",
-      "scientific_state": "DEPENDENCY_BLOCKED_NOT_YET_EVALUABLE",
-      "source_status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY"
+      "scientific_state": "PRESERVED_DELIVERY_FAILURE",
+      "source_status": "FAILED_ECONOMIC_DELIVERY"
     },
     "prl50": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
@@ -116,14 +115,14 @@
       "source_status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     }
   },
-  "generated_at_utc": "2026-10-14T00:56:10.563392+00:00",
+  "generated_at_utc": "2026-10-14T08:59:19.628393+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
   "orders_generated": 0,
   "real_capital_used": 0,
   "red_collection_components": [
-    "d50",
+    "momentum_m1_m2",
     "v16b1"
   ],
   "reference_data_date": "2026-10-13",
@@ -131,5 +130,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "09507a78bca07b30a9a24b801148ffea7f7482a06ba318270ac4725747d451c1"
+  "status_sha256": "0d4040589e79d6bb6b3aca1c3da8b0a51c5563f7af6d877238ddc95c7b308389"
 }
