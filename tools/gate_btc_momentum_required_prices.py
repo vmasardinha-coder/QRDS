@@ -5,7 +5,7 @@ Held positions remain required after leaving today's signal universe. Reuse the
 canonical CDD/Binance loaders without changing score inputs or the V2A collector.
 """
 from __future__ import annotations
-import argparse,csv,gzip,hashlib,importlib.util,io,json,math,re,shutil,sys,zipfile
+import argparse,csv,gzip,hashlib,importlib.util,io,json,math,re,shutil,sys,tempfile,zipfile
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -93,6 +93,32 @@ class MissingRequiredPrices(ValueError):
         self.failures=failures;self.evidence_path=str(evidence_path)
 
 
+# Exact identities already qualified by PIT150, effective at its frozen cutoff.
+# Keep this bridge restricted to the five observed economic-delivery failures.
+ECONOMIC_QUALIFIED_IDENTITIES = {
+    'BTW': 'bitway', 'CARDS': 'collector-crypt', 'DRV': 'derive',
+    'GRASS': 'grass', 'KCS': 'kucoin-shares',
+}
+
+
+def fetch_qualified_economic_close(session, symbol, cutoff, at):
+    """Revalidate the exact public route and select only the completed close."""
+    from tools.gate_btc_pit150_qualified_history import collect_history
+    coin_id = ECONOMIC_QUALIFIED_IDENTITIES.get(symbol)
+    if coin_id is None:
+        raise ValueError('QUALIFIED_ECONOMIC_IDENTITY_NOT_REGISTERED')
+    with tempfile.TemporaryDirectory(prefix='momentum-qualified-') as directory:
+        result = collect_history(session, symbol, coin_id, cutoff, directory, now=at)
+    if result is None:
+        raise ValueError('QUALIFIED_ECONOMIC_ROUTE_NOT_EFFECTIVE')
+    rows, evidence = result
+    import pandas as pd
+    value = choose_quote(pd.DataFrame(rows), symbol, cutoff)
+    if evidence['symbol'] != symbol or evidence['coin_id'] != coin_id or evidence['cutoff'] != cutoff:
+        raise ValueError('QUALIFIED_ECONOMIC_EVIDENCE_IDENTITY_MISMATCH')
+    return value, evidence
+
+
 def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, *, assets=None):
     cutoff=snapshot['cutoff'];at=clock()
     if cutoff!=(at.date()-timedelta(days=1)).isoformat():
@@ -120,7 +146,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
         loaders=[('cdd',module.fetch_cdd_symbol),('binance_market_data',
                  lambda s,symbol:module.fetch_binance_klines(PublicMarketSession(s),symbol))]
         session=RecordingSession(requests.Session(),clock)
-    prices=[];failures={};attempts=[]
+    prices=[];failures={};attempts=[];qualified_evidence=[]
     for symbol in required:
         alternatives = loaders + ([('okx_okb_utc_confirmed', lambda s,sym: fetch_okx_okb_utc_close(s,sym,cutoff))] if symbol == 'OKB' else [])
         for name,loader in alternatives:
@@ -130,10 +156,20 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
                 break
             except Exception as exc:
                 attempts.append({'symbol':symbol,'source':name,'error':str(exc)})
-        else:failures[symbol]=[r for r in attempts if r['symbol']==symbol]
+        else:
+            if symbol in ECONOMIC_QUALIFIED_IDENTITIES:
+                try:
+                    value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,at)
+                    prices.append({'date':cutoff,'symbol':symbol,'close_usd':value,
+                                   'source':'pit150_qualified_'+evidence['source']})
+                    qualified_evidence.append(evidence)
+                    continue
+                except Exception as exc:
+                    attempts.append({'symbol':symbol,'source':'pit150_qualified_exact_identity','error':str(exc)})
+            failures[symbol]=[r for r in attempts if r['symbol']==symbol]
     if clock().date()!=at.date():raise ValueError('COLLECTION_CROSSED_UTC_DAY')
     raw_records=getattr(session,'records',[])
-    raw=gzip.compress(packed({'sources':raw_records,'attempts':attempts}),mtime=0)
+    raw=gzip.compress(packed({'sources':raw_records,'attempts':attempts,'qualified_source_evidence':qualified_evidence}),mtime=0)
     if failures:
         failure_path=root/'failures'/cutoff/(sha(raw)+'.json.gz')
         failure_path.parent.mkdir(parents=True,exist_ok=True)
@@ -148,6 +184,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
               'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
+              'qualified_fallback_policy':'FIVE_PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_NO_BACKFILL',
+              'qualified_source_evidence':qualified_evidence,
               'evidence_role':'CURRENT_SOURCE_EVIDENCE_ONLY_NOT_BACKFILLED_ECONOMICS',
               'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0}
     dest.mkdir(parents=True,exist_ok=True)
@@ -171,3 +209,4 @@ def main():
 
 
 if __name__=='__main__':raise SystemExit(main())
+
