@@ -5,7 +5,8 @@ import argparse
 import hashlib
 import io
 import json
-from datetime import date as dt_date
+from datetime import date as dt_date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from statistics import median
 
@@ -15,6 +16,7 @@ import requests
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
 from gate_btc_h31_source_preflight import source_preflight
+from gate_btc_h31_recent_source import source_schedule, trailing, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
 
 CONTRACT_PATH = Path('tools/gate_btc_b3_h31_source_binding_contract_v1.json')
 FREEZE_PATH = Path('tools/gate_btc_b3_h31_prospective_freeze.json')
@@ -197,12 +199,20 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
     if target < first_eligible:
         raise RuntimeError(f'BACKFILL_FORBIDDEN target={target_date} first_eligible={first_eligible.isoformat()}')
 
-    schedule = load_schedule()
+    schedule = source_schedule(load_schedule()) if target_date >= load_continuation()['first_eligible_session'] else load_schedule()
     if target_date not in schedule:
         raise RuntimeError(f"BLOCKED_H31_SOURCE_CALENDAR target={target_date} last_bound={max(schedule) if schedule else None}")
-    hist = load_frozen_historical_wdo(contract)
-    official_warm = load_or_build_official_warmup(ledger_dir, schedule, target_date)
-    prior = sorted(hist + official_warm, key=lambda x: x['date'])
+    recent = target_date >= load_continuation()['first_eligible_session']
+    if recent:
+        if (datetime.now(ZoneInfo('America/Sao_Paulo')).date()-target).days not in (0,1):
+            raise RuntimeError('H31_CONTINUATION_PROSPECTIVE_WINDOW_EXPIRED_OR_NOT_OPEN')
+        if contract['freeze_rule_hash_sha256'] != load_continuation()['freeze_rule_hash_sha256']:
+            raise RuntimeError('H31_CONTINUATION_RULE_HASH_MISMATCH')
+        prior = trailing(target_date, ledger_dir)
+    else:
+        hist = load_frozen_historical_wdo(contract)
+        official_warm = load_or_build_official_warmup(ledger_dir, schedule, target_date)
+        prior = sorted(hist + official_warm, key=lambda x: x['date'])
     prior = [r for r in prior if r['date'] < target_date]
     if len(prior) < 20:
         raise RuntimeError(f'INSUFFICIENT_TRAILING_20 rows={len(prior)}')
@@ -245,6 +255,7 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         'freeze_rule_hash_sha256': contract['freeze_rule_hash_sha256'],
         'previous_event_hash': previous_hash,
         'source': evidence,
+        'source_continuation_sha256': CONTINUATION_SHA256 if recent else None,
         'warmup': {
             'trailing_session_dates': [r['date'] for r in trailing],
             'trailing_20_median_abs_30m_bps': scale,
@@ -307,7 +318,14 @@ def main() -> int:
 
     ledger_dir = Path(args.ledger_dir)
     if args.source_preflight_only:
-        receipt = source_preflight(args.date, load_schedule(), ledger_dir)
+        receipt = source_preflight(args.date, source_schedule(load_schedule()) if args.date >= load_continuation()['first_eligible_session'] else load_schedule(), ledger_dir)
+        if args.date >= load_continuation()['first_eligible_session']:
+            c = load_continuation()
+            required = sorted(d for d in c['warmup_dates'] + [r['date'] for r in c['sessions']] if d < args.date)[-20:]
+            receipt['required_official_warmup_dates'] = required
+            receipt['warmup_cache_missing_dates'] = [d for d in required if not (ledger_dir/'source_continuation'/'warmup'/(d+'.json')).is_file()]
+            receipt['source_continuation_sha256'] = CONTINUATION_SHA256
+            receipt['warmup_cache_presence_is_not_qualification'] = True
         if not args.operations_status_out:
             raise RuntimeError("OPERATIONS_STATUS_OUT_REQUIRED")
         p = Path(args.operations_status_out)

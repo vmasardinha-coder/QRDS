@@ -7,6 +7,8 @@ on:
       - tools/gate_btc_b3_gap_classifier.py
       - tools/gate_btc_b3_h31_prospective_collect.py
       - tools/gate_btc_h31_source_preflight.py
+      - tools/gate_btc_h31_recent_source.py
+      - tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json
       - tests/test_gate_btc_h31_source_preflight.py
       - .github/workflows/gate-btc-b3-h31-prospective.yml
   schedule:
@@ -17,6 +19,9 @@ on:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
       - "tools/gate_btc_h31_source_preflight.py"
+      - "tools/gate_btc_h31_recent_source.py"
+      - "tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json"
+      - "tests/test_gate_btc_h31_recent_source.py"
       - "tests/test_gate_btc_h31_source_preflight.py"
       - "tools/gate_btc_b3_gap_classifier.py"
       - "tests/test_gate_btc_b3_gap_classifier_source.py"
@@ -51,6 +56,7 @@ jobs:
           python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
           python -m unittest -v tests/test_gate_btc_b3_gap_classifier_source.py tests/test_gate_btc_b3_gap_classifier_schedule.py
           python -m unittest discover -s tests -p 'test_gate_btc_h31_source_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_gate_btc_h31_recent_source.py' -v
           python tools/gate_btc_b3_h31_prospective_collect.py --source-preflight-only --date 2099-01-01 --operations-status-out /tmp/H31_SOURCE_PREFLIGHT.json
           python -c "import json; p=json.load(open('/tmp/H31_SOURCE_PREFLIGHT.json')); assert p['target_session_bound'] is False; assert p['eligible_observation_increment']==0"
 
