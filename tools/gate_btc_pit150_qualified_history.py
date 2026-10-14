@@ -77,6 +77,7 @@ ROUTES = {'DRV': {'coin_id': 'derive', 'name': 'Derive', 'source': 'gate', 'pair
            'contract': '0xA3f751662e282E83EC3cBc387d225Ca56dD63D3A'}}
 ROUTES.update(GATE_FOLLOWUP_ROUTES)
 ROUTES['BTW'] = {'coin_id':'bitway','name':'Bitway','source':'bitget','pair':'BTWUSDT','contract':'0x444045b0ee1ee319a660a5e3d604ca0ffa35acaa','contract_chain':'BEP20'}
+ROUTES['USYC'] = {'coin_id':'hashnote-usyc','name':'Circle USYC','source':'deribit','pair':'USYC_USDC','instrument_id':377252,'base_currency_uuid':'4c559e06-44d0-411c-bb36-1a4812df4510','quote_currency':'USDC','identity_evidence':'https://insights.deribit.com/exchange-updates/deribit-introduces-hashnotes-usyc-as-new-yield-bearing-cross-margin-collateral-option/'}
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -106,6 +107,16 @@ def check_identity(route, payload):
                 and entry.get("contractAddress") == route["contract"]
                 and entry.get("isSpotTradingAllowed") is True):
             raise ValueError("exact MEXC identity/contract mismatch")
+    elif provider == 'deribit':
+        entry = payload.get('result', {})
+        if not (payload.get('jsonrpc') == '2.0' and payload.get('testnet') is False
+                and not payload.get('error') and entry.get('instrument_name') == route['pair']
+                and entry.get('instrument_id') == route['instrument_id']
+                and entry.get('base_currency_uuid') == route['base_currency_uuid']
+                and entry.get('kind') == 'spot' and entry.get('state') == 'open'
+                and entry.get('is_active') is True and entry.get('base_currency') == 'USYC'
+                and entry.get('quote_currency') == entry.get('counter_currency') == 'USDC'):
+            raise ValueError('exact Deribit spot instrument identity mismatch')
     elif provider == "bitget":
         rows = payload.get('data', [])
         if payload.get('code') != '00000' or len(rows) != 1:
@@ -150,9 +161,45 @@ def check_bitget_contract(route, payload):
     if len(matches) != 1:
         raise ValueError('exact Bitget chain/token contract mismatch')
 
+def deribit_utc_daily_rows(payload, cutoff):
+    result = payload.get('result', {})
+    fields = ['ticks','open','high','low','close','volume','cost']
+    if (payload.get('jsonrpc') != '2.0' or payload.get('testnet') is not False
+            or payload.get('error') or result.get('status') != 'ok'
+            or any(not isinstance(result.get(k), list) for k in fields)):
+        raise ValueError('invalid Deribit hourly response')
+    if any(len(result[k]) != len(result['ticks']) for k in fields):
+        raise ValueError('inconsistent Deribit hourly arrays')
+    end = datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)
+    start_ms = int((end-timedelta(days=200)).timestamp()*1000)
+    end_ms = int(end.timestamp()*1000)
+    hours = []
+    for i,tick in enumerate(result['ticks']):
+        if not isinstance(tick, int) or tick % 3600000:
+            raise ValueError('unaligned Deribit UTC hour')
+        if not start_ms <= tick < end_ms:
+            continue
+        o,h,l,c,v,cost = [float(result[k][i]) for k in fields[1:]]
+        if (not all(math.isfinite(x) and x>0 for x in [o,h,l,c])
+                or not l<=min(o,c)<=max(o,c)<=h
+                or not all(math.isfinite(x) and x>=0 for x in [v,cost])):
+            raise ValueError('invalid Deribit hourly OHLC/quote cost')
+        hours.append((tick,o,h,l,c,cost))
+    hours.sort()
+    if [x[0] for x in hours] != list(range(start_ms,end_ms,3600000)):
+        raise ValueError('Deribit history lacks 4800 unique consecutive UTC hours')
+    daily=[]
+    for i in range(0,4800,24):
+        day=hours[i:i+24]
+        daily.append([day[0][0]//1000,sum(x[5] for x in day),day[-1][4],
+                      max(x[2] for x in day),min(x[3] for x in day),day[0][1]])
+    return daily
+
 def normalize_history(symbol, route, payload, cutoff):
     provider = route["source"]
-    if provider == 'bitget':
+    if provider == 'deribit':
+        raw_rows = deribit_utc_daily_rows(payload,cutoff)
+    elif provider == 'bitget':
         if payload.get('code') != '00000':
             raise ValueError('Bitget history transport/schema failure')
         raw_rows = payload.get('data', [])
@@ -166,7 +213,7 @@ def normalize_history(symbol, route, payload, cutoff):
         raise ValueError("empty qualified history")
     rows = []
     for entry in raw_rows:
-        if provider == "gate":
+        if provider in {"gate","deribit"}:
             ts = int(entry[0]);o,h,l,c,v = map(float, [entry[5],entry[3],entry[4],entry[2],entry[1]])
         elif provider == 'bitget':
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
@@ -204,6 +251,12 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
         if route.get('contract_chain'):
             urls.insert(1, f"https://api.gateio.ws/api/v4/spot/currencies/{symbol}")
+    elif provider == 'deribit':
+        end = datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)
+        start_ms = int((end-timedelta(days=200)).timestamp()*1000)
+        end_ms = int(end.timestamp()*1000)-1
+        urls = [f'https://www.deribit.com/api/v2/public/get_instrument?instrument_name={pair}',
+                f'https://www.deribit.com/api/v2/public/get_tradingview_chart_data?instrument_name={pair}&start_timestamp={start_ms}&end_timestamp={end_ms}&resolution=60']
     elif provider == 'bitget':
         end_ms = int((datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)).timestamp()*1000)
         urls = [f'https://api.bitget.com/api/v2/spot/public/symbols?symbol={pair}',
@@ -233,6 +286,10 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
                 "identity_sha256":hashes[0],"candles_sha256":hashes[-1],
                 "public_execution_ohlcv":True,"historical_scientific_credit":0,
                 "research_only":True,"orders":0,"real_capital":0}
+    if provider == 'deribit':
+        evidence.update({'aggregation':'24 complete UTC hours per day; open first, high max, low min, close last, cost sum',
+                         'quote_currency':'USDC','quote_usd_convention':'nominal stablecoin quote; no historical FX conversion',
+                         'hourly_rows':4800,'identity_evidence':route['identity_evidence']})
     if route.get('rename_evidence'):
         evidence['rename_evidence'] = route['rename_evidence']
     if 'currency' in labels:
