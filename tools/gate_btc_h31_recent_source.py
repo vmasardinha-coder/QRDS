@@ -9,7 +9,7 @@ from gate_btc_b3_h1_parser import process_zip, time_ms, brnum, CHUNK
 
 CONTRACT = Path(__file__).resolve().parent / 'gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json'
 CALENDAR_EXTENSION = CONTRACT.with_name('H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json')
-CALENDAR_EXTENSION_SHA256 = 'b096f2a8c6bb609a17186d58d60ffd1bd0dc585ef76e3103daa061a30776380e'
+CALENDAR_EXTENSION_SHA256 = 'ccd8da077b38995b42bbf95c0f3e4c980218274a1b0b121a3c9d6fc492d34cf1'
 CONTRACT_SHA256 = '613a94bc8ceeb9067add0a0b5ec324f1ce5d2f599d51a0316a42102021ae89e7'
 
 def digest(obj):
@@ -41,7 +41,7 @@ def load_contract():
 
 def source_schedule(legacy):
     c = load_contract()
-    return dict(legacy, **{r['date']: {'WIN':r['WIN'], 'WDO':r['WDO']} for r in c['sessions']})
+    return dict(legacy, **{r['date']: {'WIN':r['WIN'], 'WDO':r['WDO'], **({'WDO_candidates':r['WDO_candidates']} if 'WDO_candidates' in r else {})} for r in c['sessions']})
 
 def choose_wdo(raw):
     """Rank only new WDO executions in 09:00-09:30; no WIN/outcome reads."""
@@ -114,7 +114,10 @@ def prepare(day, ledger_dir):
     if raw is None: raise RuntimeError('H31_WARMUP_SOURCE_NOT_READY '+json.dumps(source))
     symbol, volumes=choose_wdo(raw)
     fixed={r['date']:r['WDO'] for r in c['sessions']}
-    if day in fixed and symbol!=fixed[day]: raise RuntimeError('H31_FUTURE_WDO_BINDING_MISMATCH')
+    candidates={r['date']:r.get('WDO_candidates') for r in c['sessions']}
+    if candidates.get(day):
+        if symbol not in candidates[day]: raise RuntimeError('H31_FUTURE_WDO_CANDIDATE_MISMATCH')
+    elif day in fixed and symbol!=fixed[day]: raise RuntimeError('H31_FUTURE_WDO_BINDING_MISMATCH')
     m1,m5,stats,member=process_zip(raw,day,{'WIN':'__H31_NO_WIN_WARMUP__','WDO':symbol})
     first=validate_bars(day,symbol,m1,m5)
     rec={'schema':'qrds.h31.recent_official_warmup.v1','date':day,'contract_sha256':CONTRACT_SHA256,

@@ -16,7 +16,7 @@ import requests
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
 from gate_btc_h31_source_preflight import source_preflight
-from gate_btc_h31_recent_source import source_schedule, trailing, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
+from gate_btc_h31_recent_source import source_schedule, trailing, choose_wdo, load_contract as load_continuation, CONTRACT_SHA256 as CONTINUATION_SHA256
 
 CONTRACT_PATH = Path('tools/gate_btc_b3_h31_source_binding_contract_v1.json')
 FREEZE_PATH = Path('tools/gate_btc_b3_h31_prospective_freeze.json')
@@ -149,7 +149,12 @@ def fetch_official_session(session_date: str, schedule: dict[str, dict[str, str]
     raw, source = fetch_raw(session_date)
     if raw is None:
         raise RuntimeError(f"SOURCE_NOT_READY {session_date} {source.get('state')}")
-    front = schedule[session_date]
+    front = dict(schedule[session_date])
+    if front.get('WDO_candidates'):
+        selected, volumes = choose_wdo(raw)
+        if selected not in front['WDO_candidates']:
+            raise RuntimeError('H31_TARGET_WDO_CANDIDATE_MISMATCH')
+        front['WDO'] = selected
     m1, m5, stats, member = process_zip(raw, session_date, front)
     qa = structural_qa(session_date, front, m1, m5)
     evidence = {

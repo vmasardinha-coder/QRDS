@@ -1,4 +1,4 @@
-import sys, unittest, tempfile, json
+import sys, unittest, tempfile, json, io, zipfile
 from pathlib import Path
 import pandas as pd
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
@@ -14,7 +14,8 @@ class RecentSourceTests(unittest.TestCase):
         c=s.load_contract();self.assertEqual(len(c['warmup_dates']),20)
         self.assertEqual(c['warmup_credit'],0)
         self.assertEqual(len(c['sessions']),12)
-        self.assertEqual(new['2026-10-30'],{'WIN':'WINZ26','WDO':'WDOX26'})
+        self.assertEqual(new['2026-10-30']['WIN'],'WINZ26')
+        self.assertEqual(new['2026-10-30']['WDO_candidates'],['WDOX26','WDOZ26'])
         self.assertNotIn('2026-11-02',new)
         self.assertFalse(c['h1_economics_read'])
     def test_warmup_rejects_a_rehashed_credit(self):
@@ -32,6 +33,12 @@ class RecentSourceTests(unittest.TestCase):
             return pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':volume,'trades':trades})
         result=s.validate_bars('2026-09-16','WDOV26',frame(30,'min',5.,1),frame(6,'5min',25.,5))
         self.assertEqual(len(result),6)
+    def test_front_selection_cannot_read_later_volume_or_win_outcome(self):
+        text='CodigoInstrumento;AcaoAtualizacao;QuantidadeNegociada;HoraFechamento;TipoSessaoPregao\nWDOX26;0;100;09:00:00;1\nWDOZ26;0;50;09:00:00;1\nWDOZ26;0;10000;09:30:00;1\nWINZ26;0;90000;09:00:00;1\n'
+        data=io.BytesIO()
+        with zipfile.ZipFile(data,'w') as z:z.writestr('2026-10-21_NEGOCIOSAVISTA.TXT',text)
+        front,volumes=s.choose_wdo(data.getvalue())
+        self.assertEqual(front,'WDOX26');self.assertEqual(volumes,{'WDOX26':100.,'WDOZ26':50.})
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.
