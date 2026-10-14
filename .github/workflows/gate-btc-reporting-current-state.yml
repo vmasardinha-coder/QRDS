@@ -1,6 +1,15 @@
 name: GATE BTC Reporting Current State
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-reporting-current-state.yml
+  workflow_run:
+    workflows:
+      - GATE BTC Momentum M1 M2 Economics
+      - GATE BTC Momentum M3 Prospective Shadow
+    types: [completed]
   pull_request:
     branches: [main]
     paths:
@@ -29,7 +38,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-reporting-current-state-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  group: gate-btc-reporting-current-state-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
   cancel-in-progress: false
 
 env:
@@ -117,7 +126,8 @@ jobs:
   publish-reporting-state:
     needs: reporting-contract-test
     if: >-
-      github.event_name != 'pull_request' && github.ref_name == 'main'
+      github.event_name != 'pull_request' && github.ref_name == 'main' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main')
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -218,3 +228,4 @@ jobs:
               print('FAILED_DELIVERY=' + ','.join(s['warnings']['failed_delivery_components']))
               print('BLOCKED_DEPENDENCIES=' + ','.join(s['warnings']['blocked_dependency_components']))
           PY
+
