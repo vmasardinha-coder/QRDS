@@ -55,11 +55,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install requests pandas numpy
+      - name: Require structural test modules in the immutable PR merge tree
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          names = ('test_gate_btc_h1_prospective_schedule.py', 'test_gate_btc_b3_h1_cancel_identity.py', 'test_gate_btc_b3_missing_root_gap.py')
+          missing = [name for name in names if not Path('tests', name).is_file()]
+          assert not missing, f'Missing required structural tests: {missing}'
+          PY
       - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_prospective_schedule.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_h1_cancel_identity.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_missing_root_gap.py' -v
