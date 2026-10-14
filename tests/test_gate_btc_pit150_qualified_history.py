@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),23)
+        self.assertEqual(len(ROUTES),24)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -83,7 +83,7 @@ class QualifiedHistoryTests(unittest.TestCase):
         self.assertEqual(out[-1]["volume_usd"],42)
 
     def test_gate_new_tokens_require_exact_chain_and_contract(self):
-        for symbol in ['AERO','SPX']:
+        for symbol in ['AERO','SPX','CRVUSD']:
             route=ROUTES[symbol]
             meta={'currency':symbol,'name':route['name'],'delisted':False,'trade_disabled':False,'chains':[{'name':route['contract_chain'],'addr':route['contract']}]}
             check_gate_contract(route,meta)

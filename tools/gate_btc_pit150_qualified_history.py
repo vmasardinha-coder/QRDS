@@ -9,6 +9,7 @@ from pathlib import Path
 
 EFFECTIVE_CUTOFF = "2026-10-13"
 GATE_FOLLOWUP_ROUTES = {
+    'CRVUSD': {'coin_id': 'crvusd', 'name': 'crvUSD', 'source': 'gate', 'pair': 'CRVUSD_USDT', 'contract': '0xf939e0a03fb07f59a73314e73794be0e57ac1b4e', 'contract_chain': 'ETH'},
     'GRAM': {'coin_id':'the-open-network','name':'GRAM (prev. Toncoin)','source':'gate','pair':'GRAM_USDT','contract':'','contract_chain':'TON','rename_evidence':'https://www.gate.com/pt-br/announcements/article/100181'},
     'GRASS': {'coin_id':'grass','name':'Grass','source':'gate','pair':'GRASS_USDT','contract':'Grass7B4RdKfBCjTKgSqnXkqjwiGvQyFbuSCUJr3XXjs','contract_chain':'SOL'},
     'GT': {'coin_id':'gatechain-token','name':'GateToken','source':'gate','pair':'GT_USDT'},
