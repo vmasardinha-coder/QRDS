@@ -19,6 +19,10 @@ on:
       - 'tests/test_gate_btc_factory_track_coverage.py'
       - '.github/workflows/gate-btc-factory-status-export.yml'
 
+concurrency:
+  group: gate-btc-factory-status-export-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
+  cancel-in-progress: false
+
 env:
   RESEARCH_ONLY: 'true'
   SHADOW_ONLY: 'true'
@@ -68,12 +72,17 @@ jobs:
         run: |
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
-          git diff --cached --quiet && exit 0
-          git commit -m "Factory refresh complete status ${{ github.run_id }}"
+          # This checkout is disposable. The report is derived; recompute it
+          # from the latest remote ledgers after each rejected non-force push.
           for i in 1 2 3 4 5; do
-            git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0
+            git fetch origin gate-btc-runtime
+            git reset --hard origin/gate-btc-runtime
+            python ../main_repo/tools/gate_btc_factory_status_export.py \
+              --runtime-root . --output runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
+            git add runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
+            git diff --cached --quiet && exit 0
+            git commit -m "Factory refresh complete status ${{ github.run_id }}"
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
             sleep $((i*2))
           done
           exit 1
-
