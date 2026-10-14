@@ -23,6 +23,12 @@ class RecentSourceTests(unittest.TestCase):
             ts=pd.date_range('2026-09-16 09:00',periods=periods,freq=freq,tz='America/Sao_Paulo')
             return pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':5.,'trades':1})
         with self.assertRaisesRegex(RuntimeError,'LATTICE'):s.validate_bars('2026-09-16','WDOV26',frame(29,'min'),frame(6,'5min'))
+    def test_fixed_offset_b3_timestamps_normalize_before_lattice_comparison(self):
+        def frame(periods,freq,volume,trades):
+            ts=pd.date_range('2026-09-16 09:00',periods=periods,freq=freq,tz='UTC-03:00')
+            return pd.DataFrame({'timestamp':ts.astype(str),'date':'2026-09-16','root':'WDO','symbol':'WDOV26','open':5000.,'high':5000.,'low':5000.,'close':5000.,'volume':volume,'trades':trades})
+        result=s.validate_bars('2026-09-16','WDOV26',frame(30,'min',5.,1),frame(6,'5min',25.,5))
+        self.assertEqual(len(result),6)
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.

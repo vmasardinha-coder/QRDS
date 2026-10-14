@@ -60,10 +60,10 @@ def validate_bars(day, symbol, m1, m5):
         if df.empty: raise RuntimeError('H31_WARMUP_EMPTY_BARS')
         ts=pd.to_datetime(df.timestamp).dt.tz_convert('America/Sao_Paulo')
         x=df.loc[(ts>=pd.Timestamp(day+' 09:00',tz='America/Sao_Paulo')) & (ts<pd.Timestamp(day+' 09:30',tz='America/Sao_Paulo'))].copy()
-        x['timestamp']=pd.to_datetime(x.timestamp)
+        x['timestamp']=ts.loc[x.index]
         x=x.sort_values('timestamp').reset_index(drop=True)
         expected=pd.date_range(day+' 09:00', periods=n, freq=freq,tz='America/Sao_Paulo')
-        if not pd.DatetimeIndex(x.timestamp).equals(expected): raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH')
+        if not pd.DatetimeIndex(x.timestamp).equals(expected): raise RuntimeError('H31_WARMUP_LATTICE_MISMATCH '+str({'rows':len(x),'expected':n,'missing':[str(v) for v in expected.difference(pd.DatetimeIndex(x.timestamp))],'extra':[str(v) for v in pd.DatetimeIndex(x.timestamp).difference(expected)]}))
         if set(x.symbol)!={symbol} or set(x.root)!={'WDO'}: raise RuntimeError('H31_WARMUP_IDENTITY_MISMATCH')
         vals=x[['open','high','low','close','volume','trades']]
         if not all(math.isfinite(float(v)) for v in vals.to_numpy().flat): raise RuntimeError('H31_WARMUP_NONFINITE')
