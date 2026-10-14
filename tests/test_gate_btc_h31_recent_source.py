@@ -75,9 +75,18 @@ class RecentSourceTests(unittest.TestCase):
     def test_twelve_valid_inputs_cannot_start_canonical_warmup(self):
         dates=set(s.load_contract()['warmup_dates'][-12:])
         def quality(day,ledger):return {'ret30_bps':1.,'receipt_sha256':day} if day in dates else None
-        with patch.object(s,'qualify',side_effect=quality):
+        with patch.object(s,'qualify',side_effect=quality), patch.object(s,'frozen_seed',return_value=[]):
             with self.assertRaisesRegex(RuntimeError,'NEEDS_20_STRUCTURAL_PASS_INPUTS got=12'):
                 s.trailing('2026-10-15',Path('unused'))
+    def test_original_frozen_seed_completes_inputs_without_scored_credit(self):
+        dates=set(s.load_contract()['warmup_dates'][-12:])
+        historic=[{'date':'2025-12-'+str(d).zfill(2),'ret30_bps':1.,'source':'FROZEN_COMMUNITY_WARMUP','receipt_sha256':'frozen'} for d in range(1,21)]
+        def quality(day,ledger):return {'ret30_bps':1.,'receipt_sha256':day} if day in dates else None
+        with patch.object(s,'qualify',side_effect=quality), patch.object(s,'frozen_seed',return_value=historic):
+            rows=s.trailing('2026-10-15',Path('unused'))
+        self.assertEqual(len(rows),20)
+        self.assertEqual(sum(r['source']=='FROZEN_COMMUNITY_WARMUP' for r in rows),8)
+        self.assertEqual(sum(r['source']=='RECENT_OFFICIAL_B3_INPUT_ONLY' for r in rows),12)
     def test_receipt_change_fails_seal(self):
         r={'date':'2026-09-16','contract_sha256':s.CONTRACT_SHA256,'structural_qa':'PASS','prospective_scored':False,'ret30_bps':1.,'eligible_observation_increment':0,'source_sha256':'a'*64}
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.

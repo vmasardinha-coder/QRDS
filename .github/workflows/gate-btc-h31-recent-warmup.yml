@@ -52,7 +52,7 @@ jobs:
           from pathlib import Path
           from datetime import datetime
           from zoneinfo import ZoneInfo
-          from gate_btc_h31_recent_source import load_contract, qualify
+          from gate_btc_h31_recent_source import load_contract, qualify, frozen_seed
           canonical=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json')
           canonical_before=canonical.read_bytes() if canonical.exists() else None
           dates=load_contract()['warmup_dates']
@@ -73,14 +73,16 @@ jobs:
                   print(json.dumps({'date':d,'status':'PASS','WDO':r['WDO'],'receipt_sha256':r['receipt_sha256'],'eligible_observation_increment':0}),flush=True)
               except Exception as e:
                   failed.append(d);print(json.dumps({'date':d,'status':'FAIL_CLOSED','error':str(e),'eligible_observation_increment':0}),flush=True)
-          status={'schema':'qrds.h31.recent_warmup_status.v1','updated_at':now.isoformat(),'qualified_input_count':len(qualified),'required_input_count':20,'qualified_inputs':qualified,'unqualified_dates':failed,'pending_session_close_dates':pending,'ready_for_first_prospective_target':len(qualified)>=20,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False,'orders':0,'real_capital':0}
-          status['selected_trailing_inputs']=qualified[-20:]
+          seed=frozen_seed('runtime_repo/runtime/ledgers/b3_h31_prospective')
+          mixed=sorted(seed+[dict(x,source='RECENT_OFFICIAL_B3_INPUT_ONLY') for x in qualified],key=lambda x:x['date'])[-20:]
+          status={'schema':'qrds.h31.recent_warmup_status.v1','updated_at':now.isoformat(),'qualified_input_count':len(mixed),'qualified_official_input_count':len(qualified),'selected_frozen_community_input_count':sum(r['source']=='FROZEN_COMMUNITY_WARMUP' for r in mixed),'required_input_count':20,'qualified_inputs':qualified,'unqualified_dates':failed,'pending_session_close_dates':pending,'ready_for_first_prospective_target':len(mixed)==20,'eligible_observation_increment':0,'canonical_counter_mutated':False,'h1_economics_read':False,'orders':0,'real_capital':0}
+          status['selected_trailing_inputs']=mixed
           status['state']='READY_INPUTS_CANONICAL_OBSERVATION_STILL_REQUIRED' if status['ready_for_first_prospective_target'] else 'BLOCKED_INSUFFICIENT_20_STRUCTURAL_PASS_INPUTS'
           if os.environ['PR_PROBE']=='true': status['publication']='VALIDATED_INPUT_CACHE_ONLY_ZERO_CANONICAL_CREDIT'
           p=Path('runtime_repo/runtime/ledgers/b3_h31_prospective/source_continuation/SOURCE_STATUS.json');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
           assert (canonical.read_bytes() if canonical.exists() else None)==canonical_before, 'CANONICAL_STATUS_MUTATION_FORBIDDEN'
           print(json.dumps(status),flush=True)
-          if len(qualified)<20: raise SystemExit('H31_WARMUP_NEEDS_20_PASS_INPUTS got='+str(len(qualified)))
+          if len(mixed)!=20: raise SystemExit('H31_WARMUP_NEEDS_20_PASS_INPUTS got='+str(len(mixed)))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
