@@ -1,0 +1,197 @@
+{
+  "_STATUS": "RASCUNHO — NAO CONGELADO, NAO VALE COMO PREREGISTRO",
+  "_aviso": [
+    "Este arquivo nao e um contrato ate ser commitado, ter o sha256 do proprio",
+    "conteudo registrado e a data de congelamento fixada por quem e dono do",
+    "repositorio. Enquanto for rascunho, qualquer numero aqui pode ser discutido.",
+    "Depois de congelado, nenhum numero aqui pode mudar, e um numero que mude",
+    "encerra a serie em vez de ajusta-la.",
+    "Escrito em 2026-10-14 DEPOIS de eu ter visto o teste historico de 5 anos.",
+    "Por isso ele NAO pode ser aplicado ao V11 nem ao V13, que ja tem retorno",
+    "observado: seria retune contra resultado conhecido."
+  ],
+
+  "schema": "gate_btc.delta_v14_contract.v1",
+  "engine_version": "DELTA_V14_ENGINE_1.0_DRAFT",
+  "freeze_date": null,
+  "anchor_date": null,
+  "contract_sha256": null,
+  "inherits_observations_from_predecessors": false,
+  "predecessors_non_comparable": ["DELTA_WALK_FORWARD_1.1", "DELTA_V12_ENGINE_1.0", "DELTA_V13_ENGINE_1.0"],
+
+  "governance": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "methodology_changes": 0,
+    "official_replica_claim": false,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true,
+    "promotion_allowed": false,
+    "retrospective_winner_selection_forbidden": true
+  },
+
+  "_mudanca_estrutural": [
+    "A diferenca central em relacao ao V11/V12/V13 e DE ONDE VEM A EVIDENCIA.",
+    "Naqueles, a evidencia viria do periodo prospectivo. Medido: para atingir",
+    "t=2.80 ao nivel de nome seriam necessarios ~1367 dias (3.7 anos) de coleta",
+    "prospectiva, e ~4363 dias (12 anos) se o efeito real for o dos nomes que",
+    "decairam. Esperar nao e uma rota viavel.",
+    "Aqui a evidencia vem do TESTE HISTORICO, construido sobre dados que retem",
+    "ativos mortos, e o periodo prospectivo serve para CONFIRMAR que o resultado",
+    "historico se sustenta fora da amostra — com banda de tolerancia preregistrada,",
+    "nao com teste de significancia que a amostra prospectiva nunca alcancaria."
+  ],
+
+  "data_layer": {
+    "_requisito_critico": "A fonte DEVE reter ativos deslistados.",
+    "_motivo": [
+      "Verificado em 2026-10-14: a API da OKX PURGA instrumentos deslistados.",
+      "FTT-USDT-SWAP e SRM-USDT-SWAP, ambos negociados no passado, retornam",
+      "code 51001 'Instrument ID does not exist'. Um painel montado so com a OKX",
+      "contem apenas sobreviventes, e o vies nao e removivel por tratamento",
+      "estatistico — e ausencia de dado, nao ruido."
+    ],
+    "source_must_retain_delisted": true,
+    "candidate_sources": ["coingecko_full_history_including_dead_assets", "exchange_archive_with_delisted_retained"],
+    "universe_membership_recorded_daily": true,
+    "universe_membership_append_only": true,
+    "point_in_time_universe_required": true,
+    "per_name_daily_return_must_be_recorded": true,
+    "_motivo_per_name": [
+      "O ledger atual (delta_paper_monitor, delta_v13_engine) grava apenas",
+      "entrada e saida por nome. Sem retorno diario por nome nao se calcula a",
+      "correlacao intradiaria sobre as posicoes abertas, so sobre as saidas —",
+      "que sao amostra selecionada pelos stops e enviesada para baixo."
+    ]
+  },
+
+  "universe": {
+    "stratum": "TOP30_BY_POINT_IN_TIME_MEDIAN_USD_VOLUME_30D",
+    "size": 30,
+    "ranking_lookback_days": 30,
+    "ranking_min_observations": 15,
+    "_motivo": [
+      "Medido: o sinal vive nos nomes liquidos. t=2.92 no top 30 por volume,",
+      "1.94 fora do top 30 e 0.91 fora do top 60. O top 30 e tambem onde o",
+      "custo de execucao e menor e onde o vies de sobrevivencia morde menos,",
+      "porque nomes grandes raramente somem.",
+      "Verificado que ranking ponto-no-tempo NAO altera o resultado (t=3.35 no",
+      "top 100 PIT contra 3.36 no universo cheio), entao a escolha e por custo",
+      "e robustez, nao por resultado."
+    ]
+  },
+
+  "signal": {
+    "_herdado_verbatim_do_motor_congelado": "gate_btc_delta_v12_engine.py:265-332",
+    "formula": "0.20*z(ret7) + 0.35*z(ret14) + 0.35*z(ret30) - 0.10*z(vol30) + 0.05*z(liq14)",
+    "z": "cross_sectional_zscore_population_ddof0",
+    "vol30": "sample_stdev_ddof1_of_last_30_daily_returns",
+    "liq14": "log1p(median_usd_volume_last_14d)",
+    "min_observations_for_vol30": 30,
+    "partial_score_is_undefined": true,
+    "_nota": "Nenhum peso e alterado. Alterar qualquer um exigiria contrato novo."
+  },
+
+  "evidence": {
+    "primary_source": "HISTORICAL",
+    "historical_test": {
+      "method": "FAMA_MACBETH_CROSS_SECTIONAL",
+      "dependent": "next_day_return_demeaned_within_day",
+      "_motivo_demeanar": [
+        "Demeanar dentro do dia torna o teste neutro a mercado por construcao.",
+        "Medido no V11: betas dos livros entre 0.11 e 0.38 e os quatro alfas",
+        "indistinguiveis de zero. Sem o ajuste, o teste mede BTC, nao sinal."
+      ],
+      "min_names_per_day": 20,
+      "min_days": 1000,
+      "required_t_statistic": 3.0,
+      "must_hold_in_both_halves": true,
+      "required_t_each_half": 1.8,
+      "max_fraction_of_days_driving_result": 0.02,
+      "_regra_concentracao": [
+        "Se remover os K melhores dias, com K = 2% dos dias, derrubar o t abaixo",
+        "de 1.8, o resultado e REPROVADO por concentracao, independentemente do",
+        "t cheio. Medido no teste de 2026-10-13: remover 25 de 1968 dias (1.3%)",
+        "levou o t de 3.36 a 1.03 — ou seja, o escore ATUAL REPROVARIA nesta",
+        "regra. Isso e deliberado: a regra foi escrita para barrar exatamente o",
+        "padrao que o V11 e o teste historico exibiram."
+      ],
+      "survivorship_handling": "DATASET_MUST_INCLUDE_DELISTED_OR_TEST_IS_INVALID"
+    },
+    "prospective_confirmation": {
+      "_papel": "CONFIRMAR, nao provar. A amostra prospectiva nunca atinge significancia em prazo util.",
+      "min_observations": 180,
+      "test": "lambda_prospectivo_dentro_da_banda_do_historico",
+      "tolerance_band": "lambda_prospectivo >= 0.5 * lambda_historico",
+      "failure_action": "ENCERRAR_E_REGISTRAR",
+      "_nota": [
+        "Se o lambda prospectivo ficar abaixo de metade do historico ao fim das",
+        "180 observacoes, a serie e ENCERRADA e o registro diz que o resultado",
+        "historico nao se sustentou. Nao ha reajuste, nao ha extensao de prazo,",
+        "nao ha troca de limiar. Essa e a regra de parada, e ela e simetrica:",
+        "passar na banda tambem nao e aprovacao para capital real."
+      ]
+    }
+  },
+
+  "execution": {
+    "selection": {"top_n": 10, "bottom_n": 10},
+    "weight_per_name_fixed": true,
+    "net_exposure_is_consequence_not_parameter": true,
+    "_nota_exposicao": [
+      "Medido no V11 e no V13: o liquido do livro passeia sozinho porque o peso",
+      "e fixo por nome e os stops tiram mais de um lado que do outro. O V13",
+      "atravessou +0.330, +0.050 e +0.220 na 70/30 em tres fechamentos sem",
+      "nenhuma mudanca de parametro. Isto fica REGISTRADO como consequencia",
+      "conhecida do desenho, nao como defeito a corrigir no meio da serie."
+    ],
+    "reentry_cooldown_days": 2,
+    "cooldown_armed_by": ["STOP_INTRADAY", "TAKE_PROFIT_INTRADAY", "STOP_GAP"],
+    "cooldown_blind_to_pnl": true,
+    "_nota_cooldown": [
+      "Mantido em 2 dias, igual ao predecessor. O diagnostico de 2026-10-08",
+      "sugeria custo alto, mas a ressalva de vies de construcao nunca foi",
+      "resolvida, e o caso STRK de 2026-10-13 a ilustrou: o escore subiu a",
+      "+6.755 durante o bloqueio e voltou a +4.689 quando a posicao reabriu.",
+      "Mudar o parametro com base naquele diagnostico seria retune.",
+      "Esta e a janela legitima para escolher outro valor; escolhi manter."
+    ],
+    "slippage_model": "TIERED_BY_POINT_IN_TIME_LIQUIDITY_RANK",
+    "cost_breakeven_measured_bps_per_leg": 74,
+    "measured_daily_turnover": 0.242,
+    "_nota_custo": [
+      "Giro medido do livro de dois decis: 24.2% ao dia, livro de 9.5 nomes.",
+      "Empate em 74 bps por perna. Isso e corretagem e spread, NAO impacto de",
+      "mercado, que cresce com tamanho e nao esta medido."
+    ]
+  },
+
+  "ledger": {
+    "append_only": true,
+    "sha256_chain": true,
+    "gap_policy": "FAIL_CLOSED_NO_BACKFILL",
+    "required_files": [
+      "STATUS.json", "ANCHOR.json", "DAILY_NAV.csv", "POSITIONS_HISTORY.csv",
+      "SELECTIONS_HISTORY.csv", "TRADE_EVENTS.csv", "UNIVERSE_MEMBERSHIP.csv",
+      "PER_NAME_DAILY_RETURNS.csv"
+    ],
+    "_novo": "PER_NAME_DAILY_RETURNS.csv nao existe nos predecessores e e obrigatorio aqui."
+  },
+
+  "_o_que_este_contrato_NAO_autoriza": [
+    "Nao autoriza capital real, ordens, nem conexao a endpoint privado.",
+    "Nao autoriza aplicar qualquer regra daqui ao V11 ou ao V13.",
+    "Nao autoriza reabrir o V12.",
+    "Passar em todos os criterios aqui significa apenas que a hipotese",
+    "sobreviveu a este teste. Nao significa que existe vantagem explorada,",
+    "nem que o tamanho dela justifica risco."
+  ]
+}
