@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 from gate_btc_b3_h31_prospective_collect import load_frozen_historical_wdo, load_json, validate_contract
 from gate_btc_b3_h1_daily import load_schedule
+from gate_btc_h31_intraday_reconciliation import reconcile_intraday_events
 
 TZ = ZoneInfo("America/Sao_Paulo")
 SAFETY = {
@@ -310,6 +311,7 @@ def main() -> int:
     sessions, trades = counts(shadow_dir)
     status["H31_SHADOW_SESSIONS"] = sessions
     status["H31_SHADOW_SIMULATED_TRADES"] = trades
+    status.update(reconcile_intraday_events(shadow_dir))
     status["CANONICAL_COUNTER_CHANGED"] = False
     status["updated_at"] = now.isoformat()
     shadow_dir.mkdir(parents=True, exist_ok=True)
