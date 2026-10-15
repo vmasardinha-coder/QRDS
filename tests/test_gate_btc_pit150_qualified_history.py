@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),24)
+        self.assertEqual(len(ROUTES),25)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -66,7 +66,7 @@ class QualifiedHistoryTests(unittest.TestCase):
         self.assertEqual(ROUTES["APEPE"]["name"],"APE and PEPE")
 
     def test_gate_followup_identities_are_exact_and_short_usdy_is_not_admitted(self):
-        self.assertNotIn('USDY',ROUTES)
+        self.assertIsNone(route_for_member('USDY','ondo-us-dollar-yield','2026-10-14'))
         for symbol in ['GT','GHO','PIEVERSE']:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route['coin_id'],'2026-10-13'))
@@ -155,6 +155,45 @@ class QualifiedHistoryTests(unittest.TestCase):
             self.assertIn('granularity=1Dutc',urls[-1])
         bad=copy.deepcopy(pair);bad['data'][0]['status']='offline'
         with self.assertRaises(ValueError):check_identity(route,bad)
+
+    def test_usdy_bybit_prospective_cutoff_identity_and_physical_qa(self):
+        route=ROUTES["USDY"]
+        self.assertIsNotNone(route_for_member("USDY",route["coin_id"],"2026-10-15"))
+        self.assertIsNone(route_for_member("USDY","another-token","2026-10-15"))
+        self.assertIsNone(route_for_member("USDY",route["coin_id"],"2026-10-14"))
+        meta={"retCode":0,"result":{"category":"spot","list":[{"symbol":"USDYUSDT","symbolId":555,"baseCoin":"USDY","quoteCoin":"USDT","status":"Trading"}]}}
+        check_identity(route,meta)
+        for key,value in [("symbolId",556),("baseCoin","OTHER"),("quoteCoin","USDC"),("status","Closed")]:
+            bad=copy.deepcopy(meta);bad["result"]["list"][0][key]=value
+            with self.assertRaises(ValueError):check_identity(route,bad)
+        last=datetime(2026,10,15,tzinfo=timezone.utc)
+        bars=[[str(int((last-timedelta(days=i)).timestamp()*1000)),"2","3","1","2","900","42"] for i in range(200)]
+        payload={"retCode":0,"result":{"category":"spot","symbol":"USDYUSDT","list":bars}}
+        rows=normalize_history("USDY",route,payload,"2026-10-15")
+        self.assertEqual(rows[-1]["volume_usd"],42)
+        self.assertEqual(len(rows),200)
+        for kind in ["short","duplicate","gap","wrong_market","wrong_pair","transport","offset","negative_turnover","bad_price"]:
+            bad=copy.deepcopy(payload)
+            if kind=="short":bad["result"]["list"].pop()
+            elif kind=="duplicate":bad["result"]["list"].append(bars[0])
+            elif kind=="gap":bad["result"]["list"][50][0]=str(int(bars[-1][0])-86400000)
+            elif kind=="wrong_market":bad["result"]["category"]="linear"
+            elif kind=="wrong_pair":bad["result"]["symbol"]="OTHERUSDT"
+            elif kind=="transport":bad["retCode"]=10001
+            elif kind=="offset":bad["result"]["list"][0][0]=str(int(bars[0][0])+1)
+            elif kind=="negative_turnover":bad["result"]["list"][0][6]="-1"
+            else:bad["result"]["list"][0][3]="5"
+            with self.assertRaises(ValueError):normalize_history("USDY",route,bad,"2026-10-15")
+        responses=[json.dumps(x).encode() for x in [meta,payload]]
+        class Session:
+            def get(self,url,timeout):
+                class Response:status_code=200
+                obj=Response();obj.content=responses.pop(0);return obj
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=collect_history(Session(),"USDY",route["coin_id"],"2026-10-15",root,now=datetime(2026,10,16,tzinfo=timezone.utc))
+            self.assertEqual(e["effective_cutoff"],"2026-10-15")
+            self.assertEqual(e["volume_field"],"turnover")
+            self.assertEqual(len(rows),200)
 
     def test_native_gram_and_case_sensitive_solana_identity(self):
         for symbol in ['GRAM','GRASS']:
