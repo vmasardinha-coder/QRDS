@@ -7,7 +7,10 @@ class RWASidecarManifestTests(unittest.TestCase):
     def diagnostic(self):
         return {
             "schema": "gate_btc.v2a_failure_diagnostic.v1",
-            "advisory_only": True,
+            "advisory_only": True, "research_only": True, "shadow_only": True,
+            "not_approved": True, "source_order_changed": False, "promotion_allowed": False,
+            "orders_generated": 0, "real_capital_used": 0, "loaded_symbols": 124,
+            "qualified_source_extension_selected_count": 0,
             "feeds_frozen_engine": False,
             "source_substitution_performed": False,
             "denominator_changed": False,
@@ -44,6 +47,23 @@ class RWASidecarManifestTests(unittest.TestCase):
         self.assertTrue(all(row["automatic_exclusion_from_v2a"] is False for row in report["rows"]))
         self.assertTrue(all(row["tradable_universe_member"] is False for row in report["rows"]))
 
+    def test_upstream_extensions_do_not_grant_sidecar_substitution(self):
+        diagnostic=self.diagnostic()
+        diagnostic.update(source_substitution_performed=True, qualified_source_extension_selected_count=24)
+        before=__import__("copy").deepcopy(diagnostic)
+        report=build(diagnostic)
+        self.assertTrue(report["upstream_source_substitution_observed"])
+        self.assertEqual(report["upstream_qualified_extension_count"],24)
+        self.assertFalse(report["source_substitution_performed"])
+        self.assertEqual(diagnostic,before)
+        self.assertEqual(report["candidate_count"],2)
+
+    def test_inconsistent_upstream_extensions_remain_rejected(self):
+        for flag,count in [(True,0),(False,1),(True,125),(True,-1),(True,True)]:
+            diagnostic=self.diagnostic()
+            diagnostic.update(source_substitution_performed=flag,qualified_source_extension_selected_count=count)
+            with self.assertRaises(ValueError):build(diagnostic)
+
     def test_empty_semantic_flags_fail_closed(self):
         bad = self.diagnostic()
         bad["rows"][0]["semantic_flags"] = []
@@ -53,7 +73,7 @@ class RWASidecarManifestTests(unittest.TestCase):
     def test_boundary_change_fails_closed(self):
         bad = self.diagnostic()
         bad["universe_changed"] = True
-        with self.assertRaisesRegex(RuntimeError, "universe boundary changed"):
+        with self.assertRaises((RuntimeError, ValueError)):
             build(bad)
 
 

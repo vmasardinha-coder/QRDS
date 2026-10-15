@@ -54,3 +54,52 @@ class H31CloseReconciliationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class PhysicalAuxiliaryAdjudicationTests(unittest.TestCase):
+    def fixture(self,root):
+        import shutil
+        evidence=Path(__file__).resolve().parents[1]/"artifacts/gate_btc_2/h31_close_window_20261015"
+        dst=root/"intraday_events/2026-10-15";dst.mkdir(parents=True)
+        for path in (evidence/"original_events").glob("*.json"):shutil.copyfile(path,dst/path.name)
+        return evidence
+
+    def test_physical_adjudication_preserves_events_and_one_closed_trade(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);evidence=self.fixture(root)
+            before={p.name:p.read_bytes() for p in (root/"intraday_events/2026-10-15").glob("*.json")}
+            prior=reconcile_intraday_events(root)
+            self.assertEqual(prior["H31_SHADOW_INVALID_EVENT_COUNT"],5)
+            folder=root/"close_metric_adjudications";folder.mkdir()
+            (folder/"2026-10-15.json").write_bytes((evidence/"ADJUDICATION.json").read_bytes())
+            result=reconcile_intraday_events(root)
+            self.assertEqual(result["H31_SHADOW_CLOSED_TRADES"],1)
+            self.assertEqual(result["H31_SHADOW_INVALID_EVENT_COUNT"],0)
+            self.assertEqual(result["H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT"],5)
+            self.assertEqual(before,{p.name:p.read_bytes() for p in (root/"intraday_events/2026-10-15").glob("*.json")})
+
+    def test_tampered_receipt_or_financial_disagreement_cannot_clear_conflicts(self):
+        for kind in ("price","metric","source","event_set","credit"):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);evidence=self.fixture(root)
+                receipt=json.loads((evidence/"ADJUDICATION.json").read_text())
+                if kind=="price":receipt["economic_payload"]["exit"]+=1
+                elif kind=="metric":receipt["corrected_MFE_bps"]+=1
+                elif kind=="source":receipt["physical_window"]["bars"][0]["high"]+=1
+                elif kind=="event_set":receipt["close_event_hashes"].pop()
+                else:receipt["canonical_credit"]=1
+                folder=root/"close_metric_adjudications";folder.mkdir()
+                (folder/"2026-10-15.json").write_text(json.dumps(receipt))
+                result=reconcile_intraday_events(root)
+                self.assertEqual(result["H31_SHADOW_CLOSE_RECONCILIATION_STATUS"],"FAIL_EVENT_RECONCILIATION")
+                self.assertEqual(result["H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT"],0)
+
+    def test_adjudication_never_creates_a_missing_historical_close(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);evidence=self.fixture(root)
+            H31CloseReconciliationTests().write(root,{"event_type":"DECISION","session":"2026-09-22","trigger_state":"TRIGGER"})
+            folder=root/"close_metric_adjudications";folder.mkdir()
+            (folder/"2026-10-15.json").write_bytes((evidence/"ADJUDICATION.json").read_bytes())
+            result=reconcile_intraday_events(root)
+            self.assertEqual(result["H31_SHADOW_TRIGGER_SESSIONS_WITHOUT_CLOSE"],["2026-09-22"])
+            self.assertEqual(result["H31_SHADOW_CLOSE_RECONCILIATION_STATUS"],"PARTIAL_UNCLOSED_TRIGGER_GAPS")
+            self.assertEqual(result["H31_SHADOW_CLOSED_TRADES"],1)
