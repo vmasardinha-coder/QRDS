@@ -17,6 +17,7 @@ on:
       - tests/test_gate_btc_v16b1_universe_corpus.py
       - tests/test_gate_btc_v16b_signal_source.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B1_UNIVERSE_CUTOVER_20260926.json
+      - tests/test_gate_btc_v16b_cmc_snapshot_retry.py
       - tests/test_gate_btc_v16b_cmc_persist.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_CMC_DURABLE_COLLECTION_CONTRACT_20260925.json
   pull_request:
@@ -30,6 +31,7 @@ on:
       - tests/test_gate_btc_v16b1_universe_corpus.py
       - tests/test_gate_btc_v16b_signal_source.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B1_UNIVERSE_CUTOVER_20260926.json
+      - tests/test_gate_btc_v16b_cmc_snapshot_retry.py
       - tests/test_gate_btc_v16b_cmc_persist.py
       - artifacts/gate_btc/v16b/GATE_BTC_V16B_CMC_DURABLE_COLLECTION_CONTRACT_20260925.json
 
@@ -61,7 +63,7 @@ jobs:
         run: pip install 'requests>=2.31,<3' pytest pandas
 
       - name: Validate durable persistence contract
-        run: python -m pytest -q tests/test_gate_btc_v16b_cmc_persist.py tests/test_gate_btc_v16b1_universe_corpus.py tests/test_gate_btc_v16b_signal_source.py
+        run: python -m pytest -q tests/test_gate_btc_v16b_cmc_snapshot_retry.py tests/test_gate_btc_v16b_cmc_persist.py tests/test_gate_btc_v16b1_universe_corpus.py tests/test_gate_btc_v16b_signal_source.py
 
       - name: Capture raw CMC Top-150 and availability manifest
         run: |

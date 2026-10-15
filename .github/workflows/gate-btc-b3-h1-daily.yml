@@ -31,6 +31,11 @@ on:
     - cron: "30 9,12 * * 2-6"
   workflow_dispatch:
     inputs:
+      validation_only_pr:
+        description: "Read-only validation of this PR merge tree; no collection or runtime writes"
+        required: false
+        default: ""
+        type: string
       date:
         description: "Optional frozen H1 session date YYYY-MM-DD"
         required: false
@@ -38,6 +43,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: gate-btc-b3-h1-daily
@@ -50,12 +56,29 @@ env:
 
 jobs:
   validate:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve immutable merge tree without collecting observations
+        id: validation_target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_PR: ${{ inputs.validation_only_pr }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            TARGET_SHA="$GITHUB_SHA"
+          else
+            [[ "$VALIDATION_PR" =~ ^[1-9][0-9]*$ ]]
+            TARGET_SHA=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$VALIDATION_PR" --jq .merge_commit_sha)
+          fi
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "VALIDATION_MERGE_SHA=$TARGET_SHA"
+          echo "sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ steps.validation_target.outputs.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -73,7 +96,7 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_missing_root_gap.py' -v
 
   b3-h1-structural:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

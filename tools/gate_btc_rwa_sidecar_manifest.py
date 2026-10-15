@@ -16,6 +16,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+try:
+    from tools.gate_btc_v2a_failure_diagnostic import validate_advisory_diagnostic
+except ModuleNotFoundError:
+    from gate_btc_v2a_failure_diagnostic import validate_advisory_diagnostic
+
+
 def require(cond: bool, msg: str) -> None:
     if not cond:
         raise RuntimeError(msg)
@@ -25,7 +31,7 @@ def build(diagnostic: dict) -> dict:
     require(diagnostic.get("schema") == "gate_btc.v2a_failure_diagnostic.v1", "unexpected diagnostic schema")
     require(diagnostic.get("advisory_only") is True, "diagnostic must remain advisory-only")
     require(diagnostic.get("feeds_frozen_engine") is False, "diagnostic engine-feed boundary changed")
-    require(diagnostic.get("source_substitution_performed") is False, "diagnostic source-substitution boundary changed")
+    validate_advisory_diagnostic(diagnostic)
     require(diagnostic.get("denominator_changed") is False, "diagnostic denominator boundary changed")
     require(diagnostic.get("universe_changed") is False, "diagnostic universe boundary changed")
     require(int(diagnostic.get("methodology_changes", 0)) == 0, "diagnostic methodology changed")
@@ -58,6 +64,8 @@ def build(diagnostic: dict) -> dict:
         "status": "PASS_OBSERVATION_SIDECAR_ONLY",
         "data_as_of": diagnostic.get("data_as_of"),
         "source_snapshot_id": diagnostic.get("snapshot_id"),
+        "upstream_source_substitution_observed": diagnostic["source_substitution_performed"],
+        "upstream_qualified_extension_count": diagnostic.get("qualified_source_extension_selected_count", 0),
         "candidate_count": len(rows),
         "rwa_or_tokenized_flag_count": rwa,
         "cashlike_or_stable_flag_count": cashlike,

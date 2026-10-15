@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 from gate_btc_b3_h31_prospective_collect import load_frozen_historical_wdo, load_json, validate_contract
 from gate_btc_b3_h1_daily import load_schedule
 from gate_btc_h31_intraday_reconciliation import reconcile_intraday_events
+from gate_btc_h31_close_window import closed_holding_window, prior_close_hash
 
 TZ = ZoneInfo("America/Sao_Paulo")
 SAFETY = {
@@ -138,6 +139,9 @@ def write_event(shadow_dir: Path, session: str, event: dict) -> str:
     event["event_hash_sha256"] = stable_hash(event)
     d = shadow_dir / "intraday_events" / session
     d.mkdir(parents=True, exist_ok=True)
+    prior_hash = prior_close_hash(d, event)
+    if prior_hash is not None:
+        return prior_hash
     p = d / f"{event['event_hash_sha256']}.json"
     if not p.exists():
         p.write_text(json.dumps(event, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -275,8 +279,7 @@ def main() -> int:
                             else:
                                 exit_ = float(close_row["open"])
                                 gross = side * (exit_ / entry - 1.0) * 10000.0
-                                hold_times = [entry_time + timedelta(minutes=5 * i) for i in range(25)]
-                                hold = [win_by[t] for t in hold_times if t in win_by]
+                                hold = closed_holding_window(win_by, entry_time, close_time)
                                 if not hold:
                                     raise RuntimeError("WIN_HOLD_WINDOW_EMPTY")
                                 if side > 0:
