@@ -1,0 +1,50 @@
+{
+  "schema": "gate_btc.momentum_cost_evidence_protocol.v1",
+  "status": "ACTIVE_EX_POST_DIAGNOSTIC_ONLY",
+  "grid_one_way_fee_plus_slippage_bps": [
+    0,
+    5,
+    10,
+    25
+  ],
+  "grid_preexisting_reference": "artifacts/gate_btc_2/followups_20261010/MOMENTUM_COST_DIAGNOSTIC.json",
+  "scope": "M1_M2_HOLD_20260928_AND_SAME_WINDOW_BTC_ONLY",
+  "cost_basis": "HYPOTHETICAL_FEE_PLUS_SLIPPAGE_PER_BUY_OR_SELL_NOTIONAL",
+  "entry": "SELF_FINANCING_FROM_UNIT_CASH",
+  "rebalance": "ACTUAL_GROSS_HOLDINGS_EVERY_7_COMPLETED_CLOSES",
+  "between_rebalances": "HOLD_FIXED_NET_QUANTITIES_NO_COST",
+  "btc_benchmark": "SAME_ENTRY_RATE_NO_REBALANCE",
+  "valuation": "MARK_TO_MARKET_BEFORE_EXIT",
+  "terminal_exit": "SEPARATE_HYPOTHETICAL_FULL_SALE_VIEW_NO_DOUBLE_CHARGE",
+  "verification": [
+    "SEALED_MANIFEST",
+    "ZIP_SHA256",
+    "RAW_ARCHIVE_SHA256",
+    "RAW_HTTP_RESPONSE_SHA256",
+    "EXACT_CSV_MANIFEST_EQUALITY",
+    "GROSS_QUANTITIES_NAV",
+    "GROSS_BTC_NAV"
+  ],
+  "publication": "IMMUTABLE_REPORT_KEYED_BY_SOURCE_LEDGER_SHA256",
+  "canonical_gross_mutation": false,
+  "canonical_net_binding": {
+    "status": "UNBOUND",
+    "fields_still_required": [
+      "EXECUTION_VENUE_AND_FEE_TIER",
+      "VERSIONED_FEE_SCHEDULE_OR_EXPLICIT_ABSTRACT_MODEL",
+      "ORDER_NOTIONAL_AND_LIQUIDITY_ASSUMPTIONS",
+      "SLIPPAGE_RULE_OR_MEASUREMENT",
+      "FIRST_FUTURE_EFFECTIVE_OBSERVATION"
+    ],
+    "canonical_net_return": null
+  },
+  "fx": "USD_NUMERAIRE_ONLY_NOT_REALIZED_BRL",
+  "funding_and_borrow": "SPOT_UNLEVERED_DIAGNOSTIC_ASSUMPTION",
+  "m3": "SEPARATE_EPOCHS_NOT_JOINED_OR_CREDITED",
+  "retune": false,
+  "scientific_credit": 0,
+  "prospective_net_credit": 0,
+  "engine_feed": false,
+  "orders": 0,
+  "real_capital": 0
+}
