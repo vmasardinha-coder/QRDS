@@ -86,6 +86,13 @@ ROUTES['USDY'] = {'coin_id':'ondo-us-dollar-yield','name':'Ondo U.S. Dollar Yiel
                  'effective_cutoff':'2026-10-15',
                  'identity_evidence':'https://www.bybit.com/en/learn/stablecoin/what-is-ondo-us-dollar-yield-usdy'}
 
+ROUTES['USDGO'] = {'coin_id':'usdgo','name':'USDGO','source':'bitget',
+                   'pair':'USDGOUSDT','base_coin':'USDGO',
+                   'contract':'72puLt71H93Z9CzHuBRTwFpL4TG3WZUhnoCC7p8gxigu',
+                   'contract_chain':'SOL','currency_id':'2091',
+                   'effective_cutoff':'2026-10-15',
+                   'identity_evidence':'https://www.bitget.com/support/articles/12560603859340'}
+
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -140,7 +147,7 @@ def check_identity(route, payload):
         if payload.get('code') != '00000' or len(rows) != 1:
             raise ValueError('ambiguous Bitget spot identity')
         entry = rows[0]
-        if not (entry.get('symbol') == route['pair'] and entry.get('baseCoin') == 'BTW'
+        if not (entry.get('symbol') == route['pair'] and entry.get('baseCoin') == route.get('base_coin', 'BTW')
                 and entry.get('quoteCoin') == 'USDT' and entry.get('status') == 'online'):
             raise ValueError('exact Bitget spot identity mismatch')
     elif provider == "xt":
@@ -172,10 +179,16 @@ def check_gate_contract(route, payload):
 
 def check_bitget_contract(route, payload):
     rows = payload.get('data', [])
-    if payload.get('code') != '00000' or len(rows) != 1 or rows[0].get('coin') != 'BTW':
+    if payload.get('code') != '00000' or len(rows) != 1 or rows[0].get('coin') != route.get('base_coin', 'BTW'):
         raise ValueError('ambiguous Bitget currency identity')
+    if route.get('currency_id') and rows[0].get('coinId') != route['currency_id']:
+        raise ValueError('exact Bitget currency identifier mismatch')
+    expected = route['contract']
+    def same_contract(value):
+        actual = str(value)
+        return actual.lower() == expected.lower() if expected.startswith('0x') else actual == expected
     matches = [x for x in rows[0].get('chains', []) if x.get('chain') == route['contract_chain']
-               and str(x.get('contractAddress', '')).lower() == route['contract'].lower()]
+               and same_contract(x.get('contractAddress', ''))]
     if len(matches) != 1:
         raise ValueError('exact Bitget chain/token contract mismatch')
 
@@ -245,6 +258,8 @@ def normalize_history(symbol, route, payload, cutoff):
             ts = int(entry[0]) // 1000
             o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
         elif provider == 'bitget':
+            if len(entry) not in {7,8} or int(entry[0]) % 86400000:
+                raise ValueError('invalid Bitget UTC daily schema')
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
         elif provider == "mexc":
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float, [entry[1],entry[2],entry[3],entry[4],entry[7]])
@@ -327,6 +342,11 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         evidence.update({'aggregation':'24 complete UTC hours per day; open first, high max, low min, close last, cost sum',
                          'quote_currency':'USDC','quote_usd_convention':'nominal stablecoin quote; no historical FX conversion',
                          'hourly_rows':4800,'identity_evidence':route['identity_evidence']})
+    if provider == 'bitget':
+        evidence.update({'quote_currency':'USDT','volume_field':'quote_volume_index_6',
+                         'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
+        if route.get('identity_evidence'):
+            evidence['identity_evidence'] = route['identity_evidence']
     if route.get('rename_evidence'):
         evidence['rename_evidence'] = route['rename_evidence']
     if 'currency' in labels:
