@@ -1,12 +1,17 @@
 name: GATE BTC Bybit Spot Recovery Audit
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-bybit-spot-recovery.yml
   workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-bybit-spot-recovery.yml
       - tools/gate_btc_bybit_spot_recovery_probe.py
+      - tools/gate_btc_v2a_failure_diagnostic.py
       - tools/gate_btc_bybit_public_archive_probe.py
       - tests/test_gate_btc_bybit_spot_recovery_probe.py
   workflow_run:
@@ -36,7 +41,7 @@ jobs:
   bybit-spot-recovery-audit:
     needs: contract-tests
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_dispatch' || github.event_name == 'push' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
@@ -121,3 +126,4 @@ jobs:
           path: artifacts/bybit_recovery/
           retention-days: 30
           if-no-files-found: error
+

@@ -1,6 +1,10 @@
 name: GATE BTC Source Redundancy Probes
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-source-redundancy-probes.yml
   workflow_dispatch:
     inputs:
       data_cutoff:
@@ -221,14 +225,9 @@ jobs:
               print(str(path) + " STATUS=" + report["status"])
           diagnostic = Path("artifacts/source_probes/v2a_failure_diagnostic.json")
           if diagnostic.exists():
+              from tools.gate_btc_v2a_failure_diagnostic import validate_advisory_diagnostic
               report = json.load(open(diagnostic, encoding="utf-8"))
-              assert report["advisory_only"] is True
-              assert report["feeds_frozen_engine"] is False
-              assert report["denominator_changed"] is False
-              assert report["universe_changed"] is False
-              assert report["source_order_changed"] is False
-              assert report["source_substitution_performed"] is False
-              assert report["methodology_changes"] == 0
+              validate_advisory_diagnostic(report)
           print("SOURCE_PROBE_SAFETY=PASS")
           PY
 
@@ -240,3 +239,4 @@ jobs:
           path: artifacts/source_probes/
           retention-days: 30
           if-no-files-found: error
+

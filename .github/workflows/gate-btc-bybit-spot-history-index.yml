@@ -8,6 +8,8 @@ on:
       - .github/workflows/gate-btc-bybit-spot-history-index.yml
       - tools/gate_btc_bybit_spot_history_index_probe.py
       - tests/test_gate_btc_bybit_spot_history_index_probe.py
+      - tools/gate_btc_bybit_recovery_receipt.py
+      - tests/test_gate_btc_bybit_recovery_receipt.py
   workflow_run:
     workflows: ["GATE BTC Bybit Spot Recovery Audit"]
     types: [completed]
@@ -31,6 +33,7 @@ jobs:
           python-version: "3.12"
       - name: Test Bybit history-index fail-closed boundary
         run: python -m unittest -v tests/test_gate_btc_bybit_spot_history_index_probe.py
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_bybit_recovery_receipt.py' -v
 
   bybit-spot-history-index-audit:
     needs: contract-tests
@@ -52,6 +55,7 @@ jobs:
           python-version: "3.12"
 
       - name: Resolve exact successful Bybit recovery evidence
+        id: recovery
         env:
           GH_TOKEN: ${{ github.token }}
           TRIGGER_RUN_ID: ${{ github.event.workflow_run.id || '' }}
@@ -73,6 +77,16 @@ jobs:
           assert run['status'] == 'completed'
           assert run['conclusion'] == 'success'
           PY
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" > recovery_jobs.json
+          python tools/gate_btc_bybit_recovery_receipt.py \
+            --run recovery_run.json --jobs recovery_jobs.json \
+            --output artifacts/bybit_history/RECOVERY_DEPENDENCY_STATUS.json \
+            --github-output "$GITHUB_OUTPUT"
+          ELIGIBLE=$(python -c "import json;print(str(json.load(open('artifacts/bybit_history/RECOVERY_DEPENDENCY_STATUS.json'))['eligible']).lower())")
+          if [ "$ELIGIBLE" != 'true' ]; then
+            echo 'BYBIT_HISTORY_INDEX=WAIT_UPSTREAM_RECOVERY_JOB_SKIPPED'
+            exit 0
+          fi
           ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
             --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-bybit-spot-recovery-")) | .id' | head -1)
           test -n "$ARTIFACT_ID"
@@ -83,12 +97,14 @@ jobs:
           echo "BYBIT_RECOVERY_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
 
       - name: Measure Bybit public Spot history from directory indexes
+        if: steps.recovery.outputs.eligible == 'true'
         run: >-
           python tools/gate_btc_bybit_spot_history_index_probe.py
           --recovery-report source_bybit/bybit_spot_v2a_recovery_candidates.json
           --output artifacts/bybit_history/bybit_spot_v2a_history_index.json
 
       - name: Verify no bypass or engine integration occurred
+        if: steps.recovery.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json, os
@@ -120,3 +136,4 @@ jobs:
           path: artifacts/bybit_history/
           retention-days: 30
           if-no-files-found: error
+

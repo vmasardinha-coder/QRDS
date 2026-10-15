@@ -11,6 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import gate_btc_2_item3b_forward_source_probe as source
+from gate_btc_win_session_phase_qa import session_phase_qa
 
 TZ = ZoneInfo("America/Sao_Paulo")
 MAD_SCALE = 1.4826
@@ -383,7 +384,8 @@ def main() -> int:
 
     if not enough_session_rows(rows, max_window):
         raise RuntimeError(f"INCOMPLETE_SESSION_FOR_FROZEN_OUTCOMES bars={len(rows)} max_window={max_window}")
-    if not source.exact_spacing(rows):
+    phase_qa = session_phase_qa(rows, session, source.expiry_local(selected), max_window)
+    if not phase_qa["pass"]:
         keys = sorted({feature_key(c["feature"], int(c["decision_window_minutes"])) for c in contracts})
         obs = []
         for key in keys:
@@ -409,6 +411,7 @@ def main() -> int:
                 "time_mode": mode,
                 "copy_rates_error": str(err),
                 "range_recovery": range_evidence,
+                "session_phase_qa": phase_qa,
                 "bar_count": len(rows),
                 "first_bar": rows[0]["timestamp"] if rows else None,
                 "last_bar": rows[-1]["timestamp"] if rows else None,
