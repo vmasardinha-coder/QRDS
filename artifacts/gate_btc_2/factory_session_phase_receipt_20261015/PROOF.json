@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "session": "2026-10-15",
+  "bridge_run": 38814629452,
+  "bridge_conclusion": "success",
+  "captured_at": "2026-10-15T19:06:09.053289-03:00",
+  "canonical_record_sha256": "03816a59dcbee813cd07a848580d978009a19e182d50fd02ce3e052f4237274a",
+  "session_phase_qa": {
+    "contract_sha256": "60acbfd8ec94787e7b2f3143cf3df45c4a0d1910e9efc8dc4ff7cbc49074fd06",
+    "effective_from": "2026-10-15",
+    "expected_regular_bars": 113,
+    "historical_credit": 0,
+    "observed_call_or_post_regular_bars": 1,
+    "observed_regular_bars": 112,
+    "observed_rows_mutated": false,
+    "pass": false,
+    "policy": "B3_REGULAR_GRID_CALL_SEPARATE",
+    "regular_end_exclusive": "2026-10-15T18:25:00-03:00",
+    "regular_start": "2026-10-15T09:00:00-03:00"
+  },
+  "source_qa_pass": false,
+  "canonical_status": "SESSION_GAP_RECORDED_ZERO_CREDIT",
+  "first_bar": "2026-10-15T09:05:00-03:00",
+  "last_bar": "2026-10-15T18:30:00-03:00",
+  "source_row_count": 113,
+  "opening_slot_probe": {
+    "symbol": "WINZ26",
+    "label_time_mode": "BROKER_LOCAL_EPOCH",
+    "read_only": true,
+    "no_runtime_mutation": true,
+    "scientific_credit": 0,
+    "M1": {
+      "rows": 6,
+      "sha256": "11aee3b0116727cb441d7e1f6f3c68c458b1036f60d5f84ecbe5999d7262f6d9",
+      "first": [
+        {
+          "time": 1792055100,
+          "open": 208000.0,
+          "high": 208915.0,
+          "low": 207970.0,
+          "close": 208830.0,
+          "tick_volume": 49500,
+          "spread": 0,
+          "real_volume": 161793
+        }
+      ],
+      "last": [
+        {
+          "time": 1792055400,
+          "open": 208185.0,
+          "high": 208260.0,
+          "low": 207705.0,
+          "close": 207815.0,
+          "tick_volume": 52814,
+          "spread": 5,
+          "real_volume": 128118
+        }
+      ],
+      "last_error": "(1, 'Success')"
+    },
+    "M5": {
+      "rows": 2,
+      "sha256": "be14b6ee2ff6b3af16fa441cd027e8914ef08ddaa68669f3bf5f669e86cdfd3c",
+      "first": [
+        {
+          "time": 1792055100,
+          "open": 208000.0,
+          "high": 209285.0,
+          "low": 207970.0,
+          "close": 208180.0,
+          "tick_volume": 216559,
+          "spread": 0,
+          "real_volume": 589165
+        }
+      ],
+      "last": [
+        {
+          "time": 1792055400,
+          "open": 208185.0,
+          "high": 208260.0,
+          "low": 207435.0,
+          "close": 207740.0,
+          "tick_volume": 183120,
+          "spread": 5,
+          "real_volume": 439249
+        }
+      ],
+      "last_error": "(1, 'Success')"
+    },
+    "OPEN_ALL_TICKS": {
+      "rows": 233,
+      "sha256": "816502bcff849f3e0f66baabb725be6856c75eb0f6168da23f0a401d7d1c8ca1",
+      "first": [
+        {
+          "time": 1792054800,
+          "bid": 208430.0,
+          "ask": 208430.0,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1792054800100,
+          "flags": 2,
+          "volume_real": 0.0
+        }
+      ],
+      "last": [
+        {
+          "time": 1792055098,
+          "bid": 207920.0,
+          "ask": 207920.0,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1792055098717,
+          "flags": 6,
+          "volume_real": 0.0
+        }
+      ],
+      "last_error": "(1, 'Success')"
+    },
+    "OPEN_TRADE_TICKS": {
+      "rows": 0,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "first": [],
+      "last": [],
+      "last_error": "(1, 'Success')"
+    }
+  },
+  "interpretation": "Phase-policy application is proved. Source completeness is not proved. First regular slot09:00 lacks a physical bar and trade ticks in this terminal. Quotes do not establish exchange auction status or manufacture a trade bar.",
+  "technical_contract_application": "PROVED",
+  "physical_session_acceptance": "BLOCKED",
+  "historical_gap_rewritten": false,
+  "canonical_ledger_mutated_by_probe": false,
+  "h1_collection_changed": false,
+  "scientific_credit": 0,
+  "orders": 0,
+  "real_capital": 0,
+  "b3_regular_hours_primary_source": "https://www.b3.com.br/pt_br/solucoes/plataformas/puma-trading-system/para-participantes-e-traders/horario-de-negociacao/derivativos/indices/",
+  "next_action": "Preserve session15gap; establish authoritative exchange-phase/source evidence for opening09:00-09:05 and qualify a subsequent complete physical session. Do not move regular start to09:05 just to pass."
+}
