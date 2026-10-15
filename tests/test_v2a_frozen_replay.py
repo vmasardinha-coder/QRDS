@@ -103,6 +103,15 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
             self._source(path,with_drv=True,drv_source='gate',extension_count=1,trace=trace)
             with self.assertRaisesRegex(RuntimeError,'trace/master'):_load_source(path)
 
+    def test_bybit_extension_requires_matching_master_source(self):
+        trace={"qualified_extension_selected_count":1,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED","source":"bybit"}}]}
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/"bybit.zip"
+            self._source(path,with_drv=True,drv_source="bybit",extension_count=1,trace=trace)
+            self.assertEqual(_load_source(path)["qualified_source_extension"],1)
+            self._source(path,with_drv=True,drv_source="gate",extension_count=1,trace=trace)
+            with self.assertRaisesRegex(RuntimeError,"trace/master"):_load_source(path)
+
     def test_extension_missing_mismatched_or_duplicate_trace_is_rejected(self):
         bad=[None,{"qualified_extension_selected_count":0,"rows":[]},
              {"qualified_extension_selected_count":2,"rows":[{"symbol":"DRV","qualified_extension_attempt":{"status":"SELECTED"}}]*2}]

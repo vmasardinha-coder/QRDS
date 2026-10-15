@@ -80,13 +80,20 @@ ROUTES.update(GATE_FOLLOWUP_ROUTES)
 ROUTES['BTW'] = {'coin_id':'bitway','name':'Bitway','source':'bitget','pair':'BTWUSDT','contract':'0x444045b0ee1ee319a660a5e3d604ca0ffa35acaa','contract_chain':'BEP20'}
 ROUTES['USYC'] = {'coin_id':'hashnote-usyc','name':'Circle USYC','source':'deribit','pair':'USYC_USDC','instrument_id':377252,'base_currency_uuid':'4c559e06-44d0-411c-bb36-1a4812df4510','quote_currency':'USDC','identity_evidence':'https://insights.deribit.com/exchange-updates/deribit-introduces-hashnotes-usyc-as-new-yield-bearing-cross-margin-collateral-option/'}
 
+# Public spot execution history; first usable cutoff follows this qualification.
+ROUTES['USDY'] = {'coin_id':'ondo-us-dollar-yield','name':'Ondo U.S. Dollar Yield',
+                 'source':'bybit','pair':'USDYUSDT','symbol_id':555,
+                 'effective_cutoff':'2026-10-15',
+                 'identity_evidence':'https://www.bybit.com/en/learn/stablecoin/what-is-ondo-us-dollar-yield-usdy'}
+
+
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
         raise ValueError("invalid qualified source cutoff")
     if not cutoff or cutoff < EFFECTIVE_CUTOFF:
         return None
     route = ROUTES.get(symbol)
-    if not route or route["coin_id"] != coin_id:
+    if not route or route["coin_id"] != coin_id or cutoff < route.get("effective_cutoff", EFFECTIVE_CUTOFF):
         return None
     datetime.strptime(cutoff, "%Y-%m-%d")
     return dict(route)
@@ -98,6 +105,16 @@ def check_identity(route, payload):
                 and payload.get("quote") == "USDT" and payload.get("base_name") == route["name"]
                 and payload.get("trade_status") == "tradable"):
             raise ValueError("exact Gate identity/market mismatch")
+    elif provider == "bybit":
+        result = payload.get("result", {})
+        rows = result.get("list", [])
+        if payload.get("retCode") != 0 or result.get("category") != "spot" or len(rows) != 1:
+            raise ValueError("ambiguous Bybit spot identity")
+        entry = rows[0]
+        if not (entry.get("symbol") == route["pair"] and entry.get("symbolId") == route["symbol_id"]
+                and entry.get("baseCoin") == "USDY" and entry.get("quoteCoin") == "USDT"
+                and entry.get("status") == "Trading"):
+            raise ValueError("exact Bybit USDY spot identity mismatch")
     elif provider == "mexc":
         rows = payload.get("symbols", [])
         if len(rows) != 1:
@@ -198,7 +215,13 @@ def deribit_utc_daily_rows(payload, cutoff):
 
 def normalize_history(symbol, route, payload, cutoff):
     provider = route["source"]
-    if provider == 'deribit':
+    if provider == "bybit":
+        result = payload.get("result", {})
+        if (payload.get("retCode") != 0 or result.get("category") != "spot"
+                or result.get("symbol") != route["pair"]):
+            raise ValueError("Bybit history transport/spot identity failure")
+        raw_rows = result.get("list", [])
+    elif provider == 'deribit':
         raw_rows = deribit_utc_daily_rows(payload,cutoff)
     elif provider == 'bitget':
         if payload.get('code') != '00000':
@@ -216,6 +239,11 @@ def normalize_history(symbol, route, payload, cutoff):
     for entry in raw_rows:
         if provider in {"gate","deribit"}:
             ts = int(entry[0]);o,h,l,c,v = map(float, [entry[5],entry[3],entry[4],entry[2],entry[1]])
+        elif provider == "bybit":
+            if len(entry) != 7 or int(entry[0]) % 86400000:
+                raise ValueError("invalid Bybit UTC daily schema")
+            ts = int(entry[0]) // 1000
+            o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
         elif provider == 'bitget':
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
         elif provider == "mexc":
@@ -252,6 +280,10 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
         if route.get('contract_chain'):
             urls.insert(1, f"https://api.gateio.ws/api/v4/spot/currencies/{symbol}")
+    elif provider == "bybit":
+        end_ms = int((datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)).timestamp()*1000)-1
+        urls = [f"https://api.bybit.com/v5/market/instruments-info?category=spot&symbol={pair}",
+                f"https://api.bybit.com/v5/market/kline?category=spot&symbol={pair}&interval=D&limit=1000&end={end_ms}"]
     elif provider == 'deribit':
         end = datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)
         start_ms = int((end-timedelta(days=200)).timestamp()*1000)
@@ -283,10 +315,14 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
             (check_bitget_contract if provider == 'bitget' else check_gate_contract)(route,payloads[-1])
     rows = normalize_history(symbol,route,payloads[-1],cutoff)
     evidence = {"symbol":symbol,"coin_id":coin_id,"source":provider,"source_pair":pair,
-                "cutoff":cutoff,"effective_cutoff":EFFECTIVE_CUTOFF,"closed_rows":len(rows),
+                "cutoff":cutoff,"effective_cutoff":route.get("effective_cutoff",EFFECTIVE_CUTOFF),"closed_rows":len(rows),
                 "identity_sha256":hashes[0],"candles_sha256":hashes[-1],
                 "public_execution_ohlcv":True,"historical_scientific_credit":0,
                 "research_only":True,"orders":0,"real_capital":0}
+    if provider == "bybit":
+        evidence.update({"identity_evidence":route["identity_evidence"], "symbol_id":route["symbol_id"],
+                         "quote_currency":"USDT", "volume_field":"turnover",
+                         "quote_usd_convention":"nominal stablecoin quote; no historical FX conversion"})
     if provider == 'deribit':
         evidence.update({'aggregation':'24 complete UTC hours per day; open first, high max, low min, close last, cost sum',
                          'quote_currency':'USDC','quote_usd_convention':'nominal stablecoin quote; no historical FX conversion',
