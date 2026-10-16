@@ -1,0 +1,42 @@
+{
+  "status": "PASS_OFFLINE_NATIVE_TAPE_REPLAY_NOT_ADMISSION",
+  "rows_sha256": "86122430d507651dd428f7dd7e18ded0f83b7e20782ec1635ed691c176b159fb",
+  "verified_transactions": 5172,
+  "canonical_blocks": 5135,
+  "physical_trades": 5649,
+  "reconciled_usd_transactions": 4419,
+  "physical_hours": 2341,
+  "closed_rows": 200,
+  "provider_volume_disagreements_preserved": [
+    {
+      "hour": "2026-06-04T17:00:00Z",
+      "field": "base_volume",
+      "trades_sum": "11111.111",
+      "hourly_bar": "13345.204"
+    },
+    {
+      "hour": "2026-06-04T20:00:00Z",
+      "field": "base_volume",
+      "trades_sum": "76376.991",
+      "hourly_bar": "261792.8895"
+    },
+    {
+      "hour": "2026-06-22T20:00:00Z",
+      "field": "base_volume",
+      "trades_sum": "5016666.666",
+      "hourly_bar": "5241478.0585"
+    },
+    {
+      "hour": "2026-08-05T22:00:00Z",
+      "field": "base_volume",
+      "trades_sum": "12160.000",
+      "hourly_bar": "12080"
+    }
+  ],
+  "boundary_tie_rule": "Hourly provider TRADE close must equal a physical last-timestamp price; no lexical ID ordering",
+  "quote_volume_rule": "sum(Decimal(price)*Decimal(quantity)); USD quote; no close-times-volume proxy",
+  "close_field": "FIGURE_HOURLY_TRADE_CLOSE_BOUND_TO_PHYSICAL_LAST_TIMESTAMP_PRICE",
+  "clock": "UTC_FIGURE_EXECUTION_CREATED_NS",
+  "native_message_vwap_used_as_close": false,
+  "orders": 0
+}
