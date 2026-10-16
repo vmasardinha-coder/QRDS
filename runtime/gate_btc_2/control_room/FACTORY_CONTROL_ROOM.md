@@ -1,14 +1,14 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-16T19:36:14.721787+00:00`
+Generated: `2026-10-16T22:07:53.903804+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **15**
-- Latest ledger: **2026-10-15**
-- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-15`)
+- Ledger sessions: **16**
+- Latest ledger: **2026-10-16**
+- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-16`)
 - Triggered cells: **0**
 - Cells at 60/60: **0**
 - Trigger range: **0–0 / 60**
