@@ -1,0 +1,178 @@
+{
+  "status": "REPAIR_CLOSED_VERIFIED_ON_LATEST_BACKUP",
+  "portal_repository": "vmasardinha-coder/btc",
+  "implementation_commit": "ec82b839a524d447d89552ca60071241ef4d00ba",
+  "reviewed_repo_head": "46dfda9739cd7aefd2dffd488a1b130496850550",
+  "ci_pr": "https://github.com/vmasardinha-coder/btc/pull/8",
+  "ci_merge": "7cfd08a07e1c28b7b987cfb02be740f87b3f4f77",
+  "ci_success_runs": [
+    38905371032,
+    38905431586
+  ],
+  "tests_passed": [
+    "backup-benchmark",
+    "backup-composite-benchmark",
+    "sector-migration-basis",
+    "sector-mtm-completeness",
+    "sector-net-mtm",
+    "ledger-history-nav-consistency",
+    "ledger-risk-nav-consistency",
+    "ledger-retornos-reconcile"
+  ],
+  "independent_latest_backup_tests": [
+    {
+      "sourceSHA256": "fda4f396d538d4380830b1a02d4f3fe20b15dc6bef004a1a140ded29669aa3eb",
+      "generated": "2026-10-16T00:33:41.394Z",
+      "changedKeys": [
+        "ledger_diario_G_100_v1",
+        "ledger_diario_G_300_v1",
+        "ledger_retornos_audit_2026_10_v1"
+      ],
+      "rowsPreserved": 653,
+      "cutoffs": {
+        "ledger_diario_G7_100_v1": "2026-10-15",
+        "ledger_diario_G7_300_v1": "2026-10-15",
+        "ledger_diario_GR7C_100_v1": "2026-10-15",
+        "ledger_diario_GR7C_300_v1": "2026-10-15",
+        "ledger_diario_GR7D_100_v1": "2026-10-15",
+        "ledger_diario_GR7D_300_v1": "2026-10-15",
+        "ledger_diario_GR7F_100_v1": "2026-10-15",
+        "ledger_diario_GR7F_300_v1": "2026-10-15",
+        "ledger_diario_A_100_v1": "2026-10-15",
+        "ledger_diario_A_300_v1": "2026-10-15",
+        "ledger_diario_B_100_v1": "2026-10-15",
+        "ledger_diario_B_300_v1": "2026-10-15",
+        "ledger_diario_C_100_v1": "2026-10-15",
+        "ledger_diario_C_300_v1": "2026-10-15",
+        "ledger_diario_D_100_v1": "2026-10-15",
+        "ledger_diario_D_300_v1": "2026-10-15",
+        "ledger_diario_G_100_v1": "2026-10-15",
+        "ledger_diario_G_300_v1": "2026-10-15",
+        "ledger_diario_G_COMBINED_v1": "2026-10-15",
+        "ledger_diario_H_100_v1": "2026-10-15",
+        "ledger_diario_watchlist_v1": "2026-10-15"
+      },
+      "audit": {
+        "versao": 1,
+        "entradas": [
+          {
+            "em": "2026-10-16T13:04:24.726Z",
+            "ledger": "G_100",
+            "data": "2026-09-22",
+            "campo": "retornoDia",
+            "antes": -31.9005,
+            "depois": -0.114,
+            "origemRegistro": "auto",
+            "motivo": "retornoDia/retornoAcumulado armazenados divergiam da raz├úo dos NAVs (base de NAV mudou ap├│s reconstru├º├úo do ledger); NAV preservado como dado autoritativo"
+          },
+          {
+            "em": "2026-10-16T13:04:24.726Z",
+            "ledger": "G_300",
+            "data": "2026-09-22",
+            "campo": "retornoDia",
+            "antes": -23.1088,
+            "depois": 1.2734,
+            "origemRegistro": "auto",
+            "motivo": "retornoDia/retornoAcumulado armazenados divergiam da raz├úo dos NAVs (base de NAV mudou ap├│s reconstru├º├úo do ledger); NAV preservado como dado autoritativo"
+          }
+        ]
+      },
+      "remainingDivergences": [],
+      "secondPassWrites": 0,
+      "originalUntouched": true
+    },
+    {
+      "latestExport": {
+        "summaries": 21,
+        "modeled": [
+          {
+            "strategy": "G - Rota├º├úo Setorial (Top 100)",
+            "model": {
+              "tipo": "ESTIMATIVA_LIQUIDACAO_MODELO_EXISTENTE",
+              "moeda": "USD",
+              "roundTripBps": 50,
+              "incluiLiquidacaoCestaAberta": true,
+              "custosObservados": false
+            },
+            "nav": 1815.179365311676
+          },
+          {
+            "strategy": "G - Rota├º├úo Setorial (Top 300)",
+            "model": {
+              "tipo": "ESTIMATIVA_LIQUIDACAO_MODELO_EXISTENTE",
+              "moeda": "USD",
+              "roundTripBps": 90,
+              "incluiLiquidacaoCestaAberta": true,
+              "custosObservados": false
+            },
+            "nav": 1493.1333784976327
+          },
+          {
+            "strategy": "G - Combined 50/50 (Top100+Top300)",
+            "model": {
+              "tipo": "COMPOSTO_50_50_ESTIMATIVAS_LIQUIDACAO",
+              "moeda": "USD",
+              "roundTripBpsPorUniverso": {
+                "100": 50,
+                "300": 90
+              },
+              "incluiLiquidacaoCestaAberta": true,
+              "custosObservados": false
+            },
+            "nav": 1654.1563719046544
+          }
+        ],
+        "integrity": {
+          "regra": "retornoDia = NAV(t)/NAV(t-1)-1 e retornoAcumulado = NAV(t)/NAV(1o registro)-1; o NAV ├® o dado autoritativo",
+          "toleranciaPp": 0.001,
+          "ledgersVerificados": 21,
+          "registrosVerificados": 653,
+          "divergenciasDiarias": [],
+          "gCombinedVsMediaG100G300": {
+            "datasComparadas": 43,
+            "maiorDiferencaNav": 0
+          },
+          "trilhaReconciliacao": {
+            "entradas": 2,
+            "chave": "ledger_retornos_audit_2026_10_v1"
+          }
+        },
+        "exportWrites": 0,
+        "btc": "Not tested against current external prices in this isolated run"
+      }
+    }
+  ],
+  "delivered_corrected_backup": {
+    "cutoff": "2026-10-12",
+    "ledgers": 21,
+    "rows": 590,
+    "use": "older test fixture; never import over the latest 15/10 collection"
+  },
+  "module_sha256_lf": {
+    "ledger-diario.js": "a4e70a4fbbfda4a5cfd4b4e82d1aba6b71db2890dadd8162a87eade36acedddf",
+    "backup-diario.js": "89cd38d95b09cf93a9e27d49951d2cb5dd16957de8b053b8016af0ba6f13554d",
+    "momentum-backtest-sector.js": "f23e62683fe8fcf9039b410a8915d6a49e9961e3ae9cc106732457a02ad28e21",
+    "roi-cycles.js": "ffdf7429a4dc15c0642c44d65345485626cb9b2925bf88b7a9a1c63a4e23e53f"
+  },
+  "deployment": {
+    "status": "NOT_INDEPENDENTLY_VERIFIED",
+    "reason": "No live application origin supplied or found in repository. Latest backup was tested in an isolated VM; browser localStorage was not changed.",
+    "next_receipt": "New export from the updated Portal, retaining dates through 15/10 or later and audit entries."
+  },
+  "browser_e2e": {
+    "source": "Claude attachment e2e-resultado.json",
+    "seed_cutoff": "2026-10-12",
+    "served_module_hashes_match_delivered_files": true,
+    "reported_roundtrip_equal": true,
+    "reported_C_errors": [
+      "React hydration error #418"
+    ],
+    "error_attribution": "Unknown from the supplied report; do not claim an error-free browser session."
+  },
+  "scope_limits": [
+    "NAV values preserved, not a new independent price valuation.",
+    "Latest external BTC prices not fetched by isolated review. Export labels sources and separate close-based vs paired snapshot windows.",
+    "Three estimated cost models; no observed execution costs inferred.",
+    "Generic reconciliation assumes each ledger follows the current fixed-capital NAV ratio return contract; not a cash-flow-adjusted real portfolio rule."
+  ]
+}
