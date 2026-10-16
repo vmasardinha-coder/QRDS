@@ -271,4 +271,66 @@ class QualifiedHistoryTests(unittest.TestCase):
         self.assertTrue(report["source_substitution_performed"])
         self.assertEqual(report["qualified_source_extension_selected_count"],1)
 
+
+class BybitOfficialHostTests(unittest.TestCase):
+    def data(self):
+        meta={"retCode":0,"result":{"category":"spot","list":[{"symbol":"USDYUSDT","symbolId":555,"baseCoin":"USDY","quoteCoin":"USDT","status":"Trading"}]}}
+        last=datetime(2026,10,15,tzinfo=timezone.utc)
+        bars=[[str(int((last-timedelta(days=i)).timestamp()*1000)),"2","3","1","2","900","42"] for i in range(200)]
+        return meta,{"retCode":0,"result":{"category":"spot","symbol":"USDYUSDT","list":bars}}
+
+    def session(self, responses):
+        class Session:
+            def __init__(self):self.urls=[]
+            def get(self,url,timeout):
+                self.urls.append(url)
+                status,payload=responses[len(self.urls)-1]
+                class Response:pass
+                r=Response();r.status_code=status;r.content=json.dumps(payload).encode();return r
+        return Session()
+
+    def collect(self,session,root):
+        return collect_history(session,"USDY","ondo-us-dollar-yield","2026-10-15",root,
+                               now=datetime(2026,10,16,tzinfo=timezone.utc))
+
+    def test_identity_403_uses_only_official_secondary_host(self):
+        meta,bars=self.data();s=self.session([(403,{}),(200,meta),(200,bars)])
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=self.collect(s,root)
+            self.assertEqual(len(rows),200)
+            self.assertEqual(e["public_api_host"],"https://api.bytick.com")
+            self.assertFalse(e["cross_host_payload_mixing"])
+            self.assertTrue(all(u.startswith("https://api.bytick.com/") for u in s.urls[1:]))
+
+    def test_candle_403_repeats_identity_on_secondary_host(self):
+        meta,bars=self.data();s=self.session([(200,meta),(403,{}),(200,meta),(200,bars)])
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=self.collect(s,root)
+            self.assertEqual(len(rows),200)
+            self.assertEqual(len(s.urls),4)
+            self.assertIn("instruments-info",s.urls[2])
+            self.assertEqual(e["historical_scientific_credit"],0)
+
+    def test_wrong_identity_is_not_hidden_by_host_retry(self):
+        meta,bars=self.data();meta["result"]["list"][0]["baseCoin"]="OTHER"
+        s=self.session([(200,meta),(200,bars)])
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(ValueError):self.collect(s,root)
+        self.assertEqual(len(s.urls),1)
+
+    def test_both_hosts_blocked_never_qualify(self):
+        from pathlib import Path
+        s=self.session([(403,{}),(403,{})])
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaisesRegex(ValueError,"public hosts unavailable"):self.collect(s,root)
+            self.assertFalse((Path(root)/"USDY/qualification.json").exists())
+        self.assertEqual(len(s.urls),2)
+
+    def test_secondary_short_history_is_still_refused(self):
+        meta,bars=self.data();bars["result"]["list"].pop()
+        s=self.session([(403,{}),(200,meta),(200,bars)])
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(ValueError):self.collect(s,root)
+
+
 if __name__=="__main__":unittest.main()

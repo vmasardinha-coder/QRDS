@@ -341,6 +341,61 @@ def normalize_history(symbol, route, payload, cutoff):
         raise ValueError("qualified history lacks 200 consecutive closes through cutoff")
     return rows
 
+BYBIT_PUBLIC_HOSTS = ("https://api.bybit.com", "https://api.bytick.com")
+
+
+def _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir):
+    """Official same-venue hosts; retry availability failures, never identity QA."""
+    output = Path(evidence_dir) / symbol
+    output.mkdir(parents=True, exist_ok=True)
+    end_ms = int((datetime.strptime(cutoff, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                  + timedelta(days=1)).timestamp() * 1000) - 1
+    pair = route['pair']
+    paths = [f'/v5/market/instruments-info?category=spot&symbol={pair}',
+             f'/v5/market/kline?category=spot&symbol={pair}&interval=D&limit=1000&end={end_ms}']
+    attempts = []
+    for host in BYBIT_PUBLIC_HOSTS:
+        raw_payloads = []
+        for label, path in zip(('identity', 'candles'), paths):
+            response = session.get(host + path, timeout=30)
+            attempt = {'host': host, 'label': label, 'http_status': response.status_code}
+            attempts.append(attempt)
+            (output / 'host_attempts.json').write_text(json.dumps(attempts, indent=2) + '\n')
+            if response.status_code != 200:
+                if response.status_code in (403, 429) or response.status_code >= 500:
+                    break
+                raise ValueError(f'qualified bybit {label} HTTP {response.status_code}')
+            raw = response.content
+            payload = json.loads(raw)
+            if label == 'identity':
+                check_identity(route, payload)
+            else:
+                rows = normalize_history(symbol, route, payload, cutoff)
+            raw_payloads.append(raw)
+        if len(raw_payloads) != 2:
+            continue
+        for label, raw in zip(('identity', 'candles'), raw_payloads):
+            (output / f'{label}.json').write_bytes(raw)
+        evidence = {
+            'symbol': symbol, 'coin_id': coin_id, 'source': 'bybit', 'source_pair': pair,
+            'cutoff': cutoff, 'effective_cutoff': route['effective_cutoff'],
+            'closed_rows': len(rows), 'identity_sha256': hashlib.sha256(raw_payloads[0]).hexdigest(),
+            'candles_sha256': hashlib.sha256(raw_payloads[1]).hexdigest(),
+            'public_execution_ohlcv': True, 'historical_scientific_credit': 0,
+            'research_only': True, 'orders': 0, 'real_capital': 0,
+            'identity_evidence': route['identity_evidence'], 'symbol_id': route['symbol_id'],
+            'quote_currency': 'USDT', 'volume_field': 'turnover',
+            'quote_usd_convention': 'nominal stablecoin quote; no historical FX conversion',
+            'public_api_host': host, 'host_attempts': attempts,
+            'host_policy_reference': 'https://bybit-exchange.github.io/docs/v5/guide',
+            'cross_host_payload_mixing': False,
+        }
+        (output / 'qualification.json').write_text(json.dumps(evidence, indent=2) + '\n')
+        return rows, evidence
+    failures = '; '.join(f"{x['host']} {x['label']} HTTP {x['http_status']}" for x in attempts)
+    raise ValueError('qualified bybit public hosts unavailable: ' + failures)
+
+
 def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     route = route_for_member(symbol, coin_id, cutoff)
     if route is None:
@@ -352,6 +407,8 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         from tools.gate_btc_a7a5_swap_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
 
+    if provider == 'bybit':
+        return _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir)
     if provider == "gate":
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
         if route.get('contract_chain'):
