@@ -51,7 +51,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install requests
-      - run: python -m tools.gate_btc_reusd_swap_history --cutoff 2026-10-15 --out artifacts/pit150_reusd_native_preflight
+      - run: python -m tools.gate_btc_reusd_swap_history --out artifacts/pit150_reusd_native_preflight
       - uses: actions/upload-artifact@v4
         if: always()
         with:
