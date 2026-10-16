@@ -93,6 +93,13 @@ ROUTES['USDGO'] = {'coin_id':'usdgo','name':'USDGO','source':'bitget',
                    'effective_cutoff':'2026-10-15',
                    'identity_evidence':'https://www.bitget.com/support/articles/12560603859340'}
 
+# Exact Alpha token identity and independent exchange pair metadata are both required.
+ROUTES['KOGE'] = {'coin_id':'bnb48-club-token','name':'48 Club Token',
+                  'source':'binance_alpha','pair':'ALPHA_22USDT','alpha_id':'ALPHA_22',
+                  'chain_id':'56','contract':'0xe6df05ce8c8301223373cf5b969afcb1498c5528',
+                  'effective_cutoff':'2026-10-16',
+                  'identity_evidence':'https://web3.48.club/docs/koge-token'}
+
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -122,6 +129,20 @@ def check_identity(route, payload):
                 and entry.get("baseCoin") == "USDY" and entry.get("quoteCoin") == "USDT"
                 and entry.get("status") == "Trading"):
             raise ValueError("exact Bybit USDY spot identity mismatch")
+
+    elif provider == 'binance_alpha':
+        rows = payload.get('data', [])
+        if payload.get('code') != '000000' or payload.get('success') is not True or not isinstance(rows,list):
+            raise ValueError('invalid Binance Alpha token response')
+        matches = [x for x in rows if x.get('alphaId') == route['alpha_id'] or x.get('symbol') == 'KOGE']
+        if len(matches) != 1:
+            raise ValueError('ambiguous Binance Alpha exact token identity')
+        entry = matches[0]
+        if not (entry.get('alphaId') == route['alpha_id'] and entry.get('symbol') == 'KOGE'
+                and entry.get('name') == route['name'] and entry.get('chainId') == route['chain_id']
+                and str(entry.get('contractAddress','')).lower() == route['contract'].lower()
+                and entry.get('offline') is False and entry.get('fullyDelisted') is False):
+            raise ValueError('exact Binance Alpha token/chain/contract mismatch')
     elif provider == "mexc":
         rows = payload.get("symbols", [])
         if len(rows) != 1:
@@ -162,6 +183,16 @@ def check_identity(route, payload):
             raise ValueError("exact XT token contract mismatch")
     else:
         raise ValueError("unsupported qualified route")
+
+def check_alpha_exchange(route, payload):
+    data = payload.get('data', {})
+    if payload.get('code') != '000000' or payload.get('success') is not True or data.get('timezone') != 'UTC':
+        raise ValueError('invalid Binance Alpha exchange response/timezone')
+    entries = [x for x in data.get('symbols', []) if x.get('symbol') == route['pair']]
+    if len(entries) != 1 or not (entries[0].get('baseAsset') == route['alpha_id']
+            and entries[0].get('quoteAsset') == 'USDT' and entries[0].get('status') == 'TRADING'):
+        raise ValueError('exact Binance Alpha pair identity mismatch')
+
 
 def check_gate_contract(route, payload):
     expected_base = route['pair'].split('_')[0]
@@ -236,6 +267,11 @@ def normalize_history(symbol, route, payload, cutoff):
         raw_rows = result.get("list", [])
     elif provider == 'deribit':
         raw_rows = deribit_utc_daily_rows(payload,cutoff)
+
+    elif provider == 'binance_alpha':
+        if payload.get('code') != '000000' or payload.get('success') is not True:
+            raise ValueError('Binance Alpha history transport failure')
+        raw_rows = payload.get('data', [])
     elif provider == 'bitget':
         if payload.get('code') != '00000':
             raise ValueError('Bitget history transport/schema failure')
@@ -261,6 +297,20 @@ def normalize_history(symbol, route, payload, cutoff):
             if len(entry) not in {7,8} or int(entry[0]) % 86400000:
                 raise ValueError('invalid Bitget UTC daily schema')
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[6]])
+
+        elif provider == 'binance_alpha':
+            if (not isinstance(entry,list) or len(entry) != 12 or int(entry[0]) % 86400000
+                    or int(entry[6]) != int(entry[0])+86400000-1
+                    or str(entry[11]) != '0'):
+                raise ValueError('invalid Binance Alpha completed UTC daily schema')
+            ts = int(entry[0]) // 1000
+            o,h,l,c,v = map(float,[entry[1],entry[2],entry[3],entry[4],entry[7]])
+            base = float(entry[5])
+            count = int(entry[8])
+            if (not math.isfinite(base) or base < 0 or count < 0 or str(count) != str(entry[8])
+                    or (count == 0 and (base != 0 or v != 0))
+                    or (count > 0 and (base <= 0 or v <= 0))):
+                raise ValueError('invalid Binance Alpha reported volume/trade count')
         elif provider == "mexc":
             ts = int(entry[0]) // 1000;o,h,l,c,v = map(float, [entry[1],entry[2],entry[3],entry[4],entry[7]])
         else:
@@ -310,6 +360,12 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         urls = [f'https://api.bitget.com/api/v2/spot/public/symbols?symbol={pair}',
                 f'https://api.bitget.com/api/v2/spot/public/coins?coin={symbol}',
                 f'https://api.bitget.com/api/v2/spot/market/history-candles?symbol={pair}&granularity=1Dutc&limit=200&endTime={end_ms}']
+
+    elif provider == 'binance_alpha':
+        end_ms = int((datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)).timestamp()*1000)-1
+        urls = ['https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list',
+                'https://www.binance.com/bapi/defi/v1/public/alpha-trade/get-exchange-info',
+                f'https://www.binance.com/bapi/defi/v1/public/alpha-trade/klines?symbol={pair}&interval=1d&limit=1000&endTime={end_ms}']
     elif provider == "mexc":
         urls = [f"https://api.mexc.com/api/v3/exchangeInfo?symbol={pair}",f"https://api.mexc.com/api/v3/klines?symbol={pair}&interval=1d&limit=1000"]
     else:
@@ -317,6 +373,9 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     output = Path(evidence_dir)/symbol;output.mkdir(parents=True,exist_ok=True)
     payloads,hashes = [],[]
     labels = ['identity','currency','candles'] if (provider == 'gate' and route.get('contract_chain')) or provider == 'bitget' else ['identity','candles']
+
+    if provider == 'binance_alpha':
+        labels = ['identity','exchange','candles']
     for label,url in zip(labels,urls):
         response = session.get(url,timeout=30)
         if response.status_code != 200:
@@ -326,6 +385,8 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         payloads.append(json.loads(raw));hashes.append(hashlib.sha256(raw).hexdigest())
         if label == "identity":
             check_identity(route,payloads[-1])
+        elif label == 'exchange':
+            check_alpha_exchange(route,payloads[-1])
         elif label == 'currency':
             (check_bitget_contract if provider == 'bitget' else check_gate_contract)(route,payloads[-1])
     rows = normalize_history(symbol,route,payloads[-1],cutoff)
@@ -347,6 +408,20 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
                          'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
         if route.get('identity_evidence'):
             evidence['identity_evidence'] = route['identity_evidence']
+
+    if provider == 'binance_alpha':
+        raw_selected = [x for x in payloads[-1]['data']
+                        if datetime.fromtimestamp(int(x[0])/1000,timezone.utc).date().isoformat() <= cutoff]
+        raw_selected.sort(key=lambda x:int(x[0]))
+        evidence.update({'exchange_identity_sha256':hashes[1],
+                         'identity_evidence':route['identity_evidence'],
+                         'chain_id':route['chain_id'],'token_contract':route['contract'],
+                         'quote_currency':'USDT','volume_field':'quote_volume_index_7',
+                         'provider_reported_zero_volume_days_in_last200':[
+                             datetime.fromtimestamp(int(x[0])/1000,timezone.utc).date().isoformat()
+                             for x in raw_selected[-200:] if float(x[7]) == 0],
+                         'collector_forward_fill':False,
+                         'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
     if route.get('rename_evidence'):
         evidence['rename_evidence'] = route['rename_evidence']
     if 'currency' in labels:
