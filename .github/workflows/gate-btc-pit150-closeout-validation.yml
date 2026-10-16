@@ -6,6 +6,10 @@ on:
       - 'tools/gate_btc_pit150_qualified_history.py'
       - 'tools/gate_btc_a7a5_swap_history.py'
       - 'tools/gate_btc_reusd_swap_history.py'
+      - 'tools/gate_btc_hash_settlement_history.py'
+      - 'tools/gate_btc_pit150_figure_history_audit.py'
+      - 'tests/test_gate_btc_hash_settlement_history.py'
+      - 'artifacts/gate_btc_2/pit150_hash_kinesis_20261016/fixtures/*.zip'
       - 'tests/test_gate_btc_reusd_swap_history.py'
       - 'tools/gate_btc_pit150_usdy_capture.py'
       - 'tools/gate_btc_pit150_source_crosswalk.py'
@@ -26,7 +30,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m unittest tests.test_gate_btc_pit150_qualified_history.BybitOfficialHostTests tests.test_gate_btc_pit150_qualified_history.BybitPublicCaptureTests tests.test_gate_btc_pit150_qualified_history.BybitCapturePublisherTests tests.test_gate_btc_pit150_source_crosswalk tests.test_gate_btc_reusd_swap_history -v
+      - run: python -m unittest tests.test_gate_btc_pit150_qualified_history.BybitOfficialHostTests tests.test_gate_btc_pit150_qualified_history.BybitPublicCaptureTests tests.test_gate_btc_pit150_qualified_history.BybitCapturePublisherTests tests.test_gate_btc_pit150_source_crosswalk tests.test_gate_btc_reusd_swap_history tests.test_gate_btc_hash_settlement_history -v
   public-host-diagnostic:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -57,3 +61,19 @@ jobs:
         with:
           name: pit150-reusd-native-preflight
           path: artifacts/pit150_reusd_native_preflight/
+
+  hash-native-reconciled-public-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python -m tools.gate_btc_hash_settlement_history --out artifacts/pit150_hash_native_preflight
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit150-hash-native-preflight
+          path: artifacts/pit150_hash_native_preflight/
