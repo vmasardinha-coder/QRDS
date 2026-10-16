@@ -1,0 +1,19 @@
+name: Trading Agent Source Tests
+on:
+  pull_request:
+    branches: [main, claude/autonomous-trading-agent-h1asy9]
+    paths:
+      - 'trading_agent/**.py'
+      - 'tests/test_trading_agent.py'
+      - '.github/workflows/trading-agent-source-tests.yml'
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest tests.test_trading_agent -v
