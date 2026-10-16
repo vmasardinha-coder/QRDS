@@ -5,6 +5,11 @@ import hashlib
 import json
 from pathlib import Path
 
+try:
+    from tools.gate_btc_h31_auxiliary_adjudication import adjudicated_hashes
+except ModuleNotFoundError:
+    from gate_btc_h31_auxiliary_adjudication import adjudicated_hashes
+
 
 def event_digest(event: dict) -> str:
     payload = {k: v for k, v in event.items() if k != "event_hash_sha256"}
@@ -33,6 +38,13 @@ def reconcile_intraday_events(shadow_dir: Path) -> dict:
         except (ValueError, TypeError, KeyError):
             invalid.append(str(path.relative_to(root)))
     triggered = {session: event for session, event in decisions.items() if event.get("trigger_state") == "TRIGGER"}
+    adjudicated=set()
+    for session in sorted({x["session"] for x in closes.values()}):
+        try:
+            adjudicated.update(adjudicated_hashes(shadow_dir,session,closes))
+        except (ValueError,TypeError,KeyError,RuntimeError) as exc:
+            invalid.append("invalid_auxiliary_adjudication:"+session+":"+str(exc))
+    adjudicated_variants=0
     closed: dict[str, str] = {}
     for digest, close in closes.items():
         session = close["session"]
@@ -40,7 +52,10 @@ def reconcile_intraday_events(shadow_dir: Path) -> dict:
         if decision is None or close.get("decision_hash") != event_digest(decision):
             invalid.append("orphan_close:" + digest)
         elif session in closed:
-            invalid.append("conflicting_close:" + session)
+            if digest in adjudicated and closed[session] in adjudicated:
+                adjudicated_variants+=1
+            else:
+                invalid.append("conflicting_close:" + session)
         else:
             closed[session] = digest
     missing = sorted(set(triggered) - set(closed))
@@ -51,6 +66,8 @@ def reconcile_intraday_events(shadow_dir: Path) -> dict:
         "H31_SHADOW_TRIGGER_SESSIONS_WITHOUT_CLOSE": missing,
         "H31_SHADOW_CLOSE_RECONCILIATION_STATUS": quality,
         "H31_SHADOW_INVALID_EVENT_COUNT": len(invalid),
+        "H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT": adjudicated_variants,
+        "H31_SHADOW_ORIGINAL_EVENT_FILES_PRESERVED": True,
         "H31_SHADOW_INVALID_EVENT_REASONS": sorted(invalid),
         "H31_SHADOW_SIMULATED_TRADES_SEMANTICS": "TRIGGER_DECISIONS_NOT_CLOSED_RETURNS",
     }

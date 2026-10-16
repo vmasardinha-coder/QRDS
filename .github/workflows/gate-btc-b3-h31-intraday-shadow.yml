@@ -9,6 +9,9 @@ on:
     paths:
       - "tools/gate_btc_b3_h31_intraday_shadow.py"
       - "tools/gate_btc_h31_intraday_reconciliation.py"
+      - "tools/gate_btc_h31_close_window.py"
+      - "tools/gate_btc_h31_auxiliary_adjudication.py"
+      - "tests/test_gate_btc_h31_close_window.py"
       - "tests/test_gate_btc_h31_intraday_reconciliation.py"
       - "tools/gate_btc_b3_h31_intraday_bound_entrypoint.py"
       - "tools/gate_btc_h1_inspired_challenger_entrypoint.py"
@@ -56,6 +59,8 @@ jobs:
           if ($env:NO_RETUNE -ne 'true' -or $env:NO_BACKFILL -ne 'true') { throw 'SCIENTIFIC_BOUNDARY' }
       - name: Python compile
         run: python -m py_compile tools/gate_btc_b3_h31_intraday_shadow.py tools/gate_btc_b3_h31_intraday_bound_entrypoint.py tools/gate_btc_h1_inspired_challenger_entrypoint.py tools/gate_btc_b3_h31_economics.py
+      - name: Verify closed holding window
+        run: python -m unittest discover -s tests -p 'test_gate_btc_h31_close_window.py' -v
       - name: Verify trigger and close reconciliation
         run: python -m unittest discover -s tests -p 'test_gate_btc_h31_intraday_reconciliation.py' -v
       - name: PowerShell 5.1 parser check

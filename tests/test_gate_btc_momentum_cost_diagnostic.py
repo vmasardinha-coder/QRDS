@@ -13,7 +13,7 @@ class MomentumCostDiagnosticTest(unittest.TestCase):
         for i in range(9):
             rows.append({'cutoff':f'2026-10-{i+1:02}', 'return_observations':i,
                          'event':'ACTIVATION' if i==0 else 'REBALANCE' if i==7 else 'HOLD',
-                         'nav':{'M1_TOP10':1.0}, 'holdings_after_close':{'M1_TOP10':targets},
+                         'nav':{'M1_TOP10':1.0}, 'btc_nav':1.0, 'holdings_after_close':{'M1_TOP10':targets},
                          'quantities_after_close':{'M1_TOP10':{a:0.1 for a in targets}}})
         return {'rows':rows},[prices.copy() for _ in rows]
 

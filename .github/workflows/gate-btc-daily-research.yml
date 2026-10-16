@@ -31,6 +31,13 @@ on:
       - tools/gate_btc_pit150_source_crosswalk.py
       - tools/gate_btc_pit150_qualified_history.py
       - tests/test_gate_btc_pit150_qualified_history.py
+      - tools/gate_btc_pit150_figure_history_audit.py
+      - tests/test_gate_btc_pit150_usdgo_bitget.py
+      - tests/test_gate_btc_pit150_koge_alpha.py
+      - artifacts/gate_btc_2/pit150_koge_alpha_20261016/**
+      - tests/test_gate_btc_pit150_figure_history_audit.py
+      - artifacts/gate_btc_2/pit150_usdgo_bitget_20261015/**
+      - artifacts/gate_btc_2/pit150_cases_review_20261015/**
       - tools/gate_btc_v2a_failure_diagnostic.py
       - tools/qos_orchestrator.py
       - tools/gate_btc_lock_valuation_sidecar.py
@@ -75,6 +82,13 @@ on:
       - tools/gate_btc_pit150_source_crosswalk.py
       - tools/gate_btc_pit150_qualified_history.py
       - tests/test_gate_btc_pit150_qualified_history.py
+      - tools/gate_btc_pit150_figure_history_audit.py
+      - tests/test_gate_btc_pit150_usdgo_bitget.py
+      - tests/test_gate_btc_pit150_koge_alpha.py
+      - artifacts/gate_btc_2/pit150_koge_alpha_20261016/**
+      - tests/test_gate_btc_pit150_figure_history_audit.py
+      - artifacts/gate_btc_2/pit150_usdgo_bitget_20261015/**
+      - artifacts/gate_btc_2/pit150_cases_review_20261015/**
       - tools/gate_btc_v2a_failure_diagnostic.py
       - tools/qos_orchestrator.py
       - tools/gate_btc_lock_valuation_sidecar.py
@@ -142,6 +156,9 @@ jobs:
           tests/test_gate_btc_v2a_daily_core_close.py
           tests/test_gate_btc_pit150_source_crosswalk.py
           tests/test_gate_btc_pit150_qualified_history.py
+          tests/test_gate_btc_pit150_usdgo_bitget.py
+          tests/test_gate_btc_pit150_koge_alpha.py
+          tests/test_gate_btc_pit150_figure_history_audit.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
 
   daily-research-collection:
@@ -180,6 +197,9 @@ jobs:
           tests/test_gate_btc_v2a_daily_core_close.py
           tests/test_gate_btc_pit150_source_crosswalk.py
           tests/test_gate_btc_pit150_qualified_history.py
+          tests/test_gate_btc_pit150_usdgo_bitget.py
+          tests/test_gate_btc_pit150_koge_alpha.py
+          tests/test_gate_btc_pit150_figure_history_audit.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - name: Resolve most recent completed UTC close
         env:

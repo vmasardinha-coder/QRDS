@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -44,8 +45,16 @@ def _rows(payload: Any) -> list[dict[str, Any]]:
 def capture(out_dir: Path, now: datetime | None = None) -> tuple[Path, Path, dict[str, Any]]:
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 GATE-BTC-Research-Only/1.0"})
-    response = session.get(ENDPOINT, params=PARAMS, timeout=45)
-    response.raise_for_status()
+    # Retry only temporary transport/rate-limit responses, never change source
+    # semantics or attribute a late response to an earlier capture time.
+    for attempt in range(3):
+        response = session.get(ENDPOINT, params=PARAMS, timeout=45)
+        if response.status_code not in {429, 500, 502, 503, 504} or attempt == 2:
+            response.raise_for_status()
+            break
+        retry_after = response.headers.get("Retry-After", "")
+        delay = min(30, max(2, int(retry_after))) if retry_after.isdigit() else 2 ** (attempt + 1)
+        time.sleep(delay)
     raw = response.content
     payload = response.json()
     rows = _rows(payload)
