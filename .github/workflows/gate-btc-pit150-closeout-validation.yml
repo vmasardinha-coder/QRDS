@@ -1,0 +1,35 @@
+name: PIT150 Closeout Validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_pit150_qualified_history.py'
+      - 'tests/test_gate_btc_pit150_qualified_history.py'
+      - 'tools/gate_btc_pit150_closeout_probe.py'
+      - '.github/workflows/gate-btc-pit150-closeout-validation.yml'
+permissions:
+  contents: read
+jobs:
+  official-host-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest tests.test_gate_btc_pit150_qualified_history.BybitOfficialHostTests -v
+  public-host-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python -m tools.gate_btc_pit150_closeout_probe --out artifacts/pit150_public_host_probe
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit150-public-host-probe
+          path: artifacts/pit150_public_host_probe/
