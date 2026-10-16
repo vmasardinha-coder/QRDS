@@ -156,16 +156,32 @@ def normalize(events,cutoff):
         raise ValueError("NON_FINITE_SETTLEMENT_VALUE")
     return rows,[days[d]["last"] for d in wanted]
 
+def post_rpc(session,body,out,name):
+    for attempt in range(5):
+        # The RPC counts each call inside a batch. Bound both outer requests
+        # and inner block calls even on low-latency public cloud runners.
+        time.sleep(1.2 if isinstance(body,list) else .6)
+        response=session.post(RPC,json=body,timeout=45)
+        if response.status_code not in (429,500,502,503,504) or attempt==4:return response
+        (out/(name+f".http_retry_{attempt}")).write_bytes(response.content)
+        delay=60 if response.status_code==429 else 2**attempt
+        value=getattr(response,"headers",{}).get("Retry-After")
+        if value:
+            try:delay=max(delay,float(value))
+            except ValueError:
+                from email.utils import parsedate_to_datetime
+                delay=max(delay,(parsedate_to_datetime(value)-datetime.now(timezone.utc)).total_seconds())
+        if not math.isfinite(delay) or delay<0 or delay>300:raise ValueError("INVALID_OR_DEFERRED_RPC_RETRY_AFTER")
+        time.sleep(delay)
+    raise ValueError("RPC_RETRY_BOUND_EXHAUSTED")
+
+
 def collect_native(session,cutoff,evidence_dir,now=None):
     now=now or datetime.now(timezone.utc)
     if cutoff>=now.date().isoformat():raise ValueError("INCOMPLETE_UTC_CUTOFF")
     out=Path(evidence_dir)/"HASH";out.mkdir(parents=True,exist_ok=True);manifest=[]
     def fetch(name,body):
-        for attempt in range(4):
-            time.sleep(.6)
-            response=session.post(RPC,json=body,timeout=45)
-            if response.status_code not in (429,500,502,503,504) or attempt==3:break
-            (out/(name+f".http_retry_{attempt}")).write_bytes(response.content);time.sleep(2**attempt)
+        response=post_rpc(session,body,out,name)
         raw=response.content;(out/name).write_bytes(raw)
         if response.status_code!=200:raise ValueError("HASH_RPC_HTTP_"+str(response.status_code))
         manifest.append({"file":name,"body":body,"sha256":hashlib.sha256(raw).hexdigest()})

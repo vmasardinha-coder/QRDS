@@ -39,6 +39,34 @@ class NativeProofTests(unittest.TestCase):
         for raw in (b"\x0a\x05a",b"\x00",b"\x80"):
             with self.assertRaises(ValueError):h.fields(raw)
 
+class PublicRpcPacingTests(unittest.TestCase):
+    def test_cloud_batch_pacing_and_retry_after(self):
+        from unittest.mock import Mock,patch
+        import tempfile
+        first=Mock(status_code=429,content=b"rate limited",headers={"Retry-After":"90"})
+        final=Mock(status_code=200,content=b"[]",headers={})
+        session=Mock();session.post.side_effect=[first,final]
+        with tempfile.TemporaryDirectory() as d,patch.object(h.time,"sleep") as sleep:
+            self.assertIs(h.post_rpc(session,[{}],Path(d),"block.json"),final)
+            self.assertEqual([c.args[0] for c in sleep.call_args_list],[1.2,90,1.2])
+            self.assertEqual((Path(d)/"block.json.http_retry_0").read_bytes(),b"rate limited")
+    def test_auth_failure_has_no_retry(self):
+        from unittest.mock import Mock,patch
+        import tempfile
+        response=Mock(status_code=403,content=b"forbidden",headers={})
+        session=Mock();session.post.return_value=response
+        with tempfile.TemporaryDirectory() as d,patch.object(h.time,"sleep"):
+            self.assertIs(h.post_rpc(session,{},Path(d),"head.json"),response)
+        self.assertEqual(session.post.call_count,1)
+    def test_rpc_rate_retries_are_bounded(self):
+        from unittest.mock import Mock,patch
+        import tempfile
+        response=Mock(status_code=429,content=b"rate limited",headers={})
+        session=Mock();session.post.return_value=response
+        with tempfile.TemporaryDirectory() as d,patch.object(h.time,"sleep"):
+            self.assertIs(h.post_rpc(session,{},Path(d),"head.json"),response)
+        self.assertEqual(session.post.call_count,5)
+
 class EdgeProofTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
