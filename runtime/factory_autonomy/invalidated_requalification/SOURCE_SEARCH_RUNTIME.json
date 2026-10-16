@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-16T12:22:32.908368Z",
+  "generated_at_utc": "2026-10-16T12:33:43.335865Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -57,10 +57,10 @@
       {
         "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-01-02",
         "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-01-02",
-        "http_status": 404,
+        "http_status": 504,
         "reachable": false,
-        "content_type": null,
-        "content_length": "0",
+        "content_type": "text/html; charset=UTF-8",
+        "content_length": "6437",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -102,10 +102,10 @@
       {
         "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-09-01",
         "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-09-01",
-        "http_status": 404,
+        "http_status": 504,
         "reachable": false,
-        "content_type": null,
-        "content_length": "0",
+        "content_type": "text/html; charset=UTF-8",
+        "content_length": "6437",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "2cf406e1b8619a6e642395364204d23687cea43b8ea27123ff52ab68626416b8",
+        "sample_sha256": "7571ddf9ff90399e315a7b67242200e2d14531ae14a835e8444d05ca002ef478",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -328,6 +328,11 @@
         "query": "\"mini índice futuro\" 5min extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
         "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WIN B3\" OHLC 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
       },
       {
         "query": "\"WINFUT\" volume timestamp extension:csv",
