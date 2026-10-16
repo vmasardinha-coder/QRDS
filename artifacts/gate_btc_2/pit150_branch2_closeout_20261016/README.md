@@ -33,3 +33,5 @@ D50 agenda normal 21:15 BRT, espelho 22:25; ambas Ãºltimas execuÃ§Ãµes apr
 Reparo funcional fechado: PR8 do repositÃ³rio btc, oito scripts de regressÃ£o, CI prÃ©/pÃ³s merge e aplicaÃ§Ã£o em memÃ³ria ao backup original atualizado aprovados. Recibo de implantaÃ§Ã£o e migraÃ§Ã£o no navegador continua separado. URL efetivamente usada nÃ£o foi localizada; nÃ£o se afirma implantaÃ§Ã£o observada. NÃ£o importar o fixture de 12/10 sobre o backup com dados atÃ© 15/10.
 
 Zero ordens e zero capital real movimentado nesta rodada.
+
+Atualização posterior: REUSD foi reparado pela PR1184. O inventário corrente passou para ../pit150_three_native_20261016/PIT150_CASES_CURRENT.json, com 4 fontes reparadas aguardando recibo, 5 casos de histórico e 15 dependências materiais. Os números anteriores neste recibo preservam o estado da etapa anterior.
