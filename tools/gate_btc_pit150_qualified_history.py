@@ -101,6 +101,13 @@ ROUTES['KOGE'] = {'coin_id':'bnb48-club-token','name':'48 Club Token',
                   'identity_evidence':'https://web3.48.club/docs/koge-token'}
 
 
+# Exact Ethereum pool, with canonical closing blocks/logs independently checked.
+ROUTES['A7A5'] = {'coin_id':'a7a5','name':'A7A5',
+    'source':'blockscout_eth_a7a5_swaps','pair':'A7A5_USDT_ETH_POOL',
+    'pool':'0x14d7aab5b4bca6a02e52ac22520b033bf35f4091',
+    'effective_cutoff':'2026-10-17'}
+
+
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
         raise ValueError("invalid qualified source cutoff")
@@ -341,6 +348,10 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     if cutoff >= (now or datetime.now(timezone.utc)).date().isoformat():
         raise ValueError("qualified source cutoff is not a completed UTC day")
     provider,pair = route["source"],route["pair"]
+    if provider == 'blockscout_eth_a7a5_swaps':
+        from tools.gate_btc_a7a5_swap_history import collect
+        return collect(session,cutoff,evidence_dir,now=now)
+
     if provider == "gate":
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
         if route.get('contract_chain'):
