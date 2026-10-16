@@ -4,7 +4,7 @@ Reparo comprovado sai da fila de consertos. Coleta, maturidade e gates científi
 
 ## Frentes retomadas nesta rodada
 
-- **P0.2 â€” aberto no conjunto, reparos USDY e publicaÃ§Ã£o encerrados:** PR1182 integrada; fonte pÃºblica USDY com transporte imutÃ¡vel e captura diÃ¡ria validada local/nuvem. RelatÃ³rio derivado corrigido e vinculado ao STATUS de 15/10: 126/150, 24 falhas. TrÃªs fontes reparadas aguardam recibo futuro; cinco casos aguardam histÃ³rico; 16 ainda exigem fonte, acesso, consistÃªncia ou disposiÃ§Ã£o de escopo. Inventário mais recente: ../pit150_three_native_20261016/PIT150_CASES_CURRENT.json.
+- **P0.2 — aberto no conjunto; cinco fontes reparadas:** USDY, KOGE, A7A5, REUSD e HASH aguardam recibos futuros. Cinco casos seguem em coleta de histórico e 14 têm dependência material. O último recibo de admissão permanece 126/150, corte 15/10. Inventário corrente: ../pit150_three_native_20261016/PIT150_CASES_CURRENT.json. Prova HASH/KAU/KAG: ../pit150_hash_kinesis_20261016/.
 - **P1.3 — reparo fechado e entrega comprovada pela PR1176:** modelo canônico paper abstrato de 10 bps por compra/venda, com ativação no fechamento futuro 17/10 e primeira variação diária posterior. M1/M2 e M3 usam épocas separadas e BTC da mesma janela. O histórico bruto e os campos antigos net=N/D não foram alterados. Não é taxa observada, execução real nem prova de capacidade. A execução real 38898695029 publicou o vínculo e o estado de espera pelos fechamentos futuros; a leitura remota confirmou o contrato e os dois escopos. MOMENTUM_DELIVERY.json preserva essa prova. Os 25 testes focados e os 10 testes de cobertura dos workflows passaram; os adaptadores também validaram 16 registros físicos M1/M2 e 3 M3.
 - **P1.4 — reparo fechado e validado no backup mais recente:** repositório atual identificado como vmasardinha-coder/btc; módulos entregues conferem com main. Oito scripts de regressão passaram; CI integrado e aprovado na PR8, inclusive após merge. A revisão independente aplicou o código em memória ao backup original de 16/10, corte 15/10: 21 ledgers, 653 registros e todos os NAVs preservados, só dois retornos corrigidos, zero divergências e segunda passada sem escrita. Export somente leitura, três líquidos estimados e demais N/D. PORTAL_DELIVERY_REVIEW.json preserva os resultados. A versão servida e a migração no navegador do Victor ainda precisam de recibo operacional; não foram afirmadas como comprovadas. O backup corrigido entregue por Claude termina em 12/10 e não deve substituir o atual.
 
@@ -66,8 +66,16 @@ P0.2 permanece como frente de reparo aberta. P1.4 sai da fila de consertos pelo 
 
 ## Fechamento complementar de 16/10
 
-USDY e followup atual reparados na PR1182; produtor diÃ¡rio instalado e testado pelo agendador. Item 2 D50/D100 reconciliado e fechado tecnicamente, mantendo as coletas 75/80 e 17/80. PIT150 total continua 126/150 no Ãºltimo recibo, com os 24 casos classificados em PIT150_CASES_CURRENT.json; 16 ainda tÃªm dependÃªncia material. P1.4 Portal permanece fechado como reparo; falta recibo de implantaÃ§Ã£o na URL efetivamente usada.
+USDY e followup reparados na PR1182; produtor diário instalado e testado pelo agendador. Item 2 D50/D100 reconciliado e fechado tecnicamente, mantendo as coletas 75/80 e 17/80. PIT150 segue 126/150 no último recibo, com 24 casos classificados: cinco fontes reparadas, cinco em coleta de histórico e 14 dependências materiais após a entrega HASH. P1.4 Portal permanece fechado como reparo; recibo de implantação separado.
 
 ## Três casos de arquivo — complemento posterior
 
 REUSD: reparo fechado e integrado na PR1184, coleta/admissão futura separada. USDAI: arquivo oficial acessível, mas gaps nativos conferidos impedem qualificar a janela. OHM: 177/200 dias na pool original indexada e 194/200 na candidata USDC; ambas rejeitadas, sem substituição. Provas brutas, hashes e estado dos 24 casos em ../pit150_three_native_20261016/. O corte autoritativo 15/10 permanece 126/150. Reparos encerrados não reabrem por espera de recibos ou maturidade.
+
+## Lote HASH, KAU e KAG — fechamento técnico
+
+HASH: fonte reparada e integrada pela PR 1186, ativação no corte futuro 17/10. Provas locais e nuvem validam 200 dias físicos e 5.649 negócios reconciliados com liquidações nativas. As quatro divergências do volume agregado ficam registradas; preço físico e relógio do negócio são preservados. Reparo fechado; coleta e admissão futura continuam.
+
+KAU/KAG: dependência externa de autorização na API nativa, confirmada por HTTP403 e exemplo oficial de autenticação. Exigir acesso ou exportação nativa verificável; wrappers não substituem a identidade. Esses dois casos não foram reclassificados como mera espera de coleta.
+
+Saldo: P0.2 continua aberto por 14 dependências materiais. Os cinco reparos comprovados e os cinco casos em coleta não voltam à fila por falta de recibos ou maturidade.
