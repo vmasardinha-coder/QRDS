@@ -2062,3 +2062,140 @@ class TestMalformedJsonBody(unittest.TestCase):
         motivo = data_sources.FAILURE_TALLY["nasdaq"]["motivo"]
         self.assertIn("corpo ilegivel", motivo)
         self.assertIn("com BOM", motivo)
+
+
+
+class TestCotahistOctoberRecovery(unittest.TestCase):
+    """Falhas de transporte/decompressao observadas no lote de 15/10."""
+
+    class Response:
+        def __init__(self, chunks, status=200, headers=None):
+            self.chunks = iter(chunks)
+            self.status = status
+            self.headers = headers or {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, size):
+            item = next(self.chunks, b"")
+            if isinstance(item, BaseException):
+                raise item
+            return item
+
+    def test_timeout_retains_completed_chunks(self):
+        response = self.Response([b"abc", TimeoutError()],
+                                 headers={"Content-Length": "6"})
+        with mock.patch.object(cotahist.urllib.request, "urlopen", return_value=response):
+            self.assertEqual(cotahist._pedaco("https://example.test", 0, 1),
+                             (b"abc", 6))
+
+    def test_incomplete_read_retains_its_partial_bytes_too(self):
+        import http.client
+        response = self.Response([b"abc", http.client.IncompleteRead(b"de", 1)],
+                                 headers={"Content-Length": "6"})
+        with mock.patch.object(cotahist.urllib.request, "urlopen", return_value=response):
+            self.assertEqual(cotahist._pedaco("https://example.test", 0, 1),
+                             (b"abcde", 6))
+
+    def test_ignored_range_restarts_without_concatenating_new_body(self):
+        blob = _cotahist_zip([_cotahist_record()]); cut = len(blob) // 2
+        responses = iter([
+            self.Response([blob[:cut]], headers={"Content-Length": str(len(blob))}),
+            self.Response([blob], headers={"Content-Length": str(len(blob))}),
+            self.Response([blob], headers={"Content-Length": str(len(blob))}),
+        ])
+        ranges = []
+        def request(req, timeout):
+            ranges.append(req.get_header("Range"))
+            return next(responses)
+        with mock.patch.object(cotahist.urllib.request, "urlopen", side_effect=request), \
+             mock.patch.object(cotahist.time, "sleep"):
+            self.assertEqual(cotahist._download(2026), blob)
+        self.assertEqual(ranges, [None, f"bytes={cut}-", None])
+
+    def test_incorrect_or_missing_content_range_is_refused(self):
+        for value in [None, "bytes 0-2/6", "bytes 3-6/6", "bytes 3-5/*"]:
+            with self.subTest(value=value):
+                response = self.Response([b"def"], 206,
+                                         {"Content-Range": value} if value else {})
+                with mock.patch.object(cotahist.urllib.request, "urlopen", return_value=response):
+                    with self.assertRaises(cotahist.CotahistError):
+                        cotahist._pedaco("https://example.test", 3, 1)
+
+    def test_matching_range_is_returned_untouched(self):
+        response = self.Response([b"def"], 206, {"Content-Range": "bytes 3-5/6"})
+        with mock.patch.object(cotahist.urllib.request, "urlopen", return_value=response):
+            self.assertEqual(cotahist._pedaco("https://example.test", 3, 1),
+                             (b"def", 6))
+
+    def test_more_than_four_useful_segments_can_complete(self):
+        blob = _cotahist_zip([_cotahist_record()]); offsets = []
+        def piece(url, offset, timeout):
+            offsets.append(offset)
+            return blob[offset:offset + 50], len(blob)
+        with mock.patch.object(cotahist, "_pedaco", side_effect=piece), \
+             mock.patch.object(cotahist.time, "sleep") as sleep:
+            self.assertEqual(cotahist._download(2026), blob)
+        self.assertGreater(len(offsets), 4)
+        sleep.assert_not_called()
+
+    def test_changed_total_discards_all_prior_segments(self):
+        blob = _cotahist_zip([_cotahist_record()]); cut = len(blob) // 2
+        offsets = []
+        values = iter([(blob[:cut], len(blob)), (blob[cut:], len(blob) + 1),
+                       (blob, len(blob))])
+        def piece(url, offset, timeout):
+            offsets.append(offset)
+            return next(values)
+        with mock.patch.object(cotahist, "_pedaco", side_effect=piece), \
+             mock.patch.object(cotahist.time, "sleep"):
+            self.assertEqual(cotahist._download(2026), blob)
+        self.assertEqual(offsets, [0, cut, 0])
+
+    @staticmethod
+    def corrupt_deflate():
+        import io, zipfile
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("COTAHIST.TXT", _cotahist_record().encode())
+        blob = bytearray(buffer.getvalue())
+        with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+            info = archive.infolist()[0]
+        offset = info.header_offset + 30 + len(info.filename.encode()) + len(info.extra)
+        blob[offset] = 0xff  # BTYPE=3 e invalido; directoria central intacta
+        return bytes(blob)
+
+    def test_corrupt_compression_is_classified_as_source_failure(self):
+        bad = self.corrupt_deflate()
+        self.assertTrue(cotahist._zip_utilizavel(bad))
+        with self.assertRaises(cotahist.CotahistError):
+            cotahist.parse(bad, {"PETR4"})
+
+    def test_corrupt_body_retries_and_caches_only_successful_parse(self):
+        good = _cotahist_zip([_cotahist_record()])
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(cotahist, "_cache_dir", return_value=Path(tmp)), \
+             mock.patch.object(cotahist, "_download", side_effect=[self.corrupt_deflate(), good]) as download, \
+             mock.patch.object(cotahist.time, "sleep"):
+            series = cotahist._year_series(2026, {"PETR4"}, "2026-10-16")
+            self.assertEqual(series["PETR4"][0][1], 41.9)
+            self.assertEqual(download.call_count, 2)
+            saved = json.loads((Path(tmp) / "2026.json").read_text())
+            self.assertEqual(saved["series"]["PETR4"][0][1], 41.9)
+
+    def test_corruption_never_publishes_partial_series_or_overwrites_cache(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(cotahist, "_cache_dir", return_value=Path(tmp)), \
+             mock.patch.object(cotahist, "_download", return_value=self.corrupt_deflate()) as download, \
+             mock.patch.object(cotahist.time, "sleep"):
+            path = Path(tmp) / "2026.json"
+            before = b'{"atualizado":"2026-10-15","tickers":["PETR4"],"series":{}}'
+            path.write_bytes(before)
+            with self.assertRaises(cotahist.CotahistError):
+                cotahist._year_series(2026, {"PETR4"}, "2026-10-16")
+            self.assertEqual(download.call_count, cotahist.TENTATIVAS)
+            self.assertEqual(path.read_bytes(), before)

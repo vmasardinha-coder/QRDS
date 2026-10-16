@@ -24,10 +24,12 @@ from __future__ import annotations
 import http.client
 import io
 import json
+import re
 import time
 import urllib.error
 import urllib.request
 import zipfile
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -74,6 +76,11 @@ def _cache_path(ano: int) -> Path:
 
 TENTATIVAS = 4
 ESPERA_S = (2.0, 5.0, 12.0)
+MAX_PEDACOS = 32  # progresso nao esgota o limite de falhas; continua limitado
+
+
+class _ReiniciarDownload(CotahistError):
+    """A resposta nao pode ser colada aos bytes ja recebidos."""
 
 
 def _pedaco(url: str, desde: int, timeout: float) -> tuple[bytes, int | None]:
@@ -88,24 +95,48 @@ def _pedaco(url: str, desde: int, timeout: float) -> tuple[bytes, int | None]:
     req = urllib.request.Request(url, headers=cabecalhos)
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         total = None
+        status = resp.status
         intervalo = resp.headers.get("Content-Range")
-        if intervalo and "/" in intervalo:
-            try:
-                total = int(intervalo.rsplit("/", 1)[1])
-            except ValueError:
-                total = None
+        esperado = None
+        if status == 206:
+            m = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", intervalo or "")
+            if not m:
+                raise _ReiniciarDownload("Content-Range ausente ou invalido")
+            inicio, fim, total = map(int, m.groups())
+            if inicio != desde or fim < inicio or fim >= total:
+                raise _ReiniciarDownload("Content-Range nao corresponde ao pedido")
+            esperado = fim - inicio + 1
+        elif desde:
+            # Um 200 e um corpo novo, nao a continuacao pedida. Nunca colar.
+            raise _ReiniciarDownload("servidor ignorou Range; reiniciar do zero")
+        elif status != 200:
+            raise _ReiniciarDownload(f"status inesperado {status}")
         elif resp.headers.get("Content-Length"):
             try:
-                total = int(resp.headers["Content-Length"]) + desde
+                total = int(resp.headers["Content-Length"])
+                esperado = total
             except ValueError:
                 total = None
         blocos = []
         while True:
-            bloco = resp.read(1 << 20)
+            try:
+                bloco = resp.read(1 << 20)
+            except http.client.IncompleteRead as err:
+                # IncompleteRead pode trazer o ultimo bloco parcial.
+                blocos.append(err.partial)
+                break
+            except (urllib.error.URLError, TimeoutError, OSError,
+                    http.client.HTTPException):
+                if not blocos:
+                    raise
+                break  # devolve o progresso, para retomar no byte seguinte
             if not bloco:
                 break
             blocos.append(bloco)
-        return b"".join(blocos), total
+        corpo = b"".join(blocos)
+        if esperado is not None and len(corpo) > esperado:
+            raise _ReiniciarDownload("corpo excede o intervalo declarado")
+        return corpo, total
 
 
 def _zip_utilizavel(blob: bytes) -> bool:
@@ -145,13 +176,20 @@ def _download(ano: int, timeout: float = 240.0) -> bytes:
     url = URL.format(ano=ano)
     dados = b""
     ultimo = ""
-    for tentativa in range(TENTATIVAS):
+    falhas = 0
+    total_anterior = None
+    for _ in range(MAX_PEDACOS):
         try:
             pedaco, total = _pedaco(url, len(dados), timeout)
+            if dados and total_anterior != total:
+                raise _ReiniciarDownload("tamanho do objeto mudou durante retoma")
+            total_anterior = total
             dados += pedaco
             if not pedaco:
                 ultimo = "resposta vazia"
-            elif total is None or len(dados) >= total:
+            elif total is not None and len(dados) > total:
+                raise _ReiniciarDownload("corpo excede o tamanho total")
+            elif total is None or len(dados) == total:
                 if _zip_utilizavel(dados):
                     return dados
                 # Completo a olho, ilegivel na pratica. Recomecar do zero: um
@@ -161,10 +199,18 @@ def _download(ano: int, timeout: float = 240.0) -> bytes:
                 dados = b""
             else:
                 ultimo = f"curto ({len(dados)}/{total} bytes)"
+                # O limite de quatro e para falhas, nao para pedacos uteis.
+                falhas = 0
+                continue
+        except _ReiniciarDownload as err:
+            dados = b""
+            total_anterior = None
+            ultimo = str(err)
         except urllib.error.HTTPError as err:
             # sem retoma possivel: recomeca do principio na proxima volta
             if err.code == 416:
                 dados = b""
+                total_anterior = None
             ultimo = f"HTTP {err.code} {err.reason}"
             if err.code in (401, 403, 404):
                 break
@@ -174,8 +220,10 @@ def _download(ano: int, timeout: float = 240.0) -> bytes:
             # erro de programacao passar por instabilidade e ser tentado quatro
             # vezes antes de aparecer disfarcado de falha de fonte.
             ultimo = type(err).__name__
-        if tentativa < len(ESPERA_S):
-            time.sleep(ESPERA_S[tentativa])
+        falhas += 1
+        if falhas >= TENTATIVAS:
+            break
+        time.sleep(ESPERA_S[min(falhas - 1, len(ESPERA_S) - 1)])
     raise CotahistError(f"COTAHIST {ano}: {ultimo}")
 
 
@@ -194,24 +242,29 @@ def parse(blob: bytes, wanted: set[str]) -> dict[str, list[tuple[str, float, flo
     nomes = zf.namelist()
     if not nomes:
         raise CotahistError("COTAHIST: ZIP vazio")
-    with zf.open(nomes[0]) as stream:
-        for raw in stream:
-            if raw[:2] != TIPREG_DETALHE or raw[24:27] != TPMERC_VISTA:
-                continue
-            codigo = raw[12:24].rstrip()
-            if codigo not in alvo:
-                continue
-            try:
-                # precos com duas casas decimais implicitas; quantidade inteira
-                fecho = int(raw[108:121]) / 100.0
-                quantidade = float(int(raw[152:170] or b"0"))
-            except ValueError:
-                continue          # registo corrompido: salta, nao adivinha
-            if fecho <= 0:
-                continue
-            dia = raw[2:10].decode("latin-1")
-            saida.setdefault(codigo, []).append(
-                (f"{dia[:4]}-{dia[4:6]}-{dia[6:8]}", fecho, quantidade))
+    try:
+        with zf.open(nomes[0]) as stream:
+            for raw in stream:
+                if raw[:2] != TIPREG_DETALHE or raw[24:27] != TPMERC_VISTA:
+                    continue
+                codigo = raw[12:24].rstrip()
+                if codigo not in alvo:
+                    continue
+                try:
+                    # precos com duas casas decimais implicitas; quantidade inteira
+                    fecho = int(raw[108:121]) / 100.0
+                    quantidade = float(int(raw[152:170] or b"0"))
+                except ValueError:
+                    continue          # registo corrompido: salta, nao adivinha
+                if fecho <= 0:
+                    continue
+                dia = raw[2:10].decode("latin-1")
+                saida.setdefault(codigo, []).append(
+                    (f"{dia[:4]}-{dia[4:6]}-{dia[6:8]}", fecho, quantidade))
+    except (zipfile.BadZipFile, zlib.error, EOFError) as err:
+        raise CotahistError("COTAHIST: ZIP corrompido ao descomprimir") from err
+    finally:
+        zf.close()
     return {k.decode("latin-1"): v for k, v in saida.items()}
 
 
@@ -234,7 +287,17 @@ def _year_series(ano: int, wanted: set[str], hoje: str
                 return {k: [tuple(r) for r in v]
                         for k, v in (guardado.get("series") or {}).items()}
 
-    series = parse(_download(ano), wanted)
+    for tentativa in range(TENTATIVAS):
+        blob = _download(ano)
+        try:
+            series = parse(blob, wanted)
+            break
+        except CotahistError:
+            # Uma directoria central legivel nao garante os dados/CRC do ZIP.
+            # Sem parse completo nao publica cache nem serie parcial.
+            if tentativa == TENTATIVAS - 1:
+                raise
+            time.sleep(ESPERA_S[tentativa])
     try:
         _cache_dir().mkdir(parents=True, exist_ok=True)
         caminho.write_text(json.dumps({
