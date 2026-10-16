@@ -108,6 +108,13 @@ ROUTES['A7A5'] = {'coin_id':'a7a5','name':'A7A5',
     'effective_cutoff':'2026-10-17'}
 
 
+# Same frozen REUSD/USDT pool, reconstructed from physical Fluid executions.
+ROUTES['REUSD'] = {'coin_id':'re-protocol-reusd','name':'Re Protocol Deposit Token',
+    'source':'blockscout_eth_reusd_swaps','pair':'REUSD_USDT_ETH_POOL',
+    'pool':'0xb96cee75211700bc148b95b1c907d726791f4457',
+    'effective_cutoff':'2026-10-17'}
+
+
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
         raise ValueError("invalid qualified source cutoff")
@@ -475,6 +482,9 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     if cutoff >= (now or datetime.now(timezone.utc)).date().isoformat():
         raise ValueError("qualified source cutoff is not a completed UTC day")
     provider,pair = route["source"],route["pair"]
+    if provider == 'blockscout_eth_reusd_swaps':
+        from tools.gate_btc_reusd_swap_history import collect
+        return collect(session,cutoff,evidence_dir,now=now)
     if provider == 'blockscout_eth_a7a5_swaps':
         from tools.gate_btc_a7a5_swap_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
