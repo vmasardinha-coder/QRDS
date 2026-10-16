@@ -73,6 +73,27 @@ class ReusdHistoryTests(unittest.TestCase):
             self.assertEqual(collect_history(None,'REUSD','re-protocol-reusd','2026-10-17','tmp',now=now),('rows','evidence'))
             source.assert_called_once_with(None,'2026-10-17','tmp',now=now)
 
+    def test_transient_transport_is_retried_boundedly(self):
+        from unittest.mock import Mock
+        bad=Mock(status_code=500,headers={});good=Mock(status_code=200)
+        session=Mock();session.get.side_effect=[bad,good]
+        retries=[]
+        self.assertIs(m.request_with_retry(session,"get","public",sleep=lambda _:None,on_retry=lambda r,n:retries.append(n)),good)
+        self.assertEqual(session.get.call_count,2);self.assertEqual(retries,[0])
+        session.get.side_effect=[bad,bad,bad,bad]
+        self.assertIs(m.request_with_retry(session,"get","public",sleep=lambda _:None),bad)
+        self.assertEqual(session.get.call_count,6)
+    def test_auth_failure_never_retried_or_bypassed(self):
+        from unittest.mock import Mock
+        denied=Mock(status_code=403);session=Mock();session.get.return_value=denied
+        self.assertIs(m.request_with_retry(session,"get","public",sleep=lambda _:None),denied)
+        session.get.assert_called_once()
+    def test_network_exception_retry(self):
+        from unittest.mock import Mock
+        good=Mock(status_code=200);session=Mock();session.post.side_effect=[OSError("timeout"),good]
+        self.assertIs(m.request_with_retry(session,"post","public",sleep=lambda _:None),good)
+        self.assertEqual(session.post.call_count,2)
+
     def test_frozen_identity(self):
         self.assertEqual(m.frozen_pool_identity()["source_symbol"],"eth:"+m.POOL)
     def test_unfinished_day_without_network(self):

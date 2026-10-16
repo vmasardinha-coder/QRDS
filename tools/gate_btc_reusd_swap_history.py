@@ -1,6 +1,6 @@
 """Exact Fluid REUSD/USDT executions; prospective source repair, no candle filling."""
 from __future__ import annotations
-import hashlib,json,math,re
+import hashlib,json,math,re,time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime,timedelta,timezone
 from decimal import Decimal
@@ -15,6 +15,24 @@ RPC="https://ethereum-rpc.publicnode.com"
 LOG_RPC="https://eth.drpc.org"
 EXPLORER="https://eth.blockscout.com/api/v2"
 EFFECTIVE_CUTOFF="2026-10-17"
+
+def request_with_retry(session,method,url,*,sleep=time.sleep,on_retry=None,**kwargs):
+    """Retry transient public transport failures only; source QA is never retried."""
+    for attempt in range(4):
+        try:
+            response=getattr(session,method)(url,**kwargs)
+        except OSError:
+            if attempt==3:raise
+            sleep(2**attempt)
+            continue
+        if response.status_code not in (429,500,502,503,504) or attempt==3:
+            return response
+        if on_retry:on_retry(response,attempt)
+        try:delay=float(response.headers.get("Retry-After",2**attempt))
+        except (TypeError,ValueError):delay=2**attempt
+        sleep(min(max(delay,1),15))
+    raise AssertionError("unreachable retry state")
+
 
 def key(x):return x["block_number"],x["index"]
 
@@ -102,8 +120,16 @@ def collect(session,cutoff,evidence_dir,now=None):
         if response.status_code!=200:raise ValueError("REUSD_SOURCE_HTTP_"+str(response.status_code))
         manifest.append({"file":name,"url":url,"sha256":hashlib.sha256(raw).hexdigest()})
         return json.loads(raw)
+    def request(name,method,url,**kwargs):
+        def retry(response,attempt):
+            file=name+f".http_retry_{attempt}.json"
+            (out/file).parent.mkdir(parents=True,exist_ok=True)
+            (out/file).write_bytes(response.content)
+            manifest.append({"file":file,"url":url,"http_status":response.status_code,
+                "sha256":hashlib.sha256(response.content).hexdigest()})
+        return request_with_retry(session,method,url,on_retry=retry,**kwargs)
     def rpc(name,method,params,url=RPC):
-        p=save(name,session.post(url,json={"jsonrpc":"2.0","id":1,"method":method,"params":params},timeout=30),url)
+        p=save(name,request(name,"post",url,json={"jsonrpc":"2.0","id":1,"method":method,"params":params},timeout=30),url)
         if p.get("jsonrpc")!="2.0" or p.get("id")!=1 or p.get("error") or p.get("result") is None:
             raise ValueError("INVALID_REUSD_RPC_RESPONSE")
         return p["result"]
@@ -117,7 +143,7 @@ def collect(session,cutoff,evidence_dir,now=None):
         got=rpc(name+"_decimals.json","eth_call",[{"to":address,"data":"0x313ce567"},"latest"])
         if int(got,16)!=decimals:raise ValueError("WRONG_TOKEN_DECIMALS")
         url=EXPLORER+"/tokens/"+address
-        meta=save(name+"_metadata.json",session.get(url,timeout=30),url)
+        meta=save(name+"_metadata.json",request(name+"_metadata.json","get",url,timeout=30),url)
         if (str(meta.get("address_hash","")).lower()!=address or str(meta.get("decimals"))!=str(decimals)
             or meta.get("symbol")!=symbol or meta.get("type")!="ERC-20"):raise ValueError("WRONG_EXACT_TOKEN_IDENTITY")
     first=datetime.strptime(cutoff,"%Y-%m-%d").replace(tzinfo=timezone.utc)-timedelta(days=199)
@@ -145,7 +171,7 @@ def collect(session,cutoff,evidence_dir,now=None):
         previous=(hi,0);seen_cursors=set();events=[];complete=False
         for page in range(240):
             query=url+"?"+urlencode(params)
-            p=save(f"part_{part:02}/page_{page:03}.json",session.get(query,timeout=30),query)
+            p=save(f"part_{part:02}/page_{page:03}.json",request(f"part_{part:02}/page_{page:03}.json","get",query,timeout=30),query)
             items=p.get("items")
             if not isinstance(items,list):raise ValueError("INVALID_LOG_PAGE")
             for x in items:
