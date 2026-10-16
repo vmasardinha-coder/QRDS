@@ -6,6 +6,7 @@ on:
       - ".github/workflows/gate-btc-prospective-ledgers.yml"
       - "config/lock25_50_shadow_contract_v1.json"
       - "tools/gate_btc_*.py"
+      - "tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json"
       - "tests/test_gate_btc_*.py"
       - "tests/test_gateway_measurement_status.py"
   workflow_dispatch:
@@ -69,6 +70,7 @@ jobs:
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
+          tests/test_gate_btc_pit150_source_crosswalk.py
           tests/test_gate_btc_lock_valuation_sidecar.py
           tests/test_gate_btc_lock_reanchor.py
       - name: Compile immutable gap recovery helper
@@ -82,6 +84,9 @@ jobs:
 
   append-prospective-ledgers:
     needs: contract-tests
+    concurrency:
+      group: gate-btc-v2a-quality-publication
+      cancel-in-progress: false
     # Sem exigir a run inteira verde. A conclusao da run de coleta carrega jobs
     # irmaos com outros datasets -- entre eles o prospective-v2a-pit, que roda sem
     # needs e falha sozinho. Exigir a run verde aqui deixava este registro sem
@@ -255,6 +260,16 @@ jobs:
           --snapshot-id "$V2A_DATA_SNAPSHOT_ID"
           --source-run-id "$SOURCE_RUN_ID"
           --output "runtime_repo/runtime/data_quality/v2a/diagnostics/${V2A_DATA_SNAPSHOT_ID}.json"
+
+      - name: Refresh PIT150 followup from the current authoritative snapshot
+        if: steps.daily_source.outputs.eligible == 'true'
+        run: >-
+          python tools/gate_btc_pit150_source_crosswalk.py
+          --diagnostic-dir runtime_repo/runtime/data_quality/v2a/diagnostics
+          --status runtime_repo/runtime/data_quality/v2a/STATUS.json
+          --registry runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
+          --structural-registry tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+          --output runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
 
       - name: Preserve immutable Gateway point-in-time universe
         if: steps.daily_source.outputs.eligible == 'true'

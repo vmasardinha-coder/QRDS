@@ -458,6 +458,9 @@ jobs:
           fi
 
   publish-v2a-registry-pit:
+    concurrency:
+      group: gate-btc-v2a-quality-publication
+      cancel-in-progress: false
     # Publica em commit proprio, depois do ponteiro, para nao disputar o push.
     # Um dia sem PIT nao apaga o ponteiro do dia; a serie do Delta segue.
     needs: [prospective-v2a-pit, publish-runtime-pointer]
@@ -501,10 +504,9 @@ jobs:
           cp pit_evidence/prospective_v2a/QUALIFIED_SOURCE_REGISTRY.json runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json
           cp pit_evidence/prospective_v2a/snapshots/*.json runtime_repo/runtime/data_quality/v2a_registry_pit/snapshots/
           cp pit_evidence/prospective_v2a/archives/* runtime_repo/runtime/data_quality/v2a_registry_pit/archives/
-          diagnostic=$(find runtime_repo/runtime/data_quality/v2a/diagnostics -name '*.json' | sort | tail -1)
-          test -n "$diagnostic"
           python source_code/tools/gate_btc_pit150_source_crosswalk.py \
-            --diagnostic "$diagnostic" \
+            --diagnostic-dir runtime_repo/runtime/data_quality/v2a/diagnostics \
+            --status runtime_repo/runtime/data_quality/v2a/STATUS.json \
             --registry runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json \
             --structural-registry source_code/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
             --output runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
