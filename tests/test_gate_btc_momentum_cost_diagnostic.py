@@ -23,7 +23,7 @@ class MomentumCostDiagnosticTest(unittest.TestCase):
         out=project(ledger,prices,100)
         self.assertAlmostEqual(out['summary']['M1_TOP10']['nav_model_net'],1/1.01,places=12)
         self.assertAlmostEqual(out['summary']['BTC_HOLD']['nav_model_net'],1/1.01,places=12)
-        self.assertTrue(all(r['portfolios']['M1_TOP10']['cost_nav_units']==0 for r in out['rows'][1:]))
+        self.assertTrue(all(abs(r['portfolios']['M1_TOP10']['cost_nav_units']) < 1e-15 for r in out['rows'][1:]))
         self.assertEqual(ledger,before)
 
     def test_full_rotation_charges_both_sells_and_buys(self):
