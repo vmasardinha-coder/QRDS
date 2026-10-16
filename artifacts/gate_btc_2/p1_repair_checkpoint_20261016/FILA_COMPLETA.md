@@ -4,7 +4,7 @@ Reparo comprovado sai da fila de consertos. Coleta, maturidade e gates científi
 
 ## Frentes retomadas nesta rodada
 
-- **P0.2 — aberto:** último recibo de admissão conferido: 126/150, corte 15/10. USDGO admitido; USDY teve HTTP403; KOGE tem rota para corte 16/10. A7A5 teve a reconciliação encerrada e a fonte canônica integrada na PR1178: 200 dias físicos, 52 testes e 11 checks, vigência futura 17/10. Admissão automática futura não foi antecipada.
+- **P0.2 â€” aberto no conjunto, reparos USDY e publicaÃ§Ã£o encerrados:** PR1182 integrada; fonte pÃºblica USDY com transporte imutÃ¡vel e captura diÃ¡ria validada local/nuvem. RelatÃ³rio derivado corrigido e vinculado ao STATUS de 15/10: 126/150, 24 falhas. TrÃªs fontes reparadas aguardam recibo futuro; cinco casos aguardam histÃ³rico; 16 ainda exigem fonte, acesso, consistÃªncia ou disposiÃ§Ã£o de escopo. Ver ../pit150_branch2_closeout_20261016/README.md e PIT150_CASES_CURRENT.json.
 - **P1.3 — reparo fechado e entrega comprovada pela PR1176:** modelo canônico paper abstrato de 10 bps por compra/venda, com ativação no fechamento futuro 17/10 e primeira variação diária posterior. M1/M2 e M3 usam épocas separadas e BTC da mesma janela. O histórico bruto e os campos antigos net=N/D não foram alterados. Não é taxa observada, execução real nem prova de capacidade. A execução real 38898695029 publicou o vínculo e o estado de espera pelos fechamentos futuros; a leitura remota confirmou o contrato e os dois escopos. MOMENTUM_DELIVERY.json preserva essa prova. Os 25 testes focados e os 10 testes de cobertura dos workflows passaram; os adaptadores também validaram 16 registros físicos M1/M2 e 3 M3.
 - **P1.4 — reparo fechado e validado no backup mais recente:** repositório atual identificado como vmasardinha-coder/btc; módulos entregues conferem com main. Oito scripts de regressão passaram; CI integrado e aprovado na PR8, inclusive após merge. A revisão independente aplicou o código em memória ao backup original de 16/10, corte 15/10: 21 ledgers, 653 registros e todos os NAVs preservados, só dois retornos corrigidos, zero divergências e segunda passada sem escrita. Export somente leitura, três líquidos estimados e demais N/D. PORTAL_DELIVERY_REVIEW.json preserva os resultados. A versão servida e a migração no navegador do Victor ainda precisam de recibo operacional; não foram afirmadas como comprovadas. O backup corrigido entregue por Claude termina em 12/10 e não deve substituir o atual.
 
@@ -29,7 +29,7 @@ Reparo comprovado sai da fila de consertos. Coleta, maturidade e gates científi
 | G2 — V16B.1 | Gate separado, sem nova prova nesta rodada | 52 semanas autoritativas, labels maduros e selos causais |
 | G3 — Factory | Gate separado | Fonte elegível, warmup, gatilhos e outcomes por célula |
 | G4 — Scouts/registry | Gate separado | Identidade, preregistro, proveniência e admissão |
-| C1 — Relógios independentes | Acompanhamento contínuo | D50 75/80; readiness 4/7; V13 22/60; V11 63 observações; H1 14/20. D100 permanece congelado, zero observações |
+| C1 â€” RelÃ³gios independentes | Acompanhamento contÃ­nuo; D50/D100 reconciliados | D50 75/80; D100 econÃ´mico remoto 17/80, sem bloqueador cientÃ­fico; sidecar local D100 congelado em zero Ã© separado. Readiness 4/7; V13 22/60; V11 63; H1 14/20 |
 | C2 — QOS/PRL/ALT | Calendário | 31/10 → 01/11, sujeito aos contratos próprios |
 | C3 — Profit e comparadores | Acompanhamento / pareamento | 30/11. Comparador autônomo separado: NAV US$165.195,94; SGOV no último preço auditável, sem P&L diário EUA reconstruído |
 | C4 — Victor real | Insumos documentais pendentes | Extrato, posições, fluxos, câmbio e custos; não inferir retorno pareado |
@@ -63,3 +63,7 @@ P0.2 permanece como frente de reparo aberta. P1.4 sai da fila de consertos pelo 
 - O lote não traz novo recibo de admissão PIT150, Basis, Factory, Bull, Momentum líquido futuro, gates G1–G4 ou extratos reais. Mantêm o estado anterior, sem inferir avanço.
 
 **Saldo de reparos: P0.2 aberto; os demais reparos comprovados seguem fechados.** Coleta, recibos operacionais e decisões científicas continuam nos seus relógios.
+
+## Fechamento complementar de 16/10
+
+USDY e followup atual reparados na PR1182; produtor diÃ¡rio instalado e testado pelo agendador. Item 2 D50/D100 reconciliado e fechado tecnicamente, mantendo as coletas 75/80 e 17/80. PIT150 total continua 126/150 no Ãºltimo recibo, com os 24 casos classificados em PIT150_CASES_CURRENT.json; 16 ainda tÃªm dependÃªncia material. P1.4 Portal permanece fechado como reparo; falta recibo de implantaÃ§Ã£o na URL efetivamente usada.
