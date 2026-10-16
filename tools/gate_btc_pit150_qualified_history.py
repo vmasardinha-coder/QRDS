@@ -344,7 +344,77 @@ def normalize_history(symbol, route, payload, cutoff):
 BYBIT_PUBLIC_HOSTS = ("https://api.bybit.com", "https://api.bytick.com")
 
 
-def _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir):
+
+# A native public-data capture is collected outside the runner's blocked region.
+# The branch contains public exchange payloads only; no account or order access.
+BYBIT_CAPTURE_BRANCH = "pit150-usdy-public-captures"
+BYBIT_CAPTURE_EFFECTIVE_CUTOFF = "2026-10-16"
+BYBIT_CAPTURE_REPOSITORY = "vmasardinha-coder/QRDS"
+
+
+def load_bybit_public_capture(session, route, symbol, cutoff, evidence_dir, now=None):
+    observed = now or datetime.now(timezone.utc)
+    boundary = datetime.strptime(cutoff, "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+    if boundary > observed:
+        raise ValueError("public capture cutoff is unfinished")
+    api = f"https://api.github.com/repos/{BYBIT_CAPTURE_REPOSITORY}"
+    response = session.get(f"{api}/commits?sha={BYBIT_CAPTURE_BRANCH}&per_page=1", timeout=30)
+    if response.status_code != 200:
+        raise ValueError(f"public capture commit HTTP {response.status_code}")
+    head = json.loads(response.content)[0]
+    revision = head["sha"]
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError("invalid public capture revision")
+    published = datetime.fromisoformat(head["commit"]["committer"]["date"].replace("Z", "+00:00"))
+    if published.tzinfo is None or not boundary <= published <= observed:
+        raise ValueError("public capture publication time is not causal")
+    prefix = f"https://raw.githubusercontent.com/{BYBIT_CAPTURE_REPOSITORY}/{revision}/captures/{cutoff}"
+    payloads = {}
+    for label in ("seal", "identity", "candles"):
+        r = session.get(f"{prefix}/{label}.json", timeout=30)
+        if r.status_code != 200:
+            raise ValueError(f"public capture {label} HTTP {r.status_code}")
+        payloads[label] = r.content
+    seal = json.loads(payloads["seal"])
+    if not (seal.get("schema") == "gate_btc.bybit_public_capture.v1"
+            and seal.get("symbol") == symbol and seal.get("coin_id") == route["coin_id"]
+            and seal.get("pair") == route["pair"] and seal.get("cutoff") == cutoff
+            and seal.get("public_api_host") in BYBIT_PUBLIC_HOSTS
+            and seal.get("orders") == 0 and seal.get("real_capital") == 0):
+        raise ValueError("public capture identity or contract mismatch")
+    fetched = datetime.fromisoformat(seal["fetched_at_utc"].replace("Z", "+00:00"))
+    if fetched.tzinfo is None or not boundary <= fetched <= published:
+        raise ValueError("public capture fetch time is not causal")
+    hashes = {k: hashlib.sha256(payloads[k]).hexdigest() for k in ("identity", "candles")}
+    if any(seal.get("sha256", {}).get(k + ".json") != v for k, v in hashes.items()):
+        raise ValueError("public capture payload hash mismatch")
+    check_identity(route, json.loads(payloads["identity"]))
+    rows = normalize_history(symbol, route, json.loads(payloads["candles"]), cutoff)
+    evidence = {
+        "symbol": symbol, "coin_id": route["coin_id"], "source": "bybit",
+        "source_pair": route["pair"], "cutoff": cutoff, "closed_rows": len(rows),
+        "effective_cutoff": BYBIT_CAPTURE_EFFECTIVE_CUTOFF,
+        "public_api_host": seal["public_api_host"],
+        "identity_sha256": hashes["identity"], "candles_sha256": hashes["candles"],
+        "delivery": "PUBLIC_EXCHANGE_CAPTURE_PINNED_GITHUB_COMMIT",
+        "capture_revision": revision, "capture_published_at_utc": published.isoformat(),
+        "capture_fetched_at_utc": fetched.isoformat(),
+        "seal_sha256": hashlib.sha256(payloads["seal"]).hexdigest(),
+        "symbol_id": route["symbol_id"], "quote_currency": "USDT",
+        "volume_field": "turnover", "quote_usd_convention": "nominal stablecoin quote; no historical FX conversion",
+        "public_execution_ohlcv": True, "historical_scientific_credit": 0,
+        "research_only": True, "orders": 0, "real_capital": 0,
+        "identity_evidence": route["identity_evidence"], "cross_host_payload_mixing": False,
+    }
+    output = Path(evidence_dir) / symbol
+    output.mkdir(parents=True, exist_ok=True)
+    for label, raw in payloads.items():
+        (output / f"{label}.json").write_bytes(raw)
+    (output / "qualification.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    return rows, evidence
+
+
+def _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir, now=None):
     """Official same-venue hosts; retry availability failures, never identity QA."""
     output = Path(evidence_dir) / symbol
     output.mkdir(parents=True, exist_ok=True)
@@ -392,6 +462,8 @@ def _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir):
         }
         (output / 'qualification.json').write_text(json.dumps(evidence, indent=2) + '\n')
         return rows, evidence
+    if cutoff >= BYBIT_CAPTURE_EFFECTIVE_CUTOFF:
+        return load_bybit_public_capture(session, route, symbol, cutoff, evidence_dir, now=now)
     failures = '; '.join(f"{x['host']} {x['label']} HTTP {x['http_status']}" for x in attempts)
     raise ValueError('qualified bybit public hosts unavailable: ' + failures)
 
@@ -408,15 +480,11 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
         return collect(session,cutoff,evidence_dir,now=now)
 
     if provider == 'bybit':
-        return _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir)
+        return _collect_bybit(session, symbol, coin_id, route, cutoff, evidence_dir, now=now)
     if provider == "gate":
         urls = [f"https://api.gateio.ws/api/v4/spot/currency_pairs/{pair}",f"https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={pair}&interval=1d&limit=1000"]
         if route.get('contract_chain'):
             urls.insert(1, f"https://api.gateio.ws/api/v4/spot/currencies/{symbol}")
-    elif provider == "bybit":
-        end_ms = int((datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)).timestamp()*1000)-1
-        urls = [f"https://api.bybit.com/v5/market/instruments-info?category=spot&symbol={pair}",
-                f"https://api.bybit.com/v5/market/kline?category=spot&symbol={pair}&interval=D&limit=1000&end={end_ms}"]
     elif provider == 'deribit':
         end = datetime.strptime(cutoff,'%Y-%m-%d').replace(tzinfo=timezone.utc)+timedelta(days=1)
         start_ms = int((end-timedelta(days=200)).timestamp()*1000)
@@ -463,10 +531,6 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
                 "identity_sha256":hashes[0],"candles_sha256":hashes[-1],
                 "public_execution_ohlcv":True,"historical_scientific_credit":0,
                 "research_only":True,"orders":0,"real_capital":0}
-    if provider == "bybit":
-        evidence.update({"identity_evidence":route["identity_evidence"], "symbol_id":route["symbol_id"],
-                         "quote_currency":"USDT", "volume_field":"turnover",
-                         "quote_usd_convention":"nominal stablecoin quote; no historical FX conversion"})
     if provider == 'deribit':
         evidence.update({'aggregation':'24 complete UTC hours per day; open first, high max, low min, close last, cost sum',
                          'quote_currency':'USDC','quote_usd_convention':'nominal stablecoin quote; no historical FX conversion',

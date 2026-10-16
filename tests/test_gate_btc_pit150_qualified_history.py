@@ -333,4 +333,101 @@ class BybitOfficialHostTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.collect(s,root)
 
 
+
+class BybitPublicCaptureTests(unittest.TestCase):
+    def fixture(self,cutoff="2026-10-15"):
+        import hashlib
+        meta,bars=BybitOfficialHostTests().data()
+        if cutoff=="2026-10-16":
+            for b in bars["result"]["list"]:b[0]=str(int(b[0])+86400000)
+        raw={k:json.dumps(v).encode() for k,v in {"identity":meta,"candles":bars}.items()}
+        day=(datetime.strptime(cutoff,"%Y-%m-%d")+timedelta(days=1)).date().isoformat()
+        seal={"schema":"gate_btc.bybit_public_capture.v1","symbol":"USDY","coin_id":"ondo-us-dollar-yield",
+              "pair":"USDYUSDT","cutoff":cutoff,"public_api_host":"https://api.bybit.com",
+              "fetched_at_utc":day+"T11:00:00+00:00","orders":0,"real_capital":0,
+              "sha256":{k+".json":hashlib.sha256(v).hexdigest() for k,v in raw.items()}}
+        head=[{"sha":"a"*40,"commit":{"committer":{"date":day+"T12:00:00Z"}}}]
+        return raw,seal,head
+
+    def session(self,raw,seal,head,block_official=False):
+        class Session:
+            def __init__(self):self.urls=[]
+            def get(self,url,timeout):
+                self.urls.append(url)
+                class Response:pass
+                r=Response();r.status_code=200
+                if url.startswith(("https://api.bybit.com/","https://api.bytick.com/")) and block_official:
+                    r.status_code=403;r.content=b"blocked";return r
+                if "api.github.com" in url:r.content=json.dumps(head).encode()
+                elif url.endswith("/seal.json"):r.content=json.dumps(seal).encode()
+                elif url.endswith("/identity.json"):r.content=raw["identity"]
+                elif url.endswith("/candles.json"):r.content=raw["candles"]
+                else:raise AssertionError(url)
+                return r
+        return Session()
+
+    def test_public_capture_hashes_qa_and_pinned_revision(self):
+        from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture
+        raw,seal,head=self.fixture();s=self.session(raw,seal,head)
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=load_bybit_public_capture(s,ROUTES["USDY"],"USDY","2026-10-15",root,
+                                            now=datetime(2026,10,16,13,tzinfo=timezone.utc))
+        self.assertEqual(len(rows),200)
+        self.assertEqual(e["capture_revision"],"a"*40)
+        self.assertEqual(e["historical_scientific_credit"],0)
+        self.assertTrue(all("/"+("a"*40)+"/" in url for url in s.urls[1:]))
+
+    def test_corrupt_identity_wrong_day_future_and_backdated_seals_fail(self):
+        from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture
+        for kind in ["hash","coin","cutoff","future_fetch","early_publication","unapproved_host"]:
+            raw,seal,head=self.fixture()
+            if kind=="hash":raw["candles"]+=b" "
+            elif kind=="coin":seal["coin_id"]="other"
+            elif kind=="cutoff":seal["cutoff"]="2026-10-14"
+            elif kind=="future_fetch":seal["fetched_at_utc"]="2026-10-17T00:00:00Z"
+            elif kind=="early_publication":head[0]["commit"]["committer"]["date"]="2026-10-15T23:59:00Z"
+            else:seal["public_api_host"]="https://untrusted.example"
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as root:
+                with self.assertRaises(ValueError):
+                    load_bybit_public_capture(self.session(raw,seal,head),ROUTES["USDY"],"USDY","2026-10-15",root,
+                                              now=datetime(2026,10,16,13,tzinfo=timezone.utc))
+
+    def test_production_fallback_activates_only_future_cutoff(self):
+        raw,seal,head=self.fixture("2026-10-16")
+        s=self.session(raw,seal,head,block_official=True)
+        with tempfile.TemporaryDirectory() as root:
+            rows,e=collect_history(s,"USDY","ondo-us-dollar-yield","2026-10-16",root,
+                                   now=datetime(2026,10,17,13,tzinfo=timezone.utc))
+        self.assertEqual(len(rows),200)
+        self.assertEqual(rows[-1]["date"],"2026-10-16")
+        self.assertEqual(e["delivery"],"PUBLIC_EXCHANGE_CAPTURE_PINNED_GITHUB_COMMIT")
+
+
+
+class BybitCapturePublisherTests(unittest.TestCase):
+    def test_existing_day_is_never_recollected(self):
+        from tools import gate_btc_pit150_usdy_capture as producer
+        from unittest.mock import patch
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(sys,"argv",["capture","--root",tmp,"--cutoff","2026-10-15"]), \
+                 patch.object(producer,"github",return_value={"sha":"b"*40}), \
+                 patch.object(producer,"collect_history",side_effect=AssertionError("must not recollect")):
+                producer.main()
+
+    def test_publish_uses_server_timestamp_and_nonforce_ref(self):
+        from tools import gate_btc_pit150_usdy_capture as producer
+        from unittest.mock import patch
+        calls=[];answers=iter([{"object":{"sha":"a"*40}},{"tree":{"sha":"b"*40}},
+                               {"sha":"c"*40},{"sha":"d"*40,"committer":{"date":"2026-10-16T12:00:00Z"}},{}])
+        def api(gh,path,method="GET",payload=None):
+            calls.append((path,method,payload));return next(answers)
+        with patch.object(producer,"github",side_effect=api):
+            producer.publish("gh","2026-10-15",{"seal.json":b"{}","identity.json":b"{}","candles.json":b"{}"})
+        commit=calls[3][2]
+        self.assertNotIn("author",commit);self.assertNotIn("committer",commit)
+        self.assertEqual(calls[-1][2],{"sha":"d"*40,"force":False})
+        self.assertTrue(all(x["path"].startswith("captures/2026-10-15/") for x in calls[2][2]["tree"]))
+
+
 if __name__=="__main__":unittest.main()

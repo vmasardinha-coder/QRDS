@@ -74,6 +74,41 @@ class CrosswalkTests(unittest.TestCase):
                 build_crosswalk(self.diagnostic, self.registry, bad)
 
 
+
+class CurrentDiagnosticBindingTests(unittest.TestCase):
+    def test_current_snapshot_and_counts_are_bound(self):
+        from tools.gate_btc_pit150_source_crosswalk import validate_authoritative_status
+        diagnostic={"snapshot_id":"2026-10-15-run-1","source_run_id":1,"data_as_of":"2026-10-15",
+                    "attempted_symbols":150,"loaded_symbols":126,"failed_symbols":24}
+        status={"latest_snapshot_id":"2026-10-15-run-1","latest_source_run_id":"1","latest_source_data_as_of":"2026-10-15",
+                "latest_attempted_symbols":150,"latest_loaded_symbols":126,"latest_failed_symbols":24}
+        self.assertEqual(validate_authoritative_status(diagnostic,status)["loaded_symbols"],126)
+        for key,value in [("snapshot_id","2026-10-14-run-0"),("source_run_id",2),("data_as_of","2026-10-14"),
+                          ("attempted_symbols",149),("loaded_symbols",124),("failed_symbols",26)]:
+            bad=dict(diagnostic);bad[key]=value
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                validate_authoritative_status(bad,status)
+
+    def test_directory_selection_uses_status_not_lexical_last_file(self):
+        import tempfile,json,subprocess,sys
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/"diagnostics").mkdir()
+            diagnostic={"snapshot_id":"2026-10-15-run-1","source_run_id":1,"data_as_of":"2026-10-15",
+                        "attempted_symbols":150,"loaded_symbols":150,"failed_symbols":0,"rows":[]}
+            status={"latest_snapshot_id":diagnostic["snapshot_id"],"latest_source_run_id":1,"latest_source_data_as_of":"2026-10-15",
+                    "latest_attempted_symbols":150,"latest_loaded_symbols":150,"latest_failed_symbols":0}
+            (root/"diagnostics/2026-10-15-run-1.json").write_text(json.dumps(diagnostic))
+            (root/"diagnostics/zzzz-unrelated.json").write_text("{}")
+            (root/"status.json").write_text(json.dumps(status))
+            (root/"registry.json").write_text(json.dumps({"entry_count":0,"entries":[]}))
+            script=Path(__file__).resolve().parents[1]/"tools/gate_btc_pit150_source_crosswalk.py"
+            subprocess.run([sys.executable,str(script),"--diagnostic-dir",str(root/"diagnostics"),"--status",str(root/"status.json"),
+                            "--registry",str(root/"registry.json"),"--output",str(root/"result.json")],check=True,capture_output=True)
+            out=json.loads((root/"result.json").read_text())
+            self.assertEqual(out["data_as_of"],"2026-10-15")
+            self.assertEqual(out["authoritative_status_binding"]["failed_symbols"],0)
+
+
 if __name__ == "__main__":
     unittest.main()
-

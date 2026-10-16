@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -94,14 +95,43 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=()) 
     }
 
 
+
+def validate_authoritative_status(diagnostic, status):
+    fields = {
+        "snapshot_id": "latest_snapshot_id",
+        "source_run_id": "latest_source_run_id",
+        "data_as_of": "latest_source_data_as_of",
+        "attempted_symbols": "latest_attempted_symbols",
+        "loaded_symbols": "latest_loaded_symbols",
+        "failed_symbols": "latest_failed_symbols",
+    }
+    for field, authority in fields.items():
+        if field not in diagnostic or authority not in status or str(diagnostic[field]) != str(status[authority]):
+            raise ValueError("diagnostic disagrees with authoritative status: " + field)
+    return {field: diagnostic[field] for field in fields}
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--diagnostic", type=Path, required=True)
+    choice = parser.add_mutually_exclusive_group(required=True)
+    choice.add_argument("--diagnostic", type=Path)
+    choice.add_argument("--diagnostic-dir", type=Path)
+    parser.add_argument("--status", type=Path)
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--structural-registry", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    status_raw = args.status.read_bytes() if args.status else None
+    status = json.loads(status_raw) if status_raw else None
+    if args.diagnostic_dir:
+        if not status:
+            parser.error("--diagnostic-dir requires --status")
+        snapshot_id = status.get("latest_snapshot_id", "")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", snapshot_id):
+            raise ValueError("invalid authoritative snapshot id")
+        args.diagnostic = args.diagnostic_dir / (snapshot_id + ".json")
     diagnostic_raw, registry_raw = args.diagnostic.read_bytes(), args.registry.read_bytes()
+    binding = validate_authoritative_status(json.loads(diagnostic_raw), status) if status else None
     structural_raw = args.structural_registry.read_bytes() if args.structural_registry else None
     exclusions = json.loads(structural_raw)["structural_exclusions"] if structural_raw else ()
     report = build_crosswalk(json.loads(diagnostic_raw), json.loads(registry_raw), exclusions)
@@ -111,6 +141,9 @@ def main():
     }
     if structural_raw:
         report["input_sha256"]["structural_registry"] = hashlib.sha256(structural_raw).hexdigest()
+    if binding:
+        report["authoritative_status_binding"] = binding
+        report["input_sha256"]["authoritative_status"] = hashlib.sha256(status_raw).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (
