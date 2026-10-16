@@ -3,11 +3,12 @@ from datetime import date,timedelta
 from decimal import Decimal
 from pathlib import Path
 from tools import gate_btc_hash_settlement_history as h
+FIXTURES=Path(__file__).resolve().parents[1]/'artifacts/gate_btc_2/pit150_hash_kinesis_20261016/fixtures'
 
 class NativeProofTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with zipfile.ZipFile(Path(__file__).parent/"fixtures/gate_btc_hash_settlement_20261016.zip") as z:
+        with zipfile.ZipFile(FIXTURES/"gate_btc_hash_settlement_20261016.zip") as z:
             cls.items=json.loads(z.read("transactions.json"));cls.blocks=json.loads(z.read("blocks.json"))
     def pair(self):
         x=copy.deepcopy(self.items[0]);return x,copy.deepcopy(self.blocks[x["height"]])
@@ -41,7 +42,7 @@ class NativeProofTests(unittest.TestCase):
 class EdgeProofTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with zipfile.ZipFile(Path(__file__).parent/"fixtures/gate_btc_hash_native_edges_20261016.zip") as z:
+        with zipfile.ZipFile(FIXTURES/"gate_btc_hash_native_edges_20261016.zip") as z:
             cls.items=json.loads(z.read("transactions.json"));cls.blocks=json.loads(z.read("blocks.json"))
     def events(self,prefix):
         x=next(x for x in self.items if x["hash"].startswith(prefix))
@@ -85,7 +86,7 @@ class HybridTests(unittest.TestCase):
     def setUp(self):
         import tempfile
         self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
-        with zipfile.ZipFile(Path(__file__).parent/"fixtures/gate_btc_hash_hybrid_20261016.zip") as z:z.extractall(self.root)
+        with zipfile.ZipFile(FIXTURES/"gate_btc_hash_hybrid_20261016.zip") as z:z.extractall(self.root)
         self.events=json.loads((self.root/"settlements.json").read_bytes())
     def tearDown(self):self.temp.cleanup()
     def test_200_days_native_cashflow_and_physical_provider_close(self):
