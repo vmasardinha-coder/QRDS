@@ -114,6 +114,12 @@ ROUTES['REUSD'] = {'coin_id':'re-protocol-reusd','name':'Re Protocol Deposit Tok
     'pool':'0xb96cee75211700bc148b95b1c907d726791f4457',
     'effective_cutoff':'2026-10-17'}
 
+# Physical Figure trade clock and TRADE close; all tape cashflow must reconcile
+# with canonical native settlement proofs. Aggregated message VWAP is not close.
+ROUTES['HASH'] = {'coin_id':'hash-2','name':'Provenance Blockchain',
+    'source':'figure_hash_native_reconciled_tape','pair':'HASH-USD',
+    'effective_cutoff':'2026-10-17'}
+
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -482,6 +488,9 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     if cutoff >= (now or datetime.now(timezone.utc)).date().isoformat():
         raise ValueError("qualified source cutoff is not a completed UTC day")
     provider,pair = route["source"],route["pair"]
+    if provider == 'figure_hash_native_reconciled_tape':
+        from tools.gate_btc_hash_settlement_history import collect
+        return collect(session,cutoff,evidence_dir,now=now)
     if provider == 'blockscout_eth_reusd_swaps':
         from tools.gate_btc_reusd_swap_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
