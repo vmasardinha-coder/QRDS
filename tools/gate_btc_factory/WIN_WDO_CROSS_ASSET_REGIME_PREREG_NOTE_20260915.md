@@ -1,1 +1,0 @@
-The preregistration bundle is intentionally outcome-free. The next permitted action after a green canonical merge is source/cost qualification, not model execution. Any later implementation must consume these frozen artifacts rather than silently redefining horizons, lags, regime features, partitions, costs, promotion rules or prospective credit.
