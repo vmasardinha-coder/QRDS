@@ -15,8 +15,8 @@ def fixture(tmp_path):
     week.mkdir(parents=True)
     features = "symbol,feature_ok\nAAAUSDT,True\n"
     exclusions = "symbol,reason,missing_features\nNEWUSDT,INCOMPLETE_FROZEN_FEATURES,mom90\n"
-    (week / "FEATURES.csv").write_text(features)
-    (week / "EXCLUSIONS.csv").write_text(exclusions)
+    (week / "FEATURES.csv").write_bytes(features.encode())
+    (week / "EXCLUSIONS.csv").write_bytes(exclusions.encode())
     meta = {"signal_date": "2026-10-08", "entry_date": "2026-10-09",
             "exit_date": "2026-10-16", "label_status": "PENDING_FROZEN_EXIT",
             "eligible_feature_rows": 1, "features_sha256": m.sha(features.encode()),
@@ -64,4 +64,37 @@ def test_frozen_feature_tamper_blocks_network(tmp_path, monkeypatch):
     (week / "FEATURES.csv").write_text("symbol,feature_ok\nBADUSDT,True\n")
     monkeypatch.setattr(m, "fetch_verified", lambda *args: pytest.fail("network must not be called"))
     with pytest.raises(ValueError, match="hash mismatch"):
+        m.mature(tmp_path, "2026-10-08", datetime(2026, 10, 17, tzinfo=timezone.utc), object())
+
+
+@pytest.mark.parametrize("symbol", ["UUSDT", "币安人生USDT"])
+def test_actual_frozen_symbols_mature_without_renaming(tmp_path, monkeypatch, symbol):
+    week = fixture(tmp_path)
+    features = f"symbol,feature_ok\n{symbol},True\n".encode()
+    (week / "FEATURES.csv").write_bytes(features)
+    meta = json.loads((week / "WEEK.json").read_text())
+    meta["features_sha256"] = m.sha(features)
+    (week / "WEEK.json").write_text(json.dumps(meta))
+    before = {name: (week / name).read_bytes() for name in ["FEATURES.csv", "EXCLUSIONS.csv", "WEEK.json"]}
+    def fetch(session, venue, instrument, day):
+        assert instrument == symbol
+        return fake_fetch(session, venue, "AAAUSDT", day)
+    monkeypatch.setattr(m, "fetch_verified", fetch)
+    out = m.mature(tmp_path, "2026-10-08", datetime(2026, 10, 17, tzinfo=timezone.utc), object())
+    assert out["label_rows"] == 1
+    assert list(csv.DictReader((week / "LABELS.csv").open(encoding="utf-8")))[0]["symbol"] == symbol
+    assert (week / "raw" / symbol / f"{symbol}-1d-2026-10-16.zip").exists()
+    assert all((week / name).read_bytes() == data for name, data in before.items())
+
+
+@pytest.mark.parametrize("symbol", ["../BTCUSDT", "BTC/USDT", "BTC\\USDT", "btcUSDT", "USDT", "BTCUSDT?x", "币安人生USDT/", " BTCUSDT"])
+def test_invalid_hash_bound_symbol_still_blocks_network(tmp_path, monkeypatch, symbol):
+    week = fixture(tmp_path)
+    data = f"symbol,feature_ok\n{symbol},True\n".encode()
+    (week / "FEATURES.csv").write_bytes(data)
+    meta = json.loads((week / "WEEK.json").read_text())
+    meta["features_sha256"] = m.sha(data)
+    (week / "WEEK.json").write_text(json.dumps(meta))
+    monkeypatch.setattr(m, "fetch_verified", lambda *args: pytest.fail("network must not be called"))
+    with pytest.raises(ValueError, match="invalid frozen feature membership"):
         m.mature(tmp_path, "2026-10-08", datetime(2026, 10, 17, tzinfo=timezone.utc), object())

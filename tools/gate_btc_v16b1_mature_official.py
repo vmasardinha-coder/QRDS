@@ -16,7 +16,9 @@ import requests
 from tools.gate_btc_v16b_prospective_prices import fetch_verified, parse_daily_close
 
 BASE = Path("runtime/evidence/v16b1/prospective_training/weeks")
-SYMBOL = re.compile(r"^[A-Z0-9]{2,30}USDT$")
+# Preserve the hash-bound upstream symbols, including single-letter bases and
+# the exact CJK identity already sealed in the prospective feature corpus.
+SYMBOL = re.compile(r"^(?:[A-Z0-9]{1,30}|币安人生)USDT$")
 
 
 def sha(data: bytes) -> str:
