@@ -322,13 +322,19 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
                     result = collect_history(session, symbol, str(members.iloc[0]["id"]), cutoff,
                                              OUT / "qualified_source_extensions")
                     if result is None:
-                        raise RuntimeError("universe coin_id does not match qualified fallback")
-                    rows, evidence = result
-                    selected = pd.DataFrame(rows)
-                    name = evidence["source"]
-                    extension_attempt = {"source": name, "status": "SELECTED", "observed_rows": len(rows),
-                                         "coin_id": evidence["coin_id"], "qualification": evidence}
-                    extension_selected_count += 1
+                        if str(members.iloc[0]["id"]) != ROUTES[symbol]["coin_id"]:
+                            raise RuntimeError("universe coin_id does not match qualified fallback")
+                        effective = ROUTES[symbol].get("effective_cutoff", "2026-10-13")
+                        extension_attempt = {"source": ROUTES[symbol]["source"], "status": "NOT_EFFECTIVE",
+                                             "coin_id": ROUTES[symbol]["coin_id"], "effective_cutoff": effective}
+                        last_error = f"qualified_extension: not effective until cutoff {effective}"
+                    else:
+                        rows, evidence = result
+                        selected = pd.DataFrame(rows)
+                        name = evidence["source"]
+                        extension_attempt = {"source": name, "status": "SELECTED", "observed_rows": len(rows),
+                                             "coin_id": evidence["coin_id"], "qualification": evidence}
+                        extension_selected_count += 1
             except Exception as exc:
                 extension_attempt = {"status": "ERROR", "error_type": type(exc).__name__, "message": str(exc)[:160]}
                 last_error = f"qualified_extension: {type(exc).__name__}: {str(exc)[:160]}"
