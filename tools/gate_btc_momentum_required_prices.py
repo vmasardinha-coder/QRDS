@@ -94,10 +94,11 @@ class MissingRequiredPrices(ValueError):
 
 
 # Exact identities already qualified by PIT150, effective at its frozen cutoff.
-# Keep this bridge restricted to the five observed economic-delivery failures.
+# Keep this bridge restricted to the seven observed economic-delivery failures.
 ECONOMIC_QUALIFIED_IDENTITIES = {
     'BTW': 'bitway', 'CARDS': 'collector-crypt', 'DRV': 'derive',
     'GRASS': 'grass', 'KCS': 'kucoin-shares',
+    'BP': 'backpack', 'SHFL': 'shuffle-2',
 }
 
 
@@ -184,7 +185,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
               'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
-              'qualified_fallback_policy':'FIVE_PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_NO_BACKFILL',
+              'qualified_fallback_policy':'SEVEN_PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_NO_BACKFILL',
               'qualified_source_evidence':qualified_evidence,
               'evidence_role':'CURRENT_SOURCE_EVIDENCE_ONLY_NOT_BACKFILLED_ECONOMICS',
               'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0}
