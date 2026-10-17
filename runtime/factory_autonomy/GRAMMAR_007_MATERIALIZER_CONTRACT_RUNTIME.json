@@ -1,0 +1,83 @@
+{
+  "candidate_freeze_required_before_validation": true,
+  "economics_read": false,
+  "embargo_sessions": 60,
+  "families": [
+    {
+      "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_62943307741A",
+      "feature_fields": [
+        "EQUITY_FUND_AGG_NET_FLOW_OVER_PRIOR_AGG_NAV"
+      ],
+      "frozen_semantics": {
+        "feature": "Aggregate net flow for CVM-classified equity funds on the latest official report date available before the target B3 session, defined mechanically as total subscriptions minus total redemptions divided by the prior officially reported aggregate net asset value for the same eligible fund set; no fund ranking, threshold or performance-based subset selection.",
+        "lookback": "Exactly one latest eligible official flow report plus the immediately prior officially reported aggregate net asset value needed for scaling; missing required fields make the date ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the fund-flow feature is officially observable.",
+        "window": "Use only CVM fund-report data whose official availability timestamp is strictly before the target B3 regular-session open; later reports roll prospectively to the next eligible session."
+      },
+      "historical_testing_started": false,
+      "missing_rule": "INELIGIBLE_NO_IMPUTATION",
+      "outcomes_read": false,
+      "pit_rule": "CVM_OFFICIAL_AVAILABILITY_TIMESTAMP_STRICTLY_BEFORE_B3_OPEN",
+      "required_fields": [
+        "DT_COMPTC",
+        "CAPTC_DIA",
+        "RESG_DIA",
+        "VL_PATRIM_LIQ"
+      ],
+      "source": "CVM_FI_INF_DIARIO_PLUS_DELIVERY_AND_CLASS_REGISTRY",
+      "status": "CAUSAL_MATERIALIZER_CONTRACT_FROZEN"
+    },
+    {
+      "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
+      "economics_read": false,
+      "family_id": "XAGRAMMAR_728DC88D691B",
+      "feature_fields": [
+        "IPCA_CURRENT_YEAR_MEDIAN_REVISION",
+        "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION"
+      ],
+      "frozen_semantics": {
+        "feature": "Two-component revision vector from the latest officially published BCB Focus survey available before the target B3 session: change versus the immediately preceding Focus publication in the median IPCA expectation for the current calendar year and change in the median Selic expectation for the end of the current calendar year; no thresholding, reweighting, component selection or outcome-based transformation.",
+        "lookback": "Exactly two consecutive official Focus publications are required to compute the publication-to-publication revisions; missing either required series makes the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the revised Focus vector is officially observable.",
+        "window": "Only the latest completed official BCB Focus publication whose publication timestamp precedes the target B3 regular-session open; publications at or after the open roll prospectively to the next eligible session."
+      },
+      "historical_testing_started": false,
+      "missing_rule": "INELIGIBLE_NO_IMPUTATION",
+      "outcomes_read": false,
+      "pit_rule": "OFFICIAL_FOCUS_PUBLICATION_TIMESTAMP_STRICTLY_BEFORE_B3_OPEN",
+      "required_fields": [
+        "Indicador",
+        "Data",
+        "DataReferencia",
+        "Mediana",
+        "baseCalculo"
+      ],
+      "source": "BCB_OLINDA_EXPECTATIVASMERCADOANUAIS",
+      "status": "CAUSAL_MATERIALIZER_CONTRACT_FROZEN"
+    }
+  ],
+  "historical_testing_started": false,
+  "holdout_only_if_validation_passes": true,
+  "outcomes_read": false,
+  "partition_contract": "50_30_20_CHRONOLOGICAL",
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.causal_materializer_contract.v1",
+  "status": "READY_FOR_PHYSICAL_SOURCE_CAPTURE",
+  "target": "IBOVESPA_SIMPLE_CLOSE_TO_CLOSE_NEXT_ELIGIBLE_SESSION",
+  "target_source": "B3_COTAHIST_OFFICIAL",
+  "validation_untouched_until_candidate_freeze": true
+}

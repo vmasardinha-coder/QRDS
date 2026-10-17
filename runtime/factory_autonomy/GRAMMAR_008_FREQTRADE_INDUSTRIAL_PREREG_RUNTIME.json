@@ -1,0 +1,99 @@
+{
+  "schema":"qrds.factory.grammar_008.freqtrade_industrial_prereg.v1",
+  "status":"FROZEN_BEFORE_SOURCE_OUTCOME_READ",
+  "freeze_date":"2026-09-21",
+  "purpose":"Evaluate a finite batch of materially distinct alpha hypotheses abstracted from the already-frozen Freqtrade intake without importing external performance claims.",
+  "source_intake":"artifacts/gate_btc_2/freqtrade_integration/hypothesis_seed_manifest.json",
+  "included_seed_ids":["FT-HYP-002","FT-HYP-003","FT-HYP-004"],
+  "excluded_seed":{"FT-HYP-001":"EXECUTION_OVERLAY_ONLY_REQUIRES_UPSTREAM_ALPHA; NOT_COUNTED_AS_ALPHA_SURVIVOR"},
+  "market_data":{
+    "provider":"Coinbase Exchange public REST",
+    "endpoint":"https://api.exchange.coinbase.com/products/{product_id}/candles",
+    "products":["BTC-USD","ETH-USD"],
+    "granularity_seconds":3600,
+    "download_start_utc":"2022-01-01T00:00:00Z",
+    "download_end_exclusive_utc":"2026-09-21T00:00:00Z",
+    "warmup_only_before":"2023-01-01T00:00:00Z",
+    "missing_bar_policy":"INELIGIBLE_NO_IMPUTATION",
+    "duplicate_timestamp_policy":"FAIL_CLOSED",
+    "execution":"signal on completed hourly candle t; enter/exit at next available hourly candle open t+1; no same-candle execution",
+    "shorting":false,
+    "leverage":false
+  },
+  "partitions":{
+    "discovery":{"start":"2023-01-01T00:00:00Z","end_inclusive":"2024-12-31T23:00:00Z"},
+    "validation":{"start":"2025-01-08T00:00:00Z","end_inclusive":"2025-12-31T23:00:00Z"},
+    "holdout":{"start":"2026-01-08T00:00:00Z","end_inclusive":"2026-09-20T23:00:00Z"},
+    "boundary_embargo_hours":168,
+    "validation_unread_until_discovery_gate":true,
+    "holdout_unread_until_validation_gate":true
+  },
+  "costs":{
+    "primary_bps_per_side":20,
+    "stress_bps_per_side":40,
+    "applied_on_entry_and_exit":true,
+    "slippage_included_in_cost_stress":true,
+    "no_cost_optimization":true
+  },
+  "portfolio_contract":{
+    "position":"LONG_OR_FLAT_ONE_POSITION_PER_CANDIDATE_ASSET",
+    "notional_fraction":1.0,
+    "compounding":false,
+    "candidate_unit":"strategy_variant_x_asset",
+    "cross_asset_pooling":false
+  },
+  "decision_rule":{
+    "effect":"mean(net_trade_return_primary)/sample_sd(net_trade_return_primary)",
+    "minimum_trades":{"discovery":20,"validation":10,"holdout":10},
+    "discovery_pass":"effect > 0 AND mean_net_primary > 0 AND mean_net_stress >= 0",
+    "validation_pass":"discovery_pass AND effect_validation > 0 AND effect_validation >= 0.50 * effect_discovery AND mean_net_primary_validation > 0 AND mean_net_stress_validation >= 0",
+    "holdout_pass":"validation_pass AND effect_holdout > 0 AND effect_holdout >= 0.50 * effect_discovery AND mean_net_primary_holdout > 0 AND mean_net_stress_holdout >= 0",
+    "survivor":"holdout_pass",
+    "zero_variance":"INELIGIBLE_FAIL_CLOSED",
+    "no_retune_after_any_partition":true
+  },
+  "families":[
+    {
+      "family_id":"G008_BAND_MEAN_REVERSION",
+      "seed":"FT-HYP-002",
+      "entry_common":"close_t < SMA20_t - width * population_sd20_t; optional RSI gate evaluated on t; enter next open",
+      "exit_common":"first completed t with close_t >= SMA20_t OR max_hold_48_hours; exit next open",
+      "variants":[
+        {"variant_id":"BB20_W2_0","width":2.0,"rsi14_max":null},
+        {"variant_id":"BB20_W2_5","width":2.5,"rsi14_max":null},
+        {"variant_id":"BB20_W2_0_RSI30","width":2.0,"rsi14_max":30},
+        {"variant_id":"BB20_W2_5_RSI35","width":2.5,"rsi14_max":35}
+      ]
+    },
+    {
+      "family_id":"G008_CANDLE_EVENT",
+      "seed":"FT-HYP-003",
+      "entry_common":"bullish event fully determined at close t; enter next open",
+      "exit_common":"fixed 24 completed hourly bars after entry; exit next open; no pattern-selected horizon",
+      "variants":[
+        {"variant_id":"BULLISH_ENGULFING","pattern":"previous bearish; current bullish; current real body engulfs previous real body"},
+        {"variant_id":"HAMMER","pattern":"bullish or bearish body allowed; lower shadow >=2x body; upper shadow <= body; body >0"},
+        {"variant_id":"MORNING_STAR","pattern":"three-bar: bearish large first body; second body <=0.5 first body; third bullish close above midpoint of first body"},
+        {"variant_id":"PIERCING_LINE","pattern":"previous bearish; current bullish opens <= previous close and closes > previous body midpoint but < previous open"}
+      ]
+    },
+    {
+      "family_id":"G008_TEMA_LATTICE",
+      "seed":"FT-HYP-004",
+      "indicator":"TEMA_n = 3*EMA1_n - 3*EMA2_n + EMA3_n where EMA2=EMA(EMA1,n), EMA3=EMA(EMA2,n)",
+      "entry_common":"at close t fast>mid>slow and prior completed bar was not strictly ordered; enter next open",
+      "exit_common":"at close t fast<=mid OR mid<=slow; exit next open",
+      "variants":[
+        {"variant_id":"TEMA_5_20_50","horizons":[5,20,50]},
+        {"variant_id":"TEMA_10_30_100","horizons":[10,30,100]},
+        {"variant_id":"TEMA_20_50_200","horizons":[20,50,200]},
+        {"variant_id":"TEMA_30_90_270","horizons":[30,90,270]}
+      ]
+    }
+  ],
+  "candidate_count":24,
+  "candidate_construction":"12 frozen variants x 2 frozen assets; all exist before any Grammar 008 market-data outcome read",
+  "prohibitions":["NO_GRID_EXTENSION_AFTER_OUTCOME","NO_PARAMETER_SELECTION_AFTER_OUTCOME","NO_ASSET_DROPPING_AFTER_OUTCOME","NO_PARTITION_REFIT","NO_COST_RETUNE","NO_BACKFILL_AS_PROSPECTIVE_CREDIT"],
+  "target_boundary_at_freeze":{"grammar_008_market_data_fetched":false,"outcomes_read":false,"economics_read":false},
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}
