@@ -19,3 +19,5 @@ O resultado deve coincidir com LOCAL_AUDIT.json. SHA256.json confere os arquivos
 CAPTURE_SCRIPTS.zip preserva os scripts de obtenção usados nesta rodada, inclusive tentativas rejeitadas. São registros de pesquisa com caminhos locais de trabalho, não um serviço de produção. A reprodução determinística usa o auditor acima e não precisa de chaves.
 
 **Saldo da fila:** quatro fontes reparadas com corte futuro 17/10, cinco casos só em coleta e 15 dependências materiais. Reparos já comprovados permanecem fechados.
+
+Validação: 18 testes focados aprovados; replay em Linux/Python 3.12 byte a byte igual ao local Windows/Python 3.11, execução 39032330586. As seis verificações do código passaram. CLOUD_VERIFICATION.json preserva os vínculos e os hashes.
