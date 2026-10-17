@@ -12,6 +12,7 @@ import importlib.util
 import io
 import json
 import os
+import sys
 import traceback
 import zipfile
 from datetime import datetime, timezone
@@ -21,6 +22,9 @@ from typing import Any
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+# qos_orchestrator invokes this file directly, so expose the repository package.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 CANONICAL_ROOT = REPO_ROOT / "migration" / "canonical" / "v2a"
 CANONICAL_SCRIPT = CANONICAL_ROOT / "scripts" / "00_run_all_v2a.py"
 WRAPPER_VERSION = "V2A_FROZEN_REPLAY_1.0"
