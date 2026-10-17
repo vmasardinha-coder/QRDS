@@ -2,6 +2,16 @@
   "actions": [
     {
       "backfill_allowed": false,
+      "blocker": "collection-delivery anomaly remains open; exact failing delivery/source step must be proven from current evidence",
+      "engine_feed": false,
+      "orders": 0,
+      "real_capital": 0,
+      "repair_mode": "RETRY_ORCHESTRATION_AND_DATA_DELIVERY_ONLY",
+      "scientific_change_allowed": false,
+      "track": "MOMENTUM_M1_M2"
+    },
+    {
+      "backfill_allowed": false,
       "blocker": "qualification chain remains 0/7 with synchronized failure and stale source evidence; exact source/symbol/time/schema boundary unresolved",
       "engine_feed": false,
       "orders": 0,
@@ -21,7 +31,7 @@
       "track": "GATE_BTC_2_CORE"
     }
   ],
-  "generated_at_utc": "2026-10-17T00:21:47.107667Z",
+  "generated_at_utc": "2026-10-17T01:31:09.779549Z",
   "runtime_frontier": {
     "authority": "gate-btc-runtime",
     "generation": "H2730-H2739",
@@ -44,17 +54,17 @@
     },
     "D50_DATA_QUALIFICATION": {
       "authority": "gate-btc-runtime",
-      "data_as_of": "2026-10-15",
-      "eligible_observations": 4,
+      "data_as_of": "2026-10-16",
+      "eligible_observations": 5,
       "qualified": false,
-      "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_4_OF_7",
+      "status": "ACTIVE_CONSECUTIVE_PASS_CHAIN_5_OF_7",
       "target": 7
     },
     "MOMENTUM_M1_M2": {
       "authority": "gate-btc-runtime",
-      "data_as_of": "2026-10-15",
+      "data_as_of": "2026-10-16",
       "eligible_observations": 51,
-      "status": "ACTIVE_PROSPECTIVE_SHADOW"
+      "status": "RED_TRUE_PROCESSING_FAILURE"
     },
     "V16B": {
       "authority": "gate-btc-runtime",
@@ -76,6 +86,7 @@
   },
   "schema": "qrds.factory.watchdog.v2",
   "stalled_tracks": [
+    "MOMENTUM_M1_M2",
     "D50_DATA_QUALIFICATION",
     "GATE_BTC_2_CORE"
   ]
