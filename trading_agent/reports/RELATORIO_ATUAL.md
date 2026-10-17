@@ -1,58 +1,69 @@
-# Relatorio diario do agente — 2026-10-16
+# Relatorio diario do agente — 2026-10-17
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-10-16-grafico.svg)
+![Historico das carteiras](2026-10-17-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-16-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-17-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $48,118.66 |
-| Retorno do dia | -1.38% |
-| Retorno desde inicio (2026-08-06) | -3.76% |
-| Benchmark SPY | +0.26% |
-| **Alfa vs SPY** | **-4.02%** |
-| Caixa | $0.00 |
+| NAV | $46,330.66 |
+| Retorno do dia | -3.72% |
+| Retorno desde inicio (2026-08-06) | -7.34% |
+| Benchmark SPY | -0.85% |
+| **Alfa vs SPY** | **-6.49%** |
+| Caixa | $185.55 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| TGT | 33.8244 | $156.63 | $5,297.91 | 11.0% |
-| MRK | 36.398 | $145.19 | $5,284.63 | 11.0% |
-| SLB | 102.656 | $48.37 | $4,965.47 | 10.3% |
-| MU | 5.2524 | $931.24 | $4,891.24 | 10.2% |
-| INTC | 49.635 | $95.37 | $4,733.69 | 9.8% |
-| KLAC | 26.9683 | $174.46 | $4,704.90 | 9.8% |
-| AMAT | 10.7844 | $430.01 | $4,637.39 | 9.6% |
-| AMD | 8.21878 | $562.23 | $4,620.84 | 9.6% |
-| PANW | 12.1951 | $370.27 | $4,515.50 | 9.4% |
-| LRCX | 16.1 | $277.46 | $4,467.10 | 9.3% |
+| AMD | 8.76345 | $528.75 | $4,633.67 | 10.0% |
+| AMAT | 11.3213 | $409.29 | $4,633.67 | 10.0% |
+| LRCX | 17.5558 | $263.94 | $4,633.67 | 10.0% |
+| TGT | 30.0381 | $154.26 | $4,633.67 | 10.0% |
+| MRK | 31.7484 | $145.95 | $4,633.67 | 10.0% |
+| SLB | 93.6096 | $49.50 | $4,633.67 | 10.0% |
+| PANW | 13.5488 | $342.00 | $4,633.67 | 10.0% |
+| CSCO | 43.1481 | $107.39 | $4,633.67 | 10.0% |
+| MU | 5.2524 | $878.84 | $4,616.02 | 10.0% |
+| INTC | 49.635 | $89.85 | $4,459.70 | 9.6% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| KLAC | VENDA | 26.9683 | $165.66 | $4,467.50 | rebalanceio |
+| MRK | VENDA | 4.64966 | $145.88 | $678.28 | rebalanceio |
+| SLB | VENDA | 9.04644 | $49.48 | $447.57 | rebalanceio |
+| TGT | VENDA | 3.78631 | $154.18 | $583.78 | rebalanceio |
+| AMAT | COMPRA | 0.536884 | $409.49 | $219.85 | rebalanceio |
+| AMD | COMPRA | 0.544673 | $529.01 | $288.14 | rebalanceio |
+| CSCO | COMPRA | 43.1481 | $107.44 | $4,635.99 | rebalanceio |
+| LRCX | COMPRA | 1.45583 | $264.07 | $384.44 | rebalanceio |
+| PANW | COMPRA | 1.35361 | $342.17 | $463.17 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (SPY):** momentum de +13.9% — so entram ativos acima disto
-- **Candidatos elegiveis:** 45
+- **Gatilho:** desvio de peso em CSCO: 0.0% vs alvo 10.0%
+- **Obstaculo (SPY):** momentum de +14.6% — so entram ativos acima disto
+- **Candidatos elegiveis:** 43
 - **Fontes usadas:** nasdaq: 101
 
 | Rejeitado | Motivo |
 |---|---|
-| ABT | nao bate o benchmark (-23.2% <= +13.9%) |
-| ACN | nao bate o benchmark (-22.3% <= +13.9%) |
-| ADBE | nao bate o benchmark (-25.4% <= +13.9%) |
-| AMT | nao bate o benchmark (-5.4% <= +13.9%) |
-| AMZN | nao bate o benchmark (+13.7% <= +13.9%) |
-| AVGO | nao bate o benchmark (-1.3% <= +13.9%) |
-| AXP | nao bate o benchmark (-6.1% <= +13.9%) |
-| BA | nao bate o benchmark (-5.8% <= +13.9%) |
-| _(+47 outros)_ | |
+| ABT | nao bate o benchmark (-21.0% <= +14.6%) |
+| ACN | nao bate o benchmark (-20.6% <= +14.6%) |
+| ADBE | nao bate o benchmark (-23.6% <= +14.6%) |
+| AMT | nao bate o benchmark (-7.6% <= +14.6%) |
+| AVGO | nao bate o benchmark (-1.1% <= +14.6%) |
+| AXP | nao bate o benchmark (-5.9% <= +14.6%) |
+| BA | nao bate o benchmark (-7.9% <= +14.6%) |
+| BAC | nao bate o benchmark (+11.3% <= +14.6%) |
+| _(+49 outros)_ | |
 
 </details>
 
@@ -60,37 +71,30 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $57,866.70 |
-| Retorno do dia | -2.73% |
-| Retorno desde inicio (2026-08-06) | +15.73% |
-| Benchmark BTC | +26.58% |
-| **Alfa vs BTC** | **-10.85%** |
+| NAV | $56,338.71 |
+| Retorno do dia | -2.64% |
+| Retorno desde inicio (2026-08-06) | +12.68% |
+| Benchmark BTC | +26.13% |
+| **Alfa vs BTC** | **-13.45%** |
 | Caixa | $2,875.71 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.354942 | $81,541.87 | $28,942.62 | 50.0% |
-| NEAR | 1712.21 | $5.07 | $8,682.79 | 15.0% |
-| STX | 22292.1 | $0.39 | $8,682.79 | 15.0% |
-| TIA | 12646.1 | $0.69 | $8,682.79 | 15.0% |
+| BTC | 0.354942 | $81,248.80 | $28,838.60 | 51.2% |
+| NEAR | 1712.21 | $4.84 | $8,290.86 | 14.7% |
+| STX | 22292.1 | $0.37 | $8,185.67 | 14.5% |
+| TIA | 12646.1 | $0.64 | $8,147.86 | 14.5% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BTC | VENDA | 0.00594837 | $81,460.33 | $484.56 | rebalanceio |
-| ENA | VENDA | 42506.3 | $0.20 | $8,448.17 | rebalanceio |
-| NEAR | VENDA | 56.5261 | $5.07 | $286.36 | rebalanceio |
-| STX | COMPRA | 1642.04 | $0.39 | $640.22 | rebalanceio |
-| TIA | COMPRA | 12646.1 | $0.69 | $8,691.47 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em TIA: 0.0% vs alvo 15.0%
-- **Obstaculo (BTC):** momentum de +16.5% — so entram ativos acima disto
-- **Candidatos elegiveis:** 35
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de +16.0% — so entram ativos acima disto
+- **Candidatos elegiveis:** 32
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -104,8 +108,8 @@ _Sem movimentacoes hoje._
 | APE | liquidez baixa (0.6M < 1M) |
 | API3 | liquidez baixa (0.1M < 1M) |
 | ASTR | liquidez baixa (0.3M < 1M) |
-| AUDIO | liquidez baixa (0.0M < 1M) |
-| _(+95 outros)_ | |
+| ATOM | nao bate o benchmark (+11.5% <= +16.0%) |
+| _(+98 outros)_ | |
 
 </details>
 
@@ -113,26 +117,26 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 56,179.19 |
-| Retorno do dia | +0.00% |
-| Retorno desde inicio (2026-08-06) | +12.36% |
+| NAV | R$ 56,750.47 |
+| Retorno do dia | +1.02% |
+| Retorno desde inicio (2026-08-06) | +13.50% |
 | Benchmark IBOV | +17.02% |
 | Benchmark CDI | +2.49% |
-| **Alfa vs o maior (IBOV)** | **-4.67%** |
+| **Alfa vs o maior (IBOV)** | **-3.52%** |
 | Caixa | R$ 0.00 |
 | Regime | risco ligado — avaliado por proxy (BOVA11) |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| PRIO3 | 112.132 | R$ 68.35 | R$ 7,664.21 | 13.6% |
-| PETR4 | 127.928 | R$ 57.36 | R$ 7,337.94 | 13.1% |
-| GGBR4 | 274.606 | R$ 25.67 | R$ 7,049.14 | 12.5% |
-| UGPA3 | 181.36 | R$ 38.64 | R$ 7,007.73 | 12.5% |
-| B3SA3 | 307.679 | R$ 22.22 | R$ 6,836.63 | 12.2% |
-| CPLE3 | 391.805 | R$ 17.37 | R$ 6,805.65 | 12.1% |
-| WEGE3 | 138.187 | R$ 49.09 | R$ 6,783.60 | 12.1% |
-| VBBR3 | 184.67 | R$ 36.25 | R$ 6,694.28 | 11.9% |
+| PRIO3 | 112.132 | R$ 70.10 | R$ 7,860.44 | 13.9% |
+| PETR4 | 127.928 | R$ 59.68 | R$ 7,634.74 | 13.5% |
+| UGPA3 | 181.36 | R$ 39.40 | R$ 7,145.56 | 12.6% |
+| GGBR4 | 274.606 | R$ 25.39 | R$ 6,972.25 | 12.3% |
+| CPLE3 | 391.805 | R$ 17.70 | R$ 6,934.94 | 12.2% |
+| B3SA3 | 307.679 | R$ 22.11 | R$ 6,802.79 | 12.0% |
+| VBBR3 | 184.67 | R$ 36.65 | R$ 6,768.15 | 11.9% |
+| WEGE3 | 138.187 | R$ 47.99 | R$ 6,631.60 | 11.7% |
 
 _Sem movimentacoes hoje._
 
@@ -141,7 +145,7 @@ _Sem movimentacoes hoje._
 
 - **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (CDI):** momentum de +13.2% — so entram ativos acima disto
-- **Candidatos elegiveis:** 17
+- **Candidatos elegiveis:** 16
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Em carencia por stop:** VALE3 (ate 2026-10-30)
@@ -149,14 +153,14 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | AXIA3 | historico insuficiente |
-| BBAS3 | nao bate o benchmark (+4.0% <= +13.2%) |
-| BBDC4 | nao bate o benchmark (+6.6% <= +13.2%) |
-| BRKM5 | nao bate o benchmark (-18.1% <= +13.2%) |
-| CMIG4 | nao bate o benchmark (+5.2% <= +13.2%) |
-| CMIN3 | nao bate o benchmark (+8.4% <= +13.2%) |
-| CSAN3 | nao bate o benchmark (-39.9% <= +13.2%) |
-| CSNA3 | nao bate o benchmark (-26.2% <= +13.2%) |
-| _(+23 outros)_ | |
+| BBAS3 | nao bate o benchmark (+10.2% <= +13.2%) |
+| BBDC4 | nao bate o benchmark (+8.1% <= +13.2%) |
+| BRKM5 | nao bate o benchmark (-27.8% <= +13.2%) |
+| CMIG4 | nao bate o benchmark (+7.3% <= +13.2%) |
+| CMIN3 | nao bate o benchmark (+10.3% <= +13.2%) |
+| CSAN3 | nao bate o benchmark (-37.8% <= +13.2%) |
+| CSNA3 | nao bate o benchmark (-18.3% <= +13.2%) |
+| _(+24 outros)_ | |
 
 </details>
 
@@ -164,27 +168,27 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 56,675.75 |
-| Retorno do dia | -0.50% |
-| Retorno desde inicio (2026-08-06) | +13.35% |
+| NAV | R$ 57,050.74 |
+| Retorno do dia | +0.66% |
+| Retorno desde inicio (2026-08-06) | +14.10% |
 | Benchmark IBOV | +17.02% |
 | Benchmark CDI | +2.49% |
-| **Alfa vs objetivo (CDI)** | **+10.86%** |
-| Alfa vs IBOV (comparador informativo) | -3.67% |
+| **Alfa vs objetivo (CDI)** | **+11.61%** |
+| Alfa vs IBOV (comparador informativo) | -2.92% |
 | Caixa | R$ -1,238.29 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 201.39 | R$ 58,471.52 | 103.2% |
+| BOVA11 | 290.34 | R$ 202.30 | R$ 58,735.73 | 103.0% |
 
-> Conciliacao do NAV: ativos R$ 58,471.52 + caixa R$ -1,238.29 - obrigacao da call R$ 557.48 = R$ 56,675.75.
+> Conciliacao do NAV: ativos R$ 58,735.73 + caixa R$ -1,238.29 - obrigacao da call R$ 446.70 = R$ 57,050.74.
 
 > Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.
 
-> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 557.48
+> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 446.71
 
-> Volatilidade usada na call (GARCH(1,1)): 25.0% a.a. | realizada 30d: 26.9% a.a. | CDI: 0.0508% a.d.
+> Volatilidade usada na call (GARCH(1,1)): 21.7% a.a. | realizada 30d: 25.9% a.a. | CDI: 0.0508% a.d.
 
 _Sem movimentacoes hoje._
 
