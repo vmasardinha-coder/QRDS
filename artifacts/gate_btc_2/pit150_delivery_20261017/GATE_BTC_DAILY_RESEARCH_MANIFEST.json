@@ -1,0 +1,192 @@
+{
+  "components": {
+    "delta": {
+      "data_as_of": "2026-10-16",
+      "output_zip": "delta_walk_forward_outputs.zip",
+      "status": "PASS",
+      "version": "DELTA_WALK_FORWARD_1.1"
+    },
+    "gateway_downstream": {
+      "files": {
+        "all_strategy_selections.csv": {
+          "columns": [
+            "base",
+            "date",
+            "last_price",
+            "rows",
+            "ret7",
+            "ret14",
+            "ret30",
+            "ret90",
+            "ret180",
+            "vol30",
+            "liquidity_log",
+            "score",
+            "strategy",
+            "side",
+            "execution_layer"
+          ],
+          "output_sha256": "7e7764f0a6890f5d0a48224548f41f4977c228e24e0e60cff1b3bf9399756285",
+          "rows": 118,
+          "sha256": "c9555bb51b7d47d065fb82708aa068c7bbc54945d0bb678fcd7d2ec855e195d5",
+          "status": "PASS"
+        },
+        "delta_stop_trade_rules.csv": {
+          "columns": [
+            "strategy",
+            "asset",
+            "side",
+            "vol30_daily",
+            "paper_stop_loss_pct",
+            "paper_take_profit_pct",
+            "paper_trailing_stop_pct",
+            "backtested_trade_rule",
+            "rule"
+          ],
+          "output_sha256": "c5086bb120f19f3a6832148e597458961d78de054cb22b2285baafcb00dd856a",
+          "rows": 80,
+          "sha256": "805c25fc6af63d1cfecfa27dfd825e0277d31cc36b9b86da5be1a4e7cf7101b7",
+          "status": "PASS"
+        },
+        "gateway_decision_log.csv": {
+          "columns": [
+            "base",
+            "decision",
+            "reasons",
+            "score_qos_base",
+            "score_dynamic_defense",
+            "score_vol_target",
+            "rows",
+            "date"
+          ],
+          "output_sha256": "96f9cd94f498adef38940d57e2bffaab98d1807d66d52d8373f3a5cc8cd4273f",
+          "rows": 80,
+          "sha256": "621ab14a68361d04ffb95819281ca6fc344c89e482b1e403720384d585a080c8",
+          "status": "PASS"
+        },
+        "strategy_compositions.csv": {
+          "columns": [
+            "strategy",
+            "asset",
+            "weight",
+            "role"
+          ],
+          "output_sha256": "96ad0e963aff10c1f92d0fce1aea859c0352e5099f97f0c2d428a32ea9d51436",
+          "rows": 132,
+          "sha256": "b024ecadc3d43d7ca6a6a674b8c8eadc84e7ea8939b7474c216426fb63a70ee8",
+          "status": "PASS"
+        },
+        "strategy_execution_profiles.csv": {
+          "columns": [
+            "strategy",
+            "gross_long",
+            "gross_short_abs",
+            "net_exposure",
+            "gross_exposure",
+            "unallocated_gross_capacity_vs_100pct",
+            "estimated_daily_turnover",
+            "estimated_trading_cost_bps_per_day",
+            "estimated_short_funding_bps_per_day",
+            "estimated_total_drag_bps_per_day",
+            "manual_operability",
+            "recommended_rebalance",
+            "stop_rules_backtested",
+            "walk_forward_backtested",
+            "notes"
+          ],
+          "output_sha256": "22f073389496ea7b3b1c85f0eaf147a19c9c86740b343788b102e1fd21579fbf",
+          "rows": 8,
+          "sha256": "9567bf0848f420f1de5c6f65ade34c82b07f45cc2aad792014db3343129bb51b",
+          "status": "PASS"
+        }
+      },
+      "scope": "DETERMINISTIC_DOWNSTREAM_REPLAY_FROM_ADMITTED_FEATURE_SNAPSHOT",
+      "status": "PASS"
+    },
+    "gateway_upstream": {
+      "data_as_of": "2026-10-17",
+      "data_quality_status": "PASS_PARTIAL_REDUNDANCY_WARNING",
+      "feature_construction_equivalence": "PASS_LINUX_OFFLINE_SAME_INPUT_REPLAY",
+      "http_capture_count": 902,
+      "http_replay_consumed": 902,
+      "public_source_acquisition_equivalence": "PASS_PUBLIC_CAPTURE_WITH_COMPLETE_RESPONSE_CASSETTE",
+      "snapshot_status": "SNAPSHOT_USABLE_WITH_DATA_WARNINGS",
+      "status": "PASS",
+      "version": "QOS_V2A1_GATEWAY_SCANNER_0.10"
+    },
+    "lock_valuation_sidecar": {
+      "data_as_of": "2026-10-16",
+      "engine_feed": false,
+      "observation_count": 28,
+      "required_assets": [
+        "AKE",
+        "BTC",
+        "BTW",
+        "CRVUSD",
+        "DRV",
+        "ENA",
+        "ETH",
+        "NEAR",
+        "PUMP",
+        "QNT",
+        "RAY",
+        "STRK",
+        "ZEC",
+        "ZRO"
+      ],
+      "sidecar_sha256": "7c9ba3141ddd70074e48d9dddfd74a415d4c244e83473aa82d5ec6dadc7b9229",
+      "status": "PASS_EXACT_ACTIVE_HOLDING_CLOSES",
+      "valuation_only": true
+    },
+    "v2a": {
+      "data_as_of": "2026-10-16",
+      "output_zip": "qos_v2a_outputs.zip",
+      "status": "PASS",
+      "version": "QOS_V2A_INTEGRITY_0.4"
+    }
+  },
+  "data_cutoff": "2026-10-16",
+  "errors": [],
+  "generated_utc": "2026-10-17T11:03:54.771808+00:00",
+  "methodology_changes": 0,
+  "operational_status": "NOT_APPROVED",
+  "orders_generated": 0,
+  "real_capital_used": 0,
+  "report_delivery": {
+    "expected_shadow_pdf_count": 3,
+    "inputs_ready": true,
+    "reports": [
+      "MASTER_ANALYTIC",
+      "COMPARATIVOS_COMPLETOS",
+      "PROFIT_PRESERVATION"
+    ]
+  },
+  "research_only": true,
+  "retrospective_gateway_performance": "PROHIBITED",
+  "schema": "gate-btc-daily-research-collection-v1",
+  "source_evidence": {
+    "gateway_downstream": {
+      "path": "GATE_BTC_GATEWAY_V010_REPLAY.json",
+      "sha256": "978159c8a7a6ff290ad26028d7fb5de96da91b287149136d4e5e610b3cd2f7b4",
+      "size_bytes": 5524
+    },
+    "gateway_upstream": {
+      "path": "GATE_BTC_GATEWAY_UPSTREAM_EQUIVALENCE.json",
+      "sha256": "20528c5971e225183c2e7228df142b3d8011068433129f336f9fd5b6354c4f4b",
+      "size_bytes": 38657
+    },
+    "lock_valuation_sidecar": {
+      "path": "lock_valuation_sidecar.json",
+      "sha256": "29d8ce5d378797328ed4c97c245e251aacf0b8a830d45b0f7281d65c636d5ce8",
+      "size_bytes": 11345
+    },
+    "qos_manifest": {
+      "path": "QOS_ORCHESTRATION_MANIFEST_20261017_105731.json",
+      "sha256": "504800eda1f0d2208cb02980df68339f3b3559df2a44712a784b27962ccc631f",
+      "size_bytes": 23947
+    }
+  },
+  "stage_reached": "DAILY_V2A_DELTA_GATEWAY_COLLECTION_VALIDATED",
+  "status": "PASS_WITH_DATA_WARNINGS",
+  "total_system_equivalence_baseline": "PASS"
+}

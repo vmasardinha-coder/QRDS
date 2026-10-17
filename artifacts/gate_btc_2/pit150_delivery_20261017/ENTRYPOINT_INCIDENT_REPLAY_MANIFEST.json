@@ -1,0 +1,23 @@
+{
+  "schema": "qos-v2a-frozen-replay-v1",
+  "wrapper_version": "V2A_FROZEN_REPLAY_1.0",
+  "run_utc": "2026-10-17T10:37:14.517796+00:00",
+  "mode": "frozen_public_input_no_network",
+  "technical_status": "FAIL",
+  "data_quality_status": "NOT_EVALUATED",
+  "evidence_status": "RESEARCH_ONLY_NOT_PROMOTED",
+  "operational_status": "NOT_APPROVED",
+  "real_orders": 0,
+  "capital_used": 0,
+  "data_cutoff": "2026-10-16",
+  "errors": [
+    {
+      "type": "ModuleNotFoundError",
+      "message": "No module named 'tools'",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/QRDS/QRDS/tools/v2a_frozen_replay.py\", line 218, in replay\n    source = _load_source(source_package)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/QRDS/QRDS/tools/v2a_frozen_replay.py\", line 133, in _load_source\n    if (matched.empty or not _qualified_trace_provider(row, trace, matched)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/QRDS/QRDS/tools/v2a_frozen_replay.py\", line 63, in _qualified_trace_provider\n    from tools.gate_btc_pit150_qualified_history import route_for_member\nModuleNotFoundError: No module named 'tools'\n"
+    }
+  ],
+  "warnings": [
+    "current-universe survivorship bias remains; point-in-time universe is not yet available"
+  ]
+}

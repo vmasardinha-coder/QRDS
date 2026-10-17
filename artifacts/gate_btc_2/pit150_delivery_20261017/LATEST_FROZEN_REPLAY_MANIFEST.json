@@ -1,0 +1,52 @@
+{
+  "schema": "qos-v2a-frozen-replay-v1",
+  "wrapper_version": "V2A_FROZEN_REPLAY_1.0",
+  "run_utc": "2026-10-17T10:59:20.979015+00:00",
+  "mode": "frozen_public_input_no_network",
+  "technical_status": "PASS",
+  "data_quality_status": "PASS",
+  "evidence_status": "RESEARCH_ONLY_NOT_PROMOTED",
+  "operational_status": "NOT_APPROVED",
+  "real_orders": 0,
+  "capital_used": 0,
+  "data_cutoff": "2026-10-16",
+  "errors": [],
+  "warnings": [
+    "current-universe survivorship bias remains; point-in-time universe is not yet available",
+    "source package had no prior V2A input manifest; GitHub artifact digest remains the outer trust anchor"
+  ],
+  "version": "QOS_V2A_INTEGRITY_0.4",
+  "data_as_of": "2026-10-16",
+  "attempted_symbols": 150,
+  "loaded_symbols": 126,
+  "qualified_source_extension": 26,
+  "source_trace_sha256": "a48be8c20c6090a9c4fc02ea6d106bcfa543c02d1c3cee2127f8b8d1052a4202",
+  "failed_symbols": 24,
+  "coverage_ratio": 0.84,
+  "input_snapshot_id": "ea80ff56d5ab9a4a1dc9fb848c6dc27a6051fac23053b4cc99418ecd6fe6b87c",
+  "input_files_sha256": {
+    "data/processed/qos_v2a_master_daily.csv": "d02832f8e4c86cca234689f51b037184d45f4e8fa285c7978e886bdc1a5a68f8",
+    "data/raw/coingecko_current_universe_v04.csv": "39437348954d3cff09a35c92ffcdf42c372ca79a1abf2b903709c1c337404e98",
+    "outputs/download_failures_v2a.csv": "dcaf30ae8a2bc9a65f6092abd8b402f7f8e9f6901b39fa815645018ce1980be9"
+  },
+  "source_package_sha256": "4d815b5c60daa15c5dc4ea69a4870be425318c651ea54dc4a78489519e379783",
+  "source_package_input_manifest_verified": false,
+  "historical_signal_rows": 4968,
+  "current_feature_rows": 124,
+  "equity_rows": 16093,
+  "current_portfolio_rows": 47,
+  "reference_composition_rows": 10,
+  "bear_replay_rows": 7,
+  "monte_carlo_rows": 7,
+  "long_horizon_scoreboard_rows": 7,
+  "lookahead_guard": "signals execute on next daily bar",
+  "partial_month_guard": "current month excluded from historical backtest",
+  "portfolio_roles": {
+    "managed_qos": 4,
+    "public_benchmarks": 2,
+    "static_user_proxy": 1
+  },
+  "monte_carlo_role": "SCENARIO_ENGINE_NOT_ALPHA",
+  "output_zip": "artifacts/qos_daily/qos_v2a_outputs.zip",
+  "output_zip_sha256": "9c780a5130b93cb99822a122f254bc4b74e7a90d3a784cf362cc6bd1aa1cf99b"
+}
