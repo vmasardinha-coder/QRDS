@@ -137,6 +137,52 @@ class V2AFrozenReplaySafetyTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,"omitted"):_load_source(path)
 
 
+class RegisteredQualifiedReplayTests(unittest.TestCase):
+    _source = V2AFrozenReplaySafetyTests._source
+    def make_registered(self,path,symbol="KOGE",coin_id="bnb48-club-token",provider="binance_alpha",cutoff="2026-10-16",effective="2026-10-16",edit=None):
+        evidence={"symbol":symbol,"coin_id":coin_id,"source":provider,"cutoff":cutoff,
+                  "effective_cutoff":effective,"closed_rows":200,"orders":0,"historical_scientific_credit":0}
+        extension={"status":"SELECTED","source":provider,"coin_id":coin_id,"observed_rows":200,"qualification":evidence}
+        trace={"qualified_extension_selected_count":1,"required_daily_core_close":cutoff,
+               "rows":[{"symbol":symbol,"qualified_extension_attempt":extension}]}
+        if edit:edit(trace)
+        self._source(path,extension_count=1,trace=trace)
+        with zipfile.ZipFile(path) as z:payloads={n:z.read(n) for n in z.namelist()}
+        from datetime import date,timedelta
+        end=date.fromisoformat(cutoff)
+        lines=["date,symbol,close_usd,volume_usd,source"]+[
+            f"{end-timedelta(days=199-i)},{symbol},1,1,{provider}" for i in range(200)]
+        payloads["data/processed/qos_v2a_master_daily.csv"]=("\n".join(lines)+"\n").encode()
+        with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
+            for n,raw in payloads.items():z.writestr(n,raw)
+
+    def test_registered_alpha_and_native_families(self):
+        cases=[("KOGE","bnb48-club-token","binance_alpha","2026-10-16","2026-10-16"),
+               ("A7A5","a7a5","blockscout_eth_a7a5_swaps","2026-10-17","2026-10-17"),
+               ("REUSD","re-protocol-reusd","blockscout_eth_reusd_swaps","2026-10-17","2026-10-17"),
+               ("HASH","hash-2","figure_hash_native_reconciled_tape","2026-10-17","2026-10-17")]
+        with tempfile.TemporaryDirectory() as d:
+            for values in cases:
+                with self.subTest(symbol=values[0]):
+                    path=Path(d)/"source.zip";self.make_registered(path,*values)
+                    self.assertEqual(_load_source(path)["qualified_source_extension"],1)
+
+    def test_new_provider_identity_epoch_and_counts_are_bound(self):
+        edits=[lambda t:t["rows"][0]["qualified_extension_attempt"].update(coin_id="other"),
+               lambda t:t.update(required_daily_core_close="2026-10-15"),
+               lambda t:t["rows"][0]["qualified_extension_attempt"]["qualification"].update(effective_cutoff="2026-10-15"),
+               lambda t:t["rows"][0]["qualified_extension_attempt"]["qualification"].update(source="gate"),
+               lambda t:t["rows"][0]["qualified_extension_attempt"]["qualification"].update(cutoff="2026-10-17"),
+               lambda t:t["rows"][0]["qualified_extension_attempt"].update(observed_rows=201),
+               lambda t:t["rows"][0]["qualified_extension_attempt"]["qualification"].update(orders=1),
+               lambda t:t["rows"][0]["qualified_extension_attempt"]["qualification"].update(historical_scientific_credit=1)]
+        with tempfile.TemporaryDirectory() as d:
+            for i,edit in enumerate(edits):
+                with self.subTest(case=i):
+                    path=Path(d)/"source.zip";self.make_registered(path,edit=edit)
+                    with self.assertRaisesRegex(RuntimeError,"trace/master"):_load_source(path)
+
+
 if __name__ == "__main__":
     unittest.main()
 

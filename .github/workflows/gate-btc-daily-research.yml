@@ -240,6 +240,7 @@ jobs:
         env:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
           COINGECKO_API_KEY_BACKUP: ${{ secrets.COINGECKO_API_KEY_BACKUP }}
+          GATE_BTC_PUBLIC_CAPTURE_READ_TOKEN: ${{ github.token }}
         run: >-
           python tools/qos_orchestrator.py
           --public-data
