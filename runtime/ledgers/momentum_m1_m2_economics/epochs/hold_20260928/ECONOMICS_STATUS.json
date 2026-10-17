@@ -8,8 +8,8 @@
   "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
-  "error": "CURRENT_MOMENTUM_SIGNAL_MISSING_NO_BACKFILL",
-  "failure_evidence": null,
+  "error": "MISSING_REQUIRED_PRICES: BP,SHFL",
+  "failure_evidence": "failures/2026-10-16/f931715ab1af254f8672bb59a12a05d6dab1fe5033cca3edc0ebb18add156960.json.gz",
   "first_eligible_cutoff": "2026-09-28",
   "latest_economics": {
     "btc_daily_return_gross": 0.006903845779505202,
@@ -117,10 +117,35 @@
   "return_observations": 16,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "source_failures": {},
+  "source_failures": {
+    "BP": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "BP"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "BP"
+      }
+    ],
+    "SHFL": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "SHFL"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "SHFL"
+      }
+    ]
+  },
   "status": "FAILED_ECONOMIC_DELIVERY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-17T10:34:24.694313+00:00",
+  "updated_at_utc": "2026-10-17T16:36:19.943362+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
