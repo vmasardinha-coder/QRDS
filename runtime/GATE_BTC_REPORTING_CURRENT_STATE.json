@@ -146,7 +146,7 @@
       "valid_snapshot_count": 16
     },
     "momentum_m1_m2": {
-      "collection_health_hint": "AMBER_BLOCKED_DEPENDENCY",
+      "collection_health_hint": "RED_FAILED_DELIVERY",
       "cost_status": "N_D",
       "economic_epoch_id": "hold_20260928",
       "economic_freshness": "STALE",
@@ -155,7 +155,7 @@
         "M1_TOP10": 1.0831207516590666,
         "M2_TOP10": 1.0898465219274018
       },
-      "economic_status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+      "economic_status": "FAILED_ECONOMIC_DELIVERY",
       "economics_source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "first_eligible_economic_cutoff": "2026-09-28",
       "freshness": "FRESH",
@@ -257,14 +257,14 @@
       "m1_summary": null,
       "m2_summary": null,
       "methodology_failure": false,
-      "next_economic_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
+      "next_economic_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
       "observed_snapshots": 51,
       "price_coverage_cutoff": "2026-10-15",
       "price_coverage_status": "PASS_REQUIRED_PRICE_COVERAGE",
       "return_observations": 16,
       "signal_status": "RED_TRUE_PROCESSING_FAILURE",
       "source": "ledgers/momentum_m1_m2/STATUS.json",
-      "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+      "status": "FAILED_ECONOMIC_DELIVERY",
       "terminal_observation_target": null,
       "weighting_audit": {
         "engine_changed": true,
@@ -691,9 +691,9 @@
         "promotion_allowed": false,
         "return_observations": 16,
         "schema": "gate_btc.momentum_hold_status.v1",
-        "sha256": "5e0e86c7b72e2f57b45fc818afd6fc63b7edcfc13e4ead5828cf592f861613e9",
+        "sha256": "6521c16fee2b57801ac1ea188acd23984a76ada31583021a86eb6938feb64c85",
         "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
-        "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+        "status": "FAILED_ECONOMIC_DELIVERY",
         "status_authority_file": "ECONOMICS_STATUS.json",
         "top_level_files": [
           "ACTIVE_EPOCH.json",
@@ -906,7 +906,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-10-17T08:00:07.898204+00:00",
+  "generated_at_utc": "2026-10-17T08:02:45.011982+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 18,
@@ -1270,9 +1270,9 @@
       "promotion_allowed": false,
       "return_observations": 16,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5e0e86c7b72e2f57b45fc818afd6fc63b7edcfc13e4ead5828cf592f861613e9",
+      "sha256": "6521c16fee2b57801ac1ea188acd23984a76ada31583021a86eb6938feb64c85",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
-      "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+      "status": "FAILED_ECONOMIC_DELIVERY",
       "status_authority_file": "ECONOMICS_STATUS.json",
       "top_level_files": [
         "ACTIVE_EPOCH.json",
@@ -1665,9 +1665,9 @@
       "promotion_allowed": false,
       "return_observations": 16,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5e0e86c7b72e2f57b45fc818afd6fc63b7edcfc13e4ead5828cf592f861613e9",
+      "sha256": "6521c16fee2b57801ac1ea188acd23984a76ada31583021a86eb6938feb64c85",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
-      "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+      "status": "FAILED_ECONOMIC_DELIVERY",
       "status_authority_file": "ECONOMICS_STATUS.json"
     },
     "momentum_m3": {
@@ -1876,7 +1876,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5e0e86c7b72e2f57b45fc818afd6fc63b7edcfc13e4ead5828cf592f861613e9"
+      "sha256": "6521c16fee2b57801ac1ea188acd23984a76ada31583021a86eb6938feb64c85"
     },
     "momentum_m1_m2": {
       "exists": true,
@@ -1924,10 +1924,11 @@
   "status": "BLOCKED_INCOMPLETE_DELIVERY",
   "warnings": {
     "blocked_dependency_components": [
-      "momentum_m1_m2",
       "v16b1"
     ],
-    "failed_delivery_components": [],
+    "failed_delivery_components": [
+      "momentum_m1_m2"
+    ],
     "missing_or_undated_components": [],
     "semantic_projection_ledger_ids": [
       "d100",
