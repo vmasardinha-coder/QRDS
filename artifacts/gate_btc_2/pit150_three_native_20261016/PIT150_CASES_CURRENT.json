@@ -131,16 +131,18 @@
     {
       "symbol": "OHM",
       "state": "NATIVE_HISTORY_GAPS_AND_QUOTE_CONVERSION",
-      "next": "Original indexed pool177/200; USDC candidate194/200. Neither qualified. Original sUSDS needs historical asset conversion. Do not silently substitute candidate.",
+      "next": "Fontes anteriores continuam sem janela qualificada. Alternativa OHM/WETH 0x8805... tem token0 OHM e token1 WETH confirmados; consultas de logs históricos ficaram bloqueadas (dRPC HTTP400/plano gratuito; PublicNode HTTP403/exige token pessoal). Sem prova de ausência nativa nessas datas. Além do arquivo, exige conversão histórica causal WETH/USD; nunca tratar WETH como US$1.",
       "latest_collection_reason": "okx: RuntimeError: OKX returned no candles",
-      "latest_collection_run": "39026736864"
+      "latest_collection_run": "39026736864",
+      "latest_candidate_proof": "../pit150_candidate_audit_20261017/LOCAL_AUDIT.json"
     },
     {
       "symbol": "USDAI",
       "state": "NATIVE_ARCHIVE_ACCESS_FOUND_DATA_GAPS",
-      "next": "Official Arbitrum RPC returned complete 69-range archive. Six whole-UTC-day gaps individually verified; no qualifying 200-day source integrated. Qualify a physical source with sufficient daily executions; never fill.",
+      "next": "Pool Fluid original continua com gaps. Alternativa Curve 0x52a5... tem os tokens nativos USDai/USDC confirmados por eth_call, mas o RPC oficial retorna zero logs em 01/07 e 26/07, com fronteiras canônicas e intervalos completos. Alternativa rejeitada, sem trocar pool nem preencher dias.",
       "latest_collection_reason": "okx: RuntimeError: OKX returned no candles",
-      "latest_collection_run": "39026736864"
+      "latest_collection_run": "39026736864",
+      "latest_candidate_proof": "../pit150_candidate_audit_20261017/LOCAL_AUDIT.json"
     },
     {
       "symbol": "SAFO",
@@ -173,12 +175,13 @@
     },
     {
       "symbol": "GRX",
-      "state": "NEW_NATIVE_SOURCE_QUALIFICATION_REQUIRED",
+      "state": "EXTERNAL_NATIVE_ARCHIVE_QA_CORRECTION_REQUIRED",
       "coin_id": "grx-chain",
       "name": "GRX Chain",
-      "next": "Novo membro do universo corrente, entrou no lugar de CRVUSD. Nenhuma fonte selecionada: CDD 404, Binance 400, OKX sem candles. Qualificar identidade nativa exata e historico de execucoes diarias fechadas; nao classificar como simples maturidade sem prova, nem substituir por wrapper.",
+      "next": "GroveX nativo identificado. Arquivos 60min/30min têm 194 dias UTC completos, só 154 com execuções positivas; faltam trechos de 06 a 11/06. Granularidades e candles diários não reconciliam. Exigir arquivo nativo corrigido/reconciliado em UTC e 200 dias admissíveis; não preencher, deslocar candles diários ou usar preço vezes quantidade.",
       "latest_collection_reason": "okx: RuntimeError: OKX returned no candles",
-      "latest_collection_run": "39026736864"
+      "latest_collection_run": "39026736864",
+      "latest_candidate_proof": "../pit150_candidate_audit_20261017/LOCAL_AUDIT.json"
     }
   ],
   "registry_137_is_separate": true,
@@ -191,7 +194,7 @@
     "history_collection": 5,
     "material_dependencies": 15
   },
-  "classification_updated_at": "2026-10-17T11:12:06.475791+00:00",
+  "classification_updated_at": "2026-10-17T12:23:00.038938+00:00",
   "source_repair_prs": [
     1189,
     1190
@@ -214,7 +217,7 @@
     "attempted": 150,
     "run": "38850904047"
   },
-  "latest_case_proof": "../pit150_delivery_20261017/DELIVERY.json",
+  "latest_case_proof": "../pit150_candidate_audit_20261017/DELIVERY.json",
   "previous_successful_receipt_absence_delta": {
     "previous_failed": 24,
     "current_failed": 24,
@@ -226,5 +229,16 @@
       "AKT",
       "GRX"
     ]
+  },
+  "latest_candidate_audit": {
+    "cases": [
+      "GRX",
+      "USDAI",
+      "OHM"
+    ],
+    "new_sources_admitted": 0,
+    "repair_closures_claimed": 0,
+    "source_qualified": false,
+    "normal_receipt_unchanged": true
   }
 }

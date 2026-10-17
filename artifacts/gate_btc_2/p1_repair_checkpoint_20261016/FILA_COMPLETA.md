@@ -4,7 +4,7 @@ Reparo comprovado sai da fila de consertos. Coleta, maturidade e gates científi
 
 ## Frentes retomadas nesta rodada
 
-- **P0.2 — 15 dependências materiais abertas:** recibo normal 39026736864 aprovado e publicado, corte 16/10, **126/150**. USDY e KOGE admitidos. A7A5, REUSD, HASH e AKT têm reparo fechado e corte futuro 17/10; cinco casos seguem em coleta de histórico. Inventário: ../pit150_three_native_20261016/PIT150_CASES_CURRENT.json. Provas: ../pit150_delivery_20261017/DELIVERY.json.
+- **P0.2 — 15 dependências materiais abertas:** recibo normal 39026736864, corte 16/10, 126/150. USDY/KOGE admitidos; A7A5/REUSD/HASH/AKT reparados com corte futuro 17/10; cinco casos só em coleta. Auditoria nova de GRX/USDAI/OHM concluída, sem fonte adicional qualificada. Provas: ../pit150_candidate_audit_20261017/.
 - **P1.3 — reparo fechado e entrega comprovada pela PR1176:** modelo canônico paper abstrato de 10 bps por compra/venda, com ativação no fechamento futuro 17/10 e primeira variação diária posterior. M1/M2 e M3 usam épocas separadas e BTC da mesma janela. O histórico bruto e os campos antigos net=N/D não foram alterados. Não é taxa observada, execução real nem prova de capacidade. A execução real 38898695029 publicou o vínculo e o estado de espera pelos fechamentos futuros; a leitura remota confirmou o contrato e os dois escopos. MOMENTUM_DELIVERY.json preserva essa prova. Os 25 testes focados e os 10 testes de cobertura dos workflows passaram; os adaptadores também validaram 16 registros físicos M1/M2 e 3 M3.
 - **P1.4 — reparo fechado e validado no backup mais recente:** repositório atual identificado como vmasardinha-coder/btc; módulos entregues conferem com main. Oito scripts de regressão passaram; CI integrado e aprovado na PR8, inclusive após merge. A revisão independente aplicou o código em memória ao backup original de 16/10, corte 15/10: 21 ledgers, 653 registros e todos os NAVs preservados, só dois retornos corrigidos, zero divergências e segunda passada sem escrita. Export somente leitura, três líquidos estimados e demais N/D. PORTAL_DELIVERY_REVIEW.json preserva os resultados. A versão servida e a migração no navegador do Victor ainda precisam de recibo operacional; não foram afirmadas como comprovadas. O backup corrigido entregue por Claude termina em 12/10 e não deve substituir o atual.
 
@@ -87,3 +87,13 @@ PR1189 integrou o vínculo de provedores no replay, o acesso somente leitura ao 
 O novo ciclo 39026736864 terminou com sucesso, corte 16/10: 126/150, com USDY e KOGE selecionados e ponteiro publicado conferido. Restam 24 ausências no recibo: quatro fontes reparadas com corte futuro 17/10 (A7A5, REUSD, HASH, AKT), cinco casos de coleta (OUSD, PRL, SOFID, APXUSD, PONS) e 15 dependências materiais. GRX entrou no lugar de CRVUSD e ainda requer qualificação de fonte nativa; a troca do universo foi registrada separadamente. O denominador continua 150.
 
 **Fila de reparos materiais: KAU, KAG, USDAI, OHM, BUIDL, EURSAFO, BCAP, USTB, EUTBL, JAAA, JTRSY, OUSG, YLDS, SAFO e GRX.** Reparos comprovados ficam fechados; as coletas continuam. Os recibos anteriores foram preservados. Provas e inventário em ../pit150_delivery_20261017/.
+
+## Nova auditoria GRX, USDAI e OHM — 17/10
+
+GRX: fonte GroveX nativa encontrada e auditada. O calendário diário é UTC+8; candles diários não foram deslocados para simular dias UTC. Arquivos 60min/30min comprovam 194/200 dias UTC completos e 154 com execução positiva, com seis datas afetadas por gaps e divergências de fechamento/volume entre granularidades. Rejeitado; precisa de arquivo corrigido e reconciliado.
+
+USDAI: a alternativa Curve tem identidade USDai/USDC confirmada, mas 01/07 e 26/07 não contêm logs da pool no RPC oficial, com fronteiras de dia UTC verificadas. Não substitui silenciosamente a Fluid e não qualifica 200 dias.
+
+OHM: a alternativa WETH foi identificada, mas o arquivo de logs ficou bloqueado nas consultas públicas. Isso não é prova de dia sem swap. Também exige conversão histórica WETH/USD. Sem novo acesso autorizado ou arquivo verificável, não há qualificação.
+
+**Saldo mantido: 126/150 no corte 16/10; quatro fontes reparadas, cinco casos só em coleta e 15 dependências materiais. Nenhum reparo anterior foi reaberto.** Auditor e dados reproduzíveis em ../pit150_candidate_audit_20261017/.
