@@ -1,0 +1,90 @@
+[
+  {
+    "name": "hash_market_current",
+    "url": "https://api.figuremarkets.com/public/v1/markets/HASH-USD",
+    "http": 200,
+    "sha256": "0877185957e3eea43d63f8cb5c9b871a371abc570d1a95795fd0d4f60467ee33",
+    "identity": {
+      "id": "HASH-USD",
+      "symbol": "HASH-USD",
+      "denom": "HASH",
+      "quoteDenom": "USD",
+      "marketType": "CRYPTO",
+      "marketLocation": "US",
+      "proTradeAvailable": true,
+      "contractAddress": [
+        "nhash",
+        "ibc/CE5BFF1D9BADA03BB5CCA5F56939392A761B53A10FBD03B37506669C3218D3B2"
+      ],
+      "pricePrecision": 3,
+      "quantityPrecision": 3
+    }
+  },
+  {
+    "name": "hash_hourly_current",
+    "url": "https://api.figuremarkets.com/public/v1/markets/HASH-USD/candles?start_date=2026-03-30T00%3A00%3A00Z&end_date=2026-10-16T00%3A00%3A00Z&interval_in_minutes=60&candle_type=TRADE",
+    "http": 200,
+    "sha256": "021cfb650384cd4051ced4d48ea49ea3994f2962def3be827bde6c1aa389d022",
+    "rows": 2342
+  },
+  {
+    "name": "native_hash_units",
+    "url": "https://api.provenance.io/cosmos/bank/v1beta1/denoms_metadata/nhash",
+    "http": 200,
+    "sha256": "577c4e05fcfecd34e360554969da329f4d937a8688df1243ee3d447499c4ac1e",
+    "metadata": {
+      "metadata": {
+        "description": "Hash is the staking token of the Provenance Blockchain",
+        "denom_units": [
+          {
+            "denom": "nhash",
+            "exponent": 0,
+            "aliases": []
+          },
+          {
+            "denom": "hash",
+            "exponent": 9,
+            "aliases": []
+          }
+        ],
+        "base": "nhash",
+        "display": "hash",
+        "name": "Hash",
+        "symbol": "HASH",
+        "uri": "",
+        "uri_hash": ""
+      }
+    }
+  },
+  {
+    "name": "native_usd_units",
+    "url": "https://api.provenance.io/cosmos/bank/v1beta1/denoms_metadata/uusd.trading",
+    "http": 200,
+    "sha256": "0cd65a25863f78dd1c292e46476f60851f1250f8684213c350afd7e5ef60b3bc",
+    "metadata": {
+      "metadata": {
+        "description": "USD Trading Balance",
+        "denom_units": [
+          {
+            "denom": "uusd.trading",
+            "exponent": 0,
+            "aliases": [
+              "microusd.trading"
+            ]
+          },
+          {
+            "denom": "usd.trading",
+            "exponent": 6,
+            "aliases": []
+          }
+        ],
+        "base": "uusd.trading",
+        "display": "usd.trading",
+        "name": "USD Trading",
+        "symbol": "USD",
+        "uri": "",
+        "uri_hash": ""
+      }
+    }
+  }
+]
