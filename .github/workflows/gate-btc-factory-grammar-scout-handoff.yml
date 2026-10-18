@@ -39,6 +39,8 @@ on:
       - 'tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json'
       - 'tools/gate_btc_factory/evidence/20261018_family_packets/**'
       - 'tests/test_gate_btc_grammar_scout_handoff.py'
+      - 'tests/test_gate_btc_grammar_pipeline_progress.py'
+      - 'tests/test_gate_btc_grammar_pipeline_status.py'
       - 'tests/test_gate_btc_grammar_existing_factory_intake.py'
       - 'tests/test_gate_btc_grammar_family_briefing.py tests/test_gate_btc_qualified_materializer_readiness.py'
       - 'tests/test_gate_btc_qualified_materializer_readiness.py'
@@ -76,7 +78,7 @@ jobs:
         run: |
           python -m pip install -q pytest
           cd source_repo
-          pytest -q tests/test_gate_btc_grammar_scout_handoff.py tests/test_gate_btc_grammar_existing_factory_intake.py tests/test_gate_btc_grammar_family_briefing.py tests/test_gate_btc_grammar_source_cost_intake.py tests/test_gate_btc_grammar_source_cost_qualifier.py tests/test_gate_btc_factory_006_prereg_semantics_guard.py
+          pytest -q tests/test_gate_btc_grammar_pipeline_progress.py tests/test_gate_btc_grammar_pipeline_status.py tests/test_gate_btc_qualified_materializer_readiness.py tests/test_gate_btc_grammar_scout_handoff.py tests/test_gate_btc_grammar_existing_factory_intake.py tests/test_gate_btc_grammar_family_briefing.py tests/test_gate_btc_grammar_source_cost_intake.py tests/test_gate_btc_grammar_source_cost_qualifier.py tests/test_gate_btc_factory_006_prereg_semantics_guard.py
           python -m py_compile tools/gate_btc_factory/grammar_scout_prereg_transport.py tools/gate_btc_factory/grammar_source_cost_intake.py tools/gate_btc_factory/grammar_source_cost_qualifier.py tools/gate_btc_factory/grammar_pipeline_status.py tools/gate_btc_factory/grammar_semantic_prereg_bundle.py tools/gate_btc_factory/grammar_existing_factory_intake.py
           python - <<'PY'
           import json
