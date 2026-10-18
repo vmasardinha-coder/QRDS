@@ -1,0 +1,40 @@
+EEE
+======================================================================
+ERROR: test_current_recent_session_executes_warmup_then_builds_event (h31_regression18.RecentSourceTests.test_current_recent_session_executes_warmup_then_builds_event) (wdo_close=100.0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\QRDS_V16_LABEL_SYMBOLS_20261017\tests\test_gate_btc_h31_recent_source.py", line 117, in test_current_recent_session_executes_warmup_then_builds_event
+    event,status=collector.compute_event('2026-10-16',contract,Path(d))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jsard\AppData\Local\Temp\h31_collector_before18.py", line 221, in compute_event
+    prior = trailing(target_date, ledger_dir)
+            ^^^^^^^^
+UnboundLocalError: cannot access local variable 'trailing' where it is not associated with a value
+
+======================================================================
+ERROR: test_current_recent_session_executes_warmup_then_builds_event (h31_regression18.RecentSourceTests.test_current_recent_session_executes_warmup_then_builds_event) (wdo_close=102.0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\QRDS_V16_LABEL_SYMBOLS_20261017\tests\test_gate_btc_h31_recent_source.py", line 117, in test_current_recent_session_executes_warmup_then_builds_event
+    event,status=collector.compute_event('2026-10-16',contract,Path(d))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jsard\AppData\Local\Temp\h31_collector_before18.py", line 221, in compute_event
+    prior = trailing(target_date, ledger_dir)
+            ^^^^^^^^
+UnboundLocalError: cannot access local variable 'trailing' where it is not associated with a value
+
+======================================================================
+ERROR: test_current_recent_session_with_short_warmup_cannot_fetch_or_score (h31_regression18.RecentSourceTests.test_current_recent_session_with_short_warmup_cannot_fetch_or_score)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\QRDS_V16_LABEL_SYMBOLS_20261017\tests\test_gate_btc_h31_recent_source.py", line 132, in test_current_recent_session_with_short_warmup_cannot_fetch_or_score
+    collector.compute_event('2026-10-16',contract,Path(d))
+  File "C:\Users\jsard\AppData\Local\Temp\h31_collector_before18.py", line 221, in compute_event
+    prior = trailing(target_date, ledger_dir)
+            ^^^^^^^^
+UnboundLocalError: cannot access local variable 'trailing' where it is not associated with a value
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.036s
+
+FAILED (errors=3)
