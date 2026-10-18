@@ -120,6 +120,13 @@ ROUTES['HASH'] = {'coin_id':'hash-2','name':'Provenance Blockchain',
     'source':'figure_hash_native_reconciled_tape','pair':'HASH-USD',
     'effective_cutoff':'2026-10-17'}
 
+# Native Akash chain, bound independently to Gate currency and spot metadata.
+ROUTES['AKT'] = {'coin_id':'akash-network','name':'Akash Network',
+    'source':'gate','pair':'AKT_USDT','contract':'','contract_chain':'AKT',
+    'native_asset':True,'effective_cutoff':'2026-10-17',
+    'identity_evidence':'https://www.gate.com/fr/announcements/article/19761/Gate.io-will-list-Akash-Network-AKT',
+    'issuer_identity_evidence':'https://akash.network/token/'}
+
 
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
@@ -222,11 +229,13 @@ def check_gate_contract(route, payload):
         return actual.lower() == expected.lower() if expected.startswith('0x') else actual == expected
     matches = [entry for entry in payload.get('chains', [])
                if entry.get('name') == route['contract_chain']
-               and same_contract(entry.get('addr', ''))]
+               and same_contract(entry.get('addr'))]
     if not (payload.get('currency') == expected_base and payload.get('name') == route['name']
             and payload.get('delisted') is False and payload.get('trade_disabled') is False
             and len(matches) == 1):
         raise ValueError('exact Gate chain/token contract mismatch')
+    if route.get('native_asset') and payload.get('chain') != route['contract_chain']:
+        raise ValueError('exact Gate native primary chain mismatch')
 
 def check_bitget_contract(route, payload):
     rows = payload.get('data', [])
@@ -371,7 +380,14 @@ def load_bybit_public_capture(session, route, symbol, cutoff, evidence_dir, now=
     if boundary > observed:
         raise ValueError("public capture cutoff is unfinished")
     api = f"https://api.github.com/repos/{BYBIT_CAPTURE_REPOSITORY}"
-    response = session.get(f"{api}/commits?sha={BYBIT_CAPTURE_BRANCH}&per_page=1", timeout=30)
+    # Use the runner's read-only repository token only on GitHub's API.
+    # Public exchange and raw payload requests never receive this credential.
+    import os
+    token = os.environ.get("GATE_BTC_PUBLIC_CAPTURE_READ_TOKEN", "").strip()
+    kwargs = {"timeout": 30}
+    if token:
+        kwargs["headers"] = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    response = session.get(f"{api}/commits?sha={BYBIT_CAPTURE_BRANCH}&per_page=1", **kwargs)
     if response.status_code != 200:
         raise ValueError(f"public capture commit HTTP {response.status_code}")
     head = json.loads(response.content)[0]
@@ -572,6 +588,12 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
                              datetime.fromtimestamp(int(x[0])/1000,timezone.utc).date().isoformat()
                              for x in raw_selected[-200:] if float(x[7]) == 0],
                          'collector_forward_fill':False,
+                         'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
+    if route.get('native_asset'):
+        evidence.update({'native_asset':True,'native_chain':route['contract_chain'],
+                         'token_contract':route['contract'],'identity_evidence':route['identity_evidence'],
+                         'issuer_identity_evidence':route['issuer_identity_evidence'],
+                         'quote_currency':'USDT','volume_field':'quote_turnover_index_1',
                          'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
     if route.get('rename_evidence'):
         evidence['rename_evidence'] = route['rename_evidence']

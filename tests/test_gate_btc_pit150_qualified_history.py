@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),30)
+        self.assertEqual(len(ROUTES),31)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -272,6 +272,33 @@ class QualifiedHistoryTests(unittest.TestCase):
         self.assertEqual(report["qualified_source_extension_selected_count"],1)
 
 
+class QualifiedEpochTraceTests(unittest.TestCase):
+    def test_future_epoch_is_distinct_from_wrong_coin_identity(self):
+        import importlib.util,os,pandas as pd
+        from pathlib import Path
+        from unittest.mock import patch
+        script=Path(__file__).resolve().parents[1]/"migration/canonical/v2a/scripts/00_run_all_v2a.py"
+        spec=importlib.util.spec_from_file_location("epoch_collector_test",script)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        for wrong in (False,True):
+            universe=pd.DataFrame([{"symbol":symbol,"id":"wrong" if wrong else ROUTES[symbol]["coin_id"],
+                "standard_ticker":True,"is_stable":False,"is_blocked":False} for symbol in ("HASH","A7A5","REUSD")])
+            with self.subTest(wrong_identity=wrong),tempfile.TemporaryDirectory() as tmp:
+                with patch.dict(os.environ,{"GATE_BTC_DATA_CUTOFF":"2026-10-16"}),patch.object(module,"OUT",Path(tmp)),patch.object(module,"DATA_PROCESSED",Path(tmp)),patch.object(module.time,"sleep"),patch.object(module,"fetch_cdd_symbol",side_effect=RuntimeError("unavailable")),patch.object(module,"fetch_binance_klines",side_effect=RuntimeError("unavailable")),patch.object(module,"fetch_okx_candles",side_effect=RuntimeError("unavailable")):
+                    master,failures=module.fetch_candles_for_universe(None,universe)
+                trace=json.loads((Path(tmp)/"source_attempts_v2a.json").read_bytes())
+            self.assertEqual(trace["qualified_extension_selected_count"],0)
+            for row in trace["rows"]:
+                if row["symbol"] not in ("HASH","A7A5","REUSD"):continue
+                attempt=row["qualified_extension_attempt"]
+                if wrong:
+                    self.assertEqual(attempt["status"],"ERROR")
+                    self.assertIn("coin_id",attempt["message"])
+                else:
+                    self.assertEqual(attempt["status"],"NOT_EFFECTIVE")
+                    self.assertEqual(attempt["effective_cutoff"],"2026-10-17")
+
+
 class BybitOfficialHostTests(unittest.TestCase):
     def data(self):
         meta={"retCode":0,"result":{"category":"spot","list":[{"symbol":"USDYUSDT","symbolId":555,"baseCoin":"USDY","quoteCoin":"USDT","status":"Trading"}]}}
@@ -401,6 +428,30 @@ class BybitPublicCaptureTests(unittest.TestCase):
         self.assertEqual(len(rows),200)
         self.assertEqual(rows[-1]["date"],"2026-10-16")
         self.assertEqual(e["delivery"],"PUBLIC_EXCHANGE_CAPTURE_PINNED_GITHUB_COMMIT")
+
+
+class BybitReadTokenTests(unittest.TestCase):
+    def test_read_token_is_sent_only_to_github_api(self):
+        import os
+        from unittest.mock import patch
+        from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture
+        raw,seal,head=BybitPublicCaptureTests().fixture()
+        public=BybitPublicCaptureTests().session(raw,seal,head)
+        calls=[]
+        class Session:
+            def get(self,url,timeout,**kwargs):
+                calls.append((url,kwargs))
+                if "api.github.com" not in url:
+                    if kwargs:raise AssertionError("credential leaked to payload host")
+                return public.get(url,timeout)
+        with tempfile.TemporaryDirectory() as root,patch.dict(os.environ,{"GATE_BTC_PUBLIC_CAPTURE_READ_TOKEN":"test-read-token"}):
+            rows,e=load_bybit_public_capture(Session(),ROUTES["USDY"],"USDY","2026-10-15",root,
+                now=datetime(2026,10,16,13,tzinfo=timezone.utc))
+            for path in __import__("pathlib").Path(root).rglob("*"):
+                if path.is_file():self.assertNotIn(b"test-read-token",path.read_bytes())
+        self.assertEqual(calls[0][1]["headers"]["Authorization"],"Bearer test-read-token")
+        self.assertTrue(all(not kwargs for url,kwargs in calls[1:]))
+        self.assertEqual(len(rows),200)
 
 
 

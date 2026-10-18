@@ -6,6 +6,13 @@ on:
       - 'tools/gate_btc_pit150_qualified_history.py'
       - 'tools/gate_btc_a7a5_swap_history.py'
       - 'tools/gate_btc_reusd_swap_history.py'
+      - 'tools/v2a_frozen_replay.py'
+      - 'tests/test_v2a_frozen_replay.py'
+      - 'tools/gate_btc_pit150_akt_preflight.py'
+      - 'tests/test_gate_btc_pit150_akt_gate.py'
+      - 'migration/canonical/v2a/scripts/00_run_all_v2a.py'
+      - 'artifacts/gate_btc_2/pit150_delivery_20261017/AKT_NATIVE_GATE_RAW.zip'
+      - 'artifacts/gate_btc_2/pit150_delivery_20261017/FROZEN_FAILED_SOURCE.zip'
       - 'tools/gate_btc_hash_settlement_history.py'
       - 'tools/gate_btc_pit150_figure_history_audit.py'
       - 'tests/test_gate_btc_hash_settlement_history.py'
@@ -41,6 +48,23 @@ jobs:
           python-version: '3.11'
       - run: pip install requests
       - run: python -m tools.gate_btc_pit150_closeout_probe --out artifacts/pit150_public_host_probe
+      - name: Validate pinned public capture with read-only API access
+        env:
+          GATE_BTC_PUBLIC_CAPTURE_READ_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, pathlib, requests
+          from datetime import datetime, timedelta, timezone
+          from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture, ROUTES
+          now = datetime.now(timezone.utc)
+          cutoff = (now - timedelta(days=1)).date().isoformat()
+          out = pathlib.Path('artifacts/pit150_public_host_probe/required_capture')
+          rows, receipt = load_bybit_public_capture(requests.Session(), ROUTES['USDY'], 'USDY', cutoff, out, now=now)
+          assert len(rows) >= 200 and rows[-1]['date'] == cutoff
+          result = {'status':'PASS_PINNED_PUBLIC_CAPTURE', 'cutoff':cutoff, 'rows':len(rows), 'receipt':receipt, 'orders':0}
+          (out/'RESULT.json').write_text(json.dumps(result, indent=2)+'\n')
+          print(json.dumps({'status':result['status'], 'rows':len(rows), 'cutoff':cutoff}))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -77,3 +101,35 @@ jobs:
         with:
           name: pit150-hash-native-preflight
           path: artifacts/pit150_hash_native_preflight/
+
+  frozen-v2a-replay-and-akt-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r migration/canonical/v2a/requirements.txt
+      - run: python -m unittest tests.test_v2a_frozen_replay tests.test_gate_btc_pit150_qualified_history tests.test_gate_btc_pit150_akt_gate tests.test_gate_btc_pit150_source_crosswalk -v
+      - run: python tools/v2a_frozen_replay.py artifacts/gate_btc_2/pit150_delivery_20261017/FROZEN_FAILED_SOURCE.zip --output-zip artifacts/pit150_fixed_replay/qos_v2a_outputs.zip --data-cutoff 2026-10-16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit150-fixed-frozen-replay
+          path: artifacts/pit150_fixed_replay/
+  akt-native-public-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python -m tools.gate_btc_pit150_akt_preflight --out artifacts/pit150_akt_native_preflight
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit150-akt-native-preflight
+          path: artifacts/pit150_akt_native_preflight/

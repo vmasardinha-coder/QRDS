@@ -12,6 +12,7 @@ import importlib.util
 import io
 import json
 import os
+import sys
 import traceback
 import zipfile
 from datetime import datetime, timezone
@@ -21,6 +22,9 @@ from typing import Any
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+# qos_orchestrator invokes this file directly, so expose the repository package.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 CANONICAL_ROOT = REPO_ROOT / "migration" / "canonical" / "v2a"
 CANONICAL_SCRIPT = CANONICAL_ROOT / "scripts" / "00_run_all_v2a.py"
 WRAPPER_VERSION = "V2A_FROZEN_REPLAY_1.0"
@@ -52,6 +56,31 @@ def _single_member(archive: zipfile.ZipFile, suffix: str) -> str:
     if len(matches) != 1:
         raise RuntimeError(f"source package must contain exactly one {suffix}; found {len(matches)}")
     return matches[0]
+
+
+def _qualified_trace_provider(row: dict[str, Any], trace: dict[str, Any], matched: pd.DataFrame) -> bool:
+    extension = row.get("qualified_extension_attempt") or {}
+    provider = extension.get("source")
+    # Preserve the replay contract of already-supported exchange families.
+    if provider in {"gate", "mexc", "xt", "bitget", "deribit", "bybit"}:
+        return True
+    from tools.gate_btc_pit150_qualified_history import route_for_member
+    cutoff = trace.get("required_daily_core_close")
+    try:
+        route = route_for_member(row["symbol"], extension.get("coin_id"), cutoff)
+    except (TypeError, ValueError):
+        return False
+    evidence = extension.get("qualification") or {}
+    expected = {"symbol": row["symbol"], "coin_id": extension.get("coin_id"),
+                "source": provider, "cutoff": cutoff}
+    return bool(route and route["source"] == provider
+                and all(evidence.get(k) == v for k, v in expected.items())
+                and evidence.get("effective_cutoff") == route.get("effective_cutoff")
+                and evidence.get("closed_rows") == extension.get("observed_rows") == len(matched)
+                and len(matched) >= 200
+                and evidence.get("historical_scientific_credit", 0) == 0
+                and evidence.get("orders", 0) == 0
+                and evidence.get("real_capital", 0) == 0)
 
 
 def _load_source(package: Path) -> dict[str, Any]:
@@ -105,7 +134,7 @@ def _load_source(package: Path) -> dict[str, Any]:
             if extension.get("status") != "SELECTED":
                 continue
             matched = raw_master.loc[raw_master["symbol"].eq(row["symbol"])]
-            if (matched.empty or extension.get("source") not in {"gate","mexc","xt","bitget","deribit","bybit"}
+            if (matched.empty or not _qualified_trace_provider(row, trace, matched)
                     or set(matched["source"].astype(str)) != {extension["source"]}):
                 raise RuntimeError("qualified source trace/master mismatch")
 

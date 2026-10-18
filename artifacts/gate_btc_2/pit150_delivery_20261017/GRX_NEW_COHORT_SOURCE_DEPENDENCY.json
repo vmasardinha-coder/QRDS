@@ -1,0 +1,34 @@
+{
+  "symbol": "GRX",
+  "coin_id": "grx-chain",
+  "name": "GRX Chain",
+  "run": "39026736864",
+  "cutoff": "2026-10-16",
+  "state": "NEW_NATIVE_SOURCE_QUALIFICATION_REQUIRED",
+  "trace": {
+    "symbol": "GRX",
+    "selected_source": null,
+    "attempts": [
+      {
+        "source": "cdd",
+        "status": "ERROR",
+        "error_type": "RuntimeError",
+        "message": "CDD unavailable: HTTP 404"
+      },
+      {
+        "source": "binance",
+        "status": "ERROR",
+        "error_type": "RuntimeError",
+        "message": "Binance kline failed: HTTP 400"
+      },
+      {
+        "source": "okx",
+        "status": "ERROR",
+        "error_type": "RuntimeError",
+        "message": "OKX returned no candles"
+      }
+    ],
+    "qualified_extension_attempt": null
+  },
+  "orders": 0
+}

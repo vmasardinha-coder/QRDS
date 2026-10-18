@@ -1,0 +1,47 @@
+name: PIT150 Native Candidate Audit
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_pit150_candidate_audit.py
+      - tests/test_gate_btc_pit150_candidate_audit.py
+      - artifacts/gate_btc_2/pit150_candidate_audit_20261017/CANDIDATE_RAW.zip
+      - .github/workflows/gate-btc-pit150-candidate-audit.yml
+permissions:
+  contents: read
+jobs:
+  frozen-native-candidate-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test identity, clock, turnover, gaps and no-admission contracts
+        run: python -m unittest tests.test_gate_btc_pit150_candidate_audit -v
+      - name: Replay physical public candidate evidence offline
+        run: >-
+          python tools/gate_btc_pit150_candidate_audit.py
+          --snapshot artifacts/gate_btc_2/pit150_candidate_audit_20261017/CANDIDATE_RAW.zip
+          --output artifacts/pit150_candidate_audit/RESULT.json
+      - name: Verify same-input parity and explicit source rejection
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          result = pathlib.Path('artifacts/pit150_candidate_audit/RESULT.json').read_bytes()
+          expected = pathlib.Path('artifacts/gate_btc_2/pit150_candidate_audit_20261017/LOCAL_AUDIT.json').read_bytes()
+          assert result == expected, 'LOCAL_CLOUD_AUDIT_BYTE_MISMATCH'
+          data = json.loads(result)
+          assert data['technical_status'] == 'PASS_AUDIT_REPLAY'
+          assert data['grx']['candidate_qa_pass'] is False
+          assert data['native_pool_candidates']['USDAI_CURVE']['verified_empty_utc_days'] == ['2026-07-01','2026-07-26']
+          assert data['production_admission_changed'] is False and data['historical_receipts_rewritten'] is False
+          assert data['orders'] == data['real_capital'] == 0
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit150-native-candidate-audit
+          path: artifacts/pit150_candidate_audit/
