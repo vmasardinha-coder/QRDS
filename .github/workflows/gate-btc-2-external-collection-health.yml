@@ -12,9 +12,7 @@ on:
       - 'tools/gate_btc_2_external_collection_health.py'
       - '.github/workflows/gate-btc-2-external-collection-health.yml'
       - 'artifacts/gate_btc_2/family_handoffs/EXTERNAL_FORWARD_COLLECTION_PREREG_20260922.json'
-  workflow_run:
-    workflows: ['GATE BTC External Family Forward Collector']
-    types: [completed]
+  # Refreshed explicitly by the collector after each persisted capture.
   schedule:
     - cron: '47 */4 * * *'
   workflow_dispatch:
