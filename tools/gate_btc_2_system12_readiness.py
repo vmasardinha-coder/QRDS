@@ -8,6 +8,65 @@ from pathlib import Path
 from gate_btc_2_system11_collection_status import status as collection_status
 from gate_btc_2_system11_stress_replay_v1 import AUTHORITY, digest, validate_pairs
 
+REPLICATION_AUTHORITY = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json"
+REPLICATION_CHECKS = ("dataset_gate", "reference_semantic_digest", "all_events_compared",
+    "event_parity", "scenario_parity", "minimum_executions", "scenario_count",
+    "deterministic_independent_executor", "size_monotonicity")
+
+
+def retain_replication_progress(structural, contract, replication):
+    """Bind a frozen receipt for reporting; never adjudicate or transfer its scope."""
+    result = {**structural, "replication_continuity_status": "NO_HASH_BOUND_REPLICATION_RECEIPT",
+        "system12_complete": False, "system13_dependency_released": False,
+        "independent_adjudication_executed": False, "scientific_credit": 0,
+        "orders": 0, "real_capital_brl": 0, "engine_feed": False, "automatic_promotion": False}
+    if contract is None or replication is None:
+        return result
+    try:
+        frozen = json.loads(REPLICATION_AUTHORITY.read_text())
+        scenarios = replication["stressed_execution_results"]
+        count = replication["compared_events"]
+        counts = [s["effective_executions"] for s in scenarios]
+        valid = (
+            contract == frozen
+            and replication["contract_sha256"] == digest(frozen)
+            and replication["bindings"] == frozen["bindings"]
+            and replication["status"] == "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION"
+            and replication["implementation_replication_pass"] is True
+            and replication["independent_replication_executed"] is True
+            and all(replication["checks"][k] is True for k in REPLICATION_CHECKS)
+            and replication["scenario_count"] == frozen["required_scenario_count"] == len(scenarios)
+            and type(count) is int and count > 0
+            and all(type(n) is int and n >= 0 for n in counts) and sum(counts) == count
+            and type(replication["event_mismatches"]) is int and replication["event_mismatches"] == 0
+            and replication["scenario_mismatches"] == []
+            and all(replication[k] is False for k in ("system12_complete", "system13_dependency_released",
+                "independent_adjudication_executed", "engine_feed", "automatic_promotion", "economic_claim_authorized"))
+            and all(type(replication[k]) is int and replication[k] == 0 for k in ("scientific_credit", "orders", "real_capital_brl"))
+            and replication["research_only"] is True and replication["shadow_only"] is True
+        )
+    except (KeyError, TypeError, ValueError, OSError):
+        valid = False
+    if not valid:
+        return {**result, "replication_continuity_status": "INVALID_FROZEN_REPLICATION_RECEIPT",
+            "status": "BLOCKED_INVALID_FROZEN_REPLICATION_RECEIPT",
+            "next_action": "VERIFY_EXACT_FROZEN_RECEIPT_BINDINGS_WITHOUT_REFREEZE"}
+    result.update({
+        "replication_continuity_status": "VERIFIED_FROZEN_IMPLEMENTATION_PARITY_RECEIPT",
+        "frozen_implementation_replication_pass": True,
+        "frozen_replication_contract_sha256": digest(frozen),
+        "frozen_replication_bindings": replication["bindings"],
+        "frozen_compared_events": count,
+        "frozen_scenario_count": len(scenarios),
+        "independent_adjudication_required": True,
+        "replication_scope": "FROZEN_CONTRACT_ONLY_NO_TRANSFER_TO_NEW_COLLECTION",
+        "current_upstream_report_matches_frozen_replication": structural.get("system11_report_sha256") == frozen["bindings"]["system11_report_semantic_sha256"],
+    })
+    if structural.get("upstream_system11_ready") is True:
+        result.update({"status": "IMPLEMENTATION_PARITY_PASSED_PENDING_INDEPENDENT_ADJUDICATION",
+            "next_action": "INDEPENDENT_ADJUDICATION_OF_EXISTING_HASH_BOUND_REPLICATION"})
+    return result
+
 
 def assess(report, rows):
     result = {"schema": "gate_btc.2_0.system12_readiness.v1", "system": 12,
@@ -60,10 +119,18 @@ def main():
     ap.add_argument("--system11-report", type=Path, required=True)
     ap.add_argument("--system11-ledger", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--implementation-contract", type=Path)
+    ap.add_argument("--implementation-replication", type=Path)
     a = ap.parse_args()
+    if bool(a.implementation_contract) != bool(a.implementation_replication):
+        ap.error("implementation contract and replication must be supplied together")
     report = json.loads(a.system11_report.read_text()) if a.system11_report.exists() else None
     rows = [json.loads(x) for x in a.system11_ledger.read_text().splitlines() if x.strip()] if a.system11_ledger.exists() else None
     result = assess(report, rows)
+    if a.implementation_contract:
+        contract = json.loads(a.implementation_contract.read_text()) if a.implementation_contract.exists() else None
+        replication = json.loads(a.implementation_replication.read_text()) if a.implementation_replication.exists() else None
+        result = retain_replication_progress(result, contract, replication)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     a.output.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
     print(json.dumps(result, sort_keys=True))
@@ -71,3 +138,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
