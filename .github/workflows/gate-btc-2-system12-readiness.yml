@@ -46,6 +46,8 @@ jobs:
           python tools/gate_btc_2_system12_readiness.py \
             --system11-report runtime_repo/runtime/gate_btc_2/system11/REPLAY_RESULT.json \
             --system11-ledger runtime_repo/runtime/gate_btc_2/system11/DEPTH10_PAIRS.jsonl \
+            --implementation-contract artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json \
+            --implementation-replication runtime_repo/runtime/gate_btc_2/system12/IMPLEMENTATION_REPLICATION.json \
             --output out/SYSTEM12_READINESS.json
       - name: Publish read-only structural readiness
         if: github.event_name != 'pull_request'
