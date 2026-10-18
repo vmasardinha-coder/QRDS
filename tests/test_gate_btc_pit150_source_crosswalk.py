@@ -110,5 +110,57 @@ class CurrentDiagnosticBindingTests(unittest.TestCase):
             self.assertEqual(out["authoritative_status_binding"]["failed_symbols"],0)
 
 
+class PriorReviewContinuityTests(unittest.TestCase):
+    def inputs(self, category="SHORT_SOURCE_HISTORY"):
+        diagnostic={"attempted_symbols":150,"loaded_symbols":149,"failed_symbols":1,
+                    "data_as_of":"2026-10-17","rows":[{"symbol":"SOFID","coin_id":"sofiusd",
+                    "action_class":"SEMANTIC_SCOPE_REVIEW","failure_reason":"no candles","observed_history_rows":None}]}
+        review={"review_date":"2026-10-15","cases":[{"symbol":"SOFID","coin_id":"sofiusd",
+                "category":category,"evidence":"115 completed days at the recorded cutoff",
+                "baseline_cutoff":"2026-10-14","next_action":"Collect until full qualification; no admission yet."}]}
+        return diagnostic, {"entry_count":0,"entries":[]}, review
+
+    def test_history_review_does_not_reopen_source_discovery_or_admit_prices(self):
+        diagnostic,registry,review=self.inputs()
+        original=copy.deepcopy((diagnostic,registry,review))
+        out=build_crosswalk(diagnostic,registry,["SOFID"],review)
+        row=out["assets"][0]
+        self.assertEqual(row["operational_work_state"],"HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED")
+        self.assertTrue(row["bounded_source_review_completed"])
+        self.assertFalse(row["coverage_dependency_resolved"])
+        self.assertFalse(row["pit150_source_substitution_authorized"])
+        self.assertFalse(row["prior_exclusion_identity_revalidated"])
+        self.assertEqual((out["legacy_loaded_symbols"],out["legacy_failed_symbols"],out["pit150_denominator_preserved"]),(149,1,150))
+        self.assertEqual((diagnostic,registry,review),original)
+
+    def test_scope_and_native_access_remain_distinct(self):
+        for category,state in [("FUND_SCOPE_REVIEW","AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION"),
+                               ("ACCESS_IDENTITY_REVIEW","AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF")]:
+            diagnostic,registry,review=self.inputs(category)
+            self.assertEqual(build_crosswalk(diagnostic,registry,["SOFID"],review)["assets"][0]["operational_work_state"],state)
+
+    def test_symbol_collision_does_not_apply_old_review(self):
+        diagnostic,registry,review=self.inputs()
+        review["cases"][0]["coin_id"]="different-asset"
+        row=build_crosswalk(diagnostic,registry,["SOFID"],review)["assets"][0]
+        self.assertIn("IDENTITY_MISMATCH",row["prior_case_review_binding"])
+        self.assertNotIn("bounded_source_review_completed",row)
+
+    def test_future_review_or_duplicate_identity_fails_closed(self):
+        diagnostic,registry,review=self.inputs()
+        review["review_date"]="2026-10-18"
+        with self.assertRaises(ValueError):build_crosswalk(diagnostic,registry,["SOFID"],review)
+        review["review_date"]="2026-10-15";review["cases"].append(copy.deepcopy(review["cases"][0]))
+        with self.assertRaises(ValueError):build_crosswalk(diagnostic,registry,["SOFID"],review)
+
+    def test_current_qualified_source_contract_takes_precedence(self):
+        diagnostic,registry,review=self.inputs()
+        registry={"entry_count":1,"entries":[{"symbol":"SOFID","coin_id":"sofiusd","source_admitted":True,
+                  "qa_pass":True,"qualification":"QUALIFIED_EXACT_SOURCE"}]}
+        row=build_crosswalk(diagnostic,registry,[],review)["assets"][0]
+        self.assertEqual(row["operational_work_state"],"QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN")
+        self.assertFalse(row["pit150_source_substitution_authorized"])
+
+
 if __name__ == "__main__":
     unittest.main()
