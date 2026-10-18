@@ -72,11 +72,11 @@
         "window": "One observation per officially timestamped Ibovespa preview or final portfolio announcement; availability must be strictly before the target regular-session open and strictly before the announced implementation date. Otherwise roll to the next eligible session only if implementation is still future. No repeated reuse of one announcement."
       },
       "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
-      "next_action": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3"
       ],
-      "operational_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "qualified_sources": [],
       "required_new_data": [
         "B3 index preview/final portfolio files",
@@ -85,7 +85,7 @@
         "exchange calendar"
       ],
       "scientific_credit": 0,
-      "source_cost_status": "WAITING_SOURCE_COST_EVIDENCE"
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "blocker": null,
@@ -250,11 +250,11 @@
         "window": "Use exactly the latest completed B3 regular-session option-chain snapshot officially available strictly before the target regular-session open. Only one observation per snapshot, with contemporaneous underlying level and official metadata from that snapshot."
       },
       "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
-      "next_action": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "B3"
       ],
-      "operational_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "qualified_sources": [],
       "required_new_data": [
         "B3 listed option chain",
@@ -262,7 +262,7 @@
         "expiry/strike metadata"
       ],
       "scientific_credit": 0,
-      "source_cost_status": "WAITING_SOURCE_COST_EVIDENCE"
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "blocker": null,
@@ -277,12 +277,12 @@
         "window": "One observation per officially timestamped completed BCB FX-swap auction result with its earlier matching preannouncement. Both publication timestamps must be strictly before the target B3 regular-session open. Events at or after open roll prospectively to the next eligible session; same auction never produces a second observation."
       },
       "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
-      "next_action": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "next_action": "TERMINAL_SOURCE_COST_REJECTION",
       "official_free_source_candidates": [
         "BCB",
         "B3"
       ],
-      "operational_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
+      "operational_stage": "TERMINAL_SOURCE_COST_REJECTION",
       "qualified_sources": [],
       "required_new_data": [
         "BCB FX-swap auction announcements/results",
@@ -292,7 +292,7 @@
         "calendars"
       ],
       "scientific_credit": 0,
-      "source_cost_status": "WAITING_SOURCE_COST_EVIDENCE"
+      "source_cost_status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
       "blocker": null,
@@ -352,7 +352,7 @@
     }
   ],
   "family_count": 12,
-  "generated_at_utc": "2026-10-18T20:32:34.592974+00:00",
+  "generated_at_utc": "2026-10-18T21:48:27.307452+00:00",
   "safety": {
     "ENGINE_FEED": false,
     "FAIL_CLOSED": true,
