@@ -7,7 +7,9 @@ scientific mutation, engine feed, orders, or capital authority.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -48,6 +50,50 @@ def assert_zero_authority(name: str, obj: dict[str, Any]) -> None:
         raise RuntimeError(f"SAFETY_BOUNDARY_FAIL:{name}:orders")
     if int(obj.get("real_capital", obj.get("real_capital_brl", 0))) != 0:
         raise RuntimeError(f"SAFETY_BOUNDARY_FAIL:{name}:real_capital")
+
+
+def warmup_coverage(activation: dict, ledger_root: Path) -> dict:
+    """Count frozen prior-feature coverage; never qualify a signal or outcome."""
+    counts: Counter[str] = Counter()
+    verified = 0
+    for path in sorted(ledger_root.glob("*.json")):
+        record = load_json(path)
+        body = {k: v for k, v in record.items() if k != "record_sha256"}
+        observed_hash = hashlib.sha256(json.dumps(body, sort_keys=True,
+            separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+        if record.get("session") != path.stem or record.get("record_sha256") != observed_hash:
+            raise RuntimeError("WARMUP_LEDGER_BINDING_MISMATCH:" + path.name)
+        verified += 1
+        keys = set()
+        for row in record.get("feature_observations", []):
+            key = row["key"]
+            if key in keys:
+                raise RuntimeError("DUPLICATE_SESSION_FEATURE:" + key)
+            keys.add(key)
+            value = row.get("value")
+            if row.get("available") is True and isinstance(value, (int, float)) and math.isfinite(float(value)):
+                counts[key] += 1
+    cohorts: dict[int, list[int]] = {}
+    for family in activation["active_families"]:
+        contract = family["contract"]
+        lookback = int(contract["standardization_lookback_sessions"])
+        if lookback <= 0:
+            raise RuntimeError("INVALID_FROZEN_LOOKBACK")
+        key = f"{contract['feature']}|{int(contract['decision_window_minutes'])}"
+        cohorts.setdefault(lookback, []).append(counts[key])
+    rows = []
+    for lookback, observed in sorted(cohorts.items()):
+        needed = [max(0, lookback - n) for n in observed]
+        rows.append({"lookback_sessions": lookback, "family_count": len(observed),
+            "prior_feature_observations_min": min(observed), "prior_feature_observations_max": max(observed),
+            "additional_prior_observations_min": min(needed), "additional_prior_observations_max": max(needed),
+            "families_with_full_prior_feature_count": sum(n >= lookback for n in observed)})
+    return {"mode": "READ_ONLY_FROZEN_PRIOR_FEATURE_COVERAGE", "verified_ledger_records": verified,
+        "family_count": sum(len(v) for v in cohorts.values()), "by_lookback": rows,
+        "families_with_full_prior_feature_count": sum(r["families_with_full_prior_feature_count"] for r in rows),
+        "coverage_is_not_signal_qualification": True,
+        "first_signal_still_requires_later_eligible_session_current_feature_and_nonzero_mad": True,
+        "promotion_authority": False, "scientific_credit": 0}
 
 
 def load_external(external_root: Path | None) -> dict[str, Any]:
@@ -107,6 +153,8 @@ def summarize(runtime_root: Path, external_root: Path | None = None) -> dict[str
         assert_zero_authority(name, obj)
 
     external = load_external(external_root)
+    coverage = warmup_coverage(activation, shadow / "ledger")
+    observed_source = latest.get("source", {})
     return {
         "schema": "gate_btc_2.factory_control_room.v2",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -117,6 +165,11 @@ def summarize(runtime_root: Path, external_root: Path | None = None) -> dict[str
             "waiting_source_semantics_count": binding.get("waiting_source_semantics_count"),
             "discovery_status": discovery.get("status"), "discovery_record_count": discovery.get("record_count"),
             "discovery_source_admission_pass": discovery.get("source_admission_pass"),
+            "binding_symbol_is_historical_snapshot": True,
+            "latest_observed_symbol": observed_source.get("symbol"),
+            "latest_observed_expiration_local": observed_source.get("contract_expiration_local"),
+            "latest_observed_source_session": latest.get("session"),
+            "latest_observed_source_qa_pass": observed_source.get("source_qa_pass"),
         },
         "collection": {
             "d0": activation.get("d0"), "ledger_session_count": ledger_count,
@@ -135,6 +188,7 @@ def summarize(runtime_root: Path, external_root: Path | None = None) -> dict[str
             "checkpoint_n": 60, "candidate_authority_only": True, "survivor_promotion_authority": False,
         },
         "external_forward": external,
+        "warmup_coverage": coverage,
         "safety": {"RESEARCH_ONLY": True, "SHADOW_ONLY": True, "NO_BACKFILL": True, "NO_RETUNE": True, "ENGINE_FEED": False, "ORDERS": 0, "REAL_CAPITAL": 0},
     }
 
@@ -152,7 +206,7 @@ def render_markdown(x: dict[str, Any]) -> str:
         *[f"- `{k}`: **{v}**" for k, v in c["latest_family_state_counts"].items()], "",
         "## 3D family states", *[f"- `{k}`: **{v}**" for k, v in a["family_state_counts"].items()], "",
         "## 3D cell states", *[f"- `{k}`: **{v}**" for k, v in a["cell_state_counts"].items()], "",
-        "## Source", f"- Binding: `{s['binding_status']}` / `{s['selected_symbol']}`", f"- Waiting source semantics: **{s['waiting_source_semantics_count']}**", f"- Discovery: `{s['discovery_status']}` ({s['discovery_record_count']} records; admitted={s['discovery_source_admission_pass']})", "",
+        "## Source", f"- Historical binding snapshot: `{s['binding_status']}` / `{s['selected_symbol']}`", f"- Latest physically observed symbol: `{s.get('latest_observed_symbol')}` (session `{s.get('latest_observed_source_session')}`; source QA={s.get('latest_observed_source_qa_pass')})", f"- Waiting source semantics: **{s['waiting_source_semantics_count']}**", f"- Discovery candidate inventory (separate authority): `{s['discovery_status']}` ({s['discovery_record_count']} records; admitted={s['discovery_source_admission_pass']})", "",
         "## External prospective lanes",
     ]
     if e.get("available"):
@@ -160,6 +214,14 @@ def render_markdown(x: dict[str, Any]) -> str:
             lines.append(f"- `{fid}`: **{st['record_count']}** records · `{st['status']}` · latest `{st['latest_observed_at_utc']}`")
     else:
         lines.append(f"- unavailable: `{e.get('reason')}`")
+    w = x.get("warmup_coverage")
+    if w:
+        lines += ["", "## Frozen prior-feature coverage", "",
+            "| Lookback | Families | Prior feature observations | Additional prior observations |",
+            "|---|---:|---:|---:|"]
+        for row in w["by_lookback"]:
+            lines.append(f"| {row['lookback_sessions']} | {row['family_count']} | {row['prior_feature_observations_min']} to {row['prior_feature_observations_max']} | {row['additional_prior_observations_min']} to {row['additional_prior_observations_max']} |")
+        lines += ["", "Coverage is not a signal. A later eligible session, its current feature, nonzero MAD and the frozen trigger remain required."]
     lines += ["", "## Boundary", "`RESEARCH_ONLY=true` · `SHADOW_ONLY=true` · `NO_BACKFILL=true` · `NO_RETUNE=true` · `ENGINE_FEED=false` · `ORDERS=0` · `REAL_CAPITAL=0`", "", "Descriptive instrumentation only. No scientific, promotion, execution, source-admission, or retuning authority.", ""]
     return "\n".join(lines)
 
@@ -192,3 +254,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
