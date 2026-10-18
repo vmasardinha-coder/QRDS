@@ -1,34 +1,32 @@
 {
   "activation_cutoff": "2026-09-29",
   "backfill_performed": false,
-  "btc_nav": 0.9755207936157705,
-  "closes_since_rebalance": 3,
+  "btc_nav": 0.9740314970681415,
+  "closes_since_rebalance": 4,
   "cost_status": "N_D",
-  "data_as_of": "2026-10-16",
-  "economic_rows_appended": 0,
+  "data_as_of": "2026-10-17",
+  "economic_rows_appended": 1,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
-  "error": "MISSING_REQUIRED_PRICES: REUSD,USDGO,USYC",
-  "failure_evidence": "failures/2026-10-17/19a465aeeda90b6d621fbb1d1ab09a199b62f9df41d982a9f8f607cb99d170fb.json.gz",
   "first_eligible_cutoff": "2026-09-28",
   "latest_economics": {
-    "btc_daily_return_gross": -0.007663479518074556,
-    "btc_nav": 0.9755207936157705,
+    "btc_daily_return_gross": -0.0015266681729139142,
+    "btc_nav": 0.9740314970681415,
     "cost_status": "N_D",
-    "cutoff": "2026-10-16",
+    "cutoff": "2026-10-17",
     "daily_return_gross": {
-      "M1_TOP10": -0.027312622550684007,
-      "M2_TOP10": -0.04996713028446609
+      "M1_TOP10": -0.017494807838718485,
+      "M2_TOP10": -0.015130204522085688
     },
     "event": "HOLD",
     "evidence": {
-      "price_manifest_sha256": "24c0bf9a63f77eb5da6f16de5740503182310845c75d16744ea254b9a29dd82e",
-      "snapshot_sha256": "ca954263ca7ee518fa279fb1f4678305ed58ab4faf8e2cca4e1be2116fdc4ba4",
-      "source_available_at_utc": "2026-10-17T16:42:44.339916+00:00"
+      "price_manifest_sha256": "fde589aee5f7e1ea2ee33b9ad35fb378c21f8702453f09dce966542bd6700406",
+      "snapshot_sha256": "bc6bb0f3987b2a2b8a8211b7b6ff5ba50f4ca0a1038a386ef65714c824638fc1",
+      "source_available_at_utc": "2026-10-18T11:15:05.451325+00:00"
     },
     "excess_vs_btc_percentage_points": {
-      "M1_TOP10": 7.801708977641885,
-      "M2_TOP10": 5.986922516041259
+      "M1_TOP10": 6.107494350329123,
+      "M2_TOP10": 4.56928589638318
     },
     "holdings_after_close": {
       "M1_TOP10": [
@@ -57,19 +55,19 @@
       ]
     },
     "illustrative_brl_pnl": {
-      "M1_TOP10": 9636.819010594081,
-      "M2_TOP10": 6370.203379712955
+      "M1_TOP10": 6319.159302857895,
+      "M2_TOP10": 3550.384085755196
     },
     "illustrative_brl_value": {
-      "M1_TOP10": 189636.81901059407,
-      "M2_TOP10": 186370.20337971297
+      "M1_TOP10": 186319.1593028579,
+      "M2_TOP10": 183550.38408575518
     },
     "nav": {
-      "M1_TOP10": 1.0535378833921893,
-      "M2_TOP10": 1.035390018776183
+      "M1_TOP10": 1.0351064405714328,
+      "M2_TOP10": 1.0197243560319733
     },
     "net_return": null,
-    "observed_at_utc": "2026-10-17T16:42:44.851518+00:00",
+    "observed_at_utc": "2026-10-18T11:15:05.600773+00:00",
     "quantities_after_close": {
       "M1_TOP10": {
         "BTW": 0.052338407518072914,
@@ -97,67 +95,29 @@
       }
     },
     "reporting_currency_note": "FIXED_NOTIONAL_ILLUSTRATION_NOT_REALIZED_BRL_OR_FX_ADJUSTED",
-    "return_observations": 17,
+    "return_observations": 18,
     "total_return_gross": {
-      "M1_TOP10": 0.053537883392189345,
-      "M2_TOP10": 0.035390018776183085
+      "M1_TOP10": 0.03510644057143275,
+      "M2_TOP10": 0.01972435603197331
     }
   },
   "nav": {
-    "M1_TOP10": 1.0535378833921893,
-    "M2_TOP10": 1.035390018776183
+    "M1_TOP10": 1.0351064405714328,
+    "M2_TOP10": 1.0197243560319733
   },
   "net_return": null,
-  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
+  "next_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
   "not_approved": true,
   "orders": 0,
   "promotion_allowed": false,
   "real_capital": 0,
   "research_only": true,
-  "return_observations": 17,
+  "return_observations": 18,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "source_failures": {
-    "REUSD": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "REUSD"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "REUSD"
-      }
-    ],
-    "USDGO": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "USDGO"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "USDGO"
-      }
-    ],
-    "USYC": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "USYC"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "USYC"
-      }
-    ]
-  },
-  "status": "FAILED_ECONOMIC_DELIVERY",
+  "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-18T08:21:28.971243+00:00",
+  "updated_at_utc": "2026-10-18T11:15:05.604124+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
