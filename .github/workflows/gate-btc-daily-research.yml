@@ -514,6 +514,7 @@ jobs:
             --status runtime_repo/runtime/data_quality/v2a/STATUS.json \
             --registry runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json \
             --structural-registry source_code/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --case-review source_code/artifacts/gate_btc_2/pit150_cases_review_20261015/CASE_LEDGER.json \
             --output runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
           git -C runtime_repo add runtime/data_quality/v2a_registry_pit runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
           if git -C runtime_repo diff --cached --quiet; then
