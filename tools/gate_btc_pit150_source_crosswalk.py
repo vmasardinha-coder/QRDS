@@ -5,10 +5,38 @@ import hashlib
 import json
 import re
 from collections import Counter
+from datetime import date
 from pathlib import Path
 
 
-def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=()) -> dict:
+def reviewed_cases(case_review, cutoff):
+    if case_review is None:
+        return {}
+    if not isinstance(case_review, dict) or not isinstance(case_review.get("cases"), list):
+        raise ValueError("invalid prior case review")
+    reviewed = date.fromisoformat(case_review["review_date"])
+    if reviewed > date.fromisoformat(cutoff):
+        raise ValueError("prior case review is later than diagnostic cutoff")
+    result = {}
+    for item in case_review["cases"]:
+        if not isinstance(item, dict) or any(not isinstance(item.get(k), str) or not item[k]
+                for k in ["symbol", "coin_id", "category", "evidence", "next_action"]):
+            raise ValueError("malformed reviewed case")
+        if item["symbol"] in result:
+            raise ValueError("duplicate reviewed case symbol")
+        result[item["symbol"]] = item
+    return result
+
+
+OPERATIONAL_STATES = {
+    "FUND_SCOPE_REVIEW": "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION",
+    "ACCESS_IDENTITY_REVIEW": "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF",
+    "SHORT_SOURCE_HISTORY": "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED",
+}
+
+
+def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=(), case_review=None) -> dict:
+    prior_cases = reviewed_cases(case_review, diagnostic.get("data_as_of"))
     rows = diagnostic["rows"]
     if diagnostic["failed_symbols"] != len(rows):
         raise ValueError("diagnostic failure count mismatch")
@@ -73,6 +101,34 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=()) 
                                 "PIT150_history_requirement_200_rows",
                                 "causal_availability_and_cutoff", "PIT150_source_admission"],
         })
+    for asset in assets:
+        asset["operational_work_state"] = asset["worklist_state"]
+        asset["prior_case_review_binding"] = "NO_PRIOR_CASE"
+        item = prior_cases.get(asset["symbol"])
+        if item is None:
+            continue
+        if item["coin_id"] != asset["pit150_identity"]:
+            asset["prior_case_review_binding"] = "IDENTITY_MISMATCH_PRIOR_REVIEW_NOT_APPLIED"
+            continue
+        asset["prior_case_review_binding"] = "EXACT_COIN_ID_MATCH_ADVISORY_ONLY"
+        state = OPERATIONAL_STATES.get(item["category"])
+        if state is None or asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN":
+            continue
+        asset["operational_work_state"] = state
+        asset["bounded_source_review_completed"] = True
+        asset["coverage_dependency_resolved"] = False
+        asset["prior_case_review"] = {
+            "review_date": case_review["review_date"],
+            "category": item["category"],
+            "evidence_cutoff": item.get("baseline_cutoff"),
+            "evidence": item["evidence"],
+        }
+        asset["next_action"] = item["next_action"]
+        asset["reopen_review_only_for"] = [
+            "materially_new_exact_source_or_access",
+            "identity_change_or_invalidated_evidence",
+            "new_history_sufficient_for_full_qualification",
+        ]
     return {
         "schema": "gate_btc.pit150_source_qualification_followup.v2",
         "status": "CANDIDATE_CROSSWALK_ONLY_NO_PIT150_ADMISSION",
@@ -84,6 +140,7 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=()) 
         "identity_evidence_counts": dict(Counter(a["identity_evidence"] for a in assets)),
         "action_counts": dict(Counter(a["failure_class"] for a in assets)),
         "worklist_state_counts": dict(Counter(a["worklist_state"] for a in assets)),
+        "operational_work_state_counts": dict(Counter(a["operational_work_state"] for a in assets)),
         "legacy_failed_symbols": len(assets),
         "legacy_loaded_symbols": diagnostic["loaded_symbols"],
         "legacy_failures_are_not_new_unhandled_incidents": True,
@@ -119,6 +176,7 @@ def main():
     parser.add_argument("--status", type=Path)
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--structural-registry", type=Path)
+    parser.add_argument("--case-review", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     status_raw = args.status.read_bytes() if args.status else None
@@ -134,11 +192,15 @@ def main():
     binding = validate_authoritative_status(json.loads(diagnostic_raw), status) if status else None
     structural_raw = args.structural_registry.read_bytes() if args.structural_registry else None
     exclusions = json.loads(structural_raw)["structural_exclusions"] if structural_raw else ()
-    report = build_crosswalk(json.loads(diagnostic_raw), json.loads(registry_raw), exclusions)
+    review_raw = args.case_review.read_bytes() if args.case_review else None
+    report = build_crosswalk(json.loads(diagnostic_raw), json.loads(registry_raw), exclusions,
+                             json.loads(review_raw) if review_raw else None)
     report["input_sha256"] = {
         "diagnostic": hashlib.sha256(diagnostic_raw).hexdigest(),
         "registry": hashlib.sha256(registry_raw).hexdigest(),
     }
+    if review_raw:
+        report["input_sha256"]["case_review"] = hashlib.sha256(review_raw).hexdigest()
     if structural_raw:
         report["input_sha256"]["structural_registry"] = hashlib.sha256(structural_raw).hexdigest()
     if binding:
