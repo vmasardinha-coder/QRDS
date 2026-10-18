@@ -7,6 +7,13 @@ on:
     paths:
       - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
       - tools/gate_btc_v16b1_operational_orchestrator.py
+      - tools/gate_btc_v16b1_training_bridge.py
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
+      - tools/gate_btc_v16b1_training_bridge.py
+      - tests/test_gate_btc_v16b1_training_bridge.py
   schedule:
     # Hourly gives the causal state machine repeated opportunities without
     # changing the frozen Thu/Fri clock enforced by gate_btc_v16b1_chain.py.
@@ -35,7 +42,22 @@ env:
   FAIL_CLOSED: "true"
 
 jobs:
+  training-bridge-tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas numpy requests scikit-learn
+      - run: python -m unittest -v tests.test_gate_btc_v16b1_training_bridge tests.test_gate_btc_v16b1_prospective_training tests.test_gate_btc_v16b1_mature_official tests.test_gate_btc_v16b1_operational_orchestrator
+
   causal-publish:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -54,7 +76,33 @@ jobs:
 
       - name: Install runtime dependencies
         working-directory: source
-        run: python -m pip install --disable-pip-version-check pandas
+        run: python -m pip install --disable-pip-version-check pandas numpy requests scikit-learn
+
+      - name: Resolve hash-verified matured training corpus without lowering frozen gate
+        working-directory: source
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/canonical-runtime"
+          TARGET="$ROOT/runtime/ledgers/v16b1"
+          SIGNAL_DATE="$(python -c "import json; print(json.load(open('$TARGET/STATUS.json'))['signal_date'])")"
+          python -m tools.gate_btc_v16b1_training_bridge \
+            --runtime-root "$ROOT" --signal-date "$SIGNAL_DATE" \
+            --output "$TARGET/CORPUS_WEEKLY_UNIVERSE_MODEL_ONLY.csv" \
+            --status "$TARGET/TRAINING_CORPUS_READINESS.json"
+          python - <<'PYCODE'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['GITHUB_WORKSPACE'])/'canonical-runtime/runtime/ledgers/v16b1'
+          p=root/'STATUS.json';s=json.loads(p.read_bytes())
+          r=json.loads((root/'TRAINING_CORPUS_READINESS.json').read_bytes())
+          s['training_corpus_matured_prior_weeks']=r['matured_prior_weeks']
+          s['training_corpus_required_prior_weeks']=r['required_prior_weeks']
+          s['training_corpus_model_input_created']=r['model_input_created']
+          if not (root/'HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY.csv').exists():
+              s['operational_blocker']=('AWAITING_FROZEN_SIGNAL_PIPELINE_VALIDATION' if r['model_input_created'] else
+                  f"INSUFFICIENT_HASH_VERIFIED_MATURED_TRAINING_WEEKS_{r['matured_prior_weeks']}_OF_{r['required_prior_weeks']}")
+          p.write_bytes((json.dumps(s,indent=2,sort_keys=True)+'\n').encode())
+          PYCODE
 
       - name: Resolve authoritative V16B.1 SIGNAL inputs fail closed
         if: github.event_name != 'pull_request'
@@ -114,14 +162,18 @@ jobs:
           print('V16B1_CMC_INPUT=PASS',e['snapshot_id'])
           PY
           HIST="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY.csv"
-          # This file is an authoritative frozen model-training input only. Never
-          # reconstruct it from missed prospective windows or current snapshots.
+          # External authoritative history retains priority. The alternative view
+          # exists only after 52 hash-verified matured prospective weeks; it never
+          # reconstructs missed windows or relabels current snapshots as history.
           if [ ! -f "$HIST" ]; then
-            echo "FAIL_CLOSED_MISSING_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY"
+            HIST="$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CORPUS_WEEKLY_UNIVERSE_MODEL_ONLY.csv"
+          fi
+          if [ ! -f "$HIST" ]; then
+            echo "V16B1_SIGNAL=WAITING_HASH_VERIFIED_TRAINING_READINESS"
             python - <<'PY'
           import json,os
           p=os.environ['GITHUB_WORKSPACE']+'/canonical-runtime/runtime/ledgers/v16b1/STATUS.json'
-          s=json.load(open(p)); s['operational_blocker']='MISSING_AUTHORITATIVE_HISTORICAL_WEEKLY_UNIVERSE_MODEL_ONLY'
+          s=json.load(open(p)); assert s['training_corpus_model_input_created'] is False
           s['canonical_cycle_count']=int(s['canonical_cycle_count']); s['prospective_credit']=int(s['prospective_credit'])
           open(p,'w').write(json.dumps(s,indent=2,sort_keys=True)+'\n')
           PY
@@ -284,3 +336,4 @@ jobs:
               'prospective_credit': s['prospective_credit'],
           }, sort_keys=True))
           PY
+
