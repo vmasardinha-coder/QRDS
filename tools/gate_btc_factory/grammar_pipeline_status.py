@@ -8,6 +8,50 @@ def load(p):
  try:return json.loads(p.read_text(encoding='utf-8'))
  except:return {}
 
+
+def materialization_progress(qual, readiness):
+ """Report verified upstream stages; never activate or grant credit."""
+ invalid={'status':'RECONCILIATION_REQUIRED'}
+ expected_safety={'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_BACKFILL':True,'NO_RETUNE':True,'FAIL_CLOSED':True}
+ if readiness.get('schema')!='qrds.factory.qualified_materializer_readiness.v2' or readiness.get('safety')!=expected_safety:
+  return invalid
+ qualified=[f for f in qual.get('families',[]) if f.get('status')=='SOURCE_COST_QUALIFIED']
+ rows=readiness.get('families')
+ if not isinstance(rows,list) or len(rows)!=qual.get('qualified_count') or len(qualified)!=len(rows):
+  return invalid
+ qmap={f.get('family_id'):f for f in qualified}
+ if None in qmap or len(qmap)!=len(rows):
+  return invalid
+ seen=set(); collecting=terminal=actionable=0; dispositions=[]
+ for row in rows:
+  fid=row.get('family_id');q=qmap.get(fid)
+  if q is None or fid in seen or q.get('source_qualified') is not True or q.get('cost_applicability_proven') is not True:
+   return invalid
+  seen.add(fid)
+  if row.get('qualified_sources')!=q.get('qualified_sources') or type(row.get('scientific_credit')) is not int or row['scientific_credit']!=0:
+   return invalid
+  state=row.get('implementation_status'); action=row.get('next_action')
+  if state=='TERMINAL_SOURCE_BLOCKED_PIT_VALUES':
+   if row.get('physical_capture_proven') is not True or row.get('collection_started') is not False or action!='SOURCE_REQUALIFICATION_ONLY_IF_VERSIONED_PIT_VALUES_FOUND':
+    return invalid
+   terminal+=1;kind='TERMINAL_SOURCE_REVIEW_CLOSED'
+  elif state=='MATERIALIZER_PROVEN_OUTCOME_BLIND' and row.get('collection_started') is True:
+   digest=row.get('capture_sha256','')
+   if (not all(row.get(k) is True for k in ('physical_capture_proven','pit_feature_materialization_proven','capture_verified','prospective_preregistration_present'))
+       or not isinstance(digest,str) or len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest)
+       or action!='WAIT_NEXT_ELIGIBLE_OFFICIAL_PUBLICATION'):
+    return invalid
+   collecting+=1;kind='COLLECTING_WAIT_NEXT_PUBLICATION'
+  elif row.get('collection_started') is False and (
+       (state=='SOURCE_MATERIALIZER_REQUIRED' and action=='IMPLEMENT_OFFICIAL_SOURCE_CAPTURE_AND_PIT_TESTS')
+       or (state=='MATERIALIZER_PROVEN_OUTCOME_BLIND' and action in ('SEPARATE_PROSPECTIVE_COLLECTION_PREREG_REQUIRED','START_PREREGISTERED_PROSPECTIVE_COLLECTION')
+           and row.get('physical_capture_proven') is True and row.get('pit_feature_materialization_proven') is True)):
+   actionable+=1;kind='ACTION_REQUIRED'
+  else:
+   return invalid
+  dispositions.append({'family_id':fid,'disposition':kind,'next_action':action})
+ return {'status':'RECONCILED','qualified_family_count':len(rows),'collecting_count':collecting,'terminal_source_blocked_count':terminal,'actionable_count':actionable,'families':dispositions,'scientific_credit_awarded':0,'promotion_authority':False}
+
 def build(root):
  scout=load(root/'GRAMMAR_SCOUT_RUNTIME.json')
  hand=load(root/'GRAMMAR_HANDOFF_RUNTIME.json')
@@ -25,7 +69,15 @@ def build(root):
  blocked=int(qual.get('blocked_semantics_count',0) or 0)
  rejected=int(qual.get('rejected_count',0) or 0)
  adjudicated=qualified+waiting+blocked+rejected
- if qualified:
+ progress_path=root/'GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json'
+ progress=materialization_progress(qual,load(progress_path)) if qualified and progress_path.exists() else {'status':'NOT_AVAILABLE'}
+ if waiting or blocked:
+  next_stage='SOURCE_COST_QUALIFICATION_THEN_EXISTING_FACTORY'
+ elif qualified and progress['status']=='RECONCILIATION_REQUIRED':
+  next_stage='RECONCILE_QUALIFIED_MATERIALIZATION_STATUS'
+ elif qualified and progress['status']=='RECONCILED':
+  next_stage='ACTION_REQUIRED_FOR_QUALIFIED_MATERIALIZATION' if progress['actionable_count'] else 'WAIT_PROSPECTIVE_COLLECTION_OR_MATERIAL_NEW_EVIDENCE'
+ elif qualified:
   next_stage='EXISTING_FACTORY_FOR_SOURCE_COST_QUALIFIED_FAMILIES'
  elif transported and rejected==transported and adjudicated==transported:
   next_stage='AUTONOMOUS_SCOUT_FOR_NEW_PREREGISTRATIONS'
@@ -53,6 +105,7 @@ def build(root):
    'source_cost_rejected_current':rejected,
   },
   'next_stage':next_stage,
+  'materialization_progress':progress,
   'safety':{'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
  }
 
