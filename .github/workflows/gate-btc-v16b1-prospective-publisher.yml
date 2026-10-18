@@ -8,13 +8,17 @@ on:
       - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
       - tools/gate_btc_v16b1_operational_orchestrator.py
       - tools/gate_btc_v16b1_training_bridge.py
-      - tools/gate_btc_v16b*.py
+      - tools/gate_btc_v16b1_prospective_training.py
+      - tools/gate_btc_v16b_feature_panel.py
+      - tools/gate_btc_v16b_shadow_signal.py
   pull_request:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-v16b1-prospective-publisher.yml
       - tools/gate_btc_v16b1_training_bridge.py
-      - tools/gate_btc_v16b*.py
+      - tools/gate_btc_v16b1_prospective_training.py
+      - tools/gate_btc_v16b_feature_panel.py
+      - tools/gate_btc_v16b_shadow_signal.py
       - tests/test_gate_btc_v16b1_training_bridge.py
   schedule:
     # Hourly gives the causal state machine repeated opportunities without
