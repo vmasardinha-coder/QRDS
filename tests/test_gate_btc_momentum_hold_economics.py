@@ -185,5 +185,75 @@ class HoldEpochTests(unittest.TestCase):
                 h.run(args,clock=lambda:datetime(2026,9,29,4,tzinfo=timezone.utc))
 
 
+    def test_hold_does_not_fetch_unbought_ranking_candidates(self):
+        import pandas as pd
+        from tools import gate_btc_momentum_required_prices as p
+        ledger, _ = self.advance()
+        config_path = self.root/'config.json'; h.save(config_path, self.config)
+        epoch = h.setup(self.root, self.config, self.contract)
+        h.save(epoch/'LEDGER.json', ledger)
+        before = (epoch/'LEDGER.json').read_bytes()
+        current = ['REUSD', 'USDGO', 'USYC'] + self.assets[3:]
+        snap = self.snapshot(1, current)
+        snap_path = self.root/'snapshot.json'; h.save(snap_path, snap)
+        args = Namespace(ledger_dir=self.root, snapshot=snap_path, output_zip=self.root/'px.zip', phase='prepare')
+        clock = lambda: datetime(2026,9,30,4,tzinfo=timezone.utc)
+        calls = []
+        def loader(session, symbol):
+            calls.append(symbol)
+            if symbol in {'REUSD', 'USDGO', 'USYC'}:
+                raise ValueError('UNAVAILABLE_UNBOUGHT_CANDIDATE')
+            return pd.DataFrame([{'date': snap['cutoff'], 'symbol': symbol, 'close_usd': 100.0}])
+        original_collect = p.collect
+        def collect(*args, **kwargs):
+            return original_collect(*args, **kwargs, loaders=[('fixture', loader)])
+        with patch.object(h, 'APPROVAL', config_path), patch.object(p, 'collect', collect):
+            self.assertEqual(h.run(args, clock)['price_count'], 11)
+            self.assertEqual(set(calls), set(self.assets + ['BTC']))
+            self.assertEqual((epoch/'LEDGER.json').read_bytes(), before)
+            coverage = h.load_json(epoch/'PRICE_COVERAGE_STATUS.json')
+            self.assertEqual(coverage['pricing_scope'], 'HELD_POSITIONS_ONLY')
+            args.phase = 'append'; result = h.run(args, clock)
+        after = h.load_json(epoch/'LEDGER.json')
+        self.assertEqual(after['rows'][:-1], ledger['rows'])
+        self.assertEqual(after['state']['holdings'], ledger['state']['holdings'])
+        self.assertEqual(result['return_observations'], 1)
+        self.assertEqual(result['latest_economics']['event'], 'HOLD')
+        for name in result['nav']:
+            self.assertAlmostEqual(result['nav'][name], ledger['state']['nav'][name], places=12)
+
+    def test_missing_candidate_is_still_required_on_actual_rebalance(self):
+        import pandas as pd
+        from tools import gate_btc_momentum_required_prices as p
+        ledger, _ = self.advance()
+        for day in range(1,7):
+            ledger, _ = self.advance(ledger, day)
+        config_path = self.root/'config.json'; h.save(config_path, self.config)
+        epoch = h.setup(self.root, self.config, self.contract)
+        h.save(epoch/'LEDGER.json', ledger)
+        before = (epoch/'LEDGER.json').read_bytes()
+        snap = self.snapshot(7, ['REUSD'] + self.assets[1:])
+        snap_path = self.root/'snapshot.json'; h.save(snap_path, snap)
+        args = Namespace(ledger_dir=self.root, snapshot=snap_path, output_zip=self.root/'px.zip', phase='prepare')
+        def loader(session, symbol):
+            if symbol == 'REUSD': raise ValueError('MISSING_PRICE')
+            return pd.DataFrame([{'date': snap['cutoff'], 'symbol': symbol, 'close_usd': 100.0}])
+        original_collect = p.collect
+        def collect(*args, **kwargs):
+            return original_collect(*args, **kwargs, loaders=[('fixture', loader)])
+        with patch.object(h, 'APPROVAL', config_path), patch.object(p, 'collect', collect):
+            with self.assertRaisesRegex(p.MissingRequiredPrices, 'REUSD'):
+                h.run(args, lambda: datetime(2026,10,6,4,tzinfo=timezone.utc))
+        self.assertEqual((epoch/'LEDGER.json').read_bytes(), before)
+
+    def test_held_excluded_from_ranking_remains_mandatory(self):
+        from tools import gate_btc_momentum_required_prices as p
+        ledger, _ = self.advance(assets=['REUSD']+self.assets[1:], prices={**self.prices,'REUSD':1.0})
+        required = p.required_assets(self.snapshot(1), ledger['state'], include_current_selections=False)
+        self.assertIn('REUSD', required)
+        self.assertIn('BTC', required)
+        self.assertNotIn('A0', required)
+
+
 if __name__ == '__main__':
     unittest.main()

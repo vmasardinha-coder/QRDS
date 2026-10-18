@@ -18,10 +18,13 @@ def packed(obj):return (json.dumps(obj,sort_keys=True,separators=(',',':'),allow
 def now():return datetime.now(timezone.utc)
 
 
-def required_assets(snapshot,state):
+def required_assets(snapshot,state,*,include_current_selections=True):
+    if not include_current_selections and not state:
+        raise ValueError('HELD_PRICE_SCOPE_REQUIRES_EXISTING_STATE')
     required={'BTC'}
     for name,(block,rank) in STRATS.items():
-        required.update(top10(snapshot,block,rank))
+        if include_current_selections:
+            required.update(top10(snapshot,block,rank))
         if state:required.update(state['holdings'][name])
     if any(not re.fullmatch(r'[A-Z0-9]{2,12}',s) for s in required):
         raise ValueError('UNSUPPORTED_REQUIRED_ASSET_IDENTITY')
