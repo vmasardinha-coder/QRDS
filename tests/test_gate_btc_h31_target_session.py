@@ -32,3 +32,16 @@ class TargetSessionTests(unittest.TestCase):
     def test_naive_clock_is_rejected(self):
         with self.assertRaises(ValueError):
             resolve_target(datetime(2026, 10, 18))
+
+    def test_github_output_has_real_lines_for_weekend_skip(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        import tools.gate_btc_h31_target_session as mod
+        with tempfile.TemporaryDirectory() as d, patch.object(mod, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 10, 18, 15, tzinfo=timezone.utc)
+            output = Path(d) / "outputs"
+            with patch("sys.argv", ["target", "--github-output", str(output)]):
+                self.assertEqual(mod.main(), 0)
+            self.assertEqual(output.read_text().splitlines(),
+                             ["date=2026-10-17", "eligible=false"])

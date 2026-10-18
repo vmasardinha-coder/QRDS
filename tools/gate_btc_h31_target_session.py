@@ -20,8 +20,8 @@ def main():
     args = parser.parse_args()
     result = resolve_target(datetime.now(timezone.utc))
     with args.github_output.open("a", encoding="utf-8") as handle:
-        handle.write("date=" + result["date"] + "\\n")
-        handle.write("eligible=" + str(result["eligible"]).lower() + "\\n")
+        handle.write("date=" + result["date"] + "\n")
+        handle.write("eligible=" + str(result["eligible"]).lower() + "\n")
     print(json.dumps(result, sort_keys=True))
     return 0
 
