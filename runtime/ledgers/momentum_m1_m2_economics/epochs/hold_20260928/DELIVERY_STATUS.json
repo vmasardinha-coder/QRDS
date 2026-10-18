@@ -5,9 +5,11 @@
   "closes_since_rebalance": 3,
   "cost_status": "N_D",
   "data_as_of": "2026-10-16",
-  "economic_rows_appended": 1,
+  "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
+  "error": "MISSING_REQUIRED_PRICES: REUSD,USDGO,USYC",
+  "failure_evidence": "failures/2026-10-17/f2a2bd8c877018d8378056ef39b2b8b9e126cea1cf59a467e9392cbe0fb25306.json.gz",
   "first_eligible_cutoff": "2026-09-28",
   "latest_economics": {
     "btc_daily_return_gross": -0.007663479518074556,
@@ -106,7 +108,7 @@
     "M2_TOP10": 1.035390018776183
   },
   "net_return": null,
-  "next_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
+  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
   "not_approved": true,
   "orders": 0,
   "promotion_allowed": false,
@@ -115,9 +117,47 @@
   "return_observations": 17,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+  "source_failures": {
+    "REUSD": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "REUSD"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "REUSD"
+      }
+    ],
+    "USDGO": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "USDGO"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "USDGO"
+      }
+    ],
+    "USYC": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "USYC"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "USYC"
+      }
+    ]
+  },
+  "status": "FAILED_ECONOMIC_DELIVERY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-17T16:42:44.919126+00:00",
+  "updated_at_utc": "2026-10-18T08:19:48.820210+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
