@@ -1,5 +1,5 @@
 {
-  "blocked_semantics_count": 3,
+  "blocked_semantics_count": 0,
   "families": [
     {
       "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
@@ -83,15 +83,20 @@
       "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
-      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
       "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
       "cost_applicability_proven": false,
       "economics_read": false,
       "family_id": "XAGRAMMAR_3BC1506DBCE5",
+      "frozen_semantics": {
+        "feature": "Ibovespa announced turnover: one half of the sum across the union of constituents of absolute new announced portfolio weight minus immediately preceding announced portfolio weight, with absent constituents assigned weight zero. Use B3 published weights as fractions, no price reconstruction, no constituent ranking, no threshold.",
+        "lookback": "Exactly two consecutive officially published Ibovespa announced portfolios in publication order. Missing weights, revision versions, announcement timestamp or effective date makes the observation ineligible; no reconstruction or imputation.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after official announcement availability. No alternative horizon or implementation-date return.",
+        "window": "One observation per officially timestamped Ibovespa preview or final portfolio announcement; availability must be strictly before the target regular-session open and strictly before the announced implementation date. Otherwise roll to the next eligible session only if implementation is still future. No repeated reuse of one announcement."
+      },
       "grammar_signature": "3bc1506dbce5d9ddaf182da1e91f5dd08c7299b0d2b8be0d92d4d83d01806123",
       "historical_testing_started": false,
       "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
-      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
       "official_free_source_candidates": [
         "B3"
       ],
@@ -109,9 +114,12 @@
         "B3 security prices",
         "exchange calendar"
       ],
-      "semantic_preregistration_complete": false,
+      "semantic_prereg_path": "source_repo/tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json",
+      "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+      "semantic_preregistration_complete": true,
+      "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+      "status": "WAITING_SOURCE_COST_EVIDENCE"
     },
     {
       "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
@@ -321,15 +329,20 @@
       "status": "REJECT_SOURCE_COST_FAIL_CLOSED"
     },
     {
-      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
       "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
       "cost_applicability_proven": false,
       "economics_read": false,
       "family_id": "XAGRAMMAR_AEEC63B0F807",
+      "frozen_semantics": {
+        "feature": "Official B3-published implied-volatility state for options on the Ibovespa index: choose the nearest expiry strictly after the target session, then the strike minimizing absolute strike minus contemporaneous underlying index level, ties to lower strike. Feature is arithmetic mean of official call and put implied volatilities at that same expiry and strike, expressed as annualized fractions. Both must be finite and positive. No internally fitted volatility, rate/dividend assumption, smoothing, interpolation or fallback underlying.",
+        "lookback": "Exactly one latest eligible complete official option-chain snapshot. Missing official implied-volatility fields, matched call/put, strike, expiry, snapshot time, publication time or underlying level makes the observation ineligible; do not choose a more distant strike/expiry to repair missing data.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after official snapshot availability. No volatility or alternative-horizon target.",
+        "window": "Use exactly the latest completed B3 regular-session option-chain snapshot officially available strictly before the target regular-session open. Only one observation per snapshot, with contemporaneous underlying level and official metadata from that snapshot."
+      },
       "grammar_signature": "aeec63b0f807f90ef3a325130938ca756093aaa9fad8c864e6640c4fb3f584c5",
       "historical_testing_started": false,
       "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
-      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
       "official_free_source_candidates": [
         "B3"
       ],
@@ -346,20 +359,28 @@
         "underlying B3 asset",
         "expiry/strike metadata"
       ],
-      "semantic_preregistration_complete": false,
+      "semantic_prereg_path": "source_repo/tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json",
+      "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+      "semantic_preregistration_complete": true,
+      "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+      "status": "WAITING_SOURCE_COST_EVIDENCE"
     },
     {
-      "blocker_reason": "SOURCE_COST_PROTOCOL_REQUIRES_ALREADY_FROZEN_FEATURE_WINDOW_LOOKBACK_TARGET",
       "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
       "cost_applicability_proven": false,
       "economics_read": false,
       "family_id": "XAGRAMMAR_D30E657A4920",
+      "frozen_semantics": {
+        "feature": "Two-component BCB FX-swap auction event vector in official USD notional units: signed offered notional from the matching preannouncement and signed accepted notional from its result. Conventional swaps positive, reverse swaps negative, using the official operation classification. Exact auction/event identifier must link announcement and result; no netting across auctions, normalization, threshold or performance-selected subset.",
+        "lookback": "Exactly one completed auction result plus its matching earlier official preannouncement. Missing official notional units, direction, event identifier or availability timestamp makes the event ineligible; no inferred publication time or price-based classification.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after both announcement and result are officially observable. No BRL-based alternative target or horizon.",
+        "window": "One observation per officially timestamped completed BCB FX-swap auction result with its earlier matching preannouncement. Both publication timestamps must be strictly before the target B3 regular-session open. Events at or after open roll prospectively to the next eligible session; same auction never produces a second observation."
+      },
       "grammar_signature": "d30e657a4920a06d7cb03a359edc0e8e3a39ee9a1c59045c384e0ab38db51b80",
       "historical_testing_started": false,
       "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
-      "next_stage": "SEPARATE_SEMANTIC_PREREGISTRATION_REQUIRED_BEFORE_SOURCE_COST",
+      "next_stage": "SOURCE_COST_EVIDENCE_REQUIRED",
       "official_free_source_candidates": [
         "BCB",
         "B3"
@@ -379,9 +400,12 @@
         "B3 market data",
         "calendars"
       ],
-      "semantic_preregistration_complete": false,
+      "semantic_prereg_path": "source_repo/tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json",
+      "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+      "semantic_preregistration_complete": true,
+      "semantic_source": "SEPARATE_OUTCOME_BLIND_SEMANTIC_PREREG_V1",
       "source_qualified": false,
-      "status": "BLOCKED_PREREG_SEMANTICS_UNDECIDABLE"
+      "status": "WAITING_SOURCE_COST_EVIDENCE"
     },
     {
       "channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
@@ -479,5 +503,5 @@
     "SHADOW_ONLY": true
   },
   "schema": "qrds.factory.grammar_source_cost_qualification_runtime.v1",
-  "waiting_count": 0
+  "waiting_count": 3
 }
