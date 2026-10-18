@@ -1,0 +1,71 @@
+{
+  "schema": "qrds.factory.grammar_semantic_prereg.v1",
+  "authorization": "USER_CONTINUE_2026-10-18",
+  "scope": "THREE_EXISTING_UNDEFINED_GRAMMAR_SCOUT_FAMILIES_ONLY",
+  "frozen_before_source_cost": true,
+  "outcome_blind": true,
+  "economics_read": false,
+  "historical_testing_started": false,
+  "selection_policy": "ONE_CAUSAL_DEFINITION_PER_EXISTING_IDENTITY_NO_GRID_NO_OUTCOME_SELECTION",
+  "activation_policy": "NO_RETROACTIVE_SCIENTIFIC_CREDIT; SOURCE_COST_AND_SEPARATE_PROSPECTIVE_ACTIVATION_REQUIRED",
+  "families": [
+    {
+      "family_id": "XAGRAMMAR_3BC1506DBCE5",
+      "grammar_signature": "3bc1506dbce5d9ddaf182da1e91f5dd08c7299b0d2b8be0d92d4d83d01806123",
+      "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Ibovespa announced turnover: one half of the sum across the union of constituents of absolute new announced portfolio weight minus immediately preceding announced portfolio weight, with absent constituents assigned weight zero. Use B3 published weights as fractions, no price reconstruction, no constituent ranking, no threshold.",
+        "window": "One observation per officially timestamped Ibovespa preview or final portfolio announcement; availability must be strictly before the target regular-session open and strictly before the announced implementation date. Otherwise roll to the next eligible session only if implementation is still future. No repeated reuse of one announcement.",
+        "lookback": "Exactly two consecutive officially published Ibovespa announced portfolios in publication order. Missing weights, revision versions, announcement timestamp or effective date makes the observation ineligible; no reconstruction or imputation.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after official announcement availability. No alternative horizon or implementation-date return."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_AEEC63B0F807",
+      "grammar_signature": "aeec63b0f807f90ef3a325130938ca756093aaa9fad8c864e6640c4fb3f584c5",
+      "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Official B3-published implied-volatility state for options on the Ibovespa index: choose the nearest expiry strictly after the target session, then the strike minimizing absolute strike minus contemporaneous underlying index level, ties to lower strike. Feature is arithmetic mean of official call and put implied volatilities at that same expiry and strike, expressed as annualized fractions. Both must be finite and positive. No internally fitted volatility, rate/dividend assumption, smoothing, interpolation or fallback underlying.",
+        "window": "Use exactly the latest completed B3 regular-session option-chain snapshot officially available strictly before the target regular-session open. Only one observation per snapshot, with contemporaneous underlying level and official metadata from that snapshot.",
+        "lookback": "Exactly one latest eligible complete official option-chain snapshot. Missing official implied-volatility fields, matched call/put, strike, expiry, snapshot time, publication time or underlying level makes the observation ineligible; do not choose a more distant strike/expiry to repair missing data.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after official snapshot availability. No volatility or alternative-horizon target."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_D30E657A4920",
+      "grammar_signature": "d30e657a4920a06d7cb03a359edc0e8e3a39ee9a1c59045c384e0ab38db51b80",
+      "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Two-component BCB FX-swap auction event vector in official USD notional units: signed offered notional from the matching preannouncement and signed accepted notional from its result. Conventional swaps positive, reverse swaps negative, using the official operation classification. Exact auction/event identifier must link announcement and result; no netting across auctions, normalization, threshold or performance-selected subset.",
+        "window": "One observation per officially timestamped completed BCB FX-swap auction result with its earlier matching preannouncement. Both publication timestamps must be strictly before the target B3 regular-session open. Events at or after open roll prospectively to the next eligible session; same auction never produces a second observation.",
+        "lookback": "Exactly one completed auction result plus its matching earlier official preannouncement. Missing official notional units, direction, event identifier or availability timestamp makes the event ineligible; no inferred publication time or price-based classification.",
+        "target": "Ibovespa simple close-to-close return for the first eligible B3 regular session after both announcement and result are officially observable. No BRL-based alternative target or horizon."
+      }
+    }
+  ],
+  "prohibitions": [
+    "NO_OUTCOME_READ",
+    "NO_ECONOMICS_READ",
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_THRESHOLD_GRID",
+    "NO_WINDOW_GRID",
+    "NO_LOOKBACK_GRID",
+    "NO_TARGET_GRID",
+    "NO_PERFORMANCE_BASED_SOURCE_SELECTION",
+    "NO_COUNTER_RESET"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
