@@ -70,6 +70,9 @@ jobs:
           PY
 
   collect:
+    permissions:
+      contents: write
+      actions: write
     needs: validate
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -142,6 +145,22 @@ jobs:
           fi
           git commit -m "runtime: external family forward capture ${GITHUB_RUN_ID}"
           git push origin HEAD:runtime/gate-btc-external-forward
+
+      - name: Refresh canonical reports after persisted external capture
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          # Bot-dispatched fallback collections must not depend on a workflow_run callback.
+          failure=0
+          for workflow in gate-btc-2-external-collection-health.yml gate-btc-2-factory-control-room.yml; do
+            if ! gh workflow run "$workflow" --ref main; then
+              failure=1
+            fi
+          done
+          test "$failure" -eq 0
 
       - name: Assert safety and extractor health
         shell: bash
