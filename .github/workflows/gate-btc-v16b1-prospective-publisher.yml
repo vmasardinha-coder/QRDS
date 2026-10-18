@@ -189,6 +189,13 @@ jobs:
           python -m tools.gate_btc_v16b_source_bound_panel             --daily-prices "$OUT/daily_prices.csv" --weekly-universe "$OUT/weekly_universe.csv"             --signal-market-source-manifest "$OUT/signal_market_source_manifest.json"             --output "$OUT/panel.csv" --manifest "$OUT/panel_manifest.json"
           python -m tools.gate_btc_v16b1_okx_signal             --panel "$OUT/panel.csv" --panel-manifest "$OUT/panel_manifest.json"             --signal-market-source-manifest "$OUT/signal_market_source_manifest.json"             --v16b1-shortability "$SHORT" --signal-date "$SIGNAL_DATE"             --universe-snapshot "$RAW" --universe-snapshot-evidence "$EV"             --code-commit "$(git rev-parse HEAD)" --output "$OUT/signal_input.json"
           python -m tools.gate_btc_v16b1_chain seal-signal             --input "$OUT/signal_input.json"             --ledger "$GITHUB_WORKSPACE/canonical-runtime/runtime/ledgers/v16b1/CHAIN.jsonl"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['GITHUB_WORKSPACE'])/'canonical-runtime/runtime/ledgers/v16b1/STATUS.json'
+          s=json.loads(p.read_bytes());s['operational_blocker']=None
+          p.write_bytes((json.dumps(s,indent=2,sort_keys=True)+'\n').encode())
+          PY
 
       - name: Resolve causal V16B.1 ENTRY inputs fail closed
         if: github.event_name != 'pull_request'
