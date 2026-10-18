@@ -41,7 +41,7 @@ def build(prospective: dict[str, Any], paper: dict[str, Any]) -> dict[str, Any]:
         "shadow_sessions": sessions,
         "simulated_trades": trades,
         "open_book": "N/D_NOT_CANONICALLY_EXPOSED",
-        "closed_trades": trades,
+        "closed_trades": paper.get("H31_SHADOW_CLOSED_TRADES", paper.get("closed_trades")),
         "paper_bridge": {
             "mt5_ready": paper.get("H31_MT5_READY"),
             "mt5_parity_observations": paper.get("H31_MT5_PARITY_OBSERVATIONS"),
@@ -76,6 +76,7 @@ def markdown(x: dict[str, Any]) -> str:
         f"ELIGIBLE_OBSERVATIONS={x['eligible_observations']}",
         f"SHADOW_SESSIONS={x['shadow_sessions']}",
         f"SIMULATED_TRADES={x['simulated_trades']}",
+        f"CLOSED_TRADES={x['closed_trades']}",
         f"LATEST_VALID_DATE={x['latest_valid_observation_date']}",
         f"MT5_READY={x['paper_bridge']['mt5_ready']}",
         f"PAPER_BRIDGE_HEALTH={x['paper_bridge']['health']}",

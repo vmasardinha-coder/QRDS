@@ -226,8 +226,8 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
     prior = [r for r in prior if r['date'] < target_date]
     if len(prior) < 20:
         raise RuntimeError(f'INSUFFICIENT_TRAILING_20 rows={len(prior)}')
-    trailing = prior[-20:]
-    scale = float(median(abs(float(r['ret30_bps'])) for r in trailing))
+    trailing_rows = prior[-20:]
+    scale = float(median(abs(float(r['ret30_bps'])) for r in trailing_rows))
     if scale <= 0:
         raise RuntimeError('NONPOSITIVE_TRAILING_SCALE')
 
@@ -269,7 +269,7 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
         'source_input_qualification_sha256': load_continuation()['input_qualification_sha256'] if recent else None,
         'source_calendar_extension_sha256': load_continuation()['calendar_extension_sha256'] if recent and target_date >= '2026-10-21' else None,
         'warmup': {
-            'trailing_session_dates': [r['date'] for r in trailing],
+            'trailing_session_dates': [r['date'] for r in trailing_rows],
             'trailing_20_median_abs_30m_bps': scale,
             'uses_scored_prospective_rows_for_warmup': False,
         },

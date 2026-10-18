@@ -106,4 +106,31 @@ class RecentSourceTests(unittest.TestCase):
         r['receipt_sha256']=s.digest(r);s.validate_receipt(r,r['date']);r['ret30_bps']=2.
         with self.assertRaisesRegex(RuntimeError,'SEAL'):s.validate_receipt(r,r['date'])
 
+    def test_current_recent_session_executes_warmup_then_builds_event(self):
+        contract={'first_eligible_date':'2026-08-25','freeze_rule_hash_sha256':s.load_contract()['freeze_rule_hash_sha256'],'rule':{'trigger_abs_z_gte':1.5}}
+        prior=[{'date':str(d.date()),'ret30_bps':1.} for d in pd.bdate_range('2026-09-01',periods=20)]
+        for wdo_close in [100.,102.]:
+            with self.subTest(wdo_close=wdo_close), tempfile.TemporaryDirectory() as d:
+                bars=pd.DataFrame([{'root':'WIN','timestamp':i,'open':100.+i/10,'close':100.+i/10} for i in range(31)]+[{'root':'WDO','timestamp':i,'open':100.,'close':wdo_close} for i in range(6)])
+                with patch.object(collector,'datetime') as clock, patch.object(collector,'trailing',return_value=prior) as warmup, patch.object(collector,'fetch_official_session',return_value=(bars,{'source_sha256':'a'*64})) as fetch:
+                    clock.now.return_value=datetime(2026,10,16,20,tzinfo=s.ZoneInfo('America/Sao_Paulo'))
+                    event,status=collector.compute_event('2026-10-16',contract,Path(d))
+                warmup.assert_called_once_with('2026-10-16',Path(d))
+                fetch.assert_called_once()
+                self.assertEqual(event['warmup']['trailing_session_dates'],[r['date'] for r in prior])
+                self.assertEqual(status['eligible_observations'],1)
+                self.assertEqual(event['signal']['trigger'],wdo_close>100.)
+                self.assertEqual(event['orders'],0);self.assertEqual(event['real_capital'],0)
+                self.assertFalse(event['sealed_economics']['exposed_to_factory_or_discovery'])
+                self.assertEqual(list(Path(d).iterdir()),[])
+
+    def test_current_recent_session_with_short_warmup_cannot_fetch_or_score(self):
+        contract={'first_eligible_date':'2026-08-25','freeze_rule_hash_sha256':s.load_contract()['freeze_rule_hash_sha256']}
+        with tempfile.TemporaryDirectory() as d, patch.object(collector,'datetime') as clock, patch.object(collector,'trailing',return_value=[{'date':'2026-10-14','ret30_bps':1.}]*19), patch.object(collector,'fetch_official_session') as fetch:
+            clock.now.return_value=datetime(2026,10,16,20,tzinfo=s.ZoneInfo('America/Sao_Paulo'))
+            with self.assertRaisesRegex(RuntimeError,'INSUFFICIENT_TRAILING_20'):
+                collector.compute_event('2026-10-16',contract,Path(d))
+            fetch.assert_not_called()
+            self.assertEqual(list(Path(d).iterdir()),[])
+
 if __name__=='__main__':unittest.main()

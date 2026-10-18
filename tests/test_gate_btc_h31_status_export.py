@@ -44,5 +44,17 @@ class H31StatusExportTest(unittest.TestCase):
             build({"orders": 1, "real_capital": 0}, {"ORDERS": 0, "REAL_CAPITAL": 0})
 
 
+    def test_trigger_count_does_not_become_closed_return_count(self):
+        paper={"H31_SHADOW_SIMULATED_TRADES":7,"H31_SHADOW_CLOSED_TRADES":6,"ORDERS":0,"REAL_CAPITAL":0}
+        out=build({"orders":0,"real_capital":0},paper)
+        self.assertEqual(out["simulated_trades"],7)
+        self.assertEqual(out["closed_trades"],6)
+        self.assertEqual(paper["H31_SHADOW_CLOSED_TRADES"],6)
+
+    def test_missing_close_count_remains_unknown(self):
+        out=build({"orders":0,"real_capital":0},{"H31_SHADOW_SIMULATED_TRADES":7})
+        self.assertIsNone(out["closed_trades"])
+
+
 if __name__ == "__main__":
     unittest.main()
