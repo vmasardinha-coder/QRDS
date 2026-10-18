@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'tools/gate_btc_2_factory_control_room.py'
+      - 'tests/test_gate_btc_2_factory_warmup_coverage.py'
       - '.github/workflows/gate-btc-2-factory-control-room.yml'
   push:
     branches: [main]
     paths:
       - 'tools/gate_btc_2_factory_control_room.py'
+      - 'tests/test_gate_btc_2_factory_warmup_coverage.py'
       - '.github/workflows/gate-btc-2-factory-control-room.yml'
   workflow_run:
     workflows: ['GATE BTC 2 Item 3D Forward Adjudication']
@@ -76,6 +78,7 @@ jobs:
           set -euo pipefail
           python -m py_compile main_repo/tools/gate_btc_2_factory_control_room.py
           python main_repo/tools/gate_btc_2_factory_control_room.py --self-test
+          python -m unittest discover -s main_repo/tests -p 'test_gate_btc_2_factory_warmup_coverage.py' -v
       - name: Aggregate canonical Factory state
         run: |
           set -euo pipefail
