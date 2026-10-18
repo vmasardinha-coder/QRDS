@@ -1,0 +1,50 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_family_evidence.v1",
+  "family_id": "XAGRAMMAR_AEEC63B0F807",
+  "grammar_signature": "aeec63b0f807f90ef3a325130938ca756093aaa9fad8c864e6640c4fb3f584c5",
+  "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+  "qualified_sources": [
+    "B3"
+  ],
+  "source_checks": {
+    "official_public_free": false,
+    "required_data_covered": false,
+    "pit_timestamps": false,
+    "granularity_sufficient": false,
+    "calendar_causal": false,
+    "reproducible_auditable": false
+  },
+  "cost_checks": {
+    "data_acquisition_zero": false,
+    "frozen_execution_cost_contract_preserved": true,
+    "no_new_economic_assumption": true
+  },
+  "outcomes_read": false,
+  "economics_read": false,
+  "adjudication_decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+  "adjudication_reason": "B3 identifies implied volatility in its specialized UP2DATA volatility-surface channel and documents contractual access and pricing. The public regulatory catalog does not prove the frozen per-call/per-put Ibovespa implied-volatility snapshot, matched expiry/strike and contemporaneous index. Free samples, generic VIX, dollar volatility surfaces and internally fitted IV do not prove the required repeatable free delivery. No qualifying official free packet is established.",
+  "decision_scope": "CURRENT_FROZEN_SEMANTICS_AND_EXAMINED_EVIDENCE_ONLY_NOT_UNIVERSAL_SOURCE_NONEXISTENCE",
+  "reopen_condition": "A materially new official free repeatable feed with the exact frozen call/put IV fields, complete chain metadata, contemporaneous underlying and snapshot/publication timestamps. Paid access, trial and semantic replacement do not reopen this decision.",
+  "wait_for_more_candles": false,
+  "evidence_authorities": [
+    "tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json"
+  ],
+  "evidence_ids": [
+    "B3_OPTIONS_CATALOG",
+    "B3_CONTRACT",
+    "B3_COMMERCIAL_POLICY"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

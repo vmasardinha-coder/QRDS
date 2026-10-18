@@ -21,6 +21,8 @@ on:
       - 'tools/gate_btc_factory/GRAMMAR_006_SEMANTIC_PREREG.v1.json'
       - 'tools/gate_btc_factory/GRAMMAR_007_SEMANTIC_PREREG.v1.json'
       - 'tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json'
+      - 'tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json'
+      - 'tools/gate_btc_factory/evidence/20261018_family_packets/**'
       - '.github/workflows/gate-btc-factory-grammar-scout-handoff.yml'
   pull_request:
     branches: [main]
@@ -34,6 +36,8 @@ on:
       - 'tools/gate_btc_factory/GRAMMAR_006_SEMANTIC_PREREG.v1.json'
       - 'tools/gate_btc_factory/GRAMMAR_007_SEMANTIC_PREREG.v1.json'
       - 'tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json'
+      - 'tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json'
+      - 'tools/gate_btc_factory/evidence/20261018_family_packets/**'
       - 'tests/test_gate_btc_grammar_scout_handoff.py'
       - 'tests/test_gate_btc_grammar_existing_factory_intake.py'
       - 'tests/test_gate_btc_grammar_family_briefing.py tests/test_gate_btc_qualified_materializer_readiness.py'
@@ -85,6 +89,19 @@ jobs:
               assert len(p['families'])==n
               for f in p['families']:
                   assert set(f['frozen_semantics'])=={'feature','window','lookback','target'}
+          import hashlib, pathlib
+          semantic=pathlib.Path('tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json')
+          expected={f['family_id']:f['grammar_signature'] for f in json.load(open(semantic))['families']}
+          packets=list(pathlib.Path('tools/gate_btc_factory/evidence/20261018_family_packets').glob('*.json'))
+          assert len(packets)==3
+          for path in packets:
+              f=json.load(open(path))
+              assert path.stem==f['family_id'] and expected[f['family_id']]==f['grammar_signature']
+              assert f['semantic_prereg_sha256']==hashlib.sha256(semantic.read_bytes()).hexdigest()
+              assert f['adjudication_decision']=='REJECT_SOURCE_COST_FAIL_CLOSED'
+              assert f['outcomes_read'] is False and f['economics_read'] is False
+              assert f['source_checks']['pit_timestamps'] is False and f['wait_for_more_candles'] is False
+              assert f['reopen_condition'] and f['evidence_ids']
           PY
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
@@ -110,6 +127,15 @@ jobs:
           cp source_repo/tools/gate_btc_factory/GRAMMAR_007_SEMANTIC_PREREG.v1.json "$ROOT/GRAMMAR_007_SEMANTIC_PREREG.v1.json"
           cp source_repo/tools/gate_btc_factory/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json "$ROOT/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json"
           mkdir -p "$ROOT/grammar_source_cost_evidence"
+          cp source_repo/tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json "$ROOT/20261018_THREE_SOURCE_COST_REVIEW.json"
+          for packet in source_repo/tools/gate_btc_factory/evidence/20261018_family_packets/XAGRAMMAR_*.json; do
+            dest="$ROOT/grammar_source_cost_evidence/$(basename "$packet")"
+            if [ -f "$dest" ]; then
+              cmp -s "$packet" "$dest" || { echo "FAIL_CLOSED: source packet revision needs explicit reconciliation: $dest"; exit 1; }
+            else
+              cp "$packet" "$dest"
+            fi
+          done
           python source_repo/tools/gate_btc_factory/grammar_source_cost_qualifier.py --intake GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json --protocol source_repo/tools/gate_btc_factory/GRAMMAR_SOURCE_COST_QUALIFICATION_PROTOCOL.v1.json --evidence-dir "$ROOT/grammar_source_cost_evidence" --output "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json"
           python source_repo/tools/gate_btc_factory/grammar_existing_factory_intake.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --output "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json"
           python source_repo/tools/gate_btc_factory/grammar_family_briefing.py --qualification "$ROOT/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json" --intake "$ROOT/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json" --output "$ROOT/GRAMMAR_FAMILY_BRIEFING_RUNTIME.json"
@@ -142,7 +168,8 @@ jobs:
                   assert f['status']=='BLOCKED_PREREG_SEMANTICS_UNDECIDABLE'
               assert f['source_qualified'] is False and f['cost_applicability_proven'] is False
               assert f['economics_read'] is False and f['historical_testing_started'] is False
-          assert r['blocked_semantics_count'] == q['blocked_semantics_count']
+          assert r['blocked_semantics_count'] == q['blocked_semantics_count'] == 0
+          assert r['waiting_count'] == 0 and r['rejected_count'] == 10
           z=json.load(open('runtime_repo/runtime/factory_autonomy/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json'))
           assert z['queued_count'] == r['qualified_count'] == 2
           assert all(x['collection_started'] is False and x['scientific_credit']==0 for x in z['families'])
@@ -153,7 +180,7 @@ jobs:
         run: |
           cd runtime_repo
           git config user.name gate-btc-research-bot; git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/grammar_preregistrations runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json runtime/factory_autonomy/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json runtime/factory_autonomy/GRAMMAR_006_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/GRAMMAR_007_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/grammar_source_cost_evidence runtime/factory_autonomy/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json runtime/factory_autonomy/GRAMMAR_FAMILY_BRIEFING_RUNTIME.json runtime/factory_autonomy/GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
+          git add runtime/factory_autonomy/grammar_handoff_audits runtime/factory_autonomy/grammar_preregistrations runtime/factory_autonomy/GRAMMAR_HANDOFF_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PREREG_TRANSPORT_RUNTIME.json runtime/factory_autonomy/GRAMMAR_SOURCE_COST_INTAKE_RUNTIME.json runtime/factory_autonomy/GRAMMAR_006_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/GRAMMAR_007_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/GRAMMAR_20261018_SEMANTIC_PREREG.v1.json runtime/factory_autonomy/20261018_THREE_SOURCE_COST_REVIEW.json runtime/factory_autonomy/grammar_source_cost_evidence runtime/factory_autonomy/GRAMMAR_SOURCE_COST_QUALIFICATION_RUNTIME.json runtime/factory_autonomy/GRAMMAR_EXISTING_FACTORY_INTAKE_RUNTIME.json runtime/factory_autonomy/GRAMMAR_FAMILY_BRIEFING_RUNTIME.json runtime/factory_autonomy/GRAMMAR_MATERIALIZER_READINESS_RUNTIME.json runtime/factory_autonomy/GRAMMAR_PIPELINE_STATUS.json
           git commit -m "Factory grammar autonomous pipeline ${{ github.run_id }}" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase origin gate-btc-runtime && git push origin HEAD:gate-btc-runtime && exit 0; sleep $((i*2)); done
           exit 1

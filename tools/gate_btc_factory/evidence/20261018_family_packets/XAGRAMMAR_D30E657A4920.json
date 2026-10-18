@@ -1,0 +1,53 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_family_evidence.v1",
+  "family_id": "XAGRAMMAR_D30E657A4920",
+  "grammar_signature": "d30e657a4920a06d7cb03a359edc0e8e3a39ee9a1c59045c384e0ab38db51b80",
+  "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+  "qualified_sources": [
+    "BCB",
+    "B3"
+  ],
+  "source_checks": {
+    "official_public_free": true,
+    "required_data_covered": false,
+    "pit_timestamps": false,
+    "granularity_sufficient": false,
+    "calendar_causal": false,
+    "reproducible_auditable": false
+  },
+  "cost_checks": {
+    "data_acquisition_zero": true,
+    "frozen_execution_cost_contract_preserved": true,
+    "no_new_economic_assumption": true
+  },
+  "outcomes_read": false,
+  "economics_read": false,
+  "adjudication_decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+  "adjudication_reason": "BCB's public Selic API exposes swap id, movement/settlement dates, edital, offered/accepted quantities and type, but its swap schema has no announcement/result publication timestamp or explicit USD-notional field. Official communications demonstrate result amounts and auction identifiers, yet the examined evidence does not prove both original publication timestamps and versioned matching preannouncement required by the frozen window. Auction timetable, dataMovimento, HTTP capture time and catalog update time cannot substitute for those timestamps.",
+  "decision_scope": "CURRENT_FROZEN_SEMANTICS_AND_EXAMINED_EVIDENCE_ONLY_NOT_UNIVERSAL_SOURCE_NONEXISTENCE",
+  "reopen_condition": "A materially new official BCB packet proving original announcement and result availability timestamps, exact event link, USD units and direction, plus the preregistered B3/BRL calendar/market surfaces. Preserve existing definition; do not infer release times or retro-credit captured historical events.",
+  "wait_for_more_candles": false,
+  "evidence_authorities": [
+    "tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json"
+  ],
+  "evidence_ids": [
+    "BCB_METADATA",
+    "BCB_ENTITIES",
+    "BCB_SWAP_PAGE",
+    "BCB_RESULT_COMMUNICATION",
+    "BCB_ANNOUNCEMENT_COMMUNICATION"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}
