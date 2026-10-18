@@ -56,5 +56,21 @@ class H31StatusExportTest(unittest.TestCase):
         self.assertIsNone(out["closed_trades"])
 
 
+    def test_explicit_intraday_counters_override_stale_paper_without_changing_economics(self):
+        paper={"H31_SHADOW_SESSIONS":0,"H31_SHADOW_SIMULATED_TRADES":0,"cumulative_gross_bps":12.}
+        live={"H31_SHADOW_SESSIONS":26,"H31_SHADOW_SIMULATED_TRADES":7,"H31_SHADOW_CLOSED_TRADES":6,"H31_MT5_READY":True}
+        out=build({"eligible_observations":0,"partial_prospective_economics_exposed":False},paper,live)
+        self.assertEqual((out["shadow_sessions"],out["simulated_trades"],out["closed_trades"]),(26,7,6))
+        self.assertEqual(out["economics"]["gross_bps"],12.)
+        self.assertEqual(out["eligible_observations"],0)
+        self.assertEqual(out["shadow_counter_source"],"INTRADAY_STATUS")
+        self.assertTrue(out["paper_bridge"]["mt5_ready"])
+        self.assertEqual(paper["H31_SHADOW_SESSIONS"],0)
+
+    def test_unsafe_intraday_input_is_rejected(self):
+        with self.assertRaises(ValueError):
+            build({}, {}, {"ORDERS":1})
+
+
 if __name__ == "__main__":
     unittest.main()

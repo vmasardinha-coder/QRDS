@@ -20,14 +20,17 @@ def load(path: Path) -> dict[str, Any]:
     return obj
 
 
-def build(prospective: dict[str, Any], paper: dict[str, Any]) -> dict[str, Any]:
+def build(prospective: dict[str, Any], paper: dict[str, Any], intraday: dict[str, Any] | None = None) -> dict[str, Any]:
     if prospective.get("orders", 0) != 0 or prospective.get("real_capital", 0) != 0:
         raise ValueError("unsafe prospective H31 state")
     if paper.get("ORDERS", 0) != 0 or paper.get("REAL_CAPITAL", 0) != 0:
         raise ValueError("unsafe paper H31 state")
+    counts = paper if intraday is None else intraday
+    if counts.get("ORDERS", 0) != 0 or counts.get("REAL_CAPITAL", 0) != 0:
+        raise ValueError("unsafe intraday H31 state")
     eligible = int(prospective.get("eligible_observations", 0) or 0)
-    sessions = int(paper.get("H31_SHADOW_SESSIONS", paper.get("sessions_observed", 0)) or 0)
-    trades = int(paper.get("H31_SHADOW_SIMULATED_TRADES", paper.get("simulated_trades", 0)) or 0)
+    sessions = int(counts.get("H31_SHADOW_SESSIONS", counts.get("sessions_observed", 0)) or 0)
+    trades = int(counts.get("H31_SHADOW_SIMULATED_TRADES", counts.get("simulated_trades", 0)) or 0)
     return {
         "schema": "gate_btc.h31.executive_status.v1",
         "reporting_only": True,
@@ -41,11 +44,12 @@ def build(prospective: dict[str, Any], paper: dict[str, Any]) -> dict[str, Any]:
         "shadow_sessions": sessions,
         "simulated_trades": trades,
         "open_book": "N/D_NOT_CANONICALLY_EXPOSED",
-        "closed_trades": paper.get("H31_SHADOW_CLOSED_TRADES", paper.get("closed_trades")),
+        "closed_trades": counts.get("H31_SHADOW_CLOSED_TRADES", counts.get("closed_trades")),
+        "shadow_counter_source": "INTRADAY_STATUS" if intraday is not None else "PAPER_STATUS",
         "paper_bridge": {
-            "mt5_ready": paper.get("H31_MT5_READY"),
-            "mt5_parity_observations": paper.get("H31_MT5_PARITY_OBSERVATIONS"),
-            "health": "READY" if paper.get("H31_MT5_READY") is True else "NOT_PROVEN_READY",
+            "mt5_ready": counts.get("H31_MT5_READY"),
+            "mt5_parity_observations": counts.get("H31_MT5_PARITY_OBSERVATIONS"),
+            "health": "READY" if counts.get("H31_MT5_READY") is True else "NOT_PROVEN_READY",
         },
         "economics_locked": bool(prospective.get("partial_prospective_economics_exposed") is False),
         "economics": {
@@ -93,10 +97,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--prospective", type=Path, required=True)
     ap.add_argument("--paper", type=Path, required=True)
+    ap.add_argument("--intraday", type=Path)
     ap.add_argument("--output-json", type=Path, required=True)
     ap.add_argument("--output-md", type=Path, required=True)
     a = ap.parse_args()
-    out = build(load(a.prospective), load(a.paper))
+    out = build(load(a.prospective), load(a.paper), load(a.intraday) if a.intraday else None)
     a.output_json.parent.mkdir(parents=True, exist_ok=True)
     a.output_json.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     a.output_md.write_text(markdown(out), encoding="utf-8")
