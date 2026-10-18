@@ -59,8 +59,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: pip install pandas numpy requests scikit-learn
-      - run: python -m unittest -v tests.test_gate_btc_v16b1_training_bridge tests.test_gate_btc_v16b1_prospective_training tests.test_gate_btc_v16b1_mature_official tests.test_gate_btc_v16b1_operational_orchestrator
+      - run: pip install pandas numpy requests scikit-learn pytest
+      - run: python -m pytest -q tests/test_gate_btc_v16b1_training_bridge.py tests/test_gate_btc_v16b1_prospective_training.py tests/test_gate_btc_v16b1_mature_official.py tests/test_gate_btc_v16b1_operational_orchestrator.py tests/test_gate_btc_v16b_signal_source.py
 
   causal-publish:
     if: github.event_name != 'pull_request'
