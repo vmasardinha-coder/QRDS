@@ -63,6 +63,14 @@ class CaseContinuityTests(unittest.TestCase):
             with self.subTest(history=history), self.assertRaises((ValueError,KeyError)):
                 retain_case_history(self.current,[history])
 
+    def test_production_baseline_is_present_and_preserves_the_two_departed_cases(self):
+        path = Path(__file__).resolve().parents[1] / 'artifacts/gate_btc_2/pit150_case_continuity_20261019/BASELINE_FOLLOWUP_20261017.json'
+        baseline = json.loads(path.read_text())
+        self.assertEqual(baseline['data_as_of'], '2026-10-17')
+        self.assertEqual(len(baseline['assets']), 20)
+        self.assertTrue({'usx', 'tradable-na-rent-financing-platform-sstn'}.issubset(
+            {r['pit150_identity'] for r in baseline['assets']}))
+
 
 class SelectionProofTests(unittest.TestCase):
     def fixture(self, root):
