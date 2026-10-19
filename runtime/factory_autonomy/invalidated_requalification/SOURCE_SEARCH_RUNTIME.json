@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-19T10:51:11.473337Z",
+  "generated_at_utc": "2026-10-19T12:56:04.391143Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "d0d78dc99ec567992a81f3dd9bc10e3a1f3226d30822c940e4c9b3b7e2c9bc82",
+        "sample_sha256": "3350bce2207f7edf368d626c094023fcac37de9732b7e77669f4c5d2bbae0ce3",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -220,11 +220,52 @@
       }
     ],
     "mt5_read_only_source_evidence": {
-      "status": "MT5_PACKET_NO_WIN_IDENTITY_MATCH",
-      "source_packet_sha256": "e729fef90dd14a97aeb8df6783065984948764d9d366d6a7a87cae31bf9ec4f4",
+      "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
+      "source_packet_sha256": "80560a334f528ae985a465fc33b72740840f7f2d4ff51fc2f6464a3c299cd9a6",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
-      "matching_record_count": 0,
-      "matching_records": [],
+      "matching_record_count": 5,
+      "matching_records": [
+        {
+          "symbol": "WING23",
+          "description": "IBOVESPA MINI",
+          "path": "GTW_BMF\\WING23",
+          "earliest_observation_utc": "2022-12-27T09:00:00Z",
+          "latest_observation_utc": "2023-02-15T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
+          "symbol": "WING27",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WING27",
+          "earliest_observation_utc": "2026-08-12T10:25:00Z",
+          "latest_observation_utc": "2026-10-16T18:30:00Z",
+          "captured_bar_count": 1088
+        },
+        {
+          "symbol": "WINJ27",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINJ27",
+          "earliest_observation_utc": "2026-10-08T09:05:00Z",
+          "latest_observation_utc": "2026-10-16T17:40:00Z",
+          "captured_bar_count": 15
+        },
+        {
+          "symbol": "WINZ22",
+          "description": "IBOVESPA MINI",
+          "path": "GTW_BMF\\WINZ22",
+          "earliest_observation_utc": "2022-10-21T13:45:00Z",
+          "latest_observation_utc": "2022-12-14T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
+          "symbol": "WINZ26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINZ26",
+          "earliest_observation_utc": "2026-08-25T18:15:00Z",
+          "latest_observation_utc": "2026-10-16T18:30:00Z",
+          "captured_bar_count": 4096
+        }
+      ],
       "source_admission_pass": false,
       "prospective_credit": 0,
       "historical_backfill_credit": 0,
