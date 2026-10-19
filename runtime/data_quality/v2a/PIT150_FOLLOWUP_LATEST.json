@@ -672,6 +672,9 @@
     "snapshot_id": "2026-10-18-run-39200431338",
     "source_run_id": "39200431338"
   },
+  "case_tracking_counts": {
+    "OUTSIDE_CURRENT_SELECTION_NO_REPAIR_PROVEN": 2
+  },
   "data_as_of": "2026-10-18",
   "engine_feed": false,
   "failure_count": 18,
@@ -682,14 +685,18 @@
   },
   "input_sha256": {
     "authoritative_status": "d5d06138307e24d43d496f4ab63cacef6274b77d0673fa161bc1a0e32cba9d0c",
+    "case_history": "fab5d59aed641ede7f671aff0fd77809158af30e11084ddb456bc81b102fa056",
     "case_review": "67ba7eeddf226a61ab39e1f5d98aebbef2a055383c75a4177ac3e1691cfa752b",
     "diagnostic": "0c10b4bc4fce9ef7136a7bed3732bf5a75c2d1c857afea2c57b6e56e133d528c",
     "registry": "6257ab6941162fd4b209a5f56e204069e384d5897761e30bc65f77d72104f8b5",
+    "retained_case_membership": "63b521b4f27960045ae460174e6ac1440a9819b4711f7e9fceee510094bdb793",
+    "selection_snapshot": "7fedf38ca2257a660f82acf38151f279f0836f69842b1b517744ed8bf71e74f3",
     "structural_registry": "879d843d48d8fba55a82984e3a2501fe2a513af184d6a4afb9fae07f6f97b993"
   },
   "legacy_failed_symbols": 18,
   "legacy_failures_are_not_new_unhandled_incidents": true,
   "legacy_loaded_symbols": 132,
+  "loaded_count_change_is_not_repair_evidence": true,
   "methodology_changes": 0,
   "operational_work_state_counts": {
     "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION": 8,
@@ -705,11 +712,79 @@
   "registry_candidate_matches": 4,
   "schema": "gate_btc.pit150_source_qualification_followup.v2",
   "scientific_credit": 0,
+  "selection_membership_verified": true,
   "snapshot_id": "2026-10-18-run-39200431338",
   "source_run_id": "39200431338",
   "source_substitution_performed": false,
   "status": "CANDIDATE_CROSSWALK_ONLY_NO_PIT150_ADMISSION",
   "structural_exclusions_are_prior_dispositions_not_observed_prices": true,
+  "tracked_cases_not_current_failures": [
+    {
+      "coverage_dependency_resolved": false,
+      "cross_contract_identity_proven": false,
+      "failure_class": "SEMANTIC_SCOPE_REVIEW",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "identity_evidence": "NO_REGISTRY_CANDIDATE",
+      "last_observed_failure_cutoff": "2026-10-17",
+      "legacy_gap_resolved": false,
+      "next_action": "VERIFY_PRIOR_EXCLUSION_IDENTITY_OR_MATERIALLY_NEW_SOURCE",
+      "observed_history_rows": null,
+      "pit150_identity": "tradable-na-rent-financing-platform-sstn",
+      "pit150_source_substitution_authorized": false,
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": true,
+      "registry_candidate": null,
+      "repair_proven_by_disappearance": false,
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "PC0000031",
+      "tracking_status": "OUTSIDE_CURRENT_SELECTION_NO_REPAIR_PROVEN",
+      "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
+    },
+    {
+      "coverage_dependency_resolved": false,
+      "cross_contract_identity_proven": false,
+      "failure_class": "SEMANTIC_SCOPE_REVIEW",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "identity_evidence": "REGISTRY_COIN_ID_MISSING",
+      "last_observed_failure_cutoff": "2026-10-17",
+      "legacy_gap_resolved": false,
+      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "observed_history_rows": null,
+      "pit150_identity": "usx",
+      "pit150_source_substitution_authorized": false,
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": false,
+      "registry_candidate": {
+        "adjudication_pr": 562,
+        "coin_id": null,
+        "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "provenance_sha256": "27a08658d8f5712f8ecf3c60a8254463dc9df5dee7fe1323746d85c61fad8b61",
+        "qa_pass": true,
+        "qualification": "QUALIFIED_EXACT_SOURCE",
+        "source_admitted": true,
+        "source_identity": "GECKOTERMINAL_PUBLIC_ONCHAIN:solana:2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix",
+        "source_symbol": "solana:2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
+      },
+      "repair_proven_by_disappearance": false,
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "USX",
+      "tracking_status": "OUTSIDE_CURRENT_SELECTION_NO_REPAIR_PROVEN",
+      "worklist_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
+    }
+  ],
+  "tracked_prior_case_count": 2,
   "worklist_state_counts": {
     "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED": 11,
     "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 4,
