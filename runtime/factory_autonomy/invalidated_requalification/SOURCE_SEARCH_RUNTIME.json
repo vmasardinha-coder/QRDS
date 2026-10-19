@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-19T17:32:34.784247Z",
+  "generated_at_utc": "2026-10-19T19:48:38.683887Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "a2bc300b98bd25bb584d4db00848a65338ebe4d7cd1751255b9e9a3a4457b0d3",
+        "sample_sha256": "0d86974faf9f7051323e558678212f85b251ab9a408b1aeec10bc59eb5165529",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -221,9 +221,9 @@
     ],
     "mt5_read_only_source_evidence": {
       "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
-      "source_packet_sha256": "80560a334f528ae985a465fc33b72740840f7f2d4ff51fc2f6464a3c299cd9a6",
+      "source_packet_sha256": "b45f9543caa81c8ed2071d8cde81fa0fcd8df0cc1ac5136909ace4380d2f04cd",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
-      "matching_record_count": 5,
+      "matching_record_count": 7,
       "matching_records": [
         {
           "symbol": "WING23",
@@ -234,35 +234,51 @@
           "captured_bar_count": 4096
         },
         {
+          "symbol": "WING26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WING26",
+          "earliest_observation_utc": "2025-12-22T11:45:00Z",
+          "latest_observation_utc": "2026-02-18T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
           "symbol": "WING27",
           "description": "IBOVESPA MINI",
           "path": "BVMF-Derivatives\\WING27",
           "earliest_observation_utc": "2026-08-12T10:25:00Z",
-          "latest_observation_utc": "2026-10-16T18:30:00Z",
-          "captured_bar_count": 1088
+          "latest_observation_utc": "2026-10-19T14:30:00Z",
+          "captured_bar_count": 1155
+        },
+        {
+          "symbol": "WINJ26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINJ26",
+          "earliest_observation_utc": "2026-02-24T09:15:00Z",
+          "latest_observation_utc": "2026-04-15T16:55:00Z",
+          "captured_bar_count": 4096
         },
         {
           "symbol": "WINJ27",
           "description": "IBOVESPA MINI",
           "path": "BVMF-Derivatives\\WINJ27",
           "earliest_observation_utc": "2026-10-08T09:05:00Z",
-          "latest_observation_utc": "2026-10-16T17:40:00Z",
-          "captured_bar_count": 15
+          "latest_observation_utc": "2026-10-19T13:30:00Z",
+          "captured_bar_count": 19
         },
         {
-          "symbol": "WINZ22",
+          "symbol": "WINM26",
           "description": "IBOVESPA MINI",
-          "path": "GTW_BMF\\WINZ22",
-          "earliest_observation_utc": "2022-10-21T13:45:00Z",
-          "latest_observation_utc": "2022-12-14T17:55:00Z",
+          "path": "BVMF-Derivatives\\WINM26",
+          "earliest_observation_utc": "2026-04-24T18:30:00Z",
+          "latest_observation_utc": "2026-06-17T16:55:00Z",
           "captured_bar_count": 4096
         },
         {
-          "symbol": "WINZ26",
+          "symbol": "WINQ26",
           "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINZ26",
-          "earliest_observation_utc": "2026-08-25T18:15:00Z",
-          "latest_observation_utc": "2026-10-16T18:30:00Z",
+          "path": "BVMF-Derivatives\\WINQ26",
+          "earliest_observation_utc": "2026-06-23T15:15:00Z",
+          "latest_observation_utc": "2026-08-12T16:55:00Z",
           "captured_bar_count": 4096
         }
       ],
@@ -967,31 +983,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
-        "repository": "Sentmint/Crawl-Scrape",
-        "path": "data_collected/twitter/#DELL/1678329877.949008.csv",
-        "html_url": "https://github.com/Sentmint/Crawl-Scrape/blob/b1f068682b691ba80ee687ea9ccdff2f231b21d5/data_collected/twitter/#DELL/1678329877.949008.csv",
-        "search_priority": 4,
-        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
-        "independent_of_invalidated_source": true,
-        "free_auditable_candidate": true,
-        "identity_qa_pass": false,
-        "schema_qa_pass": false,
-        "publication_semantics_proven": false,
-        "revision_semantics_proven": false,
-        "point_in_time_valid": false,
-        "status": "DISCOVERED_NOT_QUALIFIED",
-        "inspection_error": "AttributeError: 'list' object has no attribute 'get'",
-        "deficiencies": [
-          "IDENTITY_NOT_PROVEN",
-          "INTRADAY_SCHEMA_NOT_PROVEN",
-          "PUBLICATION_SEMANTICS_NOT_PROVEN",
-          "REVISION_SEMANTICS_NOT_PROVEN",
-          "PIT_NOT_PROVEN"
-        ]
-      },
-      {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "igorsterner/TongueSwitcher",
         "path": "resources/frequency_sorted_islands/1.csv",
         "html_url": "https://github.com/igorsterner/TongueSwitcher/blob/a1ad4a293b01a1f420ee078b51233454b5462dc1/resources/frequency_sorted_islands/1.csv",
@@ -1016,7 +1008,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "is-shah/Beyond-Cookies",
         "path": "subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
         "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/816068193100ec37e9df6869a70f9b88b9a5fa1e/subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
@@ -1041,7 +1033,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "is-shah/Beyond-Cookies",
         "path": "subcode_for_analysis/Split_disclosure_output/class_4.csv",
         "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/816068193100ec37e9df6869a70f9b88b9a5fa1e/subcode_for_analysis/Split_disclosure_output/class_4.csv",
@@ -1066,7 +1058,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "lei20191116/AlignmentSys",
         "path": "twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
         "html_url": "https://github.com/lei20191116/AlignmentSys/blob/e6882b08810e755af90be9ff1d305670595c54dc/twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
@@ -1162,14 +1154,19 @@
         ]
       },
       {
-        "query": "\"mini indice\" intraday B3 extension:csv",
+        "query": "WIN$N 5min extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WIN%24N+5min+extension%3Acsv&per_page=30"
       },
       {
-        "query": "\"WIN continuous\" futures Brazil extension:csv",
+        "query": "WINFUT timestamp open high low close extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+timestamp+open+high+low+close+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "WINFUT datetime open high low close extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+datetime+open+high+low+close+extension%3Acsv&per_page=30"
       }
     ],
     "reachable_official_probe_count": 6,
@@ -1177,7 +1174,7 @@
     "schema_identity_candidate_count": 0,
     "irrelevant_identity_candidate_count": 25,
     "github_query_count": 12,
-    "github_candidate_count": 36,
+    "github_candidate_count": 35,
     "github_per_query": 30,
     "original_invalidated_source_excluded_from_independent_candidates": true
   },
