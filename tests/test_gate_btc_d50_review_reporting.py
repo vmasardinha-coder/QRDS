@@ -17,7 +17,7 @@ BASE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE/'tools'))
 import gate_btc_d50_data_review_reporting as helper
 REVIEW = BASE/'artifacts/gate_btc_2/separate_reviews_20261019/D50_PARECER.json'
-CONTRACT = BASE/'tests/fixtures/d50_review/candidate_contract_v32.json'
+CONTRACT = BASE/'artifacts/gate_btc_2/separate_reviews_20261019/d50_review_fixture/candidate_contract_v32.json'
 
 class ReviewReportingTests(unittest.TestCase):
     def setUp(self):
@@ -92,7 +92,7 @@ class ReviewReportingTests(unittest.TestCase):
         before=economic.read_bytes()
         output=io.StringIO()
         with patch.object(helper,'DEFAULT_REVIEW_PATH',REVIEW), patch.object(sys,'argv',['governance',str(install),str(proj),str(state),str(downloads)]),contextlib.redirect_stdout(output):
-            runpy.run_path(str(BASE/'d50_patches/gate_btc_governance_master_v1.py'))
+            runpy.run_path(str(BASE/'artifacts/gate_btc_2/separate_reviews_20261019/d50_reporting_patches/gate_btc_governance_master_v1.py'))
         master=json.loads((state/'GATE_BTC_MASTER_POSITION_SIDECAR_LATEST.json').read_text(encoding='utf-8'))
         self.assertTrue(master['current_documentary_adjudication']['INDEPENDENT_DATA_AUDIT_COMPLETED'])
         self.assertFalse(master['governance']['engine_feed'])
@@ -114,7 +114,7 @@ class ReviewReportingTests(unittest.TestCase):
         stub('repair',repair_historical_master=None)
         stub('snapshot',collect_prospective_snapshot=None,evaluate_qualification=lambda runtime:certificate)
         modules[package+'.gate_btc_d50_data_review_reporting']=helper
-        spec=importlib.util.spec_from_file_location(package+'.cli',BASE/'d50_patches/cli.py');cli=importlib.util.module_from_spec(spec)
+        spec=importlib.util.spec_from_file_location(package+'.cli',BASE/'artifacts/gate_btc_2/separate_reviews_20261019/d50_reporting_patches/cli.py');cli=importlib.util.module_from_spec(spec)
         lines=[];output=io.StringIO()
         with patch.dict(sys.modules,modules),patch.object(helper,'DEFAULT_REVIEW_PATH',REVIEW):
             spec.loader.exec_module(cli)
