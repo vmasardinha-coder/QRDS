@@ -7,6 +7,8 @@ on:
       - tools/gate_btc_b3_gap_classifier.py
       - tools/gate_btc_b3_h31_prospective_collect.py
       - tools/gate_btc_h31_source_preflight.py
+      - tools/gate_btc_h31_target_session.py
+      - tests/test_gate_btc_h31_target_session.py
       - tools/gate_btc_h31_recent_source.py
       - tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json
       - tools/gate_btc_factory/H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json
@@ -21,6 +23,8 @@ on:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
       - "tools/gate_btc_h31_source_preflight.py"
+      - "tools/gate_btc_h31_target_session.py"
+      - "tests/test_gate_btc_h31_target_session.py"
       - "tools/gate_btc_h31_recent_source.py"
       - "tools/gate_btc_factory/H31_SOURCE_CONTINUATION_20261015.v1.json"
       - "tools/gate_btc_factory/H31_SOURCE_CALENDAR_EXTENSION_20261021.v1.json"
@@ -60,6 +64,7 @@ jobs:
           python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
           python -m unittest -v tests/test_gate_btc_b3_gap_classifier_source.py tests/test_gate_btc_b3_gap_classifier_schedule.py
           python -m unittest discover -s tests -p 'test_gate_btc_h31_source_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_gate_btc_h31_target_session.py' -v
           python -m unittest discover -s tests -p 'test_gate_btc_h31_recent_source.py' -v
           python tools/gate_btc_b3_h31_prospective_collect.py --source-preflight-only --date 2099-01-01 --operations-status-out /tmp/H31_SOURCE_PREFLIGHT.json
           python -c "import json; p=json.load(open('/tmp/H31_SOURCE_PREFLIGHT.json')); assert p['target_session_bound'] is False; assert p['eligible_observation_increment']==0"
@@ -83,20 +88,16 @@ jobs:
       - name: Resolve immutable target session
         id: target
         run: |
-          TARGET_DATE=$(date -u -d 'yesterday' +%F)
-          python - "$TARGET_DATE" <<'PY'
-          import datetime as dt, sys
-          d=dt.date.fromisoformat(sys.argv[1])
-          assert d.weekday() < 5, f"H31 target must be Mon-Fri, got {d}"
-          PY
-          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+          python tools/gate_btc_h31_target_session.py --github-output "$GITHUB_OUTPUT"
       - name: Check out append-only runtime branch
+        if: steps.target.outputs.eligible == 'true'
         uses: actions/checkout@v4
         with:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 0
       - name: Check immutable source calendar before historical downloads
+        if: steps.target.outputs.eligible == 'true'
         id: source_preflight
         run: |
           python tools/gate_btc_b3_h31_prospective_collect.py \
@@ -114,7 +115,7 @@ jobs:
           print('ELIGIBLE_OBSERVATION_INCREMENT=0')
           PY
       - name: Collect H31 prospective observation or record ordinary gap
-        if: steps.source_preflight.outputs.bound == 'true'
+        if: steps.target.outputs.eligible == 'true' && steps.source_preflight.outputs.bound == 'true'
         run: |
           set -uo pipefail
           set +e
@@ -166,6 +167,7 @@ jobs:
             fi
           fi
       - name: Assert public status contains no partial economics
+        if: steps.target.outputs.eligible == 'true'
         run: |
           python - <<'PY'
           import json
@@ -183,6 +185,7 @@ jobs:
             assert g['synthetic_backfill'] is False
           PY
       - name: Publish append-only H31 runtime evidence
+        if: steps.target.outputs.eligible == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail

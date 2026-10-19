@@ -295,12 +295,17 @@ def main() -> int:
     if not args.runtime_root or not args.prereg or not args.out_dir:
         raise SystemExit("runtime-root, prereg and out-dir are required")
 
+    # Each invocation owns its output batch, including WAIT and idempotent exits.
+    # Never let a prior SESSION_RECORD accompany a new non-capture STATUS.
+    out = Path(args.out_dir)
+    for name in ("STATUS.json", "SESSION_RECORD.json"):
+        (out / name).unlink(missing_ok=True)
+
     now = datetime.now(TZ)
     runtime = Path(args.runtime_root)
     prereg = load(Path(args.prereg))
     if prereg.get("status") != "PREREGISTERED_BEFORE_FIRST_FORWARD_OBSERVATION":
         raise RuntimeError("COLLECTOR_PREREG_MISMATCH")
-    out = Path(args.out_dir)
     manifest_path = runtime / prereg["upstream_binding"]["runtime_manifest"]
     if not manifest_path.exists():
         dump(out / "STATUS.json", wait_result("WAIT_SOURCE_BINDING", now))

@@ -198,7 +198,7 @@ def verify_sources(epoch, cutoff, evidence=None):
 
 
 def run(args, clock=lambda: datetime.now(timezone.utc)):
-    from tools.gate_btc_momentum_required_prices import collect
+    from tools.gate_btc_momentum_required_prices import collect, required_assets
     config, contract = load_json(APPROVAL), load_json(CONTRACT)
     root = Path(args.ledger_dir)
     epoch = setup(root, config, contract)
@@ -229,9 +229,15 @@ def run(args, clock=lambda: datetime.now(timezone.utc)):
     if ledger and (date.fromisoformat(latest) - date.fromisoformat(ledger['state']['last_cutoff'])).days != 1:
         raise ValueError('GAP_OR_OUT_OF_ORDER_NO_SILENT_BRIDGE')
     if args.phase == 'prepare':
-        manifest = collect(snapshot, ledger['state'] if ledger else None,
-                           epoch / 'source_prices', Path(args.output_zip), clock=clock)
+        # A HOLD values only existing quantities. Unbought ranking candidates
+        # cannot block that mark; their prices become mandatory at rebalance.
+        state = ledger['state'] if ledger else None
+        rebalance_due = ledger is None or (state['return_observations'] + 1) % config['rebalance_every_closes'] == 0
+        required = required_assets(snapshot, state, include_current_selections=rebalance_due)
+        manifest = collect(snapshot, state, epoch / 'source_prices', Path(args.output_zip),
+                           clock=clock, assets=required)
         save(epoch / 'PRICE_COVERAGE_STATUS.json', {**SAFETY, 'status': 'PASS_REQUIRED_PRICE_COVERAGE',
+            'pricing_scope': 'ACTIVATION_OR_REBALANCE' if rebalance_due else 'HELD_POSITIONS_ONLY',
             'cutoff': latest, 'required_assets': manifest['required_assets'],
             'available_at_utc': manifest['available_at_utc'], 'scientific_credit': 0})
         return {'status': 'PRICES_READY', 'price_count': manifest['price_count']}
