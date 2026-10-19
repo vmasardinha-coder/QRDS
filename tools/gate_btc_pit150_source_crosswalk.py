@@ -1,7 +1,10 @@
 """Read-only source qualification worklist; never admits registry data to PIT150."""
 from __future__ import annotations
 import argparse
+import csv
+import gzip
 import hashlib
+import io
 import json
 import re
 from collections import Counter
@@ -168,6 +171,89 @@ def validate_authoritative_status(diagnostic, status):
     return {field: diagnostic[field] for field in fields}
 
 
+def selected_identities(snapshot, runtime_root, diagnostic):
+    """Reproduce the existing fetch slice from hash-bound raw universe bytes."""
+    if (snapshot.get("snapshot_id") != diagnostic.get("snapshot_id")
+            or snapshot.get("source_data_as_of") != diagnostic.get("data_as_of")
+            or str(snapshot.get("source_run_id")) != str(diagnostic.get("source_run_id"))):
+        raise ValueError("selection snapshot disagrees with current diagnostic")
+    archive = snapshot["universe_archive"]
+    root = Path(runtime_root).resolve()
+    path = (root / archive["archive_path"]).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError("universe archive outside runtime root")
+    compressed = path.read_bytes()
+    if hashlib.sha256(compressed).hexdigest() != archive["archive_sha256"]:
+        raise ValueError("universe archive hash mismatch")
+    raw = gzip.decompress(compressed)
+    if (hashlib.sha256(raw).hexdigest() != archive["raw_sha256"]
+            or len(raw) != archive["raw_size_bytes"]):
+        raise ValueError("universe source bytes mismatch")
+    rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
+    def flag(row, key):
+        if row.get(key) not in ("True", "False"):
+            raise ValueError("invalid universe eligibility flag")
+        return row[key] == "True"
+    eligible = [r for r in rows if flag(r, "standard_ticker")
+                and not flag(r, "is_stable") and not flag(r, "is_blocked")][:150]
+    # Same ordering/deduplication as the current V2A producer; not a new selector.
+    symbols = list(dict.fromkeys(["BTC", "ETH"] + [r["symbol"] for r in eligible]))
+    identities = {}
+    for symbol in symbols:
+        matches = [r for r in rows if r["symbol"] == symbol]
+        if len(matches) != 1 or not matches[0].get("id"):
+            raise ValueError("ambiguous selected asset identity")
+        identities[symbol] = matches[0]["id"]
+    if len(identities) != diagnostic["attempted_symbols"] or len(set(identities.values())) != len(identities):
+        raise ValueError("selection count or identity mismatch")
+    if any(identities.get(r["symbol"]) != r["coin_id"] for r in diagnostic["rows"]):
+        raise ValueError("failure identity outside verified selection")
+    return set(identities.values())
+
+
+def retain_case_history(report, histories=(), selection=None):
+    """Never interpret disappearance from the failure list as a proven repair."""
+    current_date = date.fromisoformat(report["data_as_of"])
+    current_ids = {a["pit150_identity"] for a in report["assets"]}
+    known = {}
+    for history in histories:
+        history_date = date.fromisoformat(history["data_as_of"])
+        if history_date > current_date:
+            raise ValueError("case history is later than current diagnostic")
+        rows = history.get("assets", []) + history.get("tracked_cases_not_current_failures", [])
+        seen = set()
+        for row in rows:
+            identity, symbol = row.get("pit150_identity"), row.get("symbol")
+            if not isinstance(identity, str) or not identity or not isinstance(symbol, str) or not symbol:
+                raise ValueError("case history lacks exact identity")
+            if identity in seen:
+                raise ValueError("duplicate case history identity")
+            seen.add(identity)
+            previous = known.get(identity)
+            last = date.fromisoformat(row.get("last_observed_failure_cutoff", history["data_as_of"]))
+            if last > history_date:
+                raise ValueError("case failure cutoff exceeds history date")
+            if previous is None or last >= date.fromisoformat(previous["last_observed_failure_cutoff"]):
+                known[identity] = {**row, "last_observed_failure_cutoff": last.isoformat()}
+    tracked = []
+    for identity, row in sorted(known.items()):
+        if identity in current_ids:
+            continue
+        state = ("NOT_CURRENT_FAILURE_SELECTION_UNVERIFIED" if selection is None else
+                 "OUTSIDE_CURRENT_SELECTION_NO_REPAIR_PROVEN" if identity not in selection else
+                 "CURRENTLY_SELECTED_WITHOUT_FAILURE_REPAIR_CAUSE_NOT_PROVEN")
+        tracked.append({**row, "tracking_status": state,
+                        "coverage_dependency_resolved": False,
+                        "repair_proven_by_disappearance": False,
+                        "pit150_source_substitution_authorized": False,
+                        "legacy_gap_resolved": False})
+    return {**report, "tracked_cases_not_current_failures": tracked,
+            "tracked_prior_case_count": len(tracked),
+            "case_tracking_counts": dict(Counter(r["tracking_status"] for r in tracked)),
+            "selection_membership_verified": selection is not None,
+            "loaded_count_change_is_not_repair_evidence": True}
+
+
 def main():
     parser = argparse.ArgumentParser()
     choice = parser.add_mutually_exclusive_group(required=True)
@@ -177,6 +263,9 @@ def main():
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--structural-registry", type=Path)
     parser.add_argument("--case-review", type=Path)
+    parser.add_argument("--case-history", type=Path)
+    parser.add_argument("--previous-followup", type=Path)
+    parser.add_argument("--selection-runtime-root", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     status_raw = args.status.read_bytes() if args.status else None
@@ -195,12 +284,43 @@ def main():
     review_raw = args.case_review.read_bytes() if args.case_review else None
     report = build_crosswalk(json.loads(diagnostic_raw), json.loads(registry_raw), exclusions,
                              json.loads(review_raw) if review_raw else None)
+    history_raw = []
+    if args.case_history:
+        history_raw.append(("case_history", args.case_history.read_bytes()))
+    if args.previous_followup and args.previous_followup.exists():
+        history_raw.append(("previous_followup", args.previous_followup.read_bytes()))
+    selection = None
+    selection_raw = None
+    if args.selection_runtime_root:
+        if not status:
+            parser.error("--selection-runtime-root requires --status")
+        snapshot_id = status["latest_snapshot_id"]
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", snapshot_id):
+            raise ValueError("invalid selection snapshot id")
+        selection_raw = (args.selection_runtime_root / "snapshots" / (snapshot_id + ".json")).read_bytes()
+        selection = selected_identities(json.loads(selection_raw), args.selection_runtime_root,
+                                        json.loads(diagnostic_raw))
+    if history_raw or args.selection_runtime_root:
+        report = retain_case_history(report, [json.loads(raw) for _, raw in history_raw], selection)
     report["input_sha256"] = {
         "diagnostic": hashlib.sha256(diagnostic_raw).hexdigest(),
         "registry": hashlib.sha256(registry_raw).hexdigest(),
     }
     if review_raw:
         report["input_sha256"]["case_review"] = hashlib.sha256(review_raw).hexdigest()
+    for name, raw in history_raw:
+        # Do not hash the prior output into itself: that would churn forever
+        # on an otherwise identical rerun. Bind the retained case content.
+        if name != "previous_followup":
+            report["input_sha256"][name] = hashlib.sha256(raw).hexdigest()
+    if history_raw:
+        membership = [(r["pit150_identity"], r["symbol"],
+                       r.get("last_observed_failure_cutoff", report["data_as_of"]))
+                      for r in report["assets"] + report["tracked_cases_not_current_failures"]]
+        report["input_sha256"]["retained_case_membership"] = hashlib.sha256(
+            json.dumps(sorted(membership), separators=(",", ":")).encode()).hexdigest()
+    if selection_raw:
+        report["input_sha256"]["selection_snapshot"] = hashlib.sha256(selection_raw).hexdigest()
     if structural_raw:
         report["input_sha256"]["structural_registry"] = hashlib.sha256(structural_raw).hexdigest()
     if binding:
@@ -217,4 +337,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
