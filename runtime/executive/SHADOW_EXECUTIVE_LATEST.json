@@ -306,7 +306,7 @@
             "inventory_only": true,
             "ledger_id": "b3_h31_shadow_paper",
             "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-            "sha256": "0cf0167d9155c7893e4794b4cbf7b883d1ad5a4b88d17368921bf7b190507ffd",
+            "sha256": "0ec9e1db2dd66e01daf0e9c9475335a175ac3a73b6b0d4d7baef46b46024e7ee",
             "source": "ledgers/b3_h31_shadow_paper/STATUS.json",
             "status": "UNKNOWN"
           }
@@ -366,7 +366,7 @@
               "promotion_allowed": false,
               "real_capital_used": 0,
               "schema": "gate_btc.v16b1.status.v1",
-              "sha256": "f1761f6fdd05fe3ea8cad0f56701516b5cb8a603e494185bad70250cd0594cfb",
+              "sha256": "f13a5d4e59e544f608fcb596b8bee9547a406224387cd1013982560b25d71602",
               "source": "ledgers/v16b1/STATUS.json",
               "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
             }
@@ -814,7 +814,7 @@
                 "scientific_blockers": [],
                 "scientific_observations_credited": 0,
                 "scientific_target": null,
-                "sha256": "aee5d469e38f22a89b765d85e5466d7570427d9497637e52fc09a2bdf00fb2c7",
+                "sha256": "05e9c42560e94279bee3bd77471bc5066acd88b6f70b4b93091f099543d5e15b",
                 "source": "ledgers/d100/STATUS.json",
                 "status": "ACTIVE_PHYSICAL_DATA_FEED"
               }
@@ -881,7 +881,7 @@
                 "orders_generated": 0,
                 "real_capital_used": 0,
                 "schema": "gate_btc.qos_covered_delivery.v1",
-                "sha256": "673d681219a143c725ef3ebdbb4e1fa9da335e4b71215e72fe4bff74eb06d4e8",
+                "sha256": "c481e408d0daec944638828dc3d680a37c5099e78775cd2aad7e926980baeef3",
                 "source": "ledgers/qos_three_track/STATUS.json",
                 "status": "WAITING_NEXT_APPROVED_MONTH_END"
               }
@@ -972,7 +972,7 @@
             "scientific_blockers": [],
             "scientific_observations_credited": 0,
             "scientific_target": null,
-            "sha256": "aee5d469e38f22a89b765d85e5466d7570427d9497637e52fc09a2bdf00fb2c7",
+            "sha256": "05e9c42560e94279bee3bd77471bc5066acd88b6f70b4b93091f099543d5e15b",
             "source": "ledgers/d100/STATUS.json",
             "status": "ACTIVE_PHYSICAL_DATA_FEED"
           },
@@ -1029,23 +1029,31 @@
           }
         },
         "system12": {
+          "adjudication_decision": "PASS",
+          "adjudication_receipt_semantic_sha256": "00ae74518d9e391c90d7cf0cff7ac59a2004c5f3d79f7ccc360ff8032df56a12",
+          "adjudication_receipt_status": "VERIFIED_SEPARATE_AGENT_ADJUDICATION",
+          "adjudication_reporting_status": "VERIFIED_PINNED_READINESS_PROJECTION",
+          "adjudication_scope": "HASH_BOUND_SYSTEM11_EXECUTION_IMPLEMENTATION_PARITY_ONLY",
           "compared_events": 3307200,
           "contract_sha256": "d06c294dfb74f699ab46333160fb69cca6ec53d605ce0909e41c036ff46866d3",
           "implementation_replication_pass": true,
-          "independent_adjudication_executed": false,
-          "next_action": "INDEPENDENT_ADJUDICATION_OF_HASH_BOUND_IMPLEMENTATION_REPLICATION",
+          "independent_adjudication_executed": true,
+          "next_action": "BIND_EXPLICIT_POST_REVIEW_RELEASE_WITHOUT_REFREEZE",
+          "raw_implementation_status_preserved": "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION",
           "readiness_status": "FROZEN_PARITY_ADJUDICATED_PENDING_FORMAL_RELEASE",
           "reporting_only": true,
           "scenario_count": 300,
           "scientific_authority": false,
           "scientific_credit": 0,
-          "source": "gate_btc_2/system12/IMPLEMENTATION_REPLICATION.json",
+          "source": "gate_btc_2/system12/READINESS.json",
           "source_sha256": {
             "contract": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a",
+            "frozen_contract_authority": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a",
             "implementation": "bc0c36fcc70936c2460ef408b69dc2de4557590463ca3e8bb8b7d157124ae6fa",
-            "readiness": "2e4908bc72e4dd5de49094f272a9c43245c3fedcb24ef62c822914816f88fcd7"
+            "pinned_adjudication": "80ac1a7bb0e2ccf416f2e586fd7fb748ba2712bf368566759d3e6bf098357490",
+            "readiness": "6338aa06c351b5867a6c831a7480977eff749640235f5e962b272d2779397b72"
           },
-          "status": "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION",
+          "status": "FROZEN_PARITY_ADJUDICATED_PENDING_FORMAL_RELEASE",
           "system12_complete": false,
           "system13_dependency_released": false,
           "workflow_run_url": "https://github.com/vmasardinha-coder/QRDS/actions/runs/38088972067"
@@ -1274,6 +1282,6 @@
   "schema": "gate_btc.shadow_executive.v1",
   "scientific_authority": false,
   "shadow_only": true,
-  "source_reporting_state_sha256": "a03626237fb55833f966e73905b09c316da331bbdbd7557f9f73a599d25ac35e",
+  "source_reporting_state_sha256": "48bace299cfc0077115bc1be0e8721c991be90e979b4f42e911a8badcfdca60d",
   "status": "COMPLETE_WITH_EXPLICIT_ND"
 }
