@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-20T01:54:08.219096Z",
+  "generated_at_utc": "2026-10-20T04:38:41.113616Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "66c06a22eaeb09131739ebe39502cd0e6d8b9d4d158af6602dd030c231a8f88a",
+        "sample_sha256": "0eafe7d98d470d6bfa535f6aab4cd9201c425ea84ab92644b73214b0cfcdeb39",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -221,9 +221,9 @@
     ],
     "mt5_read_only_source_evidence": {
       "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
-      "source_packet_sha256": "966df51db40c6beb54b4b6ae511e20fcd87f5bc40fbebecf6f399a7e030e4814",
+      "source_packet_sha256": "35572d7be388fdd49cbfc50042fad9c25cc1841b86b9e9087d9e696d33487eeb",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
-      "matching_record_count": 12,
+      "matching_record_count": 11,
       "matching_records": [
         {
           "symbol": "WING23",
@@ -311,14 +311,6 @@
           "path": "BVMF-Derivatives\\WINZ25",
           "earliest_observation_utc": "2025-10-28T09:30:00Z",
           "latest_observation_utc": "2025-12-17T17:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WINZ26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINZ26",
-          "earliest_observation_utc": "2026-08-26T18:30:00Z",
-          "latest_observation_utc": "2026-10-19T18:30:00Z",
           "captured_bar_count": 4096
         }
       ],
@@ -1216,6 +1208,11 @@
           "REVISION_SEMANTICS_NOT_PROVEN",
           "PIT_NOT_PROVEN"
         ]
+      },
+      {
+        "query": "WINFUT datetime open high low close extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+datetime+open+high+low+close+extension%3Acsv&per_page=30"
       },
       {
         "query": "\"mini indice futuro\" 5min extension:csv",
