@@ -225,3 +225,69 @@ class NativeCandidateAuditContinuityTests(unittest.TestCase):
         out = retain_native_candidate_audit(report, audit)
         self.assertTrue(out["tracked_cases_not_current_failures"][0]["bounded_source_review_completed"])
         self.assertFalse(out["tracked_cases_not_current_failures"][0]["legacy_gap_resolved"])
+
+class RecoveredSeedReviewTests(unittest.TestCase):
+    def test_actual_prior_cases_remain_visible_without_changing_admission(self):
+        import json
+        from pathlib import Path
+        root=Path(__file__).resolve().parents[1]
+        review=json.loads((root/"artifacts/gate_btc_2/pit150_cases_review_20261015/CASE_LEDGER.json").read_text(encoding="utf-8"))
+        expected={"APXUSD":"HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED",
+                  "OHM":"AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
+                  "USDAI":"AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
+                  "YLDS":"AWAITING_FUND_EXECUTION_SEMANTICS_PROOF",
+                  "SAFO":"AWAITING_FUND_EXECUTION_SEMANTICS_PROOF"}
+        cases=[c for c in review["cases"] if c["symbol"] in expected]
+        self.assertEqual(len(cases),5)
+        diagnostic={"data_as_of":"2026-10-19","attempted_symbols":150,
+            "loaded_symbols":145,"failed_symbols":5,"rows":[
+            {"symbol":c["symbol"],"coin_id":c["coin_id"],"action_class":"SOURCE_RECOVERY_CANDIDATE",
+             "failure_reason":"no candles","observed_history_rows":None} for c in cases]}
+        registry={"entry_count":4,"entries":[{"symbol":c["symbol"],"source_admitted":True,
+            "qa_pass":True,"qualification":"QUALIFIED_EXACT_SOURCE",
+            "evidence_stage":"RECOVERED_46_MERGED_SEED"} for c in cases if c["symbol"]!="SAFO"]}
+        original=copy.deepcopy((diagnostic,registry,review))
+        out=build_crosswalk(diagnostic,registry,[],review)
+        for row in out["assets"]:
+            self.assertEqual(row["operational_work_state"],expected[row["symbol"]])
+            self.assertEqual(row["prior_case_review"]["review_date"],"2026-10-15")
+            self.assertTrue(row["bounded_source_review_completed"])
+            self.assertFalse(row["coverage_dependency_resolved"])
+            self.assertFalse(row["pit150_source_substitution_authorized"])
+            if row["symbol"]!="SAFO":
+                self.assertEqual(row["worklist_state"],"QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN")
+                self.assertTrue(row["registry_seed_is_not_current_pit150_qualification"])
+        self.assertEqual((out["legacy_loaded_symbols"],out["failure_count"],out["scientific_credit"]),(145,5,0))
+        self.assertEqual((diagnostic,registry,review),original)
+
+    def test_non_seed_qualified_contract_keeps_review_without_downgrade(self):
+        diagnostic,registry,review=PriorReviewContinuityTests().inputs("PUBLIC_ARCHIVE_GAPS_BLOCK")
+        registry={"entry_count":1,"entries":[{"symbol":"SOFID","coin_id":"sofiusd",
+            "source_admitted":True,"qa_pass":True,"qualification":"QUALIFIED_EXACT_SOURCE",
+            "evidence_stage":"NEW_EXACT_SOURCE_QUALIFICATION"}]}
+        row=build_crosswalk(diagnostic,registry,[],review)["assets"][0]
+        self.assertEqual(row["operational_work_state"],"QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN")
+        self.assertEqual(row["prior_case_review"]["category"],"PUBLIC_ARCHIVE_GAPS_BLOCK")
+        self.assertNotIn("registry_seed_is_not_current_pit150_qualification",row)
+
+class APXUSDPhysicalReceiptTests(unittest.TestCase):
+    def test_native_payload_hashes_and_completed_history_count(self):
+        import json,hashlib,zipfile
+        from datetime import date,timedelta
+        from pathlib import Path
+        out=Path(__file__).resolve().parents[1]/"artifacts/gate_btc_2/pit150_apxusd_review_20261020"
+        report=json.loads((out/"REVIEW.json").read_bytes())
+        raw=(out/"ROWS.json").read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),report["rows_sha256"])
+        with zipfile.ZipFile(out/"RAW_SOURCE.zip") as z:
+            for key,name in [("assets","RAW_ASSETS.json"),("pairs","RAW_PAIRS.json"),("ohlcv","RAW_OHLCV.json")]:
+                self.assertEqual(hashlib.sha256(z.read(name)).hexdigest(),report["evidence"]["raw_sha256"][key])
+        rows=json.loads(raw)
+        first=date.fromisoformat(report["first_day"]);last=date.fromisoformat(report["data_as_of"])
+        expected=[(first+timedelta(days=i)).isoformat() for i in range((last-first).days+1)]
+        self.assertEqual([r["day"] for r in rows],expected)
+        self.assertEqual((len(rows),report["rows_still_needed"]),(183,17))
+        self.assertEqual(report["earliest_200_if_continuous"],(first+timedelta(days=199)).isoformat())
+        self.assertEqual(report["evidence"]["identity"]["wsname"],"APXUSD/USD")
+        self.assertFalse(report["pit150_admitted"])
+        self.assertEqual(report["scientific_credit"],0)

@@ -35,6 +35,8 @@ OPERATIONAL_STATES = {
     "FUND_SCOPE_REVIEW": "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION",
     "ACCESS_IDENTITY_REVIEW": "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF",
     "SHORT_SOURCE_HISTORY": "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED",
+    "FUND_EXECUTION_SEMANTICS_REVIEW": "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF",
+    "PUBLIC_ARCHIVE_GAPS_BLOCK": "AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
 }
 
 
@@ -70,7 +72,7 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=(), 
             candidate = {k: entry.get(k) for k in (
                 "coin_id", "source_identity", "source_symbol", "qualification",
                 "source_admitted", "qa_pass", "cutoff_semantics",
-                "provenance_sha256", "adjudication_pr",
+                "provenance_sha256", "adjudication_pr", "evidence_stage",
             )}
             identity = ("COIN_ID_MATCH_ONLY" if entry.get("coin_id") == row["coin_id"]
                         else "COIN_ID_MISMATCH" if entry.get("coin_id")
@@ -115,17 +117,24 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=(), 
             continue
         asset["prior_case_review_binding"] = "EXACT_COIN_ID_MATCH_ADVISORY_ONLY"
         state = OPERATIONAL_STATES.get(item["category"])
-        if state is None or asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN":
-            continue
-        asset["operational_work_state"] = state
-        asset["bounded_source_review_completed"] = True
-        asset["coverage_dependency_resolved"] = False
+        # Retain exact-identity review evidence even when a registry contract
+        # takes precedence. A recovered seed is not a later PIT150 QA verdict.
         asset["prior_case_review"] = {
             "review_date": case_review["review_date"],
             "category": item["category"],
             "evidence_cutoff": item.get("baseline_cutoff"),
             "evidence": item["evidence"],
         }
+        candidate = asset["registry_candidate"] or {}
+        recovered_seed = candidate.get("evidence_stage") == "RECOVERED_46_MERGED_SEED"
+        qualified_contract = asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
+        if state is None or (qualified_contract and not recovered_seed):
+            continue
+        asset["operational_work_state"] = state
+        asset["bounded_source_review_completed"] = True
+        asset["coverage_dependency_resolved"] = False
+        if qualified_contract:
+            asset["registry_seed_is_not_current_pit150_qualification"] = True
         asset["next_action"] = item["next_action"]
         asset["reopen_review_only_for"] = [
             "materially_new_exact_source_or_access",
