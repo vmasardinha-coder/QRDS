@@ -73,9 +73,9 @@ Collector Supervisor owns operational health/freshness/expected-run/append/block
 
 ## Current priority / resume point
 
-The original roadmap is not restarted from system 1. Systems 1–8 are mature/closed enough to serve as foundation while remaining under regression protection. Systems9 and10 are completed research dependencies. The highest-value unresolved chain is now:
+The original roadmap is not restarted from system 1. Systems 1–8 are mature/closed enough to serve as foundation while remaining under regression protection. Systems9 and10 are completed research dependencies. Systems11 and12 have completed their frozen research dependencies. The highest-value unresolved work is now:
 
-`11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`
+`13 Qlib/ML: QRDS-governed panel and research contract -> 14 Barter-rs`
 
 System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be paused by this technology roadmap. System 16 remains deliberately deferred.
 
