@@ -1,0 +1,69 @@
+name: Factory 512 Nelogica Public Source Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/factory-512-nelogica-public-source-audit.yml'
+      - 'tools/gate_btc_factory/nelogica_public_winfut_m5_audit.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RESEARCH_ONLY: 'true'
+      SHADOW_ONLY: 'true'
+      NOT_APPROVED: 'true'
+      ENGINE_FEED: 'false'
+      ORDERS: '0'
+      REAL_CAPITAL: '0'
+      NO_BACKFILL: 'true'
+      NO_RETUNE: 'true'
+      FAIL_CLOSED: 'true'
+      H1_ECONOMICS_READ: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Assert immutable research boundary
+        run: |
+          test "$RESEARCH_ONLY" = true
+          test "$SHADOW_ONLY" = true
+          test "$NOT_APPROVED" = true
+          test "$ENGINE_FEED" = false
+          test "$ORDERS" = 0
+          test "$REAL_CAPITAL" = 0
+          test "$NO_BACKFILL" = true
+          test "$NO_RETUNE" = true
+          test "$FAIL_CLOSED" = true
+          test "$H1_ECONOMICS_READ" = false
+      - name: Audit fixed public Nelogica export
+        run: python tools/gate_btc_factory/nelogica_public_winfut_m5_audit.py
+      - name: Assert zero scientific credit
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/factory_512_nelogica_public/RESULT.json',encoding='utf-8'))
+          assert d['evaluation_namespace']=='RQ_STRICT_FORWARD_UNSEEN_2025_2026_V2'
+          assert d['scientific_admission_pass'] is False
+          assert d['credit']=={'scientific_family_credit':0,'prospective_credit':0,'historical_backfill_credit':0}
+          assert d['minimum_required']=={'total':322,'discovery':161,'replication':161}
+          print('CAPACITY_ONLY_PASS='+str(d['capacity_only_pass']))
+          print('VALID_SESSION_COUNTS='+str(d['structurally_valid_session_counts']))
+          print('RAW_SHA256='+d['raw_sha256'])
+          print('COLUMNS='+str(d['columns']))
+          print('IDENTITY_COLUMNS='+str(d['symbol_identity_columns']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-512-nelogica-public-source-audit-${{ github.run_id }}
+          path: artifacts/factory_512_nelogica_public/
+          if-no-files-found: warn
+          retention-days: 90
