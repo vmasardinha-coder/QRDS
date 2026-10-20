@@ -99,13 +99,16 @@
         "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the fund-flow feature is officially observable.",
         "window": "Use only CVM fund-report data whose official availability timestamp is strictly before the target B3 regular-session open; later reports roll prospectively to the next eligible session."
       },
+      "intake_next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "intake_operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "materialization_reconciliation_status": "RECONCILED",
       "mechanism": "Lagged Brazilian investment-fund subscriptions and redemptions, observed only after official publication, may transmit institutional flow pressure to subsequent B3 returns.",
-      "next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "next_action": "SOURCE_REQUALIFICATION_ONLY_IF_VERSIONED_PIT_VALUES_FOUND",
       "official_free_source_candidates": [
         "CVM",
         "B3"
       ],
-      "operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "operational_stage": "TERMINAL_SOURCE_REVIEW_CLOSED",
       "qualified_sources": [
         "B3",
         "CVM"
@@ -149,7 +152,7 @@
     {
       "blocker": null,
       "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
-      "collection_started": false,
+      "collection_started": true,
       "economics_read": false,
       "family_id": "XAGRAMMAR_728DC88D691B",
       "frozen_semantics": {
@@ -158,13 +161,16 @@
         "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the revised Focus vector is officially observable.",
         "window": "Only the latest completed official BCB Focus publication whose publication timestamp precedes the target B3 regular-session open; publications at or after the open roll prospectively to the next eligible session."
       },
+      "intake_next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "intake_operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "materialization_reconciliation_status": "RECONCILED",
       "mechanism": "Published Brazilian central-bank market-expectation revisions may transmit macro expectation information to strictly subsequent B3 returns.",
-      "next_action": "IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION",
+      "next_action": "WAIT_NEXT_ELIGIBLE_OFFICIAL_PUBLICATION",
       "official_free_source_candidates": [
         "BCB",
         "B3"
       ],
-      "operational_stage": "QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
+      "operational_stage": "COLLECTING_WAIT_NEXT_PUBLICATION",
       "qualified_sources": [
         "B3",
         "BCB"
@@ -352,7 +358,7 @@
     }
   ],
   "family_count": 12,
-  "generated_at_utc": "2026-10-20T16:54:39.841227+00:00",
+  "generated_at_utc": "2026-10-20T22:54:37.518057+00:00",
   "safety": {
     "ENGINE_FEED": false,
     "FAIL_CLOSED": true,
