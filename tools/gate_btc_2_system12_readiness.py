@@ -8,6 +8,8 @@ from pathlib import Path
 from gate_btc_2_system11_collection_status import status as collection_status
 from gate_btc_2_system11_stress_replay_v1 import AUTHORITY, digest, validate_pairs
 
+from gate_btc_system12_post_review_release import RELEASE_AUTHORITY, retain_post_review_release
+
 REPLICATION_AUTHORITY = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json"
 ADJUDICATION_AUTHORITY = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/separate_reviews_20261019/SISTEMA12_PARECER.json"
 ADJUDICATION_SEMANTIC_SHA256 = "00ae74518d9e391c90d7cf0cff7ac59a2004c5f3d79f7ccc360ff8032df56a12"
@@ -177,6 +179,7 @@ def main():
     ap.add_argument("--implementation-contract", type=Path)
     ap.add_argument("--implementation-replication", type=Path)
     ap.add_argument("--independent-adjudication", type=Path, default=ADJUDICATION_AUTHORITY)
+    ap.add_argument("--post-review-release", type=Path, default=RELEASE_AUTHORITY)
     a = ap.parse_args()
     if bool(a.implementation_contract) != bool(a.implementation_replication):
         ap.error("implementation contract and replication must be supplied together")
@@ -189,6 +192,8 @@ def main():
         result = retain_replication_progress(result, contract, replication)
         review = json.loads(a.independent_adjudication.read_text(encoding="utf-8")) if a.independent_adjudication.exists() else None
         result = retain_adjudication_progress(result, contract, review)
+        release = json.loads(a.post_review_release.read_text(encoding="utf-8")) if a.post_review_release.exists() else None
+        result = retain_post_review_release(result, contract, review, release)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     a.output.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
     print(json.dumps(result, sort_keys=True))

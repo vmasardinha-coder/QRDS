@@ -1,6 +1,6 @@
 # Gate BTC 2.0 — Canonical 16-System Master Plan
 
-Status: `RECONCILED_2026_10_10_SYSTEM12_IMPLEMENTATION_PARITY_PASS_PENDING_ADJUDICATION`
+Status: `RECONCILED_2026_10_20_SYSTEM12_FROZEN_PARITY_COMPLETE_SYSTEM13_PANEL_PENDING`
 
 This document restores the original Gate BTC 2.0 technology roadmap without restarting or redesigning the program. The 16 numbered systems remain the canonical roadmap. The Research/Strategy Factory, Evidence Factory and Collector Supervisor are permanent cross-cutting layers; they are not a phase 17 and do not replace any numbered system.
 
@@ -43,8 +43,8 @@ This document restores the original Gate BTC 2.0 technology roadmap without rest
 | 9 | hftbacktest | High-frequency microstructure, latency/fill realism | Stage 9 microstructure contract/builder/guarded capture path plus scheduled Bitget forward capture/admission/append-only ledger and prospective exit evaluator | Evidence Factory credits only admitted physical forward evidence | COMPLETE_RESEARCH_EXIT_GATE | Preserve canonical PASS_STAGE9_EXIT_GATE and append-only evidence; no economics or engine promotion | At least 168 admitted captures at/after 2026-09-08T00:00:00Z cover all 24 UTC hours, all 7 UTC weekdays and at least 167 elapsed hours; the fail-closed evaluator emits `PASS_STAGE9_EXIT_GATE` |
 | 10 | NautilusTrader | Institutional event-driven engine/reference | event/shadow/state boundaries partly internalized | Receives frozen candidates only; no execution authority | COMPLETE_RESEARCH_PARITY | Preserve the completed read-only parity proof under regression protection | Independent event replay/state parity demonstrated |
 | 11 | LOB | Order-book/microstructure evidence | Stage 9 foundation plus validated Cryptofeed L2/depth10 capture capability; rejected H_CF_LL_01 is not reusable as success | Can be emitted as required evidence; never synthesized | COMPLETE_RESEARCH_STRESS_REPLAY | Preserve hash-bound PASS: 11,072 pairs, 11 days, 300 scenarios; no economic claim | Causal book dataset + execution stress/replay passes frozen contract |
-| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | IMPLEMENTATION_PARITY_PASS_PENDING_INDEPENDENT_ADJUDICATION | Preserve run38088972067 hash-bound parity PASS (3,307,200 events/300 scenarios), then obtain independent adjudication; implementation parity alone never completes12 | Survivor requires hash-bound independent replication |
-| 13 | Qlib | Quant/ML dataset-feature-model research reference | dataset/PIT/regime/experiment infrastructure | Factory provides controlled hypothesis generation and multiple-test discipline | PARTIAL | Mature ML track only after baseline/data gates | ML candidate beats frozen baseline OOS under same evidence contract |
+| 12 | ml4t / independent backtest | Independent validation/replication line | independent replication is an explicit evidence gate; stress/ablation authorities exist | Evidence Factory separates discovery owner from scientific adjudication | COMPLETE_FROZEN_SCOPE_RESEARCH_PARITY | Preserve run38088972067, the separate-agent PASS and the separate post-review research release; no economic or capital claim | Survivor requires hash-bound independent replication |
+| 13 | Qlib | Quant/ML dataset-feature-model research reference | dataset/PIT/regime/experiment infrastructure | Factory provides controlled hypothesis generation and multiple-test discipline | PREREQUISITE_RELEASED_PANEL_PENDING | Bind a QRDS-governed historical cross-sectional panel and its own frozen research contract | ML candidate beats frozen baseline OOS under same evidence contract |
 | 14 | Barter-rs | Performant event/execution engine reference | event/safety/shadow concepts partly absorbed | Factory remains disconnected from engine feed | REFERENCE_PARTIAL | Benchmark/parity or explicit non-adoption decision | Functional parity demonstrated or documented decision that integration adds no evidence value |
 | 15 | LEAN / B3 | Multiasset/B3 research and validation | B3 Factory, H1/H31, Hxxx families, prospective clocks and multiasset infrastructure | Major Factory integration: autonomous family generation, replication, survival and collector activation | ADVANCED_ACTIVE | Continue families while repairing operational gaps and accumulating prospective evidence | Continuous generation→replication→survivor→prospective pipeline with frozen gates |
 | 16 | RL / LLM Agents / public strategies | Frontier research and external-agent/strategy evaluation | Safe prerequisites exist; not a production core | Factory provides future controlled intake/evaluation boundary | FUTURE_CONTROLLED | Do not activate before data/microstructure/replication foundations are mature | Open only under preregistered frozen protocol after prerequisite gates pass |
@@ -78,6 +78,14 @@ The original roadmap is not restarted from system 1. Systems 1–8 are mature/cl
 `11 LOB → 12 independent replication → 13 Qlib/ML → 14 Barter-rs`
 
 System 15 / LEAN-B3 + Strategy Factory continues in parallel and must not be paused by this technology roadmap. System 16 remains deliberately deferred.
+
+### Post-review research release — 2026-10-20
+
+System12's frozen implementation-parity task is complete after the pinned separate-agent PASS and the separately recorded research release in `artifacts/gate_btc_2/post_review_release_20261020/SYSTEM12_RESEARCH_RELEASE.json`. The original implementation receipt and frozen contract remain unchanged. READINESS and Factory reporting validate the same subject bindings and release digest before displaying completion.
+
+This releases only the System12 research prerequisite for System13. It awards no strategy survival, profitability, prospective observations, orders or capital. System13 itself is incomplete: integrated Qlib work still requires a QRDS-governed historical cross-sectional panel and a frozen research contract. The completed CSI300 sandbox is not QRDS evidence and is not rerun or reinstalled. System14 is not released by this record.
+
+The dated checkpoints below remain historical receipts, including their earlier pending-adjudication states.
 
 ### Current bounded checkpoint — 2026-10-10
 
