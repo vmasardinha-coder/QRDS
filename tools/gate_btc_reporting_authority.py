@@ -100,10 +100,75 @@ def system12_summary(root: Path) -> dict:
         and report.get("independent_adjudication_executed") is False
         and report.get("scientific_credit") == 0 and report.get("orders") == 0
         and report.get("real_capital_brl") == 0 and report.get("engine_feed") is False)
-    return {**result, "status": "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION" if valid
+    summary = {**result, "status": "PASS_IMPLEMENTATION_PARITY_PENDING_INDEPENDENT_ADJUDICATION" if valid
             else "BLOCKED_IMPLEMENTATION_RECEIPT_BINDING_OR_BOUNDARY_MISMATCH",
             "implementation_replication_pass": valid, "compared_events": report.get("compared_events"),
             "scenario_count": report.get("scenario_count"), "workflow_run_url": report.get("workflow_run_url"),
             "contract_sha256": report.get("contract_sha256"),
             "next_action": "INDEPENDENT_ADJUDICATION_OF_HASH_BOUND_IMPLEMENTATION_REPLICATION"}
 
+
+
+    return _system12_adjudication_summary(summary, data["readiness"], contract)
+
+
+def _system12_adjudication_summary(summary, readiness, contract):
+    """Project the pinned existing decision; do not adjudicate or release it."""
+    if not summary["implementation_replication_pass"]:
+        return summary
+    readiness = readiness or {}
+    authority = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2"
+    review_path = authority / "separate_reviews_20261019/SISTEMA12_PARECER.json"
+    contract_path = authority / "SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json"
+    digest = lambda obj: hashlib.sha256(json.dumps(
+        obj, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    expected = "00ae74518d9e391c90d7cf0cff7ac59a2004c5f3d79f7ccc360ff8032df56a12"
+    try:
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+        frozen = json.loads(contract_path.read_text(encoding="utf-8"))
+        valid = (
+            digest(review) == expected
+            and contract == frozen
+            and review["contract_semantic_sha256"] == digest(contract)
+            and review["subjects"]["bindings"] == contract["bindings"]
+            and readiness["schema"] == "gate_btc.2_0.system12_readiness.v1"
+            and readiness["replication_continuity_status"] == "VERIFIED_FROZEN_IMPLEMENTATION_PARITY_RECEIPT"
+            and readiness["frozen_replication_contract_sha256"] == digest(contract)
+            and readiness["frozen_replication_bindings"] == contract["bindings"]
+            and readiness["adjudicated_bindings"] == contract["bindings"]
+            and readiness["adjudication_receipt_status"] == "VERIFIED_SEPARATE_AGENT_ADJUDICATION"
+            and readiness["adjudication_receipt_semantic_sha256"] == expected
+            and readiness["adjudication_scope"] == review["scope"]
+            and readiness["adjudication_decision"] == review["decision"] == "PASS"
+            and readiness["independent_adjudication_executed"] is True
+            and all(readiness[k] is False for k in (
+                "system12_complete", "system13_dependency_released",
+                "system12_completion_authorized", "system13_release_authorized",
+                "engine_feed", "automatic_promotion"))
+            and all(type(readiness[k]) is int and readiness[k] == 0
+                    for k in ("scientific_credit", "orders", "real_capital_brl"))
+        )
+    except (KeyError, TypeError, ValueError, OSError):
+        valid = False
+    if not valid:
+        return {**summary, "adjudication_reporting_status": "NO_VERIFIED_BOUND_READINESS"}
+    out = {**summary,
+        "raw_implementation_status_preserved": summary["status"],
+        "source": "gate_btc_2/system12/READINESS.json",
+        "source_sha256": {**summary["source_sha256"],
+            "pinned_adjudication": hashlib.sha256(review_path.read_bytes()).hexdigest(),
+            "frozen_contract_authority": hashlib.sha256(contract_path.read_bytes()).hexdigest()},
+        "adjudication_reporting_status": "VERIFIED_PINNED_READINESS_PROJECTION",
+        "adjudication_receipt_status": readiness["adjudication_receipt_status"],
+        "adjudication_receipt_semantic_sha256": expected,
+        "adjudication_scope": review["scope"],
+        "adjudication_decision": "PASS",
+        "independent_adjudication_executed": True}
+    if (readiness.get("upstream_system11_ready") is True
+            and readiness.get("status") == "FROZEN_PARITY_ADJUDICATED_PENDING_FORMAL_RELEASE"):
+        out.update(status=readiness["status"],
+            next_action="BIND_EXPLICIT_POST_REVIEW_RELEASE_WITHOUT_REFREEZE")
+    else:
+        out.update(status="BLOCKED_CURRENT_READINESS_WITH_FROZEN_ADJUDICATION_RETAINED",
+            next_action="VERIFY_CURRENT_READINESS_WITHOUT_REOPENING_FROZEN_ADJUDICATION")
+    return out
