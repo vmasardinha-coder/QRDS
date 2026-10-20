@@ -1,0 +1,44 @@
+--- before/gate_btc_governance_master_v1.py
++++ after/gate_btc_governance_master_v1.py
+@@ -3,6 +3,7 @@
+ import csv
+ import sys
+ from datetime import datetime, timezone
++from gate_btc_d50_data_review_reporting import documentary_adjudication, reporting_lines
+ 
+ 
+ def load_json(path):
+@@ -28,6 +29,9 @@
+ 
+ d50 = load_json(state / "D50_PROSPECTIVE_STATUS_V2.json")
+ audit = load_json(state / "D50_POSITION_AUDIT_LATEST.json")
++
++# Documentary review only; AUTOPILOT V2 is not the audited V3.2 engine.
++adjudication = documentary_adjudication(prospective_status=d50)
+ 
+ d100_path = (
+     proj
+@@ -70,6 +74,7 @@
+ master_sidecar = {
+     "schema": "gate_btc.master_position_sidecar.v1",
+     "created_at_utc": now,
++    "current_documentary_adjudication": adjudication,
+     "status": "PASS" if master_positions else "WARN_NO_POSITION_AUDIT",
+     "d50_position_audit": {
+         "source_status": safe(audit.get("status") if audit else None),
+@@ -264,6 +269,7 @@
+     f"CLOCK_REGISTRY={clock_path}",
+ ]
+ 
++lines += ["", "=== D50 DOCUMENTARY DATA REVIEW ==="] + reporting_lines(adjudication)
+ txt.write_text("\n".join(lines), encoding="utf-8")
+ 
+ print("GOVERNANCE_MASTER=PASS")
+@@ -271,3 +277,7 @@
+ print(f"LIVE_FROZEN={live_frozen_path}")
+ print(f"CLOCK_REGISTRY={clock_path}")
+ print(f"REPORT={txt}")
++
++# Captured by RUN_DAILY Add-Line for the persistent daily report.
++for review_line in reporting_lines(adjudication):
++    print(review_line)

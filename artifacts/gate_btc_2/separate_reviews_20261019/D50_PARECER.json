@@ -1,0 +1,248 @@
+{
+  "schema": "gate_btc.d50_separate_agent_review.v1",
+  "reviewer": {
+    "identity": "Codex — agente revisor D50",
+    "canonical_task": "/root/revisao_d50",
+    "separate_context_from_discovery": true,
+    "organizational_independence_claimed": false,
+    "human_signature_claimed": false,
+    "cryptographic_signature_claimed": false
+  },
+  "reviewed_at_utc": "2026-10-19T16:35:08.258845+00:00",
+  "verdict": "CORRECTION_PASS_WITH_NONBLOCKING_LIMITATIONS",
+  "WINDOW_MAY_START": true,
+  "CAPITAL_REAL_ALLOWED": false,
+  "decision_scope": "Elegibilidade do gate de dados para iniciar janela econômica prospectiva; nenhuma ativação operacional, trade ou alocação autorizados/efetuados.",
+  "economic_clock": {
+    "data_qualification": "7/7",
+    "economic_observations_reported_not_reaudited": "78/80",
+    "required_complete_cycles": 12,
+    "cycles_inferred_complete": false,
+    "capital_or_trades_released": false
+  },
+  "subject_zip_sha256": "f17a9e987930ef16f73f00d0f8c1a69fb1d10875cd32e1d176365a38f90911a5",
+  "subject_hashes": {
+    "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/candidate_contract_v32.json": "f0b6a277053488def52fe730806d707b7746692fc5abeb868d27a34d7a8f76e0",
+    "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/GATE_BTC_D50_7D_V32_RATIFICATION_2026-07-30.zip": "38ce78be22bc64834018a0168c2076da7d05519443e4c00209523a30ce28c036",
+    "review_work_d50/frozen/gate_btc_v3/engine.py": "1a0b5bf6c48601568fde1659e954858f153687e103755fe388a06290ccb6554e",
+    "review_work_d50/frozen/gate_btc_v3/coverage.py": "e78fc97fde90c22f87b88dfb7835de72c11b55d87338655c724936cb980d4370",
+    "review_work_d50/frozen/data/qos_master_daily.csv": "2d4fdcccac76ec3d83ea48976203d541d9043735164833acfbe389568b4c0504",
+    "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/historical_repair/qos_master_daily_gate_btc_repaired.csv": "17e2453c2db94e5e8b7981388251aa52849ffa2e6616f3499ede9124b8e446ed",
+    "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/implementation/gate_btc_data/snapshot.py": "5a8eb5d4ebf534bcdafcc880264b923cdf6ae2558aa3d6c522e68dfde77e97a7",
+    "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/implementation/gate_btc_data/okx_client.py": "c9fd3109df9b53570ec9a642953bec836ed3b1906c9258def913ea1188117021"
+  },
+  "requirements": [
+    {
+      "id": 1,
+      "requirement": "Reparo reproduzível dos 20 ativos",
+      "decision": "PASS",
+      "evidence": "Reexecutado offline usando master congelado e candles arquivados; quatro tabelas reproduzidas numericamente, 304 inclusões, 1520 linhas densas/76 dias, 20/20 por dia, zero ausência. 133812 linhas primárias mantidas; nenhum close mudou; 15 volumes diferem somente por roundtrip, máximo absoluto 2.9802322387695312e-08.",
+      "blocking": false
+    },
+    {
+      "id": 2,
+      "requirement": "Proveniência explícita OKX",
+      "decision": "PASS_WITH_NONBLOCKING_LIMITATIONS",
+      "evidence": "20 instrumentos SYMBOL-USDT, URLs públicas GET, bar=1Dutc, timestamps e hash HTTP no ledger; 304 preços/volumes inseridos e 1216 overlaps conferidos contra os candles. JSON arquivado é reserializado: SHA do arquivo difere do hash HTTP, porém reconstrução compacta code,msg,data reproduz independentemente os 20/20 digests declarados. Nenhuma corrupção demonstrada. Corpos HTTP prospectivos não foram conservados no pacote; observações apontam hashes, não há autenticação externa do recebimento.",
+      "blocking": false
+    },
+    {
+      "id": 3,
+      "requirement": "available_at prospectivo e cutoff congelado",
+      "decision": "PASS_WITH_NONBLOCKING_LIMITATIONS",
+      "evidence": "Cliente atribui available_at ao relógio após ler a resposta; coletor exige candle confirmado da véspera e available_at <= cutoff 01:30 UTC. Recalculadas 140 observações dos sete dias finais: fechamento da barra <= available_at=fetched_at <= cutoff; 20 símbolos únicos/dia, preços positivos, volume não negativo, cobertura 100%, CSV/JSON concordam. É prova de coerência interna e implementação, sem relógio/atestação externa autenticados.",
+      "blocking": false
+    },
+    {
+      "id": 4,
+      "requirement": "Sete snapshots consecutivos encadeados por SHA-256",
+      "decision": "PASS",
+      "evidence": "Recomputados hashes canônicos e ponteiros dos 79 snapshots, zero divergência. Sete finais 2026-10-12 a 2026-10-18 consecutivos e aprovados; 140/140 observações. Manifestos externo 218/218 e congelado 31/31 sem divergência. Hashes não são assinatura externa nem prova contra reescrita integral por quem controla os arquivos.",
+      "blocking": false
+    },
+    {
+      "id": 5,
+      "requirement": "Ausência de backfill como disponibilidade histórica",
+      "decision": "PASS",
+      "evidence": "1520/1520 linhas de linhagem historical_available_at_eligible=False. Fetches históricos não viram cutoff antigo. Coletor de qualificação usa candles prospectivos da véspera, não o master reparado. O helper congelado build_availability_matrix continua explicitamente DERIVED_FROM_OBSERVATION_DATE_NOT_INSTRUMENTED; só é admissível para replay diagnóstico, não elegibilidade prospectiva/histórica real.",
+      "blocking": false
+    },
+    {
+      "id": 6,
+      "requirement": "Integridade do motor V3.2 congelado",
+      "decision": "PASS_WITH_NONBLOCKING_LIMITATIONS",
+      "evidence": "ZIP e manifesto congelados íntegros, contrato externo igual ao do congelado. Revisão de fonte de coverage, estados e engine, 20/20 testes de contrato e 250/250 cenários fuzz executados sem alterar o motor. 12/12 funções da suíte original de dados executadas diretamente em isolamento com temporários. Python não tem pytest; utilizado pequeno contexto raises para os testes que o usam, não se alega execução do pytest. Comparação é dos artefatos do pacote, não atestação do binário/módulo carregado em produção.",
+      "blocking": false
+    },
+    {
+      "id": 7,
+      "requirement": "Capital real zero",
+      "decision": "PASS_WITH_NONBLOCKING_LIMITATIONS",
+      "evidence": "Contrato, configuração, status e 79 snapshots vedam capital real; fonte do coletor só acessa dois endpoints públicos GET e não contém via de ordem/conta. Nenhum coletor, gate ou capital foi alterado. Não houve consulta autenticada de saldo/posições; capital real zero é atestado no escopo de configuração e artefato, não auditoria patrimonial externa.",
+      "blocking": false
+    }
+  ],
+  "blocking_findings": [],
+  "nonblocking_limitations": [
+    "Os corpos HTTP dos 140 registros prospectivos não estão no pacote e o coletor descarta _payloads; portanto sua correspondência com payload_sha256 não pode ser reexecutada. Isso limita a verificação externa de origem, não invalida a proveniência explícita, coerência causal e cadeia efetivamente verificadas.",
+    "Divergência primário/OKX é material: mediana 0.02425124287619429%, p95 3.57306953110184%, máximo 13.09238152369527% nos 1216 overlaps. Não demonstra equivalência econômica das fontes. Primário é preservado e contingência explicitamente identificada; nenhuma conclusão econômica decorre deste PASS de dados.",
+    "O histórico usa disponibilidade derivada apenas em replay diagnóstico congelado; a qualificação não converte as 304 inclusões em elegibilidade passada. Não se aprovou a integração operacional de uma nova janela com esse helper derivado.",
+    "A política de retry do snapshot permite substituir falha sincronizada e o comentário alega preservação da falha, mas a implementação não arquiva o original antes de os.replace. Não foi achada quebra na cadeia entregue; os sete finais PASS são idempotentes e integralmente verificados. A garantia de arquivo de tentativas falhas é mais estreita que o comentário.",
+    "Revisão de agente em contexto separado da descoberta/implementação. Não há independência organizacional, revisão humana, clean-room, assinatura criptográfica ou autenticação externa demonstradas."
+  ],
+  "checks": {
+    "outer_manifest": {
+      "checked": 218,
+      "mismatches": []
+    },
+    "frozen_manifest": {
+      "checked": 31,
+      "mismatches": []
+    },
+    "subject_hashes": {
+      "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/candidate_contract_v32.json": "f0b6a277053488def52fe730806d707b7746692fc5abeb868d27a34d7a8f76e0",
+      "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/GATE_BTC_D50_7D_V32_RATIFICATION_2026-07-30.zip": "38ce78be22bc64834018a0168c2076da7d05519443e4c00209523a30ce28c036",
+      "review_work_d50/frozen/gate_btc_v3/engine.py": "1a0b5bf6c48601568fde1659e954858f153687e103755fe388a06290ccb6554e",
+      "review_work_d50/frozen/gate_btc_v3/coverage.py": "e78fc97fde90c22f87b88dfb7835de72c11b55d87338655c724936cb980d4370",
+      "review_work_d50/frozen/data/qos_master_daily.csv": "2d4fdcccac76ec3d83ea48976203d541d9043735164833acfbe389568b4c0504",
+      "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/historical_repair/qos_master_daily_gate_btc_repaired.csv": "17e2453c2db94e5e8b7981388251aa52849ffa2e6616f3499ede9124b8e446ed",
+      "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/implementation/gate_btc_data/snapshot.py": "5a8eb5d4ebf534bcdafcc880264b923cdf6ae2558aa3d6c522e68dfde77e97a7",
+      "review_work_d50/GATE_BTC_DATA_QUALIFICATION_READY/implementation/gate_btc_data/okx_client.py": "c9fd3109df9b53570ec9a642953bec836ed3b1906c9258def913ea1188117021"
+    },
+    "historical": {
+      "original_rows": 133812,
+      "original_master_sha256_matches_status": true,
+      "primary_rows_preserved_numeric_rtol_1e14": 133812,
+      "fallback_rows_verified": 304,
+      "dense_rows": 1520,
+      "raw_payload_file_sha_matches_ledger": 0,
+      "raw_payload_count": 20,
+      "overlap_rows_recomputed": 1216,
+      "overlap_max": 0.1309238152369527,
+      "overlap_p95": 0.0357306953110184,
+      "reconstructed_compact_code_msg_data_matches_http_digest": 20,
+      "primary_close_differences": 0,
+      "primary_volume_roundtrip_differences": 15,
+      "max_absolute_volume_roundtrip_difference": 2.9802322387695312e-08
+    },
+    "snapshots": {
+      "total": 79,
+      "chain_mismatches": [],
+      "qualified": [
+        {
+          "id": "2026-10-12",
+          "sha256": "e354cc9b0e4878585e2bf676ee870f8b4cc218684a297475ccb67daf3bebfa35",
+          "eligible": 20,
+          "cutoff": "2026-10-13T01:30:00Z"
+        },
+        {
+          "id": "2026-10-13",
+          "sha256": "c080b7c6cdb4f7f91a58f1259237188b5fccbce2fd93b565e02c271b92481ac3",
+          "eligible": 20,
+          "cutoff": "2026-10-14T01:30:00Z"
+        },
+        {
+          "id": "2026-10-14",
+          "sha256": "01b62bd741f77743dcb5cdea42ffc62eb24a2538555cad0f1415760237d5b6cd",
+          "eligible": 20,
+          "cutoff": "2026-10-15T01:30:00Z"
+        },
+        {
+          "id": "2026-10-15",
+          "sha256": "b9771fd832c62e1832745510b275794c97e857f677c51384aa8afd077059fc1b",
+          "eligible": 20,
+          "cutoff": "2026-10-16T01:30:00Z"
+        },
+        {
+          "id": "2026-10-16",
+          "sha256": "c154c0c061b453034015ba4a1377c52c4a826cc4f2b169748bedc1f7ad09376f",
+          "eligible": 20,
+          "cutoff": "2026-10-17T01:30:00Z"
+        },
+        {
+          "id": "2026-10-17",
+          "sha256": "965efbd889dcb1d2a816a0bf50dae8fb289ebc0384b044fe4fd876b1f9b9d9af",
+          "eligible": 20,
+          "cutoff": "2026-10-18T01:30:00Z"
+        },
+        {
+          "id": "2026-10-18",
+          "sha256": "aeaeb13573d1a8500d9efa2446cdc69a83894f921cb02fc4fef34213853ae287",
+          "eligible": 20,
+          "cutoff": "2026-10-19T01:30:00Z"
+        }
+      ],
+      "qualified_observations": 140,
+      "prospective_raw_payloads_in_package": 0
+    },
+    "direct_original_data_suite": {
+      "passed": 12,
+      "tests": [
+        "test_repair_fills_missing_without_overwriting_primary",
+        "test_repair_never_marks_historical_available_at_eligible",
+        "test_repair_blocks_when_fallback_missing",
+        "test_snapshot_passes_at_20_of_20_before_cutoff",
+        "test_snapshot_rejects_available_after_cutoff",
+        "test_snapshot_is_immutable_and_idempotent",
+        "test_seven_consecutive_snapshots_qualify",
+        "test_calendar_gap_resets_consecutive_count",
+        "test_tampered_snapshot_breaks_hash_chain",
+        "test_final_package_requires_qualification",
+        "test_final_package_keeps_window_blocked_pending_external_audit",
+        "test_okx_client_parses_public_payload_and_records_availability"
+      ],
+      "runner": "direct functions, minimal raises context; not pytest runner"
+    },
+    "direct_frozen_engine_suite": {
+      "passed": 20,
+      "tests": [
+        "a1_gap_composes_exactly",
+        "a2_stale_exit_not_sold",
+        "a3_cost_only_on_executed_trade",
+        "a4_coverage_uses_full_universe",
+        "a5_backfill_does_not_change_eligibility",
+        "a6_low_coverage_defers",
+        "a7_recovery_executes_next_close",
+        "a8_outage_over_limit_forces_inconclusive",
+        "a9_twelve_cycles_need_thirteen_executions",
+        "a10_ex_funding_borrow_label",
+        "b1_entry_is_not_a_cycle",
+        "b2_unpriceable_is_irreversible",
+        "b3_pending_exit_executes_only_next_close",
+        "b4_clock_has_no_double_lag",
+        "c1_reappearance_on_execution_date_waits_next_close",
+        "c2_reselected_missing_position_is_preserved",
+        "c3_missing_target_is_inconclusive_not_empty_cycle",
+        "c4_explicit_empty_target_is_valid_execution",
+        "c5_reselection_cancels_ready_pending_exit",
+        "c6_inconclusive_reasons_are_cumulative"
+      ]
+    },
+    "frozen_fuzz": {
+      "passed": 250,
+      "counts": {
+        "INCONCLUSIVE_MISSING_TARGET": 220,
+        "CYCLES_COMPLETE": 26,
+        "INCONCLUSIVE_UNPRICEABLE_POSITION": 4
+      }
+    },
+    "repair_replay": {
+      "matched_tables": [
+        "qos_master_daily_gate_btc_repaired.csv",
+        "historical_repair_lineage.csv",
+        "historical_coverage_after_repair.csv",
+        "primary_vs_okx_overlap.csv"
+      ],
+      "fallback_rows": 304,
+      "missing": 0,
+      "network_used": false
+    }
+  },
+  "evidence_files": {
+    "check_results": "review_work_d50/check_results.json",
+    "check_script": "review_work_d50/check_d50.py",
+    "check_script_sha256": "5380d0a7f965605586f021a9c9707794236e0284e6d31334a65c232aacd8a46c",
+    "check_results_sha256": "fd63c6889145b3c5b6b793815ff05297b2b5d8987e4248b0cca734f0b44991c6"
+  },
+  "attestation": "Atestação textual atribuída ao próprio agente /root/revisao_d50 sobre os arquivos e checks descritos. Não é assinatura humana nem assinatura criptográfica autenticada."
+}

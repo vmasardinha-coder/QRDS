@@ -1,0 +1,24 @@
+--- before/RUN_DAILY.ps1
++++ after/RUN_DAILY.ps1
+@@ -138,14 +138,18 @@
+ 
+         # GATE_BTC_GOVERNANCE_MASTER_V1
+         try {
+-            & $VenvPython `
++            $GovernanceOutput = & $VenvPython `
+                 (Join-Path $InstallRoot "governance\gate_btc_governance_master_v1.py") `
+                 $InstallRoot `
+                 $ProjectRoot `
+                 $StateRoot `
+                 $Downloads
+-
+-            if ($LASTEXITCODE -eq 0) {
++            $GovernanceExitCode = $LASTEXITCODE
++            foreach ($GovernanceLine in $GovernanceOutput) {
++                Add-Line ([string]$GovernanceLine)
++            }
++
++            if ($GovernanceExitCode -eq 0) {
+                 Add-Line "GOVERNANCE_MASTER=PASS"
+             }
+             else {

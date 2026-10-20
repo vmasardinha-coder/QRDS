@@ -9,6 +9,8 @@ from gate_btc_2_system11_collection_status import status as collection_status
 from gate_btc_2_system11_stress_replay_v1 import AUTHORITY, digest, validate_pairs
 
 REPLICATION_AUTHORITY = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json"
+ADJUDICATION_AUTHORITY = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/separate_reviews_20261019/SISTEMA12_PARECER.json"
+ADJUDICATION_SEMANTIC_SHA256 = "00ae74518d9e391c90d7cf0cff7ac59a2004c5f3d79f7ccc360ff8032df56a12"
 REPLICATION_CHECKS = ("dataset_gate", "reference_semantic_digest", "all_events_compared",
     "event_parity", "scenario_parity", "minimum_executions", "scenario_count",
     "deterministic_independent_executor", "size_monotonicity")
@@ -68,6 +70,59 @@ def retain_replication_progress(structural, contract, replication):
     return result
 
 
+def retain_adjudication_progress(result, contract, review):
+    """Report the separate frozen-scope decision; never activate or release systems."""
+    out = {**result, "adjudication_receipt_status": "NOT_PROVIDED",
+        "independent_adjudication_executed": False}
+    if review is None:
+        return out
+    try:
+        effect = review["operational_effect"]
+        valid = (
+            digest(review) == ADJUDICATION_SEMANTIC_SHA256
+            and contract == json.loads(REPLICATION_AUTHORITY.read_text())
+            and review["contract_semantic_sha256"] == digest(contract)
+            and review["subjects"]["bindings"] == contract["bindings"]
+            and review["scope"] == contract["scope"]
+            and review["decision"] == "PASS"
+            and review["independent_adjudication_executed"] is True
+            and review["implementation_parity_adjudication_pass"] is True
+            and review["blocking_limitations"] == []
+            and review["adjudicator"]["canonical_task"] == "/root/revisao_sistema12"
+            and all(effect[k] is False for k in (
+                "system12_complete", "system13_dependency_released",
+                "system12_completion_authorized", "system13_release_authorized", "engine_feed"))
+            and all(type(effect[k]) is int and effect[k] == 0
+                    for k in ("scientific_credit", "orders", "real_capital_brl"))
+        )
+    except (KeyError, TypeError, ValueError, OSError):
+        valid = False
+    if not valid:
+        return {**out, "adjudication_receipt_status": "INVALID",
+            "status": "BLOCKED_INVALID_INDEPENDENT_ADJUDICATION_RECEIPT",
+            "next_action": "VERIFY_PINNED_ADJUDICATION_WITHOUT_CHANGING_FROZEN_SUBJECTS"}
+    if result.get("replication_continuity_status") != "VERIFIED_FROZEN_IMPLEMENTATION_PARITY_RECEIPT":
+        return {**out, "adjudication_receipt_status": "VALID_REVIEW_MISSING_VALID_REPLICATION"}
+    out.update({
+        "adjudication_receipt_status": "VERIFIED_SEPARATE_AGENT_ADJUDICATION",
+        "independent_adjudication_executed": True,
+        "adjudication_decision": "PASS",
+        "adjudication_receipt_semantic_sha256": digest(review),
+        "adjudication_scope": review["scope"],
+        "adjudicator": review["adjudicator"],
+        "adjudication_issued_at_utc": review["issued_at_utc"],
+        "adjudicated_bindings": review["subjects"]["bindings"],
+        "system12_complete": False, "system13_dependency_released": False,
+        "system12_completion_authorized": False, "system13_release_authorized": False,
+        "scientific_credit": 0, "orders": 0, "real_capital_brl": 0,
+        "engine_feed": False, "automatic_promotion": False,
+    })
+    if result.get("upstream_system11_ready") is True:
+        out.update({"status": "FROZEN_PARITY_ADJUDICATED_PENDING_FORMAL_RELEASE",
+            "next_action": "BIND_EXPLICIT_POST_REVIEW_RELEASE_WITHOUT_REFREEZE"})
+    return out
+
+
 def assess(report, rows):
     result = {"schema": "gate_btc.2_0.system12_readiness.v1", "system": 12,
         "system12_complete": False, "system13_dependency_released": False,
@@ -121,6 +176,7 @@ def main():
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--implementation-contract", type=Path)
     ap.add_argument("--implementation-replication", type=Path)
+    ap.add_argument("--independent-adjudication", type=Path, default=ADJUDICATION_AUTHORITY)
     a = ap.parse_args()
     if bool(a.implementation_contract) != bool(a.implementation_replication):
         ap.error("implementation contract and replication must be supplied together")
@@ -131,6 +187,8 @@ def main():
         contract = json.loads(a.implementation_contract.read_text()) if a.implementation_contract.exists() else None
         replication = json.loads(a.implementation_replication.read_text()) if a.implementation_replication.exists() else None
         result = retain_replication_progress(result, contract, replication)
+        review = json.loads(a.independent_adjudication.read_text(encoding="utf-8")) if a.independent_adjudication.exists() else None
+        result = retain_adjudication_progress(result, contract, review)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     a.output.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
     print(json.dumps(result, sort_keys=True))

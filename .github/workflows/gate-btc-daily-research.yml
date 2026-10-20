@@ -28,7 +28,9 @@ on:
       - tests/test_gate_btc_v2a_source_attempts.py
       - tests/test_gate_btc_v2a_daily_core_close.py
       - tests/test_gate_btc_pit150_source_crosswalk.py
+      - tests/test_gate_btc_pit150_case_continuity.py
       - tools/gate_btc_pit150_source_crosswalk.py
+      - artifacts/gate_btc_2/pit150_case_continuity_20261019/**
       - tools/gate_btc_pit150_qualified_history.py
       - tools/gate_btc_hash_settlement_history.py
       - tools/gate_btc_reusd_swap_history.py
@@ -83,7 +85,9 @@ on:
       - tests/test_gate_btc_v2a_source_attempts.py
       - tests/test_gate_btc_v2a_daily_core_close.py
       - tests/test_gate_btc_pit150_source_crosswalk.py
+      - tests/test_gate_btc_pit150_case_continuity.py
       - tools/gate_btc_pit150_source_crosswalk.py
+      - artifacts/gate_btc_2/pit150_case_continuity_20261019/**
       - tools/gate_btc_pit150_qualified_history.py
       - tools/gate_btc_hash_settlement_history.py
       - tools/gate_btc_reusd_swap_history.py
@@ -163,6 +167,7 @@ jobs:
           tests/test_gate_btc_v2a_source_attempts.py
           tests/test_gate_btc_v2a_daily_core_close.py
           tests/test_gate_btc_pit150_source_crosswalk.py
+          tests/test_gate_btc_pit150_case_continuity.py
           tests/test_gate_btc_pit150_qualified_history.py
           tests/test_gate_btc_pit150_usdgo_bitget.py
           tests/test_gate_btc_pit150_koge_alpha.py
@@ -205,6 +210,7 @@ jobs:
           tests/test_gate_btc_v2a_source_attempts.py
           tests/test_gate_btc_v2a_daily_core_close.py
           tests/test_gate_btc_pit150_source_crosswalk.py
+          tests/test_gate_btc_pit150_case_continuity.py
           tests/test_gate_btc_pit150_qualified_history.py
           tests/test_gate_btc_pit150_usdgo_bitget.py
           tests/test_gate_btc_pit150_koge_alpha.py
@@ -515,6 +521,9 @@ jobs:
             --registry runtime_repo/runtime/data_quality/v2a_registry_pit/QUALIFIED_SOURCE_REGISTRY.json \
             --structural-registry source_code/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
             --case-review source_code/artifacts/gate_btc_2/pit150_cases_review_20261015/CASE_LEDGER.json \
+            --case-history source_code/artifacts/gate_btc_2/pit150_case_continuity_20261019/BASELINE_FOLLOWUP_20261017.json \
+            --previous-followup runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json \
+            --selection-runtime-root runtime_repo/runtime/data_quality/v2a \
             --output runtime_repo/runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
           git -C runtime_repo add runtime/data_quality/v2a_registry_pit runtime/data_quality/v2a/PIT150_FOLLOWUP_LATEST.json
           if git -C runtime_repo diff --cached --quiet; then
@@ -531,5 +540,3 @@ jobs:
             done
             exit 1
           fi
-
-

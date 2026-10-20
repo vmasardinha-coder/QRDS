@@ -1,0 +1,96 @@
+{
+  "project": "GATE BTC",
+  "contract_version": "V3.2",
+  "candidate_id": "D50_SLOW_NO_INTRADAY_STOP_7D_V2",
+  "economic_verdict": "PROMISSOR_MAS_INCONCLUSIVO",
+  "correction_status": "CORRECTION_BLOCKED",
+  "window_may_start": false,
+  "capital_real_allowed": false,
+  "new_families_allowed": false,
+  "economic_parameters": {
+    "cadence_valid_decision_bars": 7,
+    "clock": "close-to-next-close",
+    "intraday_stops_takes": false,
+    "turnover_cost_bps": 8,
+    "universe_size": 20,
+    "required_complete_cycles": 12,
+    "permanent_result_label": "EX_FUNDING_BORROW"
+  },
+  "data_parameters": {
+    "coverage_denominator": "FROZEN_UNIVERSE_20",
+    "minimum_coverage": 0.6,
+    "availability_basis": "AVAILABLE_AT_OR_BEFORE_DECISION_CUTOFF",
+    "backfill_can_change_historical_eligibility": false,
+    "qualification_consecutive_snapshots": 7,
+    "maximum_systemic_defer_bars": 7
+  },
+  "states": {
+    "systemic_delay": "DEFERRED_SYSTEMIC_DATA_OUTAGE",
+    "systemic_failure": "INCONCLUSIVE_SYSTEMIC_DATA_OUTAGE",
+    "pending_exit": "PENDING_EXIT_UNPRICEABLE",
+    "unpriceable": "UNPRICEABLE_POSITION"
+  },
+  "anchor_after": [
+    "2026-07-29",
+    "V3_IMPLEMENTATION_APPROVAL",
+    "DEFINITIVE_HASH_FREEZE",
+    "SEVEN_SNAPSHOT_DATA_QUALIFICATION"
+  ],
+  "accepted_audit_verdicts": [
+    "CORRECTION_PASS_WINDOW_MAY_START",
+    "CORRECTION_PASS_WITH_NONBLOCKING_LIMITATIONS"
+  ],
+  "implementation_status": {
+    "economic_logic_changed": false,
+    "deferral_logic_implemented": true,
+    "pending_exit_logic_implemented": true,
+    "unpriceable_logic_implemented": true,
+    "coverage_rule_implemented": true,
+    "unit_tests": "20/20 PASS + 250/250 deterministic fuzz scenarios",
+    "historical_replay_7_phases": "7/7 TRAVERSE_AVAILABLE_SEGMENT_WITHOUT_INCONCLUSION; 0/7 COMPLETED_12_CYCLES",
+    "ingestion_repaired": false,
+    "contingency_source_available": false,
+    "available_at_instrumented": false,
+    "seven_snapshot_qualification": "BLOCKED",
+    "blocking_reasons": [
+      "NO_ACCESS_TO_INGESTION_REPOSITORY",
+      "NO_NETWORK_ROUTE_TO_PRICE_SOURCES",
+      "SEVEN_CONSECUTIVE_FUTURE_SNAPSHOTS_REQUIRE_SEVEN_CALENDAR_DAYS"
+    ],
+    "entry_counts_as_cycle": false,
+    "unpriceable_irreversible": true,
+    "pending_exit_executes_next_close": true,
+    "clock_double_lag_fixed": true,
+    "coverage_matrix_dense_rows": 1520,
+    "engine_corrections": [
+      "D1_ENTRY_NOT_A_CYCLE",
+      "D2_UNPRICEABLE_IRREVERSIBLE",
+      "D3_EXIT_NEXT_VALID_CLOSE",
+      "D4_NO_DOUBLE_LAG",
+      "E1_NO_SAME_CLOSE_EXIT_ON_REAPPEARANCE",
+      "E2_RESELECTED_STALE_POSITION_PRESERVED",
+      "E3_MISSING_TARGET_INCONCLUSIVE",
+      "E4_CUMULATIVE_INCONCLUSIVE_REASONS"
+    ],
+    "window_may_start": false
+  },
+  "execution_edge_cases": {
+    "reselected_position_without_executable_price": {
+      "position_action": "KEEP_EXISTING_POSITION_AND_EXECUTED_WEIGHT",
+      "turnover_cost": "ZERO_UNTIL_REAL_TRADE",
+      "missed_target_delta": "NOT_CARRIED_FORWARD_OR_RETROACTIVELY_EXECUTED",
+      "future_adjustment": "ONLY_BY_A_LATER_EXPLICIT_TARGET_WITH_VALID_PRICE"
+    },
+    "missing_target_record": {
+      "status": "INCONCLUSIVE_MISSING_TARGET",
+      "trade_executed": false,
+      "execution_incremented": false,
+      "cycle_incremented": false,
+      "explicit_empty_target_is_valid": true
+    },
+    "inconclusive_diagnostics": {
+      "terminal_headline": "FIRST_TRIGGERED_CAUSE",
+      "all_causes": "CUMULATIVE_LIST"
+    }
+  }
+}

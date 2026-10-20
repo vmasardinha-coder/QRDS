@@ -1,0 +1,24 @@
+--- before/cli.py
++++ after/cli.py
+@@ -15,6 +15,7 @@
+ from .okx_client import OKXPublicDailyClient
+ from .repair import repair_historical_master
+ from .snapshot import collect_prospective_snapshot, evaluate_qualification
++from .gate_btc_d50_data_review_reporting import documentary_adjudication, reporting_lines
+ 
+ 
+ def _repo_root(value: str | None) -> Path:
+@@ -88,6 +89,13 @@
+             )
+             result = {"snapshot": snapshot, "qualification": qualification, "package": package}
+ 
++        # Reporting only: preserve frozen qualification/config flags and engine.
++        adjudication = documentary_adjudication(
++            contract_path=root / "gate_btc_inputs/candidate_contract_v32.json",
++            v32_zip_path=root / "gate_btc_inputs/GATE_BTC_D50_7D_V32_RATIFICATION_2026-07-30.zip",
++        )
++        result = {**result, "current_documentary_adjudication": adjudication}
++        report_lines.extend(reporting_lines(adjudication))
+         report_lines.append("STATUS=PASS")
+         report_lines.append("RESULT_JSON=" + json.dumps(result, sort_keys=True, ensure_ascii=False))
+         report_lines.append(f"FINISHED_AT={datetime.now(timezone.utc).isoformat()}")
