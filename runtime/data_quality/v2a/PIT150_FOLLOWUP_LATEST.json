@@ -347,16 +347,24 @@
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SOURCE_RECOVERY_CANDIDATE",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "REGISTRY_COIN_ID_MISSING",
       "legacy_gap_resolved": false,
-      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "next_action": "Clarify subscription/redemption versus secondary execution semantics; do not infer eligible spot history from matches count.",
       "observed_history_rows": null,
-      "operational_work_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN",
+      "operational_work_state": "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF",
       "pit150_identity": "ylds",
       "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "FUND_EXECUTION_SEMANTICS_REVIEW",
+        "evidence": "Figure4372public matches across200days; marketTypeFUND, proTradeAvailablefalse, fixed-price product.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
       "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
       "prior_structural_exclusion_symbol_match": false,
@@ -364,6 +372,7 @@
         "adjudication_pr": 500,
         "coin_id": null,
         "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "evidence_stage": "RECOVERED_46_MERGED_SEED",
         "provenance_sha256": "d7a443ebab5e344fe6206cfc49f4d6578f46988f8775ad411ba9d657b0c565f2",
         "qa_pass": true,
         "qualification": "QUALIFIED_EXACT_SOURCE",
@@ -371,6 +380,12 @@
         "source_identity": "FIGURE_MARKETS",
         "source_symbol": "YLDS-USD-2F"
       },
+      "registry_seed_is_not_current_pit150_qualification": true,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -496,16 +511,24 @@
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SEMANTIC_SCOPE_REVIEW",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "REGISTRY_COIN_ID_MISSING",
       "legacy_gap_resolved": false,
-      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "next_action": "22additional completed days if uninterrupted; earliest depth200 2026-11-05, subject to full QA.",
       "observed_history_rows": null,
-      "operational_work_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN",
+      "operational_work_state": "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED",
       "pit150_identity": "apxusd",
       "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "SHORT_SOURCE_HISTORY",
+        "evidence": "Kraken178 completed days,2026-04-20 through2026-10-14.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
       "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
       "prior_structural_exclusion_symbol_match": false,
@@ -513,6 +536,7 @@
         "adjudication_pr": 552,
         "coin_id": null,
         "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "evidence_stage": "RECOVERED_46_MERGED_SEED",
         "provenance_sha256": "7cf2076021f6d759c55a9e962db8d946290909456fab9c2f0986a85cdc462fb6",
         "qa_pass": true,
         "qualification": "QUALIFIED_EXACT_SOURCE",
@@ -520,6 +544,12 @@
         "source_identity": "KRAKEN:APXUSD/USD",
         "source_symbol": "APXUSD/USD"
       },
+      "registry_seed_is_not_current_pit150_qualification": true,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -531,16 +561,24 @@
       "worklist_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SOURCE_RECOVERY_CANDIDATE",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "REGISTRY_COIN_ID_MISSING",
       "legacy_gap_resolved": false,
-      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "next_action": "Recover exact physical missing executions/history or retain source rejection; no forward-fill or alternate coin.",
       "observed_history_rows": null,
-      "operational_work_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN",
+      "operational_work_state": "AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
       "pit150_identity": "olympus",
       "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "PUBLIC_ARCHIVE_GAPS_BLOCK",
+        "evidence": "Exact DEXpool returned183rows/182unique days with31missing calendar days; older API history401.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
       "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
       "prior_structural_exclusion_symbol_match": false,
@@ -548,6 +586,7 @@
         "adjudication_pr": 514,
         "coin_id": null,
         "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "evidence_stage": "RECOVERED_46_MERGED_SEED",
         "provenance_sha256": "433408ac0ab0e08a8d765c177147867302fffff6e02ded24d63c3c44ab84facd",
         "qa_pass": true,
         "qualification": "QUALIFIED_EXACT_SOURCE",
@@ -555,6 +594,12 @@
         "source_identity": "GECKOTERMINAL_PUBLIC_ONCHAIN",
         "source_symbol": "eth:0x0858e2b0f9d75f7300b38d64482ac2c8df06a755"
       },
+      "registry_seed_is_not_current_pit150_qualification": true,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -566,16 +611,24 @@
       "worklist_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SEMANTIC_SCOPE_REVIEW",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "REGISTRY_COIN_ID_MISSING",
       "legacy_gap_resolved": false,
-      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "next_action": "Recover exact physical missing executions/history or retain source rejection; no forward-fill or alternate coin.",
       "observed_history_rows": null,
-      "operational_work_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN",
+      "operational_work_state": "AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
       "pit150_identity": "usdai",
       "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "PUBLIC_ARCHIVE_GAPS_BLOCK",
+        "evidence": "Exact DEXpool returned183rows/182unique days with12missing calendar days; older API history401.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
       "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
       "prior_structural_exclusion_symbol_match": false,
@@ -583,6 +636,7 @@
         "adjudication_pr": 552,
         "coin_id": null,
         "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "evidence_stage": "RECOVERED_46_MERGED_SEED",
         "provenance_sha256": "7cf2076021f6d759c55a9e962db8d946290909456fab9c2f0986a85cdc462fb6",
         "qa_pass": true,
         "qualification": "QUALIFIED_EXACT_SOURCE",
@@ -590,6 +644,12 @@
         "source_identity": "GECKOTERMINAL_PUBLIC_ONCHAIN:arbitrum:0xba9ed8ae94c70ef9aa2cd1045ed473aaa405c6c7",
         "source_symbol": "arbitrum:0xba9ed8ae94c70ef9aa2cd1045ed473aaa405c6c7"
       },
+      "registry_seed_is_not_current_pit150_qualification": true,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -601,20 +661,33 @@
       "worklist_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SEMANTIC_SCOPE_REVIEW",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "NO_REGISTRY_CANDIDATE",
       "legacy_gap_resolved": false,
-      "next_action": "DISCOVER_EXACT_SOURCE_WITHOUT_CHANGING_UNIVERSE",
+      "next_action": "Exact fund execution contract review, not ticker-only substitution or automatic exclusion.",
       "observed_history_rows": null,
-      "operational_work_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING",
+      "operational_work_state": "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF",
       "pit150_identity": "safo",
       "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "FUND_EXECUTION_SEMANTICS_REVIEW",
+        "evidence": "Exact coin_idsafo has no ticker markets in successful fresh response; name is SpikoAmundiOvernightSwapFund.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
       "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
       "prior_structural_exclusion_symbol_match": false,
       "registry_candidate": null,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -748,12 +821,12 @@
   "loaded_count_change_is_not_repair_evidence": true,
   "methodology_changes": 0,
   "operational_work_state_counts": {
+    "AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE": 2,
     "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION": 8,
+    "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF": 2,
     "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF": 2,
     "AWAITING_RECONCILED_NATIVE_SOURCE_ARCHIVE": 1,
-    "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED": 3,
-    "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 4,
-    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 1
+    "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED": 4
   },
   "orders": 0,
   "pit150_denominator_preserved": 150,
