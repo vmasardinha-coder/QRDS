@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Inventory
 
-Generated: `2026-10-20T01:49:58.535632+00:00`
+Generated: `2026-10-20T01:57:00.314989+00:00`
 
 - Reclassified: **2560**
 - Experimental shadow active: **580**
