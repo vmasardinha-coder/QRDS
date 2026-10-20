@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_2_system12_readiness.py'
+      - 'tools/gate_btc_system12_post_review_release.py'
+      - 'tests/test_gate_btc_system12_post_review_release.py'
+      - 'artifacts/gate_btc_2/post_review_release_20261020/**'
       - 'tests/test_gate_btc_2_system12_readiness.py'
       - 'tests/test_gate_btc_2_system12_adjudication_reporting.py'
       - 'artifacts/gate_btc_2/separate_reviews_20261019/**'
@@ -14,6 +17,9 @@ on:
     branches: [main]
     paths:
       - 'tools/gate_btc_2_system12_readiness.py'
+      - 'tools/gate_btc_system12_post_review_release.py'
+      - 'tests/test_gate_btc_system12_post_review_release.py'
+      - 'artifacts/gate_btc_2/post_review_release_20261020/**'
       - 'tests/test_gate_btc_2_system12_readiness.py'
       - 'tests/test_gate_btc_2_system12_adjudication_reporting.py'
       - 'artifacts/gate_btc_2/separate_reviews_20261019/**'
@@ -41,7 +47,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prerequisite regression tests
-        run: python -m unittest -v tests.test_gate_btc_2_system12_readiness tests.test_gate_btc_2_system11_stress_replay_v1 tests.test_gate_btc_2_system12_adjudication_reporting tests.test_gate_btc_d50_review_reporting
+        run: python -m unittest -v tests.test_gate_btc_2_system12_readiness tests.test_gate_btc_2_system11_stress_replay_v1 tests.test_gate_btc_2_system12_adjudication_reporting tests.test_gate_btc_d50_review_reporting tests.test_gate_btc_system12_post_review_release tests.test_gate_btc_system12_factory_projection
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
         with:
@@ -65,9 +71,10 @@ jobs:
           mkdir -p runtime_repo/runtime/gate_btc_2/system12
           cp out/SYSTEM12_READINESS.json runtime_repo/runtime/gate_btc_2/system12/READINESS.json
           cp artifacts/gate_btc_2/separate_reviews_20261019/SISTEMA12_PARECER.json runtime_repo/runtime/gate_btc_2/system12/INDEPENDENT_ADJUDICATION.json
+          cp artifacts/gate_btc_2/post_review_release_20261020/SYSTEM12_RESEARCH_RELEASE.json runtime_repo/runtime/gate_btc_2/system12/POST_REVIEW_RELEASE.json
           git -C runtime_repo config user.name gate-btc-research-bot
           git -C runtime_repo config user.email gate-btc-research-bot@users.noreply.github.com
-          git -C runtime_repo add runtime/gate_btc_2/system12/READINESS.json runtime/gate_btc_2/system12/INDEPENDENT_ADJUDICATION.json
+          git -C runtime_repo add runtime/gate_btc_2/system12/READINESS.json runtime/gate_btc_2/system12/INDEPENDENT_ADJUDICATION.json runtime/gate_btc_2/system12/POST_REVIEW_RELEASE.json
           git -C runtime_repo diff --cached --quiet && exit 0
           git -C runtime_repo commit -m 'Bind System12 structural readiness to canonical System11 report'
           for attempt in 1 2 3 4 5; do

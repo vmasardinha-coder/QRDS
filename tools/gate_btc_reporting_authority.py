@@ -124,7 +124,22 @@ def _system12_adjudication_summary(summary, readiness, contract):
         obj, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
     expected = "00ae74518d9e391c90d7cf0cff7ac59a2004c5f3d79f7ccc360ff8032df56a12"
     try:
+        from .gate_btc_system12_post_review_release import RELEASE_AUTHORITY, retain_post_review_release
+    except ImportError:
+        from gate_btc_system12_post_review_release import RELEASE_AUTHORITY, retain_post_review_release
+    released = None
+    try:
         review = json.loads(review_path.read_text(encoding="utf-8"))
+        if RELEASE_AUTHORITY.is_file():
+            release = json.loads(RELEASE_AUTHORITY.read_text(encoding="utf-8"))
+            candidate = retain_post_review_release(readiness, contract, review, release)
+            keys = ("system12_complete", "system13_dependency_released",
+                    "system12_completion_authorized", "system13_release_authorized")
+            if (candidate.get("post_review_release_status") == "VERIFIED_FROZEN_SCOPE_RESEARCH_RELEASE"
+                    and readiness.get("post_review_release_semantic_sha256") == candidate.get("post_review_release_semantic_sha256")
+                    and readiness.get("status") == candidate.get("status")
+                    and all(readiness.get(k) is candidate.get(k) for k in keys)):
+                released = candidate
         frozen = json.loads(contract_path.read_text(encoding="utf-8"))
         valid = (
             digest(review) == expected
@@ -141,10 +156,10 @@ def _system12_adjudication_summary(summary, readiness, contract):
             and readiness["adjudication_scope"] == review["scope"]
             and readiness["adjudication_decision"] == review["decision"] == "PASS"
             and readiness["independent_adjudication_executed"] is True
-            and all(readiness[k] is False for k in (
+            and (released is not None or all(readiness[k] is False for k in (
                 "system12_complete", "system13_dependency_released",
-                "system12_completion_authorized", "system13_release_authorized",
-                "engine_feed", "automatic_promotion"))
+                "system12_completion_authorized", "system13_release_authorized")))
+            and all(readiness[k] is False for k in ("engine_feed", "automatic_promotion"))
             and all(type(readiness[k]) is int and readiness[k] == 0
                     for k in ("scientific_credit", "orders", "real_capital_brl"))
         )
@@ -164,6 +179,14 @@ def _system12_adjudication_summary(summary, readiness, contract):
         "adjudication_scope": review["scope"],
         "adjudication_decision": "PASS",
         "independent_adjudication_executed": True}
+    if released is not None and released["system13_dependency_released"] is True:
+        keys = ("status", "next_action", "system12_complete", "system13_dependency_released",
+                "system12_completion_authorized", "system13_release_authorized",
+                "post_review_release_status", "post_review_release_semantic_sha256",
+                "post_review_release_scope", "system13_complete", "economic_claim_authorized")
+        out.update({k: released[k] for k in keys})
+        out["source_sha256"]["post_review_release"] = hashlib.sha256(RELEASE_AUTHORITY.read_bytes()).hexdigest()
+        return out
     if (readiness.get("upstream_system11_ready") is True
             and readiness.get("status") == "FROZEN_PARITY_ADJUDICATED_PENDING_FORMAL_RELEASE"):
         out.update(status=readiness["status"],
