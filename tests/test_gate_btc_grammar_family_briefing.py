@@ -8,9 +8,15 @@ def test_briefing_preserves_stage_without_credit():
  assert o["safety"]["NO_BACKFILL"] and o["safety"]["ENGINE_FEED"] is False
 
 
+SAFETY={"RESEARCH_ONLY":True,"SHADOW_ONLY":True,"ENGINE_FEED":False,"ORDERS":0,"REAL_CAPITAL":0,"NO_BACKFILL":True,"NO_RETUNE":True,"FAIL_CLOSED":True}
+
 def current_inputs(tmp_path):
- from test_gate_btc_grammar_pipeline_progress import inputs
- q,r,_=inputs(tmp_path)
+ q={"qualified_count":2,"waiting_count":0,"blocked_semantics_count":0,"rejected_count":10,"families":[
+ {"family_id":"FOCUS","status":"SOURCE_COST_QUALIFIED","source_qualified":True,"cost_applicability_proven":True,"qualified_sources":["B3","BCB"]},
+ {"family_id":"CVM","status":"SOURCE_COST_QUALIFIED","source_qualified":True,"cost_applicability_proven":True,"qualified_sources":["B3","CVM"]}]}
+ r={"schema":"qrds.factory.qualified_materializer_readiness.v2","safety":SAFETY,"families":[
+ {"family_id":"FOCUS","qualified_sources":["B3","BCB"],"implementation_status":"MATERIALIZER_PROVEN_OUTCOME_BLIND","physical_capture_proven":True,"pit_feature_materialization_proven":True,"collection_started":True,"capture_verified":True,"prospective_preregistration_present":True,"capture_sha256":"a"*64,"scientific_credit":0,"next_action":"WAIT_NEXT_ELIGIBLE_OFFICIAL_PUBLICATION"},
+ {"family_id":"CVM","qualified_sources":["B3","CVM"],"implementation_status":"TERMINAL_SOURCE_BLOCKED_PIT_VALUES","physical_capture_proven":True,"collection_started":False,"scientific_credit":0,"next_action":"SOURCE_REQUALIFICATION_ONLY_IF_VERSIONED_PIT_VALUES_FOUND"}]}
  intake={"families":[{"family_id":f["family_id"],
      "status":"QUEUED_FOR_EXISTING_FACTORY_MATERIALIZATION",
      "collection_started":False,"next_stage":"IMPLEMENT_SOURCE_MATERIALIZER_THEN_SEPARATE_PROSPECTIVE_COLLECTION"}
