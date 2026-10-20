@@ -626,20 +626,43 @@
       "worklist_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING"
     },
     {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SOURCE_RECOVERY_CANDIDATE",
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "NO_REGISTRY_CANDIDATE",
       "legacy_gap_resolved": false,
-      "next_action": "DISCOVER_EXACT_SOURCE_WITHOUT_CHANGING_UNIVERSE",
+      "next_action": "Require a materially corrected native archive and rerun the existing UTC audit; do not restart discovery or admit daily UTC+8 bars.",
       "observed_history_rows": null,
-      "operational_work_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING",
+      "operational_work_state": "AWAITING_RECONCILED_NATIVE_SOURCE_ARCHIVE",
       "pit150_identity": "grx-chain",
       "pit150_source_substitution_authorized": false,
-      "prior_case_review_binding": "NO_PRIOR_CASE",
+      "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
       "prior_exclusion_identity_revalidated": false,
+      "prior_native_candidate_audit": {
+        "blocking_reasons": [
+          "MISSING_200_COMPLETE_UTC_DAYS",
+          "MISSING_200_UTC_DAYS_WITH_OBSERVED_EXECUTIONS",
+          "INTRADAY_RESOLUTIONS_DISAGREE",
+          "NATIVE_VENUE_DAY_AGGREGATES_DISAGREE"
+        ],
+        "candidate_qa_pass": false,
+        "evidence_cutoff": "2026-10-16",
+        "historical_review_not_current_source_qualification": true,
+        "hour_complete_utc_days": 194,
+        "hour_positive_execution_utc_days": 154,
+        "review_date": "2026-10-17",
+        "semantic_sha256": "07424ccf05c29ba1779c8e929ecfd3911420a26e7602b8865eb17fd55084ba87",
+        "source": "artifacts/gate_btc_2/pit150_candidate_audit_20261017/LOCAL_AUDIT.json"
+      },
       "prior_structural_exclusion_symbol_match": false,
       "registry_candidate": null,
+      "reopen_review_only_for": [
+        "materially_corrected_native_archive",
+        "new_exact_source_with_complete_UTC_history",
+        "identity_change_or_invalidated_evidence"
+      ],
       "required_proofs": [
         "exact_asset_identity",
         "venue_pair_identity",
@@ -710,13 +733,14 @@
   },
   "input_sha256": {
     "authoritative_status": "0bee3100860d9094cd71e655b79577544dc67e687a1f7e753262e7157129ec83",
-    "case_history": "fab5d59aed641ede7f671aff0fd77809158af30e11084ddb456bc81b102fa056",
+    "case_history": "559ba8c39fc21d860337a5eb2094a89b3ba1a2ef8089a7403b1f3b76e8894a3f",
     "case_review": "67ba7eeddf226a61ab39e1f5d98aebbef2a055383c75a4177ac3e1691cfa752b",
     "diagnostic": "e09871ce3fdaa44a08f692a8ddd3f5dd8299bb28003d7859b0daefd0631d166c",
+    "native_candidate_audit": "b018b2ef60d55e05b404bc9a7d0db6f88aca021d66c97b6755cf9cafe6fdc2ba",
     "registry": "6257ab6941162fd4b209a5f56e204069e384d5897761e30bc65f77d72104f8b5",
     "retained_case_membership": "7700683fc48812aaf462e90363abffe8c2f1f3db5f8e314a0873fa6a7534567d",
     "selection_snapshot": "cfb18468f64fe7678ca4324d868f795a14814f465ca04c7d6a3ffbd5be83581f",
-    "structural_registry": "879d843d48d8fba55a82984e3a2501fe2a513af184d6a4afb9fae07f6f97b993"
+    "structural_registry": "d567c04a85ebacff176d1fcd8ec7d2b93abd1fc03502ba6665e003a3816b10aa"
   },
   "legacy_failed_symbols": 19,
   "legacy_failures_are_not_new_unhandled_incidents": true,
@@ -726,9 +750,10 @@
   "operational_work_state_counts": {
     "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION": 8,
     "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF": 2,
+    "AWAITING_RECONCILED_NATIVE_SOURCE_ARCHIVE": 1,
     "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED": 3,
     "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 4,
-    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 2
+    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 1
   },
   "orders": 0,
   "pit150_denominator_preserved": 150,
