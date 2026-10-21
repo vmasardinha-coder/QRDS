@@ -8,8 +8,9 @@
   "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
+  "error": "MISSING_REQUIRED_PRICES: REUSD,USDGO,USYC",
+  "failure_evidence": "failures/2026-10-20/0a53474d895f02604cb4025c653d688c99d9e0191a9807cb26360d7bd1aa5032.json.gz",
   "first_eligible_cutoff": "2026-09-28",
-  "idempotent": true,
   "latest_economics": {
     "btc_daily_return_gross": -0.002162794096156717,
     "btc_nav": 0.9793786214946847,
@@ -107,7 +108,7 @@
     "M2_TOP10": 1.0033364399022817
   },
   "net_return": null,
-  "next_action": "AUTOMATIC_DAILY_PROSPECTIVE_COLLECTION",
+  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
   "not_approved": true,
   "orders": 0,
   "promotion_allowed": false,
@@ -116,9 +117,47 @@
   "return_observations": 20,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
+  "source_failures": {
+    "REUSD": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "REUSD"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "REUSD"
+      }
+    ],
+    "USDGO": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "USDGO"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "USDGO"
+      }
+    ],
+    "USYC": [
+      {
+        "error": "CDD unavailable: HTTP 404",
+        "source": "cdd",
+        "symbol": "USYC"
+      },
+      {
+        "error": "Binance kline failed: HTTP 400",
+        "source": "binance_market_data",
+        "symbol": "USYC"
+      }
+    ]
+  },
+  "status": "FAILED_ECONOMIC_DELIVERY",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-20T08:53:42.307835+00:00",
+  "updated_at_utc": "2026-10-21T08:52:15.677943+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
