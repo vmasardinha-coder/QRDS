@@ -8,9 +8,8 @@
   "economic_rows_appended": 0,
   "engine_feed": false,
   "epoch_id": "hold_20260928",
-  "error": "MISSING_REQUIRED_PRICES: REUSD,USDGO,USYC",
-  "failure_evidence": "failures/2026-10-20/397ef7422addd6ecabd2cae95aa333eb5d54860c154286f64527d7496c45d572.json.gz",
   "first_eligible_cutoff": "2026-09-28",
+  "historical_ledger_preserved": true,
   "latest_economics": {
     "btc_daily_return_gross": -0.002162794096156717,
     "btc_nav": 0.9793786214946847,
@@ -108,56 +107,21 @@
     "M2_TOP10": 1.0033364399022817
   },
   "net_return": null,
-  "next_action": "REPAIR_FAILURE_NO_RESET_NO_BACKFILL",
+  "next_action": "FOLLOW_SEPARATE_TRADABLE_VERSION_NO_HISTORY_TRANSFER",
   "not_approved": true,
   "orders": 0,
+  "prior_failed_rebalance_preserved": true,
   "promotion_allowed": false,
   "real_capital": 0,
   "research_only": true,
   "return_observations": 20,
   "schema": "gate_btc.momentum_hold_status.v1",
   "shadow_only": true,
-  "source_failures": {
-    "REUSD": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "REUSD"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "REUSD"
-      }
-    ],
-    "USDGO": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "USDGO"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "USDGO"
-      }
-    ],
-    "USYC": [
-      {
-        "error": "CDD unavailable: HTTP 404",
-        "source": "cdd",
-        "symbol": "USYC"
-      },
-      {
-        "error": "Binance kline failed: HTTP 400",
-        "source": "binance_market_data",
-        "symbol": "USYC"
-      }
-    ]
-  },
-  "status": "FAILED_ECONOMIC_DELIVERY",
+  "status": "CLOSED_RULE_VERSION_SUPERSEDED",
+  "successor_policy_id": "MOMENTUM_TRADABLE_SPOT_V1_20261021",
+  "successor_status_source": "ledgers/momentum_tradable_v1/STATUS.json",
   "terminal_observation_target": null,
-  "updated_at_utc": "2026-10-21T09:00:56.055973+00:00",
+  "updated_at_utc": "2026-10-21T11:52:24.069292+00:00",
   "weighting_audit": {
     "engine_changed": true,
     "historical_rewrite_performed": false,
