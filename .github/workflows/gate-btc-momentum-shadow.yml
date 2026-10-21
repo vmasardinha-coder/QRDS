@@ -5,6 +5,9 @@ on:
     paths:
       - .github/workflows/gate-btc-momentum-shadow.yml
       - tests/test_gate_btc_v2a_daily_core_close.py
+      - tools/gate_btc_momentum_tradable.py
+      - tests/test_gate_btc_momentum_tradable.py
+      - migration/reporting/momentum_tradable_policy_v1.json
   workflow_dispatch:
   schedule:
     - cron: '10 3 * * *'
@@ -31,6 +34,7 @@ jobs:
         with: {python-version: '3.12'}
       - run: pip install -r migration/canonical/v2a/requirements.txt
       - run: python -m unittest -v tests.test_gate_btc_v2a_daily_core_close
+      - run: python -m unittest discover -s tests -p test_gate_btc_momentum_tradable.py -v
   collect:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -174,6 +178,15 @@ jobs:
           print(json.dumps({'status':status['status'],'data_as_of':status['data_as_of'],'observed_snapshots':status['observed_snapshots']},sort_keys=True))
           PY
 
+      - name: Collect separately versioned tradable M1 M2 economics
+        id: tradable
+        if: steps.collect_snapshot.outputs.collection_state == 'collected' && steps.build_status.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python tools/gate_btc_momentum_tradable.py \
+            --snapshot "runtime_repo/runtime/ledgers/momentum_m1_m2/${MOMENTUM_CUTOFF}.json" \
+            --ledger-dir runtime_repo/runtime/ledgers/momentum_tradable_v1
+
       - name: Build AMBER runtime status when waiting for public data
         if: steps.v2a.outputs.source_ok != 'true' || steps.collect_snapshot.outputs.collection_state == 'wait_source_close'
         run: |
@@ -247,6 +260,7 @@ jobs:
             artifacts/momentum
             artifacts/momentum_qos/v2a_frozen_replay_evidence
             artifacts/momentum_diagnostics
+            runtime_repo/runtime/ledgers/momentum_tradable_v1
           retention-days: 90
           if-no-files-found: warn
 
@@ -257,6 +271,9 @@ jobs:
           git -C runtime_repo config user.name 'gate-btc-actions'
           git -C runtime_repo config user.email 'gate-btc-actions@users.noreply.github.com'
           git -C runtime_repo add runtime/ledgers/momentum_m1_m2
+          if [ -d runtime_repo/runtime/ledgers/momentum_tradable_v1 ]; then
+            git -C runtime_repo add runtime/ledgers/momentum_tradable_v1
+          fi
           if git -C runtime_repo diff --cached --quiet; then
             echo 'Momentum runtime already current'
             exit 0
@@ -290,7 +307,12 @@ jobs:
           else
             echo 'MOMENTUM_COLLECTION=AMBER_SOURCE_BLOCKED_FAIL_CLOSED'
           fi
+          if [ "${{ steps.tradable.outcome }}" = "failure" ]; then
+            echo 'MOMENTUM_TRADABLE=BLOCKED_SOURCE_OR_VALUATION - see preserved STATUS/evidence'
+            exit 1
+          fi
           echo 'RESEARCH_ONLY=true'
           echo 'ORDERS=0'
           echo 'REAL_CAPITAL=0'
+
 
