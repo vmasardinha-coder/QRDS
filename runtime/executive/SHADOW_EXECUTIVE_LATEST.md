@@ -371,7 +371,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b1.status.v1",
-        "sha256": "e4a110758202a8ea27418fc004acc748019de7062ea8389374140b0009452ace",
+        "sha256": "b47fc10fb7ff31c043f8d1da4787c0ce794b8023c446ba9f055078adb3c7e9a8",
         "source": "ledgers/v16b1/STATUS.json",
         "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
       }
@@ -822,7 +822,7 @@
           "scientific_blockers": [],
           "scientific_observations_credited": 0,
           "scientific_target": null,
-          "sha256": "7a754cb56f45e405edc3aadcfb09394fc05f7de1b1548011d6f34c0706102b19",
+          "sha256": "57a73c19dfe4e1e93a645e0869ba204345094d882294b8f79195d437989f6e48",
           "source": "ledgers/d100/STATUS.json",
           "status": "ACTIVE_PHYSICAL_DATA_FEED"
         }
@@ -980,7 +980,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "7a754cb56f45e405edc3aadcfb09394fc05f7de1b1548011d6f34c0706102b19",
+      "sha256": "57a73c19dfe4e1e93a645e0869ba204345094d882294b8f79195d437989f6e48",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
