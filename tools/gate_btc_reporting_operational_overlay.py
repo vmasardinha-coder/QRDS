@@ -319,6 +319,28 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
             component["status"] = component["economic_status"]
         current.setdefault("sources", {})["momentum_economic_delivery"] = source_meta(me_root / "DELIVERY_STATUS.json", md)
 
+    # New tradability policy is a separate economic authority, never inherited P&L.
+    tradable_path = runtime_root / "ledgers/momentum_tradable_v1/STATUS.json"
+    tradable = load(tradable_path)
+    tradable_active = bool(tradable and tradable.get("schema") == "gate_btc.momentum_tradable_status.v1")
+    if tradable_active:
+        safe("momentum_tradable_v1", tradable)
+        if tradable.get("orders") != 0 or tradable.get("real_capital") != 0:
+            raise SystemExit("unsafe momentum_tradable_v1: capital/order boundary")
+        completed = (as_of_utc or datetime.now(timezone.utc)).date() - timedelta(days=1)
+        waiting = tradable.get("status") == "WAIT_FIRST_POST_POLICY_CLOSE" and completed < iso(tradable.get("first_eligible_cutoff"))
+        tf = "CURRENT_CALENDAR_GATED" if waiting else freshness(tradable, completed)
+        hint = "RED_FAILED_DELIVERY" if tradable.get("status") == "BLOCKED_TRADABLE_DELIVERY" else "GREEN_ACTIVE" if tf in {"FRESH", "CURRENT_CALENDAR_GATED"} else "AMBER_BLOCKED_DEPENDENCY"
+        current["components"]["momentum_tradable_v1"] = {**tradable, "freshness":tf,
+            "collection_health_hint":hint, "source":"ledgers/momentum_tradable_v1/STATUS.json"}
+        current.setdefault("sources", {})["momentum_tradable_v1"] = source_meta(tradable_path, tradable)
+    legacy_momentum = current["components"]["momentum_m1_m2"]
+    if legacy_momentum.get("economic_status") == "CLOSED_RULE_VERSION_SUPERSEDED":
+        legacy_momentum.update(economic_freshness="CLOSED_NOT_APPLICABLE",
+            successor_source="ledgers/momentum_tradable_v1/STATUS.json",
+            price_coverage_is_historical=True,
+            collection_health_hint="GREEN_CLOSED" if tradable_active else "AMBER_BLOCKED_DEPENDENCY")
+
     # D100 v2 distinguishes physical delivery from scientific readiness.
     d100p = runtime_root / "ledgers/d100/STATUS.json"
     d100 = load(d100p)
@@ -516,6 +538,10 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     missing = list(warnings.get("missing_or_undated_components", []))
     failed = list(warnings.get("failed_delivery_components", []))
     blocked = list(warnings.get("blocked_dependency_components", []))
+    if tradable_active or legacy_momentum.get("economic_status") == "CLOSED_RULE_VERSION_SUPERSEDED":
+        for names in (stale, missing, failed, blocked):
+            names[:] = [x for x in names if x != "momentum_tradable_v1" and
+                        not (x == "momentum_m1_m2" and legacy_momentum.get("economic_status") == "CLOSED_RULE_VERSION_SUPERSEDED")]
     if v16b_closed:
         # Reconcile only the retired parent; successor and other clocks remain.
         for names in (stale, missing, failed, blocked):
@@ -553,7 +579,7 @@ def enrich(runtime_root: Path, current: dict, as_of_utc=None) -> dict:
     if bull_active:
         for names in (stale, missing, failed, blocked):
             names[:] = [x for x in names if x != "bull_replay_live_shadow"]
-    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()) + (("bull_replay_live_shadow",) if bull_active else ()) + (("v16b1",) if v16b1_active else ()) + (("system9_exit",) if system9_active else ()):
+    for name in ("b3_h1", "v16b", "momentum_m1_m2") + (("momentum_tradable_v1",) if tradable_active else ()) + (("d100",) if d100_active else ()) + (("qos_three_track",) if qos_active else ()) + (("momentum_m3_economics",) if m3_active else ()) + (("prl50",) if prl_active else ()) + (("alt_trail",) if alt_active else ()) + (("bull_replay_live_shadow",) if bull_active else ()) + (("v16b1",) if v16b1_active else ()) + (("system9_exit",) if system9_active else ()):
         component = current["components"][name]
         observed_freshness = component["freshness"]
         hint = component.get("collection_health_hint", "")
@@ -613,3 +639,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
