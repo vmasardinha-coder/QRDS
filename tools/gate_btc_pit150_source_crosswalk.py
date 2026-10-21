@@ -35,6 +35,8 @@ OPERATIONAL_STATES = {
     "FUND_SCOPE_REVIEW": "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION",
     "ACCESS_IDENTITY_REVIEW": "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF",
     "SHORT_SOURCE_HISTORY": "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED",
+    "FUND_EXECUTION_SEMANTICS_REVIEW": "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF",
+    "PUBLIC_ARCHIVE_GAPS_BLOCK": "AWAITING_COMPLETE_EXACT_SOURCE_ARCHIVE",
 }
 
 
@@ -70,7 +72,7 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=(), 
             candidate = {k: entry.get(k) for k in (
                 "coin_id", "source_identity", "source_symbol", "qualification",
                 "source_admitted", "qa_pass", "cutoff_semantics",
-                "provenance_sha256", "adjudication_pr",
+                "provenance_sha256", "adjudication_pr", "evidence_stage",
             )}
             identity = ("COIN_ID_MATCH_ONLY" if entry.get("coin_id") == row["coin_id"]
                         else "COIN_ID_MISMATCH" if entry.get("coin_id")
@@ -115,17 +117,24 @@ def build_crosswalk(diagnostic: dict, registry: dict, structural_exclusions=(), 
             continue
         asset["prior_case_review_binding"] = "EXACT_COIN_ID_MATCH_ADVISORY_ONLY"
         state = OPERATIONAL_STATES.get(item["category"])
-        if state is None or asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN":
-            continue
-        asset["operational_work_state"] = state
-        asset["bounded_source_review_completed"] = True
-        asset["coverage_dependency_resolved"] = False
+        # Retain exact-identity review evidence even when a registry contract
+        # takes precedence. A recovered seed is not a later PIT150 QA verdict.
         asset["prior_case_review"] = {
             "review_date": case_review["review_date"],
             "category": item["category"],
             "evidence_cutoff": item.get("baseline_cutoff"),
             "evidence": item["evidence"],
         }
+        candidate = asset["registry_candidate"] or {}
+        recovered_seed = candidate.get("evidence_stage") == "RECOVERED_46_MERGED_SEED"
+        qualified_contract = asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
+        if state is None or (qualified_contract and not recovered_seed):
+            continue
+        asset["operational_work_state"] = state
+        asset["bounded_source_review_completed"] = True
+        asset["coverage_dependency_resolved"] = False
+        if qualified_contract:
+            asset["registry_seed_is_not_current_pit150_qualification"] = True
         asset["next_action"] = item["next_action"]
         asset["reopen_review_only_for"] = [
             "materially_new_exact_source_or_access",
@@ -254,6 +263,53 @@ def retain_case_history(report, histories=(), selection=None):
             "loaded_count_change_is_not_repair_evidence": True}
 
 
+
+NATIVE_AUDIT_PATH = Path(__file__).resolve().parents[1] / "artifacts/gate_btc_2/pit150_candidate_audit_20261017/LOCAL_AUDIT.json"
+NATIVE_AUDIT_SEMANTIC_SHA256 = "07424ccf05c29ba1779c8e929ecfd3911420a26e7602b8865eb17fd55084ba87"
+
+
+def retain_native_candidate_audit(report, audit):
+    """Retain an existing rejected-source review; never qualify or admit data."""
+    digest = hashlib.sha256(json.dumps(audit, sort_keys=True,
+        separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    if digest != NATIVE_AUDIT_SEMANTIC_SHA256:
+        raise ValueError("native candidate audit binding mismatch")
+    # The audit was completed on 17/10 over source cutoff 16/10.
+    # Earlier diagnostics must not inherit a future review.
+    if report.get("data_as_of", "") < "2026-10-17":
+        return report
+    out = json.loads(json.dumps(report))
+    source = audit["grx"]
+    for asset in out["assets"] + out.get("tracked_cases_not_current_failures", []):
+        if asset["symbol"] != source["symbol"] or asset["pit150_identity"] != source["coin_id"]:
+            continue
+        asset["prior_native_candidate_audit"] = {
+            "review_date": "2026-10-17",
+            "evidence_cutoff": source["cutoff"],
+            "source": "artifacts/gate_btc_2/pit150_candidate_audit_20261017/LOCAL_AUDIT.json",
+            "semantic_sha256": digest,
+            "candidate_qa_pass": source["candidate_qa_pass"],
+            "hour_complete_utc_days": source["hour_complete_utc_days"],
+            "hour_positive_execution_utc_days": source["hour_positive_execution_utc_days"],
+            "blocking_reasons": source["blocking_reasons"],
+            "historical_review_not_current_source_qualification": True}
+        if asset["worklist_state"] == "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN":
+            continue
+        asset.update(
+            prior_case_review_binding="EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
+            bounded_source_review_completed=True,
+            coverage_dependency_resolved=False,
+            operational_work_state="AWAITING_RECONCILED_NATIVE_SOURCE_ARCHIVE",
+            next_action="Require a materially corrected native archive and rerun the existing UTC audit; do not restart discovery or admit daily UTC+8 bars.",
+            reopen_review_only_for=[
+                "materially_corrected_native_archive",
+                "new_exact_source_with_complete_UTC_history",
+                "identity_change_or_invalidated_evidence"])
+    out["operational_work_state_counts"] = dict(Counter(
+        a["operational_work_state"] for a in out["assets"]))
+    return out
+
+
 def main():
     parser = argparse.ArgumentParser()
     choice = parser.add_mutually_exclusive_group(required=True)
@@ -302,9 +358,12 @@ def main():
                                         json.loads(diagnostic_raw))
     if history_raw or args.selection_runtime_root:
         report = retain_case_history(report, [json.loads(raw) for _, raw in history_raw], selection)
+    native_audit_raw = NATIVE_AUDIT_PATH.read_bytes()
+    report = retain_native_candidate_audit(report, json.loads(native_audit_raw))
     report["input_sha256"] = {
         "diagnostic": hashlib.sha256(diagnostic_raw).hexdigest(),
         "registry": hashlib.sha256(registry_raw).hexdigest(),
+        "native_candidate_audit": hashlib.sha256(native_audit_raw).hexdigest(),
     }
     if review_raw:
         report["input_sha256"]["case_review"] = hashlib.sha256(review_raw).hexdigest()

@@ -9,14 +9,20 @@ on:
     paths:
       - 'tools/gate_btc_factory_status_export.py'
       - 'tools/gate_btc_reporting_authority.py'
+      - 'tools/gate_btc_system12_post_review_release.py'
+      - 'artifacts/gate_btc_2/post_review_release_20261020/**'
       - 'tests/test_gate_btc_factory_track_coverage.py'
+      - 'tests/test_gate_btc_system12_factory_projection.py'
       - '.github/workflows/gate-btc-factory-status-export.yml'
   pull_request:
     branches: [main]
     paths:
       - 'tools/gate_btc_factory_status_export.py'
       - 'tools/gate_btc_reporting_authority.py'
+      - 'tools/gate_btc_system12_post_review_release.py'
+      - 'artifacts/gate_btc_2/post_review_release_20261020/**'
       - 'tests/test_gate_btc_factory_track_coverage.py'
+      - 'tests/test_gate_btc_system12_factory_projection.py'
       - '.github/workflows/gate-btc-factory-status-export.yml'
 
 concurrency:
@@ -48,7 +54,7 @@ jobs:
       - name: Verify independent track authorities and missing evidence
         run: |
           cd main_repo
-          python -m unittest -v tests.test_gate_btc_factory_track_coverage
+          python -m unittest -v tests.test_gate_btc_factory_track_coverage tests.test_gate_btc_system12_factory_projection
       - name: Build canonical multi-track status
         run: |
           python main_repo/tools/gate_btc_factory_status_export.py \

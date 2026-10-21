@@ -1,0 +1,27 @@
+name: GATE BTC Local Checkout Sync Tests
+on:
+  pull_request:
+    paths:
+      - 'tools/gate_btc_local_checkout_sync.py'
+      - 'tests/test_gate_btc_local_checkout_sync.py'
+      - '.github/workflows/gate-btc-local-checkout-sync-test.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gate_btc_local_checkout_sync.py'
+      - 'tests/test_gate_btc_local_checkout_sync.py'
+      - '.github/workflows/gate-btc-local-checkout-sync-test.yml'
+permissions:
+  contents: read
+jobs:
+  sync-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v tests.test_gate_btc_local_checkout_sync
