@@ -3,7 +3,7 @@
   "currency": "USD",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 2722.474173829025,
+  "cash": 2747.8066712669643,
   "positions": {
     "BTC": {
       "qty": 0.3423400608129831,
@@ -15,15 +15,15 @@
       "avg_cost": 5.271871328358488,
       "high_water": 5.8561
     },
-    "STX": {
-      "qty": 24023.331428995196,
-      "avg_cost": 0.4278535672569723,
-      "high_water": 0.43743699999999996
-    },
     "TIA": {
       "qty": 13683.174014429762,
       "avg_cost": 0.6128121999999999,
-      "high_water": 0.6128121999999999
+      "high_water": 0.6246
+    },
+    "ZEC": {
+      "qty": 6.747086165448422,
+      "avg_cost": 1260.39914,
+      "high_water": 1260.39914
     }
   },
   "benchmark": {
@@ -380,8 +380,8 @@
     },
     {
       "date": "2026-10-20",
-      "nav": 55828.79,
-      "benchmark_nav": 63219.4
+      "nav": 56619.81,
+      "benchmark_nav": 64384.91
     }
   ],
   "trades": [
@@ -1744,6 +1744,22 @@
       "qty": 13683.17401443,
       "price": 0.612812,
       "value": 8385.22
+    },
+    {
+      "date": "2026-10-20",
+      "symbol": "STX",
+      "side": "sell",
+      "qty": 24023.331429,
+      "price": 0.355045,
+      "value": 8529.35
+    },
+    {
+      "date": "2026-10-20",
+      "symbol": "ZEC",
+      "side": "buy",
+      "qty": 6.74708617,
+      "price": 1260.39914,
+      "value": 8504.02
     }
   ],
   "cooldown": {},
@@ -35858,9 +35874,9 @@
       "date": "2026-10-20",
       "regime": "risk_on",
       "hurdle": "BTC",
-      "hurdle_score": 0.118,
-      "rebalance_trigger": "desvio de peso em TIA: 0.0% vs alvo 15.0%",
-      "eligible_count": 28,
+      "hurdle_score": 0.1386,
+      "rebalance_trigger": "desvio de peso em ZEC: 0.0% vs alvo 15.0%",
+      "eligible_count": 29,
       "selected": [
         {
           "symbol": "BTC",
@@ -35869,17 +35885,17 @@
         },
         {
           "symbol": "NEAR",
-          "score": 0.8829,
+          "score": 0.9094,
           "weight": 0.15
         },
         {
-          "symbol": "STX",
-          "score": 0.5803,
+          "symbol": "ZEC",
+          "score": 0.6398,
           "weight": 0.15
         },
         {
           "symbol": "TIA",
-          "score": 0.578,
+          "score": 0.61,
           "weight": 0.15
         }
       ],
@@ -35890,7 +35906,7 @@
         },
         {
           "symbol": "ADA",
-          "reason": "nao bate o benchmark (+9.4% <= +11.8%)"
+          "reason": "nao bate o benchmark (+13.2% <= +13.9%)"
         },
         {
           "symbol": "ALICE",
@@ -35918,7 +35934,7 @@
         },
         {
           "symbol": "ATOM",
-          "reason": "nao bate o benchmark (+8.7% <= +11.8%)"
+          "reason": "nao bate o benchmark (+9.1% <= +13.9%)"
         },
         {
           "symbol": "AUDIO",
@@ -35946,7 +35962,7 @@
         },
         {
           "symbol": "BONK",
-          "reason": "nao bate o benchmark (-2.3% <= +11.8%)"
+          "reason": "nao bate o benchmark (-0.8% <= +13.9%)"
         },
         {
           "symbol": "CAKE",
@@ -35958,7 +35974,7 @@
         },
         {
           "symbol": "CFX",
-          "reason": "nao bate o benchmark (+4.8% <= +11.8%)"
+          "reason": "nao bate o benchmark (+10.0% <= +13.9%)"
         },
         {
           "symbol": "CHZ",
@@ -35970,7 +35986,7 @@
         },
         {
           "symbol": "COTI",
-          "reason": "liquidez baixa (0.7M < 1M)"
+          "reason": "liquidez baixa (0.6M < 1M)"
         },
         {
           "symbol": "CTSI",
@@ -35986,7 +36002,7 @@
         },
         {
           "symbol": "DOGE",
-          "reason": "nao bate o benchmark (-0.3% <= +11.8%)"
+          "reason": "nao bate o benchmark (+2.9% <= +13.9%)"
         },
         {
           "symbol": "DYDX",
@@ -36014,11 +36030,15 @@
         },
         {
           "symbol": "ETH",
-          "reason": "nao bate o benchmark (+7.1% <= +11.8%)"
+          "reason": "nao bate o benchmark (+9.5% <= +13.9%)"
         },
         {
           "symbol": "ETHFI",
           "reason": "liquidez baixa (0.4M < 1M)"
+        },
+        {
+          "symbol": "FET",
+          "reason": "nao bate o benchmark (+12.7% <= +13.9%)"
         },
         {
           "symbol": "FLOW",
@@ -36054,7 +36074,7 @@
         },
         {
           "symbol": "HBAR",
-          "reason": "nao bate o benchmark (+4.4% <= +11.8%)"
+          "reason": "nao bate o benchmark (+6.5% <= +13.9%)"
         },
         {
           "symbol": "HIGH",
@@ -36069,12 +36089,8 @@
           "reason": "liquidez baixa (0.9M < 1M)"
         },
         {
-          "symbol": "JASMY",
-          "reason": "nao bate o benchmark (+10.2% <= +11.8%)"
-        },
-        {
           "symbol": "JTO",
-          "reason": "liquidez baixa (1.0M < 1M)"
+          "reason": "liquidez baixa (0.9M < 1M)"
         },
         {
           "symbol": "KAVA",
@@ -36118,7 +36134,7 @@
         },
         {
           "symbol": "MTL",
-          "reason": "liquidez baixa (0.2M < 1M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "NEO",
@@ -36142,11 +36158,11 @@
         },
         {
           "symbol": "ONDO",
-          "reason": "nao bate o benchmark (+2.2% <= +11.8%)"
+          "reason": "nao bate o benchmark (+5.9% <= +13.9%)"
         },
         {
           "symbol": "ONE",
-          "reason": "nao bate o benchmark (-30.4% <= +11.8%)"
+          "reason": "nao bate o benchmark (-23.7% <= +13.9%)"
         },
         {
           "symbol": "ONT",
@@ -36162,7 +36178,7 @@
         },
         {
           "symbol": "PENDLE",
-          "reason": "nao bate o benchmark (+1.4% <= +11.8%)"
+          "reason": "nao bate o benchmark (+5.5% <= +13.9%)"
         },
         {
           "symbol": "PERP",
@@ -36170,7 +36186,7 @@
         },
         {
           "symbol": "POL",
-          "reason": "nao bate o benchmark (+0.4% <= +11.8%)"
+          "reason": "nao bate o benchmark (+4.3% <= +13.9%)"
         },
         {
           "symbol": "POWR",
@@ -36199,10 +36215,6 @@
         {
           "symbol": "RARE",
           "reason": "liquidez baixa (0.1M < 1M)"
-        },
-        {
-          "symbol": "RENDER",
-          "reason": "nao bate o benchmark (+11.6% <= +11.8%)"
         },
         {
           "symbol": "REQ",
@@ -36250,7 +36262,7 @@
         },
         {
           "symbol": "SYN",
-          "reason": "nao bate o benchmark (-11.1% <= +11.8%)"
+          "reason": "nao bate o benchmark (+1.0% <= +13.9%)"
         },
         {
           "symbol": "THETA",
@@ -36274,7 +36286,7 @@
         },
         {
           "symbol": "TRX",
-          "reason": "nao bate o benchmark (-1.1% <= +11.8%)"
+          "reason": "nao bate o benchmark (-1.6% <= +13.9%)"
         },
         {
           "symbol": "UMA",
@@ -36286,7 +36298,7 @@
         },
         {
           "symbol": "W",
-          "reason": "liquidez baixa (0.2M < 1M)"
+          "reason": "liquidez baixa (0.1M < 1M)"
         },
         {
           "symbol": "WIF",
@@ -36294,11 +36306,11 @@
         },
         {
           "symbol": "XLM",
-          "reason": "nao bate o benchmark (-8.1% <= +11.8%)"
+          "reason": "nao bate o benchmark (-5.3% <= +13.9%)"
         },
         {
           "symbol": "XRP",
-          "reason": "nao bate o benchmark (+2.7% <= +11.8%)"
+          "reason": "nao bate o benchmark (+5.8% <= +13.9%)"
         },
         {
           "symbol": "XTZ",
