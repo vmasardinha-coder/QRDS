@@ -41,6 +41,11 @@ class Expanded(unittest.TestCase):
   x=report.basket_sim([rec],b,60,'REF',{DAY:{'rows':bars()}});self.assertEqual(x['closed_positions'],1);self.assertAlmostEqual(x['net_brl'],o['gross_brl']-o['cost_ref_brl']);self.assertEqual(x['max_gross_contracts'],1)
   y=report.basket_sim([rec],b,30,'REF',{DAY:{'rows':bars()}});self.assertIsNone(y['net_brl']);self.assertEqual(y['closed_positions'],0)
  def test_no_data_correlation_unavailable(self):self.assertIsNone(report.corr([],[]));self.assertIsNone(report.corr([0,0],[0,0]))
+ def test_time_binding_after_market_does_not_need_fresh_tick(self):
+  now=datetime.fromisoformat(DAY+'T19:15:00-03:00');epoch=int(datetime.fromisoformat(DAY+'T18:30:00+00:00').timestamp());ev={'raw_tick_epoch':epoch,'fresh_within_900s':False}
+  self.assertEqual(pv.bound_time_mode(now,'BROKER_LOCAL_EPOCH',ev,'BROKER_LOCAL_EPOCH',source),'BROKER_LOCAL_EPOCH')
+  with self.assertRaises(AssertionError):pv.bound_time_mode(datetime.fromisoformat(DAY+'T12:45:00-03:00'),'BROKER_LOCAL_EPOCH',ev,'BROKER_LOCAL_EPOCH',source)
+  with self.assertRaises(AssertionError):pv.bound_time_mode(now,'UTC_EPOCH',{'fresh_within_900s':True},'BROKER_LOCAL_EPOCH',source)
  def test_capture_activation_isolation_and_idempotency(self):
   with tempfile.TemporaryDirectory() as t:
    root=pathlib.Path(t);c=contract();cfg={'activation_date':DAY,'families':[{'contract':c,'policy':pv.DIAG}]}

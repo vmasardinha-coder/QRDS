@@ -1,5 +1,5 @@
 """Daily JSON/CSV and self-contained HTML/SVG views; no trading or source mutation."""
-import csv,html,json,math,statistics
+import csv,html,json,math,statistics,zipfile
 from collections import defaultdict,Counter
 from pathlib import Path
 from pressure_valve_expanded import load,save,STRICT,DIAG,at
@@ -14,7 +14,7 @@ def corr(xs,ys):
     return sum((x-mx)*(y-my) for x,y in zip(xs,ys))/math.sqrt(vx*vy) if vx>0 and vy>0 else None
 def csvfile(path,rows,fields):
     with Path(path).open('w',newline='',encoding='utf-8-sig') as f:
-        w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore',delimiter=';');w.writeheader();w.writerows(rows)
 def basket_sim(records,basket,h,scenario,bar_files):
     ids=basket['families'];eligible=[r for r in records if r['policy']==basket['policy']];days=[];curve=[];offset=0.;peak=0.;worst=0.;gross_exposure=0;net_exposure=0;notional_peak=0.;concentration=defaultdict(float);invalid=[];closed_total=0;cost_total=0.;gross_total=0.;pnl_by_day=[]
     delayed=scenario=='DELAYED_REF';fee=.0003 if scenario=='STRESS' else .0002
@@ -74,14 +74,20 @@ def build(root):
         c=f['contract'];rows=lookup[(f['policy'],c['family_id'])]
         for h in [30,60,120]:
             outs=[next((x for x in r['outcomes'] if x['horizon_minutes']==h and x['state']=='MODEL_CLOSED'),None) for _,r in rows];valid=[x for x in outs if x]
-            sums={k:sum(o[k] for o in valid) if rows else None for k in ['gross_bps','net_ref_2bps','net_stress_3bps','delayed_net_ref_2bps']}
+            measured=bool(valid) or any(r['state']=='NO_SIGNAL' for _,r in rows)
+            sums={k:sum(o[k] for o in valid) if measured else None for k in ['gross_bps','net_ref_2bps','net_stress_3bps','delayed_net_ref_2bps']}
             families.append({'family_id':c['family_id'],'policy':f['policy'],'feature':c['feature'],'direction':c['direction'],'window':c['decision_window_minutes'],'lookback':c['standardization_lookback_sessions'],'threshold':c['abs_z_threshold'],'initialized':initial['ready'],'seed_observations':initial['available'],'seed_missing':initial['missing'],'sessions_captured':len(rows),'sessions_evaluated':sum(r['state'] in ['NO_SIGNAL','TRIGGER','TRIGGER_OUTCOME_INCOMPLETE'] for _,r in rows),'no_signal':sum(r['state']=='NO_SIGNAL' for _,r in rows),'triggers':sum(r['state'].startswith('TRIGGER') for _,r in rows),'closed':len(valid),'horizon':h,**sums,'drawdown_closed_bps':dd([o['net_ref_2bps'] for o in valid]) if rows else None,'last_session':rows[-1][0]['session'] if rows else None,'last_state':rows[-1][1]['state'] if rows else ('INITIALIZED_WAIT_ACTIVATION' if initial['ready'] else 'WARMUP_PENDING'),'cost_ref_bps':2,'cost_stress_bps':3,'delay_bars':1})
     bar_files={}
     for p in sorted((root/'captures').glob('*.json')):
         r=load(p);bar_files[r['session']]=r
     baskets=[basket_sim(records,b,h,s,bar_files) for b in cfg['baskets'] for h in [30,60,120] for s in ['REF','STRESS','DELAYED_REF']]
     summary={'activation_date':cfg['activation_date'],'seed_cutoff':seed['cutoff'],'installed':580,'unique_initialized':sum(x['ready'] for x in seed['status']),'blocked_initialization':sum(not x['ready'] for x in seed['status']),'post_activation_records':len(records),'families':families,'baskets':baskets,'margin':load(root/'MARGIN.json') if (root/'MARGIN.json').exists() else load(root/'validation/MARGIN.json') if (root/'validation/MARGIN.json').exists() else None,'selection_rule':'Contracts and technical eligibility frozen before reading P&L; basket membership fixed before activation; horizons are alternatives.','legacy_series_untouched':True,'canonical_credit':0,'orders_sent':0}
-    save(out/'SUMMARY.json',summary);save(out/'DAILY_HISTORY.json',daily);save(out/'INITIALIZATION_STATUS.json',seed['status'])
+    current=[]
+    for f,initial in zip(cfg['families'],seed['status']):
+        rows=lookup[(f['policy'],f['contract']['family_id'])];last=rows[-1][1] if rows else None
+        current.append({'family_id':f['contract']['family_id'],'policy':f['policy'],'state':last['state'] if last else initial['state'],'available':last['history_available'] if last else initial['available'],'missing':last['missing'] if last else initial['missing'],'ready':(last['missing']==0 and last['mad'] is not None and last['mad']>0) if last else initial['ready'],'reason':last.get('reason') if last else initial['reason']})
+    summary['current_readiness']=current;summary['current_initialized']=sum(x['ready'] for x in current);summary['current_blocked']=sum(not x['ready'] for x in current)
+    save(out/'SUMMARY.json',summary);save(out/'DAILY_HISTORY.json',daily);save(out/'INITIALIZATION_STATUS.json',seed['status']);save(out/'CURRENT_READINESS.json',current)
     timetable=[]
     for f in cfg['families']:
         c=f['contract'];w=c['decision_window_minutes']
@@ -100,5 +106,14 @@ def build(root):
     page+='<table><thead><tr><th>Cesta</th><th>Horizonte</th><th>Cenário</th><th>Sessões</th><th>Líquido R$</th><th>Estado</th></tr></thead><tbody>'+table+'</tbody></table><p>Margem efetiva da corretora e reserva para perdas: indisponíveis enquanto não verificadas. Retorno de patrimônio não calculado.</p>'
     page+='<script>const D='+data+''';function chart(vals){if(!vals.length)return '<p>Aguardando observações após a ativação. Sem curva econômica ainda.</p>';let lo=Math.min(0,...vals),hi=Math.max(0,...vals),sp=Math.max(1,hi-lo);return '<svg viewBox="0 0 900 230"><polyline fill="none" stroke="#246ab5" stroke-width="2" points="'+vals.map((v,i)=>(25+850*i/Math.max(1,vals.length-1))+','+(200-175*(v-lo)/sp)).join(' ')+'"/></svg>'}D.families.forEach((f,i)=>family.add(new Option(f.family_id+' / '+f.policy+' / '+f.horizon+' min',i)));function ff(){let f=D.families[+family.value];familyinfo.textContent='Estado: '+f.last_state+'; sessões: '+f.sessions_captured+'; gatilhos: '+f.triggers+'; fechadas: '+f.closed+'; líquido: '+(f.net_ref_2bps??'indisponível')+' bps';let a=0,v=D.daily.filter(x=>x.family_id===f.family_id&&x.policy===f.policy&&x.horizon===f.horizon&&x.outcome_state==='MODEL_CLOSED').map(x=>a+=x.net_ref_2bps);familychart.innerHTML=chart(v)}family.onchange=ff;ff();D.baskets.forEach((b,i)=>basket.add(new Option(b.basket+' / '+b.horizon+' min / '+b.scenario,i)));function bb(){let b=D.baskets[+basket.value];basketinfo.textContent='Estado: '+b.state+'; líquido R$: '+(b.net_brl??'indisponível')+'; DD MTM R$: '+(b.drawdown_mtm_brl??'indisponível')+'; contratos simultâneos: '+(b.max_gross_contracts??'indisponível');basketchart.innerHTML=chart(b.curve.map(x=>x.equity_brl))}basket.onchange=bb;bb();</script></html>'''
     (out/'DASHBOARD.html').write_text(page,encoding='utf-8')
+    downloads=Path.home()/'Downloads'
+    if downloads.exists():
+        label=max(r['session'] for r in records) if records else 'INICIALIZACAO_20261021'
+        export=downloads/f'QRDS_PRESSURE_VALVE_EXPANDED_{label}.zip'
+        with zipfile.ZipFile(export,'w',zipfile.ZIP_DEFLATED) as z:
+            for file in out.glob('*'):
+                if file.is_file():z.write(file,'reports/'+file.name)
+            for rel in ['STATUS.json','MARGIN.json','initialization/SEED.json','INSTALL_RECEIPT.json']:
+                if (root/rel).exists():z.write(root/rel,rel)
     print(json.dumps({'report':str(out),'families':580,'initialized':summary['unique_initialized'],'post_activation_records':len(records),'orders':0}))
     return summary

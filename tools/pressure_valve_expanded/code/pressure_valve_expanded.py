@@ -151,7 +151,16 @@ def evaluate(c,policy,values,hist,rows,day,source,engine,qa,provisional=False,po
     side=(1 if z>0 else -1)*(1 if c['direction']=='CONTINUATION' else -1)
     outs=[outcome(c,rows,day,side,h,source,point_value) for h in c['holding_horizons_minutes']]
     return {**base,'state':'TRIGGER' if all(o['state']=='MODEL_CLOSED' for o in outs) else 'TRIGGER_OUTCOME_INCOMPLETE','side':side,'outcomes':outs,'reason':None}
-def snapshot_mt5(now):
+def bound_time_mode(now,detected,evidence,bound,source):
+    assert bound in ['UTC_EPOCH','BROKER_LOCAL_EPOCH'],'FROZEN_TIME_MODE_MISSING'
+    if evidence.get('fresh_within_900s'):
+        assert detected==bound,'MT5_TIME_MAPPING_CHANGED'
+    else:
+        assert now.hour>=19,'MT5_TIME_MAPPING_STALE_DURING_MARKET'
+        epoch=evidence.get('raw_tick_epoch',0)
+        assert epoch and source.decode_epoch(epoch,bound).date()==now.date(),'NO_CURRENT_SESSION_TICK'
+    return bound
+def snapshot_mt5(now,bound):
     import MetaTrader5 as mt5
     if not mt5.initialize():raise RuntimeError('MT5_INITIALIZE_FAILED:'+str(mt5.last_error()))
     try:
@@ -159,7 +168,8 @@ def snapshot_mt5(now):
         from gate_btc_2_item3b_forward_source_probe import meta,exact_win_info,choose_contract,detect_time_mode,normalize,closed_session_rows
         metas=[meta(s) for s in mt5.symbols_get(group='WIN*') or [] if exact_win_info(s)];selected=choose_contract(now.date(),metas)
         assert selected,'NO_UNEXPIRED_EXACT_WIN_CONTRACT'
-        mode,evidence=detect_time_mode(mt5,selected['symbol'],now);assert mode and evidence.get('fresh_within_900s'),'MT5_TIME_MAPPING_STALE'
+        import gate_btc_2_item3b_forward_source_probe as source
+        detected,evidence=detect_time_mode(mt5,selected['symbol'],now);mode=bound_time_mode(now,detected,evidence,bound,source)
         raw=mt5.copy_rates_from_pos(selected['symbol'],mt5.TIMEFRAME_M5,0,3000);assert raw is not None,'MT5_COPY_FAILED'
         normalized=normalize(raw,mode);rows=closed_session_rows(normalized,now.date(),now)
         info=mt5.symbol_info(selected['symbol']);account=mt5.account_info();tick=mt5.symbol_info_tick(selected['symbol'])
@@ -176,7 +186,9 @@ def capture(root,stage,now=None,validation=False):
     earliest=at(day,225 if stage=='morning' else 615)
     if now<earliest:raise RuntimeError('WAIT_'+stage.upper()+'_WINDOW')
     if day<config['activation_date'] and not validation:raise RuntimeError('WAIT_ACTIVATION_DATE')
-    rows,normalized,selected,receipt=snapshot_mt5(now)
+    audit_summary=root/'initialization/source/SUMMARY.json'
+    bound=load(audit_summary)['time_mode'] if audit_summary.exists() else 'BROKER_LOCAL_EPOCH'
+    rows,normalized,selected,receipt=snapshot_mt5(now,bound)
     if not rows or max(r['timestamp'] for r in rows)<at(day,215).isoformat():raise RuntimeError('MISSING_CLOSED_1235_BAR')
     save(root/('validation/BARS.json' if validation else f'captures/{day}_{stage}.json'),{'session':day,'symbol':selected['symbol'],'rows':rows,'receipt':receipt})
     hist,previous=build_histories(root,seed,day);keys=sorted({contract_key(f['contract']) for f in config['families']})

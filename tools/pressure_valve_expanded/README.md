@@ -26,7 +26,7 @@ A API MT5 da conta BTG retornou margem zero em 21/10; isto não comprova dispens
 
 ## Saídas
 
-`reports/SUMMARY.json`, `DAILY_HISTORY.json/CSV`, `FAMILIES.csv`, `INITIALIZATION.csv`, `BASKETS.csv`, `TIMETABLE.json/CSV` e `DASHBOARD.html`. CSVs de dados abrem no Excel; o HTML contém seleção por família/horizonte e gráficos de cestas. A pasta captures contém as barras observadas usadas na marcação; a pasta ledger contém apenas pós-ativação. O workbook XLSX entregue é um retrato de aceite; a produção diária local atualiza JSON/CSV/HTML, não o XLSX estático.
+`reports/SUMMARY.json`, `DAILY_HISTORY.json/CSV`, `FAMILIES.csv`, `INITIALIZATION.csv`, `CURRENT_READINESS.json`, `BASKETS.csv`, `TIMETABLE.json/CSV` e `DASHBOARD.html`. CSVs de dados abrem no Excel; o HTML contém seleção por família/horizonte e gráficos de cestas. Um pacote QRDS_PRESSURE_VALVE_EXPANDED_DATA.zip é atualizado em Downloads para cada sessão. A pasta captures contém as barras observadas usadas na marcação; a pasta ledger contém apenas pós-ativação. O workbook XLSX entregue é um retrato de aceite; a produção diária local atualiza JSON/CSV/HTML, não o XLSX estático.
 
 ## Aceite
 
