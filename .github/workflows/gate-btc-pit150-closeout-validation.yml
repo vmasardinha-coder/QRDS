@@ -57,13 +57,28 @@ jobs:
           python - <<'PY'
           import json, pathlib, requests
           from datetime import datetime, timedelta, timezone
-          from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture, ROUTES
+          from tools.gate_btc_pit150_qualified_history import load_bybit_public_capture, ROUTES, BYBIT_CAPTURE_BRANCH, BYBIT_CAPTURE_REPOSITORY
           now = datetime.now(timezone.utc)
-          cutoff = (now - timedelta(days=1)).date().isoformat()
+          requested_cutoff = (now - timedelta(days=1)).date()
+          # This is a transport/pinning preflight, not admission of today's close.
+          # Immediately after UTC midnight the new native capture may not exist.
+          import os
+          response = requests.get(
+              f"https://api.github.com/repos/{BYBIT_CAPTURE_REPOSITORY}/commits",
+              params={"sha":BYBIT_CAPTURE_BRANCH,"per_page":1},
+              headers={"Authorization":"Bearer " + os.environ["GATE_BTC_PUBLIC_CAPTURE_READ_TOKEN"]}, timeout=30)
+          response.raise_for_status()
+          published = datetime.fromisoformat(response.json()[0]["commit"]["committer"]["date"].replace("Z","+00:00"))
+          if published.tzinfo is None or published > now:
+              raise ValueError("capture publication is future or timezone missing")
+          available_cutoff = min(requested_cutoff, published.date() - timedelta(days=1))
+          if (requested_cutoff - available_cutoff).days > 1:
+              raise ValueError("pinned capture is more than one cutoff behind")
+          cutoff = available_cutoff.isoformat()
           out = pathlib.Path('artifacts/pit150_public_host_probe/required_capture')
           rows, receipt = load_bybit_public_capture(requests.Session(), ROUTES['USDY'], 'USDY', cutoff, out, now=now)
           assert len(rows) >= 200 and rows[-1]['date'] == cutoff
-          result = {'status':'PASS_PINNED_PUBLIC_CAPTURE', 'cutoff':cutoff, 'rows':len(rows), 'receipt':receipt, 'orders':0}
+          result = {'status':'PASS_PINNED_PUBLIC_CAPTURE', 'cutoff':cutoff, 'requested_cutoff':requested_cutoff.isoformat(), 'freshness':'CURRENT' if cutoff == requested_cutoff.isoformat() else 'WAIT_LATEST_NATIVE_CAPTURE', 'runtime_admission':False, 'rows':len(rows), 'receipt':receipt, 'orders':0}
           (out/'RESULT.json').write_text(json.dumps(result, indent=2)+'\n')
           print(json.dumps({'status':result['status'], 'rows':len(rows), 'cutoff':cutoff}))
           PY
