@@ -48,7 +48,14 @@ jobs:
             for CANDIDATE in $CANDIDATES; do
               if [ "$CANDIDATE" = "NONE" ]; then continue; fi
               ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE}/artifacts" --jq '[.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-"))] | .[0].id // 0')
-              if [ "$ARTIFACT_ID" != "0" ]; then RUN_ID="$CANDIDATE"; break; fi
+              if [ "$ARTIFACT_ID" = "0" ]; then continue; fi
+              gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+              if python -c 'import sys,zipfile; sys.exit(0 if "v2a_failure_diagnostic.json" in zipfile.ZipFile("source_probe.zip").namelist() else 1)'; then
+                RUN_ID="$CANDIDATE"
+                break
+              fi
+              echo "SOURCE_PROBE_WITHOUT_V2A_DIAGNOSTIC=$CANDIDATE"
+              ARTIFACT_ID="0"
             done
             if [ "$ARTIFACT_ID" != "0" ]; then break; fi
           done
@@ -56,7 +63,7 @@ jobs:
             echo "No retained source-probe evidence in the bounded branch/main search."
             exit 1
           fi
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+          echo "SELECTED_SOURCE_PROBE_RUN=$RUN_ID"
           mkdir -p source_probe artifacts/rwa_sidecar
           unzip -q source_probe.zip -d source_probe
           test -f source_probe/v2a_failure_diagnostic.json
