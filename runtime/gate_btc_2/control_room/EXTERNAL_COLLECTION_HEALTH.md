@@ -1,12 +1,12 @@
 # GATE BTC 2.0 — External Collection Health
 
-Generated: `2026-10-22T23:23:44.397314+00:00`
+Generated: `2026-10-22T23:26:00.668439+00:00`
 
 Preregistered cadence: `17 */4 * * *`
 
 | Family | Records | Latest age h | Latest interval h | Max interval h | Intervals > 4h |
 |---|---:|---:|---:|---:|---:|
-| `F-XVOL-SURFACE` | 208 | 0.02 | 3.23 | 11.34 | 63 |
-| `F-XMM-INVENTORY` | 208 | 0.02 | 3.23 | 11.34 | 63 |
+| `F-XVOL-SURFACE` | 209 | 0.02 | 0.04 | 11.34 | 63 |
+| `F-XMM-INVENTORY` | 209 | 0.02 | 0.04 | 11.34 | 63 |
 
 This is operational observability only. Cadence gaps are not backfilled and carry zero scientific/economic interpretation.
