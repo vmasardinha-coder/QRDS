@@ -1,0 +1,48 @@
+{
+  "schema": "qrds.factory.delta_c1_closure.v1",
+  "as_of": "2026-10-22",
+  "generation": "DELTA_C1",
+  "terminal_state": "CLOSED_NO_CANONICAL_SURVIVOR_EVIDENCE",
+  "historical_reported_candidate_count": 4,
+  "canonical_survivors_ready_for_freeze": [],
+  "freeze_pending": false,
+  "admission_allowed": false,
+  "public_regeneration_allowed": false,
+  "fixture_qa_allowed": true,
+  "source_run": {
+    "run_id": 32774705275,
+    "job_id": 97582982497,
+    "created_at_utc": "2026-08-24T20:35:01Z",
+    "mode": "fixture",
+    "log_sha256": "fe1c4a932296532a3f7cdfb30f1942ef610a64e99781db59afc93542098f7cc8",
+    "observed_output": "SURVIVORS_READY_FOR_FREEZE",
+    "reported_families": [
+      "DELTA_C1_PERSISTENCE",
+      "DELTA_C1_BETA_NEUTRAL",
+      "DELTA_C1_REGIME",
+      "DELTA_C1_RISK_BUDGET"
+    ]
+  },
+  "independent_preexisting_evidence": {
+    "path": "tools/gate_btc_factory_delta_c2_prereg.json",
+    "field": "lineage",
+    "date": "2026-09-09",
+    "predecessor_result_credit": 0,
+    "reason": "C1 result evidence not canonically persisted"
+  },
+  "causality_repair_pr": 1227,
+  "reason": "The four reported survivors are confirmed synthetic fixture output, not public-data admission evidence. The later C2 preregistration already assigned C1 zero predecessor credit. V1 also violated next-bar semantics, repaired separately in PR1227. These facts close the old freeze demand; they do not establish an economic rejection of the mechanisms.",
+  "reopen_policy": "A new research generation needs its own pre-results source admission and preregistration; do not rescue C1 using newly downloaded historical data or partial prospective outcomes.",
+  "scientific_rejection_credit": 0,
+  "scientific_promotion_credit": 0,
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "engine_feed": false,
+    "no_backfill": true,
+    "no_retune": true
+  }
+}
