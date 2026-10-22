@@ -56,7 +56,10 @@ jobs:
           assert p['h1_economics_read'] is False
           assert p['partial_prospective_economics_read'] is False
           assert p['comparison_capital_brl']==180000
-          assert p['status'] in {'CLOSED_NULL','SURVIVORS_READY_FOR_FREEZE'}
+          assert p['status'] in {'CLOSED_NULL','CAUSAL_CANDIDATES_REQUIRE_SOURCE_QUALIFICATION'}
+          assert p['measurement_rule']=='COMPLETED_CLOSE_NEXT_BAR_V2'
+          assert p['freeze_eligible'] is False
+          assert p['legacy_v1_admission_allowed'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
