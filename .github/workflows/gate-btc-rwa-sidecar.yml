@@ -10,6 +10,8 @@ on:
       - .github/workflows/gate-btc-rwa-sidecar.yml
       - tools/gate_btc_rwa_sidecar_manifest.py
       - tools/gate_btc_v2a_failure_diagnostic.py
+      - tools/gate_btc_pit150_retry_policy.py
+      - tools/gate_btc_pit150_retry_policy.json
       - tests/test_gate_btc_rwa_sidecar_manifest.py
 
 permissions:
@@ -37,15 +39,31 @@ jobs:
         run: |
           set -euo pipefail
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${BRANCH}&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
-          if [ -z "$RUN_ID" ]; then
-            echo "No successful source-probe on ${BRANCH}; using latest successful main evidence for observation-only sidecar."
-            RUN_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=main&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')
+          RUN_ID=""
+          ARTIFACT_ID="0"
+          # A successful run can have no retained payload; select evidence,
+          # rather than assuming the newest green run has an artifact.
+          for SOURCE_BRANCH in "$BRANCH" main; do
+            CANDIDATES=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-source-redundancy-probes.yml/runs?branch=${SOURCE_BRANCH}&status=success&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success") | .id] | if length == 0 then "NONE" else map(tostring) | join(" ") end')
+            for CANDIDATE in $CANDIDATES; do
+              if [ "$CANDIDATE" = "NONE" ]; then continue; fi
+              ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE}/artifacts" --jq '[.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-"))] | .[0].id // 0')
+              if [ "$ARTIFACT_ID" = "0" ]; then continue; fi
+              gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+              if python -c 'import sys,zipfile; sys.exit(0 if "v2a_failure_diagnostic.json" in zipfile.ZipFile("source_probe.zip").namelist() else 1)'; then
+                RUN_ID="$CANDIDATE"
+                break
+              fi
+              echo "SOURCE_PROBE_WITHOUT_V2A_DIAGNOSTIC=$CANDIDATE"
+              ARTIFACT_ID="0"
+            done
+            if [ "$ARTIFACT_ID" != "0" ]; then break; fi
+          done
+          if [ "$ARTIFACT_ID" = "0" ]; then
+            echo "No retained source-probe evidence in the bounded branch/main search."
+            exit 1
           fi
-          test -n "$RUN_ID"
-          ARTIFACT_ID=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-source-probes-")) | .id' | head -1)
-          test -n "$ARTIFACT_ID"
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > source_probe.zip
+          echo "SELECTED_SOURCE_PROBE_RUN=$RUN_ID"
           mkdir -p source_probe artifacts/rwa_sidecar
           unzip -q source_probe.zip -d source_probe
           test -f source_probe/v2a_failure_diagnostic.json

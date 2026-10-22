@@ -10,6 +10,9 @@ import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
+import sys
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def reviewed_cases(case_review, cutoff):
@@ -385,6 +388,8 @@ def main():
     if binding:
         report["authoritative_status_binding"] = binding
         report["input_sha256"]["authoritative_status"] = hashlib.sha256(status_raw).hexdigest()
+    from tools.gate_btc_pit150_retry_policy import annotate_followup
+    report = annotate_followup(report)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (

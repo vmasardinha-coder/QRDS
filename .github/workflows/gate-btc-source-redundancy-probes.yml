@@ -28,6 +28,8 @@ on:
       - tools/gate_btc_binance_spot_history_probe.py
       - tools/gate_btc_binance_spot_equivalence_probe.py
       - tools/gate_btc_v2a_failure_diagnostic.py
+      - tools/gate_btc_pit150_retry_policy.py
+      - tools/gate_btc_pit150_retry_policy.json
       - tests/test_gate_btc_source_redundancy_probe.py
       - tests/test_gate_btc_bybit_redundancy_probe.py
       - tests/test_gate_btc_bybit_public_archive_probe.py
@@ -239,4 +241,3 @@ jobs:
           path: artifacts/source_probes/
           retention-days: 30
           if-no-files-found: error
-

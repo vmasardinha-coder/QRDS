@@ -15,6 +15,9 @@ import json
 import os
 import re
 from pathlib import Path
+import sys
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from typing import Any
 
 
@@ -111,6 +114,15 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
             else:
                 action_class = "SOURCE_RECOVERY_CANDIDATE"
 
+        operational_deferral = None
+        if reason.startswith("OPERATIONALLY_DEFERRED:"):
+            from tools.gate_btc_pit150_retry_policy import decision
+            operational_deferral = json.loads(reason.split(":", 1)[1])
+            expected = decision(symbol, coin_id, manifest.get("data_as_of"))
+            if attempts is not None or expected is None or operational_deferral != expected:
+                raise RuntimeError("invalid operational deferral evidence")
+            action_class = "OPERATIONALLY_DEFERRED"
+            counts.setdefault(action_class, 0)
         counts[action_class] += 1
         details.append({
             "symbol": symbol,
@@ -123,6 +135,7 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
             "action_class": action_class,
             "source_attempts": attempts,
             "source_attempts_available": attempts is not None,
+            "operational_deferral": operational_deferral,
         })
 
     attempted = int(manifest.get("attempted_symbols", 0))
@@ -232,5 +245,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

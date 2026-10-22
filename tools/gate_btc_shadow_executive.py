@@ -222,6 +222,19 @@ def build(state: dict[str, Any], reporting_date: str) -> dict[str, Any]:
         "04_proxy_real": {
             "bull_replay_live_shadow": bull or nd("bull replay component absent"),
             "proxy_series": "Victor_proxy",
+            "c4_reference": {
+                "reference_status": "USER_REPORTED_APPROXIMATE_BASELINE_RETAINED",
+                "reference_balance_brl": 200000,
+                "approximate": True,
+                "historical_trajectory_brl": [180000, 220000, 200000],
+                "dates_of_trajectory_marks": None,
+                "reference_is_current_daily_valuation": False,
+                "comparison_updates_enabled": True,
+                "collection_paused_by_reference_freeze": False,
+                "new_real_mark_policy": "APPEND_OBSERVED_MARK_WITH_DATE; NEVER_REPLACE_WITH_PROXY",
+                "proxy_evidence_status": "PRESENT" if bull else "WAITING_CANONICAL_EVIDENCE",
+                "real_vs_proxy_delta": nd("requires observed real marks on matching dates"),
+            },
             "claim_boundary": "DESCRIPTIVE_SHADOW_ONLY_NOT_REAL_CAPITAL",
         },
         "05_preservation": {
@@ -390,4 +403,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
