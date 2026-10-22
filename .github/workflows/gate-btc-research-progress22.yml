@@ -1,0 +1,111 @@
+name: GATE BTC XAGENT experiment and System13 observed panel
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_xagent_spot_experiment.py
+      - tools/gate_btc_system13_observed_panel.py
+      - tools/gate_btc_research_progress_publish.py
+      - tools/gate_btc_factory/XAGENT_SPOT_CONTINUOUS_V1.json
+      - tools/gate_btc_factory/SYSTEM13_PANEL_PROTOCOL_V1.json
+      - tests/test_gate_btc_research_progress22.py
+      - .github/workflows/gate-btc-research-progress22.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_xagent_spot_experiment.py
+      - tools/gate_btc_system13_observed_panel.py
+      - tools/gate_btc_research_progress_publish.py
+      - tools/gate_btc_factory/XAGENT_SPOT_CONTINUOUS_V1.json
+      - tools/gate_btc_factory/SYSTEM13_PANEL_PROTOCOL_V1.json
+      - tests/test_gate_btc_research_progress22.py
+      - .github/workflows/gate-btc-research-progress22.yml
+  schedule:
+    - cron: '10 2,8,14,20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gate-btc-isolated-research-progress22
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
+      - name: Verify unchanged parent family economic boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/gate_btc_2/family_handoffs/F_XAGENT_DISAGREE_FAMILY.json')
+          d=json.loads(p.read_text())
+          assert all(d[k] is None for k in ['economic_direction','thresholds','lookbacks','exposure_mapping'])
+          assert d['economic_claim_authorized'] is False
+          assert d['factory_migration_authorized'] is False
+          PY
+  collect:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Index archived observations and evaluate only sealed future events
+        id: work
+        run: |
+          python source/tools/gate_btc_system13_observed_panel.py \
+            --runtime runtime_repo/runtime \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1
+          python source/tools/gate_btc_xagent_spot_experiment.py --repository runtime_repo
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json')
+          print('decision='+str(json.loads(p.read_text()).get('new_decision') or ''))
+          PY
+      - name: Publish only isolated research namespaces
+        id: publish
+        run: |
+          python source/tools/gate_btc_research_progress_publish.py --repository runtime_repo > publication.json
+          cat publication.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          print('sha='+json.load(open('publication.json'))['sha'])
+          PY
+      - name: Bind decision to the commit published before its future entry
+        if: steps.work.outputs.decision != ''
+        env:
+          PUBLISHED_SHA: ${{ steps.publish.outputs.sha }}
+        run: |
+          python source/tools/gate_btc_xagent_spot_experiment.py \
+            --repository runtime_repo --acknowledge-publication-sha "$PUBLISHED_SHA"
+          python source/tools/gate_btc_research_progress_publish.py --repository runtime_repo
+      - name: Preserve research receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-research-progress22-${{ github.run_id }}
+          path: |
+            runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/STATUS.json
+            runtime_repo/runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/
+            publication.json
+          if-no-files-found: warn

@@ -1,0 +1,58 @@
+{
+  "schema": "qrds.xagent_disagreement_spot_experiment.v1",
+  "experiment_id": "F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1",
+  "parent_family": "F-XAGENT-DISAGREE",
+  "preregistered_at_utc": "2026-10-22T12:26:21.182725+00:00",
+  "first_decision_date_utc": "2026-10-23",
+  "decision_window_utc": [
+    "02:00:00",
+    "02:45:00"
+  ],
+  "entry_time_utc": "03:00:00",
+  "horizon_hours": 24,
+  "input_max_age_seconds": 5400,
+  "producers": {
+    "S-XSPOT-FLOW-01": "SPOT_PARTICIPATION_TAKER_FLOW",
+    "S-XTERM-CARRY-01": "DERIVATIVES_TERM_STRUCTURE_CARRY",
+    "S-XBREADTH-01": "SPOT_CROSS_SECTIONAL_BREADTH"
+  },
+  "mapping": {
+    "consensus_baseline": "max(0, mean(component_signals))",
+    "candidate": "consensus_baseline * (1 - pairwise_disagreement)",
+    "direction": "LONG_ONLY_BTC_SPOT_REMAINDER_CASH",
+    "lookback": "CURRENT_THREE_PRODUCER_RECORDS_ONLY",
+    "thresholds": null,
+    "rationale": "Single continuous uncertainty overlay, bounded by the already frozen feature geometry; no threshold search or return inspection."
+  },
+  "instrument": "BTCUSDT",
+  "price_endpoint": "https://data-api.binance.vision/api/v3/klines",
+  "price_interval": "1m",
+  "price_field": "open",
+  "price_policy": "EXACT_DECLARED_ENTRY_AND_EXIT_MINUTE_CLOSED_CANDLES_ONLY",
+  "reference_cost_bps_per_side": 10,
+  "stress_cost_bps_per_side": 20,
+  "cash_return": 0,
+  "accounting": "Each 24h event starts from unit capital; buy fraction w/(1+c), remainder 1-w; liquidate after horizon at sell cost c. Events are compared pairwise, not compounded into a deployable basket.",
+  "primary_comparison": "CANDIDATE_MINUS_UNSCALED_CONSENSUS_NET",
+  "secondary_comparisons": [
+    "BTC_PAIRED_ROUNDTRIP_NET",
+    "BTC_MARKET_GROSS",
+    "CASH_ZERO"
+  ],
+  "minimum_paired_outcomes": 60,
+  "missing_input_policy": "ABSTAIN_EXPLICIT_NO_ZERO_FILL_NO_PAIRED_CREDIT",
+  "missing_price_policy": "PENDING_RETRY_EXACT_DECLARED_PRICE_NO_SUBSTITUTION",
+  "old_features_economic_credit": 0,
+  "canonical_580_untouched": true,
+  "h1_h31_untouched": true,
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "promotion_authority": false,
+    "no_retune": true,
+    "no_backfill": true
+  }
+}
