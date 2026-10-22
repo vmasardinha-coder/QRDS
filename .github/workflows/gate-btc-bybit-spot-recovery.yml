@@ -12,6 +12,8 @@ on:
       - .github/workflows/gate-btc-bybit-spot-recovery.yml
       - tools/gate_btc_bybit_spot_recovery_probe.py
       - tools/gate_btc_v2a_failure_diagnostic.py
+      - tools/gate_btc_pit150_retry_policy.py
+      - tools/gate_btc_pit150_retry_policy.json
       - tools/gate_btc_bybit_public_archive_probe.py
       - tests/test_gate_btc_bybit_spot_recovery_probe.py
   workflow_run:
@@ -126,4 +128,3 @@ jobs:
           path: artifacts/bybit_recovery/
           retention-days: 30
           if-no-files-found: error
-
