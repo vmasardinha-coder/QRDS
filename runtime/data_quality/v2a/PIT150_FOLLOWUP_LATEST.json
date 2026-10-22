@@ -1,7 +1,7 @@
 {
   "action_counts": {
-    "SEMANTIC_SCOPE_REVIEW": 13,
-    "SOURCE_RECOVERY_CANDIDATE": 4
+    "SEMANTIC_SCOPE_REVIEW": 14,
+    "SOURCE_RECOVERY_CANDIDATE": 5
   },
   "assets": [
     {
@@ -81,6 +81,31 @@
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
+      "cross_contract_identity_proven": false,
+      "failure_class": "SOURCE_RECOVERY_CANDIDATE",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "identity_evidence": "NO_REGISTRY_CANDIDATE",
+      "legacy_gap_resolved": false,
+      "next_action": "DISCOVER_EXACT_SOURCE_WITHOUT_CHANGING_UNIVERSE",
+      "observed_history_rows": null,
+      "operational_work_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING",
+      "pit150_identity": "pearl-2",
+      "pit150_source_substitution_authorized": false,
+      "prior_case_review_binding": "NO_PRIOR_CASE",
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": false,
+      "registry_candidate": null,
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "PEARL",
+      "worklist_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING"
+    },
+    {
       "bounded_source_review_completed": true,
       "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
@@ -157,31 +182,6 @@
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
-      "cross_contract_identity_proven": false,
-      "failure_class": "SOURCE_RECOVERY_CANDIDATE",
-      "failure_reason": "okx: RuntimeError: OKX returned no candles",
-      "identity_evidence": "NO_REGISTRY_CANDIDATE",
-      "legacy_gap_resolved": false,
-      "next_action": "DISCOVER_EXACT_SOURCE_WITHOUT_CHANGING_UNIVERSE",
-      "observed_history_rows": null,
-      "operational_work_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING",
-      "pit150_identity": "pearl-2",
-      "pit150_source_substitution_authorized": false,
-      "prior_case_review_binding": "NO_PRIOR_CASE",
-      "prior_exclusion_identity_revalidated": false,
-      "prior_structural_exclusion_symbol_match": false,
-      "registry_candidate": null,
-      "required_proofs": [
-        "exact_asset_identity",
-        "venue_pair_identity",
-        "PIT150_history_requirement_200_rows",
-        "causal_availability_and_cutoff",
-        "PIT150_source_admission"
-      ],
-      "symbol": "PEARL",
-      "worklist_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING"
-    },
-    {
       "bounded_source_review_completed": true,
       "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
@@ -227,44 +227,6 @@
       "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "NO_REGISTRY_CANDIDATE",
       "legacy_gap_resolved": false,
-      "next_action": "Authorized native source access or a demonstrably public exact tape;403 alone does not establish structural exclusion.",
-      "observed_history_rows": null,
-      "operational_work_state": "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF",
-      "pit150_identity": "kinesis-gold",
-      "pit150_source_substitution_authorized": false,
-      "prior_case_review": {
-        "category": "ACCESS_IDENTITY_REVIEW",
-        "evidence": "Exact Kinesis native asset markets discovered; documented OHLC endpoint returned403 without API keys.",
-        "evidence_cutoff": "2026-10-14",
-        "review_date": "2026-10-15"
-      },
-      "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
-      "prior_exclusion_identity_revalidated": false,
-      "prior_structural_exclusion_symbol_match": true,
-      "registry_candidate": null,
-      "reopen_review_only_for": [
-        "materially_new_exact_source_or_access",
-        "identity_change_or_invalidated_evidence",
-        "new_history_sufficient_for_full_qualification"
-      ],
-      "required_proofs": [
-        "exact_asset_identity",
-        "venue_pair_identity",
-        "PIT150_history_requirement_200_rows",
-        "causal_availability_and_cutoff",
-        "PIT150_source_admission"
-      ],
-      "symbol": "KAU",
-      "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
-    },
-    {
-      "bounded_source_review_completed": true,
-      "coverage_dependency_resolved": false,
-      "cross_contract_identity_proven": false,
-      "failure_class": "SEMANTIC_SCOPE_REVIEW",
-      "failure_reason": "okx: RuntimeError: OKX returned no candles",
-      "identity_evidence": "NO_REGISTRY_CANDIDATE",
-      "legacy_gap_resolved": false,
       "next_action": "Preserve dated adjudication; future-D0 scope only.",
       "observed_history_rows": null,
       "operational_work_state": "AWAITING_EXECUTION_SOURCE_OR_PROSPECTIVE_SCOPE_DECISION",
@@ -293,6 +255,44 @@
         "PIT150_source_admission"
       ],
       "symbol": "EUTBL",
+      "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
+    },
+    {
+      "bounded_source_review_completed": true,
+      "coverage_dependency_resolved": false,
+      "cross_contract_identity_proven": false,
+      "failure_class": "SEMANTIC_SCOPE_REVIEW",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "identity_evidence": "NO_REGISTRY_CANDIDATE",
+      "legacy_gap_resolved": false,
+      "next_action": "Authorized native source access or a demonstrably public exact tape;403 alone does not establish structural exclusion.",
+      "observed_history_rows": null,
+      "operational_work_state": "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF",
+      "pit150_identity": "kinesis-gold",
+      "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "ACCESS_IDENTITY_REVIEW",
+        "evidence": "Exact Kinesis native asset markets discovered; documented OHLC endpoint returned403 without API keys.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": true,
+      "registry_candidate": null,
+      "reopen_review_only_for": [
+        "materially_new_exact_source_or_access",
+        "identity_change_or_invalidated_evidence",
+        "new_history_sufficient_for_full_qualification"
+      ],
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "KAU",
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
@@ -384,11 +384,53 @@
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
     },
     {
+      "cross_contract_identity_proven": false,
+      "failure_class": "SEMANTIC_SCOPE_REVIEW",
+      "failure_reason": "qualified_extension: ValueError: REUSD_SOURCE_HTTP_500",
+      "identity_evidence": "REGISTRY_COIN_ID_MISSING",
+      "legacy_gap_resolved": false,
+      "next_action": "REVIEW_IDENTITY_VENUE_PAIR_AND_200_CAUSAL_DAILY_ROWS",
+      "observed_history_rows": null,
+      "operational_work_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN",
+      "pit150_identity": "re-protocol-reusd",
+      "pit150_source_substitution_authorized": false,
+      "prior_case_review": {
+        "category": "PUBLIC_ARCHIVE_DEPTH_BLOCK",
+        "evidence": "Exact DEXpool public response has183consecutive days; older API history401. A7A5 independent nativeRPC archive explicitly requires personal token.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "prior_case_review_binding": "EXACT_COIN_ID_MATCH_ADVISORY_ONLY",
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": false,
+      "registry_candidate": {
+        "adjudication_pr": 552,
+        "coin_id": null,
+        "cutoff_semantics": "UTC_DAILY_CANDLE_NO_FUTURE_ROWS",
+        "evidence_stage": "RECOVERED_46_MERGED_SEED",
+        "provenance_sha256": "656db0530f7df543aa205884f80da5ef8bcf41b5f476223e8fecba59a48cf334",
+        "qa_pass": true,
+        "qualification": "QUALIFIED_EXACT_SOURCE",
+        "source_admitted": true,
+        "source_identity": "GECKOTERMINAL_PUBLIC_ONCHAIN:eth:0xb96cee75211700bc148b95b1c907d726791f4457",
+        "source_symbol": "eth:0xb96cee75211700bc148b95b1c907d726791f4457"
+      },
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "REUSD",
+      "worklist_state": "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN"
+    },
+    {
       "bounded_source_review_completed": true,
       "coverage_dependency_resolved": false,
       "cross_contract_identity_proven": false,
       "failure_class": "SEMANTIC_SCOPE_REVIEW",
-      "failure_reason": "okx: ReadTimeout: HTTPSConnectionPool(host='www.okx.com', port=443): Read timed out. (read timeout=30)",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
       "identity_evidence": "NO_REGISTRY_CANDIDATE",
       "legacy_gap_resolved": false,
       "next_action": "Preserve exact identity; future-D0 scope only.",
@@ -458,6 +500,31 @@
       ],
       "symbol": "OUSG",
       "worklist_state": "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED"
+    },
+    {
+      "cross_contract_identity_proven": false,
+      "failure_class": "SOURCE_RECOVERY_CANDIDATE",
+      "failure_reason": "qualified_extension: ReadTimeout: HTTPSConnectionPool(host='api.mexc.com', port=443): Read timed out. (read timeout=30)",
+      "identity_evidence": "NO_REGISTRY_CANDIDATE",
+      "legacy_gap_resolved": false,
+      "next_action": "DISCOVER_EXACT_SOURCE_WITHOUT_CHANGING_UNIVERSE",
+      "observed_history_rows": null,
+      "operational_work_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING",
+      "pit150_identity": "collector-crypt",
+      "pit150_source_substitution_authorized": false,
+      "prior_case_review_binding": "NO_PRIOR_CASE",
+      "prior_exclusion_identity_revalidated": false,
+      "prior_structural_exclusion_symbol_match": false,
+      "registry_candidate": null,
+      "required_proofs": [
+        "exact_asset_identity",
+        "venue_pair_identity",
+        "PIT150_history_requirement_200_rows",
+        "causal_availability_and_cutoff",
+        "PIT150_source_admission"
+      ],
+      "symbol": "CARDS",
+      "worklist_state": "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING"
     },
     {
       "bounded_source_review_completed": true,
@@ -688,37 +755,37 @@
   ],
   "authoritative_status_binding": {
     "attempted_symbols": 150,
-    "data_as_of": "2026-10-20",
-    "failed_symbols": 17,
-    "loaded_symbols": 133,
-    "snapshot_id": "2026-10-20-run-39545601114",
-    "source_run_id": "39545601114"
+    "data_as_of": "2026-10-21",
+    "failed_symbols": 19,
+    "loaded_symbols": 131,
+    "snapshot_id": "2026-10-21-run-39723782953",
+    "source_run_id": "39723782953"
   },
   "case_tracking_counts": {
     "OUTSIDE_CURRENT_SELECTION_NO_REPAIR_PROVEN": 4
   },
-  "data_as_of": "2026-10-20",
+  "data_as_of": "2026-10-21",
   "engine_feed": false,
-  "failure_count": 17,
+  "failure_count": 19,
   "feeds_frozen_engine": false,
   "identity_evidence_counts": {
-    "NO_REGISTRY_CANDIDATE": 13,
-    "REGISTRY_COIN_ID_MISSING": 4
+    "NO_REGISTRY_CANDIDATE": 14,
+    "REGISTRY_COIN_ID_MISSING": 5
   },
   "input_sha256": {
-    "authoritative_status": "0fbb244c972be889554908be5fb541531fd220236db20539f9d8dec7f7d4d89f",
+    "authoritative_status": "8f572bfd84c7c06fb3bd559f2a7987b4cc4a1dcb249581a1a0b9054267ec7479",
     "case_history": "fab5d59aed641ede7f671aff0fd77809158af30e11084ddb456bc81b102fa056",
     "case_review": "67ba7eeddf226a61ab39e1f5d98aebbef2a055383c75a4177ac3e1691cfa752b",
-    "diagnostic": "6e7a1a490723c33432efa7cbeeacd1ea5e869c60ea3c239c8b64b7beb7ff89d2",
+    "diagnostic": "3bc9004439dd3757bad7ab88185ace99381b47debe3c90277047fe5ef30bb371",
     "native_candidate_audit": "b018b2ef60d55e05b404bc9a7d0db6f88aca021d66c97b6755cf9cafe6fdc2ba",
     "registry": "6257ab6941162fd4b209a5f56e204069e384d5897761e30bc65f77d72104f8b5",
-    "retained_case_membership": "805687b041d0d7fd768124a3a46889b30e5bf2b22ae79fc1a8ebeb18bac869cc",
-    "selection_snapshot": "7c7ab1720462af46a30716b01d8d0b6a30d236c1cb9f57c6c63f870268d1fcd1",
+    "retained_case_membership": "26edb8f3c31da4a56ca3b0f0cfba9f8caef11e9f4041d9faef2a5efdd6db29a4",
+    "selection_snapshot": "9cad4e8fd14d164840fea32e5ad17247e17ee9d02aeb062770a8c20de326680a",
     "structural_registry": "879d843d48d8fba55a82984e3a2501fe2a513af184d6a4afb9fae07f6f97b993"
   },
-  "legacy_failed_symbols": 17,
+  "legacy_failed_symbols": 19,
   "legacy_failures_are_not_new_unhandled_incidents": true,
-  "legacy_loaded_symbols": 133,
+  "legacy_loaded_symbols": 131,
   "loaded_count_change_is_not_repair_evidence": true,
   "methodology_changes": 0,
   "operational_work_state_counts": {
@@ -727,18 +794,19 @@
     "AWAITING_FUND_EXECUTION_SEMANTICS_PROOF": 2,
     "AWAITING_NATIVE_SOURCE_ACCESS_OR_IDENTITY_PROOF": 1,
     "HISTORY_COLLECTION_SOURCE_ALREADY_IDENTIFIED": 3,
-    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 1
+    "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 1,
+    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 2
   },
   "orders": 0,
   "pit150_denominator_preserved": 150,
   "prospective_credit": 0,
   "real_capital": 0,
-  "registry_candidate_matches": 4,
+  "registry_candidate_matches": 5,
   "schema": "gate_btc.pit150_source_qualification_followup.v2",
   "scientific_credit": 0,
   "selection_membership_verified": true,
-  "snapshot_id": "2026-10-20-run-39545601114",
-  "source_run_id": "39545601114",
+  "snapshot_id": "2026-10-21-run-39723782953",
+  "source_run_id": "39723782953",
   "source_substitution_performed": false,
   "status": "CANDIDATE_CROSSWALK_ONLY_NO_PIT150_ADMISSION",
   "structural_exclusions_are_prior_dispositions_not_observed_prices": true,
@@ -917,7 +985,7 @@
   "tracked_prior_case_count": 4,
   "worklist_state_counts": {
     "PRIOR_STRUCTURAL_EXCLUSION_HISTORICAL_GAP_PRESERVED": 10,
-    "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 4,
-    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 3
+    "QUALIFIED_SOURCE_CONTRACT_PRESENT_PIT150_REPAIR_NOT_PROVEN": 5,
+    "SOURCE_DISCOVERY_OR_QUALIFICATION_PENDING": 4
   }
 }
