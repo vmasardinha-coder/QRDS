@@ -289,8 +289,21 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
     ].head(int(CFG["max_assets_to_fetch"]))
     symbols = list(dict.fromkeys(["BTC", "ETH"] + candidates["symbol"].tolist()))
     histories, failures, source_attempts = [], [], []
+    repo_root = str(Path(__file__).resolve().parents[4])
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from tools.gate_btc_pit150_retry_policy import decision as retry_decision
     extension_selected_count = 0
     for symbol in tqdm(symbols, desc="public candles"):
+        members = candidates.loc[candidates["symbol"].eq(symbol)]
+        coin_id = str(members.iloc[0]["id"]) if len(members) == 1 and "id" in members else None
+        deferred = retry_decision(symbol, coin_id, os.environ.get("GATE_BTC_DATA_CUTOFF", "").strip())
+        if deferred:
+            failures.append({"symbol": symbol, "reason": "OPERATIONALLY_DEFERRED:" + json.dumps(deferred, sort_keys=True),
+                             "source_attempts": ""})
+            source_attempts.append({"symbol": symbol, "selected_source": None, "attempts": [],
+                                    "qualified_extension_attempt": None, "operational_deferral": deferred})
+            continue
         last_error = "not_attempted"
         selected = None
         attempts = []
@@ -821,4 +834,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

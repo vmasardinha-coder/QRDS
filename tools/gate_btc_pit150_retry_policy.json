@@ -1,0 +1,249 @@
+{
+  "schema": "gate_btc.pit150_retry_policy.v1",
+  "policy_id": "PIT150_BOUNDED_RETRY_20261022",
+  "effective_cutoff": "2026-10-22",
+  "history_required_rows": 200,
+  "legacy_denominator": 150,
+  "core_symbols_never_deferred": [
+    "BTC",
+    "ETH"
+  ],
+  "cases": [
+    {
+      "symbol": "BUIDL",
+      "coin_id": "blackrock-usd-institutional-digital-liquidity-fund",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Current CoinGecko ticker discovery returned no markets; prior issuer/fund adjudication remains applicable, no public exact execution tape established. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "EURSAFO",
+      "coin_id": "spiko-amundi-overnight-swap-fund-eur",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "No current listed ticker market; September adjudication identifies subscriptions/redemptions at NAV, not public spot execution. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "OUSD",
+      "coin_id": "open-usd",
+      "disposition": "WAIT_HISTORY",
+      "retry_from": "2027-04-17",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "SHORT_SOURCE_HISTORY",
+        "evidence": "Exact OpenUSD Kraken route15 completed days from2026-09-30; OriginUSD is a different identity.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "USTB",
+      "coin_id": "superstate-short-duration-us-government-securities-fund-ustb",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Current ticker discovery empty; exact fund token cannot be replaced by Treasury ETF or NAV observations. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "PEARL",
+      "coin_id": "pearl-2",
+      "disposition": "BOUNDED_SOURCE_RECHECK",
+      "retry_from": "2026-10-29",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "NO_QUALIFIED_EXACT_SOURCE",
+        "review_date": "2026-10-21"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "JAAA",
+      "coin_id": "janus-henderson-anemoy-aaa-clo-fund",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Exact fund liquidity/redemption is not deJAAA wrapper spot tape; current bounded retry succeeded. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "KAU",
+      "coin_id": "kinesis-gold",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "ACCESS_IDENTITY_REVIEW",
+        "evidence": "Exact Kinesis native asset markets discovered; documented OHLC endpoint returned403 without API keys.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "EUTBL",
+      "coin_id": "eutbl",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "September exact Spiko NAV/subscription adjudication; initial refresh returned429 and subsequent bounded retry succeeded. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "YLDS",
+      "coin_id": "ylds",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_EXECUTION_SEMANTICS_REVIEW",
+        "evidence": "Figure4372public matches across200days; marketTypeFUND, proTradeAvailablefalse, fixed-price product.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "SOFID",
+      "coin_id": "sofiusd",
+      "disposition": "WAIT_HISTORY",
+      "retry_from": "2027-01-07",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "SHORT_SOURCE_HISTORY",
+        "evidence": "Bullish paginated public SOFIDUSDC history has115unique consecutive completed UTC days,2026-06-22 through2026-10-14, no gaps. Kraken41days is not the global maximum.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "JTRSY",
+      "coin_id": "janus-henderson-anemoy-treasury-fund",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Exact JTRSY fund differs from deJTRSY wrapper; bounded retry succeeded. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "OUSG",
+      "coin_id": "ousg",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Existing exact fund adjudication; current bounded retry succeeded. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "APXUSD",
+      "coin_id": "apxusd",
+      "disposition": "WAIT_HISTORY",
+      "retry_from": "2026-11-05",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "SHORT_SOURCE_HISTORY",
+        "evidence": "Kraken178 completed days,2026-04-20 through2026-10-14.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "OHM",
+      "coin_id": "olympus",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "PUBLIC_ARCHIVE_GAPS_BLOCK",
+        "evidence": "Exact DEXpool returned183rows/182unique days with31missing calendar days; older API history401.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "USDAI",
+      "coin_id": "usdai",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "PUBLIC_ARCHIVE_GAPS_BLOCK",
+        "evidence": "Exact DEXpool returned183rows/182unique days with12missing calendar days; older API history401.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "SAFO",
+      "coin_id": "safo",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_EXECUTION_SEMANTICS_REVIEW",
+        "evidence": "Exact coin_idsafo has no ticker markets in successful fresh response; name is SpikoAmundiOvernightSwapFund.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "PC0000031",
+      "coin_id": "tradable-na-rent-financing-platform-sstn",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "FUND_SCOPE_REVIEW",
+        "evidence": "Private financing/security identity in current150; no200-day exact public tape established. Current bounded retry succeeded. Latest bounded retry succeeded with an empty ticker-market list; this is not proof of global absence.",
+        "evidence_cutoff": "2026-10-14",
+        "review_date": "2026-10-15"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    }
+  ]
+}

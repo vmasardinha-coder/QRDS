@@ -210,6 +210,16 @@ def run(args, clock=lambda: datetime.now(timezone.utc)):
     if at < datetime.fromisoformat(config['approved_at_utc']):
         raise ValueError('APPROVAL_NOT_EFFECTIVE')
     latest = (at.date() - timedelta(days=1)).isoformat()
+    successor = ROOT / 'migration/reporting/momentum_tradable_policy_v1.json'
+    if successor.exists():
+        policy = load_json(successor)
+        if at.date().isoformat() >= policy['legacy_retired_on']:
+            return report(epoch, config, 'CLOSED_RULE_VERSION_SUPERSEDED', ledger,
+                successor_policy_id=policy['policy_id'],
+                successor_status_source='ledgers/momentum_tradable_v1/STATUS.json',
+                historical_ledger_preserved=True,
+                prior_failed_rebalance_preserved=True,
+                next_action='FOLLOW_SEPARATE_TRADABLE_VERSION_NO_HISTORY_TRANSFER')
     if latest < config['first_eligible_cutoff']:
         if ledger:
             raise ValueError('CLOCK_BEFORE_EXISTING_EPOCH')
@@ -280,3 +290,4 @@ def main():
 
 if __name__ == '__main__':
     raise SystemExit(main())
+
