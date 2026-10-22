@@ -15,6 +15,23 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 PREREG = ROOT / "tools" / "gate_btc_factory_delta_c1_prereg.json"
 CANONICAL = ROOT / "migration" / "canonical" / "delta" / "scripts" / "00_run_delta_v11.py"
+CLOSURE = ROOT / "tools" / "gate_btc_factory" / "DELTA_C1_CLOSURE_20261022.v1.json"
+CLOSURE_SHA256 = "575bd6161521bf69a6cda3d0f679f5981340f7ab4d0607c1158a923bc131bbf5"
+
+
+def closure_result() -> dict[str, Any]:
+    if hashlib.sha256(CLOSURE.read_bytes()).hexdigest() != CLOSURE_SHA256:
+        raise RuntimeError('DELTA_C1_TERMINAL_CLOSURE_SEAL_CHANGED')
+    c = json.loads(CLOSURE.read_text(encoding="utf-8"))
+    if (c['admission_allowed'] is not False or c['public_regeneration_allowed'] is not False
+            or c['canonical_survivors_ready_for_freeze'] != []):
+        raise RuntimeError('DELTA_C1_TERMINAL_BOUNDARY_INVALID')
+    return {'schema': 'qrds.factory.delta_c1_terminal_status.v1',
+            'status': c['terminal_state'], 'survivors': [], 'mode': 'public',
+            'freeze_eligible': False, 'freeze_pending': False,
+            'admission_allowed': False, 'public_collection_attempted': False,
+            'closure_sha256': hashlib.sha256(CLOSURE.read_bytes()).hexdigest(),
+            'scientific_credit': 0, 'orders': 0, 'real_capital': 0, 'engine_feed': False}
 
 
 def load_prereg() -> dict[str, Any]:
@@ -233,11 +250,20 @@ def main() -> int:
     ap.add_argument("--mode", choices=["fixture", "public"], default="fixture")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
+    if args.mode == 'public':
+        result = closure_result()
+        p = Path(args.out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+        print(json.dumps(result, sort_keys=True))
+        return 0
     prereg = load_prereg()
     raw = fixture_ohlc() if args.mode == "fixture" else public_ohlc()
     prices = panelize(raw, prereg["historical_cutoff_exclusive"])
     result = evaluate(prices, prereg)
     result["mode"] = args.mode
+    result['synthetic_fixture'] = True
+    result['scientific_credit'] = 0
     result["source_rows"] = int(len(raw))
     result["source_sha256"] = hashlib.sha256(raw.sort_values(["date", "symbol"]).to_csv(index=False).encode()).hexdigest()
     p = Path(args.out)

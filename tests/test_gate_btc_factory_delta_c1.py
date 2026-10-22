@@ -7,6 +7,8 @@ import unittest
 import copy
 import numpy as np
 import pandas as pd
+import tempfile
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools" / "gate_btc_factory_delta_c1.py"
@@ -98,6 +100,26 @@ class DeltaC1Tests(unittest.TestCase):
         metrics = {'n': 100, 'total_return': .2, 'sharpe': 2,
                    'max_drawdown': -.01, 'invalid_held_return_count': 1}
         self.assertFalse(m.passes(metrics, m.load_prereg()['gates']))
+
+    def test_terminal_closure_has_no_candidates_awaiting_freeze(self):
+        m = load_module()
+        result = m.closure_result()
+        self.assertEqual(result['status'], 'CLOSED_NO_CANONICAL_SURVIVOR_EVIDENCE')
+        self.assertEqual(result['survivors'], [])
+        self.assertFalse(result['freeze_pending'])
+        self.assertFalse(result['admission_allowed'])
+
+    def test_public_invocation_cannot_collect_or_recreate_candidates(self):
+        m = load_module()
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / 'RESULT.json'
+            with patch('sys.argv', ['delta', '--mode', 'public', '--out', str(out)]), \
+                    patch.object(m, 'public_ohlc', side_effect=AssertionError('no public rerun')), \
+                    patch.object(m, 'evaluate', side_effect=AssertionError('no economic rerun')):
+                self.assertEqual(m.main(), 0)
+            result = json.loads(out.read_text())
+            self.assertFalse(result['public_collection_attempted'])
+            self.assertEqual(result['scientific_credit'], 0)
 
 
 if __name__ == "__main__":

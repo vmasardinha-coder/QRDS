@@ -1,4 +1,4 @@
-name: GATE BTC Factory Delta C1
+name: GATE BTC Factory Delta C1 (archived; fixture QA)
 
 on:
   pull_request:
@@ -6,18 +6,17 @@ on:
       - "tools/gate_btc_factory_delta_c1_prereg.json"
       - "tools/gate_btc_factory_delta_c1.py"
       - "tools/gate_btc_factory_delta_c1_README.md"
+      - "tools/gate_btc_factory/DELTA_C1_CLOSURE_20261022.v1.json"
       - "tests/test_gate_btc_factory_delta_c1.py"
       - ".github/workflows/gate-btc-factory-delta-c1.yml"
   workflow_dispatch:
     inputs:
       mode:
-        description: "fixture or public"
+        description: "Synthetic regression QA only; C1 public generation is closed"
         required: false
-        default: "public"
+        default: "fixture"
         type: choice
-        options: [public, fixture]
-  schedule:
-    - cron: "17 4 * * 2,5"
+        options: [fixture]
 
 permissions:
   contents: read
@@ -41,7 +40,7 @@ jobs:
         run: python -m unittest -v tests/test_gate_btc_factory_delta_c1.py
       - name: Run preregistered generation
         env:
-          REQUESTED_MODE: ${{ inputs.mode || 'public' }}
+          REQUESTED_MODE: ${{ inputs.mode || 'fixture' }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
