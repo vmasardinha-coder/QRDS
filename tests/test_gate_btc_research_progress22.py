@@ -17,6 +17,7 @@ import gate_btc_xagent_spot_experiment as x
 import gate_btc_system13_observed_panel as panel
 import gate_btc_v2a_data_ledger as parent
 import gate_btc_research_progress_publish as publication
+import gate_btc_factory_status_export as exporter
 
 NOW = datetime(2026, 10, 23, 2, 15, tzinfo=timezone.utc)
 
@@ -191,6 +192,19 @@ class PanelTests(unittest.TestCase):
             parent_file.write_text('{"qualified":17}')
             subprocess.run(['git','-C',str(repo),'add','.'],check=True)
             with self.assertRaisesRegex(RuntimeError,'SCOPE_VIOLATION'):publication.publish(repo)
+
+    def test_factory_export_exposes_zero_outcomes_and_incomplete_panel(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t)
+            states={'xagent_spot_continuous_v1':{'status':'AWAITING_FIRST_DECISION_WINDOW','paired_outcome_count':0},
+                    'system13_observed_panel_v1':{'indexed_panel_observations':75,'training_ready':False,'system13_complete':False}}
+            for key,state in states.items():
+                p=root/exporter.TRACKS[key];p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(state))
+            result=exporter.export_tracks(root)
+            for key,state in states.items():
+                self.assertTrue(result[key]['exists']);self.assertEqual(result[key]['data'],state)
+            self.assertEqual(result['xagent_spot_continuous_v1']['data']['paired_outcome_count'],0)
+            self.assertFalse(result['system13_observed_panel_v1']['data']['system13_complete'])
 
 
 if __name__ == '__main__':unittest.main()
