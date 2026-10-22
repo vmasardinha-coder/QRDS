@@ -18,6 +18,10 @@ on:
       - tools/gate_btc_b3_gap_classifier.py
       - tests/test_gate_btc_b3_missing_root_gap.py
       - tools/gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_AMENDMENT_20261007.v1.json
+      - tools/gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_EXTENSION_20261022.v1.json
+      - tools/gate_btc_h1_schedule_extension.py
+      - tools/gate_btc_local_shadow_clock.ps1
+      - tests/test_gate_btc_h1_schedule_extension.py
       - tests/test_gate_btc_h1_prospective_schedule.py
       - tests/test_gate_btc_b3_h1_cancel_identity.py
       - .github/workflows/gate-btc-b3-h1-daily.yml
@@ -87,11 +91,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          names = ('test_gate_btc_h1_prospective_schedule.py', 'test_gate_btc_b3_h1_cancel_identity.py', 'test_gate_btc_b3_missing_root_gap.py')
+          names = ('test_gate_btc_h1_prospective_schedule.py', 'test_gate_btc_h1_schedule_extension.py', 'test_gate_btc_b3_h1_cancel_identity.py', 'test_gate_btc_b3_missing_root_gap.py')
           missing = [name for name in names if not Path('tests', name).is_file()]
           assert not missing, f'Missing required structural tests: {missing}'
           PY
       - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_prospective_schedule.py' -v
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_schedule_extension.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_h1_cancel_identity.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_missing_root_gap.py' -v
 

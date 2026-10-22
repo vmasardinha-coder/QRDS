@@ -13,6 +13,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from gate_btc_h1_schedule_extension import EXTENSION_SHA256, load_extension
 
 AMENDMENT_FILE = Path(__file__).resolve().parent / "gate_btc_factory/H1_PROSPECTIVE_SCHEDULE_AMENDMENT_20261007.v1.json"
 AMENDMENT_SHA256 = "9a78b234c6f00d64af9e9de1ad2d9aa3b6a28018965f35dcbbd1b0f58f3cdb3a"
@@ -58,9 +59,14 @@ def validate_source(s: dict[str, Any]) -> None:
         amendment = json.loads(raw)
         declared = {row["date"]: row for row in amendment["sessions"]}
         row = declared.get(day)
+        evidence_sha = AMENDMENT_SHA256
+        if row is None:
+            amendment = load_extension()
+            row = {r["date"]: r for r in amendment["sessions"]}.get(day)
+            evidence_sha = EXTENSION_SHA256
         if row is None or s.get("front_contracts") != {"WIN": row["WIN"], "WDO": row["WDO"]}:
             raise RuntimeError("H1_UNDECLARED_PROSPECTIVE_SESSION_OR_CONTRACT")
-        if s.get("freeze_status") != amendment["freeze_status"] or s.get("schedule_amendment_sha256") != AMENDMENT_SHA256:
+        if s.get("freeze_status") != amendment["freeze_status"] or s.get("schedule_amendment_sha256") != evidence_sha:
             raise RuntimeError("H1_PROSPECTIVE_AMENDMENT_EVIDENCE_MISSING")
         if s.get("full_frozen_schedule_sha256") != amendment["legacy_full_frozen_schedule_sha256"] or s.get("h1_schedule_prefix_sha256") != amendment["legacy_schedule_prefix_sha256"]:
             raise RuntimeError("H1_LEGACY_SEALS_CHANGED")
