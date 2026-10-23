@@ -106,6 +106,12 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 1
+          sparse-checkout: |
+            runtime/data_quality/v2a
+            runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1
+            runtime/factory_autonomy/xagent_signal_producers
+            runtime/gate_btc_2/system12
+            runtime/gate_btc_2/system13/observed_panel_v1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

@@ -19,7 +19,10 @@ The audit is now part of the existing isolated panel workflow and publication
 scope. SOURCE_READINESS.json is exported as its own track. Factory export
 refreshes after successful M3 or panel/F-X delivery, so the repaired underlying
 states need not wait for a delayed hourly schedule. Runtime checkout requires
-only the current commit rather than full branch history. Publication still
+only the current commit and status files rather than full branch history and
+raw archives. The isolated panel checkout also requests only its input/output
+namespaces. Superseded read-only PR checks can be cancelled; canonical writers
+remain serialized without cancellation. Publication still
 recomputes after competing writers and touches only the derived status file.
 
 The separately received local 23 October pressure-valve report adds legacy
@@ -43,4 +46,5 @@ result or basket close. Therefore expanded-family and five/ten-family basket
 results retain their separate 22 October cut; no 23 October result is invented.
 
 REVIEW_FACTS.json records hashes, exact metrics and the reviewed source cut.
-Local validation: six source-readiness tests and seven exporter tests passed.
+Local validation: six source-readiness tests and eight exporter tests passed,
+including a real sparse clone preserving all exported tracks while omitting raw archives.

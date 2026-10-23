@@ -10,6 +10,27 @@ from tools.gate_btc_factory_status_export import export_tracks
 
 
 class FactoryTrackCoverageTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'posix', 'Sparse checkout executes on Linux')
+    def test_sparse_status_checkout_preserves_tracks_and_excludes_raw_archives(self):
+        workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/gate-btc-factory-status-export.yml').read_text()
+        block=workflow.split('          sparse-checkout: |',1)[1].split('      - uses:',1)[0]
+        patterns='\n'.join(line.strip() for line in block.splitlines() if line.strip())+'\n'
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);producer=root/'producer';producer.mkdir();self.fixture(producer)
+            self.write(producer,'runtime/ledgers/d100/raw/archive.json',{'large_raw_not_status':True})
+            before=export_tracks(producer)
+            def git(*args):
+                return subprocess.run(['git',*map(str,args)],check=True,capture_output=True,text=True)
+            git('init',producer);git('-C',producer,'config','user.name','test')
+            git('-C',producer,'config','user.email','test@example.invalid')
+            git('-C',producer,'add','.');git('-C',producer,'commit','-m','fixture')
+            clone=root/'clone';git('clone','--no-checkout',producer,clone)
+            git('-C',clone,'sparse-checkout','init','--no-cone')
+            subprocess.run(['git','-C',str(clone),'sparse-checkout','set','--no-cone','--stdin'],
+                input=patterns,check=True,capture_output=True,text=True)
+            git('-C',clone,'checkout')
+            self.assertEqual(export_tracks(clone),before)
+            self.assertFalse((clone/'runtime/ledgers/d100/raw/archive.json').exists())
     def test_source_readiness_is_separate_from_panel_and_never_implies_training(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
