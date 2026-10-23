@@ -10,6 +10,16 @@ from tools.gate_btc_factory_status_export import export_tracks
 
 
 class FactoryTrackCoverageTests(unittest.TestCase):
+    def test_source_readiness_is_separate_from_panel_and_never_implies_training(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            self.write(root,'runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json',
+                {'eligible_members':215,'exact_binding_candidates':91,'training_ready':False,
+                 'qualified_system13_ohlcv_assets':0})
+            tracks=export_tracks(root)
+            self.assertEqual(tracks['system13_source_readiness_v1']['data']['exact_binding_candidates'],91)
+            self.assertFalse(tracks['system13_source_readiness_v1']['data']['training_ready'])
+            self.assertFalse(tracks['system13_observed_panel_v1']['exists'])
     def write(self, root, path, data):
         p = root / path
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -150,4 +160,5 @@ class FactoryTrackCoverageTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 

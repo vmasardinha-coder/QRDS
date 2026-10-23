@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '7 * * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC Momentum M3 Prospective Shadow
+      - GATE BTC XAGENT experiment and System13 observed panel
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -42,13 +47,16 @@ env:
 
 jobs:
   export:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
         with: {path: main_repo}
       - uses: actions/checkout@v4
-        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 1}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Verify independent track authorities and missing evidence
@@ -92,3 +100,4 @@ jobs:
             sleep $((i*2))
           done
           exit 1
+
