@@ -57,9 +57,10 @@ def inspect(root, bundle, membership):
             or admission.get('historical_reconstruction_allowed') is not False
             or admission.get('volume_unit') != 'BASE_ASSET'
             or admission.get('market') != 'SPOT'
-            or admission.get('quote_currency') != 'USD'):
+            or admission.get('quote_currency') not in ('USD', 'USDT')):
         raise ValueError('SOURCE_ADMISSION_OR_UNITS_NOT_QUALIFIED')
-    # USD is literal here: USDT may not be relabelled USD without a reviewed FX adapter.
+    # Each bundle has one reviewed native unit. No conversion or USD/USDT equivalence.
+    quote_currency = admission['quote_currency']
     for key in ('identity_evidence', 'tradability_evidence', 'adjustment_evidence'):
         read_bound(root, admission[key]['path'], admission[key]['sha256'])
     bindings = admission['instrument_bindings']
@@ -99,7 +100,7 @@ def inspect(root, bundle, membership):
             raise ValueError('INVALID_OHLC_ORDER')
         if values['volume'] < 0 or values['factor'] <= 0:
             raise ValueError('INVALID_VOLUME_OR_FACTOR')
-        if (raw.get('volume_unit') != 'BASE_ASSET' or raw.get('quote_currency') != 'USD'
+        if (raw.get('volume_unit') != 'BASE_ASSET' or raw.get('quote_currency') != quote_currency
                 or raw.get('adjustment_policy') != admission['adjustment_policy']):
             raise ValueError('BAR_UNITS_OR_ADJUSTMENT_MISMATCH')
         key = (begin.date().isoformat(), coin)
@@ -107,6 +108,7 @@ def inspect(root, bundle, membership):
             raise ValueError('DUPLICATE_BAR_IDENTITY_AND_SESSION')
         seen.add(key)
         output.append({'session': key[0], 'coin_id': coin, 'venue_instrument': instrument,
+                       'quote_currency': quote_currency, 'volume_unit': 'BASE_ASSET',
                        **values, 'available_at_utc': captured.isoformat(),
                        'membership_observed_at_utc': member['observed_at_utc'],
                        'raw_sha256': item['raw_sha256'], 'admission_sha256': bundle['admission_sha256']})
@@ -128,6 +130,7 @@ def inspect(root, bundle, membership):
                          'coverage_gate_pass': len(covered) >= c['min_assets_per_session']
                             and coverage >= c['min_coverage_fraction']})
     return {'schema': 'qrds.system13.governed_bar_import_review.v1',
+            'native_quote_currency': quote_currency, 'quote_conversion_applied': False,
             'protocol_sha256': PROTOCOL_SHA256, 'validated_source_rows': len(output),
             'rows': sorted(output, key=lambda r: (r['session'], r['coin_id'])),
             'sessions': sessions,

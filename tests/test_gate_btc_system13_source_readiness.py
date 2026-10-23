@@ -18,6 +18,51 @@ def entry(coin):
 
 
 class Readiness(unittest.TestCase):
+    def discovery(self,coin='new'):
+        return {'schema':'qrds.system13.exact_identity_discovery.v1',
+            'historical_eligibility_granted':False,'system13_source_admitted':False,'ohlcv_ready':False,
+            'entries':[{'coin_id':coin,'bindings':[{'coin_id':coin,'venue':'fixture','base':'SAME',
+                'quote':'USDT','target_coin_id':'tether','source_symbol':'SAMEUSDT',
+                'identity_evidence_sha256':'a'*64,'identity_evidence_url':'https://example.test/exact',
+                'identity_observed_at_utc':'2026-10-23T17:00:00Z','primary_market_verified':False,
+                'system13_source_admitted':False,'ohlcv_ready':False}]}]}
+
+    def test_new_identity_closes_only_identity_gap_without_admission_or_backdating(self):
+        p=self.panel([member(str(i)) for i in range(215)])
+        d=self.discovery('172'); template=d['entries'][0]
+        d['entries']=[]
+        for i in range(91,175):
+            e=copy.deepcopy(template);e['coin_id']=str(i);e['bindings'][0]['coin_id']=str(i)
+            d['entries'].append(e)
+        r=s.audit(p,{'entries':[entry(str(i)) for i in range(91)]},d)
+        self.assertEqual(r['exact_binding_candidates'],175)
+        self.assertEqual(r['additional_discovered_identity_candidates'],84)
+        self.assertEqual(r['additional_exact_bindings_needed_for_coverage'],0)
+        self.assertTrue(r['identity_candidate_coverage_threshold_met'])
+        self.assertEqual(r['eligible_members'],215)
+        self.assertEqual(r['qualified_system13_ohlcv_assets'],0)
+        self.assertFalse(r['training_ready'])
+        self.assertTrue(all(not x['historical_eligibility_granted'] for x in r['rows']))
+
+    def test_discovery_does_not_double_count_or_admit_excluded_members(self):
+        r=s.audit(self.panel([member('new'),member('other',eligible=False)]),
+            {'entries':[entry('new')]},self.discovery())
+        self.assertEqual(r['exact_binding_candidates'],1)
+        self.assertEqual(r['additional_discovered_identity_candidates'],0)
+        d=self.discovery('other')
+        self.assertEqual(s.audit(self.panel([member('other',eligible=False)]),{'entries':[]},d)['exact_binding_candidates'],0)
+
+    def test_bad_identity_evidence_and_claimed_admission_fail_closed(self):
+        mutations=[lambda d:d.update(system13_source_admitted=True),
+            lambda d:d['entries'].append(copy.deepcopy(d['entries'][0])),
+            lambda d:d['entries'][0]['bindings'][0].update(coin_id='different'),
+            lambda d:d['entries'][0]['bindings'][0].update(target_coin_id='other'),
+            lambda d:d['entries'][0]['bindings'][0].update(identity_evidence_sha256='bad'),
+            lambda d:d['entries'][0]['bindings'][0].update(identity_observed_at_utc='2026-10-23T17:00:00')]
+        for mutate in mutations:
+            d=self.discovery();mutate(d)
+            with self.assertRaises(ValueError):s.audit(self.panel([member('new')]),{'entries':[]},d)
+
     def test_build_binds_real_panel_bytes_and_rejects_mutation(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);folder=root/'gate_btc_2/system13/observed_panel_v1'
