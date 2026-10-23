@@ -190,6 +190,31 @@ def candle(c, at):
     return rows[0]
 
 
+def decision_clock(c, now, decision_days):
+    """Report missed windows without creating late decisions or economic credit."""
+    first = timestamp(c['first_decision_date_utc'] + 'T00:00:00Z').date()
+    day = first
+    missed = []
+    while day <= now.date():
+        end = timestamp(day.isoformat() + 'T' + c['decision_window_utc'][1] + 'Z')
+        if now > end and day.isoformat() not in decision_days:
+            missed.append(day.isoformat())
+        day += timedelta(days=1)
+    start = timestamp(now.date().isoformat() + 'T' + c['decision_window_utc'][0] + 'Z')
+    end = timestamp(now.date().isoformat() + 'T' + c['decision_window_utc'][1] + 'Z')
+    if now.date() < first:
+        next_start = timestamp(first.isoformat() + 'T' + c['decision_window_utc'][0] + 'Z')
+    else:
+        next_start = start if now <= end else start + timedelta(days=1)
+        if now.date().isoformat() in decision_days:
+            next_start = start + timedelta(days=1)
+    return {'missed_decision_dates': missed,
+            'missed_window_count': len(missed),
+            'missed_windows_have_economic_credit': False,
+            'current_decision_window_open': now.date() >= first and start <= now <= end,
+            'next_decision_window_start_utc': next_start.isoformat()}
+
+
 def run(repo, now, acknowledge_sha=None):
     c = load_contract(); runtime = repo / "runtime"; lane = runtime / LANE
     changed_decision = None
@@ -226,9 +251,14 @@ def run(repo, now, acknowledge_sha=None):
     results = [verify(json.loads(p.read_text())) for p in sorted((lane / "outcomes").glob("*.json"))]
     if any(r.get("contract_sha256") != CONTRACT_SHA256 for r in results):
         raise ValueError("OUTCOME_CONTRACT_CHANGED")
+    decision_days = {p.stem for p in (lane / 'decisions').glob('*.json')}
+    clock = decision_clock(c, now, decision_days)
+    state = 'PROSPECTIVE_EXPERIMENT_ACTIVE' if decision_days else 'AWAITING_FIRST_DECISION_WINDOW'
+    if now.date().isoformat() in clock['missed_decision_dates']:
+        state = 'DECISION_WINDOW_MISSED_NO_BACKFILL'
     status = {"schema": "qrds.xagent_spot_status.v1", "experiment_id": c["experiment_id"],
               "contract_sha256": CONTRACT_SHA256, "as_of_utc": now.isoformat(),
-              "status": "AWAITING_FIRST_DECISION_WINDOW" if not list((lane / "decisions").glob("*.json")) else "PROSPECTIVE_EXPERIMENT_ACTIVE",
+              "status": state, **clock,
               "paired_outcome_count": len(results), "checkpoint": c["minimum_paired_outcomes"],
               "primary_excess_net_sum_diagnostic_not_nav": sum(r["primary_excess_net"] for r in results),
               "pending_price_or_seal": blocked, "new_decision": changed_decision,
@@ -245,3 +275,4 @@ if __name__ == "__main__":
     parser.add_argument("--acknowledge-publication-sha")
     args = parser.parse_args()
     print(json.dumps(run(args.repository.resolve(), datetime.now(timezone.utc), args.acknowledge_publication_sha), sort_keys=True))
+

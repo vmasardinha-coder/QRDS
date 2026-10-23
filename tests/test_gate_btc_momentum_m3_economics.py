@@ -42,6 +42,23 @@ class Economics(unittest.TestCase):
         l=step();before=copy.deepcopy(l);p=prices();del p['A000']
         with self.assertRaisesRegex(ValueError,'HELD_PRICES'):step(l,1,p,True)
         self.assertEqual(l,before)
+    def test_hold_ignores_unheld_new_rank_quote_but_keeps_old_holdings(self):
+        l=step(); held=set(l['state']['quantities'])
+        p={a:100.0 for a in held|{'BTC'}}
+        self.assertEqual(e.required_price_assets(l,signal(1,True)),held|{'BTC'})
+        out=step(l,1,p,True)
+        self.assertEqual(out['rows'][-1]['event'],'HOLD')
+        self.assertEqual(out['state']['quantities'],l['state']['quantities'])
+        self.assertEqual(out['state']['nav'],1)
+    def test_rebalance_requires_old_holdings_and_new_selection_quotes(self):
+        l=step()
+        for day in range(1,7): l=step(l,day)
+        held=set(l['state']['quantities']); new=set(signal(7,True)['selection_preview'])
+        self.assertEqual(e.required_price_assets(l,signal(7,True)),held|new|{'BTC'})
+        before=copy.deepcopy(l)
+        with self.assertRaisesRegex(ValueError,'HELD_PRICES'):
+            step(l,7,{a:100.0 for a in held|{'BTC'}},True)
+        self.assertEqual(l,before)
     def test_gap_and_old_cutoff_rejected(self):
         with self.assertRaisesRegex(ValueError,'GAP'):step(step(),2)
         with self.assertRaisesRegex(ValueError,'NON_PROSPECTIVE'):e.advance(None,signal(),prices(),A,C,{},at(1))
@@ -117,3 +134,4 @@ class Economics(unittest.TestCase):
             self.assertIn('momentum_m3_economics',v['warnings']['failed_delivery_components'])
 
 if __name__=='__main__':unittest.main()
+
