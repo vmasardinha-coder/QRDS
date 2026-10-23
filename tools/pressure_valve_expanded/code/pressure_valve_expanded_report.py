@@ -106,7 +106,17 @@ def build(root):
     page+='<table><thead><tr><th>Cesta</th><th>Horizonte</th><th>Cenário</th><th>Sessões</th><th>Líquido R$</th><th>Estado</th></tr></thead><tbody>'+table+'</tbody></table><p>Margem efetiva da corretora e reserva para perdas: indisponíveis enquanto não verificadas. Retorno de patrimônio não calculado.</p>'
     page+='<script>const D='+data+''';function chart(vals){if(!vals.length)return '<p>Aguardando observações após a ativação. Sem curva econômica ainda.</p>';let lo=Math.min(0,...vals),hi=Math.max(0,...vals),sp=Math.max(1,hi-lo);return '<svg viewBox="0 0 900 230"><polyline fill="none" stroke="#246ab5" stroke-width="2" points="'+vals.map((v,i)=>(25+850*i/Math.max(1,vals.length-1))+','+(200-175*(v-lo)/sp)).join(' ')+'"/></svg>'}D.families.forEach((f,i)=>family.add(new Option(f.family_id+' / '+f.policy+' / '+f.horizon+' min',i)));function ff(){let f=D.families[+family.value];familyinfo.textContent='Estado: '+f.last_state+'; sessões: '+f.sessions_captured+'; gatilhos: '+f.triggers+'; fechadas: '+f.closed+'; líquido: '+(f.net_ref_2bps??'indisponível')+' bps';let a=0,v=D.daily.filter(x=>x.family_id===f.family_id&&x.policy===f.policy&&x.horizon===f.horizon&&x.outcome_state==='MODEL_CLOSED').map(x=>a+=x.net_ref_2bps);familychart.innerHTML=chart(v)}family.onchange=ff;ff();D.baskets.forEach((b,i)=>basket.add(new Option(b.basket+' / '+b.horizon+' min / '+b.scenario,i)));function bb(){let b=D.baskets[+basket.value];basketinfo.textContent='Estado: '+b.state+'; líquido R$: '+(b.net_brl??'indisponível')+'; DD MTM R$: '+(b.drawdown_mtm_brl??'indisponível')+'; contratos simultâneos: '+(b.max_gross_contracts??'indisponível');basketchart.innerHTML=chart(b.curve.map(x=>x.equity_brl))}basket.onchange=bb;bb();</script></html>'''
     (out/'DASHBOARD.html').write_text(page,encoding='utf-8')
-    downloads=Path.home()/'Downloads'
+    try:
+        import pressure_valve_intracycle
+        pressure_valve_intracycle.build(root,cfg,records,bar_files)
+        link='<p><a href="INTRACYCLE.html">Abrir curvas durante o ciclo: alvo, stop, trailing e lotes</a></p>'
+        dashboard=out/'DASHBOARD.html'
+        dashboard.write_text(dashboard.read_text(encoding='utf-8').replace('<section>',link+'<section>',1),encoding='utf-8')
+    except Exception as exc:
+        save(out/'INTRACYCLE_STATUS.json',{'state':'RESEARCH_REPORT_ERROR','error':str(exc),'orders':0})
+        dashboard=out/'DASHBOARD.html'
+        dashboard.write_text(dashboard.read_text(encoding='utf-8').replace('<section>','<p>Pesquisa intraciclo indisponível: consultar INTRACYCLE_STATUS.json.</p><section>',1),encoding='utf-8')
+    downloads=Path.home()/'Downloads' 
     if downloads.exists():
         label=max(r['session'] for r in records) if records else 'INICIALIZACAO_20261021'
         export=downloads/f'QRDS_PRESSURE_VALVE_EXPANDED_{label}.zip'

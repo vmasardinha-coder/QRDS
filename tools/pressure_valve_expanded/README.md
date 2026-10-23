@@ -31,3 +31,13 @@ A API MT5 da conta BTG retornou margem zero em 21/10; isto não comprova dispens
 ## Aceite
 
 Inicialização e testes não equivalem a medição prospectiva iniciada. A primeira sessão só é contada quando o registro de 22/10 for coletado e validado. Não há promoção de sobreviventes nem aprovação de capital real.
+
+## Pesquisa intraciclo — 23/10/2026
+
+INTRACYCLE.html/JSON/CSVs são atualizados pela mesma rotina de relatórios. Não há ordens nem seletor ao vivo. Regras em EXIT_RESEARCH_V1.json; SHA256 publicado em INTRACYCLE_STATUS.json.
+
+Compara marcação M5 e saída fixa 30/60/120, alvos líquidos 50/100/150 com stop ilustrativo 100 e máximo 60 minutos, trailing arma 50/devolve 25. Lotes com limite simultâneo de 5/10 contratos usam prioridade técnica congelada, sem ranking por lucro futuro; vagas liberam apenas após execução. Gestão por família, por janela e pelo dia permanece separada. Alvo diário 150 e perda ilustrativa 150 são cenários de pesquisa, não aprovação de risco.
+
+Condição observada na abertura M5; saída condicional executa na próxima abertura. Não presumimos preenchimento no alvo ou no stop. Custos completos de 2 bps, estresse alternativo de 3 bps e entrada atrasada uma barra. Mostra pico e pior marca durante o ciclo, retorno realizado/em aberto, uso simultâneo de contratos, nocional, concentração e drawdown; margem efetiva continua indisponível.
+
+22/10 é replay de desenvolvimento. Datas a partir de 23/10 são replay de regras congeladas, não seleção ou execução prospectiva em tempo real. QA da sessão inteira continua conhecida apenas depois do pregão. Políticas nunca agrupadas. Caminho incompleto fica indisponível; não vira zero. H1/H31 e seus ciclos não são modificados. Executor MQL5 não instalado.
