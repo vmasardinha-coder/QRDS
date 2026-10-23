@@ -74,10 +74,21 @@ the different denominator explains the apparent 64%/69% discrepancy.
 R90 gross return is +7.21%, modeled net +6.31%; R30 is +8.46%/+8.17%.
 This does not isolate causation: holdings/regime and costs differ. Two September
 rebalances increased R90 cash after realized profits and no clean replacement.
-The supplied reports contain no rejected proposal JSON, per-horizon validation
-result or runnable Macro repository. Therefore the rejecting horizon and margin
-are not inferred from the refusal count. Documentary review is complete;
-proposal-specific dry-run remains pending.
+Continuity review recovered the completed 17 October dry-run already stored in
+`artifacts/gate_btc_2/dependency_followup_20261017/`. Proposal
+20261017T195537Z and validation 20261017T195859Z are hash-bound in MACRO_REVIEW.json.
+The proposal retained 30-day momentum and 90-day regime, but had only four open
+positions and insufficient diversification. Monte Carlo expected returns were
+-0.4752%, -0.8270% and -1.1645% at 7/15/30 days; all horizons failed.
+MACRO_RECEIPT.json confirms the six live portfolio hashes were unchanged.
+The source scripts were run from the user's MacroQuant project, not supplied
+as runnable source in this batch.
+
+That prior review remains CLOSED_REJECTED_PROPOSAL_NO_LIVE_CHANGE. The new
+22 October report has no new proposal/validation pair, so its 11-round warning
+is monitoring, not grounds to reopen the completed review or claim a fresh
+Monte Carlo result. A future proposal would require a separately dated review.
+No new local Macro command was executed in this batch.
 
 Existing external read-only commands, not executed in this batch:
 
