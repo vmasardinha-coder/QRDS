@@ -9,6 +9,7 @@ import json
 import math
 from pathlib import Path
 import re
+import shutil
 import time
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -16,12 +17,14 @@ from urllib.request import Request, urlopen
 UTC=timezone.utc
 PROTOCOL_SHA256='a8f90a269efd64cd939c8707b23c2db31962cdabf6742b0e97bb016be92e4670'
 FIRST_PROSPECTIVE_SESSION='2026-10-24'
+XT_SHFL_CONTRACT='0x8881562783028f5c1bcb985d2283d5e170d88888'
 METADATA={
  'BINANCE_SPOT':'https://data-api.binance.vision/api/v3/exchangeInfo',
  'OKX_SPOT':'https://www.okx.com/api/v5/public/instruments?instType=SPOT',
  'GATE_SPOT':'https://api.gateio.ws/api/v4/spot/currency_pairs',
  'BITGET_SPOT':'https://api.bitget.com/api/v2/spot/public/symbols',
  'KRAKEN_SPOT':'https://api.kraken.com/0/public/AssetPairs',
+ 'XT_SPOT':'https://sapi.xt.com/v4/public/symbol?symbols=shfl_usdt',
 }
 
 
@@ -48,6 +51,12 @@ def metadata_index(venue,d):
  elif venue=='KRAKEN_SPOT':
   if d.get('error'):raise ValueError('EXCHANGE_API_ERROR')
   rows=[(x['altname'],*x['wsname'].split('/')) for x in d['result'].values() if x.get('status')=='online' and len(x.get('wsname','').split('/'))==2]
+ elif venue=='XT_SPOT':
+  if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
+  rows=[(x['symbol'],x['baseCurrency'].upper(),x['quoteCurrency'].upper())
+        for x in d['result']['symbols'] if x['symbol']=='shfl_usdt' and x.get('type')=='normal'
+        and x.get('state')=='ONLINE' and x.get('tradingEnabled') is True
+        and any(r.get('contract','').lower()==XT_SHFL_CONTRACT for r in x.get('chainRelation',[]))]
  else:raise ValueError('UNSUPPORTED_VENUE')
  result={}
  for instrument,base,quote in rows:
@@ -63,6 +72,7 @@ def candle_url(venue,instrument,begin):
  if venue=='GATE_SPOT':return 'https://api.gateio.ws/api/v4/spot/candlesticks?'+urlencode({'currency_pair':instrument,'interval':'1d','from':start,'to':start+86399})
  if venue=='BITGET_SPOT':return 'https://api.bitget.com/api/v2/spot/market/candles?'+urlencode({'symbol':instrument,'granularity':'1Dutc','limit':3})
  if venue=='KRAKEN_SPOT':return 'https://api.kraken.com/0/public/OHLC?'+urlencode({'pair':instrument,'interval':1440,'since':start})
+ if venue=='XT_SPOT':return 'https://sapi.xt.com/v4/public/kline?'+urlencode({'symbol':instrument,'interval':'1d','limit':3})
  raise ValueError('UNSUPPORTED_VENUE')
 
 
@@ -88,6 +98,10 @@ def parse_bar(venue,d,begin,captured):
   if len(series)!=1:raise ValueError('AMBIGUOUS_CANDLE_SERIES')
   # Kraken always includes the current uncommitted candle as the final row.
   rows=[[r[i] for i in (1,2,3,4,6)] for r in series[0][:-1] if int(r[0])==target]
+ elif venue=='XT_SPOT':
+  if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
+  # XT q is asset quantity; v is quote turnover and cannot substitute for q.
+  rows=[[r[k] for k in ('o','h','l','c','q')] for r in d['result'] if int(r['t'])==target*1000]
  if len(rows)!=1:raise ValueError('EXACT_CLOSED_BAR_MISSING_OR_DUPLICATED')
  values=dict(zip(('open','high','low','close','volume'),map(float,rows[0])))
  if any(not math.isfinite(v) for v in values.values()):raise ValueError('NONFINITE_OHLCV')
@@ -120,26 +134,31 @@ def make_plan(readiness):
  return sorted(plan,key=lambda r:r['coin_id'])
 
 
+def verified_receipt(attempt):
+ result=json.loads((attempt/'RECEIPT.json').read_text())
+ if sha((attempt/'INPUT_SOURCE_READINESS.json').read_bytes())!=result['input_readiness_sha256']:
+  raise ValueError('CAPTURE_INPUT_MUTATED')
+ for proof in result['evidence']:
+  path=(attempt/proof['path']).resolve()
+  if not path.is_relative_to(attempt.resolve()):raise ValueError('CAPTURE_PATH_OUTSIDE_BUNDLE')
+  if sha(gzip.decompress(path.read_bytes()))!=proof['raw_sha256']:raise ValueError('CAPTURE_EVIDENCE_MUTATED')
+ return result
+
+
 def collect(folder,readiness,now=None,fetcher=fetch,pause=time.sleep):
  now=now or datetime.now(UTC)
  if now.tzinfo is None:raise ValueError('TIMEZONE_REQUIRED')
  now=now.astimezone(UTC);begin=now.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=1)
  plan=make_plan(readiness);panel_hash=readiness['observed_panel_sha256']
  if not re.fullmatch('[a-f0-9]{64}',panel_hash):raise ValueError('INVALID_PANEL_HASH')
- key=now.date().isoformat()+'_'+panel_hash[:16];attempt=folder/'observations'/key
+ plan_hash=sha(encoded(plan))
+ key=now.date().isoformat()+'_'+panel_hash[:16]+'_'+plan_hash[:12];attempt=folder/'observations'/key
  attempt.mkdir(parents=True,exist_ok=True)
  receipt=attempt/'RECEIPT.json'
  if receipt.exists():
-  result=json.loads(receipt.read_text())
+  result=verified_receipt(attempt)
   # Failures are explicit and cached too; daily scheduling cannot hammer a bad token.
   if result['observed_panel_sha256']!=panel_hash:raise ValueError('CAPTURE_PANEL_HASH_MISMATCH')
-  if sha((attempt/'INPUT_SOURCE_READINESS.json').read_bytes())!=result['input_readiness_sha256']:
-   raise ValueError('CAPTURE_INPUT_MUTATED')
-  for proof in result['evidence']:
-   path=(attempt/proof['path']).resolve()
-   if not path.is_relative_to(attempt.resolve()):raise ValueError('CAPTURE_PATH_OUTSIDE_BUNDLE')
-   raw=gzip.decompress(path.read_bytes())
-   if sha(raw)!=proof['raw_sha256']:raise ValueError('CAPTURE_EVIDENCE_MUTATED')
   write_json(folder/'STATUS.json',result)
   return result
  input_path=attempt/'INPUT_SOURCE_READINESS.json'
@@ -147,7 +166,29 @@ def collect(folder,readiness,now=None,fetcher=fetch,pause=time.sleep):
  input_raw=input_path.read_bytes();original=json.loads(input_raw)
  if original['observed_panel_sha256']!=panel_hash:raise ValueError('CAPTURE_INPUT_CHANGED')
  plan=make_plan(original)
- evidence=[];results={}
+ evidence=[];results={};parent_id=None;parent_sha=None
+ status_path=folder/'STATUS.json'
+ if status_path.exists():
+  previous=json.loads(status_path.read_text())
+  if (previous.get('capture_date_utc')==now.date().isoformat()
+      and previous.get('observed_panel_sha256')==panel_hash
+      and previous.get('session')==begin.date().isoformat()):
+   parent_id=previous['attempt_id']
+   if not re.fullmatch('[a-zA-Z0-9_-]+',parent_id):raise ValueError('UNSAFE_PARENT_CAPTURE_ID')
+   parent=folder/'observations'/parent_id;previous=verified_receipt(parent)
+   parent_sha=sha((parent/'RECEIPT.json').read_bytes())
+   old_plan={r['coin_id']:r for r in make_plan(json.loads((parent/'INPUT_SOURCE_READINESS.json').read_text()))}
+   old_rows={r['coin_id']:r for r in previous['rows']}
+   for r in plan:
+    if old_plan.get(r['coin_id'])==r:results[r['coin_id']]=old_rows[r['coin_id']]
+   for proof in previous['evidence']:
+    source=parent/proof['path'];destination=attempt/proof['path']
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    if not destination.exists():shutil.copyfile(source,destination)
+    if sha(gzip.decompress(destination.read_bytes()))!=proof['raw_sha256']:raise ValueError('CAPTURE_EVIDENCE_MUTATED')
+    sidecar=source.with_suffix('.receipt.json')
+    if sidecar.exists() and not destination.with_suffix('.receipt.json').exists():shutil.copyfile(sidecar,destination.with_suffix('.receipt.json'))
+    evidence.append(proof)
  def get(url,name):
   path=attempt/'raw'/(name+'.json.gz');meta=path.with_suffix('.receipt.json')
   if path.exists() and meta.exists():
@@ -181,6 +222,7 @@ def collect(folder,readiness,now=None,fetcher=fetch,pause=time.sleep):
       'schema':'qrds.system13.observed_native_ohlcv.v1','open_at_utc':begin.isoformat(),
       'close_at_utc':(begin+timedelta(days=1)).isoformat(),'captured_at_utc':captured.isoformat(),
       'base_currency':base_quote[0],'volume_unit':'BASE_ASSET','factor':None,
+      'api_order_capability_qualified':False,
       'raw_sha256':proof['raw_sha256'],'metadata_sha256':mp['raw_sha256'],
       'metadata_observed_at_utc':metadata_at.isoformat(),
       'pre_installation_session_diagnostic_only':begin.date().isoformat()<FIRST_PROSPECTIVE_SESSION,
@@ -191,18 +233,22 @@ def collect(folder,readiness,now=None,fetcher=fetch,pause=time.sleep):
   return local
  groups={}
  for r in plan:
+  if r['coin_id'] in results:continue
   if not r['exact_binding_candidate']:results[r['coin_id']]={**r,'status':'EXACT_IDENTITY_MISSING'}
   elif r['source_identity'] not in METADATA or not r['source_symbol']:
    results[r['coin_id']]={**r,'status':'PRIMARY_INSTRUMENT_OR_ADAPTER_UNAVAILABLE'}
   else:groups.setdefault(r['source_identity'],[]).append(r)
  # One sequential worker per venue; bounded requests, no cross-venue symbol fallback.
- with ThreadPoolExecutor(max_workers=5) as executor:
+ reused=len(results)
+ with ThreadPoolExecutor(max_workers=6) as executor:
   futures=[executor.submit(venue_work,v,items) for v,items in groups.items()]
   for future in futures:results.update(future.result())
  rows=[results[r['coin_id']] for r in plan];valid=sum(r['status']=='NATIVE_CLOSED_OHLCV_OBSERVED_UNQUALIFIED' for r in rows)
  result={'schema':'qrds.system13.native_capture.v1','status':'NATIVE_CAPTURE_OBSERVED_SOURCE_QUALIFICATION_PENDING',
   'protocol_sha256':PROTOCOL_SHA256,'observed_panel_sha256':panel_hash,
   'input_readiness_sha256':sha(input_raw),'attempt_id':key,'capture_date_utc':now.date().isoformat(),
+  'binding_plan_sha256':plan_hash,'parent_attempt_id':parent_id,'parent_receipt_sha256':parent_sha,
+  'unchanged_rows_reused':reused if parent_id else 0,
   'session':begin.date().isoformat(),'first_potential_prospective_session':FIRST_PROSPECTIVE_SESSION,
   'eligible_members':len(plan),'native_closed_ohlcv_observed_assets':valid,
   'native_observed_coverage_fraction':valid/len(plan) if plan else 0,
