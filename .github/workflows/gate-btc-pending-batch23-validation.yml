@@ -15,6 +15,8 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_governed_bars.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
       - tests/test_gate_btc_system13_source_readiness.py
       - tests/test_gate_btc_momentum_m3_economics.py
@@ -37,6 +39,8 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_governed_bars.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
       - tests/test_gate_btc_system13_source_readiness.py
       - .github/workflows/gate-btc-pending-batch23-validation.yml
@@ -54,4 +58,5 @@ jobs:
       - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_governed_bars.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_native_capture.py -v
 
