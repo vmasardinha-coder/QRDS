@@ -47,6 +47,25 @@ class GovernedBars(unittest.TestCase):
             self.assertFalse(result[key])
         self.assertEqual(result['new_scientific_credit'],0)
 
+    def test_reviewed_usdt_stays_usdt_without_conversion_or_training(self):
+        self.admission['quote_currency']='USDT'
+        self.admission['source_id']='FIXTURE_USDT'
+        self.admission['instrument_bindings']['bitcoin']='BTCUSDT'
+        self.bar.update(quote_currency='USDT',source_id='FIXTURE_USDT',venue_instrument='BTCUSDT')
+        result=self.review()
+        self.assertEqual(result['native_quote_currency'],'USDT')
+        self.assertEqual(result['rows'][0]['quote_currency'],'USDT')
+        self.assertEqual(result['rows'][0]['close'],105)
+        self.assertFalse(result['quote_conversion_applied'])
+        self.assertFalse(result['training_ready'])
+        self.bar['quote_currency']='USD'
+        with self.assertRaisesRegex(ValueError,'UNITS_OR_ADJUSTMENT'):self.review()
+
+    def test_unreviewed_quote_currency_is_rejected(self):
+        self.admission['quote_currency']='OTHER'
+        self.bar['quote_currency']='OTHER'
+        with self.assertRaisesRegex(ValueError,'ADMISSION_OR_UNITS'):self.review()
+
     def test_mutated_source_and_path_traversal_rejected(self):
         bundle=self.bundle();(self.root/'bar.json').write_text('{}')
         with self.assertRaisesRegex(ValueError,'HASH_MISMATCH'):
