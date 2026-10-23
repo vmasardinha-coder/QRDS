@@ -137,6 +137,28 @@ def build(runtime,registry_path,out,discovery_path=None):
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
     result['identity_discovery_sha256']=sha(discovery_raw)
+    capture_path=folder/'native_ohlcv_capture_v1/STATUS.json'
+    result['native_capture']={'status':'NOT_CAPTURED'}
+    if capture_path.exists():
+        capture_raw=capture_path.read_bytes();capture=json.loads(capture_raw)
+        if capture.get('observed_panel_sha256')==sha(raw):
+            if (capture.get('schema')!='qrds.system13.native_capture.v1'
+                    or capture.get('protocol_sha256')!=PROTOCOL_SHA256
+                    or capture.get('eligible_members')!=result['eligible_members']
+                    or not 0<=capture.get('native_closed_ohlcv_observed_assets',-1)<=result['eligible_members']):
+                raise ValueError('INVALID_NATIVE_CAPTURE_PROJECTION')
+            keys=('status','session','capture_date_utc','eligible_members',
+                  'native_closed_ohlcv_observed_assets','native_observed_coverage_fraction',
+                  'missing_or_unavailable_assets','qualified_system13_ohlcv_assets',
+                  'factor_policy','source_admitted','training_ready','scientific_credit')
+            if (capture.get('source_admitted') is not False or capture.get('training_ready') is not False
+                    or capture.get('qualified_system13_ohlcv_assets')!=0 or capture.get('scientific_credit')!=0):
+                raise ValueError('NATIVE_CAPTURE_CANNOT_GRANT_SOURCE_ADMISSION')
+            result['native_capture']={k:capture[k] for k in keys}
+            result['native_capture']['status_sha256']=sha(capture_raw)
+        else:
+            result['native_capture']={'status':'STALE_FOR_CURRENT_OBSERVED_MEMBERSHIP',
+                                      'status_sha256':sha(capture_raw)}
     out.parent.mkdir(parents=True,exist_ok=True)
     out.write_text(json.dumps(result,sort_keys=True,indent=2,allow_nan=False)+'\n')
     return result

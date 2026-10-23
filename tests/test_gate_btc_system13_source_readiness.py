@@ -77,6 +77,23 @@ class Readiness(unittest.TestCase):
             self.assertEqual(result['observed_panel_sha256'],s.sha(raw))
             self.assertEqual(result['source_registry_sha256'],s.sha(registry.read_bytes()))
             self.assertFalse(result['training_ready'])
+            self.assertEqual(result['native_capture']['status'],'NOT_CAPTURED')
+            capture={'schema':'qrds.system13.native_capture.v1','protocol_sha256':s.PROTOCOL_SHA256,
+                'observed_panel_sha256':s.sha(raw),'status':'NATIVE_CAPTURE_OBSERVED_SOURCE_QUALIFICATION_PENDING',
+                'session':'2026-10-22','capture_date_utc':'2026-10-23','eligible_members':1,
+                'native_closed_ohlcv_observed_assets':1,'native_observed_coverage_fraction':1.,
+                'missing_or_unavailable_assets':0,'qualified_system13_ohlcv_assets':0,
+                'factor_policy':'MISSING','source_admitted':False,'training_ready':False,'scientific_credit':0}
+            capture_path=folder/'native_ohlcv_capture_v1/STATUS.json';capture_path.parent.mkdir()
+            capture_path.write_text(json.dumps(capture));updated=s.build(root,registry,out)
+            self.assertEqual(updated['native_capture']['native_closed_ohlcv_observed_assets'],1)
+            self.assertEqual(updated['qualified_system13_ohlcv_assets'],0)
+            capture['observed_panel_sha256']='f'*64;capture_path.write_text(json.dumps(capture))
+            updated=s.build(root,registry,out)
+            self.assertEqual(updated['native_capture']['status'],'STALE_FOR_CURRENT_OBSERVED_MEMBERSHIP')
+            capture['observed_panel_sha256']=s.sha(raw);capture['source_admitted']=True
+            capture_path.write_text(json.dumps(capture))
+            with self.assertRaisesRegex(ValueError,'CANNOT_GRANT'):s.build(root,registry,out)
             before=out.read_bytes();panel.write_bytes(b'changed')
             with self.assertRaisesRegex(ValueError,'HASH_MISMATCH'):s.build(root,registry,out)
             self.assertEqual(out.read_bytes(),before)

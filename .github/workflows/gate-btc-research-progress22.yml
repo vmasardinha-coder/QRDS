@@ -7,6 +7,8 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
       - tests/test_gate_btc_system13_source_readiness.py
@@ -21,6 +23,8 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
       - tests/test_gate_btc_system13_source_readiness.py
@@ -80,6 +84,7 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_native_capture.py -v
       - name: Verify unchanged parent family economic boundary
         run: |
           python - <<'PY'
@@ -124,6 +129,13 @@ jobs:
           python source/tools/gate_btc_system13_observed_panel.py \
             --runtime runtime_repo/runtime \
             --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1
+          python source/tools/gate_btc_system13_source_readiness.py \
+            --runtime runtime_repo/runtime \
+            --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json
+          python source/tools/gate_btc_system13_native_capture.py \
+            --readiness runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/native_ohlcv_capture_v1
           python source/tools/gate_btc_system13_source_readiness.py \
             --runtime runtime_repo/runtime \
             --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
