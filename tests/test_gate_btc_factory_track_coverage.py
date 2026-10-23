@@ -31,6 +31,10 @@ class FactoryTrackCoverageTests(unittest.TestCase):
             git('-C',clone,'checkout')
             self.assertEqual(export_tracks(clone),before)
             self.assertFalse((clone/'runtime/ledgers/d100/raw/archive.json').exists())
+            self.write(clone,'runtime/GATE_BTC_FACTORY_STATUS_LATEST.json',{'tracks':export_tracks(clone)})
+            git('-C',clone,'add','runtime/GATE_BTC_FACTORY_STATUS_LATEST.json')
+            staged=git('-C',clone,'diff','--cached','--name-only').stdout.strip()
+            self.assertEqual(staged,'runtime/GATE_BTC_FACTORY_STATUS_LATEST.json')
     def test_source_readiness_is_separate_from_panel_and_never_implies_training(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
