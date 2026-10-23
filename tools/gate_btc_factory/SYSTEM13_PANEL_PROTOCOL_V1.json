@@ -1,0 +1,89 @@
+{
+  "schema": "qrds.system13.panel_protocol.v1",
+  "protocol_id": "SYSTEM13_QRDS_OBSERVED_PANEL_V1",
+  "preregistered_at_utc": "2026-10-22T12:26:21.182725+00:00",
+  "system12_release_required": true,
+  "source": "runtime/data_quality/v2a",
+  "source_schema": "gate_btc.v2a_point_in_time_data_snapshot.v1",
+  "time_axis": "source_run_utc_NOT_source_data_as_of_close",
+  "membership": "EXACT_COIN_ID_AT_EACH_OBSERVED_SNAPSHOT_NOT_CURRENT_SURVIVORS",
+  "identity_key": "id",
+  "raw_membership_retained": true,
+  "features_available_now": [
+    "current_price",
+    "market_cap",
+    "market_cap_rank",
+    "total_volume",
+    "last_updated"
+  ],
+  "price_semantics": "OBSERVED_QUOTE_NOT_DAILY_CLOSE_OR_EXECUTION_PRICE",
+  "required_qlib_fields": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "factor"
+  ],
+  "historical_reconstruction_allowed": false,
+  "missing_policy": "EXPLICIT_UNAVAILABLE_NO_INTERPOLATION_NO_FORWARD_FILL",
+  "delisting_policy": "KEEP_PAST_MEMBERSHIP_NO_REPLACEMENT_NO_SYNTHETIC_EXIT",
+  "source_qualification_required": true,
+  "min_assets_per_session": 50,
+  "min_coverage_fraction": 0.8,
+  "max_quote_age_seconds": 86400,
+  "training_protocol": {
+    "model_class": "qlib.contrib.model.gbdt.LGBModel",
+    "features": "Alpha158_ONLY_AFTER_GOVERNED_OHLCV_FIELDS_EXIST",
+    "label": "FORWARD_1_SESSION_RETURN_AFTER_OBSERVED_FEATURE_CUTOFF",
+    "warmup_sessions": 60,
+    "train_sessions": 120,
+    "purge_after_train_sessions": 5,
+    "validation_sessions": 30,
+    "embargo_before_holdout_sessions": 5,
+    "holdout_sessions": 60,
+    "partition_rule": "EARLIEST_CONTIGUOUS_ELIGIBLE_SESSIONS_BY_TIME_NO_OUTCOME_SELECTION",
+    "model_parameters": {
+      "objective": "regression",
+      "num_leaves": 15,
+      "n_estimators": 100,
+      "learning_rate": 0.05,
+      "max_depth": 4,
+      "feature_fraction": 1.0,
+      "bagging_fraction": 1.0,
+      "num_threads": 1,
+      "seed": 20261022,
+      "deterministic": true
+    },
+    "hyperparameter_search": false,
+    "baselines": [
+      "EQUAL_WEIGHT_ELIGIBLE_UNIVERSE",
+      "FROZEN_20_SESSION_MOMENTUM_RANK"
+    ],
+    "reference_cost_bps_per_side": 10,
+    "stress_cost_bps_per_side": 20,
+    "same_membership_dates_costs_and_execution_for_comparators": true,
+    "primary_metric": "HOLDOUT_NET_EXCESS_VS_EQUAL_WEIGHT",
+    "secondary_metrics": [
+      "RANK_IC",
+      "MAX_DRAWDOWN",
+      "TURNOVER",
+      "COSTS",
+      "EXCESS_VS_MOMENTUM"
+    ],
+    "automatic_training_or_holdout_read": false,
+    "corporate_action_and_tradability_evidence_required": true
+  },
+  "external_qlib_economics_imported": false,
+  "system13_complete": false,
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "promotion_authority": false,
+    "no_retune": true,
+    "no_backfill": true
+  }
+}

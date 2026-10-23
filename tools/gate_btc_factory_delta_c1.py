@@ -15,6 +15,23 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 PREREG = ROOT / "tools" / "gate_btc_factory_delta_c1_prereg.json"
 CANONICAL = ROOT / "migration" / "canonical" / "delta" / "scripts" / "00_run_delta_v11.py"
+CLOSURE = ROOT / "tools" / "gate_btc_factory" / "DELTA_C1_CLOSURE_20261022.v1.json"
+CLOSURE_SHA256 = "575bd6161521bf69a6cda3d0f679f5981340f7ab4d0607c1158a923bc131bbf5"
+
+
+def closure_result() -> dict[str, Any]:
+    if hashlib.sha256(CLOSURE.read_bytes()).hexdigest() != CLOSURE_SHA256:
+        raise RuntimeError('DELTA_C1_TERMINAL_CLOSURE_SEAL_CHANGED')
+    c = json.loads(CLOSURE.read_text(encoding="utf-8"))
+    if (c['admission_allowed'] is not False or c['public_regeneration_allowed'] is not False
+            or c['canonical_survivors_ready_for_freeze'] != []):
+        raise RuntimeError('DELTA_C1_TERMINAL_BOUNDARY_INVALID')
+    return {'schema': 'qrds.factory.delta_c1_terminal_status.v1',
+            'status': c['terminal_state'], 'survivors': [], 'mode': 'public',
+            'freeze_eligible': False, 'freeze_pending': False,
+            'admission_allowed': False, 'public_collection_attempted': False,
+            'closure_sha256': hashlib.sha256(CLOSURE.read_bytes()).hexdigest(),
+            'scientific_credit': 0, 'orders': 0, 'real_capital': 0, 'engine_feed': False}
 
 
 def load_prereg() -> dict[str, Any]:
@@ -124,9 +141,10 @@ def rolling_beta(ret: pd.DataFrame, window: int) -> pd.DataFrame:
 
 
 def run_variant(prices: pd.DataFrame, family: str, cfg: dict[str, Any], prereg: dict[str, Any]) -> pd.Series:
-    ret = prices.pct_change()
+    # A missing close is not a flat market observation.
+    ret = prices.pct_change(fill_method=None)
     lb = int(cfg["lookback"])
-    score = prices.pct_change(lb)
+    score = prices.pct_change(lb, fill_method=None)
     betas = rolling_beta(ret, int(cfg.get("beta_window", 60))) if family == "DELTA_C1_BETA_NEUTRAL" else None
     vol = ret.rolling(int(cfg.get("vol_window", 20))).std()
     top_n = int(prereg["execution"]["top_n"])
@@ -136,6 +154,7 @@ def run_variant(prices: pd.DataFrame, family: str, cfg: dict[str, Any], prereg: 
     weights = pd.Series(0.0, index=prices.columns)
     prev = weights.copy()
     out = []
+    invalid_return_dates = []
     for i, d in enumerate(prices.index):
         if i == 0:
             out.append(np.nan)
@@ -163,22 +182,41 @@ def run_variant(prices: pd.DataFrame, family: str, cfg: dict[str, Any], prereg: 
             if weights.empty:
                 weights = pd.Series(0.0, index=prices.columns)
             weights = weights.reindex(prices.columns, fill_value=0.0)
-        day_ret = ret.loc[d].fillna(0.0)
+        day_ret = ret.loc[d]
         turnover = float((weights - prev).abs().sum())
-        out.append(float((weights * day_ret).sum()) - fee * turnover)
+        # prev was selected at the preceding completed close. New weights
+        # selected using close[d] must never earn the return ending at close[d].
+        # Charge the close[d] rebalance fee now; its exposure starts next bar.
+        held = prev.ne(0.0)
+        if day_ret.loc[held].isna().any():
+            out.append(np.nan)
+            invalid_return_dates.append(d)
+        else:
+            out.append(float((prev.loc[held] * day_ret.loc[held]).sum()) - fee * turnover)
         prev = weights.copy()
-    return pd.Series(out, index=prices.index, name=family)
+    result = pd.Series(out, index=prices.index, name=family)
+    result.attrs['invalid_return_dates'] = invalid_return_dates
+    return result
 
 
 def passes(m: dict[str, float], gates: dict[str, Any]) -> bool:
-    return bool(m["n"] >= int(gates["min_observations_each_block"]) and m["total_return"] > 0 and m["sharpe"] >= float(gates["min_sharpe"]) and m["max_drawdown"] >= float(gates["max_drawdown_floor"]))
+    return bool(m.get("invalid_held_return_count", 0) == 0 and m["n"] >= int(gates["min_observations_each_block"]) and m["total_return"] > 0 and m["sharpe"] >= float(gates["min_sharpe"]) and m["max_drawdown"] >= float(gates["max_drawdown_floor"]))
 
 
 def evaluate(prices: pd.DataFrame, prereg: dict[str, Any]) -> dict[str, Any]:
     disc_end = pd.Timestamp(prereg["discovery_end_inclusive"])
     rep_start = pd.Timestamp(prereg["replication_start_inclusive"])
     gates = prereg["gates"]
-    result: dict[str, Any] = {"schema": "qrds.factory.delta_c1_result.v1", "families": {}, "survivors": [], "h1_economics_read": False, "partial_prospective_economics_read": False, "orders": 0, "real_capital": 0, "engine_feed": False}
+    result: dict[str, Any] = {
+        "schema": "qrds.factory.delta_c1_result.v2",
+        "measurement_rule": "COMPLETED_CLOSE_NEXT_BAR_V2",
+        "families": {}, "survivors": [],
+        "legacy_v1_admission_allowed": False,
+        "freeze_eligible": False,
+        "admission_state": "REQUIRES_CAUSAL_REPLAY_AND_SOURCE_QUALIFICATION",
+        "h1_economics_read": False, "partial_prospective_economics_read": False,
+        "orders": 0, "real_capital": 0, "engine_feed": False,
+    }
     for fam, spec in prereg["families"].items():
         variants = [("central", spec["central"])] + [(f"neighbor_{i+1}", x) for i, x in enumerate(spec["neighbors"])]
         rows = []
@@ -189,6 +227,8 @@ def evaluate(prices: pd.DataFrame, prereg: dict[str, Any]) -> dict[str, Any]:
             rr = run_variant(prices, fam, cfg, prereg)
             dm = metrics(rr[rr.index <= disc_end])
             rm = metrics(rr[rr.index >= rep_start])
+            dm['invalid_held_return_count'] = sum(d <= disc_end for d in rr.attrs['invalid_return_dates'])
+            rm['invalid_held_return_count'] = sum(d >= rep_start for d in rr.attrs['invalid_return_dates'])
             dp, rp = passes(dm, gates), passes(rm, gates)
             if label == "central":
                 central_disc_pass, central_rep_pass = dp, rp
@@ -200,7 +240,7 @@ def evaluate(prices: pd.DataFrame, prereg: dict[str, Any]) -> dict[str, Any]:
         result["families"][fam] = {"state": state, "variants": rows}
         if survivor:
             result["survivors"].append(fam)
-    result["status"] = "SURVIVORS_READY_FOR_FREEZE" if result["survivors"] else "CLOSED_NULL"
+    result["status"] = "CAUSAL_CANDIDATES_REQUIRE_SOURCE_QUALIFICATION" if result["survivors"] else "CLOSED_NULL"
     result["comparison_capital_brl"] = int(prereg["capital_comparison_brl"])
     return result
 
@@ -210,11 +250,20 @@ def main() -> int:
     ap.add_argument("--mode", choices=["fixture", "public"], default="fixture")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
+    if args.mode == 'public':
+        result = closure_result()
+        p = Path(args.out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+        print(json.dumps(result, sort_keys=True))
+        return 0
     prereg = load_prereg()
     raw = fixture_ohlc() if args.mode == "fixture" else public_ohlc()
     prices = panelize(raw, prereg["historical_cutoff_exclusive"])
     result = evaluate(prices, prereg)
     result["mode"] = args.mode
+    result['synthetic_fixture'] = True
+    result['scientific_credit'] = 0
     result["source_rows"] = int(len(raw))
     result["source_sha256"] = hashlib.sha256(raw.sort_values(["date", "symbol"]).to_csv(index=False).encode()).hexdigest()
     p = Path(args.out)

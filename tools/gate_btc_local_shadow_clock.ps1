@@ -49,13 +49,18 @@ try{
   if(-not (Test-Path $H1Spool)){ if(Test-Path $h1Source){Copy-Item $h1Source $H1Spool -Recurse -Force}else{New-Item -ItemType Directory -Force -Path $H1Spool|Out-Null}; Log 'H1_SPOOL_READY=true' }
 
   $h31='tools\gate_btc_b3_h31_intraday_bound_entrypoint.py'
-  $h1='tools\gate_btc_h1_inspired_challenger_entrypoint.py'
+  $h1=Join-Path $Root 'local_h1_opening_v2\run_h1.py'
   foreach($rel in @($h31,$h1)){
-    $p=Join-Path $Code $rel
+    $p=if([System.IO.Path]::IsPathRooted($rel)){$rel}else{Join-Path $Code $rel}
     if(-not (Test-Path $p)){throw "MISSING_BOUND_RUNNER $rel"}
     $txt=(Get-Content $p -Raw).ToLower(); $forbidden='order'+'_send'+'('
     if($txt.Contains($forbidden)){throw "FORBIDDEN_ORDER_API $rel"}
   }
+  $bindingProbe = & $Py $h1 --deployment-check
+  if($LASTEXITCODE -ne 0){throw 'H1_V2_DEPLOYMENT_CHECK_FAILED'}
+  $binding = $bindingProbe | ConvertFrom-Json
+  if($binding.deployment -ne 'H1_OPENING_V2' -or $binding.active_contract_today -ne 'contract_v2.json' -or $binding.syntax -ne 'PASS' -or $binding.runtime_ledger_touched -ne $false){throw 'H1_V2_BINDING_NOT_VERIFIED'}
+  Log 'H1_V2_BINDING=PASS; CANONICAL_CREDIT=0'
   Log 'BOUND_RUNNERS_READY=true'
   Log 'SAFETY_SCAN=PASS'
 
