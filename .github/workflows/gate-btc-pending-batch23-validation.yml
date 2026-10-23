@@ -14,6 +14,8 @@ on:
       - tools/gate_btc_reusd_swap_history.py
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_governed_bars.py
+      - tools/gate_btc_system13_source_readiness.py
+      - tests/test_gate_btc_system13_source_readiness.py
       - tests/test_gate_btc_momentum_m3_economics.py
       - tests/test_gate_btc_research_progress22.py
       - tests/test_gate_btc_system13_governed_bars.py
@@ -33,6 +35,8 @@ on:
       - tools/gate_btc_reusd_swap_history.py
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_governed_bars.py
+      - tools/gate_btc_system13_source_readiness.py
+      - tests/test_gate_btc_system13_source_readiness.py
       - .github/workflows/gate-btc-pending-batch23-validation.yml
 permissions:
   contents: read
@@ -47,3 +51,5 @@ jobs:
       - run: python -m unittest discover -s tests -p test_gate_btc_momentum_m3_economics.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_governed_bars.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
+
