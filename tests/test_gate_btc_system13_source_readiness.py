@@ -18,6 +18,23 @@ def entry(coin):
 
 
 class Readiness(unittest.TestCase):
+    def test_extensions_preserve_frozen_receipts_and_reject_identity_collision(self):
+        a=self.discovery('one');b=self.discovery('two');before=copy.deepcopy(a)
+        combined=s.combine_discoveries([a,b]);self.assertEqual(len(combined['entries']),2)
+        self.assertEqual(a,before)
+        with self.assertRaisesRegex(ValueError,'AMBIGUOUS'):s.combine_discoveries([a,a])
+
+    def test_contract_binding_requires_exact_provider_id_network_and_contract(self):
+        d=self.discovery();b=d['entries'][0]['bindings'][0]
+        b.update(identity_match_method='EXACT_PROVIDER_ID_AND_ETHEREUM_CONTRACT',provider_coin_id='new',
+            platform='ethereum',venue_network='Ethereum',provider_contract='0x'+'1'*40,
+            venue_contract='0x'+'1'*40,network_evidence_sha256='b'*64,
+            network_evidence_url='https://example.test/chains')
+        self.assertIn('new',s.discovery_bindings(d))
+        for key,value in [('provider_coin_id','other'),('venue_network','Other'),('venue_contract','0x'+'2'*40)]:
+            changed=copy.deepcopy(d);changed['entries'][0]['bindings'][0][key]=value
+            with self.assertRaisesRegex(ValueError,'CONTRACT_BINDING'):s.discovery_bindings(changed)
+
     def discovery(self,coin='new'):
         return {'schema':'qrds.system13.exact_identity_discovery.v1',
             'historical_eligibility_granted':False,'system13_source_admitted':False,'ohlcv_ready':False,

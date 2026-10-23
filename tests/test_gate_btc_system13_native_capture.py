@@ -1,4 +1,5 @@
 import copy
+import hashlib
 from datetime import datetime,timedelta,timezone
 import gzip
 from pathlib import Path
@@ -16,6 +17,7 @@ def payload(venue):
  if venue=='OKX_SPOT':return {'code':'0','data':[[str(TS*1000),'100','110','90','105','20','2100','2100','1']]}
  if venue=='GATE_SPOT':return [[str(TS),'2100','105','110','90','100','20','true']]
  if venue=='BITGET_SPOT':return {'code':'00000','data':[[str(TS*1000),'100','110','90','105','20','2100']]}
+ if venue=='XT_SPOT':return {'rc':0,'result':[{'t':TS*1000,'o':'100','h':'110','l':'90','c':'105','q':'20','v':'2100'}]}
  return {'error':[],'result':{'XB':[[TS,'100','110','90','105','104','20',3],
   [TS+86400,'105','106','104','105','105','4',1]],'last':TS+86400}}
 
@@ -27,6 +29,37 @@ def ready(n=1):
 def metadata():return {'symbols':[{'symbol':'BTCUSDT','baseAsset':'BTC','quoteAsset':'USDT','status':'TRADING','isSpotTradingAllowed':True}]}
 
 class NativeCapture(unittest.TestCase):
+ def xt_metadata(self):
+  return {'rc':0,'result':{'symbols':[{'symbol':'shfl_usdt','type':'normal','state':'ONLINE',
+    'tradingEnabled':True,'openapiEnabled':False,'baseCurrency':'shfl','quoteCurrency':'usdt',
+    'chainRelation':[{'contract':c.XT_SHFL_CONTRACT}]}]}}
+ def test_xt_contract_is_pinned_and_market_observation_does_not_authorize_orders(self):
+  d=self.xt_metadata();self.assertEqual(c.metadata_index('XT_SPOT',d),{'shfl_usdt':('SHFL','USDT')})
+  d['result']['symbols'][0]['chainRelation'][0]['contract']='0x'+'0'*40
+  self.assertEqual(c.metadata_index('XT_SPOT',d),{})
+ def test_new_binding_extends_daily_capture_without_requerying_or_rewriting_parent(self):
+  with tempfile.TemporaryDirectory() as td:
+   folder=Path(td);calls=[]
+   def fetch(url):
+    calls.append(url)
+    if 'exchangeInfo' in url:d=metadata()
+    elif '/public/symbol' in url:d=self.xt_metadata()
+    elif '/public/kline' in url:d=payload('XT_SPOT')
+    else:d=payload('BINANCE_SPOT')
+    return c.encoded(d),NOW
+   r=ready();first=c.collect(folder,r,NOW,fetch,lambda _:None)
+   parent=folder/'observations'/first['attempt_id']/'RECEIPT.json';before=parent.read_bytes()
+   r=ready(2);r['rows'][1].update(source_identity='XT_SPOT',source_symbol='shfl_usdt')
+   second=c.collect(folder,r,NOW,fetch,lambda _:None)
+   self.assertEqual(len(calls),4);self.assertEqual(second['native_closed_ohlcv_observed_assets'],2)
+   self.assertEqual(second['unchanged_rows_reused'],1)
+   self.assertEqual(second['parent_attempt_id'],first['attempt_id'])
+   self.assertEqual(second['parent_receipt_sha256'],hashlib.sha256(before).hexdigest())
+   self.assertEqual(parent.read_bytes(),before)
+   self.assertFalse(second['rows'][1]['api_order_capability_qualified'])
+   self.assertEqual(second['rows'][1]['volume'],20)
+   self.assertFalse(second['source_admitted']);self.assertEqual(second['qualified_system13_ohlcv_assets'],0)
+   c.collect(folder,r,NOW,lambda _:self.fail('same binding plan must not retry'),lambda _:None)
  def test_all_venue_adapters_keep_base_volume_not_quote_volume(self):
   for venue in c.METADATA:
    self.assertEqual(c.parse_bar(venue,payload(venue),BEGIN,NOW),{'open':100.,'high':110.,'low':90.,'close':105.,'volume':20.})

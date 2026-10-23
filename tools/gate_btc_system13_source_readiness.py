@@ -15,6 +15,15 @@ PROTOCOL_SHA256='a8f90a269efd64cd939c8707b23c2db31962cdabf6742b0e97bb016be92e467
 def sha(raw):return hashlib.sha256(raw).hexdigest()
 
 
+def combine_discoveries(discoveries):
+    entries=[];seen=set()
+    for discovery in discoveries:
+        bindings=discovery_bindings(discovery)
+        if seen.intersection(bindings):raise ValueError('AMBIGUOUS_DISCOVERY_IDENTITY')
+        seen.update(bindings);entries.extend(discovery['entries'])
+    return {**discoveries[0],'entries':entries}
+
+
 def discovery_bindings(discovery):
     """Validate observed identity candidates without transferring source admission."""
     if discovery is None:return {}
@@ -34,7 +43,16 @@ def discovery_bindings(discovery):
             raise ValueError('INVALID_DISCOVERY_IDENTITY_OR_UNIT')
         if b['quote']=='USDT' and b.get('target_coin_id')!='tether':
             raise ValueError('UNBOUND_USDT_IDENTITY')
-        for prefix in ('identity_evidence', 'primary_metadata'):
+        if b.get('identity_match_method')=='EXACT_PROVIDER_ID_AND_ETHEREUM_CONTRACT':
+            contract=b.get('provider_contract','')
+            if (b.get('provider_coin_id')!=coin or b.get('platform')!='ethereum' or b.get('venue_network')!='Ethereum'
+                    or len(contract)!=42 or not contract.startswith('0x')
+                    or any(c not in '0123456789abcdef' for c in contract[2:])
+                    or b.get('venue_contract','').lower()!=contract):
+                raise ValueError('EXACT_CONTRACT_BINDING_REQUIRED')
+        prefixes=['identity_evidence','primary_metadata']
+        if b.get('identity_match_method')=='EXACT_PROVIDER_ID_AND_ETHEREUM_CONTRACT':prefixes.append('network_evidence')
+        for prefix in prefixes:
             if prefix=='primary_metadata' and b.get('primary_market_verified') is not True:continue
             digest=b[prefix+'_sha256']
             if len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest):
@@ -133,10 +151,14 @@ def build(runtime,registry_path,out,discovery_path=None):
     if discovery_path is None:
         discovery_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json'
     discovery_raw=discovery_path.read_bytes()
-    result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),json.loads(discovery_raw))
+    extension_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json'
+    extension_raw=extension_path.read_bytes()
+    discovery=combine_discoveries([json.loads(discovery_raw),json.loads(extension_raw)])
+    result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),discovery)
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
     result['identity_discovery_sha256']=sha(discovery_raw)
+    result['identity_discovery_extension_sha256']=sha(extension_raw)
     capture_path=folder/'native_ohlcv_capture_v1/STATUS.json'
     result['native_capture']={'status':'NOT_CAPTURED'}
     if capture_path.exists():
