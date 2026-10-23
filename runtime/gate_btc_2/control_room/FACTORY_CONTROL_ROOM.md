@@ -1,17 +1,17 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-23T20:00:05.657890+00:00`
+Generated: `2026-10-23T22:16:53.742308+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **20**
-- Latest ledger: **2026-10-22**
-- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-10-22`)
-- Triggered cells: **12**
+- Ledger sessions: **21**
+- Latest ledger: **2026-10-23**
+- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-10-23`)
+- Triggered cells: **15**
 - Cells at 60/60: **0**
-- Trigger range: **0–2 / 60**
+- Trigger range: **0–3 / 60**
 
 ## Latest prospective session states
 - `NO_SIGNAL`: **1**
@@ -26,7 +26,7 @@ Generated: `2026-10-23T20:00:05.657890+00:00`
 
 ## Source
 - Historical binding snapshot: `FORWARD_SOURCE_BOUND` / `WINV26`
-- Latest physically observed symbol: `WINZ26` (session `2026-10-22`; source QA=None)
+- Latest physically observed symbol: `WINZ26` (session `2026-10-23`; source QA=None)
 - Waiting source semantics: **0**
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (43 records; admitted=False)
 
@@ -38,14 +38,14 @@ Generated: `2026-10-23T20:00:05.657890+00:00`
 
 | Lookback | Families | Prior feature observations | Additional prior observations |
 |---|---:|---:|---:|
-| 10 | 5 | 12 to 12 | 0 to 0 |
-| 20 | 5 | 12 to 12 | 8 to 8 |
-| 60 | 6 | 12 to 12 | 48 to 48 |
-| 80 | 10 | 12 to 12 | 68 to 68 |
-| 120 | 26 | 12 to 12 | 108 to 108 |
-| 160 | 16 | 12 to 12 | 148 to 148 |
-| 200 | 256 | 6 to 12 | 188 to 194 |
-| 252 | 256 | 6 to 12 | 240 to 246 |
+| 10 | 5 | 13 to 13 | 0 to 0 |
+| 20 | 5 | 13 to 13 | 7 to 7 |
+| 60 | 6 | 13 to 13 | 47 to 47 |
+| 80 | 10 | 13 to 13 | 67 to 67 |
+| 120 | 26 | 13 to 13 | 107 to 107 |
+| 160 | 16 | 13 to 13 | 147 to 147 |
+| 200 | 256 | 7 to 13 | 187 to 193 |
+| 252 | 256 | 7 to 13 | 239 to 245 |
 
 Coverage is not a signal. A later eligible session, its current feature, nonzero MAD and the frozen trigger remain required.
 
