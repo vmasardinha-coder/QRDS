@@ -121,22 +121,33 @@ def collect(session,cutoff,evidence_dir,now=None,*,reuse_seed=True):
             raise ValueError("INVALID_A7A5_RPC_RESPONSE")
         return p["result"]
     def rpc_many(method,params,url,prefix):
-        results=[]
-        for start in range(0,len(params),10):
-            chunk=params[start:start+10]
+        def fetch_chunk(chunk,start):
             payload=[{'jsonrpc':'2.0','id':i+1,'method':method,'params':value}
                      for i,value in enumerate(chunk)]
-            p=save(f'{prefix}_{start:03}.json',request('post',url,json=payload,timeout=30),url)
+            response=request('post',url,json=payload,timeout=30)
+            if response.status_code==500 and len(chunk)>1:
+                # Same endpoint and proofs; some RPC gateways reject larger batches.
+                name=f'{prefix}_{start:03}_{len(chunk):02}_http500.bin'
+                (out/name).write_bytes(response.content)
+                manifest.append({'file':name,'url':url,'http_status':500,
+                                 'sha256':hashlib.sha256(response.content).hexdigest()})
+                middle=len(chunk)//2
+                return fetch_chunk(chunk[:middle],start)+fetch_chunk(chunk[middle:],start+middle)
+            p=save(f'{prefix}_{start:03}_{len(chunk):02}.json',response,url)
             if (not isinstance(p,list) or len(p)!=len(chunk)
                     or any(not isinstance(x,dict) or type(x.get('id')) is not int for x in p)
                     or {x['id'] for x in p}!=set(range(1,len(chunk)+1))):
                 raise ValueError('INVALID_A7A5_RPC_BATCH_IDENTITIES')
-            indexed={x['id']:x for x in p}
+            indexed={x['id']:x for x in p};values=[]
             for i in range(1,len(chunk)+1):
                 x=indexed[i]
                 if x.get('jsonrpc')!='2.0' or x.get('error') or x.get('result') is None:
                     raise ValueError('INVALID_A7A5_RPC_BATCH_RESPONSE')
-                results.append(x['result'])
+                values.append(x['result'])
+            return values
+        results=[]
+        for start in range(0,len(params),10):
+            results.extend(fetch_chunk(params[start:start+10],start))
         return results
     if rpc("chain.json","eth_chainId",[])!="0x1":raise ValueError("WRONG_EVM_CHAIN")
     for name,selector,address in [("token0","0x0dfe1681",BASE),("token1","0xd21220a7",QUOTE)]:

@@ -31,6 +31,8 @@ class LiveSession:
     def post(self,url,json,timeout):
         self.posts+=1
         if isinstance(json,list):
+            if self.bad=='batch_limit' and len(json)>2:return SimpleNamespace(status_code=500,content=b'batch too large')
+            if self.bad=='always500':return SimpleNamespace(status_code=500,content=b'upstream unavailable')
             out=[self.one(x) for x in reversed(json)]
             if self.bad=='ids':out[0]['id']=out[-1]['id']
             if self.bad=='missing':out.pop()
@@ -78,5 +80,12 @@ class IncrementalTests(unittest.TestCase):
     def test_seed_never_bypasses_fresh_canonical_proof(self):
         for bad in ['block','log']:
             with self.subTest(bad=bad),tempfile.TemporaryDirectory() as d,self.assertRaisesRegex(ValueError,'CANONICAL_CLOSING'):self.run_capture(LiveSession(bad),d)
+    def test_http500_batch_is_split_without_skipping_any_closing_proof(self):
+        with tempfile.TemporaryDirectory() as d:
+            rows,e=self.run_capture(LiveSession('batch_limit'),d)
+            self.assertEqual(len(rows),200);self.assertEqual(e['canonical_closing_blocks_and_logs_verified'],200)
+            self.assertTrue(any(x.get('http_status')==500 for x in e['raw_manifest']))
+    def test_http500_at_smallest_batch_fails_closed(self):
+        with tempfile.TemporaryDirectory() as d,self.assertRaisesRegex(ValueError,'A7A5_SOURCE_HTTP_500'):self.run_capture(LiveSession('always500'),d)
 
 if __name__=='__main__':unittest.main()
