@@ -8,12 +8,16 @@ on:
     branches: [main]
     paths:
       - tools/gate_btc_p0_completion.py
+      - tools/gate_btc_a7a5_swap_history.py
+      - tests/test_gate_btc_a7a5_transient.py
       - tests/test_gate_btc_p0_completion.py
       - .github/workflows/gate-btc-p0-completion.yml
   pull_request:
     branches: [main]
     paths:
       - tools/gate_btc_p0_completion.py
+      - tools/gate_btc_a7a5_swap_history.py
+      - tests/test_gate_btc_a7a5_transient.py
       - tests/test_gate_btc_p0_completion.py
       - .github/workflows/gate-btc-p0-completion.yml
 
@@ -32,6 +36,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: python -m unittest discover -s tests -p test_gate_btc_p0_completion.py -v
+      - run: python -m unittest -v tests.test_gate_btc_a7a5_swap_history
+      - run: python -m unittest discover -s tests -p test_gate_btc_a7a5_transient.py -v
 
   crossvenue-binding:
     needs: validate
