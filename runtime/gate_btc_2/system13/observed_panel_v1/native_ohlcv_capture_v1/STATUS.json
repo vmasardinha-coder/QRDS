@@ -1,6 +1,6 @@
 {
-  "attempt_id": "2026-10-24_855cae3ee52ac748_ed66a31f52bb",
-  "binding_plan_sha256": "ed66a31f52bbfcaadbae518cdb2abdfe41ac7ae92d71dbbc3690fd1b3dddc9cf",
+  "attempt_id": "2026-10-24_855cae3ee52ac748_a84353fe2376",
+  "binding_plan_sha256": "a84353fe23768b370d0407d1e299e403f2be77b8038d84d9628d77be6c37bba5",
   "blockers": [
     "SOURCE_SPECIFIC_ADMISSION_REQUIRED",
     "CORPORATE_ACTION_AND_ADJUSTMENT_FACTOR_EVIDENCE_REQUIRED",
@@ -27,6 +27,18 @@
       "path": "raw/BITGET_SPOT_metadata.json.gz",
       "raw_sha256": "7f53e801aaea9c58b998a384d5087c0995db22dd4e2a4b22c25fbb1b0463e102",
       "url": "https://api.bitget.com/api/v2/spot/public/symbols"
+    },
+    {
+      "captured_at_utc": "2026-10-24T19:44:06.519674+00:00",
+      "path": "raw/COINBASE_SPOT_metadata.json.gz",
+      "raw_sha256": "8b017a4f633fa7d4dd93a5a53737e5f4958f6a17a873ee65fa60dcac1cb57dac",
+      "url": "https://api.exchange.coinbase.com/products"
+    },
+    {
+      "captured_at_utc": "2026-10-24T07:11:15.165853+00:00",
+      "path": "raw/GATE_SPOT_metadata.json.gz",
+      "raw_sha256": "283c9233ea3e6fbdfe930d6a3cd365ba9242e48a28bff9a7c7918f543f502e30",
+      "url": "https://api.gateio.ws/api/v4/spot/currency_pairs"
     },
     {
       "captured_at_utc": "2026-10-24T07:11:15.165853+00:00",
@@ -533,6 +545,12 @@
       "url": "https://data-api.binance.vision/api/v3/klines?symbol=IOTAUSDT&interval=1d&timeZone=0&startTime=1792713600000&endTime=1792799999999&limit=2"
     },
     {
+      "captured_at_utc": "2026-10-24T19:44:07.637157+00:00",
+      "path": "raw/irys_candles.json.gz",
+      "raw_sha256": "2248cffc2b8451a91b735f216a770dfbf089efe245c3cd20b0f95056a1b8afe7",
+      "url": "https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=IRYS_USDT&interval=1d&from=1792713600&to=1792799999"
+    },
+    {
       "captured_at_utc": "2026-10-24T07:12:02.171734+00:00",
       "path": "raw/jasmycoin_candles.json.gz",
       "raw_sha256": "0fdebf0c0fad3f8025322e39501a8da8e4ff0556657e003e8624f62fb3bf3173",
@@ -615,6 +633,12 @@
       "path": "raw/mantle_candles.json.gz",
       "raw_sha256": "60f3c2bd9e2d915e9fc4f253a13c80f3da6147eb20889af5937820a4a962a4b4",
       "url": "https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=MNT_USDT&interval=1d&from=1792713600&to=1792799999"
+    },
+    {
+      "captured_at_utc": "2026-10-24T19:44:06.970646+00:00",
+      "path": "raw/meta-2-2_candles.json.gz",
+      "raw_sha256": "d93e1ee409c07fee24ffbd7852fb2de61bd17ce23aaed44e8a2ecf6d66c86783",
+      "url": "https://api.exchange.coinbase.com/products/META-USD/candles?granularity=86400&start=2026-10-23T00%3A00%3A00Z&end=2026-10-24T00%3A00%3A00Z"
     },
     {
       "captured_at_utc": "2026-10-24T07:12:06.348754+00:00",
@@ -1070,14 +1094,14 @@
   "factor_policy": "MISSING_NO_CONSTANT_OR_ADJUSTMENT_ASSUMPTION",
   "first_potential_prospective_session": "2026-10-24",
   "holdout_read_allowed": false,
-  "input_readiness_sha256": "fce27d932cbf12b22271cdf099f9367d59c2c746f59b230b65a83255966c9789",
-  "missing_or_unavailable_assets": 44,
-  "native_closed_ohlcv_observed_assets": 170,
-  "native_observed_coverage_fraction": 0.794392523364486,
+  "input_readiness_sha256": "b59fd6a7dbf0d13af0cee0c63917843c8c11e8a39ce3fe65deb26bacf3a1150b",
+  "missing_or_unavailable_assets": 42,
+  "native_closed_ohlcv_observed_assets": 172,
+  "native_observed_coverage_fraction": 0.8037383177570093,
   "observed_panel_sha256": "855cae3ee52ac7485176b525599619bcbf846f4752826e6db14cb101f1eac535",
   "orders": 0,
-  "parent_attempt_id": null,
-  "parent_receipt_sha256": null,
+  "parent_attempt_id": "2026-10-24_855cae3ee52ac748_ed66a31f52bb",
+  "parent_receipt_sha256": "65ed2c821295a57c23e686ac43e61b74dc1eaa91035788d7f8a3c37154cad93e",
   "protocol_sha256": "a8f90a269efd64cd939c8707b23c2db31962cdabf6742b0e97bb016be92e4670",
   "qualified_system13_ohlcv_assets": 0,
   "real_capital": 0,
@@ -3471,12 +3495,32 @@
       "volume_unit": "BASE_ASSET"
     },
     {
+      "adjustment_evidence_qualified": false,
+      "api_order_capability_qualified": false,
+      "base_currency": "IRYS",
+      "captured_at_utc": "2026-10-24T19:44:07.637157+00:00",
+      "close": 0.07648,
+      "close_at_utc": "2026-10-24T00:00:00+00:00",
       "coin_id": "irys",
-      "exact_binding_candidate": false,
-      "quote_currency": null,
-      "source_identity": null,
-      "source_symbol": null,
-      "status": "EXACT_IDENTITY_MISSING"
+      "exact_binding_candidate": true,
+      "factor": null,
+      "high": 0.32848,
+      "low": 0.02029,
+      "metadata_observed_at_utc": "2026-10-24T07:11:15.165853+00:00",
+      "metadata_sha256": "283c9233ea3e6fbdfe930d6a3cd365ba9242e48a28bff9a7c7918f543f502e30",
+      "open": 0.02062,
+      "open_at_utc": "2026-10-23T00:00:00+00:00",
+      "pre_installation_session_diagnostic_only": true,
+      "quote_currency": "USDT",
+      "raw_sha256": "2248cffc2b8451a91b735f216a770dfbf089efe245c3cd20b0f95056a1b8afe7",
+      "schema": "qrds.system13.observed_native_ohlcv.v1",
+      "source_admitted": false,
+      "source_identity": "GATE_SPOT",
+      "source_symbol": "IRYS_USDT",
+      "status": "NATIVE_CLOSED_OHLCV_OBSERVED_UNQUALIFIED",
+      "training_eligible": false,
+      "volume": 723984028.0,
+      "volume_unit": "BASE_ASSET"
     },
     {
       "coin_id": "janus-henderson-anemoy-aaa-clo-fund",
@@ -3927,12 +3971,32 @@
       "volume_unit": "BASE_ASSET"
     },
     {
+      "adjustment_evidence_qualified": false,
+      "api_order_capability_qualified": false,
+      "base_currency": "META",
+      "captured_at_utc": "2026-10-24T19:44:06.970646+00:00",
+      "close": 5.159,
+      "close_at_utc": "2026-10-24T00:00:00+00:00",
       "coin_id": "meta-2-2",
-      "exact_binding_candidate": false,
-      "quote_currency": null,
-      "source_identity": null,
-      "source_symbol": null,
-      "status": "EXACT_IDENTITY_MISSING"
+      "exact_binding_candidate": true,
+      "factor": null,
+      "high": 5.345,
+      "low": 5.062,
+      "metadata_observed_at_utc": "2026-10-24T19:44:06.519674+00:00",
+      "metadata_sha256": "8b017a4f633fa7d4dd93a5a53737e5f4958f6a17a873ee65fa60dcac1cb57dac",
+      "open": 5.144,
+      "open_at_utc": "2026-10-23T00:00:00+00:00",
+      "pre_installation_session_diagnostic_only": true,
+      "quote_currency": "USD",
+      "raw_sha256": "d93e1ee409c07fee24ffbd7852fb2de61bd17ce23aaed44e8a2ecf6d66c86783",
+      "schema": "qrds.system13.observed_native_ohlcv.v1",
+      "source_admitted": false,
+      "source_identity": "COINBASE_SPOT",
+      "source_symbol": "META-USD",
+      "status": "NATIVE_CLOSED_OHLCV_OBSERVED_UNQUALIFIED",
+      "training_eligible": false,
+      "volume": 657.1,
+      "volume_unit": "BASE_ASSET"
     },
     {
       "adjustment_evidence_qualified": false,
@@ -6201,5 +6265,5 @@
   "source_admitted": false,
   "status": "NATIVE_CAPTURE_OBSERVED_SOURCE_QUALIFICATION_PENDING",
   "training_ready": false,
-  "unchanged_rows_reused": 0
+  "unchanged_rows_reused": 212
 }
