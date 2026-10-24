@@ -120,7 +120,7 @@ def collect(session,cutoff,evidence_dir,now=None,*,reuse_seed=True):
         if p.get("jsonrpc")!="2.0" or p.get("id")!=1 or p.get("error") or p.get("result") is None:
             raise ValueError("INVALID_A7A5_RPC_RESPONSE")
         return p["result"]
-    def rpc_many(method,params,url,prefix):
+    def rpc_many(method,params,url,prefix,max_batch=10):
         def fetch_chunk(chunk,start):
             payload=[{'jsonrpc':'2.0','id':i+1,'method':method,'params':value}
                      for i,value in enumerate(chunk)]
@@ -146,8 +146,8 @@ def collect(session,cutoff,evidence_dir,now=None,*,reuse_seed=True):
                 values.append(x['result'])
             return values
         results=[]
-        for start in range(0,len(params),10):
-            results.extend(fetch_chunk(params[start:start+10],start))
+        for start in range(0,len(params),max_batch):
+            results.extend(fetch_chunk(params[start:start+max_batch],start))
         return results
     if rpc("chain.json","eth_chainId",[])!="0x1":raise ValueError("WRONG_EVM_CHAIN")
     for name,selector,address in [("token0","0x0dfe1681",BASE),("token1","0xd21220a7",QUOTE)]:
@@ -189,7 +189,8 @@ def collect(session,cutoff,evidence_dir,now=None,*,reuse_seed=True):
     blocks=logs_by_close=None
     if seed_raw is not None:
         blocks=rpc_many('eth_getBlockByNumber',[[hex(x['block_number']),False] for x in final],RPC,'closing_blocks')
-        logs_by_close=rpc_many('eth_getLogs',[[{'address':POOL,'blockHash':x['block_hash'],'topics':[TOPIC]}] for x in final],LOG_RPC,'closing_logs')
+        # dRPC's public endpoint explicitly limits batches to three requests.
+        logs_by_close=rpc_many('eth_getLogs',[[{'address':POOL,'blockHash':x['block_hash'],'topics':[TOPIC]}] for x in final],LOG_RPC,'closing_logs',max_batch=3)
     for n,x in enumerate(final):
         block=blocks[n] if blocks is not None else rpc(f"close_{n:03}_block.json","eth_getBlockByNumber",[hex(x["block_number"]),False])
         at=datetime.fromisoformat(x["block_timestamp"].replace("Z","+00:00"))
