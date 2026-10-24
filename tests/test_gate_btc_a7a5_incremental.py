@@ -11,7 +11,7 @@ def events():
 
 class LiveSession:
     def __init__(self,bad=None):
-        self.bad=bad;self.posts=0;self.gets=0
+        self.bad=bad;self.posts=0;self.gets=0;self.log_batch_sizes=[]
         old=[x for x in events() if x['block_timestamp'][:10]<='2026-10-14'];self.all=old
         last=max((x for x in old if x['block_timestamp'][:10]=='2026-10-14'),key=a.key)
         fresh=[]
@@ -31,6 +31,7 @@ class LiveSession:
     def post(self,url,json,timeout):
         self.posts+=1
         if isinstance(json,list):
+            if json[0]['method']=='eth_getLogs':self.log_batch_sizes.append(len(json))
             if self.bad=='batch_limit' and len(json)>2:return SimpleNamespace(status_code=500,content=b'batch too large')
             if self.bad=='always500':return SimpleNamespace(status_code=500,content=b'upstream unavailable')
             out=[self.one(x) for x in reversed(json)]
@@ -59,7 +60,8 @@ class IncrementalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             session=LiveSession();rows,e=self.run_capture(session,d)
             self.assertEqual(len(rows),200);self.assertEqual(rows[-1]['date'],'2026-10-17')
-            self.assertEqual(session.gets,3);self.assertEqual(session.posts,43)
+            self.assertEqual(session.gets,3);self.assertEqual(session.posts,90)
+            self.assertEqual(max(session.log_batch_sizes),3)
             self.assertTrue(e['pinned_physical_seed_reused']);self.assertTrue(e['all_200_closing_blocks_and_logs_reverified_live'])
             self.assertEqual(e['canonical_closing_blocks_and_logs_verified'],200)
             self.assertEqual(e['historical_scientific_credit'],0)
