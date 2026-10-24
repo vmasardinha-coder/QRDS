@@ -24,6 +24,7 @@ METADATA={
  'GATE_SPOT':'https://api.gateio.ws/api/v4/spot/currency_pairs',
  'BITGET_SPOT':'https://api.bitget.com/api/v2/spot/public/symbols',
  'KRAKEN_SPOT':'https://api.kraken.com/0/public/AssetPairs',
+ 'COINBASE_SPOT':'https://api.exchange.coinbase.com/products',
  'XT_SPOT':'https://sapi.xt.com/v4/public/symbol?symbols=shfl_usdt',
 }
 
@@ -51,6 +52,9 @@ def metadata_index(venue,d):
  elif venue=='KRAKEN_SPOT':
   if d.get('error'):raise ValueError('EXCHANGE_API_ERROR')
   rows=[(x['altname'],*x['wsname'].split('/')) for x in d['result'].values() if x.get('status')=='online' and len(x.get('wsname','').split('/'))==2]
+ elif venue=='COINBASE_SPOT':
+  rows=[(x['id'],x['base_currency'],x['quote_currency']) for x in d
+        if x.get('status')=='online' and x.get('trading_disabled') is False]
  elif venue=='XT_SPOT':
   if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
   rows=[(x['symbol'],x['baseCurrency'].upper(),x['quoteCurrency'].upper())
@@ -72,6 +76,7 @@ def candle_url(venue,instrument,begin):
  if venue=='GATE_SPOT':return 'https://api.gateio.ws/api/v4/spot/candlesticks?'+urlencode({'currency_pair':instrument,'interval':'1d','from':start,'to':start+86399})
  if venue=='BITGET_SPOT':return 'https://api.bitget.com/api/v2/spot/market/candles?'+urlencode({'symbol':instrument,'granularity':'1Dutc','limit':3})
  if venue=='KRAKEN_SPOT':return 'https://api.kraken.com/0/public/OHLC?'+urlencode({'pair':instrument,'interval':1440,'since':start})
+ if venue=='COINBASE_SPOT':return 'https://api.exchange.coinbase.com/products/'+instrument+'/candles?'+urlencode({'granularity':86400,'start':begin.isoformat().replace('+00:00','Z'),'end':(begin+timedelta(days=1)).isoformat().replace('+00:00','Z')})
  if venue=='XT_SPOT':return 'https://sapi.xt.com/v4/public/kline?'+urlencode({'symbol':instrument,'interval':'1d','limit':3})
  raise ValueError('UNSUPPORTED_VENUE')
 
@@ -98,6 +103,8 @@ def parse_bar(venue,d,begin,captured):
   if len(series)!=1:raise ValueError('AMBIGUOUS_CANDLE_SERIES')
   # Kraken always includes the current uncommitted candle as the final row.
   rows=[[r[i] for i in (1,2,3,4,6)] for r in series[0][:-1] if int(r[0])==target]
+ elif venue=='COINBASE_SPOT':
+  rows=[[r[i] for i in (3,2,1,4,5)] for r in d if int(r[0])==target]
  elif venue=='XT_SPOT':
   if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
   # XT q is asset quantity; v is quote turnover and cannot substitute for q.
@@ -266,3 +273,4 @@ if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--readiness',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
  a=p.parse_args();r=collect(a.out,json.loads(a.readiness.read_text()))
  print(json.dumps({k:v for k,v in r.items() if k not in ('rows','evidence')},sort_keys=True))
+
