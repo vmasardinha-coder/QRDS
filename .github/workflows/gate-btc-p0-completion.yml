@@ -1,0 +1,114 @@
+name: GATE BTC P0 Evidence Completion
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '50 14 * * 1-5'
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_p0_completion.py
+      - tests/test_gate_btc_p0_completion.py
+      - .github/workflows/gate-btc-p0-completion.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_p0_completion.py
+      - tests/test_gate_btc_p0_completion.py
+      - .github/workflows/gate-btc-p0-completion.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-p0-completion-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'live' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_gate_btc_p0_completion.py -v
+
+  crossvenue-binding:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+          sparse-checkout: runtime/factory_sources/crypto_challenger_745
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Freeze qualified blinded partitions at checkpoint
+        run: python main_repo/tools/gate_btc_p0_completion.py --mode crossvenue --runtime runtime_repo
+      - name: Publish immutable binding only
+        working-directory: runtime_repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          file=runtime/factory_sources/crypto_challenger_745/forward/cross_venue/DATASET_BINDING_N1440.json
+          test -f "$file" || exit 0
+          git add "$file"
+          git diff --cached --quiet && exit 0
+          git commit -m 'Freeze outcome-blind cross-venue checkpoint dataset'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime || { git rebase --abort; exit 1; }
+            git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1
+
+  h31-publish:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    timeout-minutes: 10
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: main_repo}
+      - uses: actions/checkout@v4
+        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Publish already sealed local events without MT5 or collection
+        shell: powershell
+        run: |
+          $spool='C:\actions-runner\qrds-local-shadow\spool\b3_h31_shadow_paper'
+          python main_repo/tools/gate_btc_p0_completion.py --mode h31 --runtime runtime_repo --spool $spool
+          if ($LASTEXITCODE -ne 0) { throw 'H31_EXISTING_EVIDENCE_PUBLICATION_FAILED' }
+      - name: Persist only H31 auxiliary evidence
+        working-directory: runtime_repo
+        shell: powershell
+        run: |
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/b3_h31_shadow_paper/intraday_events runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          git commit -m 'Publish previously sealed H31 local auxiliary evidence'
+          if ($LASTEXITCODE -ne 0) { throw 'H31_COMMIT_FAILED' }
+          for ($attempt=1; $attempt -le 5; $attempt++) {
+            git fetch origin gate-btc-runtime
+            if ($LASTEXITCODE -ne 0) { throw 'H31_FETCH_FAILED' }
+            git rebase origin/gate-btc-runtime
+            if ($LASTEXITCODE -ne 0) { git rebase --abort; throw 'H31_REBASE_CONFLICT' }
+            git push origin HEAD:gate-btc-runtime
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            Start-Sleep -Seconds ($attempt * 2)
+          }
+          throw 'H31_PUSH_RETRIES_EXHAUSTED'
