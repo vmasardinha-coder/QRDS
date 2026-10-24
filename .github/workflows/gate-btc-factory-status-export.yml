@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '7 * * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC Momentum M3 Prospective Shadow
+      - GATE BTC XAGENT experiment and System13 observed panel
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -27,7 +32,7 @@ on:
 
 concurrency:
   group: gate-btc-factory-status-export-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'canonical' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   RESEARCH_ONLY: 'true'
@@ -42,13 +47,31 @@ env:
 
 jobs:
   export:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
         with: {path: main_repo}
       - uses: actions/checkout@v4
-        with: {ref: gate-btc-runtime, path: runtime_repo, fetch-depth: 0}
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            runtime/**/STATUS.json
+            runtime/**/CANONICAL_STATUS.json
+            runtime/**/ACTIVE_EPOCH.json
+            runtime/**/ECONOMICS_STATUS.json
+            runtime/**/INTRADAY_STATUS.json
+            runtime/GATE_BTC_REPORTING_CURRENT_STATE.json
+            runtime/GATE_BTC_MEASUREMENT_STATUS.json
+            runtime/GATE_BTC_FACTORY_STATUS_LATEST.json
+            runtime/gate_btc_2/system12/**
+            runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Verify independent track authorities and missing evidence
@@ -92,3 +115,4 @@ jobs:
             sleep $((i*2))
           done
           exit 1
+

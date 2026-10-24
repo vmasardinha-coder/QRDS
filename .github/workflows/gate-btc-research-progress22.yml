@@ -6,6 +6,13 @@ on:
     paths:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
+      - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tests/test_gate_btc_system13_source_readiness.py
       - tools/gate_btc_research_progress_publish.py
       - tools/gate_btc_factory/XAGENT_SPOT_CONTINUOUS_V1.json
       - tools/gate_btc_factory/SYSTEM13_PANEL_PROTOCOL_V1.json
@@ -16,13 +23,27 @@ on:
     paths:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
+      - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_native_capture.py
+      - tests/test_gate_btc_system13_native_capture.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json
+      - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
+      - tests/test_gate_btc_system13_source_readiness.py
       - tools/gate_btc_research_progress_publish.py
       - tools/gate_btc_factory/XAGENT_SPOT_CONTINUOUS_V1.json
       - tools/gate_btc_factory/SYSTEM13_PANEL_PROTOCOL_V1.json
       - tests/test_gate_btc_research_progress22.py
       - .github/workflows/gate-btc-research-progress22.yml
   schedule:
-    - cron: '10 2,8,14,20 * * *'
+    - cron: '5,20,35 2 * * *'
+    - cron: '10 8,14,20 * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC XAGENT Spot Flow Signal Producer
+      - GATE BTC XAGENT Breadth Signal Producer
+      - GATE BTC XAGENT Term Carry Signal Producer
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -33,7 +54,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  decision-window-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.clock.outputs.proceed }}
+    steps:
+      - id: clock
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          UPSTREAM_RESULT: ${{ github.event.workflow_run.conclusion }}
+          UPSTREAM_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import datetime, timezone
+          now = datetime.now(timezone.utc)
+          allow = os.environ['EVENT_NAME'] != 'workflow_run' or (
+              os.environ['UPSTREAM_RESULT'] == 'success' and
+              os.environ['UPSTREAM_BRANCH'] == 'main' and
+              now.hour == 2 and now.minute <= 45)
+          print('proceed=' + str(allow).lower())
+          PY
   validate:
+    needs: decision-window-gate
+    if: needs.decision-window-gate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +85,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_native_capture.py -v
       - name: Verify unchanged parent family economic boundary
         run: |
           python - <<'PY'
@@ -54,7 +100,10 @@ jobs:
           PY
   collect:
     needs: validate
-    if: github.event_name != 'pull_request'
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -66,16 +115,33 @@ jobs:
           ref: gate-btc-runtime
           path: runtime_repo
           fetch-depth: 1
+          sparse-checkout: |
+            runtime/data_quality/v2a
+            runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1
+            runtime/factory_autonomy/xagent_signal_producers
+            runtime/gate_btc_2/system12
+            runtime/gate_btc_2/system13/observed_panel_v1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Index archived observations and evaluate only sealed future events
         id: work
         run: |
+          python source/tools/gate_btc_xagent_spot_experiment.py --repository runtime_repo
           python source/tools/gate_btc_system13_observed_panel.py \
             --runtime runtime_repo/runtime \
             --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1
-          python source/tools/gate_btc_xagent_spot_experiment.py --repository runtime_repo
+          python source/tools/gate_btc_system13_source_readiness.py \
+            --runtime runtime_repo/runtime \
+            --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json
+          python source/tools/gate_btc_system13_native_capture.py \
+            --readiness runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/native_ohlcv_capture_v1
+          python source/tools/gate_btc_system13_source_readiness.py \
+            --runtime runtime_repo/runtime \
+            --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           from pathlib import Path
@@ -109,3 +175,5 @@ jobs:
             runtime_repo/runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/
             publication.json
           if-no-files-found: warn
+
+

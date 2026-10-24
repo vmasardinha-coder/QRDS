@@ -70,11 +70,18 @@ def validate(l,activation,contract):
     if len(s['quantities'])!=10 or not math.isclose(sum(q*s['prices'][a] for a,q in s['quantities'].items()),s['nav'],rel_tol=1e-12):
         raise ValueError('M3_QUANTITY_NAV_MISMATCH')
 
+def required_price_assets(l, snap):
+    """HOLD values frozen quantities; new ranks need quotes only at rebalance."""
+    top = selection(snap)
+    held = set(l['state']['quantities']) if l else set()
+    rebalances = l is None or (l['state']['return_observations'] + 1) % 7 == 0
+    return held | {'BTC'} | (set(top) if rebalances else set())
+
 def advance(l,snap,prices,activation,contract,evidence,at):
     verify_contract(contract);top=selection(snap);cutoff=snap['cutoff']
     if cutoff<activation['first_eligible_cutoff'] or cutoff!=(at.date()-timedelta(days=1)).isoformat():
         raise ValueError('NON_PROSPECTIVE_M3_CUTOFF')
-    needed=set(top)|{'BTC'}|(set(l['state']['quantities']) if l else set())
+    needed=required_price_assets(l,snap)
     if not needed<=set(prices) or any(not math.isfinite(prices[a]) or prices[a]<=0 for a in needed):
         raise ValueError('MISSING_OR_INVALID_M3_HELD_PRICES')
     if l:
@@ -150,7 +157,7 @@ def run(root,signals,sources,at=None,collector=collect):
         if b.get('utc_date')!=at.date().isoformat(): b={'utc_date':at.date().isoformat(),'attempts':0}
         if b['attempts']>=6: raise ValueError('DAILY_SOURCE_ATTEMPT_LIMIT')
         b['attempts']+=1;save(bp,b)
-        assets=set(top)|{'BTC'}|(set(l['state']['quantities']) if l else set())
+        assets=required_price_assets(l,snap)
         m=collector(snap,None,root/'source_prices',root/'current_prices.zip',assets=assets)
         mp=root/'source_prices'/cutoff/'MANIFEST.json'
         if m['cutoff']!=cutoff or datetime.fromisoformat(m['available_at_utc']).date()!=at.date():
@@ -175,3 +182,4 @@ def main():
         print(json.dumps({'status':s['status'],'return_observations':s['return_observations']}));return 0
     except (Exception,SystemExit) as e: print(str(e));return 2
 if __name__=='__main__':raise SystemExit(main())
+

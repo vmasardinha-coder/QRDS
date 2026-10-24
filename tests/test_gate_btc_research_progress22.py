@@ -41,6 +41,28 @@ def bar(at, price):
 
 
 class XagentTests(unittest.TestCase):
+    def test_missed_window_is_visible_without_late_decision_or_credit(self):
+        c=x.load_contract()
+        clock=x.decision_clock(c,NOW.replace(hour=8),set())
+        self.assertEqual(clock['missed_decision_dates'],['2026-10-23'])
+        self.assertFalse(clock['missed_windows_have_economic_credit'])
+        self.assertEqual(clock['next_decision_window_start_utc'],'2026-10-24T02:00:00+00:00')
+        self.assertFalse(x.decision_clock(c,NOW,set())['missed_decision_dates'])
+        self.assertFalse(x.decision_clock(c,NOW.replace(hour=8),{'2026-10-23'})['missed_decision_dates'])
+        self.assertEqual(x.decision_clock(c,NOW,{'2026-10-23'})['next_decision_window_start_utc'],
+                         '2026-10-24T02:00:00+00:00')
+    def test_runner_after_missed_window_writes_status_only(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t)
+            status=x.run(root,NOW.replace(hour=8))
+            self.assertEqual(status['status'],'DECISION_WINDOW_MISSED_NO_BACKFILL')
+            self.assertEqual(status['paired_outcome_count'],0)
+            self.assertFalse((root/'runtime'/x.LANE/'decisions').exists())
+            self.assertFalse((root/'runtime'/x.LANE/'outcomes').exists())
+    def test_clock_before_first_window_does_not_report_future_as_missed(self):
+        clock=x.decision_clock(x.load_contract(),NOW-timedelta(days=1),set())
+        self.assertEqual(clock['missed_window_count'],0)
+        self.assertEqual(clock['next_decision_window_start_utc'],'2026-10-23T02:00:00+00:00')
     def decision(self):
         return x.make_decision(records(), NOW, "a" * 40, x.load_contract())
 
@@ -208,3 +230,4 @@ class PanelTests(unittest.TestCase):
 
 
 if __name__ == '__main__':unittest.main()
+

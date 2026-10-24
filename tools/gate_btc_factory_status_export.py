@@ -9,6 +9,7 @@ except ImportError:
     from gate_btc_reporting_authority import active_status_path, h1_status_path, system12_summary, closed_v12_status, m3_status_path
 
 TRACKS = {
+    "system13_source_readiness_v1": "runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json",
     "xagent_spot_continuous_v1": "runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json",
     "system13_observed_panel_v1": "runtime/gate_btc_2/system13/observed_panel_v1/STATUS.json",
     "h31_prospective": "runtime/ledgers/b3_h31_prospective/STATUS.json",
@@ -148,5 +149,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
