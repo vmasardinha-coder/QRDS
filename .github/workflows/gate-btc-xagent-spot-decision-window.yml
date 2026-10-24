@@ -1,0 +1,93 @@
+name: GATE BTC XAGENT Spot Decision Window
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45,55 1 * * *'
+    - cron: '5,20,35 2 * * *'
+    - cron: '10 3,20 * * *'
+  workflow_run:
+    workflows:
+      - GATE BTC XAGENT Spot Flow Signal Producer
+      - GATE BTC XAGENT Breadth Signal Producer
+      - GATE BTC XAGENT Term Carry Signal Producer
+    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_xagent_window_runner.py
+      - .github/workflows/gate-btc-xagent-spot-decision-window.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_xagent_window_runner.py
+      - tests/test_gate_btc_xagent_window_runner.py
+      - .github/workflows/gate-btc-xagent-spot-decision-window.yml
+      - .github/workflows/gate-btc-research-progress22.yml
+permissions:
+  contents: read
+concurrency:
+  group: gate-btc-xagent-spot-window-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'live' }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_gate_btc_xagent_window_runner.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_research_progress22.py -v
+  live:
+    needs: validate
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions: {contents: write}
+    steps:
+      - id: clock
+        env: {EVENT_NAME: '${{ github.event_name }}'}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import datetime,timezone
+          now=datetime.now(timezone.utc);minute=now.hour*60+now.minute
+          allow=os.environ['EVENT_NAME']!='workflow_run' or 105<=minute<=165
+          print('proceed='+str(allow).lower())
+          PY
+      - uses: actions/checkout@v4
+        if: steps.clock.outputs.proceed == 'true'
+        with: {ref: main, path: source}
+      - uses: actions/checkout@v4
+        if: steps.clock.outputs.proceed == 'true'
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+          sparse-checkout: |
+            runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1
+            runtime/factory_autonomy/xagent_signal_producers
+      - uses: actions/setup-python@v5
+        if: steps.clock.outputs.proceed == 'true'
+        with: {python-version: '3.12'}
+      - name: Wait for actual frozen clock, never backdate
+        if: steps.clock.outputs.proceed == 'true'
+        run: python source/tools/gate_btc_xagent_window_runner.py
+      - name: Refresh latest producer evidence immediately before decision
+        if: steps.clock.outputs.proceed == 'true'
+        working-directory: runtime_repo
+        run: |
+          git fetch origin gate-btc-runtime
+          git merge --ff-only origin/gate-btc-runtime
+      - name: Evaluate frozen experiment and publish before entry
+        if: steps.clock.outputs.proceed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python source/tools/gate_btc_xagent_spot_experiment.py --repository runtime_repo
+          python source/tools/gate_btc_research_progress_publish.py --repository runtime_repo > publication.json
+          decision=$(python -c "import json;print(json.load(open('runtime_repo/runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json'))['new_decision'] or '')")
+          if [ -n "$decision" ]; then
+            sha=$(python -c "import json;print(json.load(open('publication.json'))['sha'])")
+            python source/tools/gate_btc_xagent_spot_experiment.py --repository runtime_repo --acknowledge-publication-sha "$sha"
+            python source/tools/gate_btc_research_progress_publish.py --repository runtime_repo
+          fi
