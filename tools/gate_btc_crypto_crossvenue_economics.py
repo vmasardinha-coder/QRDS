@@ -35,8 +35,50 @@ def qualify_observation(o):
     except (KeyError,TypeError,ValueError):why.append('REQUIRED_SOURCE_CLOCK_EVIDENCE_MISSING')
     return sorted(set(why))
 
-def load_bound(root,prereg):
-    b=read(root/'DATASET_BINDING_N1440.json')
+def prepare_clock_binding(root,prereg):
+    original=root/'DATASET_BINDING_N1440.json'
+    successor=root/'DATASET_BINDING_N1440_SOURCE_CLOCK_V1.json'
+    if successor.exists():return successor
+    previous=read(original)
+    if sha(canonical({k:v for k,v in previous.items() if k!='binding_payload_sha256'}))!=previous.get('binding_payload_sha256'):raise ValueError('BINDING_HASH')
+    old_result=root/'economics/N1440/RESULT.json'
+    if old_result.exists() and read(old_result).get('economics_computed') is True:return original
+    manifest=read(root/'MANIFEST.json')
+    if manifest.get('source_clock_profile')!='RECEIPTS_AVAILABLE_AT_FROZEN_DECISION_V1':return original
+    if sha(prereg.read_bytes())!=previous['prereg_sha256']:raise ValueError('PREREG_HASH')
+    if manifest['source_cost_evidence_sha256']!=previous['source_cost_evidence_sha256']:raise ValueError('ADMISSION_DRIFT')
+    seen={}
+    for item in manifest['partitions']:
+        if Path(item['file']).name!=item['file']:raise ValueError('PARTITION_PATH')
+        raw=(root/'partitions'/item['file']).read_bytes()
+        if sha(raw)!=item['sha256']:raise ValueError('PARTITION_HASH')
+        part=json.loads(raw)
+        if part.get('channel_id')!=CHANNEL or part.get('economics_read') is not False:raise ValueError('PARTITION_AUTHORITY')
+        for o in part.get('observations',[]):
+            if o.get('eligible_for_future_evaluation') is True:seen.setdefault(str(o['observation_id']),o)
+    approved=[oid for oid in sorted(seen,key=int) if not qualify_observation(seen[oid])]
+    progress={'schema':'qrds.crypto745.source_clock_progress.v1','source_clock_qualified':len(approved),
+              'minimum':1440,'economics_read':False,'original_binding_preserved':True,'safety':SAFETY}
+    save(root/'economics/source_clock_review/LATEST.json',progress)
+    if len(approved)<1440:return original
+    chosen=approved[:1440]
+    stamp=lambda value:datetime.fromtimestamp(int(value)/1000,timezone.utc).isoformat()
+    candidate={**{k:v for k,v in previous.items() if k!='binding_payload_sha256'},
+        'bound_at_utc':datetime.now(timezone.utc).isoformat(),
+        'predecessor_binding_payload_sha256':previous['binding_payload_sha256'],
+        'selection_rule':'EARLIEST_1440_SOURCE_CLOCK_QUALIFIED_IDS_NO_OUTCOME_SELECTION',
+        'eligible_observation_ids':chosen,'record_count':len(chosen),
+        'source_clock_profile':'RECEIPTS_AVAILABLE_AT_FROZEN_DECISION_V1',
+        'capture_code_sha256':sha((Path(__file__).parent/'gate_btc_factory/crypto_745_crossvenue_forward_capture.py').read_bytes()),
+        'predecessor_capture_code_sha256':previous['capture_code_sha256'],
+        'first_eligible_timestamp_utc':stamp(chosen[0]),'last_eligible_timestamp_utc':stamp(chosen[-1]),
+        'partitions':manifest['partitions'],'economics_read':False,'economics_computed':False}
+    candidate['binding_payload_sha256']=sha(canonical(candidate));save(successor,candidate)
+    return successor
+
+
+def load_bound(root,prereg,binding_path=None):
+    b=read(binding_path or root/'DATASET_BINDING_N1440.json')
     if sha(canonical({k:v for k,v in b.items() if k!='binding_payload_sha256'}))!=b.get('binding_payload_sha256'):raise ValueError('BINDING_HASH')
     c=read(prereg)
     if sha(prereg.read_bytes())!=b['prereg_sha256']:raise ValueError('PREREG_HASH')
@@ -58,7 +100,9 @@ def load_bound(root,prereg):
     for d in objects:
         for o in d.get('observations',[]):
             if o.get('eligible_for_future_evaluation') is True:seen.setdefault(str(o['observation_id']),o)
-    ordered=[seen[k] for k in sorted(seen,key=int)]
+    ids=b.get('eligible_observation_ids',sorted(seen,key=int))
+    if len(set(ids))!=len(ids) or ids!=sorted(ids,key=int) or any(k not in seen for k in ids):raise ValueError('BOUND_ELIGIBLE_IDS')
+    ordered=[seen[k] for k in ids]
     if len(ordered)!=b['record_count'] or not ordered:raise ValueError('RECORD_COUNT')
     if int(ordered[0]['observation_id'])!=ms(b['first_eligible_timestamp_utc']) or int(ordered[-1]['observation_id'])!=ms(b['last_eligible_timestamp_utc']):raise ValueError('BOUND_TIME_RANGE')
     minimum=c['evaluation']['minimum_observation_count_before_first_economics']
@@ -70,9 +114,9 @@ def load_bound(root,prereg):
         else:valid.append(o)
     return b,c,valid,excluded
 
-def fetch_funding(root,start_ms,end_ms):
+def fetch_funding(root,start_ms,end_ms,checkpoint_folder="N1440"):
     """Retrieve official settled funding, bounded pages, preserving every response."""
-    directory=root/'economics/N1440/funding';directory.mkdir(parents=True,exist_ok=True)
+    directory=root/'economics'/checkpoint_folder/'funding';directory.mkdir(parents=True,exist_ok=True)
     proof=directory/'RECEIPT.json'
     if proof.exists():
         receipt=read(proof)
@@ -128,8 +172,10 @@ def evaluate_one(o,funding,c):
             'funding_model_return':funding_return,'net_model':gross-cost+funding_return}
 
 def run(root,prereg):
-    b,c,valid,excluded=load_bound(root,prereg)
-    folder=root/'economics/N1440';folder.mkdir(parents=True,exist_ok=True)
+    binding_path=prepare_clock_binding(root,prereg)
+    b,c,valid,excluded=load_bound(root,prereg,binding_path)
+    checkpoint_folder='N1440_SOURCE_CLOCK_V1' if binding_path.name!='DATASET_BINDING_N1440.json' else 'N1440'
+    folder=root/'economics'/checkpoint_folder;folder.mkdir(parents=True,exist_ok=True)
     quality={'schema':'qrds.crypto745.bound_source_clock_review.v1','binding_payload_sha256':b['binding_payload_sha256'],
              'claimed_eligible':b['record_count'],'clock_qualified':len(valid),'excluded_before_outcome_read':excluded,
              'exclusions_use_outcomes':False,'minimum':1440,'safety':SAFETY}
@@ -143,7 +189,7 @@ def run(root,prereg):
         if old.get('economics_computed') is True:
             if old.get('binding_payload_sha256')!=b['binding_payload_sha256']:raise ValueError('RESULT_BINDING')
             return old
-    funding,proof=fetch_funding(root,min(int(o['entry']['ts_ms']) for o in valid),max(int(o['exit']['ts_ms']) for o in valid))
+    funding,proof=fetch_funding(root,min(int(o['entry']['ts_ms']) for o in valid),max(int(o['exit']['ts_ms']) for o in valid),checkpoint_folder)
     outcomes=[evaluate_one(o,funding,c) for o in valid]
     report={'schema':'qrds.crypto745.crossvenue_economic_checkpoint.v1','channel_id':CHANNEL,
       'status':'CHECKPOINT_DESCRIPTIVE_NO_PROMOTION_GATE','checkpoint':1440,

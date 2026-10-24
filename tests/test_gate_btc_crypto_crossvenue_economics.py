@@ -45,13 +45,27 @@ class EconomicsTests(unittest.TestCase):
   (lane/'partitions/1.json').write_bytes(raw)
   from datetime import datetime,timezone
   stamp=lambda v:datetime.fromtimestamp(int(v)/1000,timezone.utc).isoformat()
-  b={'channel_id':e.CHANNEL,'prereg_sha256':e.sha(prereg.read_bytes()),'checkpoint':1440,'record_count':count,
+  b={'capture_code_sha256':'a'*64,'channel_id':e.CHANNEL,'prereg_sha256':e.sha(prereg.read_bytes()),'checkpoint':1440,'record_count':count,
      'source_cost_file_sha256':e.sha(adm.read_bytes()),'source_cost_evidence_sha256':'a'*64,
      'first_eligible_timestamp_utc':stamp(records[0]['observation_id']),
      'last_eligible_timestamp_utc':stamp(records[-1]['observation_id']),
      'partitions':[{'file':'1.json','sha256':e.sha(raw)}]}
   b['binding_payload_sha256']=e.sha(e.canonical(b));e.save(lane/'DATASET_BINDING_N1440.json',b)
+  e.save(lane/'MANIFEST.json',{'source_clock_profile':'RECEIPTS_AVAILABLE_AT_FROZEN_DECISION_V1',
+      'source_cost_evidence_sha256':'a'*64,'partitions':b['partitions']})
   return lane,prereg
+ def test_source_clock_successor_preserves_original_and_selects_earliest_ids(self):
+  with tempfile.TemporaryDirectory() as td:
+   lane,prereg=self.fixture(Path(td),1441)
+   original=(lane/'DATASET_BINDING_N1440.json').read_bytes()
+   successor=e.prepare_clock_binding(lane,prereg)
+   self.assertEqual(successor.name,'DATASET_BINDING_N1440_SOURCE_CLOCK_V1.json')
+   self.assertEqual((lane/'DATASET_BINDING_N1440.json').read_bytes(),original)
+   b,c,valid,excluded=e.load_bound(lane,prereg,successor)
+   self.assertEqual(len(valid),1440);self.assertEqual(len(excluded),0)
+   self.assertFalse(b['economics_read'])
+   self.assertEqual(successor.read_bytes(),e.prepare_clock_binding(lane,prereg).read_bytes())
+
  def test_no_economics_before_qualified_checkpoint(self):
   with tempfile.TemporaryDirectory() as td:
    lane,prereg=self.fixture(Path(td));r=e.run(lane,prereg)
