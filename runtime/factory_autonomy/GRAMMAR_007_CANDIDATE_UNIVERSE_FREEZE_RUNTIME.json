@@ -1,0 +1,98 @@
+{
+  "candidate_count": 1,
+  "candidate_ranked": false,
+  "candidate_universe_frozen": true,
+  "candidates": [
+    {
+      "baseCalculo": 0,
+      "candidate_id": "G007_FOCUS_REVISION_VECTOR_V1",
+      "component_order_frozen": true,
+      "components": [
+        "IPCA_CURRENT_YEAR_MEDIAN_REVISION",
+        "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION"
+      ],
+      "discovery_effect": "STANDARDIZED_EFFECT_OF_FROZEN_TWO_COMPONENT_VECTOR_AS_DEFINED_BY_AUTHORIZED_005_RULE",
+      "family_id": "XAGRAMMAR_728DC88D691B",
+      "feature_rows_sha256": "a559b414994dbf4b4e5c8aeba2fed879e823560f0c799f169202993b95337de2",
+      "feature_transform": "NONE",
+      "first_target_session_date": "2024-02-26",
+      "holdout_rule": {
+        "otherwise": "REJECT_NO_RETUNE",
+        "pass_if_all": [
+          "candidate effect has same sign as discovery",
+          "absolute holdout effect >= 0.50 * absolute discovery effect",
+          "holdout effect is computable on the sealed holdout partition"
+        ],
+        "read_only_if_validation_passes": true,
+        "survivor_destination": "SEPARATE_BLINDED_PROSPECTIVE_ZERO_RETROACTIVE_CREDIT"
+      },
+      "last_target_session_date": "2026-09-14",
+      "lookback_grid": null,
+      "observation_count": 122,
+      "performance_based_source_selection": false,
+      "ranking_rule": "largest absolute standardized effect on the sealed discovery partition",
+      "representation": "TWO_COMPONENT_RAW_PUBLICATION_TO_PUBLICATION_REVISION_VECTOR",
+      "target": "IBOVESPA_SIMPLE_CLOSE_TO_CLOSE_RETURN_FOR_TARGET_SESSION",
+      "target_grid": null,
+      "target_join_rule": "join only by the already-frozen target_session_date after candidate universe freeze",
+      "threshold": null,
+      "validation_rule": {
+        "otherwise": "REJECT_NO_RETUNE",
+        "pass_if_all": [
+          "candidate effect has same sign as discovery",
+          "absolute validation effect >= 0.50 * absolute discovery effect",
+          "validation effect is computable on the sealed validation partition"
+        ]
+      },
+      "window_grid": null
+    }
+  ],
+  "discovery_candidate_rule": {
+    "candidate_count": 1,
+    "direction": "absolute standardized effect; retain observed sign for validation",
+    "eligible_candidates": "only candidates mechanically implied by each already-frozen Grammar 007 semantic preregistration; no threshold/window/lookback/target grid and no performance-based source selection",
+    "ranking": "largest absolute standardized effect on the sealed discovery partition",
+    "tie_break": [
+      "lexicographic family_id",
+      "lexicographic frozen component representation"
+    ]
+  },
+  "economics_read": false,
+  "embargo_sessions": 60,
+  "excluded_families": [
+    {
+      "exclusion_basis": "SOURCE_INELIGIBILITY_ONLY_NOT_PERFORMANCE",
+      "family_id": "XAGRAMMAR_62943307741A",
+      "reason": "CVM_HISTORICAL_REPRESENTATION_VALUES_NOT_VERSIONED_BY_ID_DOCUMENTO_IN_STRUCTURED_OPEN_DATA",
+      "scientific_credit": 0
+    }
+  ],
+  "frozen_at_utc": "2026-09-21T10:10:29.100393+00:00",
+  "historical_backfill_credit": 0,
+  "historical_testing_started": false,
+  "next_gate": "SEALED_DISCOVERY_TARGET_JOIN_50_30_20_WITH_60_SESSION_EMBARGO",
+  "outcomes_read": false,
+  "partition_contract": "50_30_20_CHRONOLOGICAL",
+  "prospective_credit": 0,
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_LATE_SEAL": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.candidate_universe_freeze.v1",
+  "scientific_credit": 0,
+  "stage": "FREEZE_CANDIDATE_UNIVERSE_BEFORE_TARGET_READ",
+  "status": "CANDIDATE_UNIVERSE_FROZEN_TARGET_STILL_BLINDED",
+  "target_bytes_read": false,
+  "target_source_opened": false,
+  "validation_started": false
+}

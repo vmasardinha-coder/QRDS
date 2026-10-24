@@ -1,0 +1,56 @@
+{
+  "schema": "gate_btc.delta_paper_monitor.out_of_band_booking.v1",
+  "recorded_at_utc": "2026-10-01T10:00:00+00:00",
+  "what_happened": "OBSERVACOES_PRODUZIDAS_NO_DIA_E_NAO_GRAVADAS_PELO_WORKFLOW",
+  "authorised_by": "repository owner, explicitamente, em 2026-10-01",
+  "dates_booked": [
+    "2026-09-28",
+    "2026-09-29",
+    "2026-09-30"
+  ],
+  "why_the_workflow_did_not_book_them": {
+    "root_cause": "CoinGecko universe failed: HTTP 403 na coleta V2A; chamada anonima vinda de IP de datacenter",
+    "2026-09-28": "job daily-research-collection concluiu 'failure'; o portao da sombra exige o produtor verde e recusou a run",
+    "2026-09-29": "job produtor verde, mas o passo Build fail-closed daily handoff foi pulado por falta de lock_valuation_sidecar.json, que le o zip do V2A; sem manifesto a sombra saiu com EXPECTED_FAIL_CLOSED_DAILY_NOOP",
+    "2026-09-30": "coleta ja corrigida e artefato completo, mas o monitor recusou com 'gap: expected 2026-09-28, got 2026-09-30' porque 28 e 29 ainda faltavam"
+  },
+  "what_was_NOT_done": [
+    "NENHUMA regra do monitor foi alterada, afrouxada ou contornada",
+    "NENHUM dado foi recalculado, reconstruido ou backfillado",
+    "NENHUMA linha preexistente foi reescrita, re-hasheada ou re-datada",
+    "NENHUM parametro congelado, flag de governanca ou contador foi tocado"
+  ],
+  "how_it_was_done": {
+    "tool": "tools/gate_btc_delta_paper_monitor.py, versao congelada, sem modificacao",
+    "method": "executado tres vezes, em ordem cronologica, sobre os artefatos originais de cada dia",
+    "why_no_rule_was_needed": "a regra exige o dia consecutivo seguinte; em ordem, cada append FOI o dia esperado, entao o monitor aceitou os tres sem excecao alguma",
+    "data_provenance": "delta_walk_forward_outputs.zip extraido do artefato gate-btc-daily-research-<run_id> de cada dia, com technical_status PASS e data_as_of correspondente",
+    "source_runs": {
+      "2026-09-28": "36527405513",
+      "2026-09-29": "36673707162",
+      "2026-09-30": "36821679527"
+    },
+    "executed_outside_ci": true,
+    "executed_outside_ci_note": "Os dois portoes que bloqueavam estao no workflow, nao no monitor, e tropecaram por causa do V2A -- dataset que esta sombra nunca le. A execucao fora do CI nao afrouxa o monitor; ela apenas entrega a ele o mesmo artefato que o workflow teria entregue. Cada linha gravada carrega source_run_id e source_zip_sha256 do artefato original, entao a procedencia e verificavel linha a linha."
+  },
+  "integrity_after": {
+    "total_rows": 192,
+    "observed_days": 48,
+    "first_date": "2026-08-14",
+    "last_date": "2026-09-30",
+    "calendar_gaps": 0,
+    "preexisting_rows_modified": 0,
+    "chain_sha256_verified": true
+  },
+  "governance_unchanged": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "promotion_allowed": false,
+    "orders_generated": 0,
+    "real_capital_used": 0,
+    "methodology_changes": 0
+  },
+  "honest_caveat": "Estes tres dias entraram no ledger por uma execucao manual autorizada, e nao pelo agendamento automatico. O dado e o mesmo que o workflow teria gravado, mas o caminho foi outro, e quem ler esta serie depois tem o direito de saber disso. E por isso que este registro existe."
+}

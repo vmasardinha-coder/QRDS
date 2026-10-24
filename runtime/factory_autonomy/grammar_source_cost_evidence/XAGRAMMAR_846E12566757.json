@@ -1,0 +1,47 @@
+{
+  "adjudication_decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+  "adjudication_reason": "The preregistered official candidates can support issuer/cross-listing and FX metadata, but the recorded evidence provides no official US ADR market-price series for the frozen B3-close-to-US-close return. Required data coverage and cross-market timestamp/calendar semantics are therefore unproven.",
+  "cost_checks": {
+    "data_acquisition_zero": true,
+    "frozen_execution_cost_contract_preserved": true,
+    "no_new_economic_assumption": true
+  },
+  "economics_read": false,
+  "evidence_authorities": [
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_BCB_CVM_B3_20260919.json",
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_SEC_CVM_PIT_20260919.json",
+    "tools/gate_btc_factory/evidence/006_SOURCE_EVIDENCE_FRED_EIA_CFTC_20260919.json"
+  ],
+  "family_id": "XAGRAMMAR_846E12566757",
+  "grammar_signature": "846e1256675729b65cee6498f109dded1970e086210a8173d8e4c921ad906759",
+  "outcomes_read": false,
+  "qualified_sources": [
+    "B3",
+    "CVM",
+    "SEC EDGAR",
+    "BCB"
+  ],
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_source_cost_family_evidence.v1",
+  "semantic_prereg_sha256": "4c9673c25a1207819136da9c237f5ead6d155b7a7f8833cce54bfda376e42a8d",
+  "source_checks": {
+    "calendar_causal": false,
+    "granularity_sufficient": false,
+    "official_public_free": true,
+    "pit_timestamps": false,
+    "reproducible_auditable": true,
+    "required_data_covered": false
+  }
+}

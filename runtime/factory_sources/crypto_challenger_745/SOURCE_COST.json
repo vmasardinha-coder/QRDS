@@ -1,0 +1,142 @@
+{
+  "schema": "qrds.factory.crypto_challenger_source_cost.v1",
+  "issue": 745,
+  "probed_at_utc": "2026-09-21T19:29:16.432735Z",
+  "outcome_blind": true,
+  "outcomes_read": false,
+  "economics_read": false,
+  "historical_testing_started": false,
+  "family_ids_allocated": false,
+  "source_substitution_used": false,
+  "probes": {
+    "okx_spot_ticker": {
+      "endpoint": "https://www.okx.com/api/v5/market/ticker",
+      "params": {
+        "instId": "BTC-USDT"
+      },
+      "http_public_unauthenticated": true,
+      "exact_instrument": true,
+      "bid_ask_exposed": true,
+      "event_timestamp_exposed": true,
+      "raw_sha256": "95a4febffe402815ed4faeb7192138287e4c7acd914e1bdc756ab21bd480d0b1",
+      "probe_ok": true
+    },
+    "okx_perp_ticker": {
+      "endpoint": "https://www.okx.com/api/v5/market/ticker",
+      "params": {
+        "instId": "BTC-USDT-SWAP"
+      },
+      "http_public_unauthenticated": true,
+      "exact_instrument": true,
+      "bid_ask_exposed": true,
+      "event_timestamp_exposed": true,
+      "raw_sha256": "c3946ade8add409d686c6b5520289f705a19b2d61861a0c692a0048368197f76",
+      "probe_ok": true
+    },
+    "okx_funding": {
+      "endpoint": "https://www.okx.com/api/v5/public/funding-rate",
+      "params": {
+        "instId": "BTC-USDT-SWAP"
+      },
+      "http_public_unauthenticated": true,
+      "exact_instrument": true,
+      "funding_rate_exposed": true,
+      "funding_time_exposed": true,
+      "next_funding_time_exposed": true,
+      "raw_sha256": "6d996f9c7aed7fedc2c3fa05522aa9ee0e6f951efb988b52129d28ae55315ee4",
+      "probe_ok": true
+    },
+    "okx_perp_trades": {
+      "endpoint": "https://www.okx.com/api/v5/market/trades",
+      "params": {
+        "instId": "BTC-USDT-SWAP",
+        "limit": "20"
+      },
+      "http_public_unauthenticated": true,
+      "exact_instrument": true,
+      "event_timestamp_exposed": true,
+      "price_exposed": true,
+      "newest_event_age_ms_at_probe": 1843,
+      "raw_sha256": "9ab5e5d31dead10b51509798c5c6106ff29cac88806729c36d1448b797590155",
+      "probe_ok": true
+    },
+    "coinbase_spot_trades": {
+      "endpoint": "https://api.exchange.coinbase.com/products/BTC-USD/trades",
+      "params": {
+        "limit": "20"
+      },
+      "http_public_unauthenticated": true,
+      "exact_instrument": true,
+      "event_timestamp_exposed": true,
+      "price_exposed": true,
+      "trade_id_exposed": true,
+      "raw_sha256": "13bbb8e9582eb5581a34ab8418f402babe420f503993866164cb81649ac0deb9",
+      "probe_ok": true
+    }
+  },
+  "channels": [
+    {
+      "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "family_id": null,
+      "required_probes": [
+        "okx_spot_ticker",
+        "okx_perp_ticker",
+        "okx_funding"
+      ],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": true,
+        "pit_timestamps": true,
+        "granularity_sufficient": true,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "adjudication_decision": "SOURCE_COST_QUALIFIED"
+    },
+    {
+      "channel_id": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "family_id": null,
+      "required_probes": [
+        "okx_perp_trades",
+        "coinbase_spot_trades"
+      ],
+      "source_checks": {
+        "official_public_free": true,
+        "required_data_covered": true,
+        "pit_timestamps": true,
+        "granularity_sufficient": true,
+        "calendar_causal": true,
+        "reproducible_auditable": true
+      },
+      "cost_checks": {
+        "data_acquisition_zero": true,
+        "frozen_execution_cost_contract_preserved": true,
+        "no_new_economic_assumption": true
+      },
+      "adjudication_decision": "SOURCE_COST_QUALIFIED"
+    }
+  ],
+  "qualified_count": 2,
+  "rejected_count": 0,
+  "scientific_credit": 0,
+  "historical_backfill_credit": 0,
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_BACKFILL": true,
+    "NO_LATE_SEAL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "FAIL_CLOSED": true
+  },
+  "evidence_sha256": "e9d49e19c60ae0fb36d594bf9cc52a26e77aea5ace8ddea5b4b41550adb6e51f"
+}

@@ -1,0 +1,44 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "68f5b4b1bcb58e95ffec65c0e62e69da82c7d8f477f48c4d5d732ca5b24030ae",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Spot/perpetual basis and funding dislocations may contain causal information about positioning and subsequent cross-sectional returns.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "Binance public market data",
+        "OKX public market data"
+      ],
+      "required_new_data": [
+        "spot OHLCV",
+        "perpetual OHLCV",
+        "funding history",
+        "instrument metadata"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}

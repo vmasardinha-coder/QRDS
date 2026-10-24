@@ -1,0 +1,46 @@
+{
+  "dataset_sha256": "38117ddbfb6b1fdc1e2285ace859ca58e15c55325574e522469363e625079075",
+  "discovery_window": {
+    "end": "2025-12-31",
+    "start": "2025-01-01"
+  },
+  "economics_read_before_freeze": false,
+  "grammar_contract": {
+    "abs_z_threshold": 1.5,
+    "causal_standardization": "ROLLING_200_PRIOR_SESSIONS_MEDIAN_MAD",
+    "decision_window_minutes": 30,
+    "direction": "REVERSION",
+    "family_id": "H2273",
+    "feature": "OPEN_RANGE",
+    "holding_horizons_minutes": [
+      30,
+      60,
+      120
+    ],
+    "standardization_lookback_sessions": 200
+  },
+  "grammar_contract_mode": "EXACT_FROZEN_ORIGINAL",
+  "historical_observations_credited": 0,
+  "namespace": "RQ_DISCOVERY_2025_V1::H2273",
+  "original_family_id": "H2273",
+  "replication_window_reserved": {
+    "end": "2026-08-09",
+    "start": "2026-01-01"
+  },
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_economics_read": false,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "same_historical_window_rerun": false,
+  "schema": "qrds.factory.invalidated_discovery_first_prereg.v1",
+  "source_gate_id": "WIN_M5_DISCOVERY_2025_BATCH_05"
+}

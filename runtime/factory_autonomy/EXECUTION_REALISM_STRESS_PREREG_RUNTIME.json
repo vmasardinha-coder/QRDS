@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "gate_id": "AUDIT-XEXEC-01",
+  "gate_name": "execution_realism_stress",
+  "status": "REGISTERED_VALIDATION_GATE",
+  "research_only": true,
+  "shadow_only": true,
+  "engine_weight": 0,
+  "auto_promote": false,
+  "external_source_system": "NautilusTrader",
+  "external_evidence_role": "methodology_provenance_only",
+  "external_performance_imported": false,
+  "external_numeric_thresholds_imported": false,
+  "core_claim": "A candidate's realized performance can materially change when execution assumptions change while signal logic is held fixed; compatible candidates therefore require an execution-realism stress audit before any production-oriented interpretation.",
+  "activation_boundary": {
+    "requires_decision_to_execution_contract": true,
+    "active_before_executable_contract": false,
+    "may_modify_signal_logic": false,
+    "may_reoptimize_strategy_parameters": false,
+    "may_replace_factory_research_engine": false
+  },
+  "stress_dimensions": [
+    "latency",
+    "fill_and_slippage_assumptions",
+    "fees_and_commissions",
+    "liquidity_and_order_size",
+    "order_sequencing_and_lifecycle",
+    "market_data_granularity",
+    "partial_fill_and_queue_assumptions_where_data_supports_them"
+  ],
+  "scenario_contract": {
+    "scenario_envelope_source": "factory_preregistered_or_candidate_specific_execution_contract",
+    "external_best_values_forbidden_as_defaults": true,
+    "same_signal_logic_across_scenarios": true,
+    "same_research_parameters_across_scenarios": true,
+    "record_fill_level_artifacts": true,
+    "record_baseline_and_delta_metrics": true,
+    "fail_closed_on_missing_execution_semantics": true
+  },
+  "required_outputs": [
+    "baseline_execution_result",
+    "stressed_execution_results",
+    "signal_count_consistency",
+    "fill_count_and_fill_price_deltas",
+    "pnl_and_return_deltas",
+    "drawdown_delta_when_equity_accounting_is_available",
+    "execution_fragility_summary",
+    "engine_and_version_provenance"
+  ],
+  "external_provenance": {
+    "source_branch": "research/nautilus-standalone",
+    "source_closeout_commit": "6ec55e11ae8614bd7254020c250f2c89c933d19c",
+    "engine_version": "2.0.0rc5",
+    "upstream_sha": "d7f1959efa02e84d7fde3226dc88a88a69a142fd",
+    "observed_demo": "Frozen EMA10/EMA20 signal on bundled ETHUSDT trade ticks changed realized PnL under latency and one-tick adverse-slippage stress while submitted signal count remained fixed.",
+    "twap_disposition": "REJECTED_AS_MIGRATABLE_BENEFIT_CLAIM",
+    "interpretation": "Evidence supports the audit methodology, not any universal latency, slippage, TWAP, or profitability threshold."
+  },
+  "promotion_boundary": {
+    "gate_registration_is_not_strategy_promotion": true,
+    "survivor_status_created_by_registration": false,
+    "requires_independent_factory_or_external_execution_audit": true,
+    "requires_separate_scientific_decision_for_stress_envelope": true,
+    "capital_activation_prohibited": true
+  }
+}

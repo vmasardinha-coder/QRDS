@@ -1,0 +1,49 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_family_evidence.v1",
+  "family_id": "XAGRAMMAR_3BC1506DBCE5",
+  "grammar_signature": "3bc1506dbce5d9ddaf182da1e91f5dd08c7299b0d2b8be0d92d4d83d01806123",
+  "semantic_prereg_sha256": "51b0ead73555ca325898994c75da5f2c912a24b76b9b4a11d1b6371e8fc54e79",
+  "qualified_sources": [
+    "B3"
+  ],
+  "source_checks": {
+    "official_public_free": true,
+    "required_data_covered": true,
+    "pit_timestamps": false,
+    "granularity_sufficient": true,
+    "calendar_causal": false,
+    "reproducible_auditable": false
+  },
+  "cost_checks": {
+    "data_acquisition_zero": true,
+    "frozen_execution_cost_contract_preserved": true,
+    "no_new_economic_assumption": true
+  },
+  "outcomes_read": false,
+  "economics_read": false,
+  "adjudication_decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+  "adjudication_reason": "The official free announcement and BDI demonstrate published portfolio weights and implementation periods. The examined announcement lacks a verifiable publication time and the packet does not establish timestamped immutable versions of the two consecutive announcements required by the frozen definition. A later dated BDI repeat cannot be assigned to the original first eligible session. Required data and granular weights exist, but PIT availability and complete reproducible version delivery remain unproven.",
+  "decision_scope": "CURRENT_FROZEN_SEMANTICS_AND_EXAMINED_EVIDENCE_ONLY_NOT_UNIVERSAL_SOURCE_NONEXISTENCE",
+  "reopen_condition": "A materially new official free versioned announcement pair with verifiable original availability timestamps, effective dates and all constituent weights; preserve the frozen semantics and require a separately reviewed evidence revision.",
+  "wait_for_more_candles": false,
+  "evidence_authorities": [
+    "tools/gate_btc_factory/evidence/20261018_THREE_SOURCE_COST_REVIEW.json"
+  ],
+  "evidence_ids": [
+    "B3_INDEX_ANNOUNCEMENT",
+    "B3_BDI_PREVIEW_METADATA"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

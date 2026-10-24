@@ -1,0 +1,26 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_family_evidence.v1",
+  "family_id": "XAGRAMMAR_DD9F1F0501B3",
+  "grammar_signature": "dd9f1f0501b336b9a629d4b55980c0ceafff57c02d8f181d02ec9fc66e0f20b3",
+  "semantic_prereg_sha256": "ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98",
+  "qualified_sources": ["B3"],
+  "source_checks": {
+    "official_public_free": true,
+    "required_data_covered": false,
+    "pit_timestamps": true,
+    "granularity_sufficient": false,
+    "calendar_causal": true,
+    "reproducible_auditable": true
+  },
+  "cost_checks": {
+    "data_acquisition_zero": true,
+    "frozen_execution_cost_contract_preserved": true,
+    "no_new_economic_assumption": true
+  },
+  "outcomes_read": false,
+  "economics_read": false,
+  "adjudication_decision": "REJECT_SOURCE_COST_FAIL_CLOSED",
+  "adjudication_reason": "B3 officially publishes foreign-investor movement daily with D+2 updates, but the inspected official public documentation does not affirmatively prove distinct purchase-value and sale-value fields needed by the frozen (purchase-sale)/(purchase+sale) feature. A generic movement/net-flow field cannot substitute, so coverage and granularity fail closed without retuning.",
+  "evidence_authorities": ["tools/gate_btc_factory/evidence/007_SOURCE_EVIDENCE_BCB_CVM_B3_20260920.json"],
+  "safety": {"RESEARCH_ONLY": true, "SHADOW_ONLY": true, "NOT_APPROVED": true, "ENGINE_FEED": false, "ORDERS": 0, "REAL_CAPITAL": 0, "NO_RETUNE": true, "NO_BACKFILL": true, "NO_COUNTER_RESET": true, "FAIL_CLOSED": true, "H1_H31_UNTOUCHED": true}
+}

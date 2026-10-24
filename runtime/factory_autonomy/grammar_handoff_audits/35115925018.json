@@ -1,0 +1,84 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 3,
+  "requests": [
+    {
+      "channel_id": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "3823d2bdf6cddc5dee2c4bbfba21862c2d31961e5ec0068ac83c9d9e62472e4e",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Lagged changes in the B3 DI futures curve may transmit monetary-policy and discount-rate information to later equity/index returns.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3",
+        "BCB"
+      ],
+      "required_new_data": [
+        "B3 DI futures expiry curve",
+        "B3 equity/index series",
+        "BCB policy calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "B3_AUCTION_IMBALANCE_OPEN_CLOSE_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "62ffe168f205da241327911323a03fc8a0664553688559868c301c51e64addf3",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Opening and closing auction states may concentrate price discovery and transmit information only to subsequent eligible observations.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "required_new_data": [
+        "B3 auction trades/quotes or official auction fields",
+        "B3 calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "f587f5854a5176fe38fc1dda1457bb218d5ea7890be21488743482d4f2699f85",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Timestamped corporate disclosures can define ex-ante event grammars whose post-publication response is evaluated only after the public timestamp.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "required_new_data": [
+        "CVM timestamped disclosures",
+        "B3 underlying prices",
+        "exchange calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}
