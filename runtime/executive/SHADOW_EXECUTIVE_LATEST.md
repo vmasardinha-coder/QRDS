@@ -392,7 +392,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b1.status.v1",
-        "sha256": "5c8b3b91c0184c402cb835a7749885e35f971b4489c316ddf4ba0d9d733dd1f3",
+        "sha256": "404efa3d51eceba840dc7663e8145c610112c6aeec1cbac580c64785f664fa92",
         "source": "ledgers/v16b1/STATUS.json",
         "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
       }
@@ -843,7 +843,7 @@
           "scientific_blockers": [],
           "scientific_observations_credited": 0,
           "scientific_target": null,
-          "sha256": "7fece2a82aa0fc2646a2551fad2d2e19054f6d89f071580370b3e082bfc2d582",
+          "sha256": "2842d69028c703ab4fff5a0ab140396e838512b6de01be79e788c1fbc7221c71",
           "source": "ledgers/d100/STATUS.json",
           "status": "ACTIVE_PHYSICAL_DATA_FEED"
         }
@@ -910,7 +910,7 @@
           "orders_generated": 0,
           "real_capital_used": 0,
           "schema": "gate_btc.qos_covered_delivery.v1",
-          "sha256": "5200234faa3669c1a01fa5b94e4a5e7ebdeeb24a7fd630dd7bbc4d87914a86e3",
+          "sha256": "31d21d9a2430feea3c6d1e20de21090026d1e83ffe04dfe241a9a2b313417f2c",
           "source": "ledgers/qos_three_track/STATUS.json",
           "status": "WAITING_NEXT_APPROVED_MONTH_END"
         }
@@ -1001,7 +1001,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "7fece2a82aa0fc2646a2551fad2d2e19054f6d89f071580370b3e082bfc2d582",
+      "sha256": "2842d69028c703ab4fff5a0ab140396e838512b6de01be79e788c1fbc7221c71",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
@@ -1085,7 +1085,7 @@
       "implementation": "bc0c36fcc70936c2460ef408b69dc2de4557590463ca3e8bb8b7d157124ae6fa",
       "pinned_adjudication": "80ac1a7bb0e2ccf416f2e586fd7fb748ba2712bf368566759d3e6bf098357490",
       "post_review_release": "222108980ba9aa792dfa4ac44b08053b10c32c9e9aefde5c9e6ea8af5aca5d82",
-      "readiness": "bf89ed7479bf7ba1d2698652b34a2b85e3d3033b7626ab95473cf8474cd19a35"
+      "readiness": "4949380da9581adff98c6a4ccfef26bd4dfed2835fbf5db3a8edd8bc08d7325f"
     },
     "status": "SYSTEM12_FROZEN_PARITY_COMPLETE_SYSTEM13_RESEARCH_DEPENDENCY_RELEASED",
     "system12_complete": true,
