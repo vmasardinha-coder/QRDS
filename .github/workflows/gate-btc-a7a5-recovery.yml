@@ -1,0 +1,77 @@
+name: GATE BTC A7A5 Source Recovery
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 20 * * *'
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_a7a5_swap_history.py
+      - tools/gate_btc_a7a5_recovery.py
+      - tests/test_gate_btc_a7a5_incremental.py
+      - .github/workflows/gate-btc-a7a5-recovery.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_a7a5_swap_history.py
+      - tools/gate_btc_a7a5_recovery.py
+      - tests/test_gate_btc_a7a5_incremental.py
+      - .github/workflows/gate-btc-a7a5-recovery.yml
+permissions: {contents: read}
+concurrency:
+  group: a7a5-recovery-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'live' }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_a7a5_*.py' -v
+  verify-source:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: source}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install requests
+      - name: Verify physical 200-day history with every canonical closing proof
+        run: python source/tools/gate_btc_a7a5_recovery.py --out proof
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a7a5-source-recovery-${{ github.run_id }}
+          path: proof
+          retention-days: 30
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+          sparse-checkout: runtime/pit150_a7a5_recovery
+      - name: Publish source-only receipt without changing PIT coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          cutoff=$(python -c "import json;print(json.load(open('proof/RESULT.json'))['cutoff'])")
+          mkdir -p "runtime_repo/runtime/pit150_a7a5_recovery/$cutoff"
+          cp proof/RESULT.json "runtime_repo/runtime/pit150_a7a5_recovery/$cutoff/${GITHUB_RUN_ID}.json"
+          cd runtime_repo
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/pit150_a7a5_recovery
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish A7A5 source recovery receipt ${GITHUB_RUN_ID}"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime || { git rebase --abort; exit 1; }
+            git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt*2))
+          done
+          exit 1
