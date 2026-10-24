@@ -56,6 +56,8 @@ class FactoryTrackCoverageTests(unittest.TestCase):
         self.write(root, base + 'momentum_m1_m2_economics/ECONOMICS_STATUS.json', {'status': 'LEGACY', 'return_observations': 99})
         self.write(root, base + 'momentum_m1_m2_economics/ACTIVE_EPOCH.json', {'relative_path': 'epochs/hold_20260928'})
         self.write(root, base + 'momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json', {'status': 'ECONOMICS_ACTIVE_HOLD_GROSS_ONLY', 'return_observations': 12, 'net_return': None})
+        self.write(root, base + 'momentum_tradable_v1/STATUS.json', {'return_observations': 2})
+        self.write(root, base + 'momentum_canonical_net/paper_spot_10bps_20261017_v1/M3_AFTER_GAP_2026_10_12/STATUS.json', {'return_observations': 6})
         self.write(root, base + 'momentum_m3/STATUS.json', {'observed_snapshots': 28})
         self.write(root, base + 'momentum_m3_economics/STATUS.json', {'active_epoch': 'epochs/after_gap_2026-10-05', 'return_observations': 10})
         self.write(root, base + 'momentum_m3_economics/epochs/after_gap_2026-10-05/STATUS.json', {'status': 'ECONOMICS_ACTIVE_HOLD_GROSS_ONLY', 'return_observations': 5, 'net_return': None})
@@ -79,6 +81,36 @@ class FactoryTrackCoverageTests(unittest.TestCase):
             self.assertIsNone(tracks['m3_economics']['data']['net_return'])
             self.assertIn('epochs/after_gap_2026-10-05', tracks['m3_economics']['path'])
             self.assertEqual(before, {p: p.read_bytes() for p in root.rglob('*.json')})
+
+    def test_closed_legacy_and_active_costed_books_have_independent_authorities(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);self.fixture(root)
+            self.write(root,'runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json',
+                {'status':'CLOSED_RULE_VERSION_SUPERSEDED','return_observations':20})
+            self.write(root,'runtime/ledgers/momentum_tradable_v1/STATUS.json',
+                {'status':'ACTIVE_PROSPECTIVE_TRADABLE_SHADOW','return_observations':2,
+                 'latest_economics':{'total_return_net_modelled':{'M1':-0.09,'M2':-0.10}}})
+            net='runtime/ledgers/momentum_canonical_net/paper_spot_10bps_20261017_v1/M3_AFTER_GAP_2026_10_12/STATUS.json'
+            self.write(root,net,{'status':'ACTIVE_CANONICAL_PAPER_NET_MODEL',
+                'return_observations':6,'cost_status':'MODEL_NOT_OBSERVED'})
+            before={p:p.read_bytes() for p in root.rglob('*.json')}
+            tracks=export_tracks(root)
+            self.assertEqual(tracks['m1_m2_economics']['data']['return_observations'],20)
+            self.assertEqual(tracks['m1_m2_tradable_v1']['data']['return_observations'],2)
+            self.assertEqual(tracks['m3_economics']['data']['return_observations'],5)
+            self.assertEqual(tracks['m3_net_model_20261017']['data']['return_observations'],6)
+            self.assertEqual(tracks['m3_net_model_20261017']['data']['cost_status'],'MODEL_NOT_OBSERVED')
+            self.assertEqual(before,{p:p.read_bytes() for p in root.rglob('*.json')})
+
+    def test_missing_costed_book_never_inherits_legacy_count_or_gross_nav(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);self.fixture(root)
+            (root/'runtime/ledgers/momentum_tradable_v1/STATUS.json').unlink()
+            (root/'runtime/ledgers/momentum_canonical_net/paper_spot_10bps_20261017_v1/M3_AFTER_GAP_2026_10_12/STATUS.json').unlink()
+            tracks=export_tracks(root)
+            for key in ('m1_m2_tradable_v1','m3_net_model_20261017'):
+                self.assertEqual(tracks[key]['status'],'MISSING')
+                self.assertNotIn('data',tracks[key])
 
     def test_v12_v13_and_v16_parent_child_states_remain_distinct(self):
         with tempfile.TemporaryDirectory() as td:
@@ -185,5 +217,6 @@ class FactoryTrackCoverageTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
