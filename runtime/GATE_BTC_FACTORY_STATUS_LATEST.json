@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-24T19:43:40.403964+00:00",
+  "generated_at_utc": "2026-10-24T19:44:26.652153+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -4663,8 +4663,8 @@
     },
     "system13_source_readiness_v1": {
       "data": {
-        "additional_discovered_identity_candidates": 83,
-        "additional_discovered_primary_market_verified_assets": 79,
+        "additional_discovered_identity_candidates": 85,
+        "additional_discovered_primary_market_verified_assets": 81,
         "additional_exact_bindings_needed_for_coverage": 0,
         "blockers": [
           "SYSTEM13_SPECIFIC_SOURCE_IDENTITY_TRADABILITY_ADJUSTMENT_ADMISSION_REQUIRED",
@@ -4672,11 +4672,12 @@
           "MIN_50_ASSETS_AND_80_PERCENT_UNCHANGED_UNIVERSE_COVERAGE_REQUIRED",
           "CHRONOLOGICAL_PARTITIONS_NOT_QUALIFIED"
         ],
-        "candidate_coverage_fraction": 0.8130841121495327,
+        "candidate_coverage_fraction": 0.822429906542056,
         "candidate_sources": {
           "BINANCE_SPOT": 83,
           "BITGET_SPOT": 18,
-          "GATE_SPOT": 21,
+          "COINBASE_SPOT": 1,
+          "GATE_SPOT": 22,
           "KRAKEN_SPOT": 6,
           "KUCOIN_SPOT": 1,
           "MXC_SPOT": 3,
@@ -4685,30 +4686,31 @@
         },
         "eligible_members": 214,
         "engine_feed": false,
-        "exact_binding_candidates": 174,
+        "exact_binding_candidates": 176,
         "holdout_read_allowed": false,
         "identity_candidate_coverage_threshold_met": true,
         "identity_candidates_grant_point_in_time_eligibility": false,
+        "identity_discovery_extension_20261024_sha256": "5ce4786064027b600f2d0d593c595f2fdc5308d790476515b2d7f9ac96d7ba09",
         "identity_discovery_extension_sha256": "10d8aec64b775ba54759c76f7d7c294e93c3531a4a42fad2a42fc1174cc88b30",
         "identity_discovery_sha256": "3d2bfea982546ba94be8a2377179c243949f87bc3775ad2780522d63bba44600",
         "legacy_exact_binding_candidates": 91,
         "literal_quote_units": {
-          "USD": 7,
-          "USDT": 167
+          "USD": 8,
+          "USDT": 168
         },
         "native_capture": {
           "capture_date_utc": "2026-10-24",
           "eligible_members": 214,
           "factor_policy": "MISSING_NO_CONSTANT_OR_ADJUSTMENT_ASSUMPTION",
-          "missing_or_unavailable_assets": 44,
-          "native_closed_ohlcv_observed_assets": 170,
-          "native_observed_coverage_fraction": 0.794392523364486,
+          "missing_or_unavailable_assets": 42,
+          "native_closed_ohlcv_observed_assets": 172,
+          "native_observed_coverage_fraction": 0.8037383177570093,
           "qualified_system13_ohlcv_assets": 0,
           "scientific_credit": 0,
           "session": "2026-10-23",
           "source_admitted": false,
           "status": "NATIVE_CAPTURE_OBSERVED_SOURCE_QUALIFICATION_PENDING",
-          "status_sha256": "65ed2c821295a57c23e686ac43e61b74dc1eaa91035788d7f8a3c37154cad93e",
+          "status_sha256": "930735c4b689a068d666e414cb540fad94c227cd234a45999d04872ec39e773c",
           "training_ready": false
         },
         "observed_members": 250,
@@ -6593,17 +6595,17 @@
           {
             "coin_id": "irys",
             "eligible_in_observed_panel": true,
-            "exact_binding_candidate": false,
+            "exact_binding_candidate": true,
             "historical_eligibility_granted": false,
-            "identity_candidate_basis": null,
-            "identity_discovery_observed_at_utc": null,
-            "literal_quote_unit_candidate": null,
+            "identity_candidate_basis": "OBSERVED_EXACT_ID_DISCOVERY",
+            "identity_discovery_observed_at_utc": "2026-10-24T19:34:03.726249+00:00",
+            "literal_quote_unit_candidate": "USDT",
             "membership_observed_at_utc": "2026-10-24T04:55:40.551376+00:00",
             "ohlcv_ready": false,
-            "primary_market_verified_in_discovery": null,
-            "reason": "EXACT_COIN_ID_SOURCE_BINDING_MISSING",
-            "source_identity": null,
-            "source_symbol": null,
+            "primary_market_verified_in_discovery": true,
+            "reason": "REVIEW_EXACT_BINDING_AND_OHLCV_QUALIFICATION",
+            "source_identity": "GATE_SPOT",
+            "source_symbol": "IRYS_USDT",
             "symbol": "IRYS",
             "system13_source_admitted": false
           },
@@ -7001,17 +7003,17 @@
           {
             "coin_id": "meta-2-2",
             "eligible_in_observed_panel": true,
-            "exact_binding_candidate": false,
+            "exact_binding_candidate": true,
             "historical_eligibility_granted": false,
-            "identity_candidate_basis": null,
-            "identity_discovery_observed_at_utc": null,
-            "literal_quote_unit_candidate": null,
+            "identity_candidate_basis": "OBSERVED_EXACT_ID_DISCOVERY",
+            "identity_discovery_observed_at_utc": "2026-10-24T19:34:03.725625+00:00",
+            "literal_quote_unit_candidate": "USD",
             "membership_observed_at_utc": "2026-10-24T04:55:40.551376+00:00",
             "ohlcv_ready": false,
-            "primary_market_verified_in_discovery": null,
-            "reason": "EXACT_COIN_ID_SOURCE_BINDING_MISSING",
-            "source_identity": null,
-            "source_symbol": null,
+            "primary_market_verified_in_discovery": true,
+            "reason": "REVIEW_EXACT_BINDING_AND_OHLCV_QUALIFICATION",
+            "source_identity": "COINBASE_SPOT",
+            "source_symbol": "META-USD",
             "symbol": "META",
             "system13_source_admitted": false
           },
@@ -8982,7 +8984,7 @@
       },
       "exists": true,
       "path": "runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json",
-      "sha256": "b030df50f3bbc40fe078b7807fdb1ca3dbf9c1e369a49b02e786e5a70a90b786"
+      "sha256": "1216d5298d0006655d3163f0e46de8662ba1456540dc7ab69cea054c8d04b82a"
     },
     "v12": {
       "data": {
