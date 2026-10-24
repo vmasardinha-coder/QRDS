@@ -1,6 +1,6 @@
 """Exact Ethereum A7A5/USDT execution logs; no candle filling or timestamp tie guessing."""
 from __future__ import annotations
-import hashlib,json,math,re
+import hashlib,json,math,re,time
 from datetime import datetime,timedelta,timezone
 from decimal import Decimal
 from pathlib import Path
@@ -12,6 +12,19 @@ QUOTE="0xdac17f958d2ee523a2206206994597c13d831ec7"
 TOPIC="0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
 RPC="https://ethereum-rpc.publicnode.com"
 LOG_RPC="https://eth.drpc.org"
+
+def request_with_retry(session, method, url, *, trace=None, sleep_fn=None, **kwargs):
+    """At most three attempts on transient gateway failures, same exact source."""
+    sleeper = sleep_fn or time.sleep
+    for attempt in range(1, 4):
+        response = getattr(session, method)(url, **kwargs)
+        if trace is not None:
+            trace.append({"method": method, "url": url, "attempt": attempt,
+                          "http_status": response.status_code})
+        if response.status_code not in (502, 503, 504) or attempt == 3:
+            return response
+        sleeper(attempt)
+
 
 def frozen_pool_identity():
     path=Path(__file__).resolve().parent/"gate_btc_2_v2a_complete_qualified_source_registry_v1.json"
@@ -58,7 +71,10 @@ def collect(session,cutoff,evidence_dir,now=None):
     if cutoff>=now.date().isoformat():raise ValueError("INCOMPLETE_UTC_CUTOFF")
     identity=frozen_pool_identity()
     out=Path(evidence_dir)/"A7A5";out.mkdir(parents=True,exist_ok=True)
-    manifest=[]
+    manifest=[];http_trace=[]
+    def request(method,url,**kwargs):
+        try:return request_with_retry(session,method,url,trace=http_trace,**kwargs)
+        finally:(out/"HTTP_ATTEMPTS.json").write_text(json.dumps(http_trace,indent=2)+"\n")
     def save(name,response,url):
         if response.status_code!=200:raise ValueError("A7A5_SOURCE_HTTP_"+str(response.status_code))
         raw=response.content;(out/name).write_bytes(raw)
@@ -66,7 +82,7 @@ def collect(session,cutoff,evidence_dir,now=None):
         return json.loads(raw)
     def rpc(name,method,params,url=RPC):
         payload={"jsonrpc":"2.0","id":1,"method":method,"params":params}
-        p=save(name,session.post(url,json=payload,timeout=30),url)
+        p=save(name,request("post",url,json=payload,timeout=30),url)
         if p.get("jsonrpc")!="2.0" or p.get("id")!=1 or p.get("error") or p.get("result") is None:
             raise ValueError("INVALID_A7A5_RPC_RESPONSE")
         return p["result"]
@@ -75,7 +91,7 @@ def collect(session,cutoff,evidence_dir,now=None):
         value=rpc(name+".json","eth_call",[{"to":POOL,"data":selector},"latest"])
         if value.lower()!="0x"+"0"*24+address[2:]:raise ValueError("WRONG_POOL_TOKEN_ORDER")
         meta_url="https://eth.blockscout.com/api/v2/tokens/"+address
-        meta=save(name+"_metadata.json",session.get(meta_url,timeout=30),meta_url)
+        meta=save(name+"_metadata.json",request("get",meta_url,timeout=30),meta_url)
         if (str(meta.get("address_hash","")).lower()!=address or meta.get("decimals")!="6"
             or meta.get("symbol")!=("A7A5" if name=="token0" else "USDT") or meta.get("type")!="ERC-20"):
             raise ValueError("WRONG_EXACT_TOKEN_IDENTITY")
@@ -84,7 +100,7 @@ def collect(session,cutoff,evidence_dir,now=None):
     params={"topic":TOPIC};events=[];cursors=set();previous=None;covered=False
     for n in range(240):
         query=url+"?"+urlencode(params)
-        p=save("page_"+str(n).zfill(3)+".json",session.get(query,timeout=30),query)
+        p=save("page_"+str(n).zfill(3)+".json",request("get",query,timeout=30),query)
         items=p.get("items")
         if not isinstance(items,list):raise ValueError("INVALID_LOG_PAGE")
         for x in items:
@@ -125,3 +141,4 @@ def collect(session,cutoff,evidence_dir,now=None):
               "historical_scientific_credit":0,"research_only":True,"orders":0,"real_capital":0}
     (out/"qualification.json").write_bytes((json.dumps(evidence,sort_keys=True,indent=2)+"\n").encode())
     return rows,evidence
+
