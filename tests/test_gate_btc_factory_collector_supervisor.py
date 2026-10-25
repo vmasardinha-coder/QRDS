@@ -1,4 +1,6 @@
 import json
+import datetime as dt
+import base64
 import unittest
 from unittest.mock import patch
 
@@ -193,6 +195,46 @@ class CollectorSupervisorRegistryTests(unittest.TestCase):
         with patch.object(supervisor, "api", side_effect=RuntimeError("GitHub API POST /x: HTTP 500: boom")):
             with self.assertRaises(RuntimeError):
                 supervisor.repair("owner/repo", collector, {"id": 7}, run, "WORKFLOW_FAILED", "token")
+
+    def test_factory_delivery_bindings_exist_and_do_not_authorize_scientific_repairs(self):
+        collectors = [c for c in self.r['collectors'] if c.get('operational_status_contract')]
+        self.assertEqual(len(collectors), 9)
+        for collector in collectors:
+            self.assertTrue((Path('.github/workflows') / collector['expected_workflow_job']).is_file())
+            self.assertIn('synthetic_backfill', collector['prohibited_actions'])
+            self.assertLessEqual(set(collector['approved_auto_repair_actions']), {'rerun_failed_job'})
+
+    def test_successful_workflow_can_still_have_stale_delivery(self):
+        collector = {'operational_status_contract': {
+            'freshness_field': 'captured', 'max_age_hours': 4, 'counter_field': 'collection.count'}}
+        now = dt.datetime(2026, 10, 25, 12, tzinfo=dt.timezone.utc)
+        anomaly, _, projected = supervisor.delivery_health(collector, {
+            'captured': '2026-10-25T07:00:00Z', 'collection': {'count': 8}, 'mean_net': 999}, now)
+        self.assertEqual(anomaly, 'LEDGER_NOT_APPENDED')
+        self.assertEqual(projected['counter'], 8)
+        self.assertNotIn('mean_net', projected)
+
+    def test_delivery_dates_and_future_timestamps(self):
+        collector = {'operational_status_contract': {'freshness_field': 'date', 'max_age_hours': 48}}
+        now = dt.datetime(2026, 10, 25, 12, tzinfo=dt.timezone.utc)
+        self.assertIsNone(supervisor.delivery_health(collector, {'date': '2026-10-25'}, now)[0])
+        self.assertEqual(supervisor.delivery_health(collector, {'date': '2026-10-26'}, now)[0], 'SOURCE_SCHEMA_FAILURE')
+        with self.assertRaises(ValueError):
+            supervisor.delivery_health(collector, {'date': '2026-10-25T12:00:00'}, now)
+
+    def test_missed_decision_window_is_not_healthy_even_with_fresh_report(self):
+        collector = {'operational_status_contract': {'failure_statuses': ['DECISION_WINDOW_MISSED_NO_BACKFILL']}}
+        self.assertEqual(supervisor.delivery_health(collector, {'status': 'DECISION_WINDOW_MISSED_NO_BACKFILL'})[0], 'LEDGER_NOT_APPENDED')
+
+    def test_delivery_fetch_projects_only_declared_metadata(self):
+        collector = {'expected_ledger': 'runtime/example.json', 'operational_status_contract': {'counter_field': 'count'}}
+        payload = {'encoding': 'base64', 'sha': 'sealed', 'content': base64.b64encode(json.dumps({'count': 60, 'mean_net': -999}).encode()).decode()}
+        with patch.object(supervisor, 'api', return_value=payload):
+            anomaly, _, projected = supervisor.inspect_delivery('owner/repo', collector, None)
+        self.assertIsNone(anomaly)
+        self.assertEqual(projected, {'status': None, 'counter': 60, 'counter_field': 'count', 'path': 'runtime/example.json', 'git_blob_sha': 'sealed'})
+        with patch.object(supervisor, 'api', side_effect=TimeoutError('unavailable')):
+            self.assertEqual(supervisor.inspect_delivery('owner/repo', collector, None)[0], 'ARTIFACT_MISSING')
 
 
 if __name__ == '__main__':
