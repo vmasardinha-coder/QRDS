@@ -26,6 +26,8 @@ METADATA={
  'KRAKEN_SPOT':'https://api.kraken.com/0/public/AssetPairs',
  'COINBASE_SPOT':'https://api.exchange.coinbase.com/products',
  'XT_SPOT':'https://sapi.xt.com/v4/public/symbol?symbols=shfl_usdt',
+ 'MXC_SPOT':'https://api.mexc.com/api/v3/exchangeInfo',
+ 'KUCOIN_SPOT':'https://api.kucoin.com/api/v2/symbols',
 }
 
 
@@ -55,6 +57,14 @@ def metadata_index(venue,d):
  elif venue=='COINBASE_SPOT':
   rows=[(x['id'],x['base_currency'],x['quote_currency']) for x in d
         if x.get('status')=='online' and x.get('trading_disabled') is False]
+ elif venue=='MXC_SPOT':
+  # Public observations do not establish API order capability or source admission.
+  rows=[(x['symbol'],x['baseAsset'],x['quoteAsset']) for x in d['symbols']
+        if x.get('status')=='1' and 'SPOT' in x.get('permissions',[])]
+ elif venue=='KUCOIN_SPOT':
+  if d.get('code')!='200000':raise ValueError('EXCHANGE_API_ERROR')
+  items=d['data'] if isinstance(d['data'],list) else [d['data']]
+  rows=[(x['symbol'],x['baseCurrency'],x['quoteCurrency']) for x in items if x.get('enableTrading') is True]
  elif venue=='XT_SPOT':
   if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
   rows=[(x['symbol'],x['baseCurrency'].upper(),x['quoteCurrency'].upper())
@@ -78,6 +88,8 @@ def candle_url(venue,instrument,begin):
  if venue=='KRAKEN_SPOT':return 'https://api.kraken.com/0/public/OHLC?'+urlencode({'pair':instrument,'interval':1440,'since':start})
  if venue=='COINBASE_SPOT':return 'https://api.exchange.coinbase.com/products/'+instrument+'/candles?'+urlencode({'granularity':86400,'start':begin.isoformat().replace('+00:00','Z'),'end':(begin+timedelta(days=1)).isoformat().replace('+00:00','Z')})
  if venue=='XT_SPOT':return 'https://sapi.xt.com/v4/public/kline?'+urlencode({'symbol':instrument,'interval':'1d','limit':3})
+ if venue=='MXC_SPOT':return 'https://api.mexc.com/api/v3/klines?'+urlencode({'symbol':instrument,'interval':'1d','startTime':start*1000,'endTime':(start+86400)*1000-1,'limit':2})
+ if venue=='KUCOIN_SPOT':return 'https://api.kucoin.com/api/v1/market/candles?'+urlencode({'symbol':instrument,'type':'1day','startAt':start,'endAt':start+86399})
  raise ValueError('UNSUPPORTED_VENUE')
 
 
@@ -105,6 +117,13 @@ def parse_bar(venue,d,begin,captured):
   rows=[[r[i] for i in (1,2,3,4,6)] for r in series[0][:-1] if int(r[0])==target]
  elif venue=='COINBASE_SPOT':
   rows=[[r[i] for i in (3,2,1,4,5)] for r in d if int(r[0])==target]
+ elif venue=='MXC_SPOT':
+  # MEXC reports the exclusive close boundary, unlike Binance's final millisecond.
+  rows=[[r[i] for i in (1,2,3,4,5)] for r in d
+        if int(r[0])==target*1000 and int(r[6])==(target+86400)*1000]
+ elif venue=='KUCOIN_SPOT':
+  if d.get('code')!='200000':raise ValueError('EXCHANGE_API_ERROR')
+  rows=[[r[i] for i in (1,3,4,2,5)] for r in d['data'] if int(r[0])==target]
  elif venue=='XT_SPOT':
   if d.get('rc')!=0:raise ValueError('EXCHANGE_API_ERROR')
   # XT q is asset quantity; v is quote turnover and cannot substitute for q.

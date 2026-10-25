@@ -16,6 +16,54 @@ PROTOCOL_SHA256='a8f90a269efd64cd939c8707b23c2db31962cdabf6742b0e97bb016be92e467
 def sha(raw):return hashlib.sha256(raw).hexdigest()
 
 
+def binding_sha(binding):
+    return sha(json.dumps(binding,sort_keys=True,separators=(',',':'),allow_nan=False).encode())
+
+
+def refine_discovery(discovery,refinement,evidence_root):
+    """Complete previously unknown instruments; never replace a known source."""
+    try:
+        from .gate_btc_system13_native_capture import metadata_index
+    except ImportError:
+        from gate_btc_system13_native_capture import metadata_index
+    if (refinement.get('schema')!='qrds.system13.exact_identity_refinement.v1'
+            or any(refinement.get(k) is not False for k in
+                   ('historical_eligibility_granted','system13_source_admitted','ohlcv_ready'))):
+        raise ValueError('INVALID_IDENTITY_REFINEMENT')
+    originals=discovery_bindings(discovery);replacements={}
+    root=evidence_root.resolve()
+    def evidence(relative,digest):
+        path=(root/relative).resolve()
+        if not path.is_relative_to(root):raise ValueError('REFINEMENT_EVIDENCE_PATH_ESCAPE')
+        raw=path.read_bytes()
+        if sha(raw)!=digest:raise ValueError('REFINEMENT_EVIDENCE_HASH_MISMATCH')
+        return json.loads(raw)
+    for item in refinement['entries']:
+        coin=item['coin_id'];old=originals.get(coin);new=item['binding']
+        if (not old or coin in replacements or old.get('source_symbol') is not None
+                or old.get('primary_market_verified') is not False
+                or binding_sha(old)!=item['parent_binding_sha256']):
+            raise ValueError('REFINEMENT_PARENT_MISMATCH_OR_ALREADY_BOUND')
+        if any(new.get(k)!=old.get(k) for k in ('coin_id','venue','base','quote','target_coin_id')):
+            raise ValueError('REFINEMENT_CANNOT_SWITCH_IDENTITY_OR_VENUE')
+        if (new.get('primary_market_verified') is not True
+                or datetime.fromisoformat(new['identity_observed_at_utc'].replace('Z','+00:00'))
+                   < datetime.fromisoformat(old['identity_observed_at_utc'].replace('Z','+00:00'))):
+            raise ValueError('REFINEMENT_CANNOT_BACKDATE_IDENTITY')
+        discovery_bindings({**discovery,'entries':[{'coin_id':coin,'bindings':[new]}]})
+        provider=evidence(item['identity_evidence_path'],new['identity_evidence_sha256'])
+        matching=[r for r in provider['tickers'] if r.get('market',{}).get('identifier')==new['venue']
+                  and r.get('base')==new['base'] and r.get('target')==new['quote']]
+        if not matching or any(r.get('coin_id')!=coin or r.get('target_coin_id')!=new['target_coin_id'] for r in matching):
+            raise ValueError('REFINEMENT_EXACT_PROVIDER_IDENTITY_MISSING')
+        primary=evidence(item['primary_metadata_path'],new['primary_metadata_sha256'])
+        index=metadata_index(new['venue'].upper()+'_SPOT',primary)
+        if index.get(new.get('source_symbol'))!=(new['base'],new['quote']):
+            raise ValueError('REFINEMENT_PRIMARY_INSTRUMENT_NOT_VERIFIED')
+        replacements[coin]={'coin_id':coin,'bindings':[new]}
+    return {**discovery,'entries':[replacements.get(e['coin_id'],e) for e in discovery['entries']]}
+
+
 def combine_discoveries(discoveries):
     entries=[];seen=set()
     for discovery in discoveries:
@@ -164,12 +212,16 @@ def build(runtime,registry_path,out,discovery_path=None):
     extension24_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261024.json'
     extension24_raw=extension24_path.read_bytes()
     discovery=combine_discoveries([json.loads(discovery_raw),json.loads(extension_raw),json.loads(extension24_raw)])
+    refinement_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_REFINEMENT_20261025.json'
+    refinement_raw=refinement_path.read_bytes()
+    discovery=refine_discovery(discovery,json.loads(refinement_raw),Path(__file__).resolve().parents[1])
     result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),discovery)
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
     result['identity_discovery_sha256']=sha(discovery_raw)
     result['identity_discovery_extension_sha256']=sha(extension_raw)
     result['identity_discovery_extension_20261024_sha256']=sha(extension24_raw)
+    result['identity_refinement_20261025_sha256']=sha(refinement_raw)
     capture_path=folder/'native_ohlcv_capture_v1/STATUS.json'
     result['native_capture']={'status':'NOT_CAPTURED'}
     if capture_path.exists():

@@ -14,6 +14,8 @@ TS=int(BEGIN.timestamp())
 
 def payload(venue):
  if venue=='BINANCE_SPOT':return [[TS*1000,'100','110','90','105','20',(TS+86400)*1000-1,'2100']]
+ if venue=='MXC_SPOT':return [[TS*1000,'100','110','90','105','20',(TS+86400)*1000,'2100']]
+ if venue=='KUCOIN_SPOT':return {'code':'200000','data':[[str(TS),'100','105','110','90','20','2100']]}
  if venue=='OKX_SPOT':return {'code':'0','data':[[str(TS*1000),'100','110','90','105','20','2100','2100','1']]}
  if venue=='GATE_SPOT':return [[str(TS),'2100','105','110','90','100','20','true']]
  if venue=='BITGET_SPOT':return {'code':'00000','data':[[str(TS*1000),'100','110','90','105','20','2100']]}
