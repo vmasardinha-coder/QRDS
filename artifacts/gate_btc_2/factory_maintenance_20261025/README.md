@@ -35,3 +35,9 @@ Os nove contratos de entrega adicionados à supervisão foram confrontados com o
 454 testes do escopo passaram, mais 60 subtestes; os quatro novos testes de checkpoints também passaram. `git diff --check` passou. Os novos testes cobrem ultrapassagem de marco, cegueira antes de 60, estabilidade do prefixo, independência entre famílias, metadados vencidos, relógio futuro, janela perdida e indisponibilidade de API.
 
 Pesquisa e shadow apenas: ordens zero, capital real zero, sem backfill, retune, reinício de contador ou promoção. As janelas perdidas são mantidas como lacunas. A auditoria operacional estruturada está em AUDIT.json.
+
+## Verificação após incorporação
+
+A execução 40201799493 capturou um novo par válido e calculou os oito checkpoints. A publicação falhou porque um coletor concorrente atualizou SOURCE_ADMISSION.json entre a leitura e o envio. O par selado foi preservado no artefato dessa execução.
+
+A correção adicional refaz a publicação a partir do runtime mais recente em cada tentativa limitada, preservando o par selado fora do worktree descartável. Não força o envio, não escolhe um lado de conflito e não altera a captura nem a pesquisa. Um teste de integração provocou uma disputa real de push em repositório Git local e comprovou a preservação da nova fonte, o recálculo dos relatórios e a entrega intacta do par. Os 14 testes focados passaram.
