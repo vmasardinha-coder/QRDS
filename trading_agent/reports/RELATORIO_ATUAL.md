@@ -1,17 +1,17 @@
-# Relatorio diario do agente — 2026-10-24
+# Relatorio diario do agente — 2026-10-25
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-10-24-grafico.svg)
+![Historico das carteiras](2026-10-25-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-24-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-25-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
 | NAV | $44,612.00 |
-| Retorno do dia | +0.57% |
+| Retorno do dia | +0.00% |
 | Retorno desde inicio (2026-08-06) | -10.78% |
 | Benchmark SPY | -1.28% |
 | **Alfa vs SPY** | **-9.50%** |
@@ -32,21 +32,15 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-24-grafico
 | INTC | 49.635 | $86.96 | $4,316.26 | 9.7% |
 | TGT | 28.0572 | $152.76 | $4,286.02 | 9.6% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| LRCX | VENDA | 19.2749 | $229.98 | $4,432.95 | stop: queda 33.8% > 8x sigma (28.7%); carencia ate 2026-11-23 |
-| PANW | VENDA | 0.775291 | $380.36 | $294.89 | rebalanceio |
-| TXN | COMPRA | 15.6712 | $284.83 | $4,463.67 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em TXN: 0.0% vs alvo 10.0%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (SPY):** momentum de +14.9% — so entram ativos acima disto
 - **Candidatos elegiveis:** 39
 - **Fontes usadas:** nasdaq: 101
-- **STOP LRCX:** stop: queda 33.8% > 8x sigma (28.7%); carencia ate 2026-11-23
 - **Em carencia por stop:** AMAT (ate 2026-11-22), LRCX (ate 2026-11-23)
 
 | Rejeitado | Motivo |
@@ -67,37 +61,30 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-24-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $52,417.97 |
-| Retorno do dia | -1.81% |
-| Retorno desde inicio (2026-08-06) | +4.84% |
-| Benchmark BTC | +24.91% |
-| **Alfa vs BTC** | **-20.08%** |
+| NAV | $53,234.36 |
+| Retorno do dia | +1.56% |
+| Retorno desde inicio (2026-08-06) | +6.47% |
+| Benchmark BTC | +24.49% |
+| **Alfa vs BTC** | **-18.03%** |
 | Caixa | $2,604.48 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.325827 | $80,464.93 | $26,217.63 | 50.0% |
-| NEAR | 1763.99 | $4.46 | $7,865.29 | 15.0% |
-| QNT | 44.2766 | $177.64 | $7,865.29 | 15.0% |
-| ZEC | 6.549 | $1,200.99 | $7,865.29 | 15.0% |
+| BTC | 0.325827 | $80,196.28 | $26,130.10 | 49.1% |
+| QNT | 44.2766 | $191.16 | $8,463.91 | 15.9% |
+| NEAR | 1763.99 | $4.58 | $8,082.97 | 15.2% |
+| ZEC | 6.549 | $1,214.37 | $7,952.91 | 14.9% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| BTC | VENDA | 0.0165133 | $80,384.47 | $1,327.41 | rebalanceio |
-| STX | VENDA | 23677.8 | $0.30 | $7,148.26 | rebalanceio |
-| NEAR | COMPRA | 124.015 | $4.46 | $553.51 | rebalanceio |
-| QNT | COMPRA | 2.15593 | $177.82 | $383.36 | rebalanceio |
-| ZEC | COMPRA | 6.549 | $1,202.19 | $7,873.15 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ZEC: 0.0% vs alvo 15.0%
-- **Obstaculo (BTC):** momentum de +9.2% — so entram ativos acima disto
-- **Candidatos elegiveis:** 20
+- **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de +10.6% — so entram ativos acima disto
+- **Candidatos elegiveis:** 18
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -105,14 +92,14 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-10-24-grafico
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.1M < 1M) |
-| ADA | nao bate o benchmark (+3.8% <= +9.3%) |
-| ALGO | nao bate o benchmark (+6.9% <= +9.3%) |
+| ADA | nao bate o benchmark (+5.3% <= +10.6%) |
 | ALICE | liquidez baixa (0.1M < 1M) |
 | AMP | liquidez baixa (0.3M < 1M) |
 | ANKR | liquidez baixa (0.1M < 1M) |
 | APE | liquidez baixa (0.5M < 1M) |
 | API3 | liquidez baixa (0.1M < 1M) |
-| _(+110 outros)_ | |
+| APT | nao bate o benchmark (-0.4% <= +10.6%) |
+| _(+112 outros)_ | |
 
 </details>
 
@@ -171,13 +158,13 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 57,241.25 |
-| Retorno do dia | +0.03% |
-| Retorno desde inicio (2026-08-06) | +14.48% |
+| NAV | R$ 57,255.29 |
+| Retorno do dia | +0.02% |
+| Retorno desde inicio (2026-08-06) | +14.51% |
 | Benchmark IBOV | +16.83% |
 | Benchmark CDI | +2.75% |
-| **Alfa vs objetivo (CDI)** | **+11.73%** |
-| Alfa vs IBOV (comparador informativo) | -2.34% |
+| **Alfa vs objetivo (CDI)** | **+11.76%** |
+| Alfa vs IBOV (comparador informativo) | -2.31% |
 | Caixa | R$ -1,238.29 |
 
 ### Posicoes
@@ -185,11 +172,11 @@ _Sem movimentacoes hoje._
 |---|---|---|---|---|
 | BOVA11 | 290.34 | R$ 201.69 | R$ 58,558.63 | 102.3% |
 
-> Conciliacao do NAV: ativos R$ 58,558.63 + caixa R$ -1,238.29 - obrigacao da call R$ 79.09 = R$ 57,241.25.
+> Conciliacao do NAV: ativos R$ 58,558.63 + caixa R$ -1,238.29 - obrigacao da call R$ 65.05 = R$ 57,255.29.
 
 > Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.
 
-> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 79.08
+> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 65.05
 
 > Volatilidade usada na call (GARCH(1,1)): 16.2% a.a. | realizada 30d: 25.9% a.a. | CDI: 0.0508% a.d.
 
