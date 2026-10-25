@@ -19,6 +19,9 @@ TRACKS = {
     "m1_m2_economics": "runtime/ledgers/momentum_m1_m2_economics/ECONOMICS_STATUS.json",
     "m3_signal": "runtime/ledgers/momentum_m3/STATUS.json",
     "m3_economics": "runtime/ledgers/momentum_m3_economics/STATUS.json",
+    # Versioned books retain their own anchors and cost semantics.
+    "m1_m2_tradable_v1": "runtime/ledgers/momentum_tradable_v1/STATUS.json",
+    "m3_net_model_20261017": "runtime/ledgers/momentum_canonical_net/paper_spot_10bps_20261017_v1/M3_AFTER_GAP_2026_10_12/STATUS.json",
     "v13": "runtime/ledgers/delta_v13_engine/STATUS.json",
     "v16_family": "runtime/ledgers/v16_family/STATUS.json",
     "v16b": "runtime/ledgers/v16b/STATUS.json",
@@ -149,6 +152,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

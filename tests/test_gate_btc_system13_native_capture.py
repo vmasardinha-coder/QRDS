@@ -17,6 +17,7 @@ def payload(venue):
  if venue=='OKX_SPOT':return {'code':'0','data':[[str(TS*1000),'100','110','90','105','20','2100','2100','1']]}
  if venue=='GATE_SPOT':return [[str(TS),'2100','105','110','90','100','20','true']]
  if venue=='BITGET_SPOT':return {'code':'00000','data':[[str(TS*1000),'100','110','90','105','20','2100']]}
+ if venue=='COINBASE_SPOT':return [[TS,'90','110','100','105','20']]
  if venue=='XT_SPOT':return {'rc':0,'result':[{'t':TS*1000,'o':'100','h':'110','l':'90','c':'105','q':'20','v':'2100'}]}
  return {'error':[],'result':{'XB':[[TS,'100','110','90','105','104','20',3],
   [TS+86400,'105','106','104','105','105','4',1]],'last':TS+86400}}
@@ -139,3 +140,4 @@ class NativeCapture(unittest.TestCase):
    self.assertTrue(all(x['status']=='PRIMARY_METADATA_UNAVAILABLE' for x in r['rows']))
 
 if __name__=='__main__':unittest.main()
+

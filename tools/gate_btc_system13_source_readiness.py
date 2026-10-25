@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -50,8 +51,15 @@ def discovery_bindings(discovery):
                     or any(c not in '0123456789abcdef' for c in contract[2:])
                     or b.get('venue_contract','').lower()!=contract):
                 raise ValueError('EXACT_CONTRACT_BINDING_REQUIRED')
+        if b.get('identity_match_method')=='EXACT_PROVIDER_ID_AND_SOLANA_MINT':
+            mint=b.get('provider_contract','')
+            if (b.get('provider_coin_id')!=coin or b.get('platform')!='solana'
+                    or b.get('venue_network')!='solana'
+                    or not re.fullmatch(r'[1-9A-HJ-NP-Za-km-z]{32,44}',mint)
+                    or b.get('venue_contract')!=mint):
+                raise ValueError('EXACT_SOLANA_MINT_BINDING_REQUIRED')
         prefixes=['identity_evidence','primary_metadata']
-        if b.get('identity_match_method')=='EXACT_PROVIDER_ID_AND_ETHEREUM_CONTRACT':prefixes.append('network_evidence')
+        if b.get('identity_match_method') in ('EXACT_PROVIDER_ID_AND_ETHEREUM_CONTRACT','EXACT_PROVIDER_ID_AND_SOLANA_MINT'):prefixes.append('network_evidence')
         for prefix in prefixes:
             if prefix=='primary_metadata' and b.get('primary_market_verified') is not True:continue
             digest=b[prefix+'_sha256']
@@ -153,12 +161,15 @@ def build(runtime,registry_path,out,discovery_path=None):
     discovery_raw=discovery_path.read_bytes()
     extension_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json'
     extension_raw=extension_path.read_bytes()
-    discovery=combine_discoveries([json.loads(discovery_raw),json.loads(extension_raw)])
+    extension24_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261024.json'
+    extension24_raw=extension24_path.read_bytes()
+    discovery=combine_discoveries([json.loads(discovery_raw),json.loads(extension_raw),json.loads(extension24_raw)])
     result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),discovery)
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
     result['identity_discovery_sha256']=sha(discovery_raw)
     result['identity_discovery_extension_sha256']=sha(extension_raw)
+    result['identity_discovery_extension_20261024_sha256']=sha(extension24_raw)
     capture_path=folder/'native_ohlcv_capture_v1/STATUS.json'
     result['native_capture']={'status':'NOT_CAPTURED'}
     if capture_path.exists():
@@ -191,3 +202,4 @@ if __name__=='__main__':
     p.add_argument('--registry',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
     a=p.parse_args();d=build(a.runtime,a.registry,a.out)
     print(json.dumps({k:v for k,v in d.items() if k!='rows'},sort_keys=True))
+

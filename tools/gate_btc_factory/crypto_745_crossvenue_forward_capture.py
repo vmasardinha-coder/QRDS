@@ -247,6 +247,20 @@ def finalize_pending(pending: dict, packet: dict) -> dict:
     return out
 
 
+def input_clock_reasons(observation):
+    reasons=[]
+    decision=observation.get('decision_ms')
+    for name in ('source_previous_close','execution_previous_close','source_close','execution_close'):
+        event=observation.get(name)
+        if not isinstance(event,dict) or 'first_seen_receipt_ms' not in event:
+            reasons.append(name+':RECEIPT_MISSING')
+        elif decision is None or int(event['first_seen_receipt_ms'])>int(decision):
+            reasons.append(name+':NOT_AVAILABLE_AT_DECISION')
+        elif int(event['first_seen_receipt_ms'])<int(event['ts_ms']):
+            reasons.append(name+':FUTURE_EVENT_AT_RECEIPT')
+    return reasons
+
+
 def pending_from(prev_packet: dict | None, packet: dict) -> dict | None:
     if prev_packet is None:
         return None
@@ -263,6 +277,12 @@ def pending_from(prev_packet: dict | None, packet: dict) -> dict | None:
         if event is None:
             reasons.append(label)
     entry = packet.get("entry")
+    reasons.extend(input_clock_reasons({
+        "decision_ms":packet["decision_ms"],
+        "source_previous_close":prev_packet.get("source_close"),
+        "execution_previous_close":prev_packet.get("execution_close"),
+        "source_close":packet.get("source_close"),
+        "execution_close":packet.get("execution_close")}))
     return {
         "observation_id": str(packet["boundary_ms"]),
         "minute_close_ms": packet["boundary_ms"],
@@ -361,6 +381,7 @@ def build_manifest(partition_dir: Path) -> dict:
     if len(evidence_hashes) > 1:
         raise RuntimeError("SOURCE_COST_EVIDENCE_DRIFT_FAIL_CLOSED")
     ids = sorted(seen, key=int)
+    clock_ids=[oid for oid in ids if not input_clock_reasons(seen[oid])]
     eligible = len(ids)
     return {
         "schema": "qrds.factory.crypto_745_crossvenue_forward_manifest.v1",
@@ -374,11 +395,16 @@ def build_manifest(partition_dir: Path) -> dict:
         "duplicate_observation_ids_zero_credit": sorted(set(duplicate_ids), key=int),
         "first_observation_id": ids[0] if ids else None,
         "last_observation_id": ids[-1] if ids else None,
+        "source_clock_profile": "RECEIPTS_AVAILABLE_AT_FROZEN_DECISION_V1",
+        "capture_flag_count_is_not_clock_qualification": True,
+        "source_clock_qualified_unique_observation_count": len(clock_ids),
+        "source_clock_eligible_observation_ids": clock_ids,
+        "source_clock_excluded_unique_observations": len(ids)-len(clock_ids),
         "checkpoint_count": CHECKPOINT,
-        "checkpoint_ready_for_dataset_binding": eligible >= CHECKPOINT,
+        "checkpoint_ready_for_dataset_binding": len(clock_ids) >= CHECKPOINT,
         "economics_read": False,
         "economics_read_allowed": False,
-        "next_action": "FREEZE_IMMUTABLE_DATASET_BINDING" if eligible >= CHECKPOINT else "CONTINUE_FORWARD_COLLECTION",
+        "next_action": "FREEZE_SOURCE_CLOCK_QUALIFIED_DATASET_BINDING" if len(clock_ids) >= CHECKPOINT else "CONTINUE_CLOCK_QUALIFIED_FORWARD_COLLECTION",
         "historical_backfill_credit": 0,
         "scientific_credit": 0,
         "safety": SAFETY,
@@ -428,3 +454,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,93 @@
+name: GATE BTC Crypto Crossvenue Bound Economics
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [GATE BTC Crypto 745 Cross Venue Forward]
+    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_crypto_crossvenue_economics.py
+      - .github/workflows/gate-btc-crypto-crossvenue-economics.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/gate_btc_crypto_crossvenue_economics.py
+      - tests/test_gate_btc_crypto_crossvenue_economics.py
+      - .github/workflows/gate-btc-crypto-crossvenue-economics.yml
+permissions:
+  contents: read
+concurrency:
+  group: crypto-crossvenue-bound-economics-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'live' }}
+  cancel-in-progress: false
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+    steps:
+      - id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          UPSTREAM_RESULT: ${{ github.event.workflow_run.conclusion }}
+          UPSTREAM_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != workflow_run ]; then echo proceed=true >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$UPSTREAM_RESULT" != success ] || [ "$UPSTREAM_BRANCH" != main ]; then echo proceed=false >> "$GITHUB_OUTPUT"; exit 0; fi
+          gh api "repos/$GITHUB_REPOSITORY/contents/runtime/factory_sources/crypto_challenger_745/forward/cross_venue/MANIFEST.json?ref=gate-btc-runtime" --jq .content | base64 -d > manifest.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          d=json.load(open('manifest.json'))
+          print('proceed='+str(d.get('source_clock_qualified_unique_observation_count',0)>=1440).lower())
+          PY
+  validate:
+    needs: readiness
+    if: needs.readiness.outputs.proceed == 'true'
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_gate_btc_crypto_crossvenue_economics.py -v
+  evaluate:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, path: source}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 1
+          sparse-checkout: runtime/factory_sources/crypto_challenger_745
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify frozen bytes and clock eligibility before first outcomes
+        run: python source/tools/gate_btc_crypto_crossvenue_economics.py --root runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/cross_venue
+      - name: Publish isolated checkpoint receipt and funding proofs
+        shell: bash
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/factory_sources/crypto_challenger_745/forward/cross_venue/economics
+          successor=runtime/factory_sources/crypto_challenger_745/forward/cross_venue/DATASET_BINDING_N1440_SOURCE_CLOCK_V1.json
+          if [ -f "$successor" ]; then git add "$successor"; fi
+          git diff --cached --quiet && exit 0
+          git commit -m 'Publish source-checked crossvenue checkpoint economics'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            git rebase origin/gate-btc-runtime || { git rebase --abort; exit 1; }
+            git push origin HEAD:gate-btc-runtime && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1

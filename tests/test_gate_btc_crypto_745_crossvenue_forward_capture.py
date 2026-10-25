@@ -11,7 +11,7 @@ c=importlib.util.module_from_spec(spec);spec.loader.exec_module(c)
 
 
 def ev(ts, price='100'):
-    return {'ts_ms':ts,'price':price,'trade_id':str(ts)}
+    return {'ts_ms':ts,'price':price,'trade_id':str(ts),'first_seen_receipt_ms':ts+1}
 
 
 def admission(path):
@@ -102,6 +102,16 @@ class CrossVenueForwardTests(unittest.TestCase):
         self.assertNotIn('return',out)
         self.assertNotIn('pnl',out)
 
+    def test_late_signal_receipt_never_becomes_eligible(self):
+        prev={'boundary_ms':60000,'source_close':ev(59900),'execution_close':ev(59800)}
+        cur={'boundary_ms':120000,'decision_ms':125000,'source_close':ev(119900),
+             'execution_close':ev(119800),'entry':ev(125100)}
+        cur['source_close']['first_seen_receipt_ms']=125001
+        pending=c.pending_from(prev,cur)
+        out=c.finalize_pending(pending,{'okx_events':[ev(185200)]})
+        self.assertFalse(out['eligible_for_future_evaluation'])
+        self.assertIn('source_close:NOT_AVAILABLE_AT_DECISION',out['ineligible_reasons'])
+
     def test_source_cost_admission_fails_closed(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/'a.json'
@@ -158,3 +168,4 @@ class CrossVenueForwardTests(unittest.TestCase):
         self.assertTrue(c.SAFETY['FAIL_CLOSED'])
 
 if __name__=='__main__':unittest.main()
+
