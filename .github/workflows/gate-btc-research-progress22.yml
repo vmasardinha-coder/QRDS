@@ -13,6 +13,9 @@ on:
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261024.json
       - tests/test_gate_btc_system13_coinbase_extension.py
+      - tests/test_gate_btc_system13_binding_refinement.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_REFINEMENT_20261025.json
+      - artifacts/gate_btc_2/system13_identity_extension_20261025/**
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
       - tests/test_gate_btc_system13_source_readiness.py
       - tools/gate_btc_research_progress_publish.py
@@ -32,6 +35,9 @@ on:
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261023_XT.json
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261024.json
       - tests/test_gate_btc_system13_coinbase_extension.py
+      - tests/test_gate_btc_system13_binding_refinement.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_REFINEMENT_20261025.json
+      - artifacts/gate_btc_2/system13_identity_extension_20261025/**
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
       - tests/test_gate_btc_system13_source_readiness.py
       - tools/gate_btc_research_progress_publish.py
@@ -62,6 +68,7 @@ jobs:
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_native_capture.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_coinbase_extension.py -v
+      - run: python -m unittest discover -s tests -p test_gate_btc_system13_binding_refinement.py -v
       - name: Verify unchanged parent family economic boundary
         run: |
           python - <<'PY'
