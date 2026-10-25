@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,json,math
+import argparse,json,math,hashlib
 from pathlib import Path
 FIDS=["COKBF01","COKBF02","COKBF03","COKBF04","COCV01","COCV02","COCV03","COCV04"]
 def fnum(x): return float(x)
@@ -60,6 +60,33 @@ def sealed_pairs(audit_dir,eligible_start):
         pairs.append((meta0["signal_bucket_start_ms"],pid,p0,p1))
     pairs.sort(key=lambda z:(z[0],z[1]))
     return pairs,ignored_legacy
+def completed_checkpoints(observations):
+    """Report only frozen 60-record prefixes, including crossed checkpoints.
+
+    A capture batch can cross 60 without ending on 60. Selecting the earliest
+    records by the existing sealed-pair order preserves the preregistration;
+    neither the batch tail nor observed returns select the reporting window.
+    """
+    latest={}; history={}
+    for fid in FIDS:
+        rows=[o for o in observations if o["family_id"]==fid]
+        family_history={}
+        for checkpoint in range(60,len(rows)+1,60):
+            prefix=rows[:checkpoint]
+            xs=[o["net_return_primary"] for o in prefix]
+            average=sum(xs)/checkpoint
+            sd=(sum((x-average)**2 for x in xs)/(checkpoint-1))**0.5
+            family_history[str(checkpoint)]={
+                "checkpoint":checkpoint,"mean_net":average,
+                "annualized_sharpe_equiv":average/sd*math.sqrt(365*24*12) if sd else 0,
+                "selection_rule":"EARLIEST_VALID_OBSERVATIONS_IN_SEALED_PAIR_ORDER",
+                "observation_prefix_sha256":hashlib.sha256(json.dumps(prefix,sort_keys=True,separators=(",",":"),allow_nan=False).encode()).hexdigest(),
+            }
+        if family_history:
+            history[fid]=family_history
+            latest[fid]=family_history[str((len(rows)//60)*60)]
+    return latest,history
+
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--audit-dir",required=True);ap.add_argument("--admission",required=True);ap.add_argument("--out",required=True);a=ap.parse_args()
     adm=json.loads(Path(a.admission).read_text())
@@ -80,12 +107,7 @@ def main():
                 seen.add(k);o["prospective_pair_id"]=pid;ledger["observations"].append(o)
     counts={fid:sum(o["family_id"]==fid for o in ledger["observations"]) for fid in FIDS}
     ledger["observation_counts"]=counts
-    # Aggregate economics deliberately withheld until exact 60-observation checkpoint.
-    for fid,n in counts.items():
-        if n>=60 and n%60==0:
-            xs=[o["net_return_primary"] for o in ledger["observations"] if o["family_id"]==fid]
-            mean=sum(xs)/len(xs)
-            sd=(sum((x-mean)**2 for x in xs)/(len(xs)-1))**0.5 if len(xs)>1 else 0
-            ledger["checkpoint_economics"][fid]={"checkpoint":n,"mean_net":mean,"annualized_sharpe_equiv":mean/sd*math.sqrt(365*24*12) if sd else 0}
+    # The incomplete tail stays blind; completed prefixes remain reproducible.
+    ledger["checkpoint_economics"],ledger["checkpoint_history"]=completed_checkpoints(ledger["observations"])
     Path(a.out).write_text(json.dumps(ledger,indent=2)+"\n");print(json.dumps({"status":"ACTIVE_BLIND" if pairs else "WAITING_SEALED_PROSPECTIVE_PAIR","sealed_pairs":len(pairs),"ignored_legacy":ignored_legacy,"observations":len(ledger["observations"]),"counts":counts,"checkpoints":list(ledger["checkpoint_economics"])}))
 if __name__=="__main__":main()
