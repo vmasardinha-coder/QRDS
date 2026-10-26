@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """QRDS Factory collector supervisor (#221).
 
-Operational metadata only. It never opens strategy economics, changes model parameters,
+Uses only declared operational metadata. It never evaluates strategy economics, changes model parameters,
 backfills data, promotes survivors, or mutates scientific clocks.
 """
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import json
 import os
@@ -115,6 +116,59 @@ def anomaly_for(collector, wf, run, artifacts):
     return None, "latest operational run healthy"
 
 
+def metadata_value(metadata, field):
+    value = metadata
+    for key in field.split("."):
+        if not isinstance(value, dict) or key not in value:
+            raise ValueError("DELIVERY_METADATA_FIELD_MISSING:" + field)
+        value = value[key]
+    return value
+
+
+def delivery_health(collector, metadata, now=None):
+    """Inspect declared delivery clocks/counters only, never economic metrics."""
+    contract = collector.get("operational_status_contract", {})
+    now = now or dt.datetime.now(dt.timezone.utc)
+    projected = {"status": metadata.get("status")}
+    field = contract.get("counter_field")
+    if field:
+        projected["counter"] = metadata_value(metadata, field)
+        projected["counter_field"] = field
+    field = contract.get("freshness_field")
+    if field:
+        value = metadata_value(metadata, field)
+        stamp = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            if len(str(value)) != 10:
+                raise ValueError("DELIVERY_TIMESTAMP_TIMEZONE_MISSING")
+            stamp = stamp.replace(tzinfo=dt.timezone.utc)
+        age = (now - stamp).total_seconds() / 3600
+        projected.update(observed_at=str(value), age_hours=round(age, 3))
+        if age < -1/60:
+            return "SOURCE_SCHEMA_FAILURE", "delivery timestamp is in the future", projected
+        if age > contract["max_age_hours"]:
+            return "LEDGER_NOT_APPENDED", "published delivery metadata is stale", projected
+    if metadata.get("status") in contract.get("failure_statuses", []):
+        return "LEDGER_NOT_APPENDED", "published status reports " + metadata["status"], projected
+    return None, "declared delivery metadata healthy", projected
+
+
+def inspect_delivery(repo, collector, token):
+    if not collector.get("operational_status_contract"):
+        return None, None, None
+    path = collector["expected_ledger"]
+    try:
+        payload = api(f"/repos/{repo}/contents/{path}?ref=gate-btc-runtime", token)
+        if payload.get("encoding") != "base64" or not payload.get("content"):
+            raise ValueError("DELIVERY_CONTENT_UNAVAILABLE")
+        metadata = json.loads(base64.b64decode(payload["content"]))
+        anomaly, reason, projected = delivery_health(collector, metadata)
+        projected.update(path=path, git_blob_sha=payload.get("sha"))
+        return anomaly, reason, projected
+    except (ValueError, KeyError, TypeError, RuntimeError, urllib.error.URLError, TimeoutError) as exc:
+        return "ARTIFACT_MISSING", "delivery metadata unavailable: " + str(exc)[:200], {"path": path}
+
+
 def repair(repo, collector, wf, run, anomaly, token):
     result = {"repair_attempted": False, "repair_result": "NOT_APPLICABLE", "repair_evidence": None, "regression_fix": False, "idempotence": "NOT_APPLICABLE"}
     allow = set(collector.get("approved_auto_repair_actions", []))
@@ -170,6 +224,9 @@ def main():
         run = latest_run(args.repo, wf["id"], token) if wf else None
         arts = artifacts_for_run(args.repo, run["id"], token) if run and run.get("status") == "completed" else []
         anomaly, root = anomaly_for(c, wf, run, arts)
+        delivery_anomaly, delivery_reason, delivery = inspect_delivery(args.repo, c, token)
+        if anomaly is None and delivery_reason:
+            anomaly, root = delivery_anomaly, delivery_reason
         assert anomaly is None or anomaly in ANOMALIES
         rep = repair(args.repo, c, wf, run, anomaly, token) if args.apply_safe_repairs else {"repair_attempted":False,"repair_result":"AUDIT_ONLY","repair_evidence":None,"regression_fix":False,"idempotence":"NOT_APPLIED"}
         repaired += int(rep["repair_attempted"])
@@ -180,6 +237,7 @@ def main():
             "latest_run": None if not run else {k:run.get(k) for k in ("id","status","conclusion","run_attempt","created_at","updated_at","html_url")},
             "latest_success_at": run.get("updated_at") if run and run.get("conclusion") == "success" else c.get("latest_success_at"),
             "actions_artifacts_count": len(arts),
+            "delivery_metadata": delivery,
             "anomaly_class": anomaly,
             "root_cause": root,
             "scientific_risk": "NONE_OPERATIONAL_ONLY" if anomaly not in {"SCIENTIFIC_BLOCK","UNKNOWN_REQUIRES_HUMAN"} else "BOUNDARY_REACHED",

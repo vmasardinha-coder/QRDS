@@ -14,6 +14,8 @@ on:
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
       - 'tests/test_crypto_prospective_pair_capture.py'
+      - 'tests/test_gate_btc_crypto_accessible_checkpoint_reporting.py'
+      - 'tests/test_gate_btc_crypto_publication_retry.py'
       - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - 'tests/test_gate_btc_crypto_full_source_admission.py'
       - 'tests/test_gate_btc_crypto_full_local_publication.py'
@@ -31,6 +33,8 @@ on:
       - 'tools/gate_btc_factory/crypto_family_state_runtime.py'
       - 'tools/gate_btc_factory/crypto_accessible_blind_evaluator.py'
       - 'tests/test_crypto_prospective_pair_capture.py'
+      - 'tests/test_gate_btc_crypto_accessible_checkpoint_reporting.py'
+      - 'tests/test_gate_btc_crypto_publication_retry.py'
       - 'tests/test_gate_btc_crypto_capture_reporting.py'
       - 'tests/test_gate_btc_crypto_full_source_admission.py'
       - 'tests/test_gate_btc_crypto_full_local_publication.py'
@@ -60,6 +64,8 @@ jobs:
           python -m py_compile tools/gate_btc_factory/crypto_family_state_runtime.py
           python -m py_compile tools/gate_btc_factory/crypto_accessible_blind_evaluator.py
           python -m unittest -v tests/test_crypto_prospective_pair_capture.py
+          python -m unittest -v tests/test_gate_btc_crypto_accessible_checkpoint_reporting.py
+          python -m unittest -v tests/test_gate_btc_crypto_publication_retry.py
           python -m unittest -v tests/test_gate_btc_crypto_capture_reporting.py
           python -m unittest -v tests/test_gate_btc_crypto_full_source_admission.py
           python -m unittest -v tests/test_gate_btc_crypto_full_local_publication.py
@@ -105,35 +111,36 @@ jobs:
           set -euo pipefail
           git fetch origin gate-btc-runtime
           git worktree add runtime-tree origin/gate-btc-runtime
-          mkdir -p runtime-tree/runtime/factory_sources/crypto_forward/audits
-          cp out/pair/T_PLUS_1.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
-          cp out/pair/T.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T.json"
-          cp out/pair/T_PLUS_1.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T1.json"
-          python tools/gate_btc_factory/crypto_full_local_publication.py \
-            --root runtime-tree/runtime/factory_sources/crypto_forward
-          python tools/gate_btc_factory/crypto_accessible_source_admission.py \
-            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
-            --previous runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
-            --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json
-          python tools/gate_btc_factory/crypto_family_state_runtime.py \
-            --original-admission runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json \
-            --accessible-admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
-            --out runtime-tree/runtime/factory_sources/crypto_forward/FAMILY_STATES.json
-          python tools/gate_btc_factory/crypto_accessible_blind_evaluator.py \
-            --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
-            --admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
-            --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_BLIND_LEDGER.json
-          cd runtime-tree
-          git config user.name gate-btc-research-bot
-          git config user.email gate-btc-research-bot@users.noreply.github.com
-          git add runtime/factory_sources/crypto_forward
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Append sealed crypto prospective pair ${GITHUB_RUN_ID}"
+          git -C runtime-tree config user.name gate-btc-research-bot
+          git -C runtime-tree config user.email gate-btc-research-bot@users.noreply.github.com
           for n in 1 2 3 4; do
-            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
-            git fetch origin gate-btc-runtime
-            git rebase origin/gate-btc-runtime
-            sleep $((n*2))
+            # Rebuild derived files from the latest runtime on every attempt.
+            # Only this disposable worktree is reset; the sealed pair stays in out/pair.
+            git -C runtime-tree fetch origin gate-btc-runtime
+            git -C runtime-tree reset --hard origin/gate-btc-runtime
+            mkdir -p runtime-tree/runtime/factory_sources/crypto_forward/audits
+            cp out/pair/T_PLUS_1.json runtime-tree/runtime/factory_sources/crypto_forward/LATEST.json
+            cp out/pair/T.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T.json"
+            cp out/pair/T_PLUS_1.json "runtime-tree/runtime/factory_sources/crypto_forward/audits/${GITHUB_RUN_ID}-T1.json"
+            python tools/gate_btc_factory/crypto_full_local_publication.py \
+              --root runtime-tree/runtime/factory_sources/crypto_forward
+            python tools/gate_btc_factory/crypto_accessible_source_admission.py \
+              --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
+              --previous runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+              --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json
+            python tools/gate_btc_factory/crypto_family_state_runtime.py \
+              --original-admission runtime-tree/runtime/factory_sources/crypto_forward/SOURCE_ADMISSION.json \
+              --accessible-admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+              --out runtime-tree/runtime/factory_sources/crypto_forward/FAMILY_STATES.json
+            python tools/gate_btc_factory/crypto_accessible_blind_evaluator.py \
+              --audit-dir runtime-tree/runtime/factory_sources/crypto_forward/audits \
+              --admission runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_SOURCE_ADMISSION.json \
+              --out runtime-tree/runtime/factory_sources/crypto_forward/ACCESSIBLE_BLIND_LEDGER.json
+            git -C runtime-tree add runtime/factory_sources/crypto_forward
+            if git -C runtime-tree diff --cached --quiet; then exit 0; fi
+            git -C runtime-tree commit -m "Append sealed crypto prospective pair ${GITHUB_RUN_ID}"
+            if git -C runtime-tree push origin HEAD:gate-btc-runtime; then exit 0; fi
+            if [ "$n" -lt 4 ]; then sleep $((n*2)); fi
           done
           exit 1
       - uses: actions/upload-artifact@v4
