@@ -305,11 +305,11 @@
       }
     },
     "momentum_tradable_v1": {
-      "backfill_performed": false,
       "collection_health_hint": "GREEN_ACTIVE",
       "data_as_of": "2026-10-25",
       "engine_feed": false,
       "freshness": "FRESH",
+      "idempotent": true,
       "latest_economics": {
         "btc_nav_gross": 0.9531553122705676,
         "btc_nav_net_modelled": 0.9522031091614064,
@@ -544,8 +544,6 @@
           "M2_TRADABLE_V1": 0.0
         }
       },
-      "legacy_pnl_inherited": false,
-      "new_economic_rows": 1,
       "not_approved": true,
       "orders": 0,
       "policy_id": "MOMENTUM_TRADABLE_SPOT_V1_20261021",
@@ -993,7 +991,7 @@
         "promotion_allowed": false,
         "return_observations": 20,
         "schema": "gate_btc.momentum_hold_status.v1",
-        "sha256": "5cbcda80479f1afaf56ff163e6d0b240dadc6dc6500fb07bbf425e2e526e9761",
+        "sha256": "ef0ca55cab328d50154a6b9b1c1bdb926d12b1cb4fa4d19e50656a15a6f39c7d",
         "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
         "status": "CLOSED_RULE_VERSION_SUPERSEDED",
         "status_authority_file": "ECONOMICS_STATUS.json",
@@ -1008,29 +1006,29 @@
         ]
       },
       "momentum_m3": {
-        "data_as_of": "2026-10-24",
+        "data_as_of": "2026-10-25",
         "engine_feed": false,
         "health_authority": false,
         "inventory_only": true,
         "ledger_id": "momentum_m3",
-        "observed_snapshots": 40,
+        "observed_snapshots": 41,
         "schema": "gate_btc.momentum_m3.status.v1",
-        "sha256": "70ea30bab507586d88e333442f2e545ab11810d0876f8934252c999635ffd7e9",
+        "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
         "source": "ledgers/momentum_m3/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
       },
       "momentum_m3_economics": {
         "cost_status": "N_D",
-        "data_as_of": "2026-10-24",
+        "data_as_of": "2026-10-25",
         "engine_feed": false,
         "health_authority": false,
         "inventory_only": true,
         "ledger_id": "momentum_m3_economics",
         "net_return": null,
         "promotion_allowed": false,
-        "return_observations": 11,
+        "return_observations": 12,
         "schema": "gate_btc.momentum_m3_economics_status.v1",
-        "sha256": "a55048d5c436a7a82ee6599c5e5a75d113f91b2a738afae0047cf5e8c785b1a3",
+        "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
         "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
         "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
         "status_authority_file": "STATUS.json",
@@ -1050,7 +1048,7 @@
         "ledger_id": "momentum_tradable_v1",
         "promotion_allowed": false,
         "schema": "gate_btc.momentum_tradable_status.v1",
-        "sha256": "d0e170ed80cd23954a025949228b36d08ee93c2bcc21f92b632d1098aa14ae48",
+        "sha256": "eedcaf47f8b755e022260b5259cecc563a0e637cfadad0c2c04cf78ed628480e",
         "source": "ledgers/momentum_tradable_v1/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
       },
@@ -1221,7 +1219,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-10-26T09:22:02.613410+00:00",
+  "generated_at_utc": "2026-10-26T09:25:03.135988+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 19,
@@ -1587,7 +1585,7 @@
       "promotion_allowed": false,
       "return_observations": 20,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5cbcda80479f1afaf56ff163e6d0b240dadc6dc6500fb07bbf425e2e526e9761",
+      "sha256": "ef0ca55cab328d50154a6b9b1c1bdb926d12b1cb4fa4d19e50656a15a6f39c7d",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
       "status": "CLOSED_RULE_VERSION_SUPERSEDED",
       "status_authority_file": "ECONOMICS_STATUS.json",
@@ -1602,29 +1600,29 @@
       ]
     },
     "momentum_m3": {
-      "data_as_of": "2026-10-24",
+      "data_as_of": "2026-10-25",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "momentum_m3",
-      "observed_snapshots": 40,
+      "observed_snapshots": 41,
       "schema": "gate_btc.momentum_m3.status.v1",
-      "sha256": "70ea30bab507586d88e333442f2e545ab11810d0876f8934252c999635ffd7e9",
+      "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
       "source": "ledgers/momentum_m3/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
     },
     "momentum_m3_economics": {
       "cost_status": "N_D",
-      "data_as_of": "2026-10-24",
+      "data_as_of": "2026-10-25",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "momentum_m3_economics",
       "net_return": null,
       "promotion_allowed": false,
-      "return_observations": 11,
+      "return_observations": 12,
       "schema": "gate_btc.momentum_m3_economics_status.v1",
-      "sha256": "a55048d5c436a7a82ee6599c5e5a75d113f91b2a738afae0047cf5e8c785b1a3",
+      "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
       "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
       "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
       "status_authority_file": "STATUS.json",
@@ -1644,7 +1642,7 @@
       "ledger_id": "momentum_tradable_v1",
       "promotion_allowed": false,
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "d0e170ed80cd23954a025949228b36d08ee93c2bcc21f92b632d1098aa14ae48",
+      "sha256": "eedcaf47f8b755e022260b5259cecc563a0e637cfadad0c2c04cf78ed628480e",
       "source": "ledgers/momentum_tradable_v1/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
     },
@@ -1994,35 +1992,35 @@
       "promotion_allowed": false,
       "return_observations": 20,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5cbcda80479f1afaf56ff163e6d0b240dadc6dc6500fb07bbf425e2e526e9761",
+      "sha256": "ef0ca55cab328d50154a6b9b1c1bdb926d12b1cb4fa4d19e50656a15a6f39c7d",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
       "status": "CLOSED_RULE_VERSION_SUPERSEDED",
       "status_authority_file": "ECONOMICS_STATUS.json"
     },
     "momentum_m3": {
-      "data_as_of": "2026-10-24",
+      "data_as_of": "2026-10-25",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "momentum_m3",
-      "observed_snapshots": 40,
+      "observed_snapshots": 41,
       "schema": "gate_btc.momentum_m3.status.v1",
-      "sha256": "70ea30bab507586d88e333442f2e545ab11810d0876f8934252c999635ffd7e9",
+      "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
       "source": "ledgers/momentum_m3/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
     },
     "momentum_m3_economics": {
       "cost_status": "N_D",
-      "data_as_of": "2026-10-24",
+      "data_as_of": "2026-10-25",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "momentum_m3_economics",
       "net_return": null,
       "promotion_allowed": false,
-      "return_observations": 11,
+      "return_observations": 12,
       "schema": "gate_btc.momentum_m3_economics_status.v1",
-      "sha256": "a55048d5c436a7a82ee6599c5e5a75d113f91b2a738afae0047cf5e8c785b1a3",
+      "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
       "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
       "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
       "status_authority_file": "STATUS.json"
@@ -2035,7 +2033,7 @@
       "ledger_id": "momentum_tradable_v1",
       "promotion_allowed": false,
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "d0e170ed80cd23954a025949228b36d08ee93c2bcc21f92b632d1098aa14ae48",
+      "sha256": "eedcaf47f8b755e022260b5259cecc563a0e637cfadad0c2c04cf78ed628480e",
       "source": "ledgers/momentum_tradable_v1/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
     },
@@ -2217,7 +2215,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "5cbcda80479f1afaf56ff163e6d0b240dadc6dc6500fb07bbf425e2e526e9761"
+      "sha256": "ef0ca55cab328d50154a6b9b1c1bdb926d12b1cb4fa4d19e50656a15a6f39c7d"
     },
     "momentum_m1_m2": {
       "exists": true,
@@ -2229,7 +2227,7 @@
       "exists": true,
       "path": "runtime_repo/runtime/ledgers/momentum_tradable_v1/STATUS.json",
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "d0e170ed80cd23954a025949228b36d08ee93c2bcc21f92b632d1098aa14ae48"
+      "sha256": "eedcaf47f8b755e022260b5259cecc563a0e637cfadad0c2c04cf78ed628480e"
     },
     "pointer": {
       "exists": true,
