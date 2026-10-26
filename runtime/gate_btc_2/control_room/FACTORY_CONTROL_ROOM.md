@@ -1,22 +1,20 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-10-26T21:04:14.214036+00:00`
+Generated: `2026-10-26T22:11:01.707347+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **21**
-- Latest ledger: **2026-10-23**
-- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-10-23`)
+- Ledger sessions: **22**
+- Latest ledger: **2026-10-26**
+- Latest collector: **SESSION_GAP_RECORDED_ZERO_CREDIT** (`2026-10-26`)
 - Triggered cells: **15**
 - Cells at 60/60: **0**
 - Trigger range: **0–3 / 60**
 
 ## Latest prospective session states
-- `NO_SIGNAL`: **1**
-- `TRIGGER`: **4**
-- `WARMUP_PENDING`: **575**
+- `FEATURE_UNAVAILABLE`: **580**
 
 ## 3D family states
 - `CONTINUE_EXPERIMENTAL_SHADOW`: **580**
@@ -26,7 +24,7 @@ Generated: `2026-10-26T21:04:14.214036+00:00`
 
 ## Source
 - Historical binding snapshot: `FORWARD_SOURCE_BOUND` / `WINV26`
-- Latest physically observed symbol: `WINZ26` (session `2026-10-23`; source QA=None)
+- Latest physically observed symbol: `WINZ26` (session `2026-10-26`; source QA=False)
 - Waiting source semantics: **0**
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (46 records; admitted=False)
 
