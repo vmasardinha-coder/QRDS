@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-26T17:19:20.541912+00:00",
+  "generated_at_utc": "2026-10-26T19:26:15.830653+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -786,20 +786,20 @@
         "CANONICAL_PROSPECTIVE_CREDIT": 0,
         "ENGINE_FEED": false,
         "H31_30M_WINDOW_COMPLETE": true,
-        "H31_CANONICAL_ELIGIBLE_OBSERVATIONS": 3,
+        "H31_CANONICAL_ELIGIBLE_OBSERVATIONS": 4,
         "H31_FRONT_CONTINUATION_POLICY": "FROZEN_ROOT_WITH_MECHANICAL_LIVE_ROLL_SHADOW_ONLY",
         "H31_INTRADAY_MONITORING": true,
-        "H31_INTRADAY_SESSION": "2026-10-23",
+        "H31_INTRADAY_SESSION": "2026-10-26",
         "H31_INTRADAY_SHADOW_STATUS": "ACTIVE",
         "H31_MT5_READY": true,
-        "H31_PAPER_POSITION": "CLOSED",
+        "H31_PAPER_POSITION": "NONE",
         "H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT": 5,
         "H31_SHADOW_CLOSED_TRADES": 8,
         "H31_SHADOW_CLOSE_RECONCILIATION_STATUS": "PARTIAL_UNCLOSED_TRIGGER_GAPS",
         "H31_SHADOW_INVALID_EVENT_COUNT": 0,
         "H31_SHADOW_INVALID_EVENT_REASONS": [],
         "H31_SHADOW_ORIGINAL_EVENT_FILES_PRESERVED": true,
-        "H31_SHADOW_SESSIONS": 31,
+        "H31_SHADOW_SESSIONS": 32,
         "H31_SHADOW_SIMULATED_TRADES": 9,
         "H31_SHADOW_SIMULATED_TRADES_SEMANTICS": "TRIGGER_DECISIONS_NOT_CLOSED_RETURNS",
         "H31_SHADOW_TRIGGERED_SESSIONS": 9,
@@ -807,7 +807,7 @@
           "2026-09-22"
         ],
         "H31_SOURCE_BINDING_SCOPE": "SHADOW_ONLY_ZERO_CANONICAL_CREDIT",
-        "H31_TRIGGER_STATE": "TRIGGER",
+        "H31_TRIGGER_STATE": "NO_TRIGGER",
         "INTRADAY_SHADOW": true,
         "MT5_READ_ONLY": true,
         "NO_BACKFILL": true,
@@ -824,11 +824,11 @@
           "WIN": "WINZ26"
         },
         "schema": "gate_btc.b3.h31.intraday_shadow_status.v1",
-        "updated_at": "2026-10-23T11:39:38.428402-03:00"
+        "updated_at": "2026-10-26T11:39:46.021267-03:00"
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json",
-      "sha256": "c9eb8351c0fbb5da2b03c552733299f520098c99e25b64ff64d3d450f5de18fd"
+      "sha256": "55d8241e388c33c1eefb2c265ad0542a77ca6c9f3ac22d8adae5a907b352f521"
     },
     "h31_prospective": {
       "data": {
@@ -859,11 +859,11 @@
         "H1_ECONOMICS_READ": false,
         "H31_MT5_PARITY_OBSERVATIONS": 0,
         "H31_MT5_READY": false,
-        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 4,
+        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 0,
         "H31_PROSPECTIVE_STATUS": "ACTIVE_PROSPECTIVE",
         "H31_SHADOW_PAPER_STATUS": "ACTIVE",
-        "H31_SHADOW_SESSIONS": 4,
-        "H31_SHADOW_SIMULATED_TRADES": 2,
+        "H31_SHADOW_SESSIONS": 0,
+        "H31_SHADOW_SIMULATED_TRADES": 0,
         "NO_BACKFILL": true,
         "NO_RETUNE": true,
         "ORDERS": 0,
@@ -872,28 +872,28 @@
         "SHADOW_CREDIT_TO_CANONICAL": 0,
         "average_MAE_bps": null,
         "average_MFE_bps": null,
-        "cumulative_gross_bps": -7.923123978174075,
-        "cumulative_reference_net_bps": -11.923123978174075,
-        "cumulative_stress_net_bps": -13.923123978174075,
+        "cumulative_gross_bps": 0.0,
+        "cumulative_reference_net_bps": 0.0,
+        "cumulative_stress_net_bps": 0.0,
         "factory_feedback_allowed": false,
-        "gross_expectancy_bps": -3.9615619890870377,
-        "losses": 1,
-        "max_drawdown_bps": 36.652869690771084,
-        "metrics_sample_status": "ENOUGH_FOR_BASIC_DISPERSION",
-        "profit_factor": 0.6747014878025709,
-        "reference_net_expectancy_bps": -5.961561989087038,
+        "gross_expectancy_bps": null,
+        "losses": 0,
+        "max_drawdown_bps": null,
+        "metrics_sample_status": "NOT_ENOUGH_OBSERVATIONS",
+        "profit_factor": null,
+        "reference_net_expectancy_bps": null,
         "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-        "sessions_observed": 4,
-        "simulated_trades": 2,
-        "stress_net_expectancy_bps": -6.961561989087038,
-        "triggered_sessions": 2,
-        "volatility": 30.691307701684046,
-        "win_rate": 0.5,
-        "wins": 1
+        "sessions_observed": 0,
+        "simulated_trades": 0,
+        "stress_net_expectancy_bps": null,
+        "triggered_sessions": 0,
+        "volatility": null,
+        "win_rate": null,
+        "wins": 0
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
-      "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7"
+      "sha256": "0ec9e1db2dd66e01daf0e9c9475335a175ac3a73b6b0d4d7baef46b46024e7ee"
     },
     "lock25_50": {
       "data": {
@@ -9404,7 +9404,7 @@
         "family_validation_ci": "PASS_PR_673_HEAD_0B730E223013C050E56CA0DC9F314BDC9B743ECA",
         "funding_mark_price_source": "OKX_OFFICIAL_HISTORY_MARK_PRICE_CANDLES",
         "funding_source": "OKX_OFFICIAL_PUBLIC_FUNDING_RATE_HISTORY",
-        "last_orchestrator_run_utc": "2026-10-26T13:07:52.090178Z",
+        "last_orchestrator_run_utc": "2026-10-26T19:20:29.430353Z",
         "long_entry_source": "BINANCE_SPOT_USDT",
         "missed_cycles": [
           {
@@ -9488,7 +9488,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/v16b1/STATUS.json",
-      "sha256": "39ae45b13f8dcc9bd5fffd48a738510d519bf6b77f661133be108f869440c14b"
+      "sha256": "c0e4ba199deda010499413ec15370016de049be6724583705a8c3ab2a6e449e8"
     },
     "v16c": {
       "data": {
