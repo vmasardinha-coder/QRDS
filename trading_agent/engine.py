@@ -109,6 +109,12 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
         "note": decision["note"],
         "cash_weight": decision["cash_weight"],
     }
+    if name == "b3":
+        symbols = set(universe) | {config.B3_BENCHMARK, config.B3_REGIME_PROXY}
+        log_entry["market_data_evidence"] = {
+            symbol: dict(data_sources.B3_SERIES_EVIDENCE[symbol])
+            for symbol in sorted(symbols)
+            if symbol in data_sources.B3_SERIES_EVIDENCE}
     portfolio.log_decision(state, log_entry)
     return {"trades": trades, "decision": decision, "regime": regime,
             "regime_avaliado": decision.get("regime_avaliado", True),
@@ -316,6 +322,10 @@ def run_b3_structured(today: str) -> dict:
         "short_call": sc, "data_failures": [],
         "selected": [{"symbol": underlying, "weight": 1.0}],
         "rejected": [], "stops": [], "cooldowns": {}, "note": "",
+        "market_data_evidence": {
+            symbol: dict(data_sources.B3_SERIES_EVIDENCE[symbol])
+            for symbol in (underlying, config.B3_BENCHMARK)
+            if symbol in data_sources.B3_SERIES_EVIDENCE},
     }
     portfolio.log_decision(state, log_entry)
 
@@ -336,3 +346,4 @@ def run_b3_structured(today: str) -> dict:
 
 def today_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+

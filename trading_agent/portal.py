@@ -241,6 +241,8 @@ def _audit(log: dict) -> str:
     if log.get("sources"):
         tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
         itens.append(f"<li><strong>Fontes usadas:</strong> {_esc(tally)}</li>")
+    itens.extend(f"<li>{_esc(line)}</li>"
+                 for line in report.market_data_evidence_lines(log))
     for nome, info in sorted((log.get("source_failures") or {}).items()):
         itens.append(f"<li><strong>Fonte {_esc(nome)} falhou {info['n']}x:</strong> "
                      f"<code>{_esc(info['motivo'])}</code></li>")
@@ -530,4 +532,5 @@ def write_portal(date: str, results: dict[str, dict], errors: dict[str, str],
     path = reports_dir / LATEST_NAME
     path.write_text(content, encoding="utf-8")
     return path
+
 

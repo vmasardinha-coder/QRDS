@@ -157,6 +157,23 @@ def _trades_table(trades: list[dict], cur: str) -> list[str]:
     return lines + [""]
 
 
+def market_data_evidence_lines(log: dict) -> list[str]:
+    """Expose source dates and marks inside the existing audit details."""
+    evidence = log.get("market_data_evidence") or {}
+    if not evidence:
+        return []
+    lines = ["Evidencia das series B3 (somente auditoria):"]
+    for symbol, receipt in sorted(evidence.items()):
+        lines.append(
+            f"{symbol}: fonte {receipt.get('provider', 'N/D')}; "
+            f"fechamento {receipt.get('last_close', 'N/D')} em "
+            f"{receipt.get('last_market_date', 'N/D')}; "
+            f"{receipt.get('point_count', 0)} pontos; "
+            f"SHA256 {receipt.get('series_sha256', 'N/D')}; "
+            f"status {receipt.get('status', 'N/D')}")
+    return lines
+
+
 def _audit_block(log: dict) -> list[str]:
     """Rasto de decisao exigido pela secao 8 da Carta de Operacao."""
     if not log:
@@ -170,6 +187,7 @@ def _audit_block(log: dict) -> list[str]:
     if log.get("sources"):
         tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
         lines.append(f"- **Fontes usadas:** {tally}")
+    lines.extend("- " + line for line in market_data_evidence_lines(log))
     for name, info in sorted((log.get("source_failures") or {}).items()):
         lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
     # "esta fonte nao lista este ativo" nao e avaria: dizia-se "coinbase falhou
@@ -308,4 +326,5 @@ def write_report(date: str, content: str) -> Path:
     path.write_text(content, encoding="utf-8")
     LATEST_PATH.write_text(content, encoding="utf-8")
     return path
+
 
