@@ -8,6 +8,7 @@ estatistico com carencia, integridade de dado e log auditavel.
 from __future__ import annotations
 
 import json
+import copy
 import tempfile
 import urllib.error
 import unittest
@@ -2199,3 +2200,59 @@ class TestCotahistOctoberRecovery(unittest.TestCase):
                 cotahist._year_series(2026, {"PETR4"}, "2026-10-16")
             self.assertEqual(download.call_count, cotahist.TENTATIVAS)
             self.assertEqual(path.read_bytes(), before)
+
+
+
+class ReturnIntervalTests(unittest.TestCase):
+    def state(self, previous="2026-10-25", current="2026-10-27"):
+        entry = {"date": current, "nav": 49045.37, "benchmark_nav": 50302.45}
+        state = {"initial_capital": 50000, "inception_date": "2026-08-06",
+                 "currency": "BRL", "cash": 24510.40,
+                 "history": [{"date": previous, "nav": 56451.95}, entry]}
+        return state, entry
+
+    def test_gap_is_not_a_daily_return_in_markdown_or_html(self):
+        state, entry = self.state()
+        before = copy.deepcopy(state)
+        text = "\n".join(report._performance_table(state, entry, "IBOV", None, "-"))
+        self.assertIn("Retorno entre registros | -13.12%", text)
+        self.assertNotIn("Retorno do dia", text)
+        self.assertIn("2026-10-25 → 2026-10-27 (2 dia(s) corridos)", text)
+        card = portal._card("b3", {"state": state, "entry": entry,
+                                   "regime": "risk_off"}, "IBOV", None)
+        self.assertIn("Entre registros", card)
+        self.assertNotIn("<dt>No dia</dt>", card)
+        self.assertIn("2 dia(s) corridos", card)
+        self.assertEqual(state, before)
+
+    def test_consecutive_dates_keep_daily_label(self):
+        state, entry = self.state(previous="2026-10-26")
+        interval = report.return_interval(state, entry)
+        self.assertTrue(interval["daily"])
+        text = "\n".join(report._performance_table(state, entry, "IBOV", None, "-"))
+        self.assertIn("Retorno do dia", text)
+
+    def test_unappended_entry_and_duplicate_current_rows_use_prior_date(self):
+        state, entry = self.state()
+        expected = report.return_interval(state, entry)
+        state["history"].pop()
+        self.assertEqual(report.return_interval(state, entry), expected)
+        state["history"].extend([entry, entry])
+        self.assertEqual(report.return_interval(state, entry), expected)
+
+    def test_no_prior_date_does_not_fabricate_zero(self):
+        state, entry = self.state()
+        state["history"] = [entry]
+        self.assertIsNone(report.return_interval(state, entry)["return"])
+
+    def test_undated_marks_cannot_be_called_daily(self):
+        state, entry = self.state()
+        del state["history"][0]["date"]
+        self.assertIsNone(report.return_interval(state, entry)["return"])
+
+    def test_invalid_previous_nav_does_not_skip_to_older_valid_mark(self):
+        state, entry = self.state()
+        state["history"].insert(0, {"date": "2026-10-24", "nav": 50000})
+        state["history"][1]["nav"] = 0
+        self.assertIsNone(report.return_interval(state, entry)["return"])
+

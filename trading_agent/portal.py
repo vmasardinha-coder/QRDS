@@ -66,10 +66,8 @@ def _metrics(state: dict, entry: dict) -> dict:
     total_ret = nav / initial - 1.0
     bench_ret = entry["benchmark_nav"] / initial - 1.0
 
-    history = state.get("history", [])
-    day_ret = None
-    if len(history) >= 2 and history[-2]["nav"] > 0:
-        day_ret = nav / history[-2]["nav"] - 1.0
+    interval = report.return_interval(state, entry)
+    day_ret = interval["return"]
 
     harder_ret = bench_ret
     bench2_ret = None
@@ -78,7 +76,8 @@ def _metrics(state: dict, entry: dict) -> dict:
         if bench2_ret > bench_ret:
             harder_ret = bench2_ret
 
-    return {"nav": nav, "day_ret": day_ret, "total_ret": total_ret,
+    return {"nav": nav, "day_ret": day_ret, "return_interval": interval,
+            "total_ret": total_ret,
             "bench_ret": bench_ret, "bench2_ret": bench2_ret,
             "harder_ret": harder_ret, "alpha": total_ret - harder_ret}
 
@@ -150,7 +149,12 @@ def _card(key: str, result: dict, bench: str, bench2: str | None) -> str:
               f'<span class="p-card-vs">{_esc(rotulo_alfa)}</span></p>',
               '<dl class="p-card-rows">']
     if m["day_ret"] is not None:
-        linhas.append(f'<div><dt>No dia</dt><dd>{_esc(report._pct(m["day_ret"]))}</dd></div>')
+        interval = m["return_interval"]
+        label = "No dia" if interval["daily"] else "Entre registros"
+        linhas.append(f'<div><dt>{label}</dt><dd>{_esc(report._pct(m["day_ret"]))}</dd></div>')
+        observed = (f'{interval["start"]} → {interval["end"]} '
+                    f'({interval["calendar_days"]} dia(s) corridos)')
+        linhas.append(f'<div><dt>Intervalo observado</dt><dd>{_esc(observed)}</dd></div>')
     linhas.append('<div><dt>Desde o inicio</dt>'
                   f'<dd>{_esc(report._pct(m["total_ret"]))}</dd></div>')
     linhas.append(f'<div><dt>{_esc(alvo)}</dt>'
@@ -526,3 +530,4 @@ def write_portal(date: str, results: dict[str, dict], errors: dict[str, str],
     path = reports_dir / LATEST_NAME
     path.write_text(content, encoding="utf-8")
     return path
+
