@@ -8,6 +8,7 @@ rejeitado e porque, e o estado do filtro de regime no momento.
 from __future__ import annotations
 
 import math
+from datetime import date
 from pathlib import Path
 
 from . import config
@@ -39,6 +40,35 @@ def _price(value: float, cur: str) -> str:
     return f"{symbol}{value:.{decimals}f}"
 
 
+def return_interval(state: dict, entry: dict) -> dict:
+    """Describe the observed NAV interval without inventing missing daily marks."""
+    history = state.get("history", [])
+    current_date = entry.get("date")
+    result = {"return": None, "start": None, "end": current_date,
+              "calendar_days": None, "daily": False}
+    try:
+        end = date.fromisoformat(current_date)
+    except (TypeError, ValueError):
+        return result
+    # Select by date rather than list position: the current entry can already
+    # be appended, or the caller can supply it separately.
+    for previous in reversed(history):
+        try:
+            start = date.fromisoformat(previous.get("date"))
+            nav = float(previous["nav"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        if start >= end:
+            continue
+        if not math.isfinite(nav) or nav <= 0:
+            return result
+        days = (end - start).days
+        return {"return": entry["nav"] / nav - 1.0,
+                "start": start.isoformat(), "end": end.isoformat(),
+                "calendar_days": days, "daily": days == 1}
+    return result
+
+
 def _performance_table(state: dict, entry: dict, benchmark_name: str,
                        benchmark2_name: str | None, regime: str,
                        regime_avaliado: bool = True,
@@ -50,15 +80,16 @@ def _performance_table(state: dict, entry: dict, benchmark_name: str,
     total_ret = nav_now / initial - 1.0
     bench_ret = entry["benchmark_nav"] / initial - 1.0
 
-    history = state["history"]
-    day_ret = None
-    if len(history) >= 2 and history[-2]["nav"] > 0:
-        day_ret = nav_now / history[-2]["nav"] - 1.0
+    interval = return_interval(state, entry)
 
     lines = ["| Indicador | Valor |", "|---|---|",
              f"| NAV | {_money(nav_now, cur)} |"]
-    if day_ret is not None:
-        lines.append(f"| Retorno do dia | {_pct(day_ret)} |")
+    if interval["return"] is not None:
+        label = ("Retorno do dia" if interval["daily"]
+                 else "Retorno entre registros")
+        lines.append(f"| {label} | {_pct(interval['return'])} |")
+        lines.append(f"| Intervalo observado | {interval['start']} → "
+                     f"{interval['end']} ({interval['calendar_days']} dia(s) corridos) |")
     lines.append(f"| Retorno desde inicio ({state['inception_date']}) | {_pct(total_ret)} |")
     lines.append(f"| Benchmark {benchmark_name} | {_pct(bench_ret)} |")
 
@@ -277,3 +308,4 @@ def write_report(date: str, content: str) -> Path:
     path.write_text(content, encoding="utf-8")
     LATEST_PATH.write_text(content, encoding="utf-8")
     return path
+
