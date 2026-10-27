@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tools/gate_btc_momentum_m3_economics.py
       - tools/gate_btc_momentum_m3_persistence.py
       - tools/gate_btc_momentum_required_prices.py
@@ -28,6 +30,8 @@ on:
   push:
     branches: [main]
     paths:
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tools/gate_btc_momentum_m3_economics.py
       - tools/gate_btc_momentum_m3_persistence.py
       - tools/gate_btc_momentum_required_prices.py
@@ -61,4 +65,5 @@ jobs:
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_governed_bars.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_source_readiness.py -v
       - run: python -m unittest discover -s tests -p test_gate_btc_system13_native_capture.py -v
+
 
