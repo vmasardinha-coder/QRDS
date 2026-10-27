@@ -128,6 +128,12 @@ ROUTES['AKT'] = {'coin_id':'akash-network','name':'Akash Network',
     'issuer_identity_evidence':'https://akash.network/token/'}
 
 
+# Exact Solana pool already bound in the source registry; only future cutoffs
+# may use the newly verified 200-day paginated history.
+ROUTES['USX'] = {'coin_id': 'usx', 'name': 'USX Stablecoin',
+                 'source': 'geckoterminal_exact_usx_pool', 'pair': 'USX-USDC',
+                 'effective_cutoff': '2026-10-27'}
+
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
         raise ValueError("invalid qualified source cutoff")
@@ -518,6 +524,9 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     provider,pair = route["source"],route["pair"]
     if provider == 'figure_hash_native_reconciled_tape':
         from tools.gate_btc_hash_settlement_history import collect
+        return collect(session,cutoff,evidence_dir,now=now)
+    if provider == 'geckoterminal_exact_usx_pool':
+        from tools.gate_btc_usx_pool_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
     if provider == 'blockscout_eth_reusd_swaps':
         from tools.gate_btc_reusd_swap_history import collect
