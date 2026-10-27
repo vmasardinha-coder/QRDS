@@ -5,7 +5,7 @@
       "first_eligible_signal_date": "2026-10-31",
       "freshness": "CURRENT_CALENDAR_GATED",
       "snapshot_count": 5,
-      "source": "ledgers\\alt_trail40_10\\STATUS.json",
+      "source": "ledgers/alt_trail40_10/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
     },
     "b3_h1": {
@@ -13,8 +13,8 @@
       "canonical_checkpoint_count": 18,
       "counter_scope": "CANONICAL_CHECKPOINT",
       "economics_locked": true,
-      "expected_session_weekday_proxy": "2026-10-23",
-      "freshness": "FRESH",
+      "expected_session_weekday_proxy": "2026-10-26",
+      "freshness": "STALE",
       "latest_valid_date": "2026-10-23",
       "remaining": 2,
       "source": "ledgers/b3_h1/CANONICAL_STATUS.json",
@@ -27,15 +27,15 @@
       "anchor_date": "2026-10-09",
       "can_append": false,
       "collection_health_hint": "GREEN_ACTIVE",
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "engine_feed": false,
-      "expected_source_data_as_of": "2026-10-26",
+      "expected_source_data_as_of": "2026-10-27",
       "first_return_date": "2026-10-10",
       "formal_prospective_evidence": false,
       "freshness": "CURRENT_CALENDAR_GATED",
       "inherited_scientific_credit": 0,
       "not_approved": true,
-      "observed_days": 16,
+      "observed_days": 17,
       "orders_generated": 0,
       "original_last_observation_date": "2026-09-08",
       "original_observed_days_preserved": 26,
@@ -48,7 +48,7 @@
       "shadow_only": true,
       "source": "ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
       "status": "WAITING_NEXT_DAILY_CLOSE",
-      "updated_at_utc": "2026-10-26T05:18:39.971254+00:00"
+      "updated_at_utc": "2026-10-27T05:43:20.841059+00:00"
     },
     "d100": {
       "anchor_bar_date": "2026-09-29",
@@ -91,16 +91,16 @@
       "target": 120
     },
     "daily_delivery_pointer": {
-      "data_cutoff": "2026-10-25",
+      "data_cutoff": "2026-10-26",
       "expected_data_cutoff": "2026-10-26",
-      "freshness": "STALE",
-      "lag_days": 1,
+      "freshness": "FRESH",
+      "lag_days": 0,
       "source": "runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
-      "status": "LATE_MISSING_OR_INVALID"
+      "status": "CURRENT"
     },
     "delta": {
       "freshness": "FRESH",
-      "observations": 164,
+      "observations": 165,
       "source": "runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "status": "ACTIVE",
       "targets": [
@@ -109,27 +109,27 @@
       ]
     },
     "delta_paper_monitor": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "freshness": "FRESH",
       "hypothesis_label": "DELTA_RECONSTRUCTION_BEST_AVAILABLE_HYPOTHESIS",
       "leaderboard_descriptive_only": true,
-      "observed_days": 73,
+      "observed_days": 74,
       "official_replica_claim": false,
       "source": "ledgers/delta_paper_monitor/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "gateway": {
       "freshness": "FRESH",
-      "latest_source_data_as_of": "2026-10-26",
+      "latest_source_data_as_of": "2026-10-27",
       "source": "runtime/ledgers/gateway_dynamics/STATUS.json",
       "status": "ACTIVE",
       "target": 80,
-      "valid_snapshot_count": 79
+      "valid_snapshot_count": 80
     },
     "lock25_50": {
       "first_eligible_close": "2026-09-30",
       "freshness": "FRESH",
-      "latest_snapshot_id": "2026-10-25",
+      "latest_snapshot_id": "2026-10-26",
       "retroactive_fill_prohibited_dates": [
         "2026-08-09",
         "2026-08-10",
@@ -143,7 +143,7 @@
       ],
       "source": "runtime/ledgers/lock25_50/STATUS.json",
       "status": "ACTIVE",
-      "valid_snapshot_count": 26
+      "valid_snapshot_count": 27
     },
     "momentum_m1_m2": {
       "collection_health_hint": "GREEN_CLOSED",
@@ -156,7 +156,7 @@
         "M2_TOP10": 1.0033364399022817
       },
       "economic_status": "CLOSED_RULE_VERSION_SUPERSEDED",
-      "economics_source": "ledgers\\momentum_m1_m2_economics\\epochs\\hold_20260928\\DELIVERY_STATUS.json",
+      "economics_source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "first_eligible_economic_cutoff": "2026-09-28",
       "freshness": "FRESH",
       "last_economic_cutoff": "2026-10-19",
@@ -563,7 +563,7 @@
       "first_eligible_signal_date": "2026-10-31",
       "freshness": "CURRENT_CALENDAR_GATED",
       "snapshot_count": 5,
-      "source": "ledgers\\prl50_position\\STATUS.json",
+      "source": "ledgers/prl50_position/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
     },
     "qos_monthly": {
@@ -605,7 +605,7 @@
       "shadow_only": true,
       "source": "ledgers/qos_three_track/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END",
-      "updated_at_utc": "2026-10-27T00:07:19.986684+00:00"
+      "updated_at_utc": "2026-10-27T05:43:47.566297+00:00"
     },
     "system12": {
       "adjudication_decision": "PASS",
@@ -630,12 +630,12 @@
       "scientific_credit": 0,
       "source": "gate_btc_2/system12/READINESS.json",
       "source_sha256": {
-        "contract": "021bf701d59fb58a2bca93a71ea4e90eb020bcb38cdadb6582fa619540116aa8",
-        "frozen_contract_authority": "021bf701d59fb58a2bca93a71ea4e90eb020bcb38cdadb6582fa619540116aa8",
-        "implementation": "40fff7ef26ba9d07e362fceb85403642b72761bf116957272e8ee9add7ff22a7",
+        "contract": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a",
+        "frozen_contract_authority": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a",
+        "implementation": "bc0c36fcc70936c2460ef408b69dc2de4557590463ca3e8bb8b7d157124ae6fa",
         "pinned_adjudication": "80ac1a7bb0e2ccf416f2e586fd7fb748ba2712bf368566759d3e6bf098357490",
-        "post_review_release": "9c3db8b4f7467f260f9e825459308eb853f69beb2e3b2a8cb1d5d011dfe01a4f",
-        "readiness": "c46390fc7fbd4b0df54ebc724117f81cbb8070e8fbb610c2e4f78ed975251f3b"
+        "post_review_release": "222108980ba9aa792dfa4ac44b08053b10c32c9e9aefde5c9e6ea8af5aca5d82",
+        "readiness": "1f1f575f652aff491ebfd447661b955e4dbb20eacfdcd9bbe72445825afb15e2"
       },
       "status": "SYSTEM12_FROZEN_PARITY_COMPLETE_SYSTEM13_RESEARCH_DEPENDENCY_RELEASED",
       "system12_complete": true,
@@ -655,7 +655,7 @@
         "utc_weekday_coverage": true
       },
       "collection_health_hint": "GREEN_GATE_PASSED",
-      "current_N": 478,
+      "current_N": 479,
       "distinct_utc_hours": 24,
       "distinct_utc_weekdays": 7,
       "economics_allowed": false,
@@ -721,7 +721,7 @@
         "orders_generated": 0,
         "real_capital_used": 0,
         "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-        "sha256": "9118d3de7d607db228e113cf4df8846bfe56f496c11e215957ac97a655ae0974",
+        "sha256": "72601d065c6556ee8c7174a8f2eeef5d1873c964d76c2019ac624f6fb3d3c322",
         "snapshot_count": 5,
         "source": "ledgers/alt_trail40_10/STATUS.json",
         "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -734,7 +734,7 @@
         "ledger_id": "b3_h1",
         "remaining": 2,
         "schema": "qrds.h1.canonical_runtime.v1",
-        "sha256": "12adb4c558b3438f6ec173bcd9688febfc54f5979e993d8397aa31b1cc9724db",
+        "sha256": "5f005ce476514ca14218e3b8d5d0c76cab87b444d1cc7faf3549be173ec64cda",
         "source": "ledgers/b3_h1/CANONICAL_STATUS.json",
         "status": "H1_18_OF_20_CANONICAL",
         "status_authority_file": "CANONICAL_STATUS.json",
@@ -748,7 +748,7 @@
         "inventory_only": true,
         "ledger_id": "b3_h1_inspired_challengers",
         "schema": "qrds.h1_inspired_challenger_shadow_status.v1",
-        "sha256": "2b3b4818474e9fc37c9e584e4af545521e9f246e8833c8ab041689cdbc260d19",
+        "sha256": "2c234174aa2d11e3629807b4774edf48f093806b9c35c2161ccb877291e97847",
         "source": "ledgers/b3_h1_inspired_challengers/STATUS.json",
         "status": "UNKNOWN"
       },
@@ -758,7 +758,7 @@
         "inventory_only": true,
         "ledger_id": "b3_h31_prospective",
         "schema": "gate_btc.b3.h31.prospective_status.v2",
-        "sha256": "b5ca7da6ba6a4a297081583ed39afdbb79a4122dd7c9edd53fc1238fdfb23546",
+        "sha256": "7ac444a10af60950b0b9174877c7e74b143b17e6a6f7875fb687b09014d49953",
         "source": "ledgers/b3_h31_prospective/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE"
       },
@@ -767,7 +767,7 @@
         "inventory_only": true,
         "ledger_id": "b3_h31_shadow_paper",
         "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-        "sha256": "1a92ea36a774a0e1a577821f7986c758e14c8bcb76669f0eecfe7f2aea1fb6f3",
+        "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7",
         "source": "ledgers/b3_h31_shadow_paper/STATUS.json",
         "status": "UNKNOWN"
       },
@@ -779,20 +779,20 @@
         "orders_generated": 0,
         "real_capital_used": 0,
         "schema": "gate_btc.b3.win_wdo_univariate.status.v1",
-        "sha256": "4cd9c9a1c17aa9a7dd76bcefb18a595b301a41887777ab55d1a9fcd355e21ed4",
+        "sha256": "abfb0055f0dbc8b676f36a1c7c1862ab8de0c8ab3b3fcf50fd68ce1cd8f9dc91",
         "source": "ledgers/b3_win_wdo_univariate/STATUS.json",
         "status": "SOURCE_GREEN_PROSPECTIVE_ONLY_ECONOMICS_BLOCKED"
       },
       "bull_replay_live_shadow": {
-        "data_as_of": "2026-10-25",
+        "data_as_of": "2026-10-26",
         "health_authority": false,
         "inventory_only": true,
         "ledger_id": "bull_replay_live_shadow",
-        "observed_days": 16,
+        "observed_days": 17,
         "orders_generated": 0,
         "real_capital_used": 0,
         "schema": "gate_btc.bull_replay_live_shadow.status.v1",
-        "sha256": "341a425316dbcb3d6a000f814569dc3a9e5500c941c99fadc5976f5183ee10ac",
+        "sha256": "280e28321f80c5d1d388443ff9cf0ef87d3687d646ff24aab9aee5ff01aa0da8",
         "source": "ledgers/bull_replay_live_shadow/epochs/independent_20261009/STATUS.json",
         "status": "LIVE_DIAGNOSTIC_ACTIVE",
         "status_authority_file": "STATUS.json",
@@ -818,7 +818,7 @@
         "scientific_blockers": [],
         "scientific_observations_credited": 0,
         "scientific_target": null,
-        "sha256": "539df1e9df8015ef1479875e1db0cabaea626edf767da5bdc42f225270f6eb2b",
+        "sha256": "fa5621fecbfce5dfd8505961886b788e7a6533bf53aca184cd0b638aa4892f20",
         "source": "ledgers/d100/STATUS.json",
         "status": "ACTIVE_PHYSICAL_DATA_FEED"
       },
@@ -831,28 +831,28 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.d50_measurement_status.v1",
-        "sha256": "71506dea050391865c6fd7d1d980f4209c7f2ff73013a17d89b68df491bcf4e1",
+        "sha256": "1a565ba032fdf8a7fcb8e4777a80d7681a0f4b81749dff317a345debe7c361a7",
         "source": "ledgers/d50/STATUS.json",
         "status": "UNKNOWN"
       },
       "delta_paper_monitor": {
-        "data_as_of": "2026-10-25",
+        "data_as_of": "2026-10-26",
         "engine_feed": false,
         "health_authority": false,
         "inventory_only": true,
         "ledger_id": "delta_paper_monitor",
-        "observed_days": 73,
+        "observed_days": 74,
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.delta_paper_monitor.v1",
-        "sha256": "9319fdd1393e2157b7fda504b595b8c119d95cf1178dba099422f004e44553d6",
+        "sha256": "ef791bcc06c12b620c8a7fad27c095d5a0981d3b7bb91920cdc391ee6b64ed02",
         "source": "ledgers/delta_paper_monitor/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
       },
       "delta_v12_engine": {
         "closure_date": "2026-09-22",
-        "closure_sha256": "0a532197b6ba26fd615371bf596e5d57b18f9611432ab3821aa30644002f927f",
+        "closure_sha256": "faae9af396c2ae5e752a81069c48cbe1324a40541b09cf697d7f2a8a75cc9631",
         "closure_source": "migration/reporting/delta_v12_engine_closure.json",
         "data_as_of": "2026-09-19",
         "engine_feed": false,
@@ -867,7 +867,7 @@
         "reporting_disposition": "DESCRIPTIVE_ONLY_AND_NOW_FROZEN",
         "schema": "gate_btc.delta_v12_engine.v1",
         "scientific_credit": 0,
-        "sha256": "84d5a8e03fa198d59cb08dcb6080a4840fcbb1e5eaa7757a162b263db8a410a4",
+        "sha256": "bf2e2958ff546f1f5b0ba2adbdf004b17c9acf2922f4d8381561b63db0619af6",
         "source": "ledgers/delta_v12_engine/STATUS.json",
         "status": "CLOSED_NO_FURTHER_OBSERVATIONS_POSSIBLE",
         "status_authority_file": "STATUS.json",
@@ -890,7 +890,7 @@
         "inventory_only": true,
         "ledger_id": "delta_v12_prices",
         "schema": "gate_btc.delta_v12_multi_venue_daily_prices.v1",
-        "sha256": "98662c9d3853618ca91423539ec2fb25ada7f5f9d8c6fb218f4a637b4caa20a5",
+        "sha256": "c907ed8249a6db6506ea11bbf7b1a2a3047f10239be9338a0a5a242d6cf079f7",
         "source": "ledgers/delta_v12_prices/COVERAGE.json",
         "status": "NO_CANONICAL_STATUS_FIELD",
         "status_authority_file": "COVERAGE.json",
@@ -902,48 +902,48 @@
         ]
       },
       "delta_v13_engine": {
-        "data_as_of": "2026-10-25",
+        "data_as_of": "2026-10-26",
         "engine_feed": false,
         "health_authority": false,
         "inventory_only": true,
         "ledger_id": "delta_v13_engine",
-        "observed_days": 32,
+        "observed_days": 33,
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.delta_v12_engine.v1",
-        "sha256": "7bfd44c8424767f639952d5d2e21ba1365b5eb90923e842c610a49eee8e86fb0",
+        "sha256": "e5624fd6a80232fd63def1d1afc06a643081ca6365b0f19c02a4427a1b7a20d5",
         "source": "ledgers/delta_v13_engine/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_SHADOW"
       },
       "gateway_dynamics": {
         "health_authority": false,
         "inventory_only": true,
-        "latest_snapshot_id": "2026-10-26",
-        "latest_source_data_as_of": "2026-10-26",
+        "latest_snapshot_id": "2026-10-27",
+        "latest_source_data_as_of": "2026-10-27",
         "ledger_id": "gateway_dynamics",
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
-        "sha256": "ff0360f31b8a9281c9139a2839d7ba9ed07b2a7df7ee4b3617acfaaeabb8fce5",
+        "sha256": "81b5e690d42d33700e8323ec39040fdf7f6c9a2541f4736e49d89e6e56cc5f90",
         "source": "ledgers/gateway_dynamics/STATUS.json",
         "status": "ACTIVE",
-        "valid_snapshot_count": 79
+        "valid_snapshot_count": 80
       },
       "lock25_50": {
         "health_authority": false,
         "inventory_only": true,
-        "latest_snapshot_id": "2026-10-25",
+        "latest_snapshot_id": "2026-10-26",
         "ledger_id": "lock25_50",
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.lock25_50_ledger_status.v2",
-        "sha256": "0da3b06258003e07c524ae052319c82fdcc55f50398efa6dcb505bb902e13ea5",
+        "sha256": "d024825cb1848c5ce4dc5864ea8d07c488142f820b9ae3addb12ea79b6e0a070",
         "source": "ledgers/lock25_50/STATUS.json",
         "status": "ACTIVE",
-        "valid_snapshot_count": 26
+        "valid_snapshot_count": 27
       },
       "momentum_canonical_net": {
         "health_authority": false,
@@ -978,7 +978,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.momentum_m1_m2.status.v1",
-        "sha256": "2fe5abf30be95a789cfc6c7a4139245effa392008c02c611d558aa32ed276b79",
+        "sha256": "50c957e6efe8ec11ef4c4eedbaf61056135e0a333163342ed1cf0dbc6f80a55d",
         "source": "ledgers/momentum_m1_m2/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_SHADOW"
       },
@@ -993,7 +993,7 @@
         "promotion_allowed": false,
         "return_observations": 20,
         "schema": "gate_btc.momentum_hold_status.v1",
-        "sha256": "28b482493a8a0cda6b4c426557219b75cb8aec61da62a775898615d15f688a35",
+        "sha256": "d6c95feb21c8188c5c600a6c4ddfa880dfeef4a411dac4154fc4e368c9cac63e",
         "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
         "status": "CLOSED_RULE_VERSION_SUPERSEDED",
         "status_authority_file": "ECONOMICS_STATUS.json",
@@ -1015,7 +1015,7 @@
         "ledger_id": "momentum_m3",
         "observed_snapshots": 41,
         "schema": "gate_btc.momentum_m3.status.v1",
-        "sha256": "33ef3d03a80283fccf0f047f61890bf4045a8f36808865fae3828c37d3046dfd",
+        "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
         "source": "ledgers/momentum_m3/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
       },
@@ -1030,7 +1030,7 @@
         "promotion_allowed": false,
         "return_observations": 12,
         "schema": "gate_btc.momentum_m3_economics_status.v1",
-        "sha256": "abdd478d72c4b25214c0fc29c1eee7dfd088805ce72ea4e64feca0a471969271",
+        "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
         "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
         "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
         "status_authority_file": "STATUS.json",
@@ -1050,7 +1050,7 @@
         "ledger_id": "momentum_tradable_v1",
         "promotion_allowed": false,
         "schema": "gate_btc.momentum_tradable_status.v1",
-        "sha256": "1e8834c88cbb6632e7d08b0ddf348c5b72b1d2b00dbae0bd233e48eef12d98a9",
+        "sha256": "e4f9263468aadc736e1910f420fbeb28e7d17f65156bdb25d5fdf41e4c736827",
         "source": "ledgers/momentum_tradable_v1/STATUS.json",
         "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
       },
@@ -1063,7 +1063,7 @@
         "orders_generated": 0,
         "real_capital_used": 0,
         "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-        "sha256": "53b89a88c8b8d1589e96f425ac59be367f00daf7d48f3029a6372013edf421e8",
+        "sha256": "12cc055b550afbf1c5bc603a44800037b1fbb40347a5b0badf7d9caebb2cf591",
         "snapshot_count": 5,
         "source": "ledgers/prl50_position/STATUS.json",
         "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -1077,7 +1077,7 @@
         "orders_generated": 0,
         "real_capital_used": 0,
         "schema": "gate_btc.qos_covered_delivery.v1",
-        "sha256": "d3e90ab2d59edc7c26e5e52298c72552630cf25fa531e465614fcdc6178cc673",
+        "sha256": "d238062a82ad50416cf0c09eb4eff9e4779c35847005c8ed6cf6fc2053561f49",
         "source": "ledgers/qos_three_track/STATUS.json",
         "status": "WAITING_NEXT_APPROVED_MONTH_END"
       },
@@ -1086,7 +1086,7 @@
         "inventory_only": true,
         "ledger_id": "v16_family",
         "schema": "gate_btc.v16_family.status.v1",
-        "sha256": "771c1261fa109ae97ffd879c1cfd44f8882d66baf6d42653cb6725053e5e07a0",
+        "sha256": "6a2e19caf1fb395180c414768ce8fbbcbf5cee6b336e12b21e8ae443985d3c28",
         "source": "ledgers/v16_family/STATUS.json",
         "status": "DEFINITION_COMPLETE_PROSPECTIVE_EVIDENCE_PENDING"
       },
@@ -1101,7 +1101,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b.status.v1",
-        "sha256": "a2f8d34c69fb01abee40dada351871a0ee81a522399b52b37e4d396005da31fa",
+        "sha256": "96cbcc0287cd8ba64bc7df42d42f63c5d04fbf1f6c27cdd74702d94e7e57de9e",
         "source": "ledgers/v16b/STATUS.json",
         "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
       },
@@ -1116,7 +1116,7 @@
         "promotion_allowed": false,
         "real_capital_used": 0,
         "schema": "gate_btc.v16b1.status.v1",
-        "sha256": "5f75674e3e86c4a715626729725efc0b6cc13d8ae845d5df3e353e3c2287e7cd",
+        "sha256": "7827bd34d87599f97644cdaa3bc63161225b036a7dbfc2fb94c1766ab0de3e49",
         "source": "ledgers/v16b1/STATUS.json",
         "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
       },
@@ -1126,7 +1126,7 @@
         "inventory_only": true,
         "ledger_id": "v16c",
         "schema": "gate_btc.v16c.status.v1",
-        "sha256": "89dfedfa3db062f520fd084f192f8849047f9d18fa61c6b7da9d4b8174501162",
+        "sha256": "181f83b8815b9822d242ddb395e45eb8b103729f578614a6a9cc11ddfb418d91",
         "source": "ledgers/v16c/STATUS.json",
         "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
       },
@@ -1136,7 +1136,7 @@
         "inventory_only": true,
         "ledger_id": "v16d",
         "schema": "gate_btc.v16d.status.v1",
-        "sha256": "560cd313c645ec7369adcc59553326b59c4fe08ffc59429fd84cd08f8616edc9",
+        "sha256": "2d1531eba575e2c822de97e1e51678d399e844ce3dc5d1f6b92a44ab7fa244e4",
         "source": "ledgers/v16d/STATUS.json",
         "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
       },
@@ -1145,7 +1145,7 @@
         "inventory_only": true,
         "ledger_id": "v16e",
         "schema": "gate_btc.v16e.status.v1",
-        "sha256": "a139ec5c76b198dfb17637caccd5ff299ac0e9b63691508691d568d474273f23",
+        "sha256": "cbbbe3f86fda771b34618d08145dc3799dabd0cadef8ba6058376b53572c145b",
         "source": "ledgers/v16e/STATUS.json",
         "status": "FROZEN_DECISION_CONTRACT_WAIT_52_PAIRED_CYCLES"
       }
@@ -1161,8 +1161,8 @@
         "inventory_only": true,
         "orders_generated": 0,
         "real_capital_used": 0,
-        "requirements_sha256": "0e8f062c9e06af38df04d4d2c32dcd8a6455863bec1cb0d4f5305ab8d491c9da",
-        "requirements_source": "C:\\actions-runner\\qrds-local-shadow\\code_canonical\\tools\\gate_btc_executive_reporting_requirements.json",
+        "requirements_sha256": "682d31727fa2cb9c3f0fd87b4c4f63aea6b27ebfc7e3a450f34894e279324151",
+        "requirements_source": "main_repo/tools/gate_btc_executive_reporting_requirements.json",
         "scientific_authority": false,
         "scientific_status": "NOT_INFERRED",
         "source_authority": "OPERATOR_REPORTING_REQUIREMENT",
@@ -1221,7 +1221,7 @@
     "daily_pointer_rule": "The latest eligible daily pointer must reach the most recent completed UTC close (reporting date minus one day).",
     "rule": "Never silently promote a stale counter to current. Preserve raw stale values only as audit metadata."
   },
-  "generated_at_utc": "2026-10-27T01:27:21.149077+00:00",
+  "generated_at_utc": "2026-10-27T09:19:21.874806+00:00",
   "inventory_summary": {
     "complete_directory_enumeration": true,
     "component_count": 19,
@@ -1315,7 +1315,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "9118d3de7d607db228e113cf4df8846bfe56f496c11e215957ac97a655ae0974",
+      "sha256": "72601d065c6556ee8c7174a8f2eeef5d1873c964d76c2019ac624f6fb3d3c322",
       "snapshot_count": 5,
       "source": "ledgers/alt_trail40_10/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -1328,7 +1328,7 @@
       "ledger_id": "b3_h1",
       "remaining": 2,
       "schema": "qrds.h1.canonical_runtime.v1",
-      "sha256": "12adb4c558b3438f6ec173bcd9688febfc54f5979e993d8397aa31b1cc9724db",
+      "sha256": "5f005ce476514ca14218e3b8d5d0c76cab87b444d1cc7faf3549be173ec64cda",
       "source": "ledgers/b3_h1/CANONICAL_STATUS.json",
       "status": "H1_18_OF_20_CANONICAL",
       "status_authority_file": "CANONICAL_STATUS.json",
@@ -1342,7 +1342,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h1_inspired_challengers",
       "schema": "qrds.h1_inspired_challenger_shadow_status.v1",
-      "sha256": "2b3b4818474e9fc37c9e584e4af545521e9f246e8833c8ab041689cdbc260d19",
+      "sha256": "2c234174aa2d11e3629807b4774edf48f093806b9c35c2161ccb877291e97847",
       "source": "ledgers/b3_h1_inspired_challengers/STATUS.json",
       "status": "UNKNOWN"
     },
@@ -1352,7 +1352,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h31_prospective",
       "schema": "gate_btc.b3.h31.prospective_status.v2",
-      "sha256": "b5ca7da6ba6a4a297081583ed39afdbb79a4122dd7c9edd53fc1238fdfb23546",
+      "sha256": "7ac444a10af60950b0b9174877c7e74b143b17e6a6f7875fb687b09014d49953",
       "source": "ledgers/b3_h31_prospective/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE"
     },
@@ -1361,7 +1361,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h31_shadow_paper",
       "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-      "sha256": "1a92ea36a774a0e1a577821f7986c758e14c8bcb76669f0eecfe7f2aea1fb6f3",
+      "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7",
       "source": "ledgers/b3_h31_shadow_paper/STATUS.json",
       "status": "UNKNOWN"
     },
@@ -1373,20 +1373,20 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.b3.win_wdo_univariate.status.v1",
-      "sha256": "4cd9c9a1c17aa9a7dd76bcefb18a595b301a41887777ab55d1a9fcd355e21ed4",
+      "sha256": "abfb0055f0dbc8b676f36a1c7c1862ab8de0c8ab3b3fcf50fd68ce1cd8f9dc91",
       "source": "ledgers/b3_win_wdo_univariate/STATUS.json",
       "status": "SOURCE_GREEN_PROSPECTIVE_ONLY_ECONOMICS_BLOCKED"
     },
     "bull_replay_live_shadow": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "bull_replay_live_shadow",
-      "observed_days": 16,
+      "observed_days": 17,
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.bull_replay_live_shadow.status.v1",
-      "sha256": "341a425316dbcb3d6a000f814569dc3a9e5500c941c99fadc5976f5183ee10ac",
+      "sha256": "280e28321f80c5d1d388443ff9cf0ef87d3687d646ff24aab9aee5ff01aa0da8",
       "source": "ledgers/bull_replay_live_shadow/epochs/independent_20261009/STATUS.json",
       "status": "LIVE_DIAGNOSTIC_ACTIVE",
       "status_authority_file": "STATUS.json",
@@ -1412,7 +1412,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "539df1e9df8015ef1479875e1db0cabaea626edf767da5bdc42f225270f6eb2b",
+      "sha256": "fa5621fecbfce5dfd8505961886b788e7a6533bf53aca184cd0b638aa4892f20",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
@@ -1425,28 +1425,28 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.d50_measurement_status.v1",
-      "sha256": "71506dea050391865c6fd7d1d980f4209c7f2ff73013a17d89b68df491bcf4e1",
+      "sha256": "1a565ba032fdf8a7fcb8e4777a80d7681a0f4b81749dff317a345debe7c361a7",
       "source": "ledgers/d50/STATUS.json",
       "status": "UNKNOWN"
     },
     "delta_paper_monitor": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "delta_paper_monitor",
-      "observed_days": 73,
+      "observed_days": 74,
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.delta_paper_monitor.v1",
-      "sha256": "9319fdd1393e2157b7fda504b595b8c119d95cf1178dba099422f004e44553d6",
+      "sha256": "ef791bcc06c12b620c8a7fad27c095d5a0981d3b7bb91920cdc391ee6b64ed02",
       "source": "ledgers/delta_paper_monitor/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "delta_v12_engine": {
       "closure_date": "2026-09-22",
-      "closure_sha256": "0a532197b6ba26fd615371bf596e5d57b18f9611432ab3821aa30644002f927f",
+      "closure_sha256": "faae9af396c2ae5e752a81069c48cbe1324a40541b09cf697d7f2a8a75cc9631",
       "closure_source": "migration/reporting/delta_v12_engine_closure.json",
       "data_as_of": "2026-09-19",
       "engine_feed": false,
@@ -1461,7 +1461,7 @@
       "reporting_disposition": "DESCRIPTIVE_ONLY_AND_NOW_FROZEN",
       "schema": "gate_btc.delta_v12_engine.v1",
       "scientific_credit": 0,
-      "sha256": "84d5a8e03fa198d59cb08dcb6080a4840fcbb1e5eaa7757a162b263db8a410a4",
+      "sha256": "bf2e2958ff546f1f5b0ba2adbdf004b17c9acf2922f4d8381561b63db0619af6",
       "source": "ledgers/delta_v12_engine/STATUS.json",
       "status": "CLOSED_NO_FURTHER_OBSERVATIONS_POSSIBLE",
       "status_authority_file": "STATUS.json",
@@ -1484,7 +1484,7 @@
       "inventory_only": true,
       "ledger_id": "delta_v12_prices",
       "schema": "gate_btc.delta_v12_multi_venue_daily_prices.v1",
-      "sha256": "98662c9d3853618ca91423539ec2fb25ada7f5f9d8c6fb218f4a637b4caa20a5",
+      "sha256": "c907ed8249a6db6506ea11bbf7b1a2a3047f10239be9338a0a5a242d6cf079f7",
       "source": "ledgers/delta_v12_prices/COVERAGE.json",
       "status": "NO_CANONICAL_STATUS_FIELD",
       "status_authority_file": "COVERAGE.json",
@@ -1496,48 +1496,48 @@
       ]
     },
     "delta_v13_engine": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "delta_v13_engine",
-      "observed_days": 32,
+      "observed_days": 33,
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.delta_v12_engine.v1",
-      "sha256": "7bfd44c8424767f639952d5d2e21ba1365b5eb90923e842c610a49eee8e86fb0",
+      "sha256": "e5624fd6a80232fd63def1d1afc06a643081ca6365b0f19c02a4427a1b7a20d5",
       "source": "ledgers/delta_v13_engine/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
     "gateway_dynamics": {
       "health_authority": false,
       "inventory_only": true,
-      "latest_snapshot_id": "2026-10-26",
-      "latest_source_data_as_of": "2026-10-26",
+      "latest_snapshot_id": "2026-10-27",
+      "latest_source_data_as_of": "2026-10-27",
       "ledger_id": "gateway_dynamics",
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
-      "sha256": "ff0360f31b8a9281c9139a2839d7ba9ed07b2a7df7ee4b3617acfaaeabb8fce5",
+      "sha256": "81b5e690d42d33700e8323ec39040fdf7f6c9a2541f4736e49d89e6e56cc5f90",
       "source": "ledgers/gateway_dynamics/STATUS.json",
       "status": "ACTIVE",
-      "valid_snapshot_count": 79
+      "valid_snapshot_count": 80
     },
     "lock25_50": {
       "health_authority": false,
       "inventory_only": true,
-      "latest_snapshot_id": "2026-10-25",
+      "latest_snapshot_id": "2026-10-26",
       "ledger_id": "lock25_50",
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.lock25_50_ledger_status.v2",
-      "sha256": "0da3b06258003e07c524ae052319c82fdcc55f50398efa6dcb505bb902e13ea5",
+      "sha256": "d024825cb1848c5ce4dc5864ea8d07c488142f820b9ae3addb12ea79b6e0a070",
       "source": "ledgers/lock25_50/STATUS.json",
       "status": "ACTIVE",
-      "valid_snapshot_count": 26
+      "valid_snapshot_count": 27
     },
     "momentum_canonical_net": {
       "health_authority": false,
@@ -1572,7 +1572,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.momentum_m1_m2.status.v1",
-      "sha256": "2fe5abf30be95a789cfc6c7a4139245effa392008c02c611d558aa32ed276b79",
+      "sha256": "50c957e6efe8ec11ef4c4eedbaf61056135e0a333163342ed1cf0dbc6f80a55d",
       "source": "ledgers/momentum_m1_m2/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
@@ -1587,7 +1587,7 @@
       "promotion_allowed": false,
       "return_observations": 20,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "28b482493a8a0cda6b4c426557219b75cb8aec61da62a775898615d15f688a35",
+      "sha256": "d6c95feb21c8188c5c600a6c4ddfa880dfeef4a411dac4154fc4e368c9cac63e",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
       "status": "CLOSED_RULE_VERSION_SUPERSEDED",
       "status_authority_file": "ECONOMICS_STATUS.json",
@@ -1609,7 +1609,7 @@
       "ledger_id": "momentum_m3",
       "observed_snapshots": 41,
       "schema": "gate_btc.momentum_m3.status.v1",
-      "sha256": "33ef3d03a80283fccf0f047f61890bf4045a8f36808865fae3828c37d3046dfd",
+      "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
       "source": "ledgers/momentum_m3/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
     },
@@ -1624,7 +1624,7 @@
       "promotion_allowed": false,
       "return_observations": 12,
       "schema": "gate_btc.momentum_m3_economics_status.v1",
-      "sha256": "abdd478d72c4b25214c0fc29c1eee7dfd088805ce72ea4e64feca0a471969271",
+      "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
       "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
       "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
       "status_authority_file": "STATUS.json",
@@ -1644,7 +1644,7 @@
       "ledger_id": "momentum_tradable_v1",
       "promotion_allowed": false,
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "1e8834c88cbb6632e7d08b0ddf348c5b72b1d2b00dbae0bd233e48eef12d98a9",
+      "sha256": "e4f9263468aadc736e1910f420fbeb28e7d17f65156bdb25d5fdf41e4c736827",
       "source": "ledgers/momentum_tradable_v1/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
     },
@@ -1657,7 +1657,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "53b89a88c8b8d1589e96f425ac59be367f00daf7d48f3029a6372013edf421e8",
+      "sha256": "12cc055b550afbf1c5bc603a44800037b1fbb40347a5b0badf7d9caebb2cf591",
       "snapshot_count": 5,
       "source": "ledgers/prl50_position/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -1671,7 +1671,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.qos_covered_delivery.v1",
-      "sha256": "d3e90ab2d59edc7c26e5e52298c72552630cf25fa531e465614fcdc6178cc673",
+      "sha256": "d238062a82ad50416cf0c09eb4eff9e4779c35847005c8ed6cf6fc2053561f49",
       "source": "ledgers/qos_three_track/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
     },
@@ -1680,7 +1680,7 @@
       "inventory_only": true,
       "ledger_id": "v16_family",
       "schema": "gate_btc.v16_family.status.v1",
-      "sha256": "771c1261fa109ae97ffd879c1cfd44f8882d66baf6d42653cb6725053e5e07a0",
+      "sha256": "6a2e19caf1fb395180c414768ce8fbbcbf5cee6b336e12b21e8ae443985d3c28",
       "source": "ledgers/v16_family/STATUS.json",
       "status": "DEFINITION_COMPLETE_PROSPECTIVE_EVIDENCE_PENDING"
     },
@@ -1695,7 +1695,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.v16b.status.v1",
-      "sha256": "a2f8d34c69fb01abee40dada351871a0ee81a522399b52b37e4d396005da31fa",
+      "sha256": "96cbcc0287cd8ba64bc7df42d42f63c5d04fbf1f6c27cdd74702d94e7e57de9e",
       "source": "ledgers/v16b/STATUS.json",
       "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     },
@@ -1710,7 +1710,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.v16b1.status.v1",
-      "sha256": "5f75674e3e86c4a715626729725efc0b6cc13d8ae845d5df3e353e3c2287e7cd",
+      "sha256": "7827bd34d87599f97644cdaa3bc63161225b036a7dbfc2fb94c1766ab0de3e49",
       "source": "ledgers/v16b1/STATUS.json",
       "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     },
@@ -1720,7 +1720,7 @@
       "inventory_only": true,
       "ledger_id": "v16c",
       "schema": "gate_btc.v16c.status.v1",
-      "sha256": "89dfedfa3db062f520fd084f192f8849047f9d18fa61c6b7da9d4b8174501162",
+      "sha256": "181f83b8815b9822d242ddb395e45eb8b103729f578614a6a9cc11ddfb418d91",
       "source": "ledgers/v16c/STATUS.json",
       "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
     },
@@ -1730,7 +1730,7 @@
       "inventory_only": true,
       "ledger_id": "v16d",
       "schema": "gate_btc.v16d.status.v1",
-      "sha256": "560cd313c645ec7369adcc59553326b59c4fe08ffc59429fd84cd08f8616edc9",
+      "sha256": "2d1531eba575e2c822de97e1e51678d399e844ce3dc5d1f6b92a44ab7fa244e4",
       "source": "ledgers/v16d/STATUS.json",
       "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
     },
@@ -1739,7 +1739,7 @@
       "inventory_only": true,
       "ledger_id": "v16e",
       "schema": "gate_btc.v16e.status.v1",
-      "sha256": "a139ec5c76b198dfb17637caccd5ff299ac0e9b63691508691d568d474273f23",
+      "sha256": "cbbbe3f86fda771b34618d08145dc3799dabd0cadef8ba6058376b53572c145b",
       "source": "ledgers/v16e/STATUS.json",
       "status": "FROZEN_DECISION_CONTRACT_WAIT_52_PAIRED_CYCLES"
     }
@@ -1754,7 +1754,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "9118d3de7d607db228e113cf4df8846bfe56f496c11e215957ac97a655ae0974",
+      "sha256": "72601d065c6556ee8c7174a8f2eeef5d1873c964d76c2019ac624f6fb3d3c322",
       "snapshot_count": 5,
       "source": "ledgers/alt_trail40_10/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -1767,7 +1767,7 @@
       "ledger_id": "b3_h1",
       "remaining": 2,
       "schema": "qrds.h1.canonical_runtime.v1",
-      "sha256": "12adb4c558b3438f6ec173bcd9688febfc54f5979e993d8397aa31b1cc9724db",
+      "sha256": "5f005ce476514ca14218e3b8d5d0c76cab87b444d1cc7faf3549be173ec64cda",
       "source": "ledgers/b3_h1/CANONICAL_STATUS.json",
       "status": "H1_18_OF_20_CANONICAL",
       "status_authority_file": "CANONICAL_STATUS.json"
@@ -1777,7 +1777,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h1_inspired_challengers",
       "schema": "qrds.h1_inspired_challenger_shadow_status.v1",
-      "sha256": "2b3b4818474e9fc37c9e584e4af545521e9f246e8833c8ab041689cdbc260d19",
+      "sha256": "2c234174aa2d11e3629807b4774edf48f093806b9c35c2161ccb877291e97847",
       "source": "ledgers/b3_h1_inspired_challengers/STATUS.json",
       "status": "UNKNOWN"
     },
@@ -1787,7 +1787,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h31_prospective",
       "schema": "gate_btc.b3.h31.prospective_status.v2",
-      "sha256": "b5ca7da6ba6a4a297081583ed39afdbb79a4122dd7c9edd53fc1238fdfb23546",
+      "sha256": "7ac444a10af60950b0b9174877c7e74b143b17e6a6f7875fb687b09014d49953",
       "source": "ledgers/b3_h31_prospective/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE"
     },
@@ -1796,7 +1796,7 @@
       "inventory_only": true,
       "ledger_id": "b3_h31_shadow_paper",
       "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-      "sha256": "1a92ea36a774a0e1a577821f7986c758e14c8bcb76669f0eecfe7f2aea1fb6f3",
+      "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7",
       "source": "ledgers/b3_h31_shadow_paper/STATUS.json",
       "status": "UNKNOWN"
     },
@@ -1808,20 +1808,20 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.b3.win_wdo_univariate.status.v1",
-      "sha256": "4cd9c9a1c17aa9a7dd76bcefb18a595b301a41887777ab55d1a9fcd355e21ed4",
+      "sha256": "abfb0055f0dbc8b676f36a1c7c1862ab8de0c8ab3b3fcf50fd68ce1cd8f9dc91",
       "source": "ledgers/b3_win_wdo_univariate/STATUS.json",
       "status": "SOURCE_GREEN_PROSPECTIVE_ONLY_ECONOMICS_BLOCKED"
     },
     "bull_replay_live_shadow": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "bull_replay_live_shadow",
-      "observed_days": 16,
+      "observed_days": 17,
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.bull_replay_live_shadow.status.v1",
-      "sha256": "341a425316dbcb3d6a000f814569dc3a9e5500c941c99fadc5976f5183ee10ac",
+      "sha256": "280e28321f80c5d1d388443ff9cf0ef87d3687d646ff24aab9aee5ff01aa0da8",
       "source": "ledgers/bull_replay_live_shadow/epochs/independent_20261009/STATUS.json",
       "status": "LIVE_DIAGNOSTIC_ACTIVE",
       "status_authority_file": "STATUS.json"
@@ -1839,7 +1839,7 @@
       "scientific_blockers": [],
       "scientific_observations_credited": 0,
       "scientific_target": null,
-      "sha256": "539df1e9df8015ef1479875e1db0cabaea626edf767da5bdc42f225270f6eb2b",
+      "sha256": "fa5621fecbfce5dfd8505961886b788e7a6533bf53aca184cd0b638aa4892f20",
       "source": "ledgers/d100/STATUS.json",
       "status": "ACTIVE_PHYSICAL_DATA_FEED"
     },
@@ -1852,28 +1852,28 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.d50_measurement_status.v1",
-      "sha256": "71506dea050391865c6fd7d1d980f4209c7f2ff73013a17d89b68df491bcf4e1",
+      "sha256": "1a565ba032fdf8a7fcb8e4777a80d7681a0f4b81749dff317a345debe7c361a7",
       "source": "ledgers/d50/STATUS.json",
       "status": "UNKNOWN"
     },
     "delta_paper_monitor": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "delta_paper_monitor",
-      "observed_days": 73,
+      "observed_days": 74,
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.delta_paper_monitor.v1",
-      "sha256": "9319fdd1393e2157b7fda504b595b8c119d95cf1178dba099422f004e44553d6",
+      "sha256": "ef791bcc06c12b620c8a7fad27c095d5a0981d3b7bb91920cdc391ee6b64ed02",
       "source": "ledgers/delta_paper_monitor/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_PAPER_SHADOW"
     },
     "delta_v12_engine": {
       "closure_date": "2026-09-22",
-      "closure_sha256": "0a532197b6ba26fd615371bf596e5d57b18f9611432ab3821aa30644002f927f",
+      "closure_sha256": "faae9af396c2ae5e752a81069c48cbe1324a40541b09cf697d7f2a8a75cc9631",
       "closure_source": "migration/reporting/delta_v12_engine_closure.json",
       "data_as_of": "2026-09-19",
       "engine_feed": false,
@@ -1888,7 +1888,7 @@
       "reporting_disposition": "DESCRIPTIVE_ONLY_AND_NOW_FROZEN",
       "schema": "gate_btc.delta_v12_engine.v1",
       "scientific_credit": 0,
-      "sha256": "84d5a8e03fa198d59cb08dcb6080a4840fcbb1e5eaa7757a162b263db8a410a4",
+      "sha256": "bf2e2958ff546f1f5b0ba2adbdf004b17c9acf2922f4d8381561b63db0619af6",
       "source": "ledgers/delta_v12_engine/STATUS.json",
       "status": "CLOSED_NO_FURTHER_OBSERVATIONS_POSSIBLE",
       "status_authority_file": "STATUS.json"
@@ -1899,54 +1899,54 @@
       "inventory_only": true,
       "ledger_id": "delta_v12_prices",
       "schema": "gate_btc.delta_v12_multi_venue_daily_prices.v1",
-      "sha256": "98662c9d3853618ca91423539ec2fb25ada7f5f9d8c6fb218f4a637b4caa20a5",
+      "sha256": "c907ed8249a6db6506ea11bbf7b1a2a3047f10239be9338a0a5a242d6cf079f7",
       "source": "ledgers/delta_v12_prices/COVERAGE.json",
       "status": "NO_CANONICAL_STATUS_FIELD",
       "status_authority_file": "COVERAGE.json"
     },
     "delta_v13_engine": {
-      "data_as_of": "2026-10-25",
+      "data_as_of": "2026-10-26",
       "engine_feed": false,
       "health_authority": false,
       "inventory_only": true,
       "ledger_id": "delta_v13_engine",
-      "observed_days": 32,
+      "observed_days": 33,
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.delta_v12_engine.v1",
-      "sha256": "7bfd44c8424767f639952d5d2e21ba1365b5eb90923e842c610a49eee8e86fb0",
+      "sha256": "e5624fd6a80232fd63def1d1afc06a643081ca6365b0f19c02a4427a1b7a20d5",
       "source": "ledgers/delta_v13_engine/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
     "gateway_dynamics": {
       "health_authority": false,
       "inventory_only": true,
-      "latest_snapshot_id": "2026-10-26",
-      "latest_source_data_as_of": "2026-10-26",
+      "latest_snapshot_id": "2026-10-27",
+      "latest_source_data_as_of": "2026-10-27",
       "ledger_id": "gateway_dynamics",
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
-      "sha256": "ff0360f31b8a9281c9139a2839d7ba9ed07b2a7df7ee4b3617acfaaeabb8fce5",
+      "sha256": "81b5e690d42d33700e8323ec39040fdf7f6c9a2541f4736e49d89e6e56cc5f90",
       "source": "ledgers/gateway_dynamics/STATUS.json",
       "status": "ACTIVE",
-      "valid_snapshot_count": 79
+      "valid_snapshot_count": 80
     },
     "lock25_50": {
       "health_authority": false,
       "inventory_only": true,
-      "latest_snapshot_id": "2026-10-25",
+      "latest_snapshot_id": "2026-10-26",
       "ledger_id": "lock25_50",
       "orders_generated": 0,
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.lock25_50_ledger_status.v2",
-      "sha256": "0da3b06258003e07c524ae052319c82fdcc55f50398efa6dcb505bb902e13ea5",
+      "sha256": "d024825cb1848c5ce4dc5864ea8d07c488142f820b9ae3addb12ea79b6e0a070",
       "source": "ledgers/lock25_50/STATUS.json",
       "status": "ACTIVE",
-      "valid_snapshot_count": 26
+      "valid_snapshot_count": 27
     },
     "momentum_canonical_net": {
       "health_authority": false,
@@ -1979,7 +1979,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.momentum_m1_m2.status.v1",
-      "sha256": "2fe5abf30be95a789cfc6c7a4139245effa392008c02c611d558aa32ed276b79",
+      "sha256": "50c957e6efe8ec11ef4c4eedbaf61056135e0a333163342ed1cf0dbc6f80a55d",
       "source": "ledgers/momentum_m1_m2/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SHADOW"
     },
@@ -1994,7 +1994,7 @@
       "promotion_allowed": false,
       "return_observations": 20,
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "28b482493a8a0cda6b4c426557219b75cb8aec61da62a775898615d15f688a35",
+      "sha256": "d6c95feb21c8188c5c600a6c4ddfa880dfeef4a411dac4154fc4e368c9cac63e",
       "source": "ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
       "status": "CLOSED_RULE_VERSION_SUPERSEDED",
       "status_authority_file": "ECONOMICS_STATUS.json"
@@ -2007,7 +2007,7 @@
       "ledger_id": "momentum_m3",
       "observed_snapshots": 41,
       "schema": "gate_btc.momentum_m3.status.v1",
-      "sha256": "33ef3d03a80283fccf0f047f61890bf4045a8f36808865fae3828c37d3046dfd",
+      "sha256": "d28e1359a2d4e39f50d33ddd9561a83d78970f62546a33804dea47787c8feb79",
       "source": "ledgers/momentum_m3/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_SIGNAL_SHADOW"
     },
@@ -2022,7 +2022,7 @@
       "promotion_allowed": false,
       "return_observations": 12,
       "schema": "gate_btc.momentum_m3_economics_status.v1",
-      "sha256": "abdd478d72c4b25214c0fc29c1eee7dfd088805ce72ea4e64feca0a471969271",
+      "sha256": "d158a176c3871181a169ee63a8098ed38884d36f20141ac918a411a6e498f7b4",
       "source": "ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
       "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
       "status_authority_file": "STATUS.json"
@@ -2035,7 +2035,7 @@
       "ledger_id": "momentum_tradable_v1",
       "promotion_allowed": false,
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "1e8834c88cbb6632e7d08b0ddf348c5b72b1d2b00dbae0bd233e48eef12d98a9",
+      "sha256": "e4f9263468aadc736e1910f420fbeb28e7d17f65156bdb25d5fdf41e4c736827",
       "source": "ledgers/momentum_tradable_v1/STATUS.json",
       "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
     },
@@ -2048,7 +2048,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "53b89a88c8b8d1589e96f425ac59be367f00daf7d48f3029a6372013edf421e8",
+      "sha256": "12cc055b550afbf1c5bc603a44800037b1fbb40347a5b0badf7d9caebb2cf591",
       "snapshot_count": 5,
       "source": "ledgers/prl50_position/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
@@ -2062,7 +2062,7 @@
       "orders_generated": 0,
       "real_capital_used": 0,
       "schema": "gate_btc.qos_covered_delivery.v1",
-      "sha256": "d3e90ab2d59edc7c26e5e52298c72552630cf25fa531e465614fcdc6178cc673",
+      "sha256": "d238062a82ad50416cf0c09eb4eff9e4779c35847005c8ed6cf6fc2053561f49",
       "source": "ledgers/qos_three_track/STATUS.json",
       "status": "WAITING_NEXT_APPROVED_MONTH_END"
     },
@@ -2071,7 +2071,7 @@
       "inventory_only": true,
       "ledger_id": "v16_family",
       "schema": "gate_btc.v16_family.status.v1",
-      "sha256": "771c1261fa109ae97ffd879c1cfd44f8882d66baf6d42653cb6725053e5e07a0",
+      "sha256": "6a2e19caf1fb395180c414768ce8fbbcbf5cee6b336e12b21e8ae443985d3c28",
       "source": "ledgers/v16_family/STATUS.json",
       "status": "DEFINITION_COMPLETE_PROSPECTIVE_EVIDENCE_PENDING"
     },
@@ -2086,7 +2086,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.v16b.status.v1",
-      "sha256": "a2f8d34c69fb01abee40dada351871a0ee81a522399b52b37e4d396005da31fa",
+      "sha256": "96cbcc0287cd8ba64bc7df42d42f63c5d04fbf1f6c27cdd74702d94e7e57de9e",
       "source": "ledgers/v16b/STATUS.json",
       "status": "TERMINAL_BLOCKED_NOT_PROMOTABLE"
     },
@@ -2101,7 +2101,7 @@
       "promotion_allowed": false,
       "real_capital_used": 0,
       "schema": "gate_btc.v16b1.status.v1",
-      "sha256": "5f75674e3e86c4a715626729725efc0b6cc13d8ae845d5df3e353e3c2287e7cd",
+      "sha256": "7827bd34d87599f97644cdaa3bc63161225b036a7dbfc2fb94c1766ab0de3e49",
       "source": "ledgers/v16b1/STATUS.json",
       "status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     },
@@ -2111,7 +2111,7 @@
       "inventory_only": true,
       "ledger_id": "v16c",
       "schema": "gate_btc.v16c.status.v1",
-      "sha256": "89dfedfa3db062f520fd084f192f8849047f9d18fa61c6b7da9d4b8174501162",
+      "sha256": "181f83b8815b9822d242ddb395e45eb8b103729f578614a6a9cc11ddfb418d91",
       "source": "ledgers/v16c/STATUS.json",
       "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
     },
@@ -2121,7 +2121,7 @@
       "inventory_only": true,
       "ledger_id": "v16d",
       "schema": "gate_btc.v16d.status.v1",
-      "sha256": "560cd313c645ec7369adcc59553326b59c4fe08ffc59429fd84cd08f8616edc9",
+      "sha256": "2d1531eba575e2c822de97e1e51678d399e844ce3dc5d1f6b92a44ab7fa244e4",
       "source": "ledgers/v16d/STATUS.json",
       "status": "PREREGISTERED_WAIT_CAUSAL_PROSPECTIVE_LEDGER"
     },
@@ -2130,7 +2130,7 @@
       "inventory_only": true,
       "ledger_id": "v16e",
       "schema": "gate_btc.v16e.status.v1",
-      "sha256": "a139ec5c76b198dfb17637caccd5ff299ac0e9b63691508691d568d474273f23",
+      "sha256": "cbbbe3f86fda771b34618d08145dc3799dabd0cadef8ba6058376b53572c145b",
       "source": "ledgers/v16e/STATUS.json",
       "status": "FROZEN_DECISION_CONTRACT_WAIT_52_PAIRED_CYCLES"
     }
@@ -2138,9 +2138,9 @@
   "methodology_changes": 0,
   "not_approved": true,
   "orders_generated": 0,
-  "pointer_lag_days": 1,
+  "pointer_lag_days": 0,
   "real_capital_used": 0,
-  "reference_data_date": "2026-10-25",
+  "reference_data_date": "2026-10-26",
   "reporting_date_utc": "2026-10-27",
   "reporting_only": true,
   "research_only": true,
@@ -2149,123 +2149,123 @@
   "sources": {
     "alt_trail": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\alt_trail40_10\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/alt_trail40_10/STATUS.json",
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "9118d3de7d607db228e113cf4df8846bfe56f496c11e215957ac97a655ae0974"
+      "sha256": "72601d065c6556ee8c7174a8f2eeef5d1873c964d76c2019ac624f6fb3d3c322"
     },
     "b3_h1": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\b3_h1\\CANONICAL_STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/b3_h1/CANONICAL_STATUS.json",
       "schema": "qrds.h1.canonical_runtime.v1",
-      "sha256": "12adb4c558b3438f6ec173bcd9688febfc54f5979e993d8397aa31b1cc9724db"
+      "sha256": "5f005ce476514ca14218e3b8d5d0c76cab87b444d1cc7faf3549be173ec64cda"
     },
     "bull_replay": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\bull_replay_live_shadow\\epochs\\independent_20261009\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/bull_replay_live_shadow/epochs/independent_20261009/STATUS.json",
       "schema": "gate_btc.bull_replay_live_shadow.status.v1",
-      "sha256": "341a425316dbcb3d6a000f814569dc3a9e5500c941c99fadc5976f5183ee10ac"
+      "sha256": "280e28321f80c5d1d388443ff9cf0ef87d3687d646ff24aab9aee5ff01aa0da8"
     },
     "bull_replay_live_shadow": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\bull_replay_live_shadow\\DELIVERY_STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/bull_replay_live_shadow/DELIVERY_STATUS.json",
       "schema": "gate_btc.bull_replay_live_shadow.delivery.v1",
-      "sha256": "33ab955bf0ff8a8731d02c2265a7b2b8c6858f70b7659581fe2630d28ebc23ff"
+      "sha256": "1b6ba2cd710dcde276357fed4c3082ea35d3274d0ec01eb27176dd58973d6deb"
     },
     "d100": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\d100\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/d100/STATUS.json",
       "schema": "qrds.d100.forward_collection.v2",
-      "sha256": "539df1e9df8015ef1479875e1db0cabaea626edf767da5bdc42f225270f6eb2b"
+      "sha256": "fa5621fecbfce5dfd8505961886b788e7a6533bf53aca184cd0b638aa4892f20"
     },
     "d100_economic": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\d100\\economic\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/d100/economic/STATUS.json",
       "schema": "qrds.d100.economics.v1",
-      "sha256": "ab9b1072aa3bd42a6f73e1db94cfec35d8a07fcfc06cc7d33b96b9383530f4eb"
+      "sha256": "c656ba4f9cf5db605539531c4c434d914439a5b6679f79bb618910a96eab23ff"
     },
     "d50": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\d50\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/d50/STATUS.json",
       "schema": "gate_btc.d50_measurement_status.v1",
-      "sha256": "71506dea050391865c6fd7d1d980f4209c7f2ff73013a17d89b68df491bcf4e1"
+      "sha256": "1a565ba032fdf8a7fcb8e4777a80d7681a0f4b81749dff317a345debe7c361a7"
     },
     "delta_paper_monitor": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\delta_paper_monitor\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/delta_paper_monitor/STATUS.json",
       "schema": "gate_btc.delta_paper_monitor.v1",
-      "sha256": "9319fdd1393e2157b7fda504b595b8c119d95cf1178dba099422f004e44553d6"
+      "sha256": "ef791bcc06c12b620c8a7fad27c095d5a0981d3b7bb91920cdc391ee6b64ed02"
     },
     "gateway": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\gateway_dynamics\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/gateway_dynamics/STATUS.json",
       "schema": "gate_btc.gateway_dynamics_ledger_status.v2",
-      "sha256": "ff0360f31b8a9281c9139a2839d7ba9ed07b2a7df7ee4b3617acfaaeabb8fce5"
+      "sha256": "81b5e690d42d33700e8323ec39040fdf7f6c9a2541f4736e49d89e6e56cc5f90"
     },
     "lock25_50": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\lock25_50\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/lock25_50/STATUS.json",
       "schema": "gate_btc.lock25_50_ledger_status.v2",
-      "sha256": "0da3b06258003e07c524ae052319c82fdcc55f50398efa6dcb505bb902e13ea5"
+      "sha256": "d024825cb1848c5ce4dc5864ea8d07c488142f820b9ae3addb12ea79b6e0a070"
     },
     "measurement": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\GATE_BTC_MEASUREMENT_STATUS.json",
+      "path": "runtime_repo/runtime/GATE_BTC_MEASUREMENT_STATUS.json",
       "schema": "gate_btc.measurement_status.v1",
-      "sha256": "7edf5d5e95d7c8985fd32e4c9040b3afd33f1d33bd7b2837caf8df1201f62542"
+      "sha256": "91d815b196d78f467159ad30d991b41f4b30debe9dba5aa5d5e9c9a38c4793dc"
     },
     "momentum_economic_delivery": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\momentum_m1_m2_economics\\epochs\\hold_20260928\\DELIVERY_STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/DELIVERY_STATUS.json",
       "schema": "gate_btc.momentum_hold_status.v1",
-      "sha256": "28b482493a8a0cda6b4c426557219b75cb8aec61da62a775898615d15f688a35"
+      "sha256": "d6c95feb21c8188c5c600a6c4ddfa880dfeef4a411dac4154fc4e368c9cac63e"
     },
     "momentum_m1_m2": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\momentum_m1_m2\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/momentum_m1_m2/STATUS.json",
       "schema": "gate_btc.momentum_m1_m2.status.v1",
-      "sha256": "2fe5abf30be95a789cfc6c7a4139245effa392008c02c611d558aa32ed276b79"
+      "sha256": "50c957e6efe8ec11ef4c4eedbaf61056135e0a333163342ed1cf0dbc6f80a55d"
     },
     "momentum_tradable_v1": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\momentum_tradable_v1\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/momentum_tradable_v1/STATUS.json",
       "schema": "gate_btc.momentum_tradable_status.v1",
-      "sha256": "1e8834c88cbb6632e7d08b0ddf348c5b72b1d2b00dbae0bd233e48eef12d98a9"
+      "sha256": "e4f9263468aadc736e1910f420fbeb28e7d17f65156bdb25d5fdf41e4c736827"
     },
     "pointer": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\GATE_BTC_LATEST_ELIGIBLE_RUN.json",
+      "path": "runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json",
       "schema": null,
-      "sha256": "c5999743792ba277d8c9666bf6f451dd4091185744fbc0888b65501a2421004b"
+      "sha256": "9397e55c8820f4c24c6da753142df7bcc4cd5b744ec1d9388e922890db679a59"
     },
     "prl50": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\prl50_position\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/prl50_position/STATUS.json",
       "schema": "gate_btc.prl_alt_next_epoch_status.v1",
-      "sha256": "53b89a88c8b8d1589e96f425ac59be367f00daf7d48f3029a6372013edf421e8"
+      "sha256": "12cc055b550afbf1c5bc603a44800037b1fbb40347a5b0badf7d9caebb2cf591"
     },
     "system9_exit": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\system9\\STAGE9_EXIT_STATUS.json",
+      "path": "runtime_repo/runtime/system9/STAGE9_EXIT_STATUS.json",
       "schema": "gate_btc.2_0.stage9_exit_gate_status.v1",
-      "sha256": "6842acb9392f80f0c0f8d7b874a700f011285516346ed5efed7f6ab5f286b48b"
+      "sha256": "af6153a2827c2b5fe16fa45412a7d78d6516a05176e4159a741f091235b6e69a"
     },
     "v16b": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\v16b\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/v16b/STATUS.json",
       "schema": "gate_btc.v16b.status.v1",
-      "sha256": "a2f8d34c69fb01abee40dada351871a0ee81a522399b52b37e4d396005da31fa"
+      "sha256": "96cbcc0287cd8ba64bc7df42d42f63c5d04fbf1f6c27cdd74702d94e7e57de9e"
     },
     "v16b1": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\ledgers\\v16b1\\STATUS.json",
+      "path": "runtime_repo/runtime/ledgers/v16b1/STATUS.json",
       "schema": "gate_btc.v16b1.status.v1",
-      "sha256": "5f75674e3e86c4a715626729725efc0b6cc13d8ae845d5df3e353e3c2287e7cd"
+      "sha256": "7827bd34d87599f97644cdaa3bc63161225b036a7dbfc2fb94c1766ab0de3e49"
     },
     "v16b1_corpus": {
       "exists": true,
-      "path": "C:\\actions-runner\\qrds-local-shadow\\mirror_afe2556f\\runtime\\evidence\\v16b1\\prospective_universe\\STATUS.json",
+      "path": "runtime_repo/runtime/evidence/v16b1/prospective_universe/STATUS.json",
       "schema": "gate_btc.v16b1.prospective_universe_status.v1",
-      "sha256": "576642c6d2f50031fa111c40644ca65d45723e4a1efe6a1715bd46ce8c70dac2"
+      "sha256": "e7b6516bc1711f3e33029210edc98f11a64149db1256b0ddb20ca7ac3a2cd82c"
     }
   },
   "status": "BLOCKED_INCOMPLETE_DELIVERY",
@@ -2283,7 +2283,7 @@
       "v16b1"
     ],
     "stale_components": [
-      "daily_delivery_pointer",
+      "b3_h1",
       "v16b1"
     ],
     "unrepresented_runtime_ledgers": [
