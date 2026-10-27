@@ -2256,3 +2256,52 @@ class ReturnIntervalTests(unittest.TestCase):
         state["history"][1]["nav"] = 0
         self.assertIsNone(report.return_interval(state, entry)["return"])
 
+
+
+
+class B3SourceEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.before = copy.deepcopy(data_sources.B3_SERIES_EVIDENCE)
+        data_sources.B3_SERIES_EVIDENCE.clear()
+
+    def tearDown(self):
+        data_sources.B3_SERIES_EVIDENCE.clear()
+        data_sources.B3_SERIES_EVIDENCE.update(self.before)
+
+    def test_receipt_records_actual_source_date_price_and_series_fingerprint(self):
+        series = [("2026-10-23", 201.69, 1000), ("2026-10-26", 172.42, 2000)]
+        original = copy.deepcopy(series)
+        with mock.patch.object(data_sources, "fetch_cotahist_daily", return_value=series), \
+             mock.patch.object(data_sources.time, "sleep"):
+            out = data_sources.fetch_b3_daily("BOVA11")
+        receipt = data_sources.B3_SERIES_EVIDENCE["BOVA11"]
+        self.assertIs(out, series)
+        self.assertEqual(series, original)
+        self.assertEqual(receipt["provider"], "cotahist")
+        self.assertEqual(receipt["last_market_date"], "2026-10-26")
+        self.assertEqual(receipt["last_close"], 172.42)
+        self.assertEqual(len(receipt["series_sha256"]), 64)
+        first_hash = receipt["series_sha256"]
+        data_sources._record_b3_series("BOVA11", "cotahist", series[:-1])
+        self.assertNotEqual(data_sources.B3_SERIES_EVIDENCE["BOVA11"]["series_sha256"], first_hash)
+
+    def test_failed_fetch_clears_old_receipt_instead_of_reusing_it(self):
+        data_sources._record_b3_series("BOVA11", "cotahist", [("2026-10-23", 201.69, 1)])
+        with mock.patch.object(data_sources, "fetch_cotahist_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_brapi_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_yahoo_daily", side_effect=data_sources.DataSourceError("missing")):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources.fetch_b3_daily("BOVA11")
+        self.assertNotIn("BOVA11", data_sources.B3_SERIES_EVIDENCE)
+
+    def test_markdown_and_html_show_the_same_source_receipt(self):
+        data_sources._record_b3_series("BOVA11", "cotahist", [("2026-10-26", 172.42, 2000)])
+        log = {"market_data_evidence": data_sources.B3_SERIES_EVIDENCE}
+        markdown = "\n".join(report._audit_block(log))
+        html = portal._audit(log)
+        for text in [markdown, html]:
+            self.assertIn("BOVA11", text)
+            self.assertIn("cotahist", text)
+            self.assertIn("2026-10-26", text)
+            self.assertIn("172.42", text)
+            self.assertIn("SHA256", text)

@@ -16,6 +16,7 @@ fornece, vem 0.0 e o ativo e tratado como nao elegivel (fail-closed, secao 7).
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import re
@@ -362,6 +363,30 @@ FAILURE_TALLY: dict[str, dict] = {}
 # alarme falso que esconde as falhas verdadeiras.
 MISSING_TALLY: dict[str, dict] = {}
 
+# Reporting evidence only: these receipts never feed prices, signals or orders.
+B3_SERIES_EVIDENCE: dict[str, dict] = {}
+
+
+def _record_b3_series(ticker: str, provider: str, series: list) -> None:
+    receipt = {"schema": "trading_agent.b3_series_evidence.v1",
+               "provider": provider, "symbol": ticker,
+               "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+               "point_count": len(series), "status": "RECORDED",
+               "series_scope": ("LIVE_SOURCE_WITH_VERIFIED_INDEX_CACHE"
+                                if ticker.startswith("^") else "LIVE_PROVIDER_SERIES")}
+    try:
+        raw = json.dumps(series, separators=(",", ":"), ensure_ascii=False,
+                         allow_nan=False).encode("utf-8")
+        receipt["series_sha256"] = hashlib.sha256(raw).hexdigest()
+        if series:
+            receipt.update({"first_market_date": series[0][0],
+                            "last_market_date": series[-1][0],
+                            "last_close": series[-1][1]})
+    except (TypeError, ValueError, IndexError):
+        # Missing audit metadata must not silently change the trading rules.
+        receipt["status"] = "UNSERIALIZABLE_SERIES"
+    B3_SERIES_EVIDENCE[ticker] = receipt
+
 
 def _note_failure(source: str, err: Exception) -> None:
     alvo = FAILURE_TALLY if isinstance(err, SourceUnavailable) else MISSING_TALLY
@@ -626,6 +651,7 @@ def fetch_b3_daily(ticker: str,
     serie do indice passa por '_absorb_index_history', que a acumula em disco.
     """
     from . import config
+    B3_SERIES_EVIDENCE.pop(ticker, None)
     symbol = ticker if ticker.startswith("^") else f"{ticker}.SA"
     errors: list[str] = []
     fontes = [("brapi", lambda: fetch_brapi_daily(ticker)),
@@ -644,6 +670,7 @@ def fetch_b3_daily(ticker: str,
         time.sleep(config.FETCH_DELAY_S)
         if ticker.startswith("^"):
             series = _absorb_index_history(ticker, series)
+        _record_b3_series(ticker, name, series)
         return series
     raise DataSourceError(f"Sem fonte para {ticker} — " + " | ".join(errors))
 
@@ -842,3 +869,4 @@ def cdi_factor_since(rates: list[tuple[str, float]], start_date: str,
         if start_date < date <= end_date:
             factor *= 1.0 + rate / 100.0
     return factor
+
