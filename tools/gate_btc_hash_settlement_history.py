@@ -176,6 +176,46 @@ def post_rpc(session,body,out,name):
     raise ValueError("RPC_RETRY_BOUND_EXHAUSTED")
 
 
+def fetch_block_batch(fetch,name,heights):
+    """Recover a rejected/truncated batch with bounded exact-height requests.
+
+    Every attempted response is retained by fetch. Splitting changes transport
+    only: each requested height must still pass chain/height and later tx proof.
+    At most 2*n-1 requests; a failing singleton remains a hard failure.
+    """
+    body=[{"jsonrpc":"2.0","id":i,"method":"block","params":{"height":str(n)}}
+          for i,n in enumerate(heights)]
+    payload=fetch(name,body)
+    # Some gateways unwrap a singleton batch. Accept only an exact matching
+    # JSON-RPC response; the same proof checks below remain mandatory.
+    if len(heights)==1 and isinstance(payload,dict) and payload.get("jsonrpc")=="2.0" and payload.get("id")==0:
+        payload=[payload]
+    envelope_ok=(isinstance(payload,list) and len(payload)==len(heights) and
+                 all(isinstance(x,dict) and type(x.get("id")) is int for x in payload) and
+                 {x["id"] for x in payload}==set(range(len(heights))))
+    if not envelope_ok:
+        # A non-batch JSON-RPC error is retried only for a transport capacity
+        # rejection. Do not turn authorization/method errors into a retry loop.
+        error=payload.get("error") if isinstance(payload,dict) else None
+        if error and not re.search(r"rate|limit|batch|too many|busy|temporar|timeout",str(error),re.I):
+            raise ValueError("HASH_BLOCK_RPC_ERROR:"+str(error))
+        if len(heights)<=1:raise ValueError("INVALID_BLOCK_BATCH:"+name)
+        middle=len(heights)//2
+        values=fetch_block_batch(fetch,name+".left",heights[:middle])
+        values.update(fetch_block_batch(fetch,name+".right",heights[middle:]))
+        return values
+    byid={x["id"]:x for x in payload};values={}
+    for i,n in enumerate(heights):
+        x=byid[i]
+        if x.get("jsonrpc")!="2.0" or x.get("error") or x.get("result") is None:
+            raise ValueError("INVALID_BLOCK_RESPONSE:"+name)
+        h=x["result"]["block"]["header"]
+        if h["chain_id"]!=CHAIN or int(h["height"])!=n:
+            raise ValueError("WRONG_BATCH_BLOCK:"+name)
+        values[n]=x["result"]
+    return values
+
+
 def collect_native(session,cutoff,evidence_dir,now=None):
     now=now or datetime.now(timezone.utc)
     if cutoff>=now.date().isoformat():raise ValueError("INCOMPLETE_UTC_CUTOFF")
@@ -230,18 +270,7 @@ def collect_native(session,cutoff,evidence_dir,now=None):
     chunks=[heights[i:i+10] for i in range(0,len(heights),10)]
     def blocks(pair):
         chunk,nums=pair
-        body=[{"jsonrpc":"2.0","id":i,"method":"block","params":{"height":str(n)}} for i,n in enumerate(nums)]
-        p=fetch(f"blocks_{chunk:04}.json",body)
-        if not isinstance(p,list) or len(p)!=len(nums) or {x.get("id") for x in p}!=set(range(len(nums))):
-            raise ValueError("INVALID_BLOCK_BATCH")
-        byid={x["id"]:x for x in p};values={}
-        for i,n in enumerate(nums):
-            x=byid[i]
-            if x.get("error") or x.get("result") is None:raise ValueError("INVALID_BLOCK_RESPONSE")
-            h=x["result"]["block"]["header"]
-            if h["chain_id"]!=CHAIN or int(h["height"])!=n:raise ValueError("WRONG_BATCH_BLOCK")
-            values[n]=x["result"]
-        return values
+        return fetch_block_batch(fetch,f"blocks_{chunk:04}.json",nums)
     headers={}
     with ThreadPoolExecutor(max_workers=1) as ex:
         for group in ex.map(blocks,enumerate(chunks)):headers.update(group)
@@ -365,3 +394,4 @@ def main():
     (args.out/"RESULT.json").write_bytes((json.dumps(result,indent=2)+"\n").encode());print(json.dumps(result))
 
 if __name__=="__main__":main()
+
