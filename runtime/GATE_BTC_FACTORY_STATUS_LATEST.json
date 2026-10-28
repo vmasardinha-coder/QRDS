@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-28T16:09:19.417357+00:00",
+  "generated_at_utc": "2026-10-28T18:46:11.151354+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -221,12 +221,12 @@
         "scientific_target": 80,
         "signal_capture_count": 32,
         "status": "ACTIVE_SHADOW_N80",
-        "updated_at_utc": "2026-10-28T14:29:50.480197Z",
-        "workflow_run_id": "40706239084"
+        "updated_at_utc": "2026-10-28T16:39:05.550066Z",
+        "workflow_run_id": "40727638148"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/economic/STATUS.json",
-      "sha256": "e76794ea3e2afdd0650ee137b14b7307498b1fda8d6b4cc11cb62309cb37fe73"
+      "sha256": "c9343b2c16728cd397a82b7c5dbc4f3869fb2028fc45cf3fd6ceb34b1945610a"
     },
     "d100_physical": {
       "data": {
@@ -241,10 +241,10 @@
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-10-28T14:29:49.011882Z",
+        "last_attempt_at_utc": "2026-10-28T16:39:04.220473Z",
         "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
         "last_error": null,
-        "last_heartbeat_utc": "2026-10-28T14:29:49.011882Z",
+        "last_heartbeat_utc": "2026-10-28T16:39:04.220473Z",
         "latest_market_data_observed_count": 71,
         "latest_physical_capture_at_utc": "2026-10-28T00:44:46.330026Z",
         "latest_raw_universe_count": 100,
@@ -275,11 +275,11 @@
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
         "successful_capture_days": 32,
         "track": "D100",
-        "workflow_run_id": "40706239084"
+        "workflow_run_id": "40727638148"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "e3b3a8232879f6df063ded9ebc8e6bdaf45579e952992fbd8d71a615f8cabc4d"
+      "sha256": "27b807fc7fc8c204a3da8038e8e920550228f4548e96739af27dd3a229c01546"
     },
     "delta_paper": {
       "data": {
@@ -537,6 +537,14 @@
             "date": "2026-10-26",
             "reason": "SOURCE_FAILURE",
             "source_run_id": "40531042000"
+          },
+          {
+            "candidate_status": "GAP",
+            "counted": false,
+            "counter_after": 18,
+            "date": "2026-10-27",
+            "reason": "SOURCE_FAILURE",
+            "source_run_id": "40723191126"
           }
         ],
         "qualified": 18,
@@ -546,11 +554,11 @@
         "schema": "qrds.h1.canonical_runtime.v1",
         "separate_runtime_structural_count_must_not_be_added": true,
         "status": "H1_18_OF_20_CANONICAL",
-        "updated_at_utc": "2026-10-27T15:29:28.255765+00:00"
+        "updated_at_utc": "2026-10-28T16:11:35.459334+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h1/CANONICAL_STATUS.json",
-      "sha256": "7d2781e72bcca99b0aa1a3f74dd24c81ce9c050c9f0adf3b0d420a71abebffda"
+      "sha256": "0b9f8c9d11f5c02def52b0a5a4767c078fe25fa2a351db41d674a0d57fec5057"
     },
     "h1_structural": {
       "data": {
@@ -797,17 +805,17 @@
         "H31_CANONICAL_ELIGIBLE_OBSERVATIONS": 4,
         "H31_FRONT_CONTINUATION_POLICY": "FROZEN_ROOT_WITH_MECHANICAL_LIVE_ROLL_SHADOW_ONLY",
         "H31_INTRADAY_MONITORING": true,
-        "H31_INTRADAY_SESSION": "2026-10-27",
+        "H31_INTRADAY_SESSION": "2026-10-28",
         "H31_INTRADAY_SHADOW_STATUS": "ACTIVE",
         "H31_MT5_READY": true,
-        "H31_PAPER_POSITION": "CLOSED",
+        "H31_PAPER_POSITION": "NONE",
         "H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT": 5,
         "H31_SHADOW_CLOSED_TRADES": 9,
         "H31_SHADOW_CLOSE_RECONCILIATION_STATUS": "PARTIAL_UNCLOSED_TRIGGER_GAPS",
         "H31_SHADOW_INVALID_EVENT_COUNT": 0,
         "H31_SHADOW_INVALID_EVENT_REASONS": [],
         "H31_SHADOW_ORIGINAL_EVENT_FILES_PRESERVED": true,
-        "H31_SHADOW_SESSIONS": 33,
+        "H31_SHADOW_SESSIONS": 34,
         "H31_SHADOW_SIMULATED_TRADES": 10,
         "H31_SHADOW_SIMULATED_TRADES_SEMANTICS": "TRIGGER_DECISIONS_NOT_CLOSED_RETURNS",
         "H31_SHADOW_TRIGGERED_SESSIONS": 10,
@@ -815,7 +823,7 @@
           "2026-09-22"
         ],
         "H31_SOURCE_BINDING_SCOPE": "SHADOW_ONLY_ZERO_CANONICAL_CREDIT",
-        "H31_TRIGGER_STATE": "TRIGGER",
+        "H31_TRIGGER_STATE": "NO_TRIGGER",
         "INTRADAY_SHADOW": true,
         "MT5_READ_ONLY": true,
         "NO_BACKFILL": true,
@@ -832,11 +840,11 @@
           "WIN": "WINZ26"
         },
         "schema": "gate_btc.b3.h31.intraday_shadow_status.v1",
-        "updated_at": "2026-10-27T11:39:52.484305-03:00"
+        "updated_at": "2026-10-28T11:39:26.923180-03:00"
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json",
-      "sha256": "e8d61d3caaf6164a3114e44a7f219e0df136330b1cb887c4a429c5355653deca"
+      "sha256": "53a5595a6dbc6e4ee4d03f71bbe60a0f8b74a6090507d90ed8729624a36d625b"
     },
     "h31_prospective": {
       "data": {
@@ -867,11 +875,11 @@
         "H1_ECONOMICS_READ": false,
         "H31_MT5_PARITY_OBSERVATIONS": 0,
         "H31_MT5_READY": false,
-        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 4,
+        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 0,
         "H31_PROSPECTIVE_STATUS": "ACTIVE_PROSPECTIVE",
         "H31_SHADOW_PAPER_STATUS": "ACTIVE",
-        "H31_SHADOW_SESSIONS": 4,
-        "H31_SHADOW_SIMULATED_TRADES": 2,
+        "H31_SHADOW_SESSIONS": 0,
+        "H31_SHADOW_SIMULATED_TRADES": 0,
         "NO_BACKFILL": true,
         "NO_RETUNE": true,
         "ORDERS": 0,
@@ -880,28 +888,28 @@
         "SHADOW_CREDIT_TO_CANONICAL": 0,
         "average_MAE_bps": null,
         "average_MFE_bps": null,
-        "cumulative_gross_bps": -7.923123978174075,
-        "cumulative_reference_net_bps": -11.923123978174075,
-        "cumulative_stress_net_bps": -13.923123978174075,
+        "cumulative_gross_bps": 0.0,
+        "cumulative_reference_net_bps": 0.0,
+        "cumulative_stress_net_bps": 0.0,
         "factory_feedback_allowed": false,
-        "gross_expectancy_bps": -3.9615619890870377,
-        "losses": 1,
-        "max_drawdown_bps": 36.652869690771084,
-        "metrics_sample_status": "ENOUGH_FOR_BASIC_DISPERSION",
-        "profit_factor": 0.6747014878025709,
-        "reference_net_expectancy_bps": -5.961561989087038,
+        "gross_expectancy_bps": null,
+        "losses": 0,
+        "max_drawdown_bps": null,
+        "metrics_sample_status": "NOT_ENOUGH_OBSERVATIONS",
+        "profit_factor": null,
+        "reference_net_expectancy_bps": null,
         "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-        "sessions_observed": 4,
-        "simulated_trades": 2,
-        "stress_net_expectancy_bps": -6.961561989087038,
-        "triggered_sessions": 2,
-        "volatility": 30.691307701684046,
-        "win_rate": 0.5,
-        "wins": 1
+        "sessions_observed": 0,
+        "simulated_trades": 0,
+        "stress_net_expectancy_bps": null,
+        "triggered_sessions": 0,
+        "volatility": null,
+        "win_rate": null,
+        "wins": 0
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
-      "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7"
+      "sha256": "0ec9e1db2dd66e01daf0e9c9475335a175ac3a73b6b0d4d7baef46b46024e7ee"
     },
     "lock25_50": {
       "data": {
