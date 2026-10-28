@@ -7,6 +7,8 @@ on:
       - tools/gate_btc_usx_pool_history.py
       - tests/test_gate_btc_usx_pool_history.py
       - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
+      - tools/gate_btc_momentum_required_prices.py
+      - tests/test_gate_btc_momentum_required_prices_qualified.py
       - tools/gate_btc_momentum_m3_gap_epoch.py
       - tools/gate_btc_retain_m3_price_evidence.py
       - tests/test_gate_btc_retain_m3_price_evidence.py
@@ -240,5 +242,6 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+
 
 

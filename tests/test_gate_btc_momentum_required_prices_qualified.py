@@ -103,3 +103,47 @@ class QualifiedEconomicPricesTests(unittest.TestCase):
                             [{'date': CUTOFF, 'symbol': symbol, 'close_usd': 2}], evidence)):
                     with self.assertRaisesRegex(ValueError, 'IDENTITY_MISMATCH'):
                         prices.fetch_qualified_economic_close(None, symbol, CUTOFF, AT)
+
+
+    def test_xdc_future_bridge_preserves_legacy_routes_and_old_cutoffs(self):
+        self.assertEqual(len(prices.ECONOMIC_QUALIFIED_IDENTITIES), 7)
+        self.assertIsNone(prices.economic_coin_id('XDC', '2026-10-26'))
+        self.assertEqual(prices.economic_coin_id('XDC', '2026-10-27'), 'xdce-crowd-sale')
+        self.assertEqual(prices.economic_coin_id('DRV', '2026-10-26'), 'derive')
+        with patch('tools.gate_btc_pit150_qualified_history.collect_history') as fetch:
+            with self.assertRaisesRegex(ValueError, 'NOT_REGISTERED'):
+                prices.fetch_qualified_economic_close(None, 'XDC', '2026-10-26', AT)
+            fetch.assert_not_called()
+
+    def test_xdc_exact_fallback_seals_current_price_and_amendment(self):
+        cutoff = '2026-10-27'
+        at = datetime(2026, 10, 28, 12, tzinfo=timezone.utc)
+        evidence = dict(symbol='XDC', coin_id='xdce-crowd-sale', cutoff=cutoff, source='mexc')
+        result = ([dict(date=cutoff, symbol='XDC', close_usd=0.03375)], evidence)
+        def primary(session, symbol):
+            if symbol == 'BTC':
+                return pd.DataFrame([dict(date=cutoff, symbol='BTC', close_usd=80909.77)])
+            raise ValueError('PRIMARY_UNAVAILABLE')
+        with tempfile.TemporaryDirectory() as directory, patch(
+                'tools.gate_btc_pit150_qualified_history.collect_history', return_value=result) as fetch:
+            root = Path(directory)
+            manifest = prices.collect({'cutoff': cutoff}, None, root/'source', root/'out.zip',
+                clock=lambda: at, loaders=[('primary', primary)], assets=['BTC', 'XDC'])
+            self.assertEqual(fetch.call_args.args[2], 'xdce-crowd-sale')
+            self.assertEqual(manifest['prices'][1]['close_usd'], 0.03375)
+            self.assertEqual(manifest['economic_source_amendments']['XDC']['effective_cutoff'], cutoff)
+            self.assertEqual(manifest['scientific_credit'], 0)
+            self.assertEqual(manifest['qualified_source_evidence'], [evidence])
+            with self.assertRaisesRegex(ValueError, 'NO_BACKFILL'):
+                prices.collect({'cutoff': '2026-10-26'}, None, root/'old', root/'old.zip',
+                    clock=lambda: at, loaders=[('primary', primary)], assets=['BTC', 'XDC'])
+
+    def test_xdc_wrong_coin_id_or_missing_completed_close_fails(self):
+        cutoff = '2026-10-27'
+        for coin_id, day in [('wrong-token', cutoff), ('xdce-crowd-sale', '2026-10-26')]:
+            with self.subTest(coin_id=coin_id, day=day), patch(
+                'tools.gate_btc_pit150_qualified_history.collect_history', return_value=(
+                    [dict(date=day, symbol='XDC', close_usd=0.03)],
+                    dict(symbol='XDC', coin_id=coin_id, cutoff=cutoff, source='mexc'))):
+                with self.assertRaises(ValueError):
+                    prices.fetch_qualified_economic_close(None, 'XDC', cutoff, AT)
