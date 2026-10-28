@@ -20,10 +20,10 @@
     "no_counter_reset": true,
     "no_backfill": true
   },
-  "updated_at_utc": "2026-10-28T16:39:05.550066Z",
+  "updated_at_utc": "2026-10-28T19:53:42.172348Z",
   "last_error": null,
   "scientific_blockers": [],
-  "workflow_run_id": "40727638148",
+  "workflow_run_id": "40757964271",
   "status": "ACTIVE_SHADOW_N80",
   "anchor_bar_date": "2026-09-29",
   "signal_capture_count": 32,
