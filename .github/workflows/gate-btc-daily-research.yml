@@ -36,6 +36,8 @@ on:
       - artifacts/gate_btc_2/pit150_case_continuity_20261019/**
       - tools/gate_btc_pit150_qualified_history.py
       - tools/gate_btc_hash_settlement_history.py
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tests/test_gate_btc_hash_block_batch.py
       - tools/gate_btc_reusd_swap_history.py
       - tools/gate_btc_a7a5_swap_history.py
@@ -56,6 +58,8 @@ on:
       # the collection. Without this path a change to it reaches main with no
       # PR CI on this workflow at all.
       - tools/gate_btc_measurement_common.py
+      - tools/gate_btc_gateway_economic_readiness.py
+      - tests/test_gate_btc_gateway_economic_readiness.py
       # measurement_common imports append_gateway from prospective_ledgers,
       # which imports measurement_status. The dependency is transitive, so
       # watching only the first level leaves the deeper two unwatched.
@@ -97,6 +101,8 @@ on:
       - artifacts/gate_btc_2/pit150_case_continuity_20261019/**
       - tools/gate_btc_pit150_qualified_history.py
       - tools/gate_btc_hash_settlement_history.py
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tests/test_gate_btc_hash_block_batch.py
       - tools/gate_btc_reusd_swap_history.py
       - tools/gate_btc_a7a5_swap_history.py
@@ -117,6 +123,8 @@ on:
       # the collection. Without this path a change to it reaches main with no
       # PR CI on this workflow at all.
       - tools/gate_btc_measurement_common.py
+      - tools/gate_btc_gateway_economic_readiness.py
+      - tests/test_gate_btc_gateway_economic_readiness.py
       # measurement_common imports append_gateway from prospective_ledgers,
       # which imports measurement_status. The dependency is transitive, so
       # watching only the first level leaves the deeper two unwatched.
@@ -183,6 +191,8 @@ jobs:
           tests/test_gate_btc_a7a5_swap_history.py
           tests/test_gate_btc_pit150_figure_history_audit.py
           tests/test_gate_btc_hash_settlement_history.py
+          tests/test_gate_btc_gateway_economic_readiness.py
+          tests/test_gate_btc_usx_pool_history.py
           tests/test_gate_btc_hash_block_batch.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
 
@@ -229,6 +239,8 @@ jobs:
           tests/test_gate_btc_a7a5_swap_history.py
           tests/test_gate_btc_pit150_figure_history_audit.py
           tests/test_gate_btc_hash_settlement_history.py
+          tests/test_gate_btc_gateway_economic_readiness.py
+          tests/test_gate_btc_usx_pool_history.py
           tests/test_gate_btc_hash_block_batch.py
           tests/test_gate_btc_2_v2a_registry_prospective_pit.py
       - name: Resolve most recent completed UTC close
@@ -307,6 +319,12 @@ jobs:
         run: >-
           python tools/gateway_frozen_replay.py
           --output-dir artifacts/gateway_reference_check
+      - name: Audit Gateway market exposure and economic ledger readiness
+        continue-on-error: true
+        run: >-
+          python tools/gate_btc_gateway_economic_readiness.py
+          --gateway-output-zip artifacts/gateway_daily/linux_public_capture_outputs.zip
+          --out artifacts/gateway_economic_readiness/STATUS.json
       - name: Build fail-closed daily handoff
         if: steps.lock_valuation.outcome == 'success' && hashFiles('artifacts/qos_daily/lock_valuation_sidecar.json') != ''
         run: >-
@@ -554,4 +572,5 @@ jobs:
             done
             exit 1
           fi
+
 

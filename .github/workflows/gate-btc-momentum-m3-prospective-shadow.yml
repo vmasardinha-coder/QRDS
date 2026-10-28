@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - .github/workflows/gate-btc-momentum-m3-prospective-shadow.yml
       - tools/gate_btc_momentum_m3_gap_epoch.py
       - tools/gate_btc_retain_m3_price_evidence.py
@@ -22,6 +24,8 @@ on:
       - tools/gate_btc_momentum_m3_gap_epoch.py
       - tools/gate_btc_momentum_required_prices.py
       - tools/gate_btc_pit150_qualified_history.py
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tools/gate_btc_hash_settlement_history.py
       - tools/gate_btc_pit150_figure_history_audit.py
       - tools/gate_btc_reusd_swap_history.py
@@ -236,4 +240,5 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+
 

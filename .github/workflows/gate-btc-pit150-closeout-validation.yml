@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - 'tools/gate_btc_pit150_qualified_history.py'
       - 'tools/gate_btc_a7a5_swap_history.py'
       - 'tools/gate_btc_reusd_swap_history.py'
@@ -150,3 +152,4 @@ jobs:
         with:
           name: pit150-akt-native-preflight
           path: artifacts/pit150_akt_native_preflight/
+

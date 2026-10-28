@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [main, agent/gate-btc-migration-current]
     paths:
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - .github/workflows/gate-btc-qos-three-track-shadow.yml
       - migration/GATE_BTC_QOS_PROSPECTIVE_THREE_TRACK_CONTRACT_V1.json
       - tools/gate_btc_qos_interruption_20260928.json
@@ -184,4 +186,5 @@ jobs:
           if os.environ['NEEDS_SOURCE']=='true':
               assert os.environ['INPUT_OUTCOME']==os.environ['PROCESS_OUTCOME']=='success'
           PY
+
 

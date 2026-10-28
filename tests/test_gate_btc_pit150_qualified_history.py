@@ -48,7 +48,7 @@ class QualifiedHistoryTests(unittest.TestCase):
 
     def test_previously_admitted_mexc_routes_bind_name_contract_and_coin_id(self):
         previous={"MNT","HTX","BGB","KAS","KCS","BDX","XDC","AKE","BSV","APEPE"}
-        self.assertEqual(len(ROUTES),31)
+        self.assertEqual(len(ROUTES),32)
         for symbol in previous:
             route=ROUTES[symbol]
             self.assertIsNotNone(route_for_member(symbol,route["coin_id"],"2026-10-13"))
@@ -482,3 +482,45 @@ class BybitCapturePublisherTests(unittest.TestCase):
 
 
 if __name__=="__main__":unittest.main()
+
+
+
+class AeroProviderNameAmendmentTests(unittest.TestCase):
+    def market(self):
+        return {"id": "AERO_USDT", "base": "AERO", "quote": "USDT",
+                "base_name": "Aero", "trade_status": "tradable"}
+
+    def currency(self):
+        return {"currency": "AERO", "name": "Aero", "delisted": False,
+                "trade_disabled": False, "chain": "BASEEVM",
+                "chains": [{"name": "BASEEVM", "addr": ROUTES["AERO"]["contract"]}]}
+
+    def test_amendment_is_future_cutoff_only_and_does_not_mutate_route(self):
+        before = copy.deepcopy(ROUTES["AERO"])
+        old = route_for_member("AERO", "aerodrome-finance", "2026-10-26")
+        new = route_for_member("AERO", "aerodrome-finance", "2026-10-27")
+        self.assertEqual(old["name"], "Aerodrome")
+        with self.assertRaises(ValueError):
+            check_identity(old, self.market())
+        check_identity(new, self.market())
+        check_gate_contract(new, self.currency())
+        self.assertEqual(new["contract"], old["contract"])
+        self.assertEqual(ROUTES["AERO"], before)
+        self.assertIsNone(route_for_member("AERO", "another-token", "2026-10-27"))
+
+    def test_new_display_name_cannot_bypass_chain_contract_or_currency(self):
+        route = route_for_member("AERO", "aerodrome-finance", "2026-10-27")
+        for kind in ["chain", "contract", "duplicate", "currency", "disabled"]:
+            bad = self.currency()
+            if kind == "chain": bad["chains"][0]["name"] = "ETH"
+            if kind == "contract": bad["chains"][0]["addr"] = "0xwrong"
+            if kind == "duplicate": bad["chains"].append(dict(bad["chains"][0]))
+            if kind == "currency": bad["currency"] = "OTHER"
+            if kind == "disabled": bad["trade_disabled"] = True
+            with self.subTest(kind=kind), self.assertRaises(ValueError):
+                check_gate_contract(route, bad)
+
+    def test_other_gate_names_are_not_relaxed(self):
+        route = dict(ROUTES["AERO"], pair="OTHER_USDT", name="Original")
+        with self.assertRaises(ValueError):
+            check_identity(route, dict(self.market(), id="OTHER_USDT", base="OTHER"))

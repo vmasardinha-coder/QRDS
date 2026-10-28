@@ -128,6 +128,12 @@ ROUTES['AKT'] = {'coin_id':'akash-network','name':'Akash Network',
     'issuer_identity_evidence':'https://akash.network/token/'}
 
 
+# Exact Solana pool already bound in the source registry; only future cutoffs
+# may use the newly verified 200-day paginated history.
+ROUTES['USX'] = {'coin_id': 'usx', 'name': 'USX Stablecoin',
+                 'source': 'geckoterminal_exact_usx_pool', 'pair': 'USX-USDC',
+                 'effective_cutoff': '2026-10-27'}
+
 def route_for_member(symbol, coin_id, cutoff):
     if cutoff and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",cutoff):
         raise ValueError("invalid qualified source cutoff")
@@ -137,7 +143,19 @@ def route_for_member(symbol, coin_id, cutoff):
     if not route or route["coin_id"] != coin_id or cutoff < route.get("effective_cutoff", EFFECTIVE_CUTOFF):
         return None
     datetime.strptime(cutoff, "%Y-%m-%d")
-    return dict(route)
+    selected = dict(route)
+    if symbol == 'AERO' and cutoff >= '2026-10-27':
+        # Gate changed only its provider display name. The exact Base contract,
+        # CoinGecko identity, pair, chain and tradability checks stay mandatory.
+        # Never reinterpret cutoffs before this reviewed amendment.
+        selected['name'] = 'Aero'
+        selected['provider_name_amendment'] = {
+            'effective_cutoff': '2026-10-27',
+            'previous_name': 'Aerodrome', 'provider_name': 'Aero',
+            'evidence': 'artifacts/gate_btc_2/pit150_aero_gate_name_20261027/IDENTITY_RECEIPT.json',
+            'contract_and_chain_unchanged': True,
+        }
+    return selected
 
 def check_identity(route, payload):
     provider = route["source"]
@@ -507,6 +525,9 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
     if provider == 'figure_hash_native_reconciled_tape':
         from tools.gate_btc_hash_settlement_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
+    if provider == 'geckoterminal_exact_usx_pool':
+        from tools.gate_btc_usx_pool_history import collect
+        return collect(session,cutoff,evidence_dir,now=now)
     if provider == 'blockscout_eth_reusd_swaps':
         from tools.gate_btc_reusd_swap_history import collect
         return collect(session,cutoff,evidence_dir,now=now)
@@ -597,7 +618,10 @@ def collect_history(session, symbol, coin_id, cutoff, evidence_dir, now=None):
                          'quote_usd_convention':'nominal stablecoin quote; no historical FX conversion'})
     if route.get('rename_evidence'):
         evidence['rename_evidence'] = route['rename_evidence']
+    if route.get('provider_name_amendment'):
+        evidence['provider_name_amendment'] = route['provider_name_amendment']
     if 'currency' in labels:
         evidence['currency_identity_sha256'] = hashes[1]
     (output/"qualification.json").write_text(json.dumps(evidence,indent=2)+"\n")
     return rows,evidence
+

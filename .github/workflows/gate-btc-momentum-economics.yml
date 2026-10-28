@@ -8,6 +8,8 @@ on:
       - tools/gate_btc_momentum_hold_epoch.py
       - migration/reporting/momentum_tradable_policy_v1.json
       - tools/gate_btc_pit150_qualified_history.py
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tools/gate_btc_hash_settlement_history.py
       - tools/gate_btc_pit150_figure_history_audit.py
       - tools/gate_btc_reusd_swap_history.py
@@ -31,6 +33,8 @@ on:
       - tools/gate_btc_momentum_hold_epoch.py
       - tools/gate_btc_momentum_required_prices.py
       - tools/gate_btc_pit150_qualified_history.py
+      - tools/gate_btc_usx_pool_history.py
+      - tests/test_gate_btc_usx_pool_history.py
       - tools/gate_btc_hash_settlement_history.py
       - tools/gate_btc_pit150_figure_history_audit.py
       - tools/gate_btc_reusd_swap_history.py
@@ -229,4 +233,5 @@ jobs:
         run: |
           echo 'MOMENTUM_ECONOMICS_BLOCKED - inspect source, gross and cost evidence; no economic row fabricated'
           exit 1
+
 
