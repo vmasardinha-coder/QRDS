@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-28T01:26:55.580164+00:00",
+  "generated_at_utc": "2026-10-28T05:23:38.177926+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -12,7 +12,8 @@
     "M1_M2_ACTIVE_STATUS_OVERRIDES_STALE_RED_REPORTING_HINT",
     "H31_ACTIVE_PROSPECTIVE_VISIBLE_EVEN_WITH_ZERO_ELIGIBLE_OBSERVATIONS",
     "ALT_TRAIL_EXISTS_DO_NOT_REPORT_AS_MISSING",
-    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING"
+    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING",
+    "D100_CANONICAL_RUNTIME_OVERRIDES_STALE_FROZEN_DORMANT_HINT"
   ],
   "reporting_only": true,
   "safety": {
@@ -56,11 +57,11 @@
         "shadow_only": true,
         "snapshot_count": 5,
         "status": "WAITING_NEXT_APPROVED_MONTH_END",
-        "updated_at_utc": "2026-10-28T00:48:14.611231+00:00"
+        "updated_at_utc": "2026-10-28T01:30:47.153860+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/alt_trail40_10/STATUS.json",
-      "sha256": "811568028d50a53c6f5dfa8c523f10d0352d61a687f91c356b1e0c7ae51729ac"
+      "sha256": "d8eca5848e004db02a53e877ce604fc5ee74b46368dd2751c7925ab0f8d6028d"
     },
     "bull_replay": {
       "data": {
@@ -151,13 +152,58 @@
     },
     "d100": {
       "data": {
+        "anchor_bar_date": "2026-09-29",
         "economics_enabled": true,
-        "last_error": "RuntimeError: source request failed: HTTPError: HTTP Error 429: Too Many Requests",
-        "next_action": "REPAIR_TECHNICAL_FAILURE_OR_EXPLICIT_INTERRUPTION_DISPOSITION",
+        "first_possible_bar_date": "2026-09-29",
+        "last_error": null,
+        "latest_eligible_asset_count": 39,
+        "latest_eligible_symbols": [
+          "AAVE",
+          "ADA",
+          "ALGO",
+          "APT",
+          "ARB",
+          "ATOM",
+          "AVAX",
+          "BCH",
+          "BNB",
+          "BTC",
+          "CRO",
+          "CRV",
+          "DOGE",
+          "DOT",
+          "ENA",
+          "ETC",
+          "ETH",
+          "FIL",
+          "HBAR",
+          "HYPE",
+          "ICP",
+          "INJ",
+          "LINK",
+          "LTC",
+          "NEAR",
+          "ONDO",
+          "PEPE",
+          "RENDER",
+          "SEI",
+          "SHIB",
+          "SOL",
+          "SUI",
+          "TAO",
+          "TRX",
+          "UNI",
+          "WLD",
+          "XLM",
+          "XRP",
+          "ZEC"
+        ],
+        "latest_signal_available_at_utc": "2026-10-28T02:14:03.409794Z",
+        "next_action": "AUTOMATIC_DAILY_CAPTURE_AND_PAIRED_ADVANCEMENT_UNTIL_N80",
         "protocol_approved": true,
         "protocol_sha256": "3ef8321bc3a6f37051d61dcfad44a2e6790b0c4ba796c91f6ef8af999902db99",
         "registry_sha256": "c00351f612610bec1e53245074bde369e7c87edcb546331f89dde91f44634a23",
-        "remaining_scientific_observations": 52,
+        "remaining_scientific_observations": 51,
         "safety": {
           "engine_feed": false,
           "no_backfill": true,
@@ -170,18 +216,17 @@
           "shadow_only": true
         },
         "schema": "qrds.d100.economics.v1",
-        "scientific_blockers": [
-          "TECHNICAL_SOURCE_OR_EVIDENCE_FAILURE"
-        ],
-        "scientific_observations_credited": 28,
+        "scientific_blockers": [],
+        "scientific_observations_credited": 29,
         "scientific_target": 80,
-        "status": "BLOCKED_TECHNICAL_QUALIFICATION",
-        "updated_at_utc": "2026-10-28T00:44:46.826093Z",
-        "workflow_run_id": "40610489092"
+        "signal_capture_count": 32,
+        "status": "ACTIVE_SHADOW_N80",
+        "updated_at_utc": "2026-10-28T02:13:44.305254Z",
+        "workflow_run_id": "40619547845"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/economic/STATUS.json",
-      "sha256": "8473b1314e7bc0b02801ca38971ca1be8cbb6742ff85e970459bfe727771f3cc"
+      "sha256": "30cc115e15b739235e56232ddb313477bb81b5406916011c9f58e131256df8a2"
     },
     "d100_physical": {
       "data": {
@@ -196,10 +241,10 @@
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-10-28T00:44:14.920834Z",
-        "last_attempt_result": "CAPTURED",
+        "last_attempt_at_utc": "2026-10-28T02:13:43.151369Z",
+        "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
         "last_error": null,
-        "last_heartbeat_utc": "2026-10-28T00:44:14.920834Z",
+        "last_heartbeat_utc": "2026-10-28T02:13:43.151369Z",
         "latest_market_data_observed_count": 71,
         "latest_physical_capture_at_utc": "2026-10-28T00:44:46.330026Z",
         "latest_raw_universe_count": 100,
@@ -230,11 +275,11 @@
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
         "successful_capture_days": 32,
         "track": "D100",
-        "workflow_run_id": "40610489092"
+        "workflow_run_id": "40619547845"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "ebd6c8273a3bc82c358a9ccd9301cbfa386a10c765473aba291959c11e4f432d"
+      "sha256": "f9993ab45ae8a472c190cb1fe2efccd4c944cc3ad7a06db519f4e9026fa7976a"
     },
     "delta_paper": {
       "data": {
@@ -1668,11 +1713,11 @@
         "shadow_only": true,
         "snapshot_count": 5,
         "status": "WAITING_NEXT_APPROVED_MONTH_END",
-        "updated_at_utc": "2026-10-28T00:48:03.585130+00:00"
+        "updated_at_utc": "2026-10-28T01:28:53.295018+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/prl50_position/STATUS.json",
-      "sha256": "8e7d7def8443edb12f231184e6d460459acafc8197a0e6da2ae49d77746baddd"
+      "sha256": "998a033f8cfbb19fa68577493611a3f4548cc5b0fba227a279052370c1c6c6c4"
     },
     "reporting_state": {
       "data": {
@@ -9612,11 +9657,11 @@
     },
     "xagent_spot_continuous_v1": {
       "data": {
-        "as_of_utc": "2026-10-27T23:44:13.221054+00:00",
+        "as_of_utc": "2026-10-28T02:24:46.488716+00:00",
         "canonical_580_untouched": true,
         "checkpoint": 60,
         "contract_sha256": "d2cdb0cd567213d24d4e32c6d27f3435a8bf1bd32e7288861cf5fc3b7bea4d2c",
-        "current_decision_window_open": false,
+        "current_decision_window_open": true,
         "experiment_id": "F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1",
         "h1_h31_untouched": true,
         "missed_decision_dates": [
@@ -9628,7 +9673,7 @@
         "missed_window_count": 4,
         "missed_windows_have_economic_credit": false,
         "new_decision": null,
-        "next_decision_window_start_utc": "2026-10-28T02:00:00+00:00",
+        "next_decision_window_start_utc": "2026-10-29T02:00:00+00:00",
         "paired_outcome_count": 0,
         "parent_handoff_unchanged": true,
         "pending_price_or_seal": [],
@@ -9650,7 +9695,7 @@
       },
       "exists": true,
       "path": "runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json",
-      "sha256": "6d8e95c01c2b12eda187b336e751e4b8ba24948d6e162f96aee56c37adcc8214"
+      "sha256": "0b9e0970a5c94117f3ad4874e15a3eab076d90a9daac9d25209bf429badc0833"
     }
   }
 }
