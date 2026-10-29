@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-29T01:54:15.170549Z",
+  "generated_at_utc": "2026-10-29T05:35:40.261537Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "6eb5d807f6dcbb5f8599aa1950a198d1d52bf6a22adf1141eae8a9d7fe432a1d",
+        "sample_sha256": "19a5fb63b747c800fd3bfb3173d6d32309df8db7aa45424231ff7225921d4b04",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -221,7 +221,7 @@
     ],
     "mt5_read_only_source_evidence": {
       "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
-      "source_packet_sha256": "00932b3d795679ee90e48b985629960d61720e83035ecb652bd89ee265782b01",
+      "source_packet_sha256": "e4fc83c3702fea682958c9dde66bc1651b47b5c9ed01e318361cc383b87e8645",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
       "matching_record_count": 7,
       "matching_records": [
@@ -883,31 +883,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
-        "repository": "Sentmint/Crawl-Scrape",
-        "path": "data_collected/twitter/#DELL/1678329877.949008.csv",
-        "html_url": "https://github.com/Sentmint/Crawl-Scrape/blob/b1f068682b691ba80ee687ea9ccdff2f231b21d5/data_collected/twitter/#DELL/1678329877.949008.csv",
-        "search_priority": 4,
-        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
-        "independent_of_invalidated_source": true,
-        "free_auditable_candidate": true,
-        "identity_qa_pass": false,
-        "schema_qa_pass": false,
-        "publication_semantics_proven": false,
-        "revision_semantics_proven": false,
-        "point_in_time_valid": false,
-        "status": "DISCOVERED_NOT_QUALIFIED",
-        "inspection_error": "AttributeError: 'list' object has no attribute 'get'",
-        "deficiencies": [
-          "IDENTITY_NOT_PROVEN",
-          "INTRADAY_SCHEMA_NOT_PROVEN",
-          "PUBLICATION_SEMANTICS_NOT_PROVEN",
-          "REVISION_SEMANTICS_NOT_PROVEN",
-          "PIT_NOT_PROVEN"
-        ]
-      },
-      {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "igorsterner/TongueSwitcher",
         "path": "resources/frequency_sorted_islands/1.csv",
         "html_url": "https://github.com/igorsterner/TongueSwitcher/blob/a1ad4a293b01a1f420ee078b51233454b5462dc1/resources/frequency_sorted_islands/1.csv",
@@ -932,7 +908,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "is-shah/Beyond-Cookies",
         "path": "subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
         "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/bb534a3aec5ef9e21464e257edb3ecfed1253ad4/subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
@@ -957,7 +933,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "is-shah/Beyond-Cookies",
         "path": "subcode_for_analysis/Split_disclosure_output/class_4.csv",
         "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/bb534a3aec5ef9e21464e257edb3ecfed1253ad4/subcode_for_analysis/Split_disclosure_output/class_4.csv",
@@ -982,7 +958,7 @@
         ]
       },
       {
-        "query": "WINFUT timestamp open high low close extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "repository": "lei20191116/AlignmentSys",
         "path": "twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
         "html_url": "https://github.com/lei20191116/AlignmentSys/blob/e6882b08810e755af90be9ff1d305670595c54dc/twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
@@ -1078,14 +1054,14 @@
         ]
       },
       {
-        "query": "\"mini índice futuro\" 5min extension:csv",
+        "query": "WINFUT timestamp open high low close extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+timestamp+open+high+low+close+extension%3Acsv&per_page=30"
       },
       {
-        "query": "\"WIN B3\" OHLC 5min extension:csv",
+        "query": "WINFUT datetime open high low close extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+datetime+open+high+low+close+extension%3Acsv&per_page=30"
       }
     ],
     "reachable_official_probe_count": 6,
@@ -1093,7 +1069,7 @@
     "schema_identity_candidate_count": 0,
     "irrelevant_identity_candidate_count": 21,
     "github_query_count": 12,
-    "github_candidate_count": 32,
+    "github_candidate_count": 31,
     "github_per_query": 30,
     "original_invalidated_source_excluded_from_independent_candidates": true
   },
