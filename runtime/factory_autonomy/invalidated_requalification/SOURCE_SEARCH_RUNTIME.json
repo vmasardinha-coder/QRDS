@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-29T16:15:10.936950Z",
+  "generated_at_utc": "2026-10-29T19:32:33.047450Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2941,
-        "sample_sha256": "1ba9085c6d532dcb29e05175efb8dd53060fc7480061ca4e435131d3208bb693",
+        "sample_sha256": "598982dca33a93d015769cee7f2326f8c043951ddb45ac9b0017a4c36092ee2b",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -221,9 +221,9 @@
     ],
     "mt5_read_only_source_evidence": {
       "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
-      "source_packet_sha256": "30cc1b63e8b0b9736be622a24aa1b2d42712c80a5be9921278aa302597b41c17",
+      "source_packet_sha256": "da54b3bf0e2aadd2a5f832d8a42bd1a1ab89aa2d8b867f462beb4754d5bd512b",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
-      "matching_record_count": 5,
+      "matching_record_count": 7,
       "matching_records": [
         {
           "symbol": "WING23",
@@ -234,35 +234,51 @@
           "captured_bar_count": 4096
         },
         {
+          "symbol": "WING26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WING26",
+          "earliest_observation_utc": "2025-12-22T11:45:00Z",
+          "latest_observation_utc": "2026-02-18T17:55:00Z",
+          "captured_bar_count": 4096
+        },
+        {
           "symbol": "WING27",
           "description": "IBOVESPA MINI",
           "path": "BVMF-Derivatives\\WING27",
           "earliest_observation_utc": "2026-08-12T10:25:00Z",
-          "latest_observation_utc": "2026-10-28T18:30:00Z",
-          "captured_bar_count": 1997
+          "latest_observation_utc": "2026-10-29T13:55:00Z",
+          "captured_bar_count": 2057
+        },
+        {
+          "symbol": "WINJ26",
+          "description": "IBOVESPA MINI",
+          "path": "BVMF-Derivatives\\WINJ26",
+          "earliest_observation_utc": "2026-02-24T09:15:00Z",
+          "latest_observation_utc": "2026-04-15T16:55:00Z",
+          "captured_bar_count": 4096
         },
         {
           "symbol": "WINJ27",
           "description": "IBOVESPA MINI",
           "path": "BVMF-Derivatives\\WINJ27",
           "earliest_observation_utc": "2026-10-08T09:05:00Z",
-          "latest_observation_utc": "2026-10-28T18:05:00Z",
-          "captured_bar_count": 128
+          "latest_observation_utc": "2026-10-29T13:35:00Z",
+          "captured_bar_count": 131
         },
         {
-          "symbol": "WINZ22",
+          "symbol": "WINM26",
           "description": "IBOVESPA MINI",
-          "path": "GTW_BMF\\WINZ22",
-          "earliest_observation_utc": "2022-10-21T13:45:00Z",
-          "latest_observation_utc": "2022-12-14T17:55:00Z",
+          "path": "BVMF-Derivatives\\WINM26",
+          "earliest_observation_utc": "2026-04-24T18:30:00Z",
+          "latest_observation_utc": "2026-06-17T16:55:00Z",
           "captured_bar_count": 4096
         },
         {
-          "symbol": "WINZ26",
+          "symbol": "WINQ26",
           "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINZ26",
-          "earliest_observation_utc": "2026-09-08T09:50:00Z",
-          "latest_observation_utc": "2026-10-28T18:30:00Z",
+          "path": "BVMF-Derivatives\\WINQ26",
+          "earliest_observation_utc": "2026-06-23T15:15:00Z",
+          "latest_observation_utc": "2026-08-12T16:55:00Z",
           "captured_bar_count": 4096
         }
       ],
@@ -1062,24 +1078,14 @@
         ]
       },
       {
-        "query": "\"mini indice futuro\" 5min extension:csv",
+        "query": "\"WIN B3\" OHLC 5min extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice+futuro%22+5min+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
       },
       {
-        "query": "\"mini índice futuro\" 5min extension:csv",
+        "query": "\"WINFUT\" volume timestamp extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
-      },
-      {
-        "query": "\"mini indice\" intraday B3 extension:csv",
-        "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
-      },
-      {
-        "query": "\"WIN continuous\" futures Brazil extension:csv",
-        "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WINFUT%22+volume+timestamp+extension%3Acsv&per_page=30"
       }
     ],
     "reachable_official_probe_count": 6,
