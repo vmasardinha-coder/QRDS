@@ -105,10 +105,22 @@ ECONOMIC_QUALIFIED_IDENTITIES = {
 }
 
 
+# XDC already has an exact PIT route; extend only the economic mark bridge.
+ECONOMIC_SOURCE_AMENDMENTS = {
+    'XDC': {'coin_id': 'xdce-crowd-sale', 'effective_cutoff': '2026-10-27'},
+}
+
+def economic_coin_id(symbol, cutoff):
+    amendment = ECONOMIC_SOURCE_AMENDMENTS.get(symbol)
+    if amendment and cutoff >= amendment['effective_cutoff']:
+        return amendment['coin_id']
+    return ECONOMIC_QUALIFIED_IDENTITIES.get(symbol)
+
+
 def fetch_qualified_economic_close(session, symbol, cutoff, at):
     """Revalidate the exact public route and select only the completed close."""
     from tools.gate_btc_pit150_qualified_history import collect_history
-    coin_id = ECONOMIC_QUALIFIED_IDENTITIES.get(symbol)
+    coin_id = economic_coin_id(symbol, cutoff)
     if coin_id is None:
         raise ValueError('QUALIFIED_ECONOMIC_IDENTITY_NOT_REGISTERED')
     with tempfile.TemporaryDirectory(prefix='momentum-qualified-') as directory:
@@ -161,7 +173,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
             except Exception as exc:
                 attempts.append({'symbol':symbol,'source':name,'error':str(exc)})
         else:
-            if symbol in ECONOMIC_QUALIFIED_IDENTITIES:
+            if economic_coin_id(symbol, cutoff) is not None:
                 try:
                     value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,at)
                     prices.append({'date':cutoff,'symbol':symbol,'close_usd':value,
@@ -188,7 +200,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
               'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
-              'qualified_fallback_policy':'SEVEN_PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_NO_BACKFILL',
+              'qualified_fallback_policy':'PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_TEMPORAL_AMENDMENTS_NO_BACKFILL',
+              'economic_source_amendments':{s:ECONOMIC_SOURCE_AMENDMENTS[s] for s in required if s in ECONOMIC_SOURCE_AMENDMENTS and cutoff>=ECONOMIC_SOURCE_AMENDMENTS[s]['effective_cutoff']},
               'qualified_source_evidence':qualified_evidence,
               'evidence_role':'CURRENT_SOURCE_EVIDENCE_ONLY_NOT_BACKFILLED_ECONOMICS',
               'scientific_credit':0,'research_only':True,'shadow_only':True,'orders':0,'real_capital':0}
@@ -213,4 +226,5 @@ def main():
 
 
 if __name__=='__main__':raise SystemExit(main())
+
 
