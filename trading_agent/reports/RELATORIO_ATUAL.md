@@ -1,37 +1,37 @@
-# Relatorio diario do agente — 2026-10-28
+# Relatorio diario do agente — 2026-10-29
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-10-28-grafico.svg)
+![Historico das carteiras](2026-10-29-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-28-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-29-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $45,452.95 |
-| Retorno do dia | +1.89% |
-| Intervalo observado | 2026-10-27 → 2026-10-28 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -9.09% |
-| Benchmark SPY | -0.57% |
-| **Alfa vs SPY** | **-8.52%** |
+| NAV | $46,791.50 |
+| Retorno do dia | +2.94% |
+| Intervalo observado | 2026-10-28 → 2026-10-29 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -6.42% |
+| Benchmark SPY | -0.02% |
+| **Alfa vs SPY** | **-6.40%** |
 | Caixa | $362.87 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| MU | 5.2524 | $903.70 | $4,746.59 | 10.4% |
-| ADI | 11.5348 | $407.93 | $4,705.37 | 10.4% |
-| TXN | 15.6712 | $298.12 | $4,671.90 | 10.3% |
-| AMD | 8.76345 | $531.28 | $4,655.85 | 10.2% |
-| PANW | 11.7237 | $390.46 | $4,577.62 | 10.1% |
-| INTC | 49.635 | $90.47 | $4,490.47 | 9.9% |
-| KLAC | 30.0083 | $149.21 | $4,477.54 | 9.9% |
-| CAT | 6.30087 | $692.13 | $4,361.02 | 9.6% |
-| MRK | 30.1285 | $140.61 | $4,236.37 | 9.3% |
-| TGT | 28.0572 | $148.53 | $4,167.34 | 9.2% |
+| AMD | 8.76345 | $560.26 | $4,909.81 | 10.5% |
+| ADI | 11.5348 | $425.35 | $4,906.31 | 10.5% |
+| MU | 5.2524 | $928.76 | $4,878.22 | 10.4% |
+| TXN | 15.6712 | $308.91 | $4,840.99 | 10.3% |
+| PANW | 11.7237 | $401.70 | $4,709.39 | 10.1% |
+| INTC | 49.635 | $93.74 | $4,652.78 | 9.9% |
+| KLAC | 30.0083 | $153.66 | $4,611.08 | 9.9% |
+| CAT | 6.30087 | $713.31 | $4,494.47 | 9.6% |
+| MRK | 30.1285 | $141.82 | $4,272.83 | 9.1% |
+| TGT | 28.0572 | $148.01 | $4,152.75 | 8.9% |
 
 _Sem movimentacoes hoje._
 
@@ -39,22 +39,22 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (SPY):** momentum de +14.8% — so entram ativos acima disto
-- **Candidatos elegiveis:** 39
+- **Obstaculo (SPY):** momentum de +13.1% — so entram ativos acima disto
+- **Candidatos elegiveis:** 38
 - **Fontes usadas:** nasdaq: 101
 - **Em carencia por stop:** AMAT (ate 2026-11-22), LRCX (ate 2026-11-23)
 
 | Rejeitado | Motivo |
 |---|---|
-| ABT | nao bate o benchmark (-19.8% <= +14.8%) |
-| ACN | nao bate o benchmark (-29.5% <= +14.8%) |
-| ADBE | nao bate o benchmark (-33.5% <= +14.8%) |
-| AMT | nao bate o benchmark (-11.2% <= +14.8%) |
-| AMZN | nao bate o benchmark (+12.9% <= +14.8%) |
-| AVGO | nao bate o benchmark (+2.5% <= +14.8%) |
-| AXP | nao bate o benchmark (-13.0% <= +14.8%) |
-| BA | nao bate o benchmark (-9.0% <= +14.8%) |
-| _(+51 outros)_ | |
+| ABT | nao bate o benchmark (-20.4% <= +13.0%) |
+| ACN | nao bate o benchmark (-29.5% <= +13.0%) |
+| ADBE | nao bate o benchmark (-34.7% <= +13.0%) |
+| AMT | nao bate o benchmark (-12.3% <= +13.0%) |
+| AMZN | nao bate o benchmark (+9.8% <= +13.0%) |
+| AVGO | nao bate o benchmark (-1.3% <= +13.0%) |
+| AXP | nao bate o benchmark (-14.3% <= +13.0%) |
+| BA | nao bate o benchmark (-16.7% <= +13.0%) |
+| _(+52 outros)_ | |
 
 </details>
 
@@ -62,79 +62,22 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $53,919.84 |
-| Retorno do dia | +0.37% |
-| Intervalo observado | 2026-10-27 → 2026-10-28 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | +7.84% |
-| Benchmark BTC | +25.26% |
-| **Alfa vs BTC** | **-17.42%** |
+| NAV | $53,999.18 |
+| Retorno do dia | +0.15% |
+| Intervalo observado | 2026-10-28 → 2026-10-29 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | +8.00% |
+| Benchmark BTC | +25.76% |
+| **Alfa vs BTC** | **-17.76%** |
 | Caixa | $2,466.72 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.335285 | $80,689.57 | $27,054.02 | 50.2% |
-| NEAR | 1763.99 | $4.66 | $8,218.26 | 15.2% |
-| ZEC | 6.22877 | $1,298.88 | $8,090.42 | 15.0% |
-| QNT | 40.684 | $198.86 | $8,090.42 | 15.0% |
-
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| ENA | VENDA | 38179.7 | $0.21 | $7,980.74 | rebalanceio |
-| QNT | COMPRA | 1.10382 | $199.06 | $219.73 | rebalanceio |
-| ZEC | COMPRA | 6.22877 | $1,300.18 | $8,098.51 | rebalanceio |
-
-<details>
-<summary>Rasto de decisao (auditoria)</summary>
-
-- **Gatilho:** desvio de peso em ZEC: 0.0% vs alvo 15.0%
-- **Obstaculo (BTC):** momentum de +10.7% — so entram ativos acima disto
-- **Candidatos elegiveis:** 19
-- **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
-- **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
-- **Nota:** teto de 15% por alt deixou 5.0% em caixa
-
-| Rejeitado | Motivo |
-|---|---|
-| 1INCH | liquidez baixa (0.1M < 1M) |
-| ADA | nao bate o benchmark (+1.9% <= +10.7%) |
-| ALGO | nao bate o benchmark (+3.3% <= +10.7%) |
-| ALICE | liquidez baixa (0.0M < 1M) |
-| AMP | liquidez baixa (0.3M < 1M) |
-| ANKR | liquidez baixa (0.1M < 1M) |
-| APE | liquidez baixa (0.5M < 1M) |
-| API3 | liquidez baixa (0.1M < 1M) |
-| _(+111 outros)_ | |
-
-</details>
-
-## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
-
-| Indicador | Valor |
-|---|---|
-| NAV | R$ 48,865.21 |
-| Retorno do dia | -0.37% |
-| Intervalo observado | 2026-10-27 → 2026-10-28 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -2.27% |
-| Benchmark IBOV | +0.09% |
-| Benchmark CDI | +2.86% |
-| **Alfa vs o maior (CDI)** | **-5.13%** |
-| Caixa | R$ 24,522.85 |
-| Regime | risco reduzido (defensivo) — avaliado por proxy (BOVA11) |
-
-### Posicoes
-| Ativo | Qtd | Preco | Valor | Peso |
-|---|---|---|---|---|
-| B3SA3 | 203.508 | R$ 15.40 | R$ 3,134.03 | 6.4% |
-| BPAC11 | 51.1145 | R$ 60.25 | R$ 3,079.65 | 6.3% |
-| CPLE3 | 203.104 | R$ 15.13 | R$ 3,072.96 | 6.3% |
-| ITSA4 | 229.042 | R$ 13.33 | R$ 3,053.13 | 6.2% |
-| PRIO3 | 43.1104 | R$ 70.43 | R$ 3,036.26 | 6.2% |
-| PETR4 | 56.9204 | R$ 52.79 | R$ 3,004.83 | 6.1% |
-| GGBR4 | 120.506 | R$ 24.75 | R$ 2,982.52 | 6.1% |
-| UGPA3 | 87.0281 | R$ 34.23 | R$ 2,978.97 | 6.1% |
+| BTC | 0.335285 | $81,008.93 | $27,161.09 | 50.3% |
+| NEAR | 1763.99 | $4.66 | $8,226.20 | 15.2% |
+| QNT | 40.684 | $198.47 | $8,074.55 | 15.0% |
+| ZEC | 6.22877 | $1,295.70 | $8,070.61 | 14.9% |
 
 _Sem movimentacoes hoje._
 
@@ -142,75 +85,133 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
+- **Obstaculo (BTC):** momentum de +12.9% — so entram ativos acima disto
+- **Candidatos elegiveis:** 18
+- **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
+- **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
+- **Nota:** teto de 15% por alt deixou 5.0% em caixa
+
+| Rejeitado | Motivo |
+|---|---|
+| 1INCH | liquidez baixa (0.1M < 1M) |
+| AAVE | nao bate o benchmark (+12.0% <= +12.9%) |
+| ADA | nao bate o benchmark (+2.9% <= +12.9%) |
+| ALGO | nao bate o benchmark (+6.8% <= +12.9%) |
+| ALICE | liquidez baixa (0.0M < 1M) |
+| AMP | liquidez baixa (0.3M < 1M) |
+| ANKR | liquidez baixa (0.1M < 1M) |
+| APE | liquidez baixa (0.5M < 1M) |
+| _(+112 outros)_ | |
+
+</details>
+
+## Acoes B3 (objetivo: bater o maior entre Ibovespa e CDI)
+
+| Indicador | Valor |
+|---|---|
+| NAV | R$ 48,183.51 |
+| Retorno do dia | -1.40% |
+| Intervalo observado | 2026-10-28 → 2026-10-29 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -3.63% |
+| Benchmark IBOV | -2.59% |
+| Benchmark CDI | +2.91% |
+| **Alfa vs o maior (CDI)** | **-6.54%** |
+| Caixa | R$ 24,439.44 |
+| Regime | risco reduzido (defensivo) — avaliado por proxy (BOVA11) |
+
+### Posicoes
+| Ativo | Qtd | Preco | Valor | Peso |
+|---|---|---|---|---|
+| PRIO3 | 43.1104 | R$ 71.70 | R$ 3,091.01 | 6.4% |
+| ABEV3 | 197.912 | R$ 15.22 | R$ 3,012.22 | 6.3% |
+| ASAI3 | 382.261 | R$ 7.88 | R$ 3,012.22 | 6.3% |
+| B3SA3 | 203.508 | R$ 14.69 | R$ 2,989.54 | 6.2% |
+| PETR4 | 56.9204 | R$ 52.51 | R$ 2,988.89 | 6.2% |
+| GGBR4 | 120.506 | R$ 24.09 | R$ 2,902.98 | 6.0% |
+| BPAC11 | 51.1145 | R$ 56.32 | R$ 2,878.77 | 6.0% |
+| UGPA3 | 87.0281 | R$ 32.96 | R$ 2,868.45 | 6.0% |
+
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| CPLE3 | VENDA | 203.104 | R$ 14.68 | R$ 2,980.62 | rebalanceio |
+| ITSA4 | VENDA | 229.042 | R$ 12.90 | R$ 2,953.97 | rebalanceio |
+| ABEV3 | COMPRA | 197.912 | R$ 15.24 | R$ 3,015.23 | rebalanceio |
+| ASAI3 | COMPRA | 382.261 | R$ 7.89 | R$ 3,015.23 | rebalanceio |
+
+<details>
+<summary>Rasto de decisao (auditoria)</summary>
+
+- **Gatilho:** desvio de peso em ASAI3: 0.0% vs alvo 6.2%
 - **Obstaculo (CDI):** momentum de +13.1% — so entram ativos acima disto
-- **Candidatos elegiveis:** 11
+- **Candidatos elegiveis:** 10
 - **Fontes usadas:** binance: 31, brapi: 1, coinbase: 119, cotahist: 50, nasdaq: 101
 - Evidencia das series B3 (somente auditoria):
-- ABEV3: fonte cotahist; fechamento 15.57 em 2026-10-27; 455 pontos; SHA256 1fd3fe3d158afba5fdb213a52dbdd922a7b3e686e58268affc45b17e9bdc616e; status RECORDED
-- ASAI3: fonte cotahist; fechamento 8.0 em 2026-10-27; 455 pontos; SHA256 1d3cf875d11307a57d1f61226a06054830292189628e0c00c1a2bef1066fae41; status RECORDED
-- AXIA3: fonte cotahist; fechamento 50.88 em 2026-10-27; 239 pontos; SHA256 01488c11d2af20ca127e5c1a19162c7cf5552b133750aff850dc252f577ef362; status RECORDED
-- B3SA3: fonte cotahist; fechamento 15.4 em 2026-10-27; 455 pontos; SHA256 1439f5efe44e332c6ee8644a2aaeefa615ee3e76b3fc336cdf1f59429a35f126; status RECORDED
-- BBAS3: fonte cotahist; fechamento 17.38 em 2026-10-27; 455 pontos; SHA256 d12517f016316174cdda2a99c4d7ee3c2b08fb1106a234756a9af36eeab739d4; status RECORDED
-- BBDC4: fonte cotahist; fechamento 15.73 em 2026-10-27; 455 pontos; SHA256 ba8290cb63bd2d0d5c4ea722ce0c68af404e9d012a8eb4e863201886fa77b85f; status RECORDED
-- BOVA11: fonte cotahist; fechamento 173.0 em 2026-10-27; 455 pontos; SHA256 6eb2ab935fdf3c6112f6c65f3ded6d6ec1565ace507b1b3da343aca0cc886733; status RECORDED
-- BPAC11: fonte cotahist; fechamento 60.25 em 2026-10-27; 455 pontos; SHA256 7a9fc9cb3cd113b33368d95397e6fe4e3bea8b42f865a9d02fd60911b72f36e7; status RECORDED
-- BRKM5: fonte cotahist; fechamento 3.7 em 2026-10-27; 455 pontos; SHA256 425786392d0f99c800613eb864852e9cd73178443303721776d55fa4a100931a; status RECORDED
-- CMIG4: fonte cotahist; fechamento 10.45 em 2026-10-27; 455 pontos; SHA256 161937effd9fb133c9a171121d0935b4eccef2ca55b7ac145c76bdd90dee9da5; status RECORDED
-- CMIN3: fonte cotahist; fechamento 4.56 em 2026-10-27; 455 pontos; SHA256 1db495c4b2cd0fb11fdc16454182cbd061298038928413c421d8d63b994aaf8d; status RECORDED
-- CPFE3: fonte cotahist; fechamento 43.69 em 2026-10-27; 455 pontos; SHA256 2c0f1f9ed18362ff88a2435e7aa7c6f367c8d1b692e0d461b61137d49cdffd53; status RECORDED
-- CPLE3: fonte cotahist; fechamento 15.13 em 2026-10-27; 455 pontos; SHA256 d6802703b0b93625be3d9fd7a087ce3a10dfee0c350ec0ac99aee0d37053682f; status RECORDED
-- CSAN3: fonte cotahist; fechamento 2.68 em 2026-10-27; 455 pontos; SHA256 c5ef38b03af6924da0fa0561425d6a6aeb39dc0a7609e3f857bab27fe2a80020; status RECORDED
-- CSNA3: fonte cotahist; fechamento 4.76 em 2026-10-27; 455 pontos; SHA256 081ed26103e852a10a4b732cea03c871dbe02dbeb28dac535d188dc0f6528ef1; status RECORDED
-- CYRE3: fonte cotahist; fechamento 19.01 em 2026-10-27; 455 pontos; SHA256 dc995d98c1f6897ec75fdb516461527429bc678d0edf8cf0f1a1dbbc3479cbe8; status RECORDED
-- EGIE3: fonte cotahist; fechamento 28.0 em 2026-10-27; 455 pontos; SHA256 26de965ac600465db06d1336259f7d7c706a516e4a73c21c2a3a494f9f1c7cc0; status RECORDED
-- EMBJ3: fonte cotahist; fechamento 97.38 em 2026-10-27; 244 pontos; SHA256 d29350128c31045e91c6044409a207391b193b381ac60111dbc36acc6718595c; status RECORDED
-- ENGI11: fonte cotahist; fechamento 47.64 em 2026-10-27; 455 pontos; SHA256 b137a97407ae945c9763b24bfea2df46ed9b63d5089e62824d7a5f316281bc35; status RECORDED
-- EQTL3: fonte cotahist; fechamento 35.3 em 2026-10-27; 455 pontos; SHA256 e7cee0db0ef7891ea37e1aa142782bdd334968b046a22c630830414c2444748c; status RECORDED
-- GGBR4: fonte cotahist; fechamento 24.75 em 2026-10-27; 455 pontos; SHA256 c34436f44ebd4ac0b8261fcbf3f7d1e1d62ce17cafd633d185f4db02b9b181a3; status RECORDED
-- GOAU4: fonte cotahist; fechamento 11.0 em 2026-10-27; 455 pontos; SHA256 549ac2d9953186f4f76c7fe4bd6725984e678d289a9d88edf60ed5f4acaed996; status RECORDED
-- HAPV3: fonte cotahist; fechamento 4.18 em 2026-10-27; 455 pontos; SHA256 43cbff0607d5cd609e712365dcf1674f0da0e18495c555b584616d13dd4948e5; status RECORDED
-- ITSA4: fonte cotahist; fechamento 13.33 em 2026-10-27; 455 pontos; SHA256 5bfb6079252e2196d4a3764fb8c6192d580173a3990d87b1604dfa0731055cb7; status RECORDED
-- ITUB4: fonte cotahist; fechamento 41.19 em 2026-10-27; 455 pontos; SHA256 fd6cb4866d741aef6b7d172b9ad04159284385f00da097353793f91e9a3be1b0; status RECORDED
-- KLBN11: fonte cotahist; fechamento 18.68 em 2026-10-27; 455 pontos; SHA256 0f7293ea70909dd1a998e5b38a585605f11ed0edf5b3b90b47a5782b808a9236; status RECORDED
-- LREN3: fonte cotahist; fechamento 9.72 em 2026-10-27; 455 pontos; SHA256 a6fbe2c984da0b7c524d7dcd43a9bcb791c7b1941ef050f309516e0f2fbcd736; status RECORDED
-- MBRF3: fonte cotahist; fechamento 16.29 em 2026-10-27; 273 pontos; SHA256 52818337fc39c986a508280ea48dc87aab685389128e30e9867b6d4cba5a8b3d; status RECORDED
-- MGLU3: fonte cotahist; fechamento 5.75 em 2026-10-27; 455 pontos; SHA256 118e55bbc0ef8af51d9dd3533ee4dbee5f97a842438e2ab7e3477ebbf53cec99; status RECORDED
-- MULT3: fonte cotahist; fechamento 27.54 em 2026-10-27; 455 pontos; SHA256 4e997c36291c6adec332a39a6b4bdadb88a083f876613d468a59e3596c6f61e5; status RECORDED
-- NATU3: fonte cotahist; fechamento 5.5 em 2026-10-27; 332 pontos; SHA256 96c2977d0f34f4f507e0ba33aa1e9cc9a5a1e064e84b25be3856cdc3f188c7e4; status RECORDED
-- PETR4: fonte cotahist; fechamento 52.79 em 2026-10-27; 455 pontos; SHA256 02f9fd4fc8d00ebc684efabe3b32d2b93911f969e36e311d4b6fd38deeed94ed; status RECORDED
-- PRIO3: fonte cotahist; fechamento 70.43 em 2026-10-27; 455 pontos; SHA256 a3ca1bf4d37c0632dc85fa0e2ad5230b0ffbf1f1af7941711e5991b65c9cbdf3; status RECORDED
-- PSSA3: fonte cotahist; fechamento 48.1 em 2026-10-27; 455 pontos; SHA256 9272bf07727a75ce768ad354edb2522a32d20708b347439aea0e84eb9fdf877a; status RECORDED
-- RADL3: fonte cotahist; fechamento 16.14 em 2026-10-27; 455 pontos; SHA256 d374903d23660553af1849ce30be4b827b1b414a43d021bc20bf2e6abe8c0f16; status RECORDED
-- RAIL3: fonte cotahist; fechamento 15.36 em 2026-10-27; 455 pontos; SHA256 2832fe1147273fa9df4cebd1fec73c51e2f70674ed37034bd779144aacc347f5; status RECORDED
-- RDOR3: fonte cotahist; fechamento 34.72 em 2026-10-27; 455 pontos; SHA256 23daff2133932998ff39ad264363c90be3aad4904c4261f1b2fee891f06eec67; status RECORDED
-- RENT3: fonte cotahist; fechamento 30.76 em 2026-10-27; 455 pontos; SHA256 738b10016963d411b1e40cd8a117f18501aeef5eb6d2429ce66d6cb7225751a1; status RECORDED
-- SANB11: fonte cotahist; fechamento 25.87 em 2026-10-27; 455 pontos; SHA256 e394eb2ec27cadbed8dd9adc54a655b64266200cdff9374a5e94d1b285d105b3; status RECORDED
-- SBSP3: fonte cotahist; fechamento 25.53 em 2026-10-27; 455 pontos; SHA256 1e307981e5357260acdd0c785ba795f2cfc6004bba8c6a924ea0b5c01f8382f7; status RECORDED
-- SLCE3: fonte cotahist; fechamento 17.09 em 2026-10-27; 455 pontos; SHA256 9ab49815402cde27af3415a8fcb8a204f7f02d92e28ae1df95e44a1bfa5ba6e6; status RECORDED
-- SUZB3: fonte cotahist; fechamento 47.53 em 2026-10-27; 455 pontos; SHA256 d26c6565ca0cb9d529c50de56a7dc131fa3dd179949e5c4a5163ec577329d27a; status RECORDED
-- TAEE11: fonte cotahist; fechamento 40.57 em 2026-10-27; 455 pontos; SHA256 46858f744ff74ab30a762793d1ca0e02b5e141d6c8ffa130efce1a1c2db884c7; status RECORDED
-- TIMS3: fonte cotahist; fechamento 19.01 em 2026-10-27; 455 pontos; SHA256 619443a5d7ceb6cd4747913727ba97002266b154136b0a04ad0a579dee19e837; status RECORDED
-- TOTS3: fonte cotahist; fechamento 35.35 em 2026-10-27; 455 pontos; SHA256 e229e62392b159659b3426b4d6ef9a36ae9b04525528faf1868e0e47d3109ddb; status RECORDED
-- UGPA3: fonte cotahist; fechamento 34.23 em 2026-10-27; 455 pontos; SHA256 fadbad406d5a7f0636dd8087bf3482c1f52070f38b067f98c688e76b1ae9743a; status RECORDED
-- VALE3: fonte cotahist; fechamento 63.0 em 2026-10-27; 455 pontos; SHA256 6b248f8a91b230076912da29d86578ee6fba8912195f51907bdb1b1ec0b519f6; status RECORDED
-- VBBR3: fonte cotahist; fechamento 32.18 em 2026-10-27; 455 pontos; SHA256 c7f4058c63a47086168b71eac41ecd37aaa39ddd96bc7ee0e809d8e78c045a7c; status RECORDED
-- VIVT3: fonte cotahist; fechamento 31.08 em 2026-10-27; 455 pontos; SHA256 1b3682235622f1e6c86cb3797a88d7e2bc3eb206a855ce15ff4eb7a04bc55ea2; status RECORDED
-- WEGE3: fonte cotahist; fechamento 46.16 em 2026-10-27; 455 pontos; SHA256 5a9183c517aff279c3ce63541858522305e5e65e11a393014cebfc0447a02e5b; status RECORDED
-- ^BVSP: fonte brapi; fechamento 175710.0469 em 2026-10-27; 112 pontos; SHA256 ce6b8fc02a5818237d2417bba1097fa0074eaff97f94af5eed0aa1fb16dfb917; status RECORDED
+- ABEV3: fonte cotahist; fechamento 15.22 em 2026-10-28; 456 pontos; SHA256 144910647a50ae2696aa948ade6bb7bde953dd5737bc43cb6514495bc84b5d29; status RECORDED
+- ASAI3: fonte cotahist; fechamento 7.88 em 2026-10-28; 456 pontos; SHA256 7a715cbc24d00c8e7f04ab764ff83acc450ea7034491f96ab71cb4f4aa02bdd2; status RECORDED
+- AXIA3: fonte cotahist; fechamento 48.23 em 2026-10-28; 240 pontos; SHA256 ddac30c1ef991d11d18a88a4f54cf9437bc4b3795ce34594b0740958dd71964f; status RECORDED
+- B3SA3: fonte cotahist; fechamento 14.69 em 2026-10-28; 456 pontos; SHA256 3502c216103dfe52417a8faaf704261d07e992c1ff9baf38bae18266d7db031c; status RECORDED
+- BBAS3: fonte cotahist; fechamento 16.79 em 2026-10-28; 456 pontos; SHA256 be5050c3116ee6dc912df97b5e02319528cb72cddd5a2cbf9a462c9b3d102edc; status RECORDED
+- BBDC4: fonte cotahist; fechamento 14.68 em 2026-10-28; 456 pontos; SHA256 543eb5dfcf46271b07825bc6f30566d1944e560f088b6153628822bbb374dea7; status RECORDED
+- BOVA11: fonte cotahist; fechamento 168.47 em 2026-10-28; 456 pontos; SHA256 8cc37d7094edcdfa132b28777235e8ba836255deab98722c6edc053fee56ba67; status RECORDED
+- BPAC11: fonte cotahist; fechamento 56.32 em 2026-10-28; 456 pontos; SHA256 cf42451beb29576c81168f4d40de935ebb5835b6523f30cf9d8a857e4a3f68da; status RECORDED
+- BRKM5: fonte cotahist; fechamento 3.37 em 2026-10-28; 456 pontos; SHA256 6dc4633e07be6ead2f8fab242eedb2112ca1e51f2ef3bf2eff8062e8af84f0ee; status RECORDED
+- CMIG4: fonte cotahist; fechamento 10.14 em 2026-10-28; 456 pontos; SHA256 dd3855d47192c93778815c2838c1981fa7aaa7d54358653af89c744cfeadb498; status RECORDED
+- CMIN3: fonte cotahist; fechamento 4.47 em 2026-10-28; 456 pontos; SHA256 dec13917418c19044b21d8a1275ee4020a71803d39c46e212058e92c9ae6c26b; status RECORDED
+- CPFE3: fonte cotahist; fechamento 42.95 em 2026-10-28; 456 pontos; SHA256 a94dc85a6839755e54847b9d53d7dfc8cbdfafd5386cb2f33d9f7ad068a00e43; status RECORDED
+- CPLE3: fonte cotahist; fechamento 14.69 em 2026-10-28; 456 pontos; SHA256 250f06385ffd5c15e337154f7328805a453c5c22b755dee1ac34487c43b30e99; status RECORDED
+- CSAN3: fonte cotahist; fechamento 2.35 em 2026-10-28; 456 pontos; SHA256 797a8e946e68423f97f0d6dcf74473bd106c990af5dd697c41f1e64ec25492f4; status RECORDED
+- CSNA3: fonte cotahist; fechamento 4.33 em 2026-10-28; 456 pontos; SHA256 fc1318b306cf3a1f942931dfc4f5e470a9cef6893a8c188efcca7dc527cb4dc8; status RECORDED
+- CYRE3: fonte cotahist; fechamento 17.78 em 2026-10-28; 456 pontos; SHA256 2128c122ffe5cdb2f8edbde2e20ab1d96bdc1728a4497988f66f18e9c62e2826; status RECORDED
+- EGIE3: fonte cotahist; fechamento 27.4 em 2026-10-28; 456 pontos; SHA256 a61fcc80e438b3890b7368e63c8fdea5f0bff363bcd26eadb15170bf67fc5777; status RECORDED
+- EMBJ3: fonte cotahist; fechamento 97.29 em 2026-10-28; 245 pontos; SHA256 ede46d1f67401e5e67c4a4064ef9af94003aa9db540ed2fa237bcd90196bc57d; status RECORDED
+- ENGI11: fonte cotahist; fechamento 45.71 em 2026-10-28; 456 pontos; SHA256 8b87938544b2862140a99c6e25aaba96783de3ddffbd796c1bf70d0dc2b98c64; status RECORDED
+- EQTL3: fonte cotahist; fechamento 34.06 em 2026-10-28; 456 pontos; SHA256 9ef58523fb9a4f1099ea106e19a9781a3b2ecafabb6215cb4919847bab763638; status RECORDED
+- GGBR4: fonte cotahist; fechamento 24.09 em 2026-10-28; 456 pontos; SHA256 d677166a71dba2c52a68d632e6f18dac254462ce20d955dde2ec22c302366ba6; status RECORDED
+- GOAU4: fonte cotahist; fechamento 10.65 em 2026-10-28; 456 pontos; SHA256 763de9f7d250c27fd00c424241ab49c9fdf23e5c4a974152640c4d6fec8b2703; status RECORDED
+- HAPV3: fonte cotahist; fechamento 4.25 em 2026-10-28; 456 pontos; SHA256 c7986c8b3a2e2bc5cd54519baca5d3c27e5af2f2734ced50ce331658f16800e2; status RECORDED
+- ITSA4: fonte cotahist; fechamento 12.91 em 2026-10-28; 456 pontos; SHA256 140e7f6584bc26cb6fc395355c86041fd7614c39d2b91b060a4859385d7fca6e; status RECORDED
+- ITUB4: fonte cotahist; fechamento 39.78 em 2026-10-28; 456 pontos; SHA256 33465830472b69e7e3d3e45ddb5cf3f8e73daa4aad8d0281fb5026ac792722a1; status RECORDED
+- KLBN11: fonte cotahist; fechamento 17.49 em 2026-10-28; 456 pontos; SHA256 89d2aa01898a50c01fd6687379597c0f611568ea1beb8e6e9134c4cdad8248f7; status RECORDED
+- LREN3: fonte cotahist; fechamento 9.59 em 2026-10-28; 456 pontos; SHA256 17068469be0a723dbedf1cd633c4423f803ff8dd835f47393377bbabf66e2328; status RECORDED
+- MBRF3: fonte cotahist; fechamento 16.75 em 2026-10-28; 274 pontos; SHA256 8bbc4081624937a99ffab9e76862d117fdde7dd40061a5d9b540949f181d90f5; status RECORDED
+- MGLU3: fonte cotahist; fechamento 5.22 em 2026-10-28; 456 pontos; SHA256 45b771e158ee830f91fbe4890df92a730c79e51796e9a4141d87463259f581a0; status RECORDED
+- MULT3: fonte cotahist; fechamento 25.95 em 2026-10-28; 456 pontos; SHA256 ee15a429ae04dd491edd38e2aed9ac0051b30accdcac3d1a5f15cc21ee3a1a06; status RECORDED
+- NATU3: fonte cotahist; fechamento 5.01 em 2026-10-28; 333 pontos; SHA256 6f92a4d79f7ae845de1f48ae289ab6e190bbc667e86487a3083a869c76fe870d; status RECORDED
+- PETR4: fonte cotahist; fechamento 52.51 em 2026-10-28; 456 pontos; SHA256 5f1da70a673c1cbdb4529c2928388a95eb40cbfd9dcc5a3b94ca1b7bae16eac7; status RECORDED
+- PRIO3: fonte cotahist; fechamento 71.7 em 2026-10-28; 456 pontos; SHA256 05a73c7c62067d6030e36658dfb81b411cda2e236e16b6b4f91416ce1f0bd5cf; status RECORDED
+- PSSA3: fonte cotahist; fechamento 46.7 em 2026-10-28; 456 pontos; SHA256 a65826554d1663efafa8ca8c1c8dc6014f5db159ed40f7b14bf0f29dc71290ab; status RECORDED
+- RADL3: fonte cotahist; fechamento 15.7 em 2026-10-28; 456 pontos; SHA256 8da412685e840296efd81e9e2f54822efd8cc822989011caa1ca63440df66a6e; status RECORDED
+- RAIL3: fonte cotahist; fechamento 14.48 em 2026-10-28; 456 pontos; SHA256 dddfc5c4553f0199ca99ddd76cd60f46d52a287b8b850f6ee5b876555aa6f50d; status RECORDED
+- RDOR3: fonte cotahist; fechamento 33.69 em 2026-10-28; 456 pontos; SHA256 58f198213d315ecb15adbfc0a0f5655d8e46754a23d5c895d82760d15fadc370; status RECORDED
+- RENT3: fonte cotahist; fechamento 29.86 em 2026-10-28; 456 pontos; SHA256 3ac8e44658a6e418509d91b329b222c4886cf6a8f30cd2fc90141cf3c305ecaf; status RECORDED
+- SANB11: fonte cotahist; fechamento 24.35 em 2026-10-28; 456 pontos; SHA256 d105c67c12d06f365f6defaf79b7e66d494995542eba9f78095275a3556d4001; status RECORDED
+- SBSP3: fonte cotahist; fechamento 25.11 em 2026-10-28; 456 pontos; SHA256 17bcf8013150f5738bf95f402aa85cfd282180527caa8073af090af888772a57; status RECORDED
+- SLCE3: fonte cotahist; fechamento 16.94 em 2026-10-28; 456 pontos; SHA256 955f3256fc1549412d0683448624ede9c933c1f16dbedd3097f1630b1322f60c; status RECORDED
+- SUZB3: fonte cotahist; fechamento 48.1 em 2026-10-28; 456 pontos; SHA256 d016398109b53612b2b0a8563a597faee0393277c410462c573ffc0f26ebc17f; status RECORDED
+- TAEE11: fonte cotahist; fechamento 39.71 em 2026-10-28; 456 pontos; SHA256 c35891b6f1ec54a9614dc30e54422f51c4e546a43a3fd7c284149fe3a1cb9c50; status RECORDED
+- TIMS3: fonte cotahist; fechamento 19.44 em 2026-10-28; 456 pontos; SHA256 8bf83e44606469a7968787cb943b517b3742473772485a17c60bf9224f0e9d47; status RECORDED
+- TOTS3: fonte cotahist; fechamento 34.11 em 2026-10-28; 456 pontos; SHA256 2cb8ab15148f695c428fb1de1582a9d1b07001cf7e1fa85471706ea694dc14f0; status RECORDED
+- UGPA3: fonte cotahist; fechamento 32.96 em 2026-10-28; 456 pontos; SHA256 86d20e2209867f9ab40cd154fef1efa5ca346d4f4b0b9cb844a8351c14ea45a6; status RECORDED
+- VALE3: fonte cotahist; fechamento 61.38 em 2026-10-28; 456 pontos; SHA256 6334f6d4957cc1c39be308fa8701fa57888e7fd9a67f92b96dc3407a85d5c73c; status RECORDED
+- VBBR3: fonte cotahist; fechamento 30.66 em 2026-10-28; 456 pontos; SHA256 408485a83f25c6ee4f7cece38d760a030131bf4bc228a1257730738c025ac585; status RECORDED
+- VIVT3: fonte cotahist; fechamento 30.74 em 2026-10-28; 456 pontos; SHA256 531f1e909f890b6c342368cc837267b7915eaccf0aab7dfa5045900b35678d1e; status RECORDED
+- WEGE3: fonte cotahist; fechamento 47.2 em 2026-10-28; 456 pontos; SHA256 06e84bce4b82168f5a7d782ed34f0194b7765b39e4f714c00286f05aa26393b9; status RECORDED
+- ^BVSP: fonte brapi; fechamento 171006.0938 em 2026-10-28; 113 pontos; SHA256 673e3febc84700642eb13cf854fa06bb9668d351472eea68d834bfab4b15c1d8; status RECORDED
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Em carencia por stop:** VALE3 (ate 2026-10-30), WEGE3 (ate 2026-11-21), VBBR3 (ate 2026-11-26)
 
 | Rejeitado | Motivo |
 |---|---|
 | AXIA3 | historico insuficiente |
-| BBAS3 | nao bate o benchmark (+5.1% <= +13.1%) |
-| BBDC4 | nao bate o benchmark (+0.6% <= +13.1%) |
-| BRKM5 | nao bate o benchmark (-37.7% <= +13.1%) |
-| CMIG4 | nao bate o benchmark (+1.2% <= +13.1%) |
-| CMIN3 | nao bate o benchmark (-13.0% <= +13.1%) |
-| CPFE3 | nao bate o benchmark (+10.4% <= +13.1%) |
-| CSAN3 | nao bate o benchmark (-36.4% <= +13.1%) |
-| _(+27 outros)_ | |
+| BBAS3 | nao bate o benchmark (+3.9% <= +13.1%) |
+| BBDC4 | nao bate o benchmark (-0.7% <= +13.1%) |
+| BRKM5 | nao bate o benchmark (-40.4% <= +13.1%) |
+| CMIG4 | nao bate o benchmark (+0.9% <= +13.1%) |
+| CMIN3 | nao bate o benchmark (-11.6% <= +13.1%) |
+| CPFE3 | nao bate o benchmark (+8.0% <= +13.1%) |
+| CSAN3 | nao bate o benchmark (-37.1% <= +13.1%) |
+| _(+28 outros)_ | |
 
 </details>
 
@@ -218,28 +219,28 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 48,502.24 |
-| Retorno do dia | +1.28% |
-| Intervalo observado | 2026-10-27 → 2026-10-28 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -3.00% |
-| Benchmark IBOV | +0.09% |
-| Benchmark CDI | +2.86% |
-| **Alfa vs objetivo (CDI)** | **-5.85%** |
-| Alfa vs IBOV (comparador informativo) | -3.09% |
+| NAV | R$ 47,535.92 |
+| Retorno do dia | -1.99% |
+| Intervalo observado | 2026-10-28 → 2026-10-29 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -4.93% |
+| Benchmark IBOV | -2.59% |
+| Benchmark CDI | +2.91% |
+| **Alfa vs objetivo (CDI)** | **-7.84%** |
+| Alfa vs IBOV (comparador informativo) | -2.34% |
 | Caixa | R$ -1,238.29 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 173.00 | R$ 50,228.78 | 103.6% |
+| BOVA11 | 290.34 | R$ 168.47 | R$ 48,913.54 | 102.9% |
 
-> Conciliacao do NAV: ativos R$ 50,228.78 + caixa R$ -1,238.29 - obrigacao da call R$ 488.25 = R$ 48,502.24.
+> Conciliacao do NAV: ativos R$ 48,913.54 + caixa R$ -1,238.29 - obrigacao da call R$ 139.33 = R$ 47,535.92.
 
 > Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.
 
-> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 488.25
+> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 139.33
 
-> Volatilidade usada na call (GARCH(1,1)): 108.1% a.a. | realizada 30d: 53.0% a.a. | CDI: 0.0508% a.d.
+> Volatilidade usada na call (GARCH(1,1)): 94.9% a.a. | realizada 30d: 53.4% a.a. | CDI: 0.0508% a.d.
 
 _Sem movimentacoes hoje._
 
@@ -249,8 +250,8 @@ _Sem movimentacoes hoje._
 - **Gatilho:** nenhum (call em curso)
 - **Candidatos elegiveis:** 0
 - Evidencia das series B3 (somente auditoria):
-- BOVA11: fonte cotahist; fechamento 173.0 em 2026-10-27; 455 pontos; SHA256 6eb2ab935fdf3c6112f6c65f3ded6d6ec1565ace507b1b3da343aca0cc886733; status RECORDED
-- ^BVSP: fonte brapi; fechamento 175710.0469 em 2026-10-27; 112 pontos; SHA256 ce6b8fc02a5818237d2417bba1097fa0074eaff97f94af5eed0aa1fb16dfb917; status RECORDED
+- BOVA11: fonte cotahist; fechamento 168.47 em 2026-10-28; 456 pontos; SHA256 8cc37d7094edcdfa132b28777235e8ba836255deab98722c6edc053fee56ba67; status RECORDED
+- ^BVSP: fonte brapi; fechamento 171006.0938 em 2026-10-28; 113 pontos; SHA256 673e3febc84700642eb13cf854fa06bb9668d351472eea68d834bfab4b15c1d8; status RECORDED
 
 </details>
 
