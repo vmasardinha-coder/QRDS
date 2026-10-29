@@ -130,6 +130,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r migration/canonical/v2a/requirements.txt
+      - run: python -m unittest tests.test_gate_btc_pit150_retry_policy tests.test_gate_btc_kag_retry_cutoff -v
       - run: python -m unittest tests.test_v2a_frozen_replay tests.test_gate_btc_pit150_qualified_history tests.test_gate_btc_pit150_akt_gate tests.test_gate_btc_pit150_source_crosswalk -v
       - run: python tools/v2a_frozen_replay.py artifacts/gate_btc_2/pit150_delivery_20261017/FROZEN_FAILED_SOURCE.zip --output-zip artifacts/pit150_fixed_replay/qos_v2a_outputs.zip --data-cutoff 2026-10-16
       - uses: actions/upload-artifact@v4
