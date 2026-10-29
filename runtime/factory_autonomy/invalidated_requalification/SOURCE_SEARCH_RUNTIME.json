@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-29T00:54:05.800884Z",
+  "generated_at_utc": "2026-10-29T01:54:15.170549Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -72,10 +72,10 @@
       {
         "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-03-03",
         "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-03-03",
-        "http_status": 504,
+        "http_status": 404,
         "reachable": false,
-        "content_type": "text/html; charset=UTF-8",
-        "content_length": "6439",
+        "content_type": null,
+        "content_length": "0",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -117,10 +117,10 @@
       {
         "url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-12-12",
         "final_url": "https://arquivos.b3.com.br/apinegocios/tickercsv/2025-12-12",
-        "http_status": 504,
+        "http_status": 404,
         "reachable": false,
-        "content_type": "text/html; charset=UTF-8",
-        "content_length": "6439",
+        "content_type": null,
+        "content_length": "0",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -132,10 +132,10 @@
       {
         "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-01-02",
         "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-01-02",
-        "http_status": 502,
-        "reachable": false,
-        "content_type": "text/html; charset=UTF-8",
-        "content_length": "6424",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -177,10 +177,10 @@
       {
         "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-09-01",
         "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-09-01",
-        "http_status": 502,
-        "reachable": false,
-        "content_type": "text/html; charset=UTF-8",
-        "content_length": "6424",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -192,10 +192,10 @@
       {
         "url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-12-12",
         "final_url": "https://arquivos.b3.com.br/rapinegocios/tickercsv/2025-12-12",
-        "http_status": 504,
-        "reachable": false,
-        "content_type": "text/html; charset=UTF-8",
-        "content_length": "6439",
+        "http_status": 200,
+        "reachable": true,
+        "content_type": null,
+        "content_length": "0",
         "sample_bytes": 0,
         "sample_sha256": null,
         "zip_magic": false,
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "956a21f5c8a22f17423e44e3b90c4f06a11820f5616d66a9d819acbd116d2e94",
+        "sample_sha256": "6eb5d807f6dcbb5f8599aa1950a198d1d52bf6a22adf1141eae8a9d7fe432a1d",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -1078,17 +1078,17 @@
         ]
       },
       {
-        "query": "\"mini indice\" intraday B3 extension:csv",
+        "query": "\"mini índice futuro\" 5min extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
       },
       {
-        "query": "\"WIN continuous\" futures Brazil extension:csv",
+        "query": "\"WIN B3\" OHLC 5min extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
       }
     ],
-    "reachable_official_probe_count": 3,
+    "reachable_official_probe_count": 6,
     "official_payload_probe_count": 1,
     "schema_identity_candidate_count": 0,
     "irrelevant_identity_candidate_count": 21,
