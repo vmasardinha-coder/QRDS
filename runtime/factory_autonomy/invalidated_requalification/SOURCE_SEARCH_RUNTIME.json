@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-10-29T05:35:40.261537Z",
+  "generated_at_utc": "2026-10-29T07:02:02.806712Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2765,
-        "sample_sha256": "19a5fb63b747c800fd3bfb3173d6d32309df8db7aa45424231ff7225921d4b04",
+        "sample_sha256": "88725cd5facf783748c585a389a324a7af40be47b9ac1f0789f1c0ff262f31ec",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -1059,9 +1059,9 @@
         "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+timestamp+open+high+low+close+extension%3Acsv&per_page=30"
       },
       {
-        "query": "WINFUT datetime open high low close extension:csv",
+        "query": "\"WIN continuous\" futures Brazil extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=WINFUT+datetime+open+high+low+close+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
       }
     ],
     "reachable_official_probe_count": 6,
