@@ -244,6 +244,23 @@
         "review_date": "2026-10-15"
       },
       "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "KAG",
+      "coin_id": "kinesis-silver",
+      "effective_cutoff": "2026-10-29",
+      "disposition": "PAUSED_PENDING_NEW_EVIDENCE",
+      "retry_from": null,
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "ACCESS_IDENTITY_REVIEW",
+        "evidence": "Exact Kinesis native KAG_USD historical OHLC and pairs endpoints returned HTTP 403 without authentication on 2026-10-29. Documented client requires public/private API keys. Existing CDD/Binance/OKX routes yielded no qualified history. This does not establish global absence or authorize a ticker proxy.",
+        "evidence_cutoff": "2026-10-29",
+        "review_date": "2026-10-29",
+        "source_documentation": "https://github.com/bullioncapital/kinesis-api/blob/main/v1/kinesis_api_example.py",
+        "response_sha256": "320aedda22e6d46a0a925a5a64c84545a810f80700f5e82e9559a7b324208b1f"
+      },
+      "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
     }
   ]
 }
