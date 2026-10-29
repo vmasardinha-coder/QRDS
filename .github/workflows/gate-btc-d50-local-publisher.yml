@@ -1,0 +1,102 @@
+name: GATE BTC D50 Local Evidence Publisher
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 1 * * *"
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gate-btc-d50-local-publisher.yml
+      - tools/gate_btc_publish_local_d50.ps1
+      - tools/gate_btc_d50_local_mirror.py
+      - tools/gate_btc_d50_mirror_reconcile.py
+      - tools/gate_btc_d50_runtime_authority.py
+      - tests/test_gate_btc_d50_local_mirror.py
+      - tests/test_gate_btc_d50_mirror_reconcile.py
+  pull_request:
+    paths:
+      - .github/workflows/gate-btc-d50-local-publisher.yml
+      - tools/gate_btc_publish_local_d50.ps1
+      - tools/gate_btc_d50_local_mirror.py
+      - tools/gate_btc_d50_mirror_reconcile.py
+      - tools/gate_btc_d50_runtime_authority.py
+      - tests/test_gate_btc_d50_local_mirror.py
+      - tests/test_gate_btc_d50_mirror_reconcile.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-btc-d50-local-evidence-publisher
+  cancel-in-progress: false
+
+env:
+  GATE_BTC_RESEARCH_ONLY: "true"
+  GATE_BTC_SHADOW_ONLY: "true"
+  GATE_BTC_NOT_APPROVED: "true"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate complete-ledger and qualification-chain guards
+        run: >-
+          python -m unittest -v
+          tests/test_gate_btc_d50_local_mirror.py
+          tests/test_gate_btc_d50_mirror_reconcile.py
+
+  publish-existing-local-evidence:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: publisher_src
+          sparse-checkout: |
+            tools
+            migration/reporting
+      - name: Publish verified existing D50 evidence without collecting or replaying
+        shell: powershell
+        env:
+          D50_PUBLISH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $codeRoot = Join-Path $env:GITHUB_WORKSPACE 'publisher_src'
+          $runtimeRepo = 'C:\actions-runner\qrds-local-shadow\runtime_canonical'
+          if (-not (Test-Path (Join-Path $runtimeRepo '.git'))) {
+            throw 'D50_RUNTIME_CLONE_NOT_AVAILABLE'
+          }
+          # Process-local Git authentication; no token is persisted in the clone.
+          $auth = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("x-access-token:$env:D50_PUBLISH_TOKEN"))
+          $env:GIT_CONFIG_COUNT = '1'
+          $env:GIT_CONFIG_KEY_0 = 'http.https://github.com/.extraheader'
+          $env:GIT_CONFIG_VALUE_0 = "AUTHORIZATION: basic $auth"
+          try {
+            & (Join-Path $codeRoot 'tools\gate_btc_publish_local_d50.ps1') `
+              -CodeRoot $codeRoot -RuntimeRepo $runtimeRepo
+            if ($LASTEXITCODE -ne 0) { throw "D50_LOCAL_PUBLISHER_EXIT=$LASTEXITCODE" }
+          } finally {
+            Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+            Remove-Item Env:GIT_CONFIG_KEY_0 -ErrorAction SilentlyContinue
+            Remove-Item Env:GIT_CONFIG_VALUE_0 -ErrorAction SilentlyContinue
+            Remove-Item Env:D50_PUBLISH_TOKEN -ErrorAction SilentlyContinue
+          }
+      - name: Retain publisher receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-btc-d50-local-publisher-${{ github.run_id }}
+          path: C:\Users\jsard\AppData\Local\GATE_BTC_D50_AUTOPILOT_V2\logs\D50_RUNTIME_MIRROR_LATEST.log
+          if-no-files-found: warn
+          retention-days: 30
