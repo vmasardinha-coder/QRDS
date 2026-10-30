@@ -23,6 +23,8 @@ def decision(symbol, coin_id, cutoff, policy=None):
     if len(matches) != 1:
         return None
     case = matches[0]
+    if day < date.fromisoformat(case.get('effective_cutoff', p['effective_cutoff'])):
+        return None
     first = case['retry_from']
     next_due = None
     if first is not None:
@@ -59,3 +61,4 @@ def annotate_followup(report):
     report['deferred_case_count'] = sum('request_schedule' in r for r in report['assets'])
     report['coverage_gap_is_not_new_repair'] = True
     return report
+
