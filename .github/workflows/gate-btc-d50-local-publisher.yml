@@ -2,8 +2,6 @@ name: GATE BTC D50 Local Evidence Publisher
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "40 1 * * *"
   push:
     branches: [main]
     paths:
@@ -28,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-d50-local-evidence-publisher
+  group: gate-btc-d50-local-evidence-publisher-${{ github.event_name == 'pull_request' && github.ref || 'runtime' }}
   cancel-in-progress: false
 
 env:
@@ -53,7 +51,9 @@ jobs:
 
   publish-existing-local-evidence:
     needs: validate
-    if: github.event_name != 'pull_request'
+    # Daily publication is owned by Windows task GATE_BTC_D50_RUNTIME_MIRROR.
+    # This fallback must not queue automatic work on an intentionally disabled runner.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, Windows]
     timeout-minutes: 10
     permissions:
