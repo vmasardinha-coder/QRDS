@@ -1,0 +1,113 @@
+{
+  "schema": "pressure_valve.exit_research.v1",
+  "frozen_at": "2026-10-23T08:01:30.267997-03:00",
+  "post_freeze_not_before": "2026-10-23",
+  "purpose": "RESEARCH_REPLAY_ONLY_NO_ORDERS",
+  "daily_goal_brl": 150,
+  "caps": [
+    5,
+    10
+  ],
+  "priority_families": [
+    "H474",
+    "H478",
+    "H518",
+    "H618",
+    "H626",
+    "H170",
+    "H330",
+    "H358",
+    "H362",
+    "H370"
+  ],
+  "priority_tiebreak": "family_numeric_id_ascending; only signals with entry_time <= current timestamp",
+  "cost_reference_bps": 2,
+  "cost_stress_bps": 3,
+  "condition_observation": "M5_OPEN_MARK",
+  "conditional_exit_latency_bars": 1,
+  "fill": "NEXT_M5_OPEN_NO_TARGET_PRICE_GUARANTEE",
+  "qa_caveat": "Session QA is known only after the session. All runs are exit replays, not live selection validation. Policies never pooled.",
+  "family_rules": [
+    {
+      "id": "TIME30",
+      "minutes": 30
+    },
+    {
+      "id": "TIME60",
+      "minutes": 60
+    },
+    {
+      "id": "TIME120",
+      "minutes": 120
+    },
+    {
+      "id": "TP50_SL100_MAX60",
+      "minutes": 60,
+      "target": 50,
+      "stop": 100
+    },
+    {
+      "id": "TP100_SL100_MAX60",
+      "minutes": 60,
+      "target": 100,
+      "stop": 100
+    },
+    {
+      "id": "TP150_SL100_MAX60",
+      "minutes": 60,
+      "target": 150,
+      "stop": 100
+    },
+    {
+      "id": "TRAIL50_25_SL100_MAX60",
+      "minutes": 60,
+      "arm": 50,
+      "distance": 25,
+      "stop": 100
+    }
+  ],
+  "portfolio_rules": [
+    {
+      "id": "TIME60",
+      "minutes": 60,
+      "scope": "family"
+    },
+    {
+      "id": "FAMILY_TP50",
+      "minutes": 60,
+      "scope": "family",
+      "target": 50,
+      "stop": 100
+    },
+    {
+      "id": "FAMILY_TRAIL50_25",
+      "minutes": 60,
+      "scope": "family",
+      "arm": 50,
+      "distance": 25,
+      "stop": 100
+    },
+    {
+      "id": "COHORT_TP150_SL150",
+      "minutes": 60,
+      "scope": "cohort",
+      "target": 150,
+      "stop": 150
+    },
+    {
+      "id": "COHORT_TRAIL150_50",
+      "minutes": 60,
+      "scope": "cohort",
+      "arm": 150,
+      "distance": 50,
+      "stop": 150
+    },
+    {
+      "id": "DAY_TP150_SL150",
+      "minutes": 60,
+      "scope": "day",
+      "target": 150,
+      "stop": 150
+    }
+  ]
+}
