@@ -58,6 +58,47 @@ class GatewayEconomicReadinessTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 audit(self.capture(directory, extra={"strategy_compositions.csv": "x"}))
 
+    def test_short_weights_require_explicit_execution_and_margin_bindings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = audit(self.capture(directory))
+        contract = result["strategies"][0]["execution_contract"]
+        self.assertTrue(contract["contains_short_weights"])
+        self.assertEqual({r["id"] for r in contract["requirements"]},
+                         {"DYN01", "DYN02", "DYN03", "DYN04", "DYN05", "DYN06", "DYN07"})
+        short = next(r for r in contract["instrument_bindings"] if r["asset_label"] == "BTC_SHORT")
+        self.assertEqual(short["side"], "SHORT")
+        self.assertIsNone(short["venue"])
+        self.assertNotIn("CASH", {r["asset_label"] for r in contract["instrument_bindings"]})
+        self.assertFalse(contract["nav_available"])
+
+    def test_weekly_label_does_not_freeze_calendar_or_activate_old_snapshots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = audit(self.capture(directory,
+                composition="strategy,asset,weight\nH,CASH,.4\nH,BTC,.6\n",
+                profile="strategy,gross_long,estimated_total_drag_bps_per_day,recommended_rebalance\nH,1,1,weekly\n"))
+        contract = result["strategies"][0]["execution_contract"]
+        self.assertEqual(contract["recommended_rebalance"], "weekly")
+        self.assertFalse(contract["recommendation_is_frozen_execution_policy"])
+        self.assertFalse(contract["contains_short_weights"])
+        self.assertTrue(all(r["status"] == "UNBOUND" for r in contract["requirements"]))
+        self.assertIsNone(contract["activation_at_utc"])
+        self.assertIsNone(contract["frozen_protocol_sha256"])
+        self.assertEqual(result["execution_contract_summary"]["profiles_ready_for_economic_ledger"], 0)
+        self.assertEqual(contract["economic_observations"], 0)
+
+    def test_profile_specific_instrument_intake_preserves_weights(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = audit(self.capture(directory,
+                composition="strategy,asset,weight\nA,BTC,.7\nA,CASH,.3\nB,ETH,-.4\nB,CASH,1\n",
+                profile="strategy,gross_long,estimated_total_drag_bps_per_day,recommended_rebalance\nA,1,1,weekly\nB,1,2,weekly_or_risk_trigger\n"))
+        first, second = result["strategies"]
+        self.assertEqual(first["execution_contract"]["instrument_bindings"][0]["asset_label"], "BTC")
+        self.assertEqual(second["execution_contract"]["instrument_bindings"][0]["weight"], -.4)
+        self.assertFalse(first["execution_contract"]["contains_short_weights"])
+        self.assertTrue(second["execution_contract"]["contains_short_weights"])
+        self.assertEqual(result["execution_contract_summary"]["profile_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
+
