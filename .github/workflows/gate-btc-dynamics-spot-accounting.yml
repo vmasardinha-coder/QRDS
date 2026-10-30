@@ -1,0 +1,30 @@
+name: GATE BTC Dynamics Spot Accounting
+
+on:
+  pull_request:
+    paths:
+      - tools/gate_btc_dynamics_spot_accounting.py
+      - tests/test_gate_btc_dynamics_spot_accounting.py
+      - .github/workflows/gate-btc-dynamics-spot-accounting.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/gate_btc_dynamics_spot_accounting.py
+      - tests/test_gate_btc_dynamics_spot_accounting.py
+      - .github/workflows/gate-btc-dynamics-spot-accounting.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  accounting-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test offline spot accounting boundaries
+        run: python -m unittest discover -s tests -p test_gate_btc_dynamics_spot_accounting.py -v
