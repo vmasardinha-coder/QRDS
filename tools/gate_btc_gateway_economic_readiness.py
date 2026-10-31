@@ -31,6 +31,48 @@ def finite(value: str) -> float:
     return number
 
 
+def execution_backlog(strategy: str, positions: list, recommendation: str) -> dict:
+    """Describe unresolved execution bindings; never turn a label into a rule.
+
+    This is an intake draft tied to the audited snapshot, not an activation
+    contract. In particular a ticker is not a venue/instrument identity and
+    even 'weekly' leaves the timezone, session and first execution undefined.
+    """
+    requirements = [
+        ("DYN01", "publication_and_execution", "Bind hashed signal publication to the first strictly later executable price; define stale/missing price handling."),
+        ("DYN02", "instrument_identity", "Bind every non-cash asset to exact identity, venue, instrument, settlement currency, multiplier and lot size."),
+        ("DYN03", "rebalance_and_hold", "Freeze timezone, session calendar, rebalance schedule, persistence/trigger predicates and hold state transitions."),
+        ("DYN04", "event_precedence", "Freeze ordering of fills, rebalance, stop, take-profit and trailing updates; resolve same-bar ambiguity and missing bars."),
+        ("DYN05", "accounting_and_costs", "Bind quantities, cash, turnover-based fees/slippage, valuation timestamps and accounting reconciliation; estimated drag is not observed cost."),
+        ("DYN06", "prospective_activation", "Freeze protocol hash and future activation boundary; do not inherit NAV or P&L from existing composition snapshots."),
+    ]
+    shorts = any(weight < 0 for asset, weight in positions if asset != "CASH")
+    if shorts:
+        requirements.append(("DYN07", "short_execution", "Bind borrow or derivative mechanics, funding clock, margin, collateral and liquidation; a negative weight is not proof of tradable short access."))
+    else:
+        requirements.append(("DYN07", "short_execution", "Explicitly bind a spot-only instrument set or provide derivative/margin mechanics; nonnegative weights alone do not establish instrument type."))
+    return {
+        "strategy": strategy,
+        "status": "BLOCKED_UNBOUND_EXECUTION_CONTRACT",
+        "recommended_rebalance": recommendation,
+        "recommendation_is_frozen_execution_policy": False,
+        "contains_short_weights": shorts,
+        "instrument_bindings": [
+            {"asset_label": asset, "weight": weight,
+             "side": "SHORT" if weight < 0 else "LONG" if weight > 0 else "ZERO",
+             "exact_identity": None, "venue": None, "instrument": None,
+             "settlement_currency": None, "multiplier": None, "lot_size": None}
+            for asset, weight in sorted(positions) if asset != "CASH"
+        ],
+        "requirements": [{"id": rid, "binding": binding,
+                          "status": "UNBOUND", "acceptance": acceptance}
+                         for rid, binding, acceptance in requirements],
+        "frozen_protocol_sha256": None, "activation_at_utc": None,
+        "nav_available": False, "economic_observations": 0,
+        "scientific_credit": 0,
+    }
+
+
 def audit(path: Path) -> dict:
     names = ["v2a1_run_manifest.json", "scanner_snapshot_status.json",
              "strategy_compositions.csv", "strategy_execution_profiles.csv"]
@@ -89,6 +131,8 @@ def audit(path: Path) -> dict:
             "drag_is_assumption_not_observed_cost": True,
             "recommended_rebalance_not_executable_contract": profile["recommended_rebalance"],
             "causal_nav_status": "NOT_PROVIDED_BY_THIS_SNAPSHOT",
+            "execution_contract": execution_backlog(
+                strategy, positions, profile["recommended_rebalance"]),
         })
     return {
         "schema": "gate_btc.gateway.economic_readiness.v1",
@@ -98,6 +142,14 @@ def audit(path: Path) -> dict:
         "source_sha256": {name: hashlib.sha256(data).hexdigest()
                           for name, data in raw.items()},
         "strategies": strategies,
+        "execution_contract_summary": {
+            "status": "BLOCKED_UNBOUND_EXECUTION_CONTRACT",
+            "profile_count": len(strategies),
+            "profiles_ready_for_economic_ledger": 0,
+            "shared_requirement_ids": ["DYN01", "DYN02", "DYN03", "DYN04", "DYN05", "DYN06", "DYN07"],
+            "snapshot_count_is_not_an_execution_binding": True,
+            "draft_only_not_activation_validator": True,
+        },
         "nav_or_return_inferred_from_snapshot_count": False,
         "missing_economic_book_contract": REQUIRED_BOOK_FIELDS,
         "retrospective_current_composition_performance": "PROHIBITED",
@@ -121,3 +173,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
