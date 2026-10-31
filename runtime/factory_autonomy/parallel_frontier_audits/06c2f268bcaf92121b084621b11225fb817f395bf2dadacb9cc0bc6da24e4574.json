@@ -1,0 +1,52 @@
+{
+  "canonical_frontier_mutated": false,
+  "canonical_generation": "H2730-H2739",
+  "canonical_status": "WAITING_OFFICIAL_TICK_SOURCE",
+  "family_ids_allocated": [],
+  "historical_credit": 0,
+  "namespace": "PF::06c2f268bcaf9212",
+  "next_gate": "SOURCE_QUALIFICATION_THEN_SEPARATE_CHILD_PREREGISTRATION",
+  "promotion_authority": false,
+  "retroactive_credit": 0,
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.parallel_frontier.v1",
+  "scout_count": 2,
+  "selected": {
+    "channel_id": "CRYPTO_SPOT_PARTICIPATION_FLOW",
+    "cost_applicability_required": true,
+    "economics_read": false,
+    "grammar_signature": "06c2f268bcaf92121b084621b11225fb817f395bf2dadacb9cc0bc6da24e4574",
+    "may_allocate_existing_h_id": false,
+    "may_modify_existing_grammar": false,
+    "may_receive_retroactive_credit": false,
+    "mechanism": "Lagged spot participation and taker-volume composition may define a venue-flow channel without reusing order-book depth geometry from F-XMM-INVENTORY.",
+    "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+    "official_free_source_candidates": [
+      "Binance public market data",
+      "OKX public market data"
+    ],
+    "required_new_data": [
+      "spot OHLCV",
+      "taker buy/sell or aggressor volume when public",
+      "venue metadata",
+      "synchronized timestamps"
+    ],
+    "source_qualification_required": true,
+    "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+  },
+  "selection_policy": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND_ACROSS_ALL_SCOUTS",
+  "status": "PARALLEL_FRONTIER_PREREGISTERED_AWAITING_SOURCE_QUALIFICATION"
+}

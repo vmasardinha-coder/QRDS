@@ -1,0 +1,44 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 1,
+  "requests": [
+    {
+      "channel_id": "CRYPTO_STABLECOIN_LIQUIDITY_IMPULSE",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "f34d320d5a70b6c4e86791a526dc24e3956efad52d405e837587e1b0f732b873",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Changes in observable stablecoin liquidity and transfer activity may proxy crypto-native purchasing power independently of BTC price trend.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "public issuer attestations",
+        "DefiLlama public stablecoin data"
+      ],
+      "required_new_data": [
+        "stablecoin circulating supply",
+        "stablecoin transfer or exchange-flow aggregates",
+        "BTC spot reference prices",
+        "availability timestamps"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}

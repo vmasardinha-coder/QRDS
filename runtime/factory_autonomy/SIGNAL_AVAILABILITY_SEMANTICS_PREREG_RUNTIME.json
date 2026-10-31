@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "guard_id": "AUDIT-XAVAIL-01",
+  "guard_name": "signal_availability_semantics",
+  "status": "REGISTERED_INTEGRITY_GUARD",
+  "research_only": true,
+  "shadow_only": true,
+  "engine_weight": 0,
+  "auto_promote": false,
+  "external_source_system": "ai-hedge-fund",
+  "external_evidence_role": "semantic_provenance_only",
+  "external_performance_imported": false,
+  "core_contract": {
+    "unavailable_is_not_neutral": true,
+    "abstained_is_not_neutral": true,
+    "explicit_zero_is_available_neutral_vote": true,
+    "unavailable_contributors_excluded_from_aggregation_denominator": true,
+    "all_unavailable_means_no_active_signal": true,
+    "all_unavailable_target_weight": 0,
+    "availability_and_provenance_receipts_required": true,
+    "fail_closed_on_semantic_conflation": true
+  },
+  "aggregation_contract": {
+    "eligible_contributor_requires_available_signal": true,
+    "available_zero_counts_in_denominator": true,
+    "missing_unavailable_abstained_do_not_count_in_denominator": true,
+    "no_imputation_of_missing_as_zero": true,
+    "signal_value_and_availability_state_stored_separately": true,
+    "aggregation_parameters_must_remain_frozen_when_testing_semantics": true
+  },
+  "required_test_cases": [
+    "positive_plus_abstain_preserves_positive_contributor_conviction",
+    "positive_plus_explicit_neutral_dilutes_under_equal_weight_mean",
+    "all_abstain_produces_no_active_signal_and_zero_target_weight",
+    "missing_contributor_cannot_silently_become_zero_vote",
+    "availability_receipt_preserves_contributor_identity_and_state"
+  ],
+  "activation_boundary": {
+    "applies_to_multi_contributor_aggregation": true,
+    "does_not_create_alpha_family": true,
+    "does_not_set_model_weights": true,
+    "does_not_set_risk_thresholds": true,
+    "does_not_activate_capital": true
+  },
+  "external_provenance": {
+    "source_branch": "research/aihf-standalone",
+    "source_closeout_commit": "3e19adb1a7f00061afba19481a9824f262d93586",
+    "upstream_repo": "virattt/ai-hedge-fund",
+    "upstream_version": "2.3.0",
+    "upstream_sha": "154a8b2f46dca0f40764d814e4e747b0ad71f4c4",
+    "observed_structural_case": {
+      "bull_plus_abstain_conviction": 1.0,
+      "bull_plus_explicit_neutral_conviction": 0.5,
+      "all_abstain_conviction": 0.0,
+      "all_abstain_weight": 0.0
+    },
+    "interpretation": "The external system demonstrated a deterministic semantic distinction between unavailable/abstained contributors and explicit neutral votes. Numeric outcomes are demonstration fixtures, not performance claims or Factory defaults."
+  },
+  "promotion_boundary": {
+    "guard_registration_is_not_strategy_promotion": true,
+    "survivor_status_created_by_registration": false,
+    "capital_activation_prohibited": true,
+    "requires_separate_validation_for_any_economic_claim": true
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_external_evidence.v1",
+  "collected_at_utc": "2026-09-20T10:20:00Z",
+  "outcome_blind": true,
+  "economics_read": false,
+  "evidence": [
+    {
+      "source": "BCB",
+      "official_url": "https://www.bcb.gov.br/controleinflacao/expectativasmercado",
+      "facts": [
+        "The Banco Central do Brasil states that Focus is published every Monday between 08:25 and 08:30.",
+        "The BCB states that historical series of all market-expectation statistics are available and that the same information is exposed through its Open Data portal.",
+        "Focus covers IPCA and Selic expectations required by the frozen two-component revision vector."
+      ],
+      "limitations": []
+    },
+    {
+      "source": "BCB",
+      "official_url": "https://www.bcb.gov.br/publicacoes/focus",
+      "facts": [
+        "Official Focus publication pages expose the report reference date and publication date, supporting publication-to-publication ordering.",
+        "The report contains current-year IPCA and Selic median expectation statistics."
+      ],
+      "limitations": []
+    },
+    {
+      "source": "CVM",
+      "official_url": "https://dados.cvm.gov.br/dataset/fi-doc-inf_diario",
+      "facts": [
+        "Official CVM daily fund reports include net asset value, subscriptions and redemptions.",
+        "Current and previous-month files are updated Monday through Saturday at 08:00 using documents received by CVMWeb through 23:59 of the prior day.",
+        "The dataset is openly downloadable and historical files are retained."
+      ],
+      "limitations": [
+        "Portal availability can occasionally be delayed; the frozen rule therefore uses only data actually available before the target-session open and treats unavailable observations as ineligible."
+      ]
+    },
+    {
+      "source": "CVM",
+      "official_url": "https://dados.cvm.gov.br/dataset/fi-doc-entrega",
+      "facts": [
+        "Official CVM delivery metadata records periodic and event-document deliveries and is updated daily for recent months, providing an auditable delivery layer for point-in-time eligibility."
+      ],
+      "limitations": []
+    },
+    {
+      "source": "CVM",
+      "official_url": "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip",
+      "facts": [
+        "Official fund/class registration data are updated through the CVM open-data repository.",
+        "The class registration schema includes Classificacao and Classificacao_Anbima fields, allowing a deterministic equity-fund eligibility filter without performance selection."
+      ],
+      "limitations": []
+    },
+    {
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/consultas/mercado-a-vista/dados-de-mercado/",
+      "facts": [
+        "B3 states that its Dados de Mercado file includes foreign-investor movement information.",
+        "Publication is daily and foreign-investor participation/movement is updated D+2.",
+        "The page states that the statistics concern financial purchase and sale flows and publishes monthly, annual and prior-year accumulations."
+      ],
+      "limitations": [
+        "The official public page inspected does not affirmatively document distinct machine-readable foreign-investor purchase-value and sale-value fields required by the frozen normalized feature.",
+        "A generic movement or net-flow field cannot substitute for the frozen purchase-minus-sale divided by purchase-plus-sale formula."
+      ]
+    },
+    {
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/boletins-diarios/pesquisa-por-pregao/pesquisa-por-pregao/",
+      "facts": [
+        "Official B3 daily bulletins and historical market files support daily target-return and exchange-session reconstruction for the Focus and CVM-flow families."
+      ],
+      "limitations": []
+    }
+  ],
+  "decision": "EVIDENCE_ONLY_NO_OUTCOME_OR_ECONOMICS_READ",
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "asset": "ARK",
+  "authorised_by": "repository owner, explicitamente, em 2026-10-05",
+  "fix_applied_to_the_pipeline": {
+    "already_pinned_asset_that_goes_stale": "permanece no painel, porque o livro pode carrega-lo, mas e contado em stale_pinned_assets e verify_coverage recusa o dia, exigindo decisao registrada em vez de queda silenciosa",
+    "file": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py",
+    "guard": "MAX_FEED_STALENESS_DAYS = 3; um ativo nunca fixado cujo feed esta parado e excluido e registrado como stale_feed, e NAO e fixado",
+    "tests": "tests/test_gate_btc_delta_v12_multi_venue_daily_prices.py, classe StaleFeedTests, 9 casos; 4 deles falham sem o conserto"
+  },
+  "governance_unchanged": {
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "methodology_changes": 0,
+    "not_approved": true,
+    "orders": 0,
+    "promotion_allowed": false,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "honest_caveat": "A guarda de lacuna do painel do motor cobre o painel inteiro, inclusive o aquecimento, e nao apenas a janela de evidencia. Ela nao foi alterada. Isto removeu a CAUSA da lacuna, nao a regra que a recusou.",
+  "neutrality_proof": {
+    "conclusion": "despinar ARK e bit-a-bit neutro; nao pode alterar nenhuma linha comprometida",
+    "gap_guard_neutralised_for_the_diagnostic_only": "uma COPIA do motor foi usada para que a variante (a) pudesse rodar; o motor do repositorio nao foi modificado",
+    "method": "o motor foi executado localmente tres vezes sobre os MESMOS insumos, variando apenas ARK: (a) painel com ARK, (b) painel sem ARK e proveniencia sem ARK, (c) painel sem ARK e proveniencia COM ARK",
+    "result": "as 44 linhas das tres variantes sao identicas campo a campo, incluindo chain_sha256 e prev_chain_sha256",
+    "verified_by_the_engine_itself": "o motor recomputa o ledger inteiro a cada execucao e recusa se uma linha comprometida divergir, entao a neutralidade sera reconfirmada em producao"
+  },
+  "observation_recorded_not_acted_on": "Os agregados gross_long, gross_short_abs e net_exposure sao somas sobre um dict de posicoes, cuja ordem de insercao depende da composicao do painel. Comparando uma reconstrucao local com o ledger de producao, esses tres campos divergem no ultimo bit de ponto flutuante em 33 das 40 linhas, e isso propaga para a cadeia. Nenhum campo economico diverge: gross_return, net_return, normalized_nav, drawdown, turnover e open_positions sao identicos. Isto nao foi causado por ARK nem por esta correcao, e nada foi feito a respeito.",
+  "panel_after_removing_ark": {
+    "calendar_gaps": 0,
+    "distinct_days": 100,
+    "first_date": "2026-06-27",
+    "last_date": "2026-10-04",
+    "prospective_window": "2026-09-22..2026-10-04, 13 dias, zero lacunas"
+  },
+  "recorded_at_utc": "2026-10-05T23:27:29+00:00",
+  "removed_pin": {
+    "pinned_at": "2026-09-26",
+    "venue": "HYPERLIQUID"
+  },
+  "removed_provenance": {
+    "bars": 100,
+    "failed_attempts": [],
+    "first_date": "2026-03-18",
+    "last_date": "2026-06-25",
+    "meets_min_history": true,
+    "pinned_at": "2026-09-26",
+    "venue": "HYPERLIQUID"
+  },
+  "root_cause": {
+    "defect": "tools/gate_btc_delta_v12_multi_venue_daily_prices.py admitia um instrumento pela CONTAGEM de barras (meets_min_history = len(bars) >= min_history) e nunca pela RECENCIA da ultima barra",
+    "failed_run": "37279031874",
+    "failure": "EngineError: FAIL_CLOSED: price panel gap between 2026-06-25 and 2026-06-27; the frozen gap policy forbids backfilling a missed day",
+    "why_it_broke_only_on_2026-10-05": "os feeds vivos trazem janela rolante de ~100 barras. Ate 2026-10-04 a data mais antiga deles era 2026-06-26, que tapava o buraco por exatamente um dia. Em 2026-10-05 a janela rolou para 2026-06-27 e a lacuna de 2026-06-26 abriu",
+    "why_it_would_not_self_heal": "o painel e remontado do zero a cada execucao a partir do historico completo de cada ativo fixado, entao o rabo morto de ARK voltava todo dia e a distancia aumentava um dia por dia",
+    "why_the_venue_did_not_error": "uma venue responde um instrumento morto com as ultimas barras que tem, nao com erro; ARK voltou 100 barras terminando em 2026-06-25 e foi fixada em 2026-09-26"
+  },
+  "schema": "gate_btc.delta_v12_prices.stale_feed_unpin.v1",
+  "what_happened": "ATIVO_FIXADO_COM_FEED_MORTO_TRAVOU_O_MOTOR_PELA_GUARDA_DE_LACUNA_DO_PAINEL",
+  "what_was_NOT_done": [
+    "NENHUMA politica de lacuna foi alterada, afrouxada ou contornada",
+    "NENHUM dia faltante foi preenchido ou backfillado",
+    "NENHUM parametro congelado de selecao, risco, custo ou funding foi tocado",
+    "NENHUMA linha preexistente do ledger foi reescrita, re-hasheada ou re-datada",
+    "NENHUM ativo alem de ARK foi despinado",
+    "NENHUMA flag de governanca ou contador foi alterado; methodology_changes segue 0"
+  ],
+  "why_this_is_not_a_methodology_change": {
+    "ark_never_entered_a_signal": "a ancora e a linha 187 do painel e o lookback maximo e de 30 linhas, alcancando 2026-08-23; o rabo de ARK termina em 2026-06-25",
+    "ark_never_entered_the_books": "0 linhas em SELECTIONS_HISTORY.csv, 0 em POSITIONS_HISTORY.csv e 0 em TRADE_EVENTS.csv, em toda a historia da serie",
+    "ark_was_never_in_the_universe": "ARK nao esta no TOP100; era apenas um pin carregado fora do universo",
+    "contract_already_prescribes_it": "universe.rotation.new_entrant_no_venue_serves manda excluir da selecao do dia e registrar o ativo para o qual nenhuma venue serve preco, em vez de admiti-lo",
+    "the_judgement_call_that_was_made": "o contrato diz que perder um ativo JA FIXADO derruba a execucao, e da o motivo: 'because the book may still hold it'. O livro nunca carregou ARK, entao a protecao nao se aplica em substancia. Essa foi a unica chamada de escopo, e foi autorizada pelo dono do repositorio"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 3,
+  "requests": [
+    {
+      "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "aeec63b0f807f90ef3a325130938ca756093aaa9fad8c864e6640c4fb3f584c5",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "required_new_data": [
+        "B3 listed option chain",
+        "underlying B3 asset",
+        "expiry/strike metadata"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "3bc1506dbce5d9ddaf182da1e91f5dd08c7299b0d2b8be0d92d4d83d01806123",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "required_new_data": [
+        "B3 index preview/final portfolio files",
+        "announcement/effective dates",
+        "B3 security prices",
+        "exchange calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "d30e657a4920a06d7cb03a359edc0e8e3a39ee9a1c59045c384e0ab38db51b80",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "required_new_data": [
+        "BCB FX-swap auction announcements/results",
+        "official event timing",
+        "BRL market data",
+        "B3 market data",
+        "calendars"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}

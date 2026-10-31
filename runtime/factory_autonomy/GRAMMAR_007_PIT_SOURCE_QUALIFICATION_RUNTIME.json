@@ -1,0 +1,136 @@
+{
+  "B3": {
+    "blocker": "B3_HISTORICAL_SESSION_AND_OPEN_TIME_VERSIONING_NOT_YET_MATERIALIZED",
+    "calendar_2026": {
+      "body_read": false,
+      "content_length": null,
+      "content_type": "text/html;charset=UTF-8",
+      "etag": null,
+      "http_status": 200,
+      "last_modified": null,
+      "reachable": true,
+      "url": "https://www.b3.com.br/main.jsp?lumA=1&lumII=8A80CB81633FBF0B0163402956733E3A&lumPageId=8A6882694E91F2D4014E9248DBB001C9"
+    },
+    "cotahist_target": {
+      "body_read": false,
+      "content_length": 89056788,
+      "content_type": "application/x-zip-compressed",
+      "etag": "\"9096c04557adc1:0\"",
+      "http_status": 200,
+      "last_modified": "Wed, 31 Dec 2025 03:26:37 GMT",
+      "reachable": true,
+      "url": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2025.ZIP"
+    },
+    "current_authorities_reachable": true,
+    "historical_open_time_versioning_proven": false,
+    "historical_session_calendar_versioning_proven": false,
+    "pit_admission_pass": false,
+    "status": "CURRENT_AUTHORITY_QUALIFIED_HISTORICAL_VERSIONING_PENDING",
+    "target_bytes_parsed": false,
+    "target_bytes_read": false,
+    "target_outcomes_read": false,
+    "trading_hours": {
+      "body_read": false,
+      "content_length": null,
+      "content_type": "text/html;charset=UTF-8",
+      "etag": null,
+      "http_status": 200,
+      "last_modified": null,
+      "reachable": true,
+      "url": "https://www.b3.com.br/main.jsp?lumA=1&lumII=8A80CB81633FBF0B0163402B3B335F48&lumPageId=8A6882694E91F2D4014E9248DBB001D4"
+    }
+  },
+  "BCB": {
+    "blocker": "BCB_FOCUS_HISTORICAL_INTRADAY_PUBLICATION_TIMESTAMP_NOT_INDEPENDENTLY_PROVEN",
+    "exact_historical_intraday_publication_timestamp_proven": false,
+    "historical_intraday_publication_timestamp_source_identified": false,
+    "official_release_day_semantics_documented": true,
+    "pit_admission_pass": false,
+    "status": "PIT_BLOCKED_TIMESTAMP_AUTHORITY_MISSING"
+  },
+  "CVM": {
+    "delivery_schema": {
+      "observed_fields": [
+        "Ativo",
+        "CNPJ_Fundo_Classe",
+        "Data_Fim_Competencia",
+        "Data_Hora_Entrega",
+        "Data_Inicio_Competencia",
+        "ID_Documento",
+        "ID_Subclasse",
+        "Sistema_Origem",
+        "Tipo_Apresentacao",
+        "Tipo_Documento",
+        "Tipo_Fundo_Classe"
+      ],
+      "parseable_delivery_timestamps": 50,
+      "required_fields": [
+        "Ativo",
+        "CNPJ_Fundo_Classe",
+        "Data_Fim_Competencia",
+        "Data_Hora_Entrega",
+        "Data_Inicio_Competencia",
+        "ID_Documento",
+        "Tipo_Apresentacao",
+        "Tipo_Documento"
+      ],
+      "sample_rows_checked": 50,
+      "schema_pass": true,
+      "timestamp_parse_pass": true
+    },
+    "delivery_source": {
+      "content_type": "application/zip",
+      "http_status": 200,
+      "reachable": true,
+      "url": "https://dados.cvm.gov.br/dados/FI/DOC/ENTREGA/DADOS/fi_entrega_documento_202609.zip"
+    },
+    "join_contract": {
+      "active_flag": "Ativo",
+      "availability_timestamp": "Data_Hora_Entrega",
+      "competency_keys": [
+        "CNPJ_Fundo_Classe",
+        "Data_Inicio_Competencia",
+        "Data_Fim_Competencia",
+        "Tipo_Documento"
+      ],
+      "missing_rule": "INELIGIBLE_NO_IMPUTATION",
+      "presentation_type": "Tipo_Apresentacao",
+      "rule": "For each fund/class competency, only a document version with Data_Hora_Entrega strictly before the target B3 regular-session open is eligible; later presentations/re-presentations roll prospectively and never overwrite prior PIT state.",
+      "version_key": "ID_Documento"
+    },
+    "join_contract_ready": true,
+    "pit_admission_pass": false,
+    "status": "PIT_JOIN_CONTRACT_READY_NOT_EXECUTED"
+  },
+  "blockers": [
+    "BCB_FOCUS_HISTORICAL_INTRADAY_PUBLICATION_TIMESTAMP_NOT_INDEPENDENTLY_PROVEN",
+    "B3_HISTORICAL_SESSION_AND_OPEN_TIME_VERSIONING_NOT_YET_MATERIALIZED"
+  ],
+  "candidate_ranked": false,
+  "economics_read": false,
+  "features_materialized": false,
+  "historical_backfill_credit": 0,
+  "historical_testing_started": false,
+  "next_gate": "MATERIALIZE_HISTORICAL_AVAILABILITY_AUTHORITIES_WITHOUT_OUTCOMES",
+  "outcomes_read": false,
+  "prospective_credit": 0,
+  "qualified_at_utc": "2026-09-20T23:46:05.265273+00:00",
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_LATE_SEAL": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.pit_source_qualification.v1",
+  "scientific_credit": 0,
+  "stage": "PIT_SEMANTICS_AND_TARGET_SOURCE_QUALIFICATION",
+  "status": "PIT_SOURCE_QUALIFICATION_BLOCKED"
+}

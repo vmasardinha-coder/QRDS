@@ -1,0 +1,135 @@
+{
+  "cases": [
+    {
+      "case_id": "G007_FOCUS_50_50_V1",
+      "discovery": {
+        "n": 49,
+        "pass": true,
+        "pearson_r": 0.21393520361277413,
+        "started": true
+      },
+      "execution_order": 1,
+      "holdout": {
+        "n": 0,
+        "pass": null,
+        "pearson_r": null,
+        "started": false,
+        "target_year_2026_fetched_for_this_case": false
+      },
+      "ineligibility_reason": null,
+      "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+      "validation": {
+        "magnitude_floor": 0.10696760180638706,
+        "n": 16,
+        "pass": false,
+        "pearson_r": -0.12093106577900216,
+        "same_sign": false,
+        "started": true
+      }
+    },
+    {
+      "case_id": "G007_FOCUS_IPCA_ONLY_V1",
+      "discovery": {
+        "n": 49,
+        "pass": true,
+        "pearson_r": 0.42026476234348503,
+        "started": true
+      },
+      "execution_order": 2,
+      "holdout": {
+        "n": 0,
+        "pass": null,
+        "pearson_r": null,
+        "started": false,
+        "target_year_2026_fetched_for_this_case": false
+      },
+      "ineligibility_reason": null,
+      "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+      "validation": {
+        "magnitude_floor": 0.21013238117174252,
+        "n": 16,
+        "pass": false,
+        "pearson_r": -0.12093106577900223,
+        "same_sign": false,
+        "started": true
+      }
+    },
+    {
+      "case_id": "G007_FOCUS_SELIC_ONLY_V1",
+      "discovery": {
+        "n": 49,
+        "pass": true,
+        "pearson_r": -0.11702842286499286,
+        "started": true
+      },
+      "execution_order": 3,
+      "holdout": {
+        "n": 0,
+        "pass": null,
+        "pearson_r": null,
+        "started": false,
+        "target_year_2026_fetched_for_this_case": false
+      },
+      "ineligibility_reason": "PEARSON_FEATURE_ZERO_VARIANCE_FAIL_CLOSED",
+      "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+      "validation": {
+        "ineligible": true,
+        "n": 16,
+        "pass": false,
+        "pearson_r": null,
+        "started": true
+      }
+    }
+  ],
+  "effect_statistic": "PEARSON_PRODUCT_MOMENT_CORRELATION",
+  "embargo_sessions": 60,
+  "historical_backfill_credit": 0,
+  "next_gate": "FACTORY_007_CLOSE_NO_SURVIVOR",
+  "partition_contract": "50_30_20_CHRONOLOGICAL",
+  "prospective_credit": 0,
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.pearson_historical_eval.v1",
+  "scientific_credit": 0,
+  "standardization": {
+    "fit_partition": "DISCOVERY_ONLY",
+    "method": "ZSCORE",
+    "parameters": {
+      "IPCA_CURRENT_YEAR_MEDIAN_REVISION": {
+        "mean": 0.034083673469387746,
+        "n": 49,
+        "sample_sd": 0.0667063725933125
+      },
+      "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION": {
+        "mean": 0.061224489795918366,
+        "n": 49,
+        "sample_sd": 0.14003917090498322
+      }
+    },
+    "validation_holdout_refit": false
+  },
+  "status": "HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR",
+  "survivors": [],
+  "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+  "target_source": {
+    "holdout_year_2026_ever_fetched": false,
+    "pre_holdout_years_fetched": [
+      2024,
+      2025
+    ],
+    "provider": "B3 S.A. - Brasil, Bolsa, Balcao",
+    "raw_provider_payload_persisted": false,
+    "route_status": "MECHANICAL_SOURCE_ROUTE_CORRECTED_TARGET_IDENTITY_UNCHANGED"
+  },
+  "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED_ZERO_CREDIT_NOT_INFRASTRUCTURE_ERROR"
+}

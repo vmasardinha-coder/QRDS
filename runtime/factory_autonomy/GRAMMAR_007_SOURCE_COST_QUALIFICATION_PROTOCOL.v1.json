@@ -1,0 +1,57 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_qualification_protocol.v1",
+  "frozen_before_outcomes": true,
+  "authorization": "USER_CONTINUE_2026-09-20",
+  "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+  "source_rule": {
+    "candidate_set": "ONLY_official_free_source_candidates_frozen_in_each_preregistration",
+    "no_unregistered_source": true,
+    "no_paid_source": true,
+    "qualification_requirements": [
+      "source is official/public and accessible without paid credential or license",
+      "source can supply every required_new_data element assigned to it without semantic substitution",
+      "timestamps/publication or market timestamps support point-in-time causal ordering",
+      "coverage and granularity are sufficient for the grammar's already-frozen feature/window/lookback/target semantics",
+      "calendar/session semantics can be reconstructed without future information",
+      "delivery is reproducible and auditable"
+    ],
+    "selection": "Evaluate preregistered candidates only; accept any deterministic combination that proves all requirements. If multiple combinations qualify, choose lexicographically by normalized source-name tuple. If none qualify, FAIL_CLOSED_SOURCE_UNQUALIFIED."
+  },
+  "cost_rule": {
+    "qualification_requirements": [
+      "data acquisition cost is zero under the preregistered official/free candidate restriction",
+      "existing frozen trading/execution cost contract, if any, remains unchanged and is merely carried forward",
+      "no new cost estimate, threshold, fee assumption or economic optimization may be inferred from outcomes"
+    ],
+    "failure": "If an applicable frozen execution-cost contract cannot be identified without creating or changing a scientific assumption, FAIL_CLOSED_COST_UNRESOLVED."
+  },
+  "prohibitions": [
+    "NO_OUTCOME_READ_BEFORE_GATE",
+    "NO_ECONOMICS_READ_BEFORE_GATE",
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_COUNTER_RESET",
+    "NO_GRAMMAR_CHANGE",
+    "NO_TARGET_CHANGE",
+    "NO_THRESHOLD_CHANGE",
+    "NO_WINDOW_CHANGE",
+    "NO_LOOKBACK_CHANGE",
+    "NO_CUTOFF_CHANGE",
+    "NO_CAUSALITY_CHANGE",
+    "NO_PIT_CHANGE",
+    "NO_N_OR_CRITERION_CHANGE"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

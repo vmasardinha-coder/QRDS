@@ -1,0 +1,336 @@
+{
+  "schema": "gate_btc.system12.independent_agent_adjudication.v1",
+  "adjudicator": {
+    "canonical_task": "/root/revisao_sistema12",
+    "identity": "Codex agent /root/revisao_sistema12",
+    "type": "AI_AGENT",
+    "human_signature": false,
+    "organizational_independence_claim": false,
+    "external_review_claim": false,
+    "clean_room_claim": false,
+    "discovery_adjudication_separation": "Separate review task supplied sources/contracts and prior technical receipts; no discovery implementation role in this task."
+  },
+  "issued_at_utc": "2026-10-19T16:41:49.167558+00:00",
+  "decision": "PASS",
+  "scope": "HASH_BOUND_SYSTEM11_EXECUTION_IMPLEMENTATION_PARITY_ONLY",
+  "independent_adjudication_executed": true,
+  "implementation_parity_adjudication_pass": true,
+  "contract_semantic_sha256": "d06c294dfb74f699ab46333160fb69cca6ec53d605ce0909e41c036ff46866d3",
+  "subjects": {
+    "main_execution_ref": "0e7f1260183b7c345ef9b2c3c1bf046a75cf1ac0",
+    "frozen_runtime_commit": "05520a7aecd2ed7e70d3cb3011920a083a2c655f",
+    "dataset_git_blob_sha": "64e91f3080d0210a35c569556d2cb4b9ce7db6bf",
+    "artifact_id": 11681515958,
+    "artifact_zip_sha256": "4024c5faf50acd212fa74791895433cc7e6a6edddeda328c501e2a2a32e26b84",
+    "bindings": {
+      "dataset_semantic_sha256": "2545a1603434c966534c1c4650755e1bf2b2f1151d6c45be4d4a358386e1708a",
+      "independent_executor_source_sha256": "cc5d702fe33ac3806a9ae31875261c0a245377e6bef93a2679bd72986b18cd64",
+      "prereg_semantic_sha256": "9940010a5f48918b5f2e73c8283875078578fc42ebb035ecf359d29536fbc0ab",
+      "system11_fills_sha256": "653c09c7f47c2363a92b2526766edbc326e5251fa6faab7891969489a14aa391",
+      "system11_report_semantic_sha256": "d44fbcf0f5562e1ea36a4ab3ef87a1d0a4cce08e33fe66472bf859ac3b78ec94"
+    },
+    "fills_uncompressed_sha256": "31d915a918ee2be1f9b64d1a7cc3a67910c56959bfc48e68b1824128eca1cb21",
+    "vector_execution_digest": "f583cc65e9deb38b904c5f7b0f99591e975c14a905120c4719bb8edb71aac7d3"
+  },
+  "requirements": [
+    {
+      "requirement": "frozen_subject_and_bindings",
+      "decision": "PASS",
+      "basis": "ZIP, GZ, blob Git, dataset/prereg/report semânticos e fonte conferidos diretamente; nenhum input substituído."
+    },
+    {
+      "requirement": "preregistration_and_no_retune",
+      "decision": "PASS",
+      "basis": "Prereg e contrato exatos. Contrato no commit de 21:47:31Z; primeiro run de produção listado às 21:47:34Z. Dois runs anteriores eram pull_request; workflow exclui reprodução de produção em PR. Nenhuma alteração ao freeze nesta revisão."
+    },
+    {
+      "requirement": "implementation_independence",
+      "decision": "PASS",
+      "basis": "Inspeção completa do executor: NumPy searchsorted/prefix/cumsum/clip; baseline: bisect e subtração sequencial. Executor não importa nem chama código de execução System 11. Referência só entra no comparador após cálculo próprio."
+    },
+    {
+      "requirement": "raw_dataset_and_dataset_gate",
+      "decision": "PASS",
+      "basis": "11.072 pares em 11 datas de 30/09 a 10/10, 11 dias corridos; identidade, recibos crescentes, depth10, ordenação, positividade e finitude validados. Gates 10000/3/7 satisfeitos."
+    },
+    {
+      "requirement": "causal_receipts_latency_gaps",
+      "decision": "PASS",
+      "basis": "Auditoria própria com bisect em todos os pares/latências confirmou primeiro recibo >= alvo e abstenção quando destino excede segundo de decisão+1. Scan integral de 3.307.200 fills confirmou causalidade de cada execução. Maior atraso efetivo 1905 ms, coerente com amostragem."
+    },
+    {
+      "requirement": "fixed_numeric_tolerances_and_dust",
+      "decision": "PASS",
+      "basis": "Fonte usa abs+rel*max(|a|,|b|), evento 1e-8/1e-10; cenário 1e-7/1e-9. Dust compara apenas q>1e-8 e não remove totais/classificação. Testes dirigidos dentro/fora da tolerância e dust q=1e-8/q>1e-8 passaram. 576 ocorrências de níveis de dust na leitura integral."
+    },
+    {
+      "requirement": "exact_discrete_parity",
+      "decision": "PASS",
+      "basis": "Identidade de cenário, recibos, motivos indisponíveis, contagens, parcial/full e índice dos níveis usam igualdade exata no comparador inspecionado. Testes de adulteração unitária detectados. Scan próprio integral confirmou classificação parcial e contagens por cenário."
+    },
+    {
+      "requirement": "all_scenarios_events_and_reference_digest",
+      "decision": "PASS",
+      "basis": "Grid cartesiano exato 300; soma esperada 3.307.200, mesma contagem do scan integral. SHA256 descomprimido31d915...1cb21 igual ao execution_digest. Report doZIP é byte idêntico ao runtime congelado. Cenários próprios coincidem sob tolerância; evidência anterior de 0 mismatches validada pelos binds e inspeção do comparador, sem reexecutá-lo integralmente por rotina."
+    },
+    {
+      "requirement": "determinism_minimum_monotonicity",
+      "decision": "PASS",
+      "basis": "Duas execuções vetoriais sem reader de fills em ambiente de revisão deram cenários e digest idênticos, inclusive digest anterior f583...ac7d3; NumPy 2.5.1/Python 3.12. Mínimo 10951 execuções/cenário > 1000; zero violações de monotonicidade."
+    },
+    {
+      "requirement": "separate_attributable_adjudication",
+      "decision": "PASS",
+      "basis": "Este é parecer próprio do agente /root/revisao_sistema12, em contexto separado da descoberta/implementação. Revisão técnica anterior lida como evidência, sem copiar identidade ou decisão. Atestação textual abaixo, sem autenticação criptográfica/humana."
+    },
+    {
+      "requirement": "operational_safety",
+      "decision": "PASS",
+      "basis": "Nenhum serviço escrito, gate liberado ou fonte alterada. Ordens/capital/crédito 0; engine/promoção/conclusão operacional System12/liberação 13 false. PASS restrito à adjudicação de paridade congelada."
+    }
+  ],
+  "effective_checks": {
+    "raw_audit": {
+      "bindings": {
+        "dataset_semantic_sha256": "2545a1603434c966534c1c4650755e1bf2b2f1151d6c45be4d4a358386e1708a",
+        "prereg_semantic_sha256": "9940010a5f48918b5f2e73c8283875078578fc42ebb035ecf359d29536fbc0ab",
+        "system11_report_semantic_sha256": "d44fbcf0f5562e1ea36a4ab3ef87a1d0a4cce08e33fe66472bf859ac3b78ec94",
+        "independent_executor_source_sha256": "cc5d702fe33ac3806a9ae31875261c0a245377e6bef93a2679bd72986b18cd64"
+      },
+      "contract_semantic_sha256": "d06c294dfb74f699ab46333160fb69cca6ec53d605ce0909e41c036ff46866d3",
+      "ledger_git_blob_sha": "64e91f3080d0210a35c569556d2cb4b9ce7db6bf",
+      "rows": 11072,
+      "dates": [
+        "2026-09-30",
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-04",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-10"
+      ],
+      "dataset_gate": true,
+      "causal_checks": [
+        {
+          "venue": "BINANCE",
+          "latency": 0,
+          "executed": 11072,
+          "gaps": 0,
+          "no_future": 0
+        },
+        {
+          "venue": "BINANCE",
+          "latency": 50,
+          "executed": 11027,
+          "gaps": 44,
+          "no_future": 1
+        },
+        {
+          "venue": "BINANCE",
+          "latency": 100,
+          "executed": 11027,
+          "gaps": 44,
+          "no_future": 1
+        },
+        {
+          "venue": "BINANCE",
+          "latency": 250,
+          "executed": 11021,
+          "gaps": 49,
+          "no_future": 2
+        },
+        {
+          "venue": "BINANCE",
+          "latency": 500,
+          "executed": 11012,
+          "gaps": 58,
+          "no_future": 2
+        },
+        {
+          "venue": "OKX",
+          "latency": 0,
+          "executed": 11072,
+          "gaps": 0,
+          "no_future": 0
+        },
+        {
+          "venue": "OKX",
+          "latency": 50,
+          "executed": 11027,
+          "gaps": 44,
+          "no_future": 1
+        },
+        {
+          "venue": "OKX",
+          "latency": 100,
+          "executed": 11027,
+          "gaps": 44,
+          "no_future": 1
+        },
+        {
+          "venue": "OKX",
+          "latency": 250,
+          "executed": 11004,
+          "gaps": 66,
+          "no_future": 2
+        },
+        {
+          "venue": "OKX",
+          "latency": 500,
+          "executed": 10951,
+          "gaps": 119,
+          "no_future": 2
+        }
+      ],
+      "expected_event_count": 3307200,
+      "scenario_count": 300,
+      "minimum_executions": 10951,
+      "scenario_parity": true,
+      "vector_digest": "f583cc65e9deb38b904c5f7b0f99591e975c14a905120c4719bb8edb71aac7d3",
+      "determinism": true,
+      "monotonicity_violations": 0,
+      "numpy": "2.5.1"
+    },
+    "directed_tests": {
+      "purpose": "Resolve tolerance boundary, fixed dust, discrete-field and gap-fixture questions without re-running sealed full event parity",
+      "tests": {
+        "baseline_zero": true,
+        "inside_absolute_plus_relative": true,
+        "outside_tolerance": true,
+        "receipt_exact": true,
+        "classification_exact": true,
+        "scenario_identity_exact": true,
+        "dust_at_fixed_absolute_ignored": true,
+        "dust_above_fixed_absolute_detected": true,
+        "level_identity_exact": true,
+        "scenario_exact_unavailable_reasons": true,
+        "scenario_exact_effective_executions": true,
+        "scenario_exact_partial_fills": true
+      },
+      "fixture_events": 1020,
+      "algorithm_source_sha256": "2a42de1ab48b94651c4fcabc7c5b82cc5292d7f3b0f94462d2658bc38b5c743d"
+    },
+    "full_fill_stream_audit": {
+      "purpose": "Independent full stream audit of causal receipts, depth explainability, fee arithmetic, discrete classifications and completeness; does not rerun sealed comparator",
+      "fills_sha256": "653c09c7f47c2363a92b2526766edbc326e5251fa6faab7891969489a14aa391",
+      "fills_uncompressed_sha256": "31d915a918ee2be1f9b64d1a7cc3a67910c56959bfc48e68b1824128eca1cb21",
+      "events": 3307200,
+      "scenarios": 300,
+      "causal_and_depth_violations": 0,
+      "partial_count_mismatches": 0,
+      "dust_level_occurrences_at_or_below_1e8": 576,
+      "max_effective_delay_ms": 1905
+    }
+  },
+  "evidence_hashes": {
+    "system12_evidence/audit.py": {
+      "size": 2942,
+      "sha256": "282b9a7e00e9d4536309f738b9ea7a2568f1593405f3cde26ea6c98d52567c46"
+    },
+    "system12_evidence/audit_summary.json": {
+      "size": 2491,
+      "sha256": "73bdb2c99e46e9437c3766cb1d04b70d600fc9d118d6d678ca4dcfbb0fe2d921"
+    },
+    "system12_evidence/boundaries.py": {
+      "size": 3148,
+      "sha256": "1043fc5a5c02cff32c3f3635036392f43329cefcad9f3cce3c98c13c7f3e08f5"
+    },
+    "system12_evidence/boundaries_summary.json": {
+      "size": 765,
+      "sha256": "3b9c844db0d3d199ae6158be130bd00672a0065b7b4bc4670bde46079852e612"
+    },
+    "system12_evidence/chronology.json": {
+      "size": 458,
+      "sha256": "1a4d395b3922899efa9c995b909bd7bf97db8568a024fc224e02f4e16bde90ea"
+    },
+    "system12_evidence/fill_audit.py": {
+      "size": 3223,
+      "sha256": "0a16bc245ea08f36931c6be6a2bac73e1f43ab173dcaffc4df702000c4317680"
+    },
+    "system12_evidence/fill_audit_summary.json": {
+      "size": 570,
+      "sha256": "40d2fc4c620d8b3d7fd398d2ff4ec4e9e46e3060da57addd9041f83eb57744a8"
+    },
+    "system12_evidence/frozen_sources/.github/workflows/gate-btc-2-system12-implementation-replication.yml": {
+      "size": 5681,
+      "sha256": "95e9e362f757e61f2481e1b6abe216e7f8a3ee4af3e7e4e927f62c7df4843b37"
+    },
+    "system12_evidence/frozen_sources/artifacts/gate_btc_2/SYSTEM11_LOB_STRESS_PREREG_V1_20260929.json": {
+      "size": 2997,
+      "sha256": "fe21fad4176d2aec3317a7b3cc499bf1f2efd549cb5cb177d6ec0fc2c6b30f84"
+    },
+    "system12_evidence/frozen_sources/artifacts/gate_btc_2/SYSTEM12_IMPLEMENTATION_REPLICATION_V1_20261010.json": {
+      "size": 2322,
+      "sha256": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a"
+    },
+    "system12_evidence/frozen_sources/executor.py": {
+      "size": 18777,
+      "sha256": "cc5d702fe33ac3806a9ae31875261c0a245377e6bef93a2679bd72986b18cd64"
+    },
+    "system12_evidence/frozen_sources/tests/test_gate_btc_2_system12_vector_replication.py": {
+      "size": 5330,
+      "sha256": "564abfd77101b466484fc21e526d372d58f106e7cff53a93b0216410d2c34e02"
+    },
+    "system12_evidence/frozen_sources/tools/gate_btc_2_system11_stress_replay_v1.py": {
+      "size": 12692,
+      "sha256": "2a42de1ab48b94651c4fcabc7c5b82cc5292d7f3b0f94462d2658bc38b5c743d"
+    },
+    "system12_evidence/manifest.json": {
+      "size": 1929,
+      "sha256": "2553d0c6ba917a24d08690c4053673061ac67e8c65896cdde64eb4a4ef2a4535"
+    },
+    "review_handoff19/Sistema12/SYSTEM12_CONTRACT.json": {
+      "size": 2322,
+      "sha256": "7a550b4b07f8244bc2b524d21b6db85e2ccfbf4c13ca236c83263dbdb6dc5c9a"
+    },
+    "review_handoff19/Sistema12/SYSTEM12_HANDOFF.json": {
+      "size": 2772,
+      "sha256": "7c26ee93449b8606e2c9149e1c967e68bd5356c1cc504146bc235780a12ba659"
+    },
+    "review_handoff19/Sistema12/SYSTEM12_REPRODUCED.json": {
+      "size": 181316,
+      "sha256": "f0e27813c1d68d1532c58b9df77e9d4ec8c35aa9779ded8f37e99ef9fee3de14"
+    },
+    "review_handoff19/Sistema12/SYSTEM12_REVIEW.json": {
+      "size": 980,
+      "sha256": "738aa6a2b0c1cadec96f0556779a13aeeabe330a0311b4985abc2cee732b2fc3"
+    },
+    "review_handoff19/Sistema12/SYSTEM12_REVIEW_HANDOFF.md": {
+      "size": 1010,
+      "sha256": "0022f3212dc0b6587ff61be4570f63e86e1d3c011936195238a6a2b25c5f9ddd"
+    }
+  },
+  "limitations_nonblocking": [
+    "Escopo: paridade de implementação dos sujeitos congelados; não lucratividade, equivalência econômica, autenticidade externa da captura das exchanges, dados atuais de System 11 ou liberação de System13.",
+    "Independência é algorítmica/de implementação e contexto separado de adjudicação por agente. Não há alegação clean-room, independência organizacional, revisão externa ou assinatura humana.",
+    "Não foi repetido o comparador integral selado: sua evidência anterior de 0 mismatches foi examinada com código/binds; a revisão realizou scan próprio integral dosfills, recálculo de todos os cenários/determinismo e testes dirigidos de fronteira.",
+    "Determinismo observado neste ambiente e coerência do digest com reprodução anterior; não é prova universal entre arquiteturas. Resolução de um snapshot por segundo, sem interpolação ou fila, conforme prereg.",
+    "Campo original da auditoria dust_level_occurrences_at_or_below_1e8 contém um erro de grafia no nome: o código testa <=1e-8. O valor 576 significa q<=1e-8, não q<=1e8.",
+    "Matéria-prima grande permanece no ambiente isolado remoto C:\\Users\\jsard\\s12_adjudication_20261019; o pacote local contém fontes inspecionadas, scripts, resultados e hashes. Nenhuma alegação de preservação perpétua desse ambiente."
+  ],
+  "blocking_limitations": [],
+  "operational_effect": {
+    "system12_complete": false,
+    "system13_dependency_released": false,
+    "system12_completion_authorized": false,
+    "system13_release_authorized": false,
+    "scientific_credit": 0,
+    "orders": 0,
+    "real_capital_brl": 0,
+    "engine_feed": false,
+    "automatic_promotion": false,
+    "economic_claim_authorized": false
+  },
+  "next_action": "Integrar e preservar este parecer como sidecar hash-bound do handoff, mantendo originais. O contrato exige adjudicação antes de conclusão, mas mantém safety.system12_completion_authorized=false e system13_release_authorized=false; este parecer não fornece autorização de mudança operacional. Eventual liberação exige autorização explícita própria e integração de estado; não foi especificado no contrato um protocolo adicional de assinatura humana/externa.",
+  "attestation": {
+    "signer": "Codex agent /root/revisao_sistema12",
+    "signed_at_utc": "2026-10-19T16:41:49.167558+00:00",
+    "decision_payload_sha256": "ae3342bbcbd1709c4eb10b8092ed42660c26d8c00eada4df0f7f63efd45043cd",
+    "text": "Atesto que emiti este PASS a partir das evidências efetivamente inspecionadas e dos checks descritos. A atribuição é ao agente identificado nesta tarefa. Trata-se de atestação textual vinculada por hash, sem chave privada, certificação, autenticação criptográfica ou assinatura humana.",
+    "authenticated_cryptographic_signature": false
+  }
+}

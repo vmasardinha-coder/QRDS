@@ -1,0 +1,5 @@
+# QOS retrospective reconstruction authorized13Oct2026
+
+Frozen selections and candidate membership from the original31Aug/30Sep signal states. September: entry1Sep, exit1Oct. October: entry1Oct, mark11Oct, incomplete month. Full candidate paths86/86 and91/91. Uses recovered V2A masters from producer38358554759 and36969563740 plus physically observed Binance candles for five missing symbols. Source changes versus the old locks are explicit per asset in RESULTS.json (38/39); this is retrospective reconstruction, not original prospective evidence. Baseline equal weights; PRL50 uses20% activation,50% profit giveback and next daily close. Gross primary;8bps per side is a declared sensitivity, not a QOS canonical fee contract. DCA is equal daily contributions and return on contributed capital, not lump-sum NAV return. No personal-wallet benchmark series was provided for these windows.
+
+Original cycle states and scientific ledgers are unchanged. No capital, orders, promotion or prospective credit.

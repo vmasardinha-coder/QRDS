@@ -1,0 +1,65 @@
+{
+  "carry_formula_defined": false,
+  "channel_id": "CRYPTO_TERM_STRUCTURE_CARRY",
+  "direction_defined": false,
+  "economic_outcomes_read": false,
+  "fallback": {
+    "authentication_required": false,
+    "dated_expiry_ms": 1790323200000,
+    "dated_price_observed": true,
+    "dated_symbol": "BTC-USD-260925",
+    "funding_rate_observed": true,
+    "funding_time_ms": 1790150400000,
+    "next_funding_time_ms": 1790179200000,
+    "perpetual_price_observed": true,
+    "perpetual_symbol": "BTC-USD-SWAP",
+    "provider": "OKX_PUBLIC_API",
+    "sample_checks": {
+      "dated_price_positive": true,
+      "expiry_in_future": true,
+      "funding_parseable": true,
+      "perpetual_price_positive": true
+    },
+    "status": "PASS"
+  },
+  "generated_at_utc": "2026-09-23T02:10:40.319350Z",
+  "grammar_signature": "5c6294637c3b4e7f61f9f4419a68671e6b3503314b6520e093b1301d504b3503",
+  "historical_backfill_started": false,
+  "lookbacks_defined": false,
+  "namespace": "PF::5c6294637c3b4e7f",
+  "next_gate": "SEPARATE_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "operational_primary": {
+    "binding_reason": "BINANCE_TRANSPORT_OR_JURISDICTION_UNAVAILABLE_AND_OKX_SAME_OBSERVABLES_PASS",
+    "provider": "OKX_PUBLIC_API"
+  },
+  "original_primary": {
+    "provider": "BINANCE_COIN_M_PUBLIC_API",
+    "reason": "RuntimeError:HTTP_451:https://dapi.binance.com/dapi/v1/exchangeInfo",
+    "status": "FAIL_CLOSED_SOURCE_UNVERIFIED"
+  },
+  "return_horizon_defined": false,
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v2",
+  "status": "SOURCE_QUALIFIED_VIA_PREOUTCOME_TRANSPORT_FAILOVER_AWAITING_SEPARATE_SIGNAL_PREREGISTRATION",
+  "thresholds_defined": false,
+  "transport_failover": {
+    "activated": true,
+    "economic_outcomes_read_before_failover": false,
+    "fallback_provider": "OKX_PUBLIC_API",
+    "mechanism_changed": false,
+    "original_primary_failure_retained": true,
+    "original_primary_provider": "BINANCE_COIN_M_PUBLIC_API",
+    "performance_used_for_failover": false,
+    "required_observables_changed": false
+  }
+}

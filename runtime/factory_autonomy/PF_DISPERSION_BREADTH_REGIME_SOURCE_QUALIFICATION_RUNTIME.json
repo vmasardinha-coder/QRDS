@@ -1,0 +1,77 @@
+{
+  "channel_id": "CRYPTO_DISPERSION_BREADTH_REGIME",
+  "direction_defined": false,
+  "economic_outcomes_read": false,
+  "generated_at_utc": "2026-09-23T02:25:56.733408Z",
+  "grammar_signature": "757b8b0385a1b53beb6ad406a69450403a52d05a222d8312d7920fc6019debfa",
+  "historical_backfill_started": false,
+  "namespace": "PF::757b8b0385a1b53b",
+  "next_gate": "SEPARATE_BREADTH_SIGNAL_PRODUCER_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
+  "signal_formula_defined": false,
+  "source": {
+    "authentication_required": false,
+    "deterministic_probe_results": [
+      {
+        "confirmed_1h_observed": true,
+        "instId": "1INCH-USDT"
+      },
+      {
+        "confirmed_1h_observed": true,
+        "instId": "2Z-USDT"
+      },
+      {
+        "confirmed_1h_observed": true,
+        "instId": "A-USDT"
+      },
+      {
+        "confirmed_1h_observed": true,
+        "instId": "AAVE-USDT"
+      },
+      {
+        "confirmed_1h_observed": true,
+        "instId": "ACE-USDT"
+      }
+    ],
+    "eligible_live_usdt_spot_count": 406,
+    "exp_time_field_observed": true,
+    "exp_time_populated_count": 0,
+    "list_time_field_observed": true,
+    "prospective_genesis_supported": true,
+    "prospective_membership_change_detection_supported": true,
+    "provider": "OKX_PUBLIC_API",
+    "raw_spot_instrument_count": 1412,
+    "required_metadata_fields_present": true,
+    "snapshot_time_ms": 1790130355542,
+    "state_field_observed": true,
+    "status": "QUALIFIED_PUBLIC_SOURCE"
+  },
+  "status": "SOURCE_QUALIFIED_AWAITING_SEPARATE_BREADTH_PRODUCER_PREREGISTRATION",
+  "thresholds_defined": false,
+  "universe_policy": {
+    "genesis_immutable": true,
+    "historical_membership_reconstruction": false,
+    "missing_or_delisted_members_replaced": false,
+    "missing_policy": "UNAVAILABLE_AND_COUNT_NOT_ZERO_FILL",
+    "new_listings_after_genesis_enter_universe": false
+  },
+  "xagent_independence": {
+    "distinct_from": [
+      "SPOT_PARTICIPATION_TAKER_FLOW",
+      "DERIVATIVES_TERM_STRUCTURE_CARRY"
+    ],
+    "eligible_after_separate_producer_preregistration": true,
+    "evidence_class": "SPOT_CROSS_SECTIONAL_BREADTH"
+  }
+}
