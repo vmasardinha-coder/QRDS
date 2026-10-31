@@ -261,6 +261,40 @@
         "response_sha256": "320aedda22e6d46a0a925a5a64c84545a810f80700f5e82e9559a7b324208b1f"
       },
       "reopen_rule": "exact_identity_new_source_access_or_validated_history; change reviewed policy before retry"
+    },
+    {
+      "symbol": "EURCV",
+      "coin_id": "societe-generale-forge-eurcv",
+      "effective_cutoff": "2026-10-31",
+      "disposition": "BOUNDED_SOURCE_RECHECK",
+      "retry_from": "2026-11-07",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "NO_QUALIFIED_ALLOWED_ROUTE",
+        "evidence": "Exact identity EUR CoinVertible in official run 41173353667, cutoff 2026-10-30: CDD HTTP 404, Binance HTTP 400, OKX empty candle response. Only these allowed collector routes were exhausted; this does not establish global market absence or authorize a proxy. Preserve the 150 denominator and all existing history/identity QA.",
+        "evidence_cutoff": "2026-10-30",
+        "review_date": "2026-10-31",
+        "source_run": 41173353667,
+        "source_archive_sha256": "641a02dbed34bbce1a13a4aeff8e5b85aeb6cf4c9e65fd188938cc5a9b103c7a"
+      },
+      "reopen_rule": "weekly exact-identity retry on due cutoff through original sources and full QA; earlier retry requires reviewed new exact-source evidence"
+    },
+    {
+      "symbol": "MGLO",
+      "coin_id": "midas-fasanara-global-open",
+      "effective_cutoff": "2026-10-31",
+      "disposition": "BOUNDED_SOURCE_RECHECK",
+      "retry_from": "2026-11-07",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "NO_QUALIFIED_ALLOWED_ROUTE",
+        "evidence": "Exact identity Midas Fasanara Global Open in official run 41173353667, cutoff 2026-10-30: CDD HTTP 404, Binance HTTP 400, OKX empty candle response. Only these allowed collector routes were exhausted; this does not establish global market absence or authorize a proxy. Preserve the 150 denominator and all existing history/identity QA.",
+        "evidence_cutoff": "2026-10-30",
+        "review_date": "2026-10-31",
+        "source_run": 41173353667,
+        "source_archive_sha256": "641a02dbed34bbce1a13a4aeff8e5b85aeb6cf4c9e65fd188938cc5a9b103c7a"
+      },
+      "reopen_rule": "weekly exact-identity retry on due cutoff through original sources and full QA; earlier retry requires reviewed new exact-source evidence"
     }
   ]
 }
