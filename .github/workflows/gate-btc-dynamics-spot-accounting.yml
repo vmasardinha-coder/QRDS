@@ -5,16 +5,20 @@ on:
     paths:
       - tools/gate_btc_dynamics_spot_accounting.py
       - tools/gate_btc_dynamics_spot_rebalance.py
+      - tools/gate_btc_dynamics_target_intake.py
       - tests/test_gate_btc_dynamics_spot_accounting.py
       - tests/test_gate_btc_dynamics_spot_rebalance.py
+      - tests/test_gate_btc_dynamics_target_intake.py
       - .github/workflows/gate-btc-dynamics-spot-accounting.yml
   push:
     branches: [main]
     paths:
       - tools/gate_btc_dynamics_spot_accounting.py
       - tools/gate_btc_dynamics_spot_rebalance.py
+      - tools/gate_btc_dynamics_target_intake.py
       - tests/test_gate_btc_dynamics_spot_accounting.py
       - tests/test_gate_btc_dynamics_spot_rebalance.py
+      - tests/test_gate_btc_dynamics_target_intake.py
       - .github/workflows/gate-btc-dynamics-spot-accounting.yml
   workflow_dispatch:
 
@@ -31,5 +35,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Test offline spot accounting boundaries
-        run: python -m unittest discover -s tests -p 'test_gate_btc_dynamics_spot_*.py' -v
+        run: python -m unittest discover -s tests -p 'test_gate_btc_dynamics_*.py' -v
+
 
