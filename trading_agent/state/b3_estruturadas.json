@@ -478,6 +478,12 @@
       "nav": 47079.62,
       "benchmark_nav": 48188.53,
       "benchmark2_nav": 51480.8
+    },
+    {
+      "date": "2026-10-31",
+      "nav": 46781.62,
+      "benchmark_nav": 47828.33,
+      "benchmark2_nav": 51506.94
     }
   ],
   "trades": [
@@ -2753,7 +2759,63 @@
           "last_close": 169186.4219
         }
       }
+    },
+    {
+      "date": "2026-10-31",
+      "regime": "-",
+      "hurdle": "CDI",
+      "rebalance_trigger": "nenhum (call em curso)",
+      "vol_source": "GARCH(1,1)",
+      "sigma": 0.7015,
+      "vol_realized": 0.5345,
+      "short_call": {
+        "strike": 210.48,
+        "expiry": "2026-11-05",
+        "qty": 290.33975761074475,
+        "premium_unit": 12.5271,
+        "sold_on": "2026-10-06",
+        "sigma": 0.6113
+      },
+      "data_failures": [],
+      "selected": [
+        {
+          "symbol": "BOVA11",
+          "weight": 1.0
+        }
+      ],
+      "rejected": [],
+      "stops": [],
+      "cooldowns": {},
+      "note": "",
+      "market_data_evidence": {
+        "BOVA11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BOVA11",
+          "captured_at_utc": "2026-10-31T01:08:46.445281+00:00",
+          "point_count": 458,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7dbe27b2fdaa31713bb9112fcb871628daaee1b60bc6b5b70dd983ccad15860b",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-10-30",
+          "last_close": 165.4
+        },
+        "^BVSP": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "brapi",
+          "symbol": "^BVSP",
+          "captured_at_utc": "2026-10-31T01:08:47.733676+00:00",
+          "point_count": 115,
+          "status": "RECORDED",
+          "series_scope": "LIVE_SOURCE_WITH_VERIFIED_INDEX_CACHE",
+          "series_sha256": "46a81e43574aea75ee78e33ebd92ecb2fc639cbb5e39400e88292d0252426f58",
+          "first_market_date": "2026-05-20",
+          "last_market_date": "2026-10-30",
+          "last_close": 167921.7969
+        }
+      }
     }
   ],
-  "last_accrual_date": "2026-10-28"
+  "last_accrual_date": "2026-10-29"
 }
