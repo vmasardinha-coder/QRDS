@@ -17,6 +17,8 @@ on:
       - '.github/workflows/gate-btc-xagent-spot-flow-signal-producer.yml'
   schedule:
     - cron: '7 * * * *'
+    # Extra producer delivery before the unchanged 02:00 UTC decision window.
+    - cron: '30,45 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -71,12 +73,12 @@ jobs:
           print('S_XSPOT_FLOW_01_PREREG=PASS')
           PY
       - name: Produce live prospective signal
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           mkdir -p live
           python source_repo/tools/gate_btc_factory/xagent_spot_flow_signal_producer.py --output live/S_XSPOT_FLOW_01.json
       - name: Persist append-only producer observation
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
           python - <<'PY'

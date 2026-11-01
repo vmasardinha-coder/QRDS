@@ -73,6 +73,34 @@ def combine_discoveries(discoveries):
     return {**discoveries[0],'entries':entries}
 
 
+def verified_identity_extension(discovery,evidence_root):
+    """Check exact provider IDs and primary active instruments against archived bytes."""
+    try:
+        from .gate_btc_system13_native_capture import metadata_index
+    except ImportError:
+        from gate_btc_system13_native_capture import metadata_index
+    discovery_bindings(discovery)
+    root=evidence_root.resolve()
+    def evidence(path,digest):
+        p=(root/path).resolve()
+        if not p.is_relative_to(root):raise ValueError('EXTENSION_EVIDENCE_PATH_ESCAPE')
+        raw=p.read_bytes()
+        if p.suffix=='.gz':raw=gzip.decompress(raw)
+        if sha(raw)!=digest:raise ValueError('EXTENSION_EVIDENCE_HASH_MISMATCH')
+        return json.loads(raw)
+    for entry in discovery['entries']:
+        for b in entry['bindings']:
+            identity=evidence(b['identity_evidence_path'],b['identity_evidence_sha256'])
+            matching=[r for r in identity['tickers'] if r.get('market',{}).get('identifier')==b['venue']
+                      and r.get('base')==b['base'] and r.get('target')==b['quote']]
+            if not matching or any(r.get('coin_id')!=b['coin_id'] or r.get('target_coin_id')!=b['target_coin_id'] for r in matching):
+                raise ValueError('EXTENSION_EXACT_PROVIDER_IDENTITY_MISSING')
+            primary=evidence(b['primary_metadata_path'],b['primary_metadata_sha256'])
+            if metadata_index(b['venue'].upper()+'_SPOT',primary).get(b['source_symbol'])!=(b['base'],b['quote']):
+                raise ValueError('EXTENSION_ACTIVE_INSTRUMENT_NOT_CONFIRMED')
+    return discovery
+
+
 def discovery_bindings(discovery):
     """Validate observed identity candidates without transferring source admission."""
     if discovery is None:return {}
@@ -215,6 +243,12 @@ def build(runtime,registry_path,out,discovery_path=None):
     refinement_path=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_REFINEMENT_20261025.json'
     refinement_raw=refinement_path.read_bytes()
     discovery=refine_discovery(discovery,json.loads(refinement_raw),Path(__file__).resolve().parents[1])
+    extension_nov=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261101.json'
+    extension_nov_raw=None
+    if extension_nov.exists():
+        extension_nov_raw=extension_nov.read_bytes()
+        verified=verified_identity_extension(json.loads(extension_nov_raw),Path(__file__).resolve().parents[1])
+        discovery=combine_discoveries([discovery,verified])
     result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),discovery)
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
@@ -222,6 +256,7 @@ def build(runtime,registry_path,out,discovery_path=None):
     result['identity_discovery_extension_sha256']=sha(extension_raw)
     result['identity_discovery_extension_20261024_sha256']=sha(extension24_raw)
     result['identity_refinement_20261025_sha256']=sha(refinement_raw)
+    if extension_nov_raw is not None:result['identity_extension_20261101_sha256']=sha(extension_nov_raw)
     capture_path=folder/'native_ohlcv_capture_v1/STATUS.json'
     result['native_capture']={'status':'NOT_CAPTURED'}
     if capture_path.exists():

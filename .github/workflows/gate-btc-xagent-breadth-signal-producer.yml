@@ -17,6 +17,8 @@ on:
       - '.github/workflows/gate-btc-xagent-breadth-signal-producer.yml'
   schedule:
     - cron: '27 * * * *'
+    # Extra producer delivery before the unchanged 02:00 UTC decision window.
+    - cron: '30,45 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -78,12 +80,12 @@ jobs:
           print('S_XBREADTH_01_PREREG=PASS')
           PY
       - name: Prepare canonical runtime
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           git clone --depth 1 --branch gate-btc-runtime "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" runtime_repo
           mkdir -p live
       - name: Produce live prospective breadth signal
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           ROOT='runtime_repo/runtime/factory_autonomy/xagent_signal_producers/S-XBREADTH-01'
           GENESIS_ARGS=()
@@ -95,7 +97,7 @@ jobs:
             --genesis-output live/GENESIS.json \
             "${GENESIS_ARGS[@]}"
       - name: Validate and persist append-only breadth observation
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           python - <<'PY'
           import json, pathlib, shutil

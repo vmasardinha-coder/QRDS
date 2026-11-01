@@ -3,7 +3,7 @@ name: GATE BTC Crypto 745 Basis Funding Forward
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '15 7,15,23 * * *'
   pull_request:
     branches: [main]
     paths:
@@ -51,12 +51,12 @@ jobs:
       - run: python -m unittest -v tests.test_gate_btc_crypto_745_basis_forward_capture
 
   observe-funding-window:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: validate
     runs-on: ubuntu-24.04
     # Operational runway only: the frozen decision/entry/exit clocks are unchanged.
-    # 30m wait + 5m hold + 60s exit + checkout/publication overhead.
-    timeout-minutes: 45
+    # 40m operational runway + frozen 5m hold + 60s exit + publication.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -86,7 +86,7 @@ jobs:
           python source_repo/tools/gate_btc_factory/crypto_745_basis_forward_capture.py
           --admission runtime_repo/runtime/factory_sources/crypto_challenger_745/SOURCE_COST.json
           --attempt-out out/ATTEMPT.json
-          --max-wait-seconds 1800
+          --max-wait-seconds 2400
           --poll-seconds 0.5
       - name: Show capture status separately from workflow success
         if: always()
