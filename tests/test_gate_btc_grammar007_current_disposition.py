@@ -1,8 +1,17 @@
 import json,tempfile,unittest,copy
 from pathlib import Path
 from tools.gate_btc_factory.grammar_007_current_disposition import reconcile,HISTORY
+from tools.gate_btc_factory.frozen_source_bytes import read_frozen_bytes
+import hashlib
 
 class GrammarDispositionTests(unittest.TestCase):
+ def test_lf_and_crlf_require_same_original_pinned_content(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   p=Path(tmp)/'seal.json';raw=b'{\n  "fixed": true\n}\n';digest=hashlib.sha256(raw).hexdigest()
+   p.write_bytes(raw);self.assertEqual(read_frozen_bytes(p,digest),raw)
+   p.write_bytes(raw.replace(b'\n',b'\r\n'));self.assertEqual(read_frozen_bytes(p,digest),raw)
+   p.write_bytes(raw.replace(b'true',b'false').replace(b'\n',b'\r\n'))
+   with self.assertRaisesRegex(ValueError,'CONTENT_CHANGED'):read_frozen_bytes(p,digest)
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
   repo=Path(__file__).resolve().parents[1]

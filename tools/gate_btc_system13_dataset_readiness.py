@@ -4,9 +4,13 @@ import argparse,json,math
 from datetime import date,timedelta
 from pathlib import Path
 try:
- from .gate_btc_system13_governed_bars import protocol,PROTOCOL_SHA256
+ from .gate_btc_system13_governed_bars import PROTOCOL,PROTOCOL_SHA256
+ from .gate_btc_factory.frozen_source_bytes import read_frozen_bytes
 except ImportError:
- from gate_btc_system13_governed_bars import protocol,PROTOCOL_SHA256
+ from gate_btc_system13_governed_bars import PROTOCOL,PROTOCOL_SHA256
+ from gate_btc_factory.frozen_source_bytes import read_frozen_bytes
+
+def protocol():return json.loads(read_frozen_bytes(PROTOCOL,PROTOCOL_SHA256))
 
 def admission_dossier(readiness,native):
  if readiness.get('protocol_sha256')!=PROTOCOL_SHA256 or native.get('protocol_sha256')!=PROTOCOL_SHA256:
