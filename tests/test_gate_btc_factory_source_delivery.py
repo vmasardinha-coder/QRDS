@@ -17,6 +17,18 @@ def genesis():
  d['genesis_sha256']=op.breadth.stable_hash(d);return d
 
 class SourceDeliveryTests(unittest.TestCase):
+ def test_spot_age_covers_full_frozen_window_with_hour_boundary_refresh(self):
+  from datetime import datetime,timezone
+  from gate_btc_xagent_spot_experiment import CONTRACT,CONTRACT_SHA256
+  from gate_btc_factory.frozen_source_bytes import read_frozen_bytes
+  c=json.loads(read_frozen_bytes(CONTRACT,CONTRACT_SHA256));end=datetime.fromisoformat('2026-11-02T'+c['decision_window_utc'][1]+'+00:00')
+  old_close=int(datetime(2026,11,2,1,tzinfo=timezone.utc).timestamp()*1000)-1
+  refreshed_close=int(datetime(2026,11,2,2,tzinfo=timezone.utc).timestamp()*1000)-1
+  with self.assertRaisesRegex(ValueError,'STALE'):op.check_producer(record('S-XSPOT-FLOW-01',stamp=old_close),int(end.timestamp()*1000))
+  op.check_producer(record('S-XSPOT-FLOW-01',stamp=refreshed_close),int(end.timestamp()*1000))
+  self.assertEqual(c['input_max_age_seconds'],5400)
+  installer=(Path(__file__).resolve().parents[1]/'tools/gate_btc_factory_source_delivery_install.ps1').read_text()
+  self.assertIn('@{h=2;m=0}',installer)
  def test_stale_future_tampered_or_unsafe_never_publish(self):
   d=record('S-XSPOT-FLOW-01');op.check_producer(d,15_400_000)
   for now in [9_999_999,15_400_001]:

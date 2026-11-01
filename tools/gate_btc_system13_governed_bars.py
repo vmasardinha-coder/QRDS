@@ -12,6 +12,10 @@ import json
 import math
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+try:
+    from .gate_btc_factory.frozen_source_bytes import read_frozen_bytes
+except ImportError:
+    from gate_btc_factory.frozen_source_bytes import read_frozen_bytes
 
 PROTOCOL = Path(__file__).resolve().parent / 'gate_btc_factory/SYSTEM13_PANEL_PROTOCOL_V1.json'
 PROTOCOL_SHA256 = 'a8f90a269efd64cd939c8707b23c2db31962cdabf6742b0e97bb016be92e4670'
@@ -40,9 +44,7 @@ def read_bound(root, relative, expected):
 
 
 def protocol():
-    raw = PROTOCOL.read_bytes()
-    if sha(raw) != PROTOCOL_SHA256:
-        raise ValueError('FROZEN_PROTOCOL_CHANGED')
+    raw = read_frozen_bytes(PROTOCOL, PROTOCOL_SHA256)
     return json.loads(raw)
 
 
