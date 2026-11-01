@@ -1,60 +1,71 @@
-# Relatorio diario do agente — 2026-10-31
+# Relatorio diario do agente — 2026-11-01
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-10-31-grafico.svg)
+![Historico das carteiras](2026-11-01-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-10-31-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-11-01-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
-| NAV | $46,939.08 |
-| Retorno do dia | -0.14% |
-| Intervalo observado | 2026-10-30 → 2026-10-31 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -6.12% |
-| Benchmark SPY | -0.06% |
-| **Alfa vs SPY** | **-6.07%** |
-| Caixa | $362.87 |
+| NAV | $44,002.91 |
+| Retorno do dia | -6.26% |
+| Intervalo observado | 2026-10-31 → 2026-11-01 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -11.99% |
+| Benchmark SPY | -1.83% |
+| **Alfa vs SPY** | **-10.17%** |
+| Caixa | $47.53 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| KLAC | 30.0083 | $167.43 | $5,024.29 | 10.7% |
-| ADI | 11.5348 | $433.28 | $4,997.78 | 10.6% |
-| AMD | 8.76345 | $566.42 | $4,963.79 | 10.6% |
-| MU | 5.2524 | $934.27 | $4,907.16 | 10.5% |
-| TXN | 15.6712 | $312.94 | $4,904.15 | 10.4% |
-| INTC | 49.635 | $92.07 | $4,569.89 | 9.7% |
-| PANW | 11.7237 | $380.57 | $4,461.67 | 9.5% |
-| MRK | 30.1285 | $146.33 | $4,408.71 | 9.4% |
-| TGT | 28.0572 | $151.82 | $4,259.65 | 9.1% |
-| CAT | 6.30087 | $647.39 | $4,079.12 | 8.7% |
+| MRK | 30.1285 | $149.52 | $4,504.82 | 10.2% |
+| AMD | 8.76345 | $504.80 | $4,423.79 | 10.1% |
+| MU | 4.97433 | $884.74 | $4,400.99 | 10.0% |
+| KLAC | 27.8703 | $157.91 | $4,400.99 | 10.0% |
+| TXN | 14.629 | $300.84 | $4,400.99 | 10.0% |
+| BMY | 70.4384 | $62.48 | $4,400.99 | 10.0% |
+| CSCO | 42.1107 | $104.51 | $4,400.99 | 10.0% |
+| ADI | 10.5512 | $417.11 | $4,400.99 | 10.0% |
+| TGT | 28.0572 | $154.38 | $4,331.47 | 9.8% |
+| PANW | 11.7237 | $365.87 | $4,289.33 | 9.7% |
 
-_Sem movimentacoes hoje._
+### Movimentacoes de hoje
+| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
+|---|---|---|---|---|---|
+| INTC | VENDA | 49.635 | $65.73 | $3,262.36 | stop: queda 48.4% > 8x sigma (42.6%); carencia ate 2026-12-01 |
+| ADI | VENDA | 0.983605 | $416.90 | $410.07 | rebalanceio |
+| CAT | VENDA | 6.30087 | $622.44 | $3,921.90 | rebalanceio |
+| KLAC | VENDA | 2.13804 | $157.83 | $337.45 | rebalanceio |
+| MU | VENDA | 0.278065 | $884.30 | $245.89 | rebalanceio |
+| TXN | VENDA | 1.0422 | $300.69 | $313.38 | rebalanceio |
+| BMY | COMPRA | 70.4384 | $62.51 | $4,403.19 | rebalanceio |
+| CSCO | COMPRA | 42.1107 | $104.56 | $4,403.19 | rebalanceio |
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (SPY):** momentum de +11.0% — so entram ativos acima disto
-- **Candidatos elegiveis:** 38
+- **Gatilho:** desvio de peso em CSCO: 0.0% vs alvo 10.0%
+- **Obstaculo (SPY):** momentum de +11.1% — so entram ativos acima disto
+- **Candidatos elegiveis:** 39
 - **Fontes usadas:** nasdaq: 101
-- **Em carencia por stop:** AMAT (ate 2026-11-22), LRCX (ate 2026-11-23)
+- **STOP INTC:** stop: queda 48.4% > 8x sigma (42.6%); carencia ate 2026-12-01
+- **Em carencia por stop:** AMAT (ate 2026-11-22), LRCX (ate 2026-11-23), INTC (ate 2026-12-01)
 
 | Rejeitado | Motivo |
 |---|---|
-| ABT | nao bate o benchmark (-21.9% <= +11.0%) |
-| ACN | nao bate o benchmark (-27.6% <= +11.0%) |
-| ADBE | nao bate o benchmark (-33.3% <= +11.0%) |
-| AMT | nao bate o benchmark (-10.4% <= +11.0%) |
-| AMZN | nao bate o benchmark (+8.7% <= +11.0%) |
-| AVGO | nao bate o benchmark (-5.8% <= +11.0%) |
-| AXP | nao bate o benchmark (-15.8% <= +11.0%) |
-| BA | nao bate o benchmark (-16.7% <= +11.0%) |
-| _(+52 outros)_ | |
+| ABT | nao bate o benchmark (-22.3% <= +11.1%) |
+| ACN | nao bate o benchmark (-14.3% <= +11.1%) |
+| ADBE | nao bate o benchmark (-28.6% <= +11.1%) |
+| AMT | nao bate o benchmark (-10.1% <= +11.1%) |
+| AMZN | nao bate o benchmark (+7.8% <= +11.1%) |
+| AVGO | nao bate o benchmark (-11.0% <= +11.1%) |
+| AXP | nao bate o benchmark (-15.7% <= +11.1%) |
+| BA | nao bate o benchmark (-10.0% <= +11.1%) |
+| _(+50 outros)_ | |
 
 </details>
 
@@ -62,22 +73,22 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | $51,885.03 |
-| Retorno do dia | +3.27% |
-| Intervalo observado | 2026-10-30 → 2026-10-31 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | +3.77% |
+| NAV | $52,119.43 |
+| Retorno do dia | +0.45% |
+| Intervalo observado | 2026-10-31 → 2026-11-01 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | +4.24% |
 | Benchmark BTC | +20.13% |
-| **Alfa vs BTC** | **-16.36%** |
+| **Alfa vs BTC** | **-15.89%** |
 | Caixa | $2,466.72 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.335285 | $77,382.90 | $25,945.34 | 50.0% |
-| ZEC | 6.22877 | $1,282.38 | $7,987.65 | 15.4% |
-| QNT | 40.684 | $192.28 | $7,822.72 | 15.1% |
-| NEAR | 1763.99 | $4.34 | $7,662.61 | 14.8% |
+| BTC | 0.335285 | $77,382.70 | $25,945.27 | 49.8% |
+| QNT | 40.684 | $199.77 | $8,127.44 | 15.6% |
+| ZEC | 6.22877 | $1,250.88 | $7,791.44 | 14.9% |
+| NEAR | 1763.99 | $4.42 | $7,788.55 | 14.9% |
 
 _Sem movimentacoes hoje._
 
@@ -85,8 +96,8 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +6.5% — so entram ativos acima disto
-- **Candidatos elegiveis:** 20
+- **Obstaculo (BTC):** momentum de +6.8% — so entram ativos acima disto
+- **Candidatos elegiveis:** 19
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -94,14 +105,14 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.1M < 1M) |
-| ADA | nao bate o benchmark (-8.3% <= +6.5%) |
-| ALGO | nao bate o benchmark (-4.9% <= +6.5%) |
+| ADA | nao bate o benchmark (-10.9% <= +6.7%) |
+| ALGO | nao bate o benchmark (-10.0% <= +6.7%) |
 | ALICE | liquidez baixa (0.0M < 1M) |
 | AMP | liquidez baixa (0.3M < 1M) |
 | ANKR | liquidez baixa (0.1M < 1M) |
 | APE | liquidez baixa (0.5M < 1M) |
 | API3 | liquidez baixa (0.2M < 1M) |
-| _(+110 outros)_ | |
+| _(+111 outros)_ | |
 
 </details>
 
@@ -110,8 +121,8 @@ _Sem movimentacoes hoje._
 | Indicador | Valor |
 |---|---|
 | NAV | R$ 47,518.98 |
-| Retorno do dia | -0.64% |
-| Intervalo observado | 2026-10-30 → 2026-10-31 (1 dia(s) corridos) |
+| Retorno do dia | +0.00% |
+| Intervalo observado | 2026-10-31 → 2026-11-01 (1 dia(s) corridos) |
 | Retorno desde inicio (2026-08-06) | -4.96% |
 | Benchmark IBOV | -4.34% |
 | Benchmark CDI | +3.01% |
@@ -191,7 +202,7 @@ _Sem movimentacoes hoje._
 - VBBR3: fonte cotahist; fechamento 29.6 em 2026-10-30; 458 pontos; SHA256 33f0d031e894d9810f2fcf1ee034bde1bf7f7e8484fdb329535f2e3152e92fce; status RECORDED
 - VIVT3: fonte cotahist; fechamento 30.7 em 2026-10-30; 458 pontos; SHA256 8c920d7d5709313d085ca4830bbf53c51d8f7618a214d2c1f03ee1e3e9c3902d; status RECORDED
 - WEGE3: fonte cotahist; fechamento 48.36 em 2026-10-30; 458 pontos; SHA256 22fe6620f1dfea04b0cdfdc37c104c08b78251fc6d897f040d0924c9826901eb; status RECORDED
-- ^BVSP: fonte brapi; fechamento 167921.7969 em 2026-10-30; 115 pontos; SHA256 46a81e43574aea75ee78e33ebd92ecb2fc639cbb5e39400e88292d0252426f58; status RECORDED
+- ^BVSP: fonte brapi; fechamento 167922.0 em 2026-10-30; 115 pontos; SHA256 552c83bd5e9a6e30e46e4162486be614aadabaddf25be7f2757352a88db54626; status RECORDED
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Em carencia por stop:** WEGE3 (ate 2026-11-21), VBBR3 (ate 2026-11-26), UGPA3 (ate 2026-11-29)
 
@@ -213,10 +224,10 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 46,781.62 |
-| Retorno do dia | -0.63% |
-| Intervalo observado | 2026-10-30 → 2026-10-31 (1 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -6.44% |
+| NAV | R$ 46,783.33 |
+| Retorno do dia | +0.00% |
+| Intervalo observado | 2026-10-31 → 2026-11-01 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -6.43% |
 | Benchmark IBOV | -4.34% |
 | Benchmark CDI | +3.01% |
 | **Alfa vs objetivo (CDI)** | **-9.45%** |
@@ -226,13 +237,13 @@ _Sem movimentacoes hoje._
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 165.40 | R$ 48,022.20 | 102.7% |
+| BOVA11 | 290.34 | R$ 165.40 | R$ 48,022.20 | 102.6% |
 
-> Conciliacao do NAV: ativos R$ 48,022.20 + caixa R$ -1,238.29 - obrigacao da call R$ 2.29 = R$ 46,781.62.
+> Conciliacao do NAV: ativos R$ 48,022.20 + caixa R$ -1,238.29 - obrigacao da call R$ 0.58 = R$ 46,783.33.
 
 > Caixa negativo: financiamento no estado paper; o peso dos ativos usa o NAV liquido e pode exceder 100%.
 
-> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 2.29
+> Call vendida (premio modelado): strike R$ 210.48, vence 2026-11-05, premio R$ 12.5271/un, valor atual da obrigacao R$ 0.58
 
 > Volatilidade usada na call (GARCH(1,1)): 70.1% a.a. | realizada 30d: 53.5% a.a. | CDI: 0.0508% a.d.
 
@@ -245,7 +256,7 @@ _Sem movimentacoes hoje._
 - **Candidatos elegiveis:** 0
 - Evidencia das series B3 (somente auditoria):
 - BOVA11: fonte cotahist; fechamento 165.4 em 2026-10-30; 458 pontos; SHA256 7dbe27b2fdaa31713bb9112fcb871628daaee1b60bc6b5b70dd983ccad15860b; status RECORDED
-- ^BVSP: fonte brapi; fechamento 167921.7969 em 2026-10-30; 115 pontos; SHA256 46a81e43574aea75ee78e33ebd92ecb2fc639cbb5e39400e88292d0252426f58; status RECORDED
+- ^BVSP: fonte brapi; fechamento 167922.0 em 2026-10-30; 115 pontos; SHA256 552c83bd5e9a6e30e46e4162486be614aadabaddf25be7f2757352a88db54626; status RECORDED
 
 </details>
 
