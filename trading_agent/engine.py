@@ -115,6 +115,23 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
             symbol: dict(data_sources.B3_SERIES_EVIDENCE[symbol])
             for symbol in sorted(symbols)
             if symbol in data_sources.B3_SERIES_EVIDENCE}
+    elif name == "equities":
+        symbols = set(universe) | set(state.get("positions", {})) | {config.EQUITY_BENCHMARK}
+        log_entry["market_data_market"] = "EUA"
+        log_entry["market_data_evidence"] = {
+            symbol: {**data_sources.EQUITY_SERIES_EVIDENCE[symbol],
+                     "included_in_valuation": symbol in prices,
+                     "is_benchmark": symbol == config.EQUITY_BENCHMARK}
+            for symbol in sorted(symbols)
+            if symbol in data_sources.EQUITY_SERIES_EVIDENCE}
+        log_entry["paper_execution_context"] = {
+            "run_date": today,
+            "benchmark_market_date": bench_series[-1][0],
+            "valuation_market_dates": {symbol: universe[symbol][-1][0]
+                                       for symbol in sorted(prices) if symbol in universe},
+            "execution_model": "LAST_AVAILABLE_CLOSE_PAPER_NOT_OBSERVED_FILL",
+            "same_day_benchmark_session": bench_series[-1][0] == today,
+        }
     portfolio.log_decision(state, log_entry)
     return {"trades": trades, "decision": decision, "regime": regime,
             "regime_avaliado": decision.get("regime_avaliado", True),
@@ -124,6 +141,7 @@ def _run_directional(name: str, today: str, universe: dict[str, Series],
 
 def run_equities(today: str) -> dict:
     """Carteira de acoes EUA — benchmark SPY."""
+    data_sources.EQUITY_SERIES_EVIDENCE.clear()
     bench_series = data_sources.fetch_equity_daily(config.EQUITY_BENCHMARK,
                                                   is_benchmark=True)
     universe, failed = _fetch_universe(config.EQUITY_UNIVERSE,
@@ -346,4 +364,5 @@ def run_b3_structured(today: str) -> dict:
 
 def today_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
 

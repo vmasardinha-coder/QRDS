@@ -162,7 +162,8 @@ def market_data_evidence_lines(log: dict) -> list[str]:
     evidence = log.get("market_data_evidence") or {}
     if not evidence:
         return []
-    lines = ["Evidencia das series B3 (somente auditoria):"]
+    market = log.get("market_data_market", "B3")
+    lines = [f"Evidencia das series {market} (somente auditoria):"]
     for symbol, receipt in sorted(evidence.items()):
         lines.append(
             f"{symbol}: fonte {receipt.get('provider', 'N/D')}; "
@@ -171,6 +172,23 @@ def market_data_evidence_lines(log: dict) -> list[str]:
             f"{receipt.get('point_count', 0)} pontos; "
             f"SHA256 {receipt.get('series_sha256', 'N/D')}; "
             f"status {receipt.get('status', 'N/D')}")
+    return lines
+
+
+def paper_execution_context_lines(log: dict) -> list[str]:
+    context = log.get("paper_execution_context") or {}
+    if not context:
+        return []
+    lines = [f"Rodada {context.get('run_date', 'N/D')}; ultima sessao do benchmark: "
+             f"{context.get('benchmark_market_date', 'N/D')}.",
+             "Operacoes paper marcadas pelo ultimo fechamento disponivel; "
+             "nao sao fills observados nem comprovam negociacao nessa data da rodada."]
+    if not context.get("same_day_benchmark_session"):
+        lines.append("A variacao entre rodadas pode incorporar uma sessao anterior; "
+                     "nao representa necessariamente um pregao da data do relatorio.")
+    dates = sorted(set(context.get("valuation_market_dates", {}).values()))
+    if len(dates) > 1:
+        lines.append("Datas de mercado diferentes entre ativos: " + ", ".join(dates) + ".")
     return lines
 
 
@@ -188,6 +206,7 @@ def _audit_block(log: dict) -> list[str]:
         tally = ", ".join(f"{k}: {v}" for k, v in sorted(log["sources"].items()))
         lines.append(f"- **Fontes usadas:** {tally}")
     lines.extend("- " + line for line in market_data_evidence_lines(log))
+    lines.extend("- " + line for line in paper_execution_context_lines(log))
     for name, info in sorted((log.get("source_failures") or {}).items()):
         lines.append(f"- **Fonte {name} falhou {info['n']}x:** `{info['motivo']}`")
     # "esta fonte nao lista este ativo" nao e avaria: dizia-se "coinbase falhou
@@ -237,6 +256,9 @@ def _sleeve_section(title: str, benchmark_name: str, result: dict,
                                result.get("regime", "-"),
                                result.get("regime_avaliado", True), result.get("regime_fonte"), objective_benchmark_name)
     lines.append("")
+    lines += ["> " + line for line in paper_execution_context_lines(log)]
+    if log.get("paper_execution_context"):
+        lines.append("")
     lines += _positions_table(state, result["prices"], entry["nav"], cur)
 
     if objective_benchmark_name == "CDI":
@@ -326,5 +348,6 @@ def write_report(date: str, content: str) -> Path:
     path.write_text(content, encoding="utf-8")
     LATEST_PATH.write_text(content, encoding="utf-8")
     return path
+
 
 
