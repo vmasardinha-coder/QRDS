@@ -5,6 +5,8 @@ evaluator, opens a target source or selects a new statistic.
 """
 import argparse,hashlib,json
 from pathlib import Path
+try:from .frozen_source_bytes import read_frozen_bytes
+except ImportError:from frozen_source_bytes import read_frozen_bytes
 
 CASES_SHA='c6b1540ac3d2c5ebbced51d5bca5308b84684ac2e1371ff4a5522fa01c2dd856'
 STAT_SHA='c4f416d6bb28ae3fc8dbd0546c3542a296c15bcafabf833d2a9d8e97452f342f'
@@ -19,8 +21,7 @@ def reconcile(root):
  for name,digest,runtime in [
    ('GRAMMAR_007_EFFECT_CASES_AUTH_20260921.json',CASES_SHA,'GRAMMAR_007_EFFECT_CASES_AUTH_RUNTIME.json'),
    ('GRAMMAR_007_EFFECT_STAT_AUTH_20260921.json',STAT_SHA,'GRAMMAR_007_EFFECT_STAT_AUTH_RUNTIME.json')]:
-  raw=(source/name).read_bytes()
-  if sha(raw)!=digest:raise ValueError('FROZEN_EFFECT_AUTHORITY_CHANGED')
+  raw=read_frozen_bytes(source/name,digest)
   d=json.loads(raw)
   if json.loads((root/runtime).read_bytes())!=d:raise ValueError('RUNTIME_AUTHORITY_MISMATCH')
   if d['target_boundary_at_freeze']!={'target_source_opened':False,'target_bytes_read':False,'outcomes_read':False,'economics_read':False}:
