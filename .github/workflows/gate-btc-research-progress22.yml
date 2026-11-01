@@ -7,6 +7,10 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_dataset_readiness.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261101.json
+      - artifacts/gate_btc_2/system13_identity_extension_20261101/**
+      - tests/test_gate_btc_system13_dataset_readiness.py
       - tools/gate_btc_system13_native_capture.py
       - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
@@ -29,6 +33,10 @@ on:
       - tools/gate_btc_xagent_spot_experiment.py
       - tools/gate_btc_system13_observed_panel.py
       - tools/gate_btc_system13_source_readiness.py
+      - tools/gate_btc_system13_dataset_readiness.py
+      - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261101.json
+      - artifacts/gate_btc_2/system13_identity_extension_20261101/**
+      - tests/test_gate_btc_system13_dataset_readiness.py
       - tools/gate_btc_system13_native_capture.py
       - tests/test_gate_btc_system13_native_capture.py
       - tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_DISCOVERY_20261023.json
@@ -120,6 +128,12 @@ jobs:
             --runtime runtime_repo/runtime \
             --registry source/tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json \
             --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json
+      - name: Build admission evidence queue without granting eligibility
+        run: |
+          python source/tools/gate_btc_system13_dataset_readiness.py \
+            --readiness runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/SOURCE_READINESS.json \
+            --native runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/native_ohlcv_capture_v1/STATUS.json \
+            --out runtime_repo/runtime/gate_btc_2/system13/observed_panel_v1/ADMISSION_EVIDENCE_QUEUE.json
       - name: Publish only isolated research namespaces
         id: publish
         run: |
