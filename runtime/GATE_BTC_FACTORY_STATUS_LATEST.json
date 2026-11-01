@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-01T10:22:13.586945+00:00",
+  "generated_at_utc": "2026-11-01T10:43:39.298799+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -1144,7 +1144,7 @@
         "successor_policy_id": "MOMENTUM_TRADABLE_SPOT_V1_20261021",
         "successor_status_source": "ledgers/momentum_tradable_v1/STATUS.json",
         "terminal_observation_target": null,
-        "updated_at_utc": "2026-10-31T09:56:56.193736+00:00",
+        "updated_at_utc": "2026-11-01T10:43:02.754582+00:00",
         "weighting_audit": {
           "engine_changed": true,
           "historical_rewrite_performed": false,
@@ -1153,13 +1153,13 @@
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_m1_m2_economics/epochs/hold_20260928/ECONOMICS_STATUS.json",
-      "sha256": "ae66cc4173f5a75dc5c8f9d832db466348f8b78c403b2d3f64252de37e99face"
+      "sha256": "c3e83eba5ab2b442de48a10b776be8c7876880cc945c6bbde4c383b8fd1bb01f"
     },
     "m1_m2_tradable_v1": {
       "data": {
-        "backfill_performed": false,
         "data_as_of": "2026-10-31",
         "engine_feed": false,
+        "idempotent": true,
         "latest_economics": {
           "btc_nav_gross": 0.9225694471695883,
           "btc_nav_net_modelled": 0.9216477993702182,
@@ -1463,8 +1463,6 @@
             "M2_TRADABLE_V1": 0.0
           }
         },
-        "legacy_pnl_inherited": false,
-        "new_economic_rows": 1,
         "not_approved": true,
         "orders": 0,
         "policy_id": "MOMENTUM_TRADABLE_SPOT_V1_20261021",
@@ -1478,41 +1476,41 @@
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_tradable_v1/STATUS.json",
-      "sha256": "b01af7513beb660dc18a4f1230c0edd8fd215199aeba361f401864faa3699a35"
+      "sha256": "7a45fd7b899b03ed16b8be85ecca927da352dc0bcb12c8307794014e3dbbf4ca"
     },
     "m3_economics": {
       "data": {
         "backfill": false,
-        "btc_nav": 0.9302597121523646,
+        "btc_nav": 0.9328237684714258,
         "cost_status": "N_D",
         "counter_reset": false,
-        "data_as_of": "2026-10-30",
+        "data_as_of": "2026-10-31",
         "economic_gate": "IMPLEMENTATION_AND_CAUSALITY_TESTS_PASSED",
         "engine_feed": false,
         "first_eligible_cutoff": "2026-10-13",
         "late_seal": false,
         "latest_economics": {
-          "btc_daily_return_gross": -0.007989548656917922,
-          "btc_nav": 0.9302597121523646,
+          "btc_daily_return_gross": 0.002756280085621121,
+          "btc_nav": 0.9328237684714258,
           "cost_status": "N_D",
-          "cutoff": "2026-10-30",
-          "daily_return_gross": 0.008947949309644265,
+          "cutoff": "2026-10-31",
+          "daily_return_gross": 0.0029278871377047544,
           "event": "HOLD",
           "evidence": {
-            "price_manifest_sha256": "4230972e5cf30be717d9a88da97cf5caa7c76bc40a0900e831feb193621a35b2",
-            "signal_file_sha256": "c4c757a3e612661251f2531dd211bafdc0a09333a210da788c8746954d2b65d1",
+            "price_manifest_sha256": "41e717aea1bf4ecf7f5e782b09c2ba8d5b3262761d1427f2dd95edbfb7b75472",
+            "signal_file_sha256": "1ccc145263dc08c00c9ac34cc24d1eda9b82a4922cb850c254443a8a03ce7f71",
             "source_snapshot_sha256": {
-              "2026-10-16": "54cfdfdd820af3ee3117658e86bba4a617f03de05baff81775dbb611b771a5d2",
-              "2026-10-23": "b37981b8dd6290feb41a6bd3ebcc2fce6c5fcd95b9cc36e8ae9f95bedcbfe938",
-              "2026-10-30": "830df2fa3d19bdeb6f29f17b4703891ca62b9316d185c5b54ba6cde0e1c9b552"
+              "2026-10-17": "c3168c5b7a6c1de68fb1def400df01975dad76d2e3437cc8daa02531c54ca2c3",
+              "2026-10-24": "ec10336385df171858a9129ca2e0bfd291e3e71921be4c27ce7d4e36c4cfb833",
+              "2026-10-31": "06a654f9f372a280d14ac569bce334c3ebff6551a670c679251731b594ba11d0"
             }
           },
-          "excess_vs_btc_percentage_points": -16.820551654236127,
-          "illustrative_brl_pnl": -42830.2447901994,
-          "illustrative_brl_value": 137169.75520980058,
-          "nav": 0.7620541956100033,
+          "excess_vs_btc_percentage_points": -16.85383641838619,
+          "illustrative_brl_pnl": -42428.6272282385,
+          "illustrative_brl_value": 137571.3727717615,
+          "nav": 0.7642854042875639,
           "net_return": null,
-          "observed_at_utc": "2026-10-31T09:52:11.557537+00:00",
+          "observed_at_utc": "2026-11-01T10:43:11.257542+00:00",
           "quantities": {
             "BTW": 0.048234712405043484,
             "CARDS": 0.268102192754633,
@@ -1526,10 +1524,10 @@
             "ZRO": 0.050218832064784676
           },
           "reporting_currency_note": "FIXED_NOTIONAL_ILLUSTRATION_NOT_REALIZED_BRL_OR_FX_ADJUSTED",
-          "return_observations": 17,
-          "total_return_gross": -0.23794580438999668
+          "return_observations": 18,
+          "total_return_gross": -0.23571459571243614
         },
-        "nav": 0.7620541956100033,
+        "nav": 0.7642854042875639,
         "net_return": null,
         "not_approved": true,
         "orders": 0,
@@ -1537,16 +1535,16 @@
         "real_capital": 0,
         "research_only": true,
         "retune": false,
-        "return_observations": 17,
+        "return_observations": 18,
         "schema": "gate_btc.momentum_m3_economics_status.v1",
         "shadow_only": true,
         "status": "ECONOMICS_ACTIVE_HOLD_GROSS_ONLY",
         "terminal_observation_target": null,
-        "updated_at_utc": "2026-10-31T09:52:18.485593+00:00"
+        "updated_at_utc": "2026-11-01T10:43:17.704486+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_m3_economics/epochs/after_gap_2026-10-12/STATUS.json",
-      "sha256": "2ff8c6ace6e7376943b7e0aaf47c454d2d85a311c37afe2e8c1f3500841e0489"
+      "sha256": "612275b05f75cba6e1ea947e0896e2e476229962cc1d8c8e06ab09ffa3fd8116"
     },
     "m3_net_model_20261017": {
       "data": {
@@ -1624,16 +1622,16 @@
       "data": {
         "backfill": false,
         "candidate_id": "GATE_BTC_MOMENTUM_M3_PERSISTENCE_20260909",
-        "common_universe_n": 77,
+        "common_universe_n": 80,
         "counter_reset": false,
-        "data_as_of": "2026-10-30",
+        "data_as_of": "2026-10-31",
         "economics_status": "SEE_INDEPENDENT_ECONOMIC_LEDGER",
         "economics_status_path": "runtime/ledgers/momentum_m3_economics/STATUS.json",
         "engine_feed": false,
         "late_seal": false,
-        "latest_snapshot_sha256": "e397d2d35a97df82a518737f2d3a179987b48976589b24628199aa0a572d9631",
+        "latest_snapshot_sha256": "3edede2876f27889ee4c4d74abb65ab7173d983248fb31aff71095893da98989",
         "not_approved": true,
-        "observed_snapshots": 46,
+        "observed_snapshots": 47,
         "orders": 0,
         "real_capital": 0,
         "research_only": true,
@@ -1645,7 +1643,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_m3/STATUS.json",
-      "sha256": "9ed3056b8b26fff169bcc2ab9a46eef849d5bb9b044673de77fb93cf7bb91779"
+      "sha256": "c4cf5f44ad06f2c4a7c8802e0ad4d693a0b54f26c72d2f861d91165db2f566e8"
     },
     "measurement": {
       "data": {
