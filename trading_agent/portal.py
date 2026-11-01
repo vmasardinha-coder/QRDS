@@ -243,6 +243,8 @@ def _audit(log: dict) -> str:
         itens.append(f"<li><strong>Fontes usadas:</strong> {_esc(tally)}</li>")
     itens.extend(f"<li>{_esc(line)}</li>"
                  for line in report.market_data_evidence_lines(log))
+    itens.extend(f"<li>{_esc(line)}</li>"
+                 for line in report.paper_execution_context_lines(log))
     for nome, info in sorted((log.get("source_failures") or {}).items()):
         itens.append(f"<li><strong>Fonte {_esc(nome)} falhou {info['n']}x:</strong> "
                      f"<code>{_esc(info['motivo'])}</code></li>")
@@ -290,6 +292,8 @@ def _section(key: str, titulo: str, result: dict, bench: str,
            f"<h2>{_esc(titulo)}</h2>"]
     for extra in result.get("extra_lines", []):
         out.append(f'<p class="p-note">{_esc(extra)}</p>')
+    for note in report.paper_execution_context_lines(result.get("log", {})):
+        out.append(f'<p class="p-note">{_esc(note)}</p>')
     out.append("<h3>Posicoes</h3>")
     out.append(_positions(result))
     out.append("<h3>Movimentacoes de hoje</h3>")
@@ -532,5 +536,6 @@ def write_portal(date: str, results: dict[str, dict], errors: dict[str, str],
     path = reports_dir / LATEST_NAME
     path.write_text(content, encoding="utf-8")
     return path
+
 
 

@@ -2259,6 +2259,102 @@ class ReturnIntervalTests(unittest.TestCase):
 
 
 
+class EquitySourceEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        data_sources.reset_source_breakers()
+        self.addCleanup(data_sources.reset_source_breakers)
+
+    def series(self):
+        return [("2026-10-29", 92.07, 1000), ("2026-10-30", 65.76, 2000)]
+
+    def test_nasdaq_receipt_preserves_series_and_actual_session(self):
+        series = self.series()
+        before = copy.deepcopy(series)
+        with mock.patch.object(data_sources, "fetch_nasdaq_daily", return_value=series), \
+             mock.patch.object(data_sources.time, "sleep"):
+            self.assertIs(data_sources.fetch_equity_daily("INTC"), series)
+        self.assertEqual(series, before)
+        receipt = data_sources.EQUITY_SERIES_EVIDENCE["INTC"]
+        self.assertEqual(receipt["provider"], "nasdaq")
+        self.assertEqual(receipt["last_market_date"], "2026-10-30")
+        self.assertEqual(receipt["last_close"], 65.76)
+        self.assertEqual(len(receipt["series_sha256"]), 64)
+
+    def test_stooq_fallback_records_the_provider_that_served(self):
+        with mock.patch.object(data_sources, "fetch_nasdaq_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_stooq_daily", return_value=self.series()), \
+             mock.patch.object(data_sources.time, "sleep"):
+            data_sources.fetch_equity_daily("INTC")
+        self.assertEqual(data_sources.EQUITY_SERIES_EVIDENCE["INTC"]["provider"], "stooq")
+
+    def test_yahoo_fallback_records_the_provider_that_served(self):
+        with mock.patch.object(data_sources, "fetch_nasdaq_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_stooq_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_yahoo_daily", return_value=self.series()), \
+             mock.patch.object(data_sources.time, "sleep"):
+            data_sources.fetch_equity_daily("SPY", is_benchmark=True)
+        self.assertEqual(data_sources.EQUITY_SERIES_EVIDENCE["SPY"]["provider"], "yahoo")
+
+    def test_new_series_changes_fingerprint_and_reset_removes_old_receipt(self):
+        data_sources._record_equity_series("INTC", "nasdaq", self.series())
+        first = data_sources.EQUITY_SERIES_EVIDENCE["INTC"]["series_sha256"]
+        data_sources._record_equity_series("INTC", "nasdaq", self.series()[:-1])
+        self.assertNotEqual(data_sources.EQUITY_SERIES_EVIDENCE["INTC"]["series_sha256"], first)
+        data_sources.reset_source_breakers()
+        self.assertEqual(data_sources.EQUITY_SERIES_EVIDENCE, {})
+
+    def test_missing_source_does_not_create_a_receipt(self):
+        with mock.patch.object(data_sources, "fetch_nasdaq_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_stooq_daily", side_effect=data_sources.DataSourceError("missing")), \
+             mock.patch.object(data_sources, "fetch_yahoo_daily", side_effect=data_sources.DataSourceError("missing")):
+            with self.assertRaises(data_sources.DataSourceError):
+                data_sources.fetch_equity_daily("INTC")
+        self.assertNotIn("INTC", data_sources.EQUITY_SERIES_EVIDENCE)
+
+    def test_unserializable_evidence_does_not_alter_trading_data(self):
+        series = [("2026-10-30", float("nan"), 1)]
+        data_sources._record_equity_series("INTC", "nasdaq", series)
+        self.assertEqual(data_sources.EQUITY_SERIES_EVIDENCE["INTC"]["status"], "UNSERIALIZABLE_SERIES")
+        self.assertNotIn("series_sha256", data_sources.EQUITY_SERIES_EVIDENCE["INTC"])
+
+    def test_engine_binds_run_date_source_date_and_valuation_inclusion_without_trades(self):
+        from trading_agent import engine
+        series = self.series()
+        for symbol in ["INTC", "SPY", "OLD"]:
+            data_sources._record_equity_series(symbol, "nasdaq", series)
+        state = {"positions": {"INTC": {"qty": 1}}, "cash": 0}
+        before = copy.deepcopy(state)
+        decision = {"weights": {}, "regime": "risk_on", "hurdle": "SPY", "hurdle_score": None,
+                    "eligible_count": 0, "selected": [], "rejected": [], "note": "", "cash_weight": 1}
+        with mock.patch.object(engine, "_sigmas", return_value={}), \
+             mock.patch.object(portfolio, "update_high_water"), \
+             mock.patch.object(portfolio, "check_stops", return_value=[]), \
+             mock.patch.object(portfolio, "active_cooldowns", return_value={}), \
+             mock.patch.object(portfolio, "needs_rebalance", return_value=None), \
+             mock.patch.object(portfolio, "log_decision"):
+            result = engine._run_directional("equities", "2026-11-01", {"INTC": series, "OLD": series},
+                [], {"INTC": 65.76}, series, lambda _: decision, state, 5)
+        self.assertEqual(state, before)
+        self.assertEqual(result["trades"], [])
+        log = result["log"]
+        self.assertTrue(log["market_data_evidence"]["SPY"]["is_benchmark"])
+        self.assertTrue(log["market_data_evidence"]["INTC"]["included_in_valuation"])
+        self.assertFalse(log["market_data_evidence"]["OLD"]["included_in_valuation"])
+        self.assertEqual(log["paper_execution_context"]["benchmark_market_date"], "2026-10-30")
+        self.assertFalse(log["paper_execution_context"]["same_day_benchmark_session"])
+
+    def test_markdown_and_html_show_equity_session_hash_and_paper_clock(self):
+        data_sources._record_equity_series("INTC", "nasdaq", self.series())
+        log = {"market_data_market": "EUA", "market_data_evidence": data_sources.EQUITY_SERIES_EVIDENCE,
+               "paper_execution_context": {"run_date": "2026-11-01", "benchmark_market_date": "2026-10-30",
+                   "same_day_benchmark_session": False, "valuation_market_dates": {"INTC": "2026-10-30"}}}
+        before = copy.deepcopy(log)
+        for text in ["\n".join(report._audit_block(log)), portal._audit(log)]:
+            for expected in ["EUA", "INTC", "nasdaq", "2026-10-30", "2026-11-01", "SHA256", "nao sao fills"]:
+                self.assertIn(expected, text)
+        self.assertEqual(log, before)
+
+
 class B3SourceEvidenceTests(unittest.TestCase):
     def setUp(self):
         self.before = copy.deepcopy(data_sources.B3_SERIES_EVIDENCE)
@@ -2305,3 +2401,4 @@ class B3SourceEvidenceTests(unittest.TestCase):
             self.assertIn("2026-10-26", text)
             self.assertIn("172.42", text)
             self.assertIn("SHA256", text)
+

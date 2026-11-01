@@ -221,6 +221,7 @@ def reset_source_breakers() -> None:
     SOURCE_TALLY.clear()
     FAILURE_TALLY.clear()
     MISSING_TALLY.clear()
+    EQUITY_SERIES_EVIDENCE.clear()
 
 
 def fetch_yahoo_daily(ticker: str,
@@ -365,6 +366,27 @@ MISSING_TALLY: dict[str, dict] = {}
 
 # Reporting evidence only: these receipts never feed prices, signals or orders.
 B3_SERIES_EVIDENCE: dict[str, dict] = {}
+EQUITY_SERIES_EVIDENCE: dict[str, dict] = {}
+
+
+def _record_equity_series(ticker: str, provider: str, series: list) -> None:
+    """Evidence only: do not change prices, calendar, stops or fills."""
+    receipt = {"schema": "trading_agent.equity_series_evidence.v1",
+               "provider": provider, "symbol": ticker,
+               "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+               "point_count": len(series), "status": "RECORDED",
+               "series_scope": "LIVE_PROVIDER_SERIES"}
+    try:
+        raw = json.dumps(series, separators=(",", ":"), ensure_ascii=False,
+                         allow_nan=False).encode("utf-8")
+        receipt["series_sha256"] = hashlib.sha256(raw).hexdigest()
+        if series:
+            receipt.update(first_market_date=series[0][0],
+                           last_market_date=series[-1][0],
+                           last_close=series[-1][1])
+    except (TypeError, ValueError, IndexError):
+        receipt["status"] = "UNSERIALIZABLE_SERIES"
+    EQUITY_SERIES_EVIDENCE[ticker] = receipt
 
 
 def _record_b3_series(ticker: str, provider: str, series: list) -> None:
@@ -408,6 +430,7 @@ def fetch_equity_daily(ticker: str,
     try:
         series = fetch_nasdaq_daily(ticker)
         SOURCE_TALLY["nasdaq"] = SOURCE_TALLY.get("nasdaq", 0) + 1
+        _record_equity_series(ticker, "nasdaq", series)
         time.sleep(config.FETCH_DELAY_S)
         return series
     except DataSourceError as err:
@@ -417,6 +440,7 @@ def fetch_equity_daily(ticker: str,
             series = fetch_stooq_daily(ticker)
             _STOOQ_CONSECUTIVE_FAILURES = 0
             SOURCE_TALLY["stooq"] = SOURCE_TALLY.get("stooq", 0) + 1
+            _record_equity_series(ticker, "stooq", series)
             time.sleep(config.FETCH_DELAY_S)
             return series
         except SourceUnavailable as err:
@@ -431,6 +455,7 @@ def fetch_equity_daily(ticker: str,
         _note_failure("yahoo", err)
         raise
     SOURCE_TALLY["yahoo"] = SOURCE_TALLY.get("yahoo", 0) + 1
+    _record_equity_series(ticker, "yahoo", series)
     time.sleep(config.FETCH_DELAY_S)
     return series
 
@@ -869,4 +894,5 @@ def cdi_factor_since(rates: list[tuple[str, float]], start_date: str,
         if start_date < date <= end_date:
             factor *= 1.0 + rate / 100.0
     return factor
+
 
