@@ -7,8 +7,8 @@ $ErrorActionPreference='Stop'
 $wrapper=Join-Path $CodeRoot 'tools\gate_btc_factory_source_delivery.ps1'
 if(-not(Test-Path -LiteralPath $wrapper -PathType Leaf)){throw 'VERSIONED_SOURCE_WRAPPER_MISSING'}
 $definitions=@(
- @{name='QRDS_FACTORY_BASIS_WINDOW_V1';mode='basis';hours=@(7,15,23);minutes=@(15);limit=65},
- @{name='QRDS_FACTORY_XAGENT_PRODUCERS_V1';mode='xagent-producers';hours=@(1);minutes=@(30,45);limit=25}
+ @{name='QRDS_FACTORY_BASIS_WINDOW_V1';mode='basis';slots=@(@{h=7;m=15},@{h=15;m=15},@{h=23;m=15});limit=65},
+ @{name='QRDS_FACTORY_XAGENT_PRODUCERS_V1';mode='xagent-producers';slots=@(@{h=1;m=30},@{h=1;m=45},@{h=2;m=0});limit=25}
 )
 $identity=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $results=@()
@@ -16,11 +16,11 @@ foreach($d in $definitions){
  & $wrapper -Mode $d.mode -CodeRoot $CodeRoot -RuntimeRepo $RuntimeRepo -Python $Python -ValidateOnly
  if($LASTEXITCODE -ne 0){throw 'SOURCE_CONFIG_VALIDATION_FAILED'}
  $times=@();$triggers=@()
- foreach($h in $d.hours){foreach($m in $d.minutes){
-  $utc=[datetime]::SpecifyKind([datetime]::UtcNow.Date.AddHours($h).AddMinutes($m),[DateTimeKind]::Utc)
+ foreach($slot in $d.slots){
+  $utc=[datetime]::SpecifyKind([datetime]::UtcNow.Date.AddHours($slot.h).AddMinutes($slot.m),[DateTimeKind]::Utc)
   if($utc -le [datetime]::UtcNow){$utc=$utc.AddDays(1)}
   $local=$utc.ToLocalTime();$times+=$utc.ToString('o');$triggers+=New-ScheduledTaskTrigger -Daily -At $local
- }}
+ }
  if(-not $ValidateOnly){
   $existing=Get-ScheduledTask -TaskName $d.name -ErrorAction SilentlyContinue
   if($existing){
