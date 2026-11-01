@@ -16,6 +16,7 @@ import requests
 
 from gate_btc_b3_h1_parser import process_zip, URL
 from gate_btc_h1_schedule_extension import EXTENSION_SHA256, extension_schedule, load_extension
+from gate_btc_h1_schedule_continuation import CONTINUATION_SHA256, continuation_schedule, load_continuation
 
 TZ = "America/Sao_Paulo"
 UPSTREAM_ENGINE_SHA256 = "1e313614e4f8dd318488e3abdde1d56848c076f9e57bb47a4fd5ce4f9c06410c"
@@ -283,6 +284,10 @@ def main() -> int:
         if set(extension) & (set(schedule) | set(prospective)):
             raise RuntimeError("H1_EXTENSION_OVERLAPS_FROZEN_HISTORY")
         prospective.update(extension)
+        continuation = continuation_schedule()
+        if set(continuation) & (set(schedule) | set(prospective)):
+            raise RuntimeError("H1_CONTINUATION_OVERLAPS_FROZEN_HISTORY")
+        prospective.update(continuation)
         if date in prospective:
             target = datetime.fromisoformat(date).date()
             elapsed = (datetime.now(ZoneInfo(TZ)).date() - target).days
@@ -300,6 +305,11 @@ def main() -> int:
                 state["freeze_status"] = contract["freeze_status"]
                 state["schedule_amendment_sha256"] = EXTENSION_SHA256
                 state["schedule_amendment_id"] = contract["extension_id"]
+            if date in continuation:
+                contract = load_continuation()
+                state["freeze_status"] = contract["freeze_status"]
+                state["schedule_amendment_sha256"] = CONTINUATION_SHA256
+                state["schedule_amendment_id"] = contract["continuation_id"]
         elif date in schedule:
             front = schedule[date]
             state["freeze_status"] = "FROZEN_BEFORE_H1"
