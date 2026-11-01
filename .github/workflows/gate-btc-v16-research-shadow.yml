@@ -1,0 +1,98 @@
+name: GATE BTC V16 Independent Research Shadow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 1 * * *'
+    - cron: '10 21 * * 5'
+  pull_request:
+    paths:
+      - 'tools/gate_btc_v16_research_*.py'
+      - 'tests/test_gate_btc_v16_research_shadow.py'
+      - '.github/workflows/gate-btc-v16-research-shadow.yml'
+      - 'tools/gate_btc_v16b_shadow_signal.py'
+
+permissions:
+  contents: read
+concurrency:
+  group: gate-btc-v16-independent-research-shadow
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+
+jobs:
+  research-shadow-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install numpy==2.3.5 pandas==2.2.3 scikit-learn==1.8.0 certifi
+      - run: python -m unittest -v tests.test_gate_btc_v16_research_shadow
+  collect-independent-shadow:
+    if: github.event_name != 'pull_request'
+    needs: research-shadow-tests
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install numpy==2.3.5 pandas==2.2.3 scikit-learn==1.8.0 certifi
+      - name: Preserve existing V16B1 authority
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path("runtime_repo")
+          paths=list((root/"runtime/ledgers/v16b1").rglob("*"))+list((root/"runtime/evidence/v16b1").rglob("*"))
+          record={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths if p.is_file()}
+          Path("/tmp/v16-canonical-before.json").write_text(json.dumps(record,sort_keys=True))
+          PY
+      - name: Collect only the independent paper series
+        run: python -m tools.gate_btc_v16_research_live --runtime-root runtime_repo --run-id "${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Check canonical preservation and publish independent ledger
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          before=json.loads(Path("/tmp/v16-canonical-before.json").read_text())
+          root=Path(".")
+          paths=list((root/"runtime/ledgers/v16b1").rglob("*"))+list((root/"runtime/evidence/v16b1").rglob("*"))
+          after={"runtime_repo/"+str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths if p.is_file()}
+          assert before==after,"canonical V16B1 modified"
+          status=json.loads(Path("runtime/ledgers/v16_research_shadow_20261031/STATUS.json").read_text())
+          assert status["orders"]==0 and status["real_capital"]==0
+          assert status["canonical_credit"]==0 and status["engine_feed"] is False
+          PY
+          git add -- runtime/ledgers/v16_research_shadow_20261031
+          git diff --quiet
+          git diff --cached --quiet && exit 0
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git commit -m "Update independent V16 historical-seed research shadow"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
+            if git push origin HEAD:gate-btc-runtime; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v16-independent-research-shadow-${{ github.run_id }}
+          path: runtime_repo/runtime/ledgers/v16_research_shadow_20261031/
+          retention-days: 90

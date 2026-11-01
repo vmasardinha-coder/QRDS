@@ -26,6 +26,7 @@ TRACKS = {
     "v16_family": "runtime/ledgers/v16_family/STATUS.json",
     "v16b": "runtime/ledgers/v16b/STATUS.json",
     "v16b1": "runtime/ledgers/v16b1/STATUS.json",
+    "v16_research_shadow": "runtime/ledgers/v16_research_shadow_20261031/STATUS.json",
     "v16c": "runtime/ledgers/v16c/STATUS.json",
     "v16d": "runtime/ledgers/v16d/STATUS.json",
     "v16e": "runtime/ledgers/v16e/STATUS.json",
