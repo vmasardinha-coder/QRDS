@@ -7,6 +7,8 @@ on:
       - tools/gate_btc_dynamics_spot_rebalance.py
       - tools/gate_btc_dynamics_target_intake.py
       - tools/gate_btc_dynamics_spot_market_audit.py
+      - tools/gate_btc_dynamics_market_checked_rebalance.py
+      - tests/test_gate_btc_dynamics_market_checked_rebalance.py
       - tests/test_gate_btc_dynamics_spot_market_audit.py
       - tests/test_gate_btc_dynamics_spot_accounting.py
       - tests/test_gate_btc_dynamics_spot_rebalance.py
@@ -19,6 +21,8 @@ on:
       - tools/gate_btc_dynamics_spot_rebalance.py
       - tools/gate_btc_dynamics_target_intake.py
       - tools/gate_btc_dynamics_spot_market_audit.py
+      - tools/gate_btc_dynamics_market_checked_rebalance.py
+      - tests/test_gate_btc_dynamics_market_checked_rebalance.py
       - tests/test_gate_btc_dynamics_spot_market_audit.py
       - tests/test_gate_btc_dynamics_spot_accounting.py
       - tests/test_gate_btc_dynamics_spot_rebalance.py
@@ -40,5 +44,3 @@ jobs:
           python-version: '3.11'
       - name: Test offline spot accounting boundaries
         run: python -m unittest discover -s tests -p 'test_gate_btc_dynamics_*.py' -v
-
-
