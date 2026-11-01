@@ -122,9 +122,9 @@ def cancellation_identity_audit(raw, member, cancellations, front):
                 symbols = ch["CodigoInstrumento"].astype(str).str.strip().str.upper()
                 ids = ch["CodigoIdentificadorNegocio"].astype(str).str.strip()
                 action = pd.to_numeric(ch["AcaoAtualizacao"], errors="coerce")
-                # pandas 3 string arrays require a concrete sequence here;
-                # dict_values can otherwise trigger ambiguous array truth checks.
-                hit = ch.loc[symbols.isin(list(front.values())) & ids.isin({x[1] for x in targets}) & action.eq(0)]
+                # H31 schedules also carry WDO_candidates metadata. Only the
+                # two selected contracts are admissible execution identities.
+                hit = ch.loc[symbols.isin([front["WIN"], front["WDO"]]) & ids.isin({x[1] for x in targets}) & action.eq(0)]
                 for row in hit.itertuples(index=False):
                     key = (str(row.CodigoInstrumento).strip().upper(), str(row.CodigoIdentificadorNegocio).strip())
                     if key in matches:
