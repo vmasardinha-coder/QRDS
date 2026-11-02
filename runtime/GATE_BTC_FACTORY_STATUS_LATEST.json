@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-02T18:45:36.317785+00:00",
+  "generated_at_utc": "2026-11-02T23:36:03.652250+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -57,11 +57,11 @@
         "shadow_only": true,
         "snapshot_count": 7,
         "status": "ACTIVE_PROSPECTIVE_ARCHIVE",
-        "updated_at_utc": "2026-11-02T17:32:00.169504+00:00"
+        "updated_at_utc": "2026-11-02T23:11:53.731495+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/alt_trail40_10/STATUS.json",
-      "sha256": "1453cea0baa83bf88746fdc817678ff9c4fdb17aa9b937b7d106d18f90648040"
+      "sha256": "7a80183e8444e5e549ddbdcd320f718808e0d08a51e1bbb5124029241b0a1f0f"
     },
     "bull_replay": {
       "data": {
@@ -220,12 +220,12 @@
         "scientific_target": 80,
         "signal_capture_count": 37,
         "status": "ACTIVE_SHADOW_N80",
-        "updated_at_utc": "2026-11-02T15:45:58.836951Z",
-        "workflow_run_id": "41474530319"
+        "updated_at_utc": "2026-11-02T23:30:30.721081Z",
+        "workflow_run_id": "41545722474"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/economic/STATUS.json",
-      "sha256": "893d6ecfbf02445c950487ede8fb9a9cd6a560d1062f66a92ff78a60925ec211"
+      "sha256": "fd520b3e27c9272df01ed2e0e78ef1f5605e64473a85e50832f50d4805f60855"
     },
     "d100_physical": {
       "data": {
@@ -240,10 +240,10 @@
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-11-02T15:45:58.256302Z",
+        "last_attempt_at_utc": "2026-11-02T23:30:29.934427Z",
         "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
         "last_error": null,
-        "last_heartbeat_utc": "2026-11-02T15:45:58.256302Z",
+        "last_heartbeat_utc": "2026-11-02T23:30:29.934427Z",
         "latest_market_data_observed_count": 70,
         "latest_physical_capture_at_utc": "2026-11-02T01:02:09.686397Z",
         "latest_raw_universe_count": 100,
@@ -274,11 +274,11 @@
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
         "successful_capture_days": 37,
         "track": "D100",
-        "workflow_run_id": "41474530319"
+        "workflow_run_id": "41545722474"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "020993f7fd1cb66c31298446ae2199dd46852723d6333c4455b779ffc81b3dc0"
+      "sha256": "4be2755854c655f3c6b78811b0794e64ce14589528b1a84939747a066de8f34c"
     },
     "delta_paper": {
       "data": {
@@ -811,11 +811,11 @@
         "H31_30M_WINDOW_COMPLETE": true,
         "H31_CANONICAL_ELIGIBLE_OBSERVATIONS": 4,
         "H31_FRONT_CONTINUATION_POLICY": "FROZEN_ROOT_WITH_MECHANICAL_LIVE_ROLL_SHADOW_ONLY",
-        "H31_INTRADAY_MONITORING": true,
-        "H31_INTRADAY_SESSION": "2026-10-30",
+        "H31_INTRADAY_MONITORING": false,
+        "H31_INTRADAY_SESSION": "2026-11-02",
         "H31_INTRADAY_SHADOW_STATUS": "ACTIVE",
-        "H31_MT5_READY": true,
-        "H31_PAPER_POSITION": "CLOSED",
+        "H31_MT5_READY": false,
+        "H31_PAPER_POSITION": "NONE",
         "H31_SHADOW_ADJUDICATED_AUXILIARY_VARIANT_COUNT": 5,
         "H31_SHADOW_CLOSED_TRADES": 11,
         "H31_SHADOW_CLOSE_RECONCILIATION_STATUS": "PARTIAL_UNCLOSED_TRIGGER_GAPS",
@@ -830,7 +830,7 @@
           "2026-09-22"
         ],
         "H31_SOURCE_BINDING_SCOPE": "SHADOW_ONLY_ZERO_CANONICAL_CREDIT",
-        "H31_TRIGGER_STATE": "TRIGGER",
+        "H31_TRIGGER_STATE": "PENDING",
         "INTRADAY_SHADOW": true,
         "MT5_READ_ONLY": true,
         "NO_BACKFILL": true,
@@ -842,16 +842,13 @@
         "SCIENTIFIC_PROMOTION_CREDIT": 0,
         "SHADOW_CREDIT_TO_CANONICAL": 0,
         "SHADOW_ONLY": true,
-        "mt5_symbols": {
-          "WDO": "WDOX26",
-          "WIN": "WINZ26"
-        },
+        "monitor_error": "MISSED_CAUSAL_WINDOW_NO_BACKFILL",
         "schema": "gate_btc.b3.h31.intraday_shadow_status.v1",
-        "updated_at": "2026-10-30T11:39:32.335385-03:00"
+        "updated_at": "2026-11-02T11:39:52.533475-03:00"
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/INTRADAY_STATUS.json",
-      "sha256": "8ec711c2f05734420440a8f40f160d7d5dd92348a0123cc12fa3e8396909920d"
+      "sha256": "39baf75a6d045bf452783a19cb879f5b1a2e4f2083f1f03a543077849c576258"
     },
     "h31_prospective": {
       "data": {
@@ -882,11 +879,11 @@
         "H1_ECONOMICS_READ": false,
         "H31_MT5_PARITY_OBSERVATIONS": 0,
         "H31_MT5_READY": false,
-        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 4,
+        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 0,
         "H31_PROSPECTIVE_STATUS": "ACTIVE_PROSPECTIVE",
         "H31_SHADOW_PAPER_STATUS": "ACTIVE",
-        "H31_SHADOW_SESSIONS": 4,
-        "H31_SHADOW_SIMULATED_TRADES": 2,
+        "H31_SHADOW_SESSIONS": 0,
+        "H31_SHADOW_SIMULATED_TRADES": 0,
         "NO_BACKFILL": true,
         "NO_RETUNE": true,
         "ORDERS": 0,
@@ -895,28 +892,28 @@
         "SHADOW_CREDIT_TO_CANONICAL": 0,
         "average_MAE_bps": null,
         "average_MFE_bps": null,
-        "cumulative_gross_bps": -7.923123978174075,
-        "cumulative_reference_net_bps": -11.923123978174075,
-        "cumulative_stress_net_bps": -13.923123978174075,
+        "cumulative_gross_bps": 0.0,
+        "cumulative_reference_net_bps": 0.0,
+        "cumulative_stress_net_bps": 0.0,
         "factory_feedback_allowed": false,
-        "gross_expectancy_bps": -3.9615619890870377,
-        "losses": 1,
-        "max_drawdown_bps": 36.652869690771084,
-        "metrics_sample_status": "ENOUGH_FOR_BASIC_DISPERSION",
-        "profit_factor": 0.6747014878025709,
-        "reference_net_expectancy_bps": -5.961561989087038,
+        "gross_expectancy_bps": null,
+        "losses": 0,
+        "max_drawdown_bps": null,
+        "metrics_sample_status": "NOT_ENOUGH_OBSERVATIONS",
+        "profit_factor": null,
+        "reference_net_expectancy_bps": null,
         "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-        "sessions_observed": 4,
-        "simulated_trades": 2,
-        "stress_net_expectancy_bps": -6.961561989087038,
-        "triggered_sessions": 2,
-        "volatility": 30.691307701684046,
-        "win_rate": 0.5,
-        "wins": 1
+        "sessions_observed": 0,
+        "simulated_trades": 0,
+        "stress_net_expectancy_bps": null,
+        "triggered_sessions": 0,
+        "volatility": null,
+        "win_rate": null,
+        "wins": 0
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
-      "sha256": "13d35084897d4c1e0384ad8f5a0831ef9b04cc8dd4828375a58101340c277bc7"
+      "sha256": "0ec9e1db2dd66e01daf0e9c9475335a175ac3a73b6b0d4d7baef46b46024e7ee"
     },
     "lock25_50": {
       "data": {
@@ -1795,11 +1792,11 @@
         "shadow_only": true,
         "snapshot_count": 7,
         "status": "ACTIVE_PROSPECTIVE_ARCHIVE",
-        "updated_at_utc": "2026-11-02T17:31:56.291706+00:00"
+        "updated_at_utc": "2026-11-02T23:10:15.250019+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/prl50_position/STATUS.json",
-      "sha256": "4fbc60d636e80f41f1884ba7beecba9201aa5808f7a41ee51bdcc89db21c46c0"
+      "sha256": "1f7d4104a54f84ab6555f9cd9ebfa3cfedc5db3c7f9c5fd59e9dfb3bd26b7c41"
     },
     "reporting_state": {
       "data": {
@@ -9699,7 +9696,7 @@
         "family_validation_ci": "PASS_PR_673_HEAD_0B730E223013C050E56CA0DC9F314BDC9B743ECA",
         "funding_mark_price_source": "OKX_OFFICIAL_HISTORY_MARK_PRICE_CANDLES",
         "funding_source": "OKX_OFFICIAL_PUBLIC_FUNDING_RATE_HISTORY",
-        "last_orchestrator_run_utc": "2026-11-02T15:54:26.608273Z",
+        "last_orchestrator_run_utc": "2026-11-02T23:31:18.571935Z",
         "long_entry_source": "BINANCE_SPOT_USDT",
         "missed_cycles": [
           {
@@ -9790,7 +9787,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/v16b1/STATUS.json",
-      "sha256": "d3a6b32a4fef7919a1e0644d22c657786d14e7bc0c93f4f1da8393594eb41728"
+      "sha256": "233f7fb0bd04efcdbd35696b500892d18f945f56bcdf9385cddd8d8dcb8cca84"
     },
     "v16c": {
       "data": {
