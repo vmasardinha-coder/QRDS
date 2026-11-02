@@ -169,6 +169,7 @@ def valid_quote(frame, symbol, day, source):
 
 def canonical_loaders(day):
     import requests
+    from tools.gate_btc_qos_locked_mexc import fetch_locked_ake
     from tools.gate_btc_momentum_required_prices import RecordingSession,PublicMarketSession
     spec=importlib.util.spec_from_file_location('qos_locked_sources',ROOT/'migration/canonical/v2a/scripts/00_run_all_v2a.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
@@ -187,6 +188,7 @@ def canonical_loaders(day):
             'close_usd':receipt['close_usd'],
             'source':epoch_policy()['source_lock']}])
     return {'cdd':lambda symbol:module.fetch_cdd_symbol(session,symbol),
+            'mexc':lambda symbol:fetch_locked_ake(session,symbol,day),
             'binance':lambda symbol:module.fetch_binance_klines(PublicMarketSession(session),symbol),
             'okx':lambda symbol:module.fetch_okx_candles(session,symbol),
             epoch_policy()['source_lock']:archive},session
