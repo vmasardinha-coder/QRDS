@@ -164,5 +164,59 @@ class CoveredDeliveryTests(unittest.TestCase):
         self.assertEqual(after['freshness'],'STALE')
         self.assertEqual(after['collection_health_hint'],'AMBER_BLOCKED_DEPENDENCY')
 
+    def test_calendar_keeps_first_authority_and_advances_after_captured_october_signal(self):
+        q.core.write(self.root/'cycles/2026-10-31/SIGNAL_STATE.json',{'signal_date':'2026-10-31'})
+        out=q.status(self.root,self.config,'ACTIVE_PROSPECTIVE_THREE_TRACK',datetime(2026,11,1,tzinfo=timezone.utc))
+        self.assertEqual(out['approved_first_signal_date'],'2026-09-30')
+        self.assertEqual(out['latest_captured_signal_date'],'2026-10-31')
+        self.assertEqual(out['next_signal_date'],'2026-11-30')
+        self.assertEqual(self.config['next_signal_date'],'2026-09-30')
+
+    def test_calendar_does_not_skip_missing_signal_based_on_wall_clock(self):
+        q.core.write(self.root/'cycles/2026-09-30/SIGNAL_STATE.json',{'signal_date':'2026-09-30'})
+        out=q.status(self.root,self.config,'FAILED_QOS_DELIVERY',datetime(2026,11,1,tzinfo=timezone.utc))
+        self.assertEqual(out['next_signal_date'],'2026-10-31')
+        self.assertEqual(out['orders_generated'],0)
+        self.assertFalse(out['backfill_performed'])
+
+    def test_calendar_without_approved_capture_keeps_first_signal_date(self):
+        out=q.signal_calendar(self.root,self.config)
+        self.assertEqual(out['next_signal_date'],'2026-09-30')
+        self.assertIsNone(out['latest_captured_signal_date'])
+
+    def test_calendar_handles_leap_month_and_year_rollover(self):
+        for captured,wanted in [('2024-01-31','2024-02-29'),('2026-12-31','2027-01-31')]:
+            with self.subTest(captured=captured),tempfile.TemporaryDirectory() as td:
+                root=Path(td);config={**self.config,'next_signal_date':captured}
+                q.core.write(root/'cycles'/captured/'SIGNAL_STATE.json',{'signal_date':captured})
+                self.assertEqual(q.signal_calendar(root,config)['next_signal_date'],wanted)
+
+    def test_explicit_approved_wait_override_remains_supported(self):
+        out=q.status(self.root,self.config,'WAITING_NEXT_APPROVED_MONTH_END',self.at,
+                     next_signal_date='2026-10-31')
+        self.assertEqual(out['next_signal_date'],'2026-10-31')
+        self.assertEqual(out['approved_first_signal_date'],'2026-09-30')
+
+    def test_delivered_day_repairs_only_metadata_without_refetch_or_freshening(self):
+        q.disposition(self.root,self.config)
+        cycle=self.root/'cycles/2026-10-31'
+        q.core.write(cycle/'SIGNAL_STATE.json',{'signal_date':'2026-10-31'})
+        q.core.write(cycle/'path/snapshots/2026-10-31.json',{'sealed_test_row':True})
+        old={**q.SAFE,'status':'ACTIVE_PROSPECTIVE_THREE_TRACK','latest_snapshot_date':'2026-10-31',
+             'updated_at_utc':'2026-11-01T08:12:50Z','next_signal_date':'2026-09-30',
+             'result_ledger_rows':0,'custom_evidence':'preserve'}
+        q.core.write(self.root/'STATUS.json',old)
+        protected={p:p.read_bytes() for p in self.root.rglob('*') if p.is_file() and p.name!='STATUS.json'}
+        need,out=q.plan(self.root,self.config,datetime(2026,11,1,23,tzinfo=timezone.utc))
+        self.assertFalse(need)
+        self.assertEqual(out['next_signal_date'],'2026-11-30')
+        for key in old:
+            if key!='next_signal_date':self.assertEqual(out[key],old[key])
+        self.assertEqual(protected,{p:p.read_bytes() for p in protected})
+        self.assertFalse((self.root/'retry_budget.json').exists())
+        saved=(self.root/'STATUS.json').read_bytes()
+        self.assertFalse(q.plan(self.root,self.config,datetime(2026,11,1,23,tzinfo=timezone.utc))[0])
+        self.assertEqual(saved,(self.root/'STATUS.json').read_bytes())
+
 
 if __name__=='__main__':unittest.main()
