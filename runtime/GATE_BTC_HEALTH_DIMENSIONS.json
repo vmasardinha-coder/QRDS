@@ -7,10 +7,10 @@
   "collection_delivery": "RED_INCOMPLETE_DELIVERY",
   "components": {
     "alt_trail": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "NEEDS_CURRENT_SOURCE"
     },
     "b3_h1": {
       "collection_health": "RED_STALE",
@@ -79,10 +79,10 @@
       "source_status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
     },
     "prl50": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ACTIVE_PROSPECTIVE_ARCHIVE"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "NEEDS_CURRENT_SOURCE"
     },
     "qos_monthly": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
@@ -91,10 +91,10 @@
       "source_status": "ACTIVE_CALENDAR_GATED"
     },
     "qos_three_track": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ACTIVE_PROSPECTIVE_THREE_TRACK"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "WAITING_NEXT_HOURLY_RETRY"
     },
     "system12": {
       "collection_health": "AMBER",
@@ -121,20 +121,23 @@
       "source_status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     }
   },
-  "generated_at_utc": "2026-11-01T10:49:59.468885+00:00",
+  "generated_at_utc": "2026-11-02T11:17:12.417534+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
   "orders_generated": 0,
   "real_capital_used": 0,
   "red_collection_components": [
+    "alt_trail",
     "b3_h1",
+    "prl50",
+    "qos_three_track",
     "v16b1"
   ],
-  "reference_data_date": "2026-10-31",
+  "reference_data_date": "2026-11-01",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "08cf044456a831f2a7d93d908bebf50ee1d8c50c37ff4c10bfbbb14166d2c19f"
+  "status_sha256": "55269f2052f55110cadbc8a284377930d21ece9053c42a7b0fcd4297f393c550"
 }
