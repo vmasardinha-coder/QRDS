@@ -32,7 +32,7 @@ def utc(value):
     return result.astimezone(timezone.utc)
 
 
-def read_bound(root, relative, expected):
+def read_bound_bytes(root, relative, expected):
     root = root.resolve()
     p = (root / relative).resolve()
     if not p.is_relative_to(root) or not p.is_file():
@@ -40,12 +40,52 @@ def read_bound(root, relative, expected):
     raw = p.read_bytes()
     if sha(raw) != expected:
         raise ValueError('SOURCE_EVIDENCE_HASH_MISMATCH')
-    return json.loads(raw)
+    return raw
+
+
+def read_bound(root, relative, expected):
+    return json.loads(read_bound_bytes(root, relative, expected))
 
 
 def protocol():
     raw = read_frozen_bytes(PROTOCOL, PROTOCOL_SHA256)
     return json.loads(raw)
+
+
+def documented_factor(root, adjustment, admission, raw, begin, end):
+    """Bind a native factor to the reviewed instrument and its effective interval.
+
+    The caller supplies externally reviewed evidence; this check grants no source
+    admission and never derives a factor from prices, precision or missing fields.
+    """
+    if (adjustment.get('source_id') != admission['source_id']
+            or adjustment.get('adjustment_policy') != admission['adjustment_policy']):
+        raise ValueError('ADJUSTMENT_DOCUMENT_SOURCE_OR_POLICY_MISMATCH')
+    matches = [row for row in adjustment.get('factor_intervals', [])
+               if row.get('coin_id') == raw['coin_id']
+               and row.get('venue_instrument') == raw['venue_instrument']
+               and utc(row['valid_from_utc']) <= begin
+               and end <= utc(row['valid_to_utc'])]
+    if len(matches) != 1:
+        raise ValueError('ONE_DOCUMENTED_FACTOR_INTERVAL_REQUIRED')
+    row = matches[0]
+    factor = row.get('factor')
+    if (isinstance(factor, bool) or not isinstance(factor, (int, float))
+            or not math.isfinite(factor) or factor <= 0):
+        raise ValueError('DOCUMENTED_NUMERIC_FACTOR_REQUIRED')
+    if (row.get('quote_currency') != admission['quote_currency']
+            or row.get('volume_unit') != admission['volume_unit']):
+        raise ValueError('ADJUSTMENT_DOCUMENT_UNITS_MISMATCH')
+    if (utc(row['evidence_available_at_utc']) > utc(admission['qualified_at_utc'])
+            or not row.get('official_source_url')
+            or not row.get('official_source_path')
+            or not row.get('official_source_sha256')
+            or not row.get('source_locator')):
+        raise ValueError('FACTOR_OFFICIAL_PROVENANCE_REQUIRED_BEFORE_ADMISSION')
+    read_bound_bytes(root, row['official_source_path'], row['official_source_sha256'])
+    if isinstance(raw.get('factor'), bool) or raw.get('factor') != factor:
+        raise ValueError('BAR_FACTOR_DIFFERS_FROM_DOCUMENTED_FACTOR')
+    return factor
 
 
 def inspect(root, bundle, membership):
@@ -63,8 +103,8 @@ def inspect(root, bundle, membership):
         raise ValueError('SOURCE_ADMISSION_OR_UNITS_NOT_QUALIFIED')
     # Each bundle has one reviewed native unit. No conversion or USD/USDT equivalence.
     quote_currency = admission['quote_currency']
-    for key in ('identity_evidence', 'tradability_evidence', 'adjustment_evidence'):
-        read_bound(root, admission[key]['path'], admission[key]['sha256'])
+    proofs = {key: read_bound(root, admission[key]['path'], admission[key]['sha256'])
+              for key in ('identity_evidence', 'tradability_evidence', 'adjustment_evidence')}
     bindings = admission['instrument_bindings']
     members = {}
     for m in membership['rows']:
@@ -87,6 +127,7 @@ def inspect(root, bundle, membership):
             raise ValueError('UNFINISHED_OR_LATE_HISTORICAL_BAR')
         if utc(admission['qualified_at_utc']) > begin:
             raise ValueError('SOURCE_NOT_QUALIFIED_BEFORE_SESSION')
+        documented_factor(root, proofs['adjustment_evidence'], admission, raw, begin, end)
         candidates = [m for (cid, _), m in members.items()
                       if cid == coin and utc(m['observed_at_utc']) <= begin]
         if not candidates:
