@@ -26,6 +26,17 @@ def sample(original_id="42", cancellation_id="42", original_price="100,0", extra
 
 
 class CancelIdentityAuditTests(unittest.TestCase):
+    def test_h31_candidate_metadata_does_not_enter_symbol_membership(self):
+        front = {"WIN": "WINV26", "WDO": "WDOV26",
+                 "WDO_candidates": ["WDOV26", "WDOX26"]}
+        m1, m5, stats, _ = process_zip(sample(), "2026-10-08", front)
+        self.assertEqual(stats["cancellation_reconciliation"], "EXACT_ONE_TO_ONE_DELETE_NEW")
+        self.assertEqual(stats["cancelled_original_rows_removed"], 1)
+        self.assertEqual(m1.iloc[0]["volume"], 3)
+        self.assertEqual(m5.iloc[0]["trades"], 1)
+        with self.assertRaisesRegex(RuntimeError, "'matched_original_count': 0"):
+            process_zip(sample(cancellation_id="999"), "2026-10-08", front)
+
     def test_exact_delete_removes_only_matched_original(self):
         m1, m5, stats, _ = process_zip(sample(), "2026-10-08",
                                         {"WIN": "WINV26", "WDO": "WDOV26"})

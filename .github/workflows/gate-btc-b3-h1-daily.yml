@@ -22,6 +22,10 @@ on:
       - tools/gate_btc_h1_schedule_extension.py
       - tools/gate_btc_local_shadow_clock.ps1
       - tests/test_gate_btc_h1_schedule_extension.py
+      - tools/gate_btc_h1_schedule_continuation.py
+      - tools/gate_btc_h1_materialize_collector.py
+      - tools/gate_btc_factory/H1_PROSPECTIVE_CONTINUATION_20261101.v1.json
+      - tests/test_gate_btc_h1_future_continuation.py
       - tests/test_gate_btc_h1_prospective_schedule.py
       - tests/test_gate_btc_b3_h1_cancel_identity.py
       - .github/workflows/gate-btc-b3-h1-daily.yml
@@ -60,7 +64,7 @@ env:
 
 jobs:
   validate:
-    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
     runs-on: ubuntu-latest
     steps:
       - name: Resolve immutable merge tree without collecting observations
@@ -71,7 +75,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [ "$EVENT_NAME" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "push" ]; then
             TARGET_SHA="$GITHUB_SHA"
           else
             [[ "$VALIDATION_PR" =~ ^[1-9][0-9]*$ ]]
@@ -91,17 +95,18 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          names = ('test_gate_btc_h1_prospective_schedule.py', 'test_gate_btc_h1_schedule_extension.py', 'test_gate_btc_b3_h1_cancel_identity.py', 'test_gate_btc_b3_missing_root_gap.py')
+          names = ('test_gate_btc_h1_prospective_schedule.py', 'test_gate_btc_h1_schedule_extension.py', 'test_gate_btc_h1_future_continuation.py', 'test_gate_btc_b3_h1_cancel_identity.py', 'test_gate_btc_b3_missing_root_gap.py')
           missing = [name for name in names if not Path('tests', name).is_file()]
           assert not missing, f'Missing required structural tests: {missing}'
           PY
       - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_prospective_schedule.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_schedule_extension.py' -v
+      - run: python -m unittest discover -s tests -p 'test_gate_btc_h1_future_continuation.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_h1_cancel_identity.py' -v
       - run: python -m unittest discover -s tests -p 'test_gate_btc_b3_missing_root_gap.py' -v
 
   b3-h1-structural:
-    if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
+    if: github.event_name != 'pull_request' && github.event_name != 'push' && !(github.event_name == 'workflow_dispatch' && inputs.validation_only_pr != '')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

@@ -53,6 +53,13 @@ def materialization_progress(qual, readiness):
  return {'status':'RECONCILED','qualified_family_count':len(rows),'collecting_count':collecting,'terminal_source_blocked_count':terminal,'actionable_count':actionable,'families':dispositions,'scientific_credit_awarded':0,'promotion_authority':False}
 
 def build(root):
+ historical007={'status':'NOT_AVAILABLE'}
+ if (root/'GRAMMAR_007_PEARSON_HISTORICAL_EVAL_RUNTIME.json').exists():
+  try:
+   try:from .grammar_007_current_disposition import reconcile
+   except ImportError:from grammar_007_current_disposition import reconcile
+   historical007=reconcile(root)
+  except (ValueError,KeyError,OSError):historical007={'status':'RECONCILIATION_REQUIRED_NO_TARGET_READ'}
  scout=load(root/'GRAMMAR_SCOUT_RUNTIME.json')
  hand=load(root/'GRAMMAR_HANDOFF_RUNTIME.json')
  trans=load(root/'GRAMMAR_PREREG_TRANSPORT_RUNTIME.json')
@@ -106,6 +113,7 @@ def build(root):
   },
   'next_stage':next_stage,
   'materialization_progress':progress,
+  'grammar007_historical_disposition':historical007,
   'safety':{'RESEARCH_ONLY':True,'SHADOW_ONLY':True,'NOT_APPROVED':True,'ENGINE_FEED':False,'ORDERS':0,'REAL_CAPITAL':0,'NO_RETUNE':True,'NO_BACKFILL':True,'NO_COUNTER_RESET':True,'FAIL_CLOSED':True}
  }
 

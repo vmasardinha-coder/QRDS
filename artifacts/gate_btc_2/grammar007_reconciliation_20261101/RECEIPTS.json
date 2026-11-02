@@ -1,0 +1,533 @@
+{
+  "source_runtime": "76009aae7a9e41eba9330bb5c777836cbb223064",
+  "captured_for": "RECEIPT_RECONCILIATION_ONLY_NOT_TARGET_REEVALUATION",
+  "files": {
+    "GRAMMAR_007_EFFECT_CASES_AUTH_RUNTIME.json": {
+      "schema": "qrds.factory.grammar_007.effect_cases_auth.v1",
+      "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+      "status": "FROZEN_BEFORE_FIRST_TARGET_READ",
+      "authorization": "USER_AUTHORIZED_2026-09-21_PRIMARY_50_50_AND_FOLLOWON_COMPONENT_CASES",
+      "authorization_basis": "User explicitly authorized option 1 with 50/50 weights and requested follow-on cases equivalent to option 3 before any Ibovespa target/outcome read.",
+      "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+      "partitions": {
+        "rule": "50_30_20_CHRONOLOGICAL",
+        "embargo_sessions": 60,
+        "already_sealed": true,
+        "reuse_exact_same_partitions_for_all_cases": true
+      },
+      "feature_components": [
+        "IPCA_CURRENT_YEAR_MEDIAN_REVISION",
+        "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION"
+      ],
+      "standardization": {
+        "method": "ZSCORE",
+        "fit_partition": "DISCOVERY_ONLY",
+        "fit_parameters": "component-wise arithmetic mean and sample standard deviation computed from discovery feature values only",
+        "validation_and_holdout": "reuse discovery-fitted mean and standard deviation without refit",
+        "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED",
+        "missing_component_policy": "INELIGIBLE_NO_IMPUTATION"
+      },
+      "cases": [
+        {
+          "case_id": "G007_FOCUS_50_50_V1",
+          "execution_order": 1,
+          "role": "PRIMARY_AUTHORIZED_CASE",
+          "scalar_effect_feature": "0.50 * Z(IPCA_CURRENT_YEAR_MEDIAN_REVISION) + 0.50 * Z(SELIC_CURRENT_YEAR_END_MEDIAN_REVISION)",
+          "weights": {
+            "IPCA": 0.5,
+            "SELIC": 0.5
+          },
+          "component_selection": false,
+          "optimization": false,
+          "retune": false
+        },
+        {
+          "case_id": "G007_FOCUS_IPCA_ONLY_V1",
+          "execution_order": 2,
+          "role": "PREAUTHORIZED_FOLLOWON_COMPONENT_CASE",
+          "scalar_effect_feature": "Z(IPCA_CURRENT_YEAR_MEDIAN_REVISION)",
+          "weights": {
+            "IPCA": 1,
+            "SELIC": 0
+          },
+          "component_selection": "fixed ex ante by user authorization, not selected by primary-case performance",
+          "optimization": false,
+          "retune": false
+        },
+        {
+          "case_id": "G007_FOCUS_SELIC_ONLY_V1",
+          "execution_order": 3,
+          "role": "PREAUTHORIZED_FOLLOWON_COMPONENT_CASE",
+          "scalar_effect_feature": "Z(SELIC_CURRENT_YEAR_END_MEDIAN_REVISION)",
+          "weights": {
+            "IPCA": 0,
+            "SELIC": 1
+          },
+          "component_selection": "fixed ex ante by user authorization, not selected by primary-case performance",
+          "optimization": false,
+          "retune": false
+        }
+      ],
+      "execution_contract": {
+        "primary_case_first": true,
+        "followon_cases_execute_after_primary_terminal_result": true,
+        "followon_existence_independent_of_primary_result": true,
+        "discovery_rule": "reuse GRAMMAR_007_DISCOVERY_VALIDATION_RULE_20260920.json",
+        "validation_rule": "same sign as discovery and absolute validation standardized effect >= 0.50 * absolute discovery standardized effect",
+        "holdout_rule": "read only after validation pass; same sign as discovery and absolute holdout standardized effect >= 0.50 * absolute discovery standardized effect",
+        "no_cross_case_retune": true,
+        "no_performance_based_case_creation": true
+      },
+      "target_boundary_at_freeze": {
+        "target_source_opened": false,
+        "target_bytes_read": false,
+        "outcomes_read": false,
+        "economics_read": false
+      },
+      "immutability": [
+        "NO_RETUNE",
+        "NO_BACKFILL",
+        "NO_COUNTER_RESET",
+        "NO_WEIGHT_OPTIMIZATION",
+        "NO_COMPONENT_SELECTION_AFTER_OUTCOME",
+        "NO_CASE_CREATION_AFTER_OUTCOME_FOR_THIS_BATCH",
+        "NO_VALIDATION_REFIT",
+        "NO_HOLDOUT_REFIT"
+      ],
+      "safety": {
+        "RESEARCH_ONLY": true,
+        "SHADOW_ONLY": true,
+        "NOT_APPROVED": true,
+        "ENGINE_FEED": false,
+        "ORDERS": 0,
+        "REAL_CAPITAL": 0,
+        "NO_RETUNE": true,
+        "NO_BACKFILL": true,
+        "NO_COUNTER_RESET": true,
+        "FAIL_CLOSED": true,
+        "H1_H31_UNTOUCHED": true
+      }
+    },
+    "GRAMMAR_007_EFFECT_STAT_AUTH_RUNTIME.json": {
+      "schema": "qrds.factory.grammar_007.effect_stat_auth.v1",
+      "scope": "XAWINWDO_REGIME_007_GRAMMAR_SCOUT_ONLY",
+      "status": "FROZEN_BEFORE_FIRST_TARGET_READ",
+      "authorization": "USER_AUTHORIZED_PEARSON_2026-09-21",
+      "authorization_basis": "User explicitly authorized Pearson correlation before any Grammar 007 Ibovespa target/outcome read.",
+      "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+      "effect_statistic": {
+        "name": "PEARSON_PRODUCT_MOMENT_CORRELATION",
+        "symbol": "r",
+        "x": "the scalar effect feature frozen for the current case in GRAMMAR_007_EFFECT_CASES_AUTH_20260921.json",
+        "y": "the frozen next-eligible-session Ibovespa simple close-to-close return",
+        "computation": "ordinary sample Pearson product-moment correlation on eligible paired observations within the sealed partition",
+        "standardized_effect": "Pearson r itself; dimensionless in [-1,1]",
+        "missing_pair_policy": "INELIGIBLE_PAIR_EXCLUDED_ONLY_WHEN_PREEXISTING_CAUSAL_OR_SOURCE_RULE_MAKES_THE_PAIR_INELIGIBLE; NO_IMPUTATION",
+        "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED",
+        "alternate_estimators": false,
+        "post_outcome_metric_selection": false
+      },
+      "cases": [
+        "G007_FOCUS_50_50_V1",
+        "G007_FOCUS_IPCA_ONLY_V1",
+        "G007_FOCUS_SELIC_ONLY_V1"
+      ],
+      "execution_order": [
+        "G007_FOCUS_50_50_V1",
+        "G007_FOCUS_IPCA_ONLY_V1",
+        "G007_FOCUS_SELIC_ONLY_V1"
+      ],
+      "partition_contract": {
+        "rule": "50_30_20_CHRONOLOGICAL",
+        "embargo_sessions": 60,
+        "reuse_exact_same_sealed_partitions_for_all_cases": true
+      },
+      "discovery_validation_holdout_contract": {
+        "discovery_ranking": "largest absolute Pearson r among only the already-frozen eligible candidates; retain discovery sign",
+        "validation_pass": "same sign as discovery and abs(r_validation) >= 0.50 * abs(r_discovery)",
+        "validation_failure": "REJECT_NO_RETUNE",
+        "holdout_read_gate": "holdout is unread unless validation passes",
+        "holdout_pass": "same sign as discovery and abs(r_holdout) >= 0.50 * abs(r_discovery)",
+        "holdout_failure": "REJECT_NO_RETUNE",
+        "survivor_destination": "SEPARATE_BLINDED_PROSPECTIVE_ZERO_RETROACTIVE_CREDIT"
+      },
+      "target_boundary_at_freeze": {
+        "target_source_opened": false,
+        "target_bytes_read": false,
+        "outcomes_read": false,
+        "economics_read": false
+      },
+      "immutability": [
+        "NO_RETUNE",
+        "NO_BACKFILL",
+        "NO_COUNTER_RESET",
+        "NO_LATE_SEAL",
+        "NO_ALTERNATE_CORRELATION_ESTIMATOR_AFTER_OUTCOME",
+        "NO_METRIC_SELECTION_AFTER_OUTCOME",
+        "NO_WEIGHT_OPTIMIZATION",
+        "NO_COMPONENT_SELECTION_AFTER_OUTCOME",
+        "NO_CASE_CREATION_AFTER_OUTCOME_FOR_THIS_BATCH",
+        "NO_VALIDATION_REFIT",
+        "NO_HOLDOUT_REFIT"
+      ],
+      "safety": {
+        "RESEARCH_ONLY": true,
+        "SHADOW_ONLY": true,
+        "NOT_APPROVED": true,
+        "ENGINE_FEED": false,
+        "ORDERS": 0,
+        "REAL_CAPITAL": 0,
+        "NO_RETUNE": true,
+        "NO_BACKFILL": true,
+        "NO_COUNTER_RESET": true,
+        "FAIL_CLOSED": true,
+        "H1_H31_UNTOUCHED": true
+      }
+    },
+    "GRAMMAR_007_PEARSON_HISTORICAL_EVAL_RUNTIME.json": {
+      "cases": [
+        {
+          "case_id": "G007_FOCUS_50_50_V1",
+          "discovery": {
+            "n": 49,
+            "pass": true,
+            "pearson_r": 0.21393520361277413,
+            "started": true
+          },
+          "execution_order": 1,
+          "holdout": {
+            "n": 0,
+            "pass": null,
+            "pearson_r": null,
+            "started": false,
+            "target_year_2026_fetched_for_this_case": false
+          },
+          "ineligibility_reason": null,
+          "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+          "validation": {
+            "magnitude_floor": 0.10696760180638706,
+            "n": 16,
+            "pass": false,
+            "pearson_r": -0.12093106577900216,
+            "same_sign": false,
+            "started": true
+          }
+        },
+        {
+          "case_id": "G007_FOCUS_IPCA_ONLY_V1",
+          "discovery": {
+            "n": 49,
+            "pass": true,
+            "pearson_r": 0.42026476234348503,
+            "started": true
+          },
+          "execution_order": 2,
+          "holdout": {
+            "n": 0,
+            "pass": null,
+            "pearson_r": null,
+            "started": false,
+            "target_year_2026_fetched_for_this_case": false
+          },
+          "ineligibility_reason": null,
+          "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+          "validation": {
+            "magnitude_floor": 0.21013238117174252,
+            "n": 16,
+            "pass": false,
+            "pearson_r": -0.12093106577900223,
+            "same_sign": false,
+            "started": true
+          }
+        },
+        {
+          "case_id": "G007_FOCUS_SELIC_ONLY_V1",
+          "discovery": {
+            "n": 49,
+            "pass": true,
+            "pearson_r": -0.11702842286499286,
+            "started": true
+          },
+          "execution_order": 3,
+          "holdout": {
+            "n": 0,
+            "pass": null,
+            "pearson_r": null,
+            "started": false,
+            "target_year_2026_fetched_for_this_case": false
+          },
+          "ineligibility_reason": "PEARSON_FEATURE_ZERO_VARIANCE_FAIL_CLOSED",
+          "terminal_status": "REJECTED_VALIDATION_NO_RETUNE",
+          "validation": {
+            "ineligible": true,
+            "n": 16,
+            "pass": false,
+            "pearson_r": null,
+            "started": true
+          }
+        }
+      ],
+      "effect_statistic": "PEARSON_PRODUCT_MOMENT_CORRELATION",
+      "embargo_sessions": 60,
+      "historical_backfill_credit": 0,
+      "next_gate": "FACTORY_007_CLOSE_NO_SURVIVOR",
+      "partition_contract": "50_30_20_CHRONOLOGICAL",
+      "prospective_credit": 0,
+      "safety": {
+        "ENGINE_FEED": false,
+        "FAIL_CLOSED": true,
+        "NOT_APPROVED": true,
+        "NO_BACKFILL": true,
+        "NO_COUNTER_RESET": true,
+        "NO_RETUNE": true,
+        "ORDERS": 0,
+        "REAL_CAPITAL": 0,
+        "RESEARCH_ONLY": true,
+        "SHADOW_ONLY": true
+      },
+      "schema": "qrds.factory.grammar_007.pearson_historical_eval.v1",
+      "scientific_credit": 0,
+      "standardization": {
+        "fit_partition": "DISCOVERY_ONLY",
+        "method": "ZSCORE",
+        "parameters": {
+          "IPCA_CURRENT_YEAR_MEDIAN_REVISION": {
+            "mean": 0.034083673469387746,
+            "n": 49,
+            "sample_sd": 0.0667063725933125
+          },
+          "SELIC_CURRENT_YEAR_END_MEDIAN_REVISION": {
+            "mean": 0.061224489795918366,
+            "n": 49,
+            "sample_sd": 0.14003917090498322
+          }
+        },
+        "validation_holdout_refit": false
+      },
+      "status": "HISTORICAL_EVALUATION_COMPLETE_NO_SURVIVOR",
+      "survivors": [],
+      "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the Focus revision vector is officially observable.",
+      "target_source": {
+        "holdout_year_2026_ever_fetched": false,
+        "pre_holdout_years_fetched": [
+          2024,
+          2025
+        ],
+        "provider": "B3 S.A. - Brasil, Bolsa, Balcao",
+        "raw_provider_payload_persisted": false,
+        "route_status": "MECHANICAL_SOURCE_ROUTE_CORRECTED_TARGET_IDENTITY_UNCHANGED"
+      },
+      "zero_variance_policy": "INELIGIBLE_FAIL_CLOSED_ZERO_CREDIT_NOT_INFRASTRUCTURE_ERROR"
+    },
+    "GRAMMAR_007_SEALED_PARTITION_PREFLIGHT_RUNTIME.json": {
+      "authority_sha256": "8d1a938eec18a32cd708b774b8433bf1c9892d80c8e9ffffef071fbebfa34be3",
+      "blocker_detail": "The frozen preregistration defines a raw two-component Focus revision vector and prohibits reweighting/component selection/outcome-based transformation, while the reused 005 decision rule ranks a scalar standardized effect. No ex-ante scalar map from the two-component vector to one effect statistic was frozen.",
+      "candidate_embargo_or_unassigned_count": 44,
+      "candidate_embargo_or_unassigned_dates": [
+        "2025-03-10",
+        "2025-03-17",
+        "2025-03-24",
+        "2025-03-31",
+        "2025-04-07",
+        "2025-04-14",
+        "2025-04-28",
+        "2025-05-05",
+        "2025-05-12",
+        "2025-05-19",
+        "2025-05-26",
+        "2025-06-02",
+        "2025-06-09",
+        "2025-06-16",
+        "2025-06-23",
+        "2025-06-30",
+        "2025-07-07",
+        "2025-07-14",
+        "2025-07-21",
+        "2025-07-28",
+        "2025-08-04",
+        "2025-08-11",
+        "2025-08-18",
+        "2026-01-12",
+        "2026-01-19",
+        "2026-01-26",
+        "2026-02-02",
+        "2026-02-09",
+        "2026-02-23",
+        "2026-03-02",
+        "2026-03-09",
+        "2026-03-16",
+        "2026-03-23",
+        "2026-03-30",
+        "2026-04-06",
+        "2026-04-13",
+        "2026-04-20",
+        "2026-04-27",
+        "2026-05-04",
+        "2026-05-11",
+        "2026-05-18",
+        "2026-05-25",
+        "2026-06-01",
+        "2026-06-08"
+      ],
+      "candidate_feature_rows_sha256": "a559b414994dbf4b4e5c8aeba2fed879e823560f0c799f169202993b95337de2",
+      "candidate_id": "G007_FOCUS_REVISION_VECTOR_V1",
+      "candidate_observation_count": 122,
+      "candidate_partition_counts": {
+        "discovery": 49,
+        "holdout": 13,
+        "validation": 16
+      },
+      "candidate_partition_dates": {
+        "discovery": [
+          "2024-02-26",
+          "2024-03-04",
+          "2024-03-11",
+          "2024-03-18",
+          "2024-03-25",
+          "2024-04-01",
+          "2024-04-08",
+          "2024-04-15",
+          "2024-04-22",
+          "2024-04-29",
+          "2024-05-06",
+          "2024-05-13",
+          "2024-05-20",
+          "2024-05-27",
+          "2024-06-03",
+          "2024-06-10",
+          "2024-06-17",
+          "2024-06-24",
+          "2024-07-01",
+          "2024-07-08",
+          "2024-07-15",
+          "2024-07-22",
+          "2024-07-29",
+          "2024-08-05",
+          "2024-08-12",
+          "2024-08-19",
+          "2024-08-26",
+          "2024-09-02",
+          "2024-09-09",
+          "2024-09-16",
+          "2024-09-23",
+          "2024-09-30",
+          "2024-10-07",
+          "2024-10-14",
+          "2024-10-21",
+          "2024-10-28",
+          "2024-11-04",
+          "2024-11-11",
+          "2024-11-18",
+          "2024-11-25",
+          "2024-12-02",
+          "2024-12-09",
+          "2025-01-13",
+          "2025-01-20",
+          "2025-01-27",
+          "2025-02-03",
+          "2025-02-10",
+          "2025-02-17",
+          "2025-02-24"
+        ],
+        "holdout": [
+          "2026-06-15",
+          "2026-06-22",
+          "2026-06-29",
+          "2026-07-06",
+          "2026-07-13",
+          "2026-07-20",
+          "2026-07-27",
+          "2026-08-03",
+          "2026-08-10",
+          "2026-08-17",
+          "2026-08-24",
+          "2026-08-31",
+          "2026-09-14"
+        ],
+        "validation": [
+          "2025-08-25",
+          "2025-09-01",
+          "2025-09-08",
+          "2025-09-15",
+          "2025-09-22",
+          "2025-09-29",
+          "2025-10-06",
+          "2025-10-13",
+          "2025-10-20",
+          "2025-10-27",
+          "2025-11-03",
+          "2025-11-10",
+          "2025-11-17",
+          "2025-11-24",
+          "2025-12-01",
+          "2025-12-08"
+        ]
+      },
+      "candidate_sha256": "fda6296f5567cefcf056c08d55ed359b2f4cfbc402850d1829851437ce81d0d4",
+      "candidate_universe_frozen": true,
+      "economics_read": false,
+      "embargo_sessions": 60,
+      "forbidden_until_blocker_resolved_ex_ante": [
+        "choose_component_weights",
+        "fit_regression_or_projection_using_target",
+        "choose_norm_or_sign_rule_after_target_read",
+        "read_discovery_target_outcomes",
+        "read_validation_target_outcomes",
+        "read_holdout_target_outcomes"
+      ],
+      "historical_backfill_credit": 0,
+      "holdout_started": false,
+      "methodological_blocker": "FOCUS_TWO_COMPONENT_VECTOR_STANDARDIZED_EFFECT_SCALARIZATION_NOT_PREREGISTERED",
+      "next_gate": "HUMAN_OR_PREEXISTING_EX_ANTE_VECTOR_EFFECT_DEFINITION_REQUIRED_BEFORE_TARGET_READ",
+      "outcomes_read": false,
+      "partition_algorithm": "REGIME_005_EXACT_GEOMETRY_ON_B3_SESSION_CALENDAR",
+      "partition_contract": "50_30_20_CHRONOLOGICAL",
+      "partitions_frozen": true,
+      "prereg_sha256": "ca80c0b9032d05fde28bfe7a8af1f01be92206eaecb27efae2b82c720cd8ff98",
+      "prospective_credit": 0,
+      "rule_sha256": "9344c7a99987c8433079a5f16e9bdd5764f0dccfdad2157aa17656a94b5cb8f1",
+      "safety": {
+        "ENGINE_FEED": false,
+        "FAIL_CLOSED": true,
+        "H1_H31_ISOLATED": true,
+        "NOT_APPROVED": true,
+        "NO_BACKFILL": true,
+        "NO_COUNTER_RESET": true,
+        "NO_LATE_SEAL": true,
+        "NO_RETUNE": true,
+        "ORDERS": 0,
+        "REAL_CAPITAL": 0,
+        "RESEARCH_ONLY": true,
+        "SHADOW_ONLY": true
+      },
+      "schema": "qrds.factory.grammar_007.sealed_partition_preflight.v1",
+      "scientific_credit": 0,
+      "sealed_at_utc": "2026-09-21T10:25:48.307931+00:00",
+      "session_count": 656,
+      "session_split_bounds": {
+        "discovery": {
+          "first": "2024-02-05",
+          "last": "2025-02-27"
+        },
+        "holdout": {
+          "first": "2026-06-10",
+          "last": "2026-09-18"
+        },
+        "validation": {
+          "first": "2025-08-25",
+          "last": "2025-12-09"
+        }
+      },
+      "session_split_counts": {
+        "discovery": 268,
+        "holdout": 72,
+        "validation": 76
+      },
+      "stage": "SEALED_DISCOVERY_TARGET_JOIN_PREFLIGHT_NO_OUTCOME_READ",
+      "status": "PARTITIONS_SEALED_TARGET_READ_BLOCKED_BY_METHOD_STATISTIC",
+      "target_bytes_read": false,
+      "target_source_opened": false,
+      "validation_started": false
+    }
+  }
+}
