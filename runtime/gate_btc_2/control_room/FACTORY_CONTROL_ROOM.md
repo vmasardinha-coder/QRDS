@@ -1,21 +1,20 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-11-03T19:41:52.101587+00:00`
+Generated: `2026-11-03T22:19:59.122269+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **26**
-- Latest ledger: **2026-10-30**
-- Latest collector: **WAIT_DAILY_BATCH_WINDOW** (`None`)
+- Ledger sessions: **27**
+- Latest ledger: **2026-11-03**
+- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-11-03`)
 - Triggered cells: **15**
 - Cells at 60/60: **0**
-- Trigger range: **0–7 / 60**
+- Trigger range: **0–8 / 60**
 
 ## Latest prospective session states
-- `NO_SIGNAL`: **1**
-- `TRIGGER`: **4**
+- `TRIGGER`: **5**
 - `WARMUP_PENDING`: **575**
 
 ## 3D family states
@@ -26,7 +25,7 @@ Generated: `2026-11-03T19:41:52.101587+00:00`
 
 ## Source
 - Historical binding snapshot: `FORWARD_SOURCE_BOUND` / `WINV26`
-- Latest physically observed symbol: `WINZ26` (session `2026-10-30`; source QA=None)
+- Latest physically observed symbol: `WINZ26` (session `2026-11-03`; source QA=None)
 - Waiting source semantics: **0**
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (46 records; admitted=False)
 
@@ -38,14 +37,14 @@ Generated: `2026-11-03T19:41:52.101587+00:00`
 
 | Lookback | Families | Prior feature observations | Additional prior observations |
 |---|---:|---:|---:|
-| 10 | 5 | 17 to 17 | 0 to 0 |
-| 20 | 5 | 17 to 17 | 3 to 3 |
-| 60 | 6 | 17 to 17 | 43 to 43 |
-| 80 | 10 | 17 to 17 | 63 to 63 |
-| 120 | 26 | 17 to 17 | 103 to 103 |
-| 160 | 16 | 17 to 17 | 143 to 143 |
-| 200 | 256 | 10 to 17 | 183 to 190 |
-| 252 | 256 | 10 to 17 | 235 to 242 |
+| 10 | 5 | 18 to 18 | 0 to 0 |
+| 20 | 5 | 18 to 18 | 2 to 2 |
+| 60 | 6 | 18 to 18 | 42 to 42 |
+| 80 | 10 | 18 to 18 | 62 to 62 |
+| 120 | 26 | 18 to 18 | 102 to 102 |
+| 160 | 16 | 18 to 18 | 142 to 142 |
+| 200 | 256 | 11 to 18 | 182 to 189 |
+| 252 | 256 | 11 to 18 | 234 to 241 |
 
 Coverage is not a signal. A later eligible session, its current feature, nonzero MAD and the frozen trigger remain required.
 
