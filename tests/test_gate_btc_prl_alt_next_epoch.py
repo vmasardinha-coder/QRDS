@@ -31,6 +31,16 @@ class NextEpochTests(unittest.TestCase):
                 self.assertEqual(next_epoch.config(lane)[2].load_json(old/'PRESERVED_GAP.json')['economic_credit'],0)
 
 class DeliveryFailureTests(unittest.TestCase):
+    def test_preserved_snapshot_keys_are_portable_across_windows_and_linux(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);old=root/'epochs/monthly_20260930'
+            (old/'snapshots').mkdir(parents=True);(old/'ANCHOR.json').write_text('{}')
+            (old/'snapshots/2026-10-04.json').write_text('{}')
+            next_epoch.plan(root,'alt',datetime(2026,11,1,12,tzinfo=timezone.utc))
+            marker=next_epoch.alt.load_json(old/'PRESERVED_GAP.json')
+            self.assertEqual(set(marker['preserved_files_sha256']),
+                             {'ANCHOR.json','snapshots/2026-10-04.json'})
+
     def test_failure_preserves_snapshots_and_retry_plan(self):
         for lane in ('prl50','alt'):
             with self.subTest(lane=lane),tempfile.TemporaryDirectory() as tmp:
