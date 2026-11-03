@@ -27,7 +27,7 @@ class RetryPolicyTests(unittest.TestCase):
 
     def test_all_known_cases_have_explicit_disposition(self):
         cases = load_policy()['cases']
-        self.assertEqual(len(cases), 20)
+        self.assertEqual(len(cases), 21)
         for c in cases:
             d = decision(c['symbol'], c['coin_id'], c.get('effective_cutoff', '2026-10-22'))
             self.assertIsNotNone(d)
@@ -68,5 +68,3 @@ class RetryPolicyTests(unittest.TestCase):
         self.assertEqual(block['c4_reference']['reference_balance_brl'],200000)
 
 if __name__ == '__main__': unittest.main()
-
-
