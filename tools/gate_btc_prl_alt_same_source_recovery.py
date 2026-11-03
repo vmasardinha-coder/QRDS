@@ -54,7 +54,16 @@ def rollover_requirements(ledger_root, day):
             'ROLLOVER_CONSUMER_SAFETY_MISMATCH')
     signals = row.get('signals', {})
     require(set(signals) == {'QOS_Moderada','QOS_Ultra'}, 'ROLLOVER_SIGNALS_MISSING')
-    assets = set(row.get('rollover_exit_assets', []))
+    pending = set(row.get('rollover_exit_assets', []))
+    deadlines = row.get('rollover_exit_deadlines')
+    if deadlines is None:
+        execution_dates = {s.get('execution_eligible_from') for s in signals.values()}
+        require(not pending or (len(execution_dates) == 1 and None not in execution_dates),
+                'ROLLOVER_LEGACY_DEADLINE_AMBIGUOUS')
+        deadlines = {a:next(iter(execution_dates)) for a in pending}
+    require(set(deadlines) == pending, 'ROLLOVER_DEADLINE_SCOPE_MISMATCH')
+    assets = {a for a,boundary in deadlines.items()
+              if datetime.fromisoformat(boundary).date() >= datetime.fromisoformat(day).date()}
     assets.update(p['asset'] for s in signals.values() for p in s.get('picks', [])
                   if float(p.get('weight') or 0) > 0)
     return assets - {'BTC','ETH','BNB','CASH'}, digest
