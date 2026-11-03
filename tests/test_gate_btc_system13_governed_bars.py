@@ -26,12 +26,21 @@ class GovernedBars(unittest.TestCase):
         self.membership={'protocol_sha256':g.PROTOCOL_SHA256,'rows':[
             {'coin_id':'bitcoin','observed_at_utc':'2026-10-21T05:00:00Z',
              'eligible_by_observed_flags_and_quote':True}]}
+        self.adjustment={'source_id':'FIXTURE_USD','adjustment_policy':'REVIEWED_SPOT_POLICY',
+            'factor_intervals':[{'coin_id':'bitcoin','venue_instrument':'BTC-USD',
+                'quote_currency':'USD','volume_unit':'BASE_ASSET','factor':1,
+                'valid_from_utc':'2026-10-20T00:00:00Z','valid_to_utc':'2026-10-24T00:00:00Z',
+                'evidence_available_at_utc':'2026-10-19T00:00:00Z',
+                'official_source_url':'https://fixture.invalid/policy',
+                'official_source_path':proof['path'],'official_source_sha256':proof['sha256'],
+                'source_locator':'EXPLICIT_TEST_FIXTURE_NOT_REAL_ADMISSION'}]}
 
     def bound(self,name,value):
         raw=json.dumps(value,sort_keys=True).encode();(self.root/name).write_bytes(raw)
         return {'path':name,'sha256':g.sha(raw)}
 
     def bundle(self):
+        self.admission['adjustment_evidence']=self.bound('adjustment.json',self.adjustment)
         a=self.bound('admission.json',self.admission); b=self.bound('bar.json',self.bar)
         return {'schema':'qrds.system13.governed_bar_import.v1',
                 'admission_path':a['path'],'admission_sha256':a['sha256'],
@@ -52,6 +61,8 @@ class GovernedBars(unittest.TestCase):
         self.admission['source_id']='FIXTURE_USDT'
         self.admission['instrument_bindings']['bitcoin']='BTCUSDT'
         self.bar.update(quote_currency='USDT',source_id='FIXTURE_USDT',venue_instrument='BTCUSDT')
+        self.adjustment['source_id']='FIXTURE_USDT'
+        self.adjustment['factor_intervals'][0].update(quote_currency='USDT',venue_instrument='BTCUSDT')
         result=self.review()
         self.assertEqual(result['native_quote_currency'],'USDT')
         self.assertEqual(result['rows'][0]['quote_currency'],'USDT')
@@ -101,6 +112,28 @@ class GovernedBars(unittest.TestCase):
             before=copy.deepcopy(self.bar);self.bar[field]=value
             with self.assertRaises(ValueError):self.review()
             self.bar=before
+
+    def test_factor_requires_exact_documented_value_not_merely_positive(self):
+        self.bar['factor']=7
+        with self.assertRaisesRegex(ValueError,'DIFFERS_FROM_DOCUMENTED'):self.review()
+        self.bar['factor']=1
+        self.adjustment['factor_intervals']=[]
+        with self.assertRaisesRegex(ValueError,'DOCUMENTED_FACTOR_INTERVAL'):self.review()
+
+    def test_factor_validity_units_provenance_and_ambiguity_fail_closed(self):
+        original=copy.deepcopy(self.adjustment['factor_intervals'][0])
+        for field,value in [('valid_from_utc','2026-10-22T00:00:01Z'),
+                            ('valid_to_utc','2026-10-22T23:59:59Z'),
+                            ('evidence_available_at_utc','2026-10-21T00:00:00Z'),
+                            ('factor',True),('factor',float('inf')),
+                            ('quote_currency','USDT'),('venue_instrument','OTHER'),
+                            ('official_source_url',''),('official_source_sha256','0'*64)]:
+            with self.subTest(field=field,value=value):
+                row=copy.deepcopy(original);row[field]=value
+                self.adjustment['factor_intervals']=[row]
+                with self.assertRaises(ValueError):self.review()
+        self.adjustment['factor_intervals']=[original,copy.deepcopy(original)]
+        with self.assertRaisesRegex(ValueError,'ONE_DOCUMENTED_FACTOR_INTERVAL'):self.review()
 
     def test_duplicate_bars_fail_and_absent_members_remain_in_denominator(self):
         bundle=self.bundle();bundle['bars']*=2

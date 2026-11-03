@@ -126,6 +126,21 @@ def archive_expired_gap(root, at):
     seal(marker,packed(record))
 
 
+def signal_calendar(root, config):
+    """Project the next uncaptured month end, not the first approved epoch.
+
+    Captured signal directories are the existing authority. Wall-clock month
+    rollover alone must not skip a missing signal or authorize backfill.
+    """
+    first=config['next_signal_date']
+    captured=sorted(p.parent.name for p in (root/'cycles').glob('*/SIGNAL_STATE.json')
+                    if p.parent.name>=first)
+    latest=captured[-1] if captured else None
+    return {'approved_first_signal_date':first,
+            'latest_captured_signal_date':latest,
+            'next_signal_date':core.nme(latest).date().isoformat() if latest else first}
+
+
 def status(root, config, code, at, **extra):
     cycles=[]
     for p in sorted((root/'cycles').glob('*/SIGNAL_STATE.json')):
@@ -137,7 +152,7 @@ def status(root, config, code, at, **extra):
     valid=[p.stem for p in (root/'cycles').glob('*/path/snapshots/*.json')]
     obj={**SAFE,'schema':'gate_btc.qos_covered_delivery.v1','status':code,
          'updated_at_utc':at.isoformat(),'latest_snapshot_date':max(valid) if valid else None,
-         'next_signal_date':config['next_signal_date'],'cycles':cycles,
+         **signal_calendar(root,config),'cycles':cycles,
          'result_ledger_rows':len(core.load(root/'RESULT_LEDGER.json')) if (root/'RESULT_LEDGER.json').exists() else 0,
          'interrupted_cycle_economic_credit':0,'backfill_performed':False,**extra}
     save(root/'STATUS.json',packed(obj));return obj
@@ -154,6 +169,7 @@ def valid_quote(frame, symbol, day, source):
 
 def canonical_loaders(day):
     import requests
+    from tools.gate_btc_qos_locked_mexc import fetch_locked_ake
     from tools.gate_btc_momentum_required_prices import RecordingSession,PublicMarketSession
     spec=importlib.util.spec_from_file_location('qos_locked_sources',ROOT/'migration/canonical/v2a/scripts/00_run_all_v2a.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
@@ -172,6 +188,7 @@ def canonical_loaders(day):
             'close_usd':receipt['close_usd'],
             'source':epoch_policy()['source_lock']}])
     return {'cdd':lambda symbol:module.fetch_cdd_symbol(session,symbol),
+            'mexc':lambda symbol:fetch_locked_ake(session,symbol,day),
             'binance':lambda symbol:module.fetch_binance_klines(PublicMarketSession(session),symbol),
             'okx':lambda symbol:module.fetch_okx_candles(session,symbol),
             epoch_policy()['source_lock']:archive},session
@@ -277,6 +294,13 @@ def plan(root,config,at):
     # A fully delivered current date needs no additional source request.
     s=core.load(root/'STATUS.json') if (root/'STATUS.json').exists() else {}
     if s.get('status')=='ACTIVE_PROSPECTIVE_THREE_TRACK' and s.get('latest_snapshot_date')==day:
+        # Correct only derived calendar metadata on an already-delivered date.
+        # Preserve the source timestamp, all scientific rows and retry budget;
+        # this is not a new capture and must not make old evidence look fresh.
+        calendar=signal_calendar(root,config)
+        if any(s.get(k)!=v for k,v in calendar.items()):
+            s={**s,**calendar}
+            save(root/'STATUS.json',packed(s))
         return False,s
     budget_path=root/'retry_budget.json';b=core.load(budget_path) if budget_path.exists() else {}
     today=at.date().isoformat();hour=at.strftime('%Y-%m-%dT%H')
