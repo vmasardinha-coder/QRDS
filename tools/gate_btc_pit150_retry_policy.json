@@ -295,6 +295,28 @@
         "source_archive_sha256": "641a02dbed34bbce1a13a4aeff8e5b85aeb6cf4c9e65fd188938cc5a9b103c7a"
       },
       "reopen_rule": "weekly exact-identity retry on due cutoff through original sources and full QA; earlier retry requires reviewed new exact-source evidence"
+    },
+    {
+      "symbol": "SPCXB",
+      "coin_id": "spacex-bstocks-tokenized-stock",
+      "effective_cutoff": "2026-11-03",
+      "disposition": "WAIT_HISTORY",
+      "retry_from": "2026-12-29",
+      "retry_interval_days": 7,
+      "evidence": {
+        "category": "SHORT_EXACT_SOURCE_HISTORY",
+        "review_date": "2026-11-03",
+        "evidence_cutoff": "2026-11-02",
+        "source_pair": "SPCXBUSDT",
+        "source": "binance",
+        "closed_rows": 144,
+        "first_closed_bar_date": "2026-06-12",
+        "last_closed_bar_date": "2026-11-02",
+        "first_bar_partial_listing_session": true,
+        "evidence": "Binance exact spot pair TRADING. 144 unique consecutive UTC bars through completed cutoff 2026-11-02; unbounded 145th bar is 2026-11-03 still open. Listing began 2026-06-12 at17:00UTC. Recheck cutoff2026-12-29 conservatively allows200 full UTC days after the partial listing day. Due date only reopens original routes and full existing QA; no automatic coverage or scientific credit.",
+        "source_documentation": "https://www.binance.com/en/support/announcement/detail/191cb96109f24c5c85362631a55a45d3"
+      },
+      "reopen_rule": "weekly exact-identity retry on due cutoff through original sources and full QA; earlier retry requires reviewed new exact-source evidence; never substitute underlying share or another wrapper"
     }
   ]
 }
