@@ -37,7 +37,7 @@ def seal_interrupted(root, lane, at):
     if last+timedelta(days=1)>=(at.date()-timedelta(days=1)):
         return False
     files=[old/'ANCHOR.json',*paths]
-    original={str(p.relative_to(old)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+    original={p.relative_to(old).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     marker=old/'PRESERVED_GAP.json'
     payload={**SAFE,'schema':'gate_btc.prl_alt_interrupted_epoch.v1',
              'lane':lane,'last_valid_date':last.isoformat(),

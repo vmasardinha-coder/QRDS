@@ -145,5 +145,18 @@ class AltRolloverRecoveryTests(unittest.TestCase):
         self.assertEqual(result['added_symbols'],['STX'])
         self.assertEqual(result['required_rollover_symbols'],['STX'])
 
+    def test_expired_rollover_does_not_require_an_obsolete_quote(self):
+        row=json.loads(self.row_path.read_text())
+        row['rollover_exit_assets']=['AKE']
+        row['rollover_exit_deadlines']={'AKE':self.previous}
+        clean={k:v for k,v in row.items() if k!='row_sha256'}
+        digest=hashlib.sha256(json.dumps(clean,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        row['row_sha256']=digest;self.row_path.write_text(json.dumps(row))
+        state=self.row_path.parent.parent/'STATUS.json'
+        state.write_text(json.dumps(dict(latest_snapshot_date=self.previous,latest_row_sha256=digest)))
+        result=recovery.recover(self.master,self.qos,self.day,self.out,self.receipt,self.consumer)
+        self.assertEqual(result['required_rollover_symbols'],['STX'])
+        self.assertNotIn('AKE',self.out.read_text())
+
 
 if __name__=='__main__':unittest.main()

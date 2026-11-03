@@ -86,22 +86,33 @@ def patch(ledger_dir, master_daily, snapshot_id):
 
     snapshot_day = date.fromisoformat(snapshot_id)
     rollover = set()
-    signal_changed = False
+    deadlines = {}
     for strategy in STRATEGIES:
         require(strategy in current["signals"] and strategy in previous["signals"], f"missing strategy {strategy}")
         cur = current["signals"][strategy]
         prev = previous["signals"][strategy]
         if cur["signal_date"] != prev["signal_date"]:
-            signal_changed = True
-            rollover.update(picks(prev))
+            exit_day = date.fromisoformat(cur['execution_eligible_from'])
+            for asset in picks(prev):
+                deadlines[asset] = max(deadlines.get(asset, exit_day), exit_day)
 
-    if not signal_changed:
-        prior_rollover = set(previous.get("rollover_exit_assets", []))
-        if prior_rollover:
-            execution_dates = {date.fromisoformat(current["signals"][s]["execution_eligible_from"]) for s in STRATEGIES}
-            require(len(execution_dates) == 1, "ambiguous execution date during rollover")
-            if snapshot_day <= next(iter(execution_dates)):
-                rollover.update(prior_rollover)
+    prior_rollover = set(previous.get('rollover_exit_assets', []))
+    prior_deadlines = previous.get('rollover_exit_deadlines')
+    if prior_deadlines is None:
+        # Existing monthly rows have one common pending execution boundary.
+        # Derive that boundary without rewriting those sealed historical rows.
+        execution_dates = {date.fromisoformat(previous['signals'][s]['execution_eligible_from'])
+                           for s in STRATEGIES}
+        require(not prior_rollover or len(execution_dates) == 1,
+                'ambiguous legacy execution date during rollover')
+        prior_deadlines = {a:next(iter(execution_dates)).isoformat() for a in prior_rollover}
+    require(set(prior_deadlines) == prior_rollover, 'rollover deadline/assets mismatch')
+    for asset, boundary in prior_deadlines.items():
+        exit_day = date.fromisoformat(boundary)
+        if snapshot_day <= exit_day:
+            deadlines[asset] = max(deadlines.get(asset, exit_day), exit_day)
+
+    rollover.update(asset for asset, boundary in deadlines.items() if snapshot_day <= boundary)
 
     rollover -= EXCLUDED
     if rollover:
@@ -111,6 +122,7 @@ def patch(ledger_dir, master_daily, snapshot_id):
         current["selected_alt_closes"] = dict(sorted(merged.items()))
 
     current["rollover_exit_assets"] = sorted(rollover)
+    current['rollover_exit_deadlines'] = {a:deadlines[a].isoformat() for a in sorted(rollover)}
     current["row_sha256"] = payload_sha(current, "row_sha256")
     write_json(current_path, current)
 
