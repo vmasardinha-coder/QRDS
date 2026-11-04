@@ -1,14 +1,14 @@
 # GATE BTC — Delta Prospective Paper Monitor
 
 Status: `ACTIVE_PROSPECTIVE_PAPER_SHADOW`
-Data as of: `2026-11-02`
-Observed days: `81`
+Data as of: `2026-11-03`
+Observed days: `82`
 
 | Strategy | NAV | Daily net | DD |
 |---|---:|---:|---:|
-| Delta_LS_70_30 | 1.004617 | +0.0385% | -13.0409% |
-| Delta_LS_70_30_StopVol | 1.002801 | +0.0059% | -8.5460% |
-| Delta_LS_50_50 | 0.976988 | +0.3333% | -9.4869% |
-| Delta_LS_50_50_StopVol | 0.987715 | +0.2789% | -6.8647% |
+| Delta_LS_70_30 | 1.010790 | +0.6145% | -12.5065% |
+| Delta_LS_70_30_StopVol | 1.008875 | +0.6057% | -7.9920% |
+| Delta_LS_50_50 | 0.981307 | +0.4421% | -9.0868% |
+| Delta_LS_50_50_StopVol | 0.991938 | +0.4275% | -6.4665% |
 
 Research/shadow only; no orders or real capital. This monitors the GATE BTC reconstruction, not the proprietary/official Delta.
