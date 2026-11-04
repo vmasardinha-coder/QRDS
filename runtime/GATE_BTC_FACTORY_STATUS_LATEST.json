@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-04T00:36:55.977395+00:00",
+  "generated_at_utc": "2026-11-04T01:27:19.632774+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -12,8 +12,7 @@
     "M1_M2_ACTIVE_STATUS_OVERRIDES_STALE_RED_REPORTING_HINT",
     "H31_ACTIVE_PROSPECTIVE_VISIBLE_EVEN_WITH_ZERO_ELIGIBLE_OBSERVATIONS",
     "ALT_TRAIL_EXISTS_DO_NOT_REPORT_AS_MISSING",
-    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING",
-    "D100_CANONICAL_RUNTIME_OVERRIDES_STALE_FROZEN_DORMANT_HINT"
+    "PRL50_EXISTS_DO_NOT_REPORT_AS_MISSING"
   ],
   "reporting_only": true,
   "safety": {
@@ -152,53 +151,9 @@
     },
     "d100": {
       "data": {
-        "anchor_bar_date": "2026-09-29",
         "economics_enabled": true,
-        "first_possible_bar_date": "2026-09-29",
-        "last_error": null,
-        "latest_eligible_asset_count": 38,
-        "latest_eligible_symbols": [
-          "AAVE",
-          "ADA",
-          "ALGO",
-          "APT",
-          "ARB",
-          "ATOM",
-          "AVAX",
-          "BCH",
-          "BNB",
-          "BTC",
-          "CRV",
-          "DOGE",
-          "DOT",
-          "ENA",
-          "ETC",
-          "ETH",
-          "FIL",
-          "HBAR",
-          "HYPE",
-          "ICP",
-          "INJ",
-          "LINK",
-          "LTC",
-          "NEAR",
-          "ONDO",
-          "PEPE",
-          "RENDER",
-          "SEI",
-          "SHIB",
-          "SOL",
-          "SUI",
-          "TAO",
-          "TRX",
-          "UNI",
-          "WLD",
-          "XLM",
-          "XRP",
-          "ZEC"
-        ],
-        "latest_signal_available_at_utc": "2026-11-03T01:48:42.468194Z",
-        "next_action": "AUTOMATIC_DAILY_CAPTURE_AND_PAIRED_ADVANCEMENT_UNTIL_N80",
+        "last_error": "RuntimeError: source request failed: HTTPError: HTTP Error 429: Too Many Requests",
+        "next_action": "REPAIR_TECHNICAL_FAILURE_OR_EXPLICIT_INTERRUPTION_DISPOSITION",
         "protocol_approved": true,
         "protocol_sha256": "3ef8321bc3a6f37051d61dcfad44a2e6790b0c4ba796c91f6ef8af999902db99",
         "registry_sha256": "c00351f612610bec1e53245074bde369e7c87edcb546331f89dde91f44634a23",
@@ -215,17 +170,18 @@
           "shadow_only": true
         },
         "schema": "qrds.d100.economics.v1",
-        "scientific_blockers": [],
+        "scientific_blockers": [
+          "TECHNICAL_SOURCE_OR_EVIDENCE_FAILURE"
+        ],
         "scientific_observations_credited": 35,
         "scientific_target": 80,
-        "signal_capture_count": 38,
-        "status": "ACTIVE_SHADOW_N80",
-        "updated_at_utc": "2026-11-03T23:40:18.410596Z",
-        "workflow_run_id": "41740782186"
+        "status": "BLOCKED_TECHNICAL_QUALIFICATION",
+        "updated_at_utc": "2026-11-04T01:20:53.539855Z",
+        "workflow_run_id": "41753174860"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/economic/STATUS.json",
-      "sha256": "fd4ff92e35267effba491d908336c9c03d19c9f6e7d008c7be7790bb1cb1f895"
+      "sha256": "2b585bf45bdf903d0e9f752966b40bb6179b4284594da399b527cf455648419c"
     },
     "d100_physical": {
       "data": {
@@ -233,26 +189,26 @@
         "backfill_performed": false,
         "collection_enabled": true,
         "collection_mode": "PHYSICAL_FORWARD_SOURCE_EVIDENCE_ONLY",
-        "distinct_capture_days": 38,
+        "distinct_capture_days": 39,
         "economic_status": "SEE_SEPARATE_APPROVED_ECONOMIC_AUTHORITY",
         "economics_enabled": false,
         "first_physical_capture_at_utc": "2026-09-27T15:26:17.787968Z",
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-11-03T23:40:17.678605Z",
-        "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
+        "last_attempt_at_utc": "2026-11-04T01:20:31.970081Z",
+        "last_attempt_result": "CAPTURED",
         "last_error": null,
-        "last_heartbeat_utc": "2026-11-03T23:40:17.678605Z",
-        "latest_market_data_observed_count": 70,
-        "latest_physical_capture_at_utc": "2026-11-03T01:48:27.399166Z",
+        "last_heartbeat_utc": "2026-11-04T01:20:31.970081Z",
+        "latest_market_data_observed_count": 71,
+        "latest_physical_capture_at_utc": "2026-11-04T01:20:53.079362Z",
         "latest_raw_universe_count": 100,
-        "latest_snapshot_id": "20261103T014827399166Z_2fa0523d3331",
-        "latest_snapshot_sha256": "8c77842a974f75bb6f8d6e308afda02cce0cf40f9f59d5ae61ab37a9de24d525",
+        "latest_snapshot_id": "20261104T012053079362Z_9f7bc4353ef9",
+        "latest_snapshot_sha256": "f02ab3cfb4243e58ee4af09cb1360bc260d4ea57b4bb2dae549949403d733deb",
         "latest_source_failure_count": 0,
         "next_action": "READ_ECONOMIC_STATUS_FOR_APPROVED_N80_PROGRESS",
-        "next_expected_capture_date": "2026-11-04",
-        "physical_snapshot_count": 38,
+        "next_expected_capture_date": "2026-11-05",
+        "physical_snapshot_count": 39,
         "remaining_scientific_observations": null,
         "safety": {
           "economics_read": false,
@@ -272,13 +228,13 @@
         "scientific_observations_credited": 0,
         "scientific_target": null,
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
-        "successful_capture_days": 38,
+        "successful_capture_days": 39,
         "track": "D100",
-        "workflow_run_id": "41740782186"
+        "workflow_run_id": "41753174860"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "2dd239a94fe86e6fb3a5f91e5349dff27520ee79a1e79faac95d9e7019170a8a"
+      "sha256": "ba9efe78b4452d31910aebccc2cc43b01c4712e85000f545ea3aa1f79a30ba4f"
     },
     "delta_paper": {
       "data": {
@@ -4276,7 +4232,7 @@
           "implementation": "bc0c36fcc70936c2460ef408b69dc2de4557590463ca3e8bb8b7d157124ae6fa",
           "pinned_adjudication": "80ac1a7bb0e2ccf416f2e586fd7fb748ba2712bf368566759d3e6bf098357490",
           "post_review_release": "222108980ba9aa792dfa4ac44b08053b10c32c9e9aefde5c9e6ea8af5aca5d82",
-          "readiness": "2c1b524023ddaadc060fe20395e6b94e0e963298010a8d8067be22b57d16aab8"
+          "readiness": "8fe0957bd9d369f747bc13d429d09c66d2874efcf65339aad7f57155729f91c7"
         },
         "status": "SYSTEM12_FROZEN_PARITY_COMPLETE_SYSTEM13_RESEARCH_DEPENDENCY_RELEASED",
         "system12_complete": true,
@@ -9708,7 +9664,7 @@
         "family_validation_ci": "PASS_PR_673_HEAD_0B730E223013C050E56CA0DC9F314BDC9B743ECA",
         "funding_mark_price_source": "OKX_OFFICIAL_HISTORY_MARK_PRICE_CANDLES",
         "funding_source": "OKX_OFFICIAL_PUBLIC_FUNDING_RATE_HISTORY",
-        "last_orchestrator_run_utc": "2026-11-03T21:00:00.406621Z",
+        "last_orchestrator_run_utc": "2026-11-04T01:22:50.297968Z",
         "long_entry_source": "BINANCE_SPOT_USDT",
         "missed_cycles": [
           {
@@ -9799,7 +9755,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/v16b1/STATUS.json",
-      "sha256": "cdebfba5f82a995c80f8e24e43ad3e444a7f4233c2ebadd2c6e01f4d4041c073"
+      "sha256": "39d110efb81647b7aac840ccd7cb5b431c928c74e851a4a0588f193f51bd908c"
     },
     "v16c": {
       "data": {
