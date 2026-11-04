@@ -13,10 +13,10 @@
       "source_status": "NEEDS_CURRENT_SOURCE"
     },
     "b3_h1": {
-      "collection_health": "RED_STALE",
-      "freshness": "STALE",
-      "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "H1_18_OF_20_CANONICAL"
+      "collection_health": "GREEN",
+      "freshness": "FRESH",
+      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "source_status": "H1_19_OF_20_CANONICAL"
     },
     "bull_replay_live_shadow": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
@@ -31,9 +31,9 @@
       "source_status": "ACTIVE_SHADOW_N80"
     },
     "d50": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
@@ -94,7 +94,7 @@
       "collection_health": "RED_STALE",
       "freshness": "STALE",
       "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "WAITING_NEXT_HOURLY_RETRY"
+      "source_status": "FAILED_QOS_DELIVERY"
     },
     "system12": {
       "collection_health": "AMBER",
@@ -121,7 +121,7 @@
       "source_status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     }
   },
-  "generated_at_utc": "2026-11-03T11:21:10.175983+00:00",
+  "generated_at_utc": "2026-11-04T11:08:54.128276+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -129,15 +129,15 @@
   "real_capital_used": 0,
   "red_collection_components": [
     "alt_trail",
-    "b3_h1",
+    "d50",
     "prl50",
     "qos_three_track",
     "v16b1"
   ],
-  "reference_data_date": "2026-11-02",
+  "reference_data_date": "2026-11-03",
   "research_only": true,
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "cf08461d52ddf6c15ba8eaf1b57f63df3d2ae42bd37fb1f04aab508c583ee7dc"
+  "status_sha256": "66b89914c044e741de776208022d3665166268879f53e11a98e831517b7a1664"
 }
