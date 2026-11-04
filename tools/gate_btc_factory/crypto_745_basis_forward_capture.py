@@ -37,13 +37,17 @@ def digest_bytes(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def get_json(url: str, params: dict[str, str] | None = None) -> tuple[bytes, object]:
+def get_json(url: str, params: dict[str, str] | None = None) -> tuple[bytes, object, dict]:
     if params:
         url = url + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers=UA)
+    sent_ns = time.time_ns()
     with urllib.request.urlopen(req, timeout=20) as r:
         raw = r.read()
-    return raw, json.loads(raw.decode("utf-8"))
+        received_ns = time.time_ns()
+    return raw, json.loads(raw.decode("utf-8")), {
+        "request_sent_utc_ns": sent_ns, "response_received_utc_ns": received_ns,
+    }
 
 
 def qualified_source_cost(path: Path) -> tuple[dict, str]:
@@ -102,21 +106,24 @@ def normalize_funding(obj: object) -> dict | None:
 
 
 def fetch_funding() -> tuple[bytes, dict | None]:
-    raw, obj = get_json("https://www.okx.com/api/v5/public/funding-rate", {"instId": "BTC-USDT-SWAP"})
-    return raw, normalize_funding(obj)
+    raw, obj, receipt = get_json("https://www.okx.com/api/v5/public/funding-rate", {"instId": "BTC-USDT-SWAP"})
+    funding = normalize_funding(obj)
+    return raw, {**funding, "receipt": receipt} if funding is not None else None
 
 
 def fetch_quote_pair() -> dict:
     def one(inst: str):
-        raw, obj = get_json("https://www.okx.com/api/v5/market/ticker", {"instId": inst})
-        return raw, normalize_ticker(inst, obj)
+        raw, obj, receipt = get_json("https://www.okx.com/api/v5/market/ticker", {"instId": inst})
+        return raw, normalize_ticker(inst, obj), receipt
     with ThreadPoolExecutor(max_workers=2) as ex:
         a = ex.submit(one, "BTC-USDT")
         b = ex.submit(one, "BTC-USDT-SWAP")
-        spot_raw, spot = a.result()
-        perp_raw, perp = b.result()
+        spot_raw, spot, spot_receipt = a.result()
+        perp_raw, perp, perp_receipt = b.result()
     return {
         "captured_at_ms": int(time.time() * 1000),
+        "spot_receipt": spot_receipt,
+        "perp_receipt": perp_receipt,
         "spot": spot,
         "perp": perp,
         "spot_raw_sha256": digest_bytes(spot_raw),
@@ -138,8 +145,24 @@ def synchronized_pair(sample: dict, relation: str, clock_ms: int) -> bool:
     raise ValueError(relation)
 
 
+def received_by(receipt: object, clock_ms: int) -> bool:
+    if not isinstance(receipt, dict):
+        return False
+    sent = receipt.get("request_sent_utc_ns")
+    received = receipt.get("response_received_utc_ns")
+    return (
+        type(sent) is int and type(received) is int
+        and 0 < sent <= received <= clock_ms * 1_000_000
+    )
+
+
 def select_latest_predecision(samples: list[dict], decision_ms: int) -> dict | None:
-    good = [x for x in samples if synchronized_pair(x, "at_or_before", decision_ms)]
+    good = [
+        x for x in samples
+        if synchronized_pair(x, "at_or_before", decision_ms)
+        and received_by(x.get("spot_receipt"), decision_ms)
+        and received_by(x.get("perp_receipt"), decision_ms)
+    ]
     if not good:
         return None
     return max(good, key=lambda x: max(int(x["spot"]["ts_ms"]), int(x["perp"]["ts_ms"])))
@@ -160,7 +183,9 @@ def select_first_postclock(samples: list[dict], clock_ms: int, max_delay_ms: int
 def select_latest_funding_before(samples: list[dict], decision_ms: int, settlement_ms: int) -> dict | None:
     good = [
         x for x in samples
-        if x and int(x.get("ts_ms", 0)) <= decision_ms and int(x.get("funding_time_ms", 0)) == settlement_ms
+        if x and int(x.get("ts_ms", 0)) <= decision_ms
+        and int(x.get("funding_time_ms", 0)) == settlement_ms
+        and received_by(x.get("receipt"), decision_ms)
     ]
     if not good:
         return None
