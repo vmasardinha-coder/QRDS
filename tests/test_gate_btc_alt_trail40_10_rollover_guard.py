@@ -118,6 +118,39 @@ class AltTrailRolloverGuardTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             guard.patch(self.ledger, self.master, "2026-09-30")
 
+    def test_consecutive_daily_signals_keep_only_unexpired_exit_prices(self):
+        from tools import gate_btc_alt_trail40_10_shadow_evaluator as evaluator
+        write_csv(self.master,[
+            {'date':'2026-11-01','symbol':'AKE','close_usd':'100'},
+            {'date':'2026-11-02','symbol':'AKE','close_usd':'110'},
+            {'date':'2026-11-02','symbol':'STX','close_usd':'20'},
+            {'date':'2026-11-03','symbol':'STX','close_usd':'21'},
+            {'date':'2026-11-03','symbol':'AR','close_usd':'30'},
+        ])
+        first=row('2026-10-31',self._signals('2026-10-31','2026-11-01',['AKE']),{},None)
+        first_path=self.ledger/'snapshots/2026-10-31.json'
+        first_path.write_text(json.dumps(first));old_bytes=first_path.read_bytes()
+        rows=[first]
+        for day,next_day,asset in [('2026-11-01','2026-11-02','STX'),
+                                   ('2026-11-02','2026-11-03','AR'),
+                                   ('2026-11-03','2026-11-04','SOL')]:
+            value=row(day,self._signals(day,next_day,[asset]),{},rows[-1]['row_sha256'])
+            path=self.ledger/'snapshots'/f'{day}.json';path.write_text(json.dumps(value))
+            self._write_status(day,value['row_sha256'])
+            guard.patch(self.ledger,self.master,day)
+            rows.append(json.loads(path.read_text()))
+        self.assertEqual(set(rows[2]['selected_alt_closes']),{'AKE','STX'})
+        self.assertEqual(rows[2]['rollover_exit_deadlines'],{'AKE':'2026-11-02','STX':'2026-11-03'})
+        self.assertEqual(set(rows[3]['selected_alt_closes']),{'STX','AR'})
+        self.assertNotIn('AKE',rows[3]['rollover_exit_assets'])
+        self.assertEqual(first_path.read_bytes(),old_bytes)
+        contract={'candidate_definition':{'activation_gain':.4,
+                  'trailing_buffer_fraction_of_running_close_high':.1}}
+        cycle=rows[0]['signals']['QOS_Moderada']
+        result=evaluator.evaluate_trade(contract,rows,cycle,'2026-11-01','AKE')
+        self.assertTrue(result['completed'])
+        self.assertEqual(result['candidate_exit_date'],'2026-11-02')
+
 
 if __name__ == "__main__":
     unittest.main()

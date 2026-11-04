@@ -37,7 +37,7 @@ def seal_interrupted(root, lane, at):
     if last+timedelta(days=1)>=(at.date()-timedelta(days=1)):
         return False
     files=[old/'ANCHOR.json',*paths]
-    original={str(p.relative_to(old)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+    original={p.relative_to(old).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     marker=old/'PRESERVED_GAP.json'
     payload={**SAFE,'schema':'gate_btc.prl_alt_interrupted_epoch.v1',
              'lane':lane,'last_valid_date':last.isoformat(),
@@ -141,10 +141,20 @@ def process(root,lane,portfolios,master,snapshot_id,source_run_id,at=None):
     return {'append':appended,'delivery':publish(root,lane,'ACTIVE_PROSPECTIVE_ARCHIVE',at,
                       (date.fromisoformat(snapshot_id)+timedelta(days=1)).isoformat())}
 
+def failure(root,lane,at=None):
+    """Publish retryable delivery failure without appending economic evidence."""
+    at=at or datetime.now(timezone.utc)
+    status=plan(root,lane,at)
+    if status.get('current_epoch')!=NEXT_EPOCH or not status.get('can_append'):
+        return status
+    return publish(Path(root),lane,'FAILED_CURRENT_SOURCE_RETRYABLE',at,
+                   status['next_required_cutoff'])
+
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--lane',choices=('prl50','alt'),required=True)
-    p.add_argument('--mode',choices=('plan','process'),required=True)
+    p.add_argument('--mode',choices=('plan','process','failure'),required=True)
     p.add_argument('--ledger-dir',type=Path,required=True)
     p.add_argument('--current-portfolios',type=Path)
     p.add_argument('--master-daily',type=Path)
@@ -152,6 +162,7 @@ def main():
     p.add_argument('--source-run-id')
     a=p.parse_args()
     result=(plan(a.ledger_dir,a.lane) if a.mode=='plan' else
+            failure(a.ledger_dir,a.lane) if a.mode=='failure' else
             process(a.ledger_dir,a.lane,a.current_portfolios,a.master_daily,
                     a.snapshot_id,a.source_run_id))
     if a.mode=='plan' and os.environ.get('GITHUB_OUTPUT'):

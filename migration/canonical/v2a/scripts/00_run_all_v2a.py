@@ -281,6 +281,26 @@ def validate_daily_core_candidate(candidate: pd.DataFrame, symbol: str) -> None:
             raise RuntimeError(f"invalid required raw core close {symbol} {day.date()}")
 
 
+def requested_cutoff_history(candidate: pd.DataFrame) -> pd.DataFrame:
+    """Bound prospective history length to its declared completed-day cutoff.
+
+    Earlier captures/replays keep their original semantics. A later/live bar
+    cannot supply the 200th row for new collections from this boundary onward.
+    """
+    requested = os.environ.get("GATE_BTC_DATA_CUTOFF", "").strip()
+    if not requested or requested < "2026-11-03":
+        return candidate
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", requested):
+        raise RuntimeError("invalid requested history cutoff")
+    cutoff = pd.Timestamp(requested)
+    dates = pd.to_datetime(candidate["date"], errors="raise", utc=True).dt.tz_localize(None).dt.normalize()
+    bounded = candidate.loc[dates.le(cutoff)].copy()
+    bounded["date"] = dates.loc[bounded.index]
+    if bounded.duplicated(["date", "symbol"]).any():
+        raise RuntimeError("ambiguous duplicate daily history before source selection")
+    return bounded
+
+
 def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     candidates = universe[
         universe["standard_ticker"]
@@ -309,7 +329,7 @@ def fetch_candles_for_universe(session, universe: pd.DataFrame) -> tuple[pd.Data
         attempts = []
         for name, loader in (("cdd", fetch_cdd_symbol), ("binance", fetch_binance_klines), ("okx", fetch_okx_candles)):
             try:
-                candidate = loader(session, symbol)
+                candidate = requested_cutoff_history(loader(session, symbol))
                 if len(candidate) >= 200:
                     validate_daily_core_candidate(candidate, symbol)
                 attempts.append({"source": name, "status": "SELECTED" if len(candidate) >= 200 else "SHORT_HISTORY", "observed_rows": len(candidate)})

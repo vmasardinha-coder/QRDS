@@ -6,6 +6,7 @@ import csv
 import gzip
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -23,9 +24,59 @@ def packed(value):
     return (json.dumps(value, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
 
 
-def recover(master, qos_root, day, output, receipt):
+def rollover_requirements(ledger_root, day):
+    """Read the consumer's sealed prior snapshot, never infer extra holdings."""
+    root = Path(ledger_root)
+    status = json.loads((root/'STATUS.json').read_text())
+    require(status.get('schema') == 'gate_btc.prl_alt_next_epoch_status.v1'
+            and status.get('authorization_id') == 'ALT_TRAIL40_10_20261031_USER_20261006',
+            'ROLLOVER_CONSUMER_SCOPE_MISMATCH')
+    epoch = status.get('current_epoch', '')
+    require(re.fullmatch(r'monthly_\d{8}', epoch), 'ROLLOVER_EPOCH_INVALID')
+    previous_day = status.get('latest_snapshot_date')
+    if previous_day is None:
+        return set(), None
+    require(previous_day == (datetime.fromisoformat(day).date()-timedelta(days=1)).isoformat(),
+            'ROLLOVER_PREVIOUS_DAY_MISMATCH')
+    folder = root/'epochs'/epoch
+    row = json.loads((folder/'snapshots'/f'{previous_day}.json').read_text())
+    epoch_status = json.loads((folder/'STATUS.json').read_text())
+    clean = {k:v for k,v in row.items() if k != 'row_sha256'}
+    digest = sha(json.dumps(clean,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
+    require(row.get('row_sha256') == digest
+            and epoch_status.get('latest_row_sha256') == digest
+            and epoch_status.get('latest_snapshot_date') == previous_day
+            and row.get('snapshot_date') == previous_day,
+            'ROLLOVER_CONSUMER_HASH_MISMATCH')
+    require(row.get('research_only') is True and row.get('shadow_only') is True
+            and row.get('not_approved') is True and row.get('engine_feed') is False
+            and row.get('orders_generated') == 0 and row.get('real_capital_used') == 0,
+            'ROLLOVER_CONSUMER_SAFETY_MISMATCH')
+    signals = row.get('signals', {})
+    require(set(signals) == {'QOS_Moderada','QOS_Ultra'}, 'ROLLOVER_SIGNALS_MISSING')
+    pending = set(row.get('rollover_exit_assets', []))
+    deadlines = row.get('rollover_exit_deadlines')
+    if deadlines is None:
+        execution_dates = {s.get('execution_eligible_from') for s in signals.values()}
+        require(not pending or (len(execution_dates) == 1 and None not in execution_dates),
+                'ROLLOVER_LEGACY_DEADLINE_AMBIGUOUS')
+        deadlines = {a:next(iter(execution_dates)) for a in pending}
+    require(set(deadlines) == pending, 'ROLLOVER_DEADLINE_SCOPE_MISMATCH')
+    assets = {a for a,boundary in deadlines.items()
+              if datetime.fromisoformat(boundary).date() >= datetime.fromisoformat(day).date()}
+    assets.update(p['asset'] for s in signals.values() for p in s.get('picks', [])
+                  if float(p.get('weight') or 0) > 0)
+    return assets - {'BTC','ETH','BNB','CASH'}, digest
+
+
+def recover(master, qos_root, day, output, receipt, rollover_ledger_root=None):
     require(day == (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat(),
             "CURRENT_UTC_CUTOFF_ONLY")
+    # The existing ALT workflow binds its receipt to this canonical consumer
+    # path. Validate that consumer's own sealed state before widening recovery.
+    if (rollover_ledger_root is None and receipt.parent.name == 'source_evidence'
+            and receipt.parent.parent.name == 'alt_trail40_10'):
+        rollover_ledger_root = receipt.parent.parent
     cycles=sorted(p for p in (qos_root/"cycles").glob("*/SIGNAL_STATE.json")
                   if p.parent.name<=day and not (p.parent/"BLOCKED.json").exists())
     require(cycles,"NO_ACTIVE_QOS_SIGNAL_FOR_CUTOFF")
@@ -58,6 +109,9 @@ def recover(master, qos_root, day, output, receipt):
                 "QOS_DUPLICATE_OR_INVALID_QUOTE")
         quotes[symbol] = quote
     selected = set(sum(state["qos_picks"].values(), []))
+    extra, consumer_sha = (rollover_requirements(rollover_ledger_root, day)
+                           if rollover_ledger_root is not None else (set(), None))
+    selected |= extra
     require(selected <= quotes.keys(), "QOS_SELECTED_COVERAGE_MISSING")
     with master.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
@@ -110,6 +164,9 @@ def recover(master, qos_root, day, output, receipt):
               "original_master_sha256": sha(master.read_bytes()),
               "recovered_master_sha256": sha(output.read_bytes()),
               "scientific_credit_added": 0}
+    if rollover_ledger_root is not None:
+        result['required_rollover_symbols'] = sorted(extra)
+        result['consumer_previous_row_sha256'] = consumer_sha
     receipt.parent.mkdir(parents=True, exist_ok=True)
     receipt.write_bytes(packed(result))
     return result
@@ -122,8 +179,10 @@ def main():
     p.add_argument("--day", required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--receipt", type=Path, required=True)
+    p.add_argument("--rollover-ledger-root", type=Path)
     a = p.parse_args()
-    print(json.dumps(recover(a.master, a.qos_root, a.day, a.output, a.receipt),
+    print(json.dumps(recover(a.master, a.qos_root, a.day, a.output, a.receipt,
+                             rollover_ledger_root=a.rollover_ledger_root),
                      sort_keys=True))
 if __name__ == "__main__":
     main()
