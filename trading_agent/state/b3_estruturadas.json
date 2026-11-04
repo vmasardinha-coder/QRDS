@@ -502,6 +502,12 @@
       "nav": 46783.91,
       "benchmark_nav": 47828.39,
       "benchmark2_nav": 51533.1
+    },
+    {
+      "date": "2026-11-04",
+      "nav": 46089.99,
+      "benchmark_nav": 47146.78,
+      "benchmark2_nav": 51533.1
     }
   ],
   "trades": [
@@ -2999,6 +3005,62 @@
           "first_market_date": "2026-05-20",
           "last_market_date": "2026-10-30",
           "last_close": 167922.0
+        }
+      }
+    },
+    {
+      "date": "2026-11-04",
+      "regime": "-",
+      "hurdle": "CDI",
+      "rebalance_trigger": "nenhum (call em curso)",
+      "vol_source": "GARCH(1,1)",
+      "sigma": 0.6121,
+      "vol_realized": 0.5355,
+      "short_call": {
+        "strike": 210.48,
+        "expiry": "2026-11-05",
+        "qty": 290.33975761074475,
+        "premium_unit": 12.5271,
+        "sold_on": "2026-10-06",
+        "sigma": 0.6113
+      },
+      "data_failures": [],
+      "selected": [
+        {
+          "symbol": "BOVA11",
+          "weight": 1.0
+        }
+      ],
+      "rejected": [],
+      "stops": [],
+      "cooldowns": {},
+      "note": "",
+      "market_data_evidence": {
+        "BOVA11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BOVA11",
+          "captured_at_utc": "2026-11-04T01:42:42.251292+00:00",
+          "point_count": 459,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "96ddc81fefa9fcd8866cee4dd53870e39c58ff7772da0949d7463d3d74ada697",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-03",
+          "last_close": 163.01
+        },
+        "^BVSP": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "brapi",
+          "symbol": "^BVSP",
+          "captured_at_utc": "2026-11-04T01:42:43.673721+00:00",
+          "point_count": 116,
+          "status": "RECORDED",
+          "series_scope": "LIVE_SOURCE_WITH_VERIFIED_INDEX_CACHE",
+          "series_sha256": "598f4eff1fa3bbe9cbba44e253b5c0753cdd429674808ccfa241eb7b612113b9",
+          "first_market_date": "2026-05-20",
+          "last_market_date": "2026-11-03",
+          "last_close": 165528.9219
         }
       }
     }
