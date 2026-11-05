@@ -1,21 +1,21 @@
 # GATE BTC 2.0 — Factory Economics Monitor
 
-Generated: `2026-11-05T03:27:26.852039+00:00`
+Generated: `2026-11-05T22:14:38.760813+00:00`
 
-- Ledger sessions: **28**
+- Ledger sessions: **29**
 - Families with any trigger: **5**
 - Triggered cells: **15**
 - Cells at 60/60: **0**
-- Max trigger count: **9 / 60**
+- Max trigger count: **10 / 60**
 
 Partial metrics are **NON_ADJUDICABLE** before 60/60 and carry zero scientific/promotion authority.
 
 `RESEARCH_ONLY=true` · `SHADOW_ONLY=true` · `NO_BACKFILL=true` · `NO_RETUNE=true` · `ENGINE_FEED=false` · `ORDERS=0` · `REAL_CAPITAL=0`
 
 ## H474
-- 30m: 9/60 · net2=-0.24995820951486103 · stress3=-1.249958209514861 · delayed2=5.208805564327126 · `NON_ADJUDICABLE_PARTIAL`
-- 60m: 9/60 · net2=9.957524499817623 · stress3=8.957524499817623 · delayed2=3.1815807796038205 · `NON_ADJUDICABLE_PARTIAL`
-- 120m: 9/60 · net2=3.963241725914657 · stress3=2.963241725914657 · delayed2=9.19095943821153 · `NON_ADJUDICABLE_PARTIAL`
+- 30m: 10/60 · net2=-4.833615104293474 · stress3=-5.833615104293474 · delayed2=2.2793794087896417 · `NON_ADJUDICABLE_PARTIAL`
+- 60m: 10/60 · net2=6.939528927334072 · stress3=5.939528927334072 · delayed2=3.3996045680116955 · `NON_ADJUDICABLE_PARTIAL`
+- 120m: 10/60 · net2=6.80566667159266 · stress3=5.80566667159266 · delayed2=13.578503854825065 · `NON_ADJUDICABLE_PARTIAL`
 
 ## H478
 - 30m: 7/60 · net2=3.047400021461756 · stress3=2.047400021461756 · delayed2=-5.484330173704991 · `NON_ADJUDICABLE_PARTIAL`
