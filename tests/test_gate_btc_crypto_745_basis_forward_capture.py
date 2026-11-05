@@ -13,8 +13,11 @@ b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
 def ticker(inst,ts):
     return {'instId':inst,'bid':'99','ask':'101','ts_ms':ts}
 
+def receipt(ms):
+    return {'request_sent_utc_ns':ms*1_000_000-1,'response_received_utc_ns':ms*1_000_000}
+
 def pair(spot_ts,perp_ts):
-    return {'spot':ticker('BTC-USDT',spot_ts),'perp':ticker('BTC-USDT-SWAP',perp_ts),'captured_at_ms':max(spot_ts,perp_ts)}
+    return {'spot':ticker('BTC-USDT',spot_ts),'perp':ticker('BTC-USDT-SWAP',perp_ts),'captured_at_ms':max(spot_ts,perp_ts),'spot_receipt':receipt(spot_ts),'perp_receipt':receipt(perp_ts)}
 
 class BasisForwardTests(unittest.TestCase):
     def simulated_attempt(self, now_ms, max_wait_seconds):
@@ -26,6 +29,7 @@ class BasisForwardTests(unittest.TestCase):
             return b'funding', {
                 'funding_time_ms': settlement,
                 'ts_ms': int(clock[0] * 1000),
+                'receipt': receipt(int(clock[0] * 1000)),
                 'funding_rate': '0.0001',
             }
         def quote_pair():
@@ -103,8 +107,26 @@ class BasisForwardTests(unittest.TestCase):
             {'ts_ms':100100,'funding_time_ms':200000,'funding_rate':'0.3'},
             {'ts_ms':99950,'funding_time_ms':300000,'funding_rate':'0.4'},
         ]
+        xs=[{**x,'receipt':receipt(x['ts_ms'])} for x in xs]
         x=b.select_latest_funding_before(xs,100000,200000)
         self.assertEqual(x['funding_rate'],'0.2')
+
+    def test_predecision_rejects_missing_or_late_leg_receipt(self):
+        timely=pair(98000,98100)
+        late=pair(99900,99950)
+        late['perp_receipt']=receipt(100000)
+        late['perp_receipt']['response_received_utc_ns']+=1
+        missing=pair(99980,99990)
+        del missing['spot_receipt']
+        self.assertIs(b.select_latest_predecision([timely,late,missing],100000),timely)
+
+    def test_funding_rejects_unproven_receipt_and_clock_reversal(self):
+        base={'ts_ms':99900,'funding_time_ms':200000,'funding_rate':'0.1'}
+        late={**base,'receipt':receipt(100001)}
+        reversed_clock={**base,'receipt':{'request_sent_utc_ns':99000000000,'response_received_utc_ns':98000000000}}
+        self.assertIsNone(b.select_latest_funding_before([base,late,reversed_clock],100000,200000))
+        on_time={**base,'receipt':receipt(100000)}
+        self.assertIs(b.select_latest_funding_before([on_time],100000,200000),on_time)
 
     def test_manifest_duplicates_are_zero_credit(self):
         with tempfile.TemporaryDirectory() as td:
