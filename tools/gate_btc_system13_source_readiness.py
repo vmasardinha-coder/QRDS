@@ -249,9 +249,13 @@ def build(runtime,registry_path,out,discovery_path=None):
         extension_nov_raw=extension_nov.read_bytes()
         verified=verified_identity_extension(json.loads(extension_nov_raw),Path(__file__).resolve().parents[1])
         discovery=combine_discoveries([discovery,verified])
+    extension5=Path(__file__).parent/'gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261105.json'
+    extension5_raw=extension5.read_bytes()
+    discovery=combine_discoveries([discovery,verified_identity_extension(json.loads(extension5_raw),Path(__file__).resolve().parents[1])])
     result=audit(json.loads(gzip.decompress(raw)),json.loads(registry_raw),discovery)
     result.update(observed_panel_sha256=sha(raw),source_registry_sha256=sha(registry_raw),
                   source_observed_at_utc=source['source_run_utc'])
+    result['identity_extension_20261105_sha256']=sha(extension5_raw)
     result['identity_discovery_sha256']=sha(discovery_raw)
     result['identity_discovery_extension_sha256']=sha(extension_raw)
     result['identity_discovery_extension_20261024_sha256']=sha(extension24_raw)

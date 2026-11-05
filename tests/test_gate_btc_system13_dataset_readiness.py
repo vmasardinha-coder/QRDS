@@ -35,6 +35,14 @@ class DatasetTests(unittest.TestCase):
   self.assertFalse(d['rows'][0]['gates']['adjustment_factor_evidence_admitted']);self.assertFalse(d['rows'][0]['gates']['system13_admission_before_session'])
   n['observed_panel_sha256']='b'*64
   with self.assertRaisesRegex(ValueError,'MEMBERSHIP'):admission_dossier(r,n)
+ def test_nov5_extension_has_exact_two_current_ids_without_admission(self):
+  root=Path(__file__).resolve().parents[1]
+  p=root/'tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261105.json'
+  d=json.loads(p.read_bytes());verified_identity_extension(d,root)
+  self.assertEqual({x['coin_id'] for x in d['entries']},{'alphabet-bstocks-tokenized-stock','circle-xstock'})
+  self.assertTrue(all(b['quote']=='USDT' and not b['system13_source_admitted'] and not b['ohlcv_ready'] for x in d['entries'] for b in x['bindings']))
+  bad=copy.deepcopy(d);bad['entries'][0]['bindings'][0]['target_coin_id']='usd-coin'
+  with self.assertRaises(ValueError):verified_identity_extension(bad,root)
  def test_real_extension_archived_identity_and_primary_receipts(self):
   root=Path(__file__).resolve().parents[1]
   p=root/'tools/gate_btc_factory/SYSTEM13_EXACT_IDENTITY_EXTENSION_20261101.json'
