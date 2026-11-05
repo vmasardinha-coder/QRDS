@@ -7,7 +7,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tools import gate_btc_momentum_canonical_net as net
 
 ROOT=Path(__file__).resolve().parents[1]
-BINDING=ROOT/'migration/reporting/m3_forward_net_binding_20261105.json'
+BINDING=ROOT/'migration/reporting/momentum_m3_forward_net_binding_20261105.json'
 SERIES='M3_PRICE_GAP_20261104_NET10_V1'
 SAFE=dict(research_only=True,shadow_only=True,not_approved=True,engine_feed=False,
           orders=0,real_capital=0,scientific_credit=0,historical_net_credit=0,
