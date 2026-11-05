@@ -3,7 +3,7 @@
   "currency": "BRL",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 23802.41214709154,
+  "cash": 23259.86367212619,
   "positions": {
     "GGBR4": {
       "qty": 120.50574826567805,
@@ -11,13 +11,13 @@
       "high_water": 26.52
     },
     "PETR4": {
-      "qty": 56.920402623635965,
-      "avg_cost": 41.9419,
+      "qty": 62.89927837335656,
+      "avg_cost": 42.438582028043555,
       "high_water": 59.68
     },
     "PRIO3": {
-      "qty": 43.1103639775303,
-      "avg_cost": 59.343835688842,
+      "qty": 47.69575147976442,
+      "avg_cost": 59.61862814853364,
       "high_water": 73.8
     },
     "B3SA3": {
@@ -33,24 +33,24 @@
     "ABEV3": {
       "qty": 197.9117909108211,
       "avg_cost": 15.23522,
-      "high_water": 15.235219999999998
+      "high_water": 15.25
     },
     "ASAI3": {
       "qty": 382.2610986881596,
       "avg_cost": 7.887879999999999,
-      "high_water": 7.887879999999999
+      "high_water": 8.1
     },
-    "ITSA4": {
-      "qty": 232.63261953242406,
-      "avg_cost": 12.862849999999996,
-      "high_water": 12.862849999999998
+    "CPLE3": {
+      "qty": 203.14009574726256,
+      "avg_cost": 14.604589999999998,
+      "high_water": 14.604589999999998
     }
   },
   "benchmark": {
     "symbol": "^BVSP",
     "inception_price": 175546.359375
   },
-  "last_rebalance": "2026-11-02",
+  "last_rebalance": "2026-11-05",
   "last_regime": "risk_off",
   "history": [
     {
@@ -550,6 +550,12 @@
       "nav": 47217.61,
       "benchmark_nav": 47146.78,
       "benchmark2_nav": 51533.1
+    },
+    {
+      "date": "2026-11-05",
+      "nav": 47414.51,
+      "benchmark_nav": 47726.27,
+      "benchmark2_nav": 51559.27
     }
   ],
   "trades": [
@@ -1644,6 +1650,38 @@
       "qty": 17.6335716,
       "price": 13.44343,
       "value": 237.06
+    },
+    {
+      "date": "2026-11-05",
+      "symbol": "ITSA4",
+      "side": "sell",
+      "qty": 232.63261953,
+      "price": 12.80718,
+      "value": 2979.37
+    },
+    {
+      "date": "2026-11-05",
+      "symbol": "CPLE3",
+      "side": "buy",
+      "qty": 203.14009575,
+      "price": 14.60459,
+      "value": 2966.78
+    },
+    {
+      "date": "2026-11-05",
+      "symbol": "PETR4",
+      "side": "buy",
+      "qty": 5.97887575,
+      "price": 47.16712,
+      "value": 282.01
+    },
+    {
+      "date": "2026-11-05",
+      "symbol": "PRIO3",
+      "side": "buy",
+      "qty": 4.5853875,
+      "price": 62.20214,
+      "value": 285.22
     }
   ],
   "benchmark2": {
@@ -24004,7 +24042,867 @@
           "last_close": 165528.9219
         }
       }
+    },
+    {
+      "date": "2026-11-05",
+      "regime": "risk_off",
+      "hurdle": "CDI",
+      "hurdle_score": 0.1311,
+      "rebalance_trigger": "desvio de peso em CPLE3: 0.0% vs alvo 6.2%",
+      "eligible_count": 16,
+      "selected": [
+        {
+          "symbol": "PRIO3",
+          "score": 0.7296,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "PETR4",
+          "score": 0.7062,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "B3SA3",
+          "score": 0.5044,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "GGBR4",
+          "score": 0.4139,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "BPAC11",
+          "score": 0.3769,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "ASAI3",
+          "score": 0.3227,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "ABEV3",
+          "score": 0.3167,
+          "weight": 0.0625
+        },
+        {
+          "symbol": "CPLE3",
+          "score": 0.2977,
+          "weight": 0.0625
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "AXIA3",
+          "reason": "historico insuficiente"
+        },
+        {
+          "symbol": "BBDC4",
+          "reason": "nao bate o benchmark (+5.4% <= +13.1%)"
+        },
+        {
+          "symbol": "BRKM5",
+          "reason": "nao bate o benchmark (-43.3% <= +13.1%)"
+        },
+        {
+          "symbol": "CMIG4",
+          "reason": "nao bate o benchmark (+3.1% <= +13.1%)"
+        },
+        {
+          "symbol": "CMIN3",
+          "reason": "nao bate o benchmark (-16.6% <= +13.1%)"
+        },
+        {
+          "symbol": "CSAN3",
+          "reason": "nao bate o benchmark (-32.0% <= +13.1%)"
+        },
+        {
+          "symbol": "CSNA3",
+          "reason": "nao bate o benchmark (-32.3% <= +13.1%)"
+        },
+        {
+          "symbol": "CYRE3",
+          "reason": "nao bate o benchmark (-7.1% <= +13.1%)"
+        },
+        {
+          "symbol": "EGIE3",
+          "reason": "nao bate o benchmark (-22.8% <= +13.1%)"
+        },
+        {
+          "symbol": "EMBJ3",
+          "reason": "historico insuficiente"
+        },
+        {
+          "symbol": "ENGI11",
+          "reason": "nao bate o benchmark (+8.4% <= +13.1%)"
+        },
+        {
+          "symbol": "GOAU4",
+          "reason": "nao bate o benchmark (+10.5% <= +13.1%)"
+        },
+        {
+          "symbol": "HAPV3",
+          "reason": "nao bate o benchmark (-75.7% <= +13.1%)"
+        },
+        {
+          "symbol": "KLBN11",
+          "reason": "nao bate o benchmark (+2.8% <= +13.1%)"
+        },
+        {
+          "symbol": "LREN3",
+          "reason": "nao bate o benchmark (-19.3% <= +13.1%)"
+        },
+        {
+          "symbol": "MBRF3",
+          "reason": "nao bate o benchmark (-8.2% <= +13.1%)"
+        },
+        {
+          "symbol": "MGLU3",
+          "reason": "nao bate o benchmark (-12.1% <= +13.1%)"
+        },
+        {
+          "symbol": "NATU3",
+          "reason": "nao bate o benchmark (-14.7% <= +13.1%)"
+        },
+        {
+          "symbol": "PSSA3",
+          "reason": "nao bate o benchmark (+3.1% <= +13.1%)"
+        },
+        {
+          "symbol": "RADL3",
+          "reason": "nao bate o benchmark (+0.4% <= +13.1%)"
+        },
+        {
+          "symbol": "RAIL3",
+          "reason": "nao bate o benchmark (+6.8% <= +13.1%)"
+        },
+        {
+          "symbol": "RDOR3",
+          "reason": "nao bate o benchmark (-6.5% <= +13.1%)"
+        },
+        {
+          "symbol": "RENT3",
+          "reason": "nao bate o benchmark (+5.9% <= +13.1%)"
+        },
+        {
+          "symbol": "SANB11",
+          "reason": "nao bate o benchmark (-4.3% <= +13.1%)"
+        },
+        {
+          "symbol": "SBSP3",
+          "reason": "nao bate o benchmark (-78.6% <= +13.1%)"
+        },
+        {
+          "symbol": "SLCE3",
+          "reason": "nao bate o benchmark (+8.5% <= +13.1%)"
+        },
+        {
+          "symbol": "SUZB3",
+          "reason": "nao bate o benchmark (-10.3% <= +13.1%)"
+        },
+        {
+          "symbol": "TIMS3",
+          "reason": "nao bate o benchmark (-26.1% <= +13.1%)"
+        },
+        {
+          "symbol": "TOTS3",
+          "reason": "nao bate o benchmark (-18.7% <= +13.1%)"
+        },
+        {
+          "symbol": "VIVT3",
+          "reason": "nao bate o benchmark (-12.7% <= +13.1%)"
+        }
+      ],
+      "stops": [],
+      "cooldowns": {
+        "WEGE3": "2026-11-21",
+        "VBBR3": "2026-11-26",
+        "UGPA3": "2026-11-29"
+      },
+      "data_failures": [],
+      "sources": {
+        "nasdaq": 101,
+        "coinbase": 119,
+        "binance": 31,
+        "brapi": 1,
+        "cotahist": 50
+      },
+      "source_failures": {},
+      "source_missing": {
+        "coinbase": {
+          "n": 31,
+          "motivo": "anularity=86400&start=2026-03-01T00:00:00Z&end=2026-11-06T00:00:00Z: HTTP 404 (definitivo)"
+        }
+      },
+      "note": "",
+      "cash_weight": 0.5,
+      "market_data_evidence": {
+        "ABEV3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "ABEV3",
+          "captured_at_utc": "2026-11-05T01:49:24.328050+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "36b0ec94613e8312cf1d66a7a2a2a97c0b197ff224828105d050405f47e3efe5",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 15.25
+        },
+        "ASAI3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "ASAI3",
+          "captured_at_utc": "2026-11-05T01:49:47.551172+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "643ced678fcb22ab7345cfad59798f8585b743f92ad5ac88b35ff066e293a1cf",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 8.1
+        },
+        "AXIA3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "AXIA3",
+          "captured_at_utc": "2026-11-05T01:49:39.543445+00:00",
+          "point_count": 244,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ebdb95492b8aacd2dfebc7ed11aedf6730dd77bda538e1327473720be14ce73a",
+          "first_market_date": "2025-11-10",
+          "last_market_date": "2026-11-04",
+          "last_close": 47.58
+        },
+        "B3SA3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "B3SA3",
+          "captured_at_utc": "2026-11-05T01:49:26.730448+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e44e0f4bf5a9a87b8039384994f9a6c4eedd2c9e4b395fed598aa922f280a0af",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 14.3
+        },
+        "BBAS3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BBAS3",
+          "captured_at_utc": "2026-11-05T01:49:23.527220+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7e2f43368a79aa5d21eb4df828d6ab695df3636614f907df6d1d0fcef8fadc59",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 16.49
+        },
+        "BBDC4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BBDC4",
+          "captured_at_utc": "2026-11-05T01:49:22.726387+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "36dad30bd1d2456a5e0a941fbb998cdd56fa2340c8ec37cd6237dbc92e59bbfc",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 14.06
+        },
+        "BOVA11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BOVA11",
+          "captured_at_utc": "2026-11-05T01:49:59.567423+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "3dbd9150a7422e19b65f4e431d5d8ceffa1b711105b0c2c81d8704f38343a425",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 164.82
+        },
+        "BPAC11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BPAC11",
+          "captured_at_utc": "2026-11-05T01:49:41.144818+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2bc6ccec139511ea1aeecafd3cdd0bc07f5acbf1ec47d77d9ed6d0f89ce8adc6",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 54.02
+        },
+        "BRKM5": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BRKM5",
+          "captured_at_utc": "2026-11-05T01:49:50.754450+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b8ad93a5a4aa6e2a3825068fa8e0a414bf66da608d1b3ef54f90f746971a4ede",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 3.05
+        },
+        "CMIG4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CMIG4",
+          "captured_at_utc": "2026-11-05T01:49:38.742626+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "91f045efa0411c21e361efaef9bfd1d4c316357c3fcd2153585af85ba6a1640a",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 10.2
+        },
+        "CMIN3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CMIN3",
+          "captured_at_utc": "2026-11-05T01:49:57.161046+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "a8ad5af60772cabc17c8a9767dd6b1b936bb130f0fb35e5eed2510cd29c52b74",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 5.24
+        },
+        "CPFE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CPFE3",
+          "captured_at_utc": "2026-11-05T01:49:53.156904+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e6362b6d2b028cbd00c38339f5ab49ad347cd8e938158472903d67fd94d26d5c",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 42.64
+        },
+        "CPLE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CPLE3",
+          "captured_at_utc": "2026-11-05T01:49:41.945625+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "bb50e4655d30e542ecf54a21aaffa64fcac52e42727a854384978642d8ae2ec9",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 14.59
+        },
+        "CSAN3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CSAN3",
+          "captured_at_utc": "2026-11-05T01:49:49.152799+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d69e9f652293c91522535c913609d3bce6b6d85cae4c7d5432a8f4dcbde8c45a",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 2.39
+        },
+        "CSNA3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CSNA3",
+          "captured_at_utc": "2026-11-05T01:49:29.933767+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "157d792f766408a8aac86057fcb4fe7c1d217462ad59778a3b2fee0606002bff",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 4.08
+        },
+        "CYRE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "CYRE3",
+          "captured_at_utc": "2026-11-05T01:49:45.949507+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b495ff5070c4d9f0c8cae4ed29955107c71fd9c29256c2836f5b82fc995eaa86",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 17.81
+        },
+        "EGIE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "EGIE3",
+          "captured_at_utc": "2026-11-05T01:49:54.758560+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "3dea25b3c267cd0ba24bc2d66cf82ab139b7b2d99ada7d46552afd871358cbdf",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 26.69
+        },
+        "EMBJ3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "EMBJ3",
+          "captured_at_utc": "2026-11-05T01:49:30.734559+00:00",
+          "point_count": 249,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "c0d23c2c10cb23e1bb6da76042ac7e47480874bbc47b0ac7a7ff697880d687af",
+          "first_market_date": "2025-11-03",
+          "last_market_date": "2026-11-04",
+          "last_close": 107.06
+        },
+        "ENGI11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "ENGI11",
+          "captured_at_utc": "2026-11-05T01:49:52.356088+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d5d46626405458aa9cf74482cf506c24dc3aa60e9f05862ed8c941160f37ac40",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 44.74
+        },
+        "EQTL3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "EQTL3",
+          "captured_at_utc": "2026-11-05T01:49:34.738433+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "cbf5a42e7cf794d82da6b21679369159aedbcbd746dfcff7d9b882dd5e7f7b78",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 33.27
+        },
+        "GGBR4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "GGBR4",
+          "captured_at_utc": "2026-11-05T01:49:29.132935+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "36296cc6cc7e297b5f41fdb84b45f2232a6d149bdc2e499f4c7b064f5c4d3706",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 24.88
+        },
+        "GOAU4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "GOAU4",
+          "captured_at_utc": "2026-11-05T01:49:51.555279+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "481cddfd470d9fafcd2712ccd57bd78830acabff485e313c65221d26a8283591",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 11.03
+        },
+        "HAPV3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "HAPV3",
+          "captured_at_utc": "2026-11-05T01:49:37.140933+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "553091c80c3e6a8d5f3adf471a97db3cbeb3b3be8af6cca96313dbdb5a124411",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 4.07
+        },
+        "ITSA4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "ITSA4",
+          "captured_at_utc": "2026-11-05T01:49:27.531291+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7245fa0d0a0a62086852c387fa004999fe5de27ef7afb2db1022a0425d7d2c1b",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 12.82
+        },
+        "ITUB4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "ITUB4",
+          "captured_at_utc": "2026-11-05T01:49:21.925555+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ad332df4aaa83532c7aeb953bade472dd68e721fb564e0e0ee73814de35fbb15",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 39.71
+        },
+        "KLBN11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "KLBN11",
+          "captured_at_utc": "2026-11-05T01:49:45.148691+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b7b7d2c40f4145c7040022b1627c6a95dc796279059c1df0d83a83bff0afc663",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 18.08
+        },
+        "LREN3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "LREN3",
+          "captured_at_utc": "2026-11-05T01:49:32.335951+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4b484c510da6977bea00b7ae7f8975073f935e1b0c625a45d2cfcff044fe41fc",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 9.39
+        },
+        "MBRF3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "MBRF3",
+          "captured_at_utc": "2026-11-05T01:49:44.348110+00:00",
+          "point_count": 278,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "1739c9129184c93b8386be07eb26bc646c6eb67a0916952e73496ed46ce73f30",
+          "first_market_date": "2025-09-23",
+          "last_market_date": "2026-11-04",
+          "last_close": 15.91
+        },
+        "MGLU3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "MGLU3",
+          "captured_at_utc": "2026-11-05T01:49:58.762531+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e8f0d51f14ac462a8843ab06039a117fc2c33b8937fd27bde7770f2d61b8157f",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 5.5
+        },
+        "MULT3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "MULT3",
+          "captured_at_utc": "2026-11-05T01:49:46.750343+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e125e63030cf2f7a328637341682f88371e086df6a528c2c6f5ccada154346b0",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 26.45
+        },
+        "NATU3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "NATU3",
+          "captured_at_utc": "2026-11-05T01:49:57.961872+00:00",
+          "point_count": 337,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "9fc7504d031b8c9b2e1ccc7f6341273c057fb7c2ba3783444d8e0d0fc9808cf8",
+          "first_market_date": "2025-07-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 5.42
+        },
+        "PETR4": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "PETR4",
+          "captured_at_utc": "2026-11-05T01:49:20.323899+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "5a3df8d1c562089bfe403117f05708f70afb626b658c0ffb1d25b70dc6342338",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 47.12
+        },
+        "PRIO3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "PRIO3",
+          "captured_at_utc": "2026-11-05T01:49:33.937618+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4b0f1b27249cf6de037c5c51cca7441ba15782db28fe1a2b7a8897022dbff1d7",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 62.14
+        },
+        "PSSA3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "PSSA3",
+          "captured_at_utc": "2026-11-05T01:49:56.360225+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "19009dd97eb4fb5fe9e8e8aea76f53c8bdd2a91928083e88c57b6ed7972da30f",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 44.89
+        },
+        "RADL3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "RADL3",
+          "captured_at_utc": "2026-11-05T01:49:31.535132+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2ff7e50e8bb770b411b700c6f15b5e7970c55f966fa5703f1e8abc26cfd7a653",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 15.44
+        },
+        "RAIL3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "RAIL3",
+          "captured_at_utc": "2026-11-05T01:49:33.136781+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "fe417d003327fc2c08550d647ebcd991a2c8bc560ff317569067813e5c661f14",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 14.3
+        },
+        "RDOR3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "RDOR3",
+          "captured_at_utc": "2026-11-05T01:49:37.941792+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d518d3434d3de221b1585f897ddf80fbb15232286f2d77e09ee8a48907a5f097",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 32.54
+        },
+        "RENT3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "RENT3",
+          "captured_at_utc": "2026-11-05T01:49:25.929668+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ca0332fec3297b65d44ba5c006fee9acb3d5f9e43c97f3bddf816b3cb4b4cc98",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 29.46
+        },
+        "SANB11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "SANB11",
+          "captured_at_utc": "2026-11-05T01:49:48.351988+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "a9ef6173d8801f05be0087b314a1054f7a5416df8a39e15f25de72cd85c31a09",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 25.81
+        },
+        "SBSP3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "SBSP3",
+          "captured_at_utc": "2026-11-05T01:49:40.344016+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "fc33771518c7a936183e32eefb947e9ab5a0173de2a1d99a899da4b43c681fe1",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 25.23
+        },
+        "SLCE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "SLCE3",
+          "captured_at_utc": "2026-11-05T01:49:55.559393+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "35fd7a1d95409f4f07d2cf926b3f9464097a82acf3fdaba151306103119f9546",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 16.6
+        },
+        "SUZB3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "SUZB3",
+          "captured_at_utc": "2026-11-05T01:49:28.332118+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "126d2a9c104acd00983a6ce2103b36b9307b51f1417e6f6d27fb404124b1eea8",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 52.35
+        },
+        "TAEE11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "TAEE11",
+          "captured_at_utc": "2026-11-05T01:49:53.957740+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4b0e99a52c6cc8ad777b8ac06eadcadb9cd27266199b2c3077d0695b2daeeb69",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 39.9
+        },
+        "TIMS3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "TIMS3",
+          "captured_at_utc": "2026-11-05T01:49:42.746449+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "108f06cb75b15510716431ba2a7c06d60972811376ea754a9165a3fa83d4e0d8",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 19.8
+        },
+        "TOTS3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "TOTS3",
+          "captured_at_utc": "2026-11-05T01:49:36.340110+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "6f7243b108c22bd3b925f8484d782a1afcc230d92a668cecf3c09a7179deaa8a",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 33.4
+        },
+        "UGPA3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "UGPA3",
+          "captured_at_utc": "2026-11-05T01:49:43.547280+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "3dfcfd067fcae199dd150a96d30ceca93be5eb5352a935a675947a69eb8d4f3c",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 30.68
+        },
+        "VALE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "VALE3",
+          "captured_at_utc": "2026-11-05T01:49:21.124740+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "81ab38885ecb2a5291fb1889644788b2d6e8a2a07ee63dd44df6314bd08aa107",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 62.35
+        },
+        "VBBR3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "VBBR3",
+          "captured_at_utc": "2026-11-05T01:49:49.953641+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "dc7347b68eb5c34580d2143029eb991cd0aff9d3983aba022cfb6578c6af7079",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 29.25
+        },
+        "VIVT3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "VIVT3",
+          "captured_at_utc": "2026-11-05T01:49:35.539279+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e3d3dc1b6c53110fcb894e98a51df11842247d652b5934bbad6d1dd8d3ccc3d8",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 31.0
+        },
+        "WEGE3": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "WEGE3",
+          "captured_at_utc": "2026-11-05T01:49:25.128892+00:00",
+          "point_count": 460,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e691b646f86c0fc1a51ecf0787d332906bd965ba4266fa8bc6d555c9746cc3c1",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-04",
+          "last_close": 50.05
+        },
+        "^BVSP": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "brapi",
+          "symbol": "^BVSP",
+          "captured_at_utc": "2026-11-05T01:49:17.679675+00:00",
+          "point_count": 117,
+          "status": "RECORDED",
+          "series_scope": "LIVE_SOURCE_WITH_VERIFIED_INDEX_CACHE",
+          "series_sha256": "a43e486525d2d69f29c2939523c613984b6555870988a5f4e1ed317767046a29",
+          "first_market_date": "2026-05-20",
+          "last_market_date": "2026-11-04",
+          "last_close": 167563.4688
+        }
+      }
     }
   ],
-  "last_accrual_date": "2026-10-30"
+  "last_accrual_date": "2026-11-03"
 }
