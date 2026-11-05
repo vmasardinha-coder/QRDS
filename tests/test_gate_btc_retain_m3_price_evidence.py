@@ -26,9 +26,9 @@ class RetainEvidenceTests(unittest.TestCase):
         p = self.archive()
         original = p.read_bytes()
         subprocess.run(['git', '-C', str(self.root), 'add', '.'], check=True)
-        self.assertNotIn(str(p.relative_to(self.root)), self.staged())
+        self.assertNotIn(p.relative_to(self.root).as_posix(), self.staged())
         retain(self.root)
-        rel = str(p.relative_to(self.root))
+        rel = p.relative_to(self.root).as_posix()
         self.assertIn(rel, self.staged())
         self.assertEqual(subprocess.check_output(['git', '-C', str(self.root), 'show', ':' + rel]), original)
         self.assertEqual(p.read_bytes(), original)
@@ -44,7 +44,7 @@ class RetainEvidenceTests(unittest.TestCase):
         (self.root / 'current_prices.zip').write_bytes(b'transient')
         (self.root / 'other.zip').write_bytes(b'unrelated')
         self.assertEqual(retain(self.root), [str(p.relative_to(self.root))])
-        self.assertEqual(self.staged(), [str(p.relative_to(self.root))])
+        self.assertEqual(self.staged(), [p.relative_to(self.root).as_posix()])
     def test_missing_archive_not_reconstructed_or_credited(self):
         root = self.root / 'runtime/ledgers/momentum_m3_economics/epochs/after_gap_2026-10-05/source_prices/2026-10-09'
         root.mkdir(parents=True)
