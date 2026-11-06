@@ -1,0 +1,140 @@
+{
+  "schema": "gate_btc.delta_v15_contrarian_gate_result.v1",
+  "evaluated_at_utc": "2026-11-06",
+  "verdict": "REPROVADO",
+  "anchor_fixed_by_this_result": false,
+  "contract_frozen": false,
+  "_por_que_nao_ha_contrato_congelado": [
+    "A V14 foi congelada primeiro e avaliada depois. Aqui a ordem foi invertida de proposito: a avaliacao e barata e o contrato nao e.",
+    "O portao reprovou, entao congelar um contrato agora so criaria um segundo artefato REPROVADO sem serie nenhuma por tras.",
+    "Se o dono do repositorio decidir ancorar apesar deste resultado, isso e decisao dele e tem de ser registrada como tal, nunca derivada deste arquivo."
+  ],
+
+  "hipotese_avaliada": {
+    "origem": "Proposta pelo dono do repositorio em 2026-11-06, na conversa da rotina diaria.",
+    "enunciado_literal": "BTC um dia acima de 3%: ficar vendido. Um dia abaixo de -3%: ficar comprado.",
+    "limiar": "+/- 3,0% no retorno fechamento-a-fechamento do BTC em um dia",
+    "limiar_prespecificado_pelo_dono": true,
+    "varredura_de_limiares_executada": false,
+    "_nota_varredura": "Nenhum outro limiar foi testado. Varrer limiares e garimpar; o limiar testado foi o unico fornecido."
+  },
+
+  "_atencao_selecao_retrospectiva": [
+    "A hipotese nasceu de observar o resultado ja realizado do V11 e do V13, o que e selecao retrospectiva.",
+    "Por isso ela foi avaliada contra o painel historico e contra os criterios da V14 ANTES de qualquer ancora, e nao sobre a amostra que a gerou.",
+    "O resultado abaixo e o motivo pelo qual ela nao ancora."
+  ],
+
+  "panel": {
+    "source": "data.binance.vision — arquivo publico mensal, sem chave",
+    "instrument": "BTCUSDT perpetuo USDT margem em USDT (futures/um), klines 1d",
+    "janela_primaria": "2021-04-01 a 2026-09-30",
+    "dias_janela_primaria": 2009,
+    "janela_robustez": "2021-01-01 a 2026-10-31",
+    "dias_janela_robustez": 2126,
+    "_nota_janela": "A janela primaria e a mesma do portao historico da V14, para o resultado sair comparavel.",
+    "convencao_de_execucao": "sinal no fechamento de D, posicao da abertura de D+1 a abertura de D+2 — a mesma do motor congelado (signal_close_then_next_daily_open)"
+  },
+
+  "custo_de_referencia": {
+    "V11_bps_por_perna": 8.0,
+    "V13_bps_por_perna": 11.6,
+    "ida_e_volta_V11_pct": 0.160,
+    "ida_e_volta_V13_pct": 0.232,
+    "fonte": "medido no ledger, custo dividido por giro, dia a dia — nao estimado"
+  },
+
+  "resultados": {
+    "base_incondicional_retorno_dia_seguinte_pct": 0.0596,
+    "perna_vendida_apos_alta": {
+      "condicao": "retorno do BTC em D > +3%",
+      "n_eventos_janela_primaria": 219,
+      "retorno_medio_da_posicao_pct": 0.0602,
+      "t": 0.30,
+      "p_permutacao": 0.758,
+      "janela_robustez": { "n_eventos": 244, "retorno_medio_da_posicao_pct": -0.0163, "t": -0.08, "p_permutacao": 0.935 },
+      "leitura": "Nenhum sinal. Indistinguivel de zero nas duas janelas."
+    },
+    "perna_comprada_apos_queda": {
+      "condicao": "retorno do BTC em D < -3%",
+      "n_eventos_janela_primaria": 201,
+      "retorno_medio_da_posicao_pct": 0.3757,
+      "retorno_mediano_da_posicao_pct": 0.3929,
+      "pct_eventos_positivos": 55,
+      "t": 1.32,
+      "p_permutacao": 0.061,
+      "janela_robustez": { "n_eventos": 220, "retorno_medio_da_posicao_pct": 0.4039, "t": 1.44, "p_permutacao": 0.052 },
+      "leitura_a_favor": "Mediana praticamente igual a media e 55% de eventos positivos: o efeito esta no centro da distribuicao, nao em poucos dias extremos. Isso o distingue favoravelmente do V11 e do V13, onde poucos dias carregam tudo.",
+      "leitura_contra": "t de 1,3 nao estabelece nada, e foram dois testes (as duas pernas), o que leva p corrigido a cerca de 0,12."
+    }
+  },
+
+  "criteria": [
+    {
+      "criterio": "sinal presente na perna vendida (shortar apos alta de 3%)",
+      "observado": "t = +0,30 (p = 0,758) na janela primaria; t = -0,08 (p = 0,935) na janela de robustez",
+      "resultado": "REPROVA"
+    },
+    {
+      "criterio": "significancia estatistica na perna comprada",
+      "observado": "t = +1,32, p = 0,061 bruto, cerca de 0,12 corrigido pelos dois testes",
+      "resultado": "REPROVA"
+    },
+    {
+      "criterio": "concentracao — retirar 2% dos eventos (criterio do contrato da V14)",
+      "observado": "media cai de +0,3757% para +0,1333% retirando 4 de 201 eventos, abaixo do custo de ida e volta de 0,160%; liquido -0,027%",
+      "resultado": "REPROVA"
+    },
+    {
+      "criterio": "replicacao em duas metades independentes (protocolo usado na V14)",
+      "observado": "metade 1 (2021-04-01 a 2023-12-31): +0,676%, t = +1,73, n = 119. metade 2 (2023-12-31 a 2026-09-30): -0,061%, t = -0,15, n = 82",
+      "resultado": "REPROVA"
+    },
+    {
+      "criterio": "margem sobre o custo de execucao medido",
+      "observado": "+0,216% liquido na media cheia, mas -0,027% retirando 2% dos eventos; a perna vendida nao cobre custo em nenhuma variante",
+      "resultado": "REPROVA"
+    }
+  ],
+  "criterios_reprovados": 5,
+  "criterios_avaliados": 5,
+
+  "_o_que_este_resultado_significa": [
+    "A metade 'shortar na alta' da hipotese nao tem sinal mensuravel. Isso e um resultado limpo e negativo.",
+    "A metade 'comprar na queda' tem uma tendencia central robusta — mediana igual a media, 55% positivos — mas ela nao replica fora da amostra e nao sobra margem sobre o custo depois do criterio de concentracao.",
+    "A diferenca em relacao a V14 e de grau e vale registrada: a V14 colapsava para -75% a -93% ao retirar 2% dos dias; esta hipotese vai para o zero, nao para o desastre. E 'nao passa a regua', nao 'esta demonstradamente quebrada'.",
+    "O teste foi feito sobre o BTC, que e onde o gatilho vive. A implementacao que o dono descreveu poria a exposicao liquida na cesta, com vol e custo diferentes; isso nao foi testado porque o gatilho nao passou."
+  ],
+  "_o_que_este_resultado_NAO_significa": [
+    "Nao diz que estrategia contraria nao funciona. Diz que ESTE gatilho, neste limiar, nesta janela, com esta convencao de execucao, nao passa.",
+    "Nao autoriza testar outros limiares procurando um que passe. Isso seria garimpagem, e invalidaria qualquer resultado encontrado.",
+    "Nao se aplica ao V11 nem ao V13 e nao autoriza mudanca nenhuma neles.",
+    "Nao e evidencia sobre o diagnostico separado de que o sinal transversal do V11 e do V13 tem deriva proxima de zero; esse e outro registro."
+  ],
+
+  "limitacoes": [
+    "Amostra de 2021 a 2026, com deriva incondicional positiva (+0,0596%/dia). A perna comprada se beneficia disso por construcao.",
+    "Teste sobre o BTC isolado, nao sobre a cesta do motor.",
+    "Retornos diarios tem cauda gorda; o teste de permutacao mitiga mas nao elimina.",
+    "Dias de evento se agrupam em regimes de volatilidade e nao sao independentes entre si.",
+    "O corte das metades foi feito no ponto medio em numero de dias, definido antes de olhar o resultado das metades."
+  ],
+
+  "governance": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "engine_feed": false,
+    "exchange_auth_allowed": false,
+    "methodology_changes": 0,
+    "promotion_allowed": false,
+    "anchor_fixed_by_this_result": false,
+    "applies_to_v11": false,
+    "applies_to_v13": false,
+    "applies_to_v14": false,
+    "parametros_congelados_tocados": 0,
+    "bytes_de_ledger_tocados": 0
+  }
+}
