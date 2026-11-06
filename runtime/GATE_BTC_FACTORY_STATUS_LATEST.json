@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-06T02:31:29.146716+00:00",
+  "generated_at_utc": "2026-11-06T06:21:39.711998+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -33,7 +33,7 @@
       "data": {
         "armed_completed_journeys": 0,
         "authorization_id": "ALT_TRAIL40_10_20261031_USER_20261006",
-        "can_append": false,
+        "can_append": true,
         "current_epoch": "monthly_20261031",
         "current_epoch_snapshot_count": 5,
         "earliest_calendar_gate_date": "2027-02-28",
@@ -56,12 +56,12 @@
         "schema": "gate_btc.prl_alt_next_epoch_status.v1",
         "shadow_only": true,
         "snapshot_count": 10,
-        "status": "ACTIVE_PROSPECTIVE_ARCHIVE",
-        "updated_at_utc": "2026-11-05T23:54:06.112712+00:00"
+        "status": "NEEDS_CURRENT_SOURCE",
+        "updated_at_utc": "2026-11-06T02:39:38.463296+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/alt_trail40_10/STATUS.json",
-      "sha256": "8bea8ffe4faf18de877b3a46b66781829964dde03b76df7730149d2466432afc"
+      "sha256": "c1e7858d87ebf83fd770d509fcbe131118d02da1c0841ca0890fa7e06b6a2736"
     },
     "bull_replay": {
       "data": {
@@ -220,12 +220,12 @@
         "scientific_target": 80,
         "signal_capture_count": 41,
         "status": "ACTIVE_SHADOW_N80",
-        "updated_at_utc": "2026-11-06T02:25:25.589308Z",
-        "workflow_run_id": "42150002490"
+        "updated_at_utc": "2026-11-06T02:49:36.543507Z",
+        "workflow_run_id": "42152587511"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/economic/STATUS.json",
-      "sha256": "e7424eb6fd71791eba506dd3c956ac18fe1be4a2cf56e3ea3d42018560b37c40"
+      "sha256": "3ec8f1462742ec8754fd2223730925b8260bef96cccfb37fc242bd216974f653"
     },
     "d100_physical": {
       "data": {
@@ -240,10 +240,10 @@
         "historical_observations_credited": 0,
         "historical_period_before_activation": "EXPLICIT_GAP_NOT_RECOVERED",
         "historical_recovery_attempted": false,
-        "last_attempt_at_utc": "2026-11-06T02:24:56.797150Z",
-        "last_attempt_result": "CAPTURED",
+        "last_attempt_at_utc": "2026-11-06T02:49:35.270177Z",
+        "last_attempt_result": "IDEMPOTENT_ALREADY_CAPTURED_TODAY",
         "last_error": null,
-        "last_heartbeat_utc": "2026-11-06T02:24:56.797150Z",
+        "last_heartbeat_utc": "2026-11-06T02:49:35.270177Z",
         "latest_market_data_observed_count": 70,
         "latest_physical_capture_at_utc": "2026-11-06T02:25:25.289412Z",
         "latest_raw_universe_count": 100,
@@ -274,11 +274,11 @@
         "status": "ACTIVE_PHYSICAL_DATA_FEED",
         "successful_capture_days": 41,
         "track": "D100",
-        "workflow_run_id": "42150002490"
+        "workflow_run_id": "42152587511"
       },
       "exists": true,
       "path": "runtime/ledgers/d100/STATUS.json",
-      "sha256": "c3dd06b1a8557e7a8052ea5af403155f535bad65f0795131434d6adac1b578eb"
+      "sha256": "7e99f779ae32a8b32f340d8eda2843bffe793eaabd8365f7ae2c6baaa3650989"
     },
     "delta_paper": {
       "data": {
@@ -1020,43 +1020,43 @@
     },
     "m1_m2": {
       "data": {
-        "data_as_of": "2026-11-04",
+        "data_as_of": "2026-11-05",
         "engine_feed": false,
-        "latest_snapshot_sha256": "1b6d24bc99826b0cd00d96cf7ea63e4865241e4403534da4b5bba6c553a5abf3",
+        "latest_snapshot_sha256": "49c2def179eb09988cdd590c0c2bb3c5ec0501624cf0ec79c64e7790b121e0fa",
         "m1_summary": {
           "breadth_pct_m1_gt_zero": 45.67901234567901,
-          "cross_sectional_dispersion_m1": 0.8062134195272103,
-          "cutoff": "2026-11-04",
-          "delta_breadth_pct_points": 0.6790123456790127,
+          "cross_sectional_dispersion_m1": 0.8058639216221904,
+          "cutoff": "2026-11-05",
+          "delta_breadth_pct_points": 0.0,
           "engine_feed": false,
-          "lookback_14_date": "2026-10-21",
-          "lookback_30_date": "2026-10-05",
-          "median_m1": -0.09535053751782191,
-          "negative_median_distance_to_zero": 0.5056166007192602,
+          "lookback_14_date": "2026-10-22",
+          "lookback_30_date": "2026-10-06",
+          "median_m1": -0.08899035606856365,
+          "negative_median_distance_to_zero": 0.5558768090489729,
           "orders": 0,
           "real_capital": 0,
           "status": "SHADOW_ONLY_NOT_APPROVED",
           "universe_n": 81
         },
         "m2_summary": {
-          "breadth_pct_m2_gt_zero": 41.97530864197531,
-          "cross_sectional_dispersion_m2": 2.7844946779009208,
-          "cutoff": "2026-11-04",
-          "delta_breadth_pct_points": -29.27469135802469,
+          "breadth_pct_m2_gt_zero": 58.02469135802469,
+          "cross_sectional_dispersion_m2": 2.886377856374784,
+          "cutoff": "2026-11-05",
+          "delta_breadth_pct_points": 16.04938271604938,
           "engine_feed": false,
-          "excluded_incomplete_history": 48,
-          "median_m2": -0.35379444808770033,
+          "excluded_incomplete_history": 47,
+          "median_m2": 0.894916885729895,
           "orders": 0,
           "real_capital": 0,
           "reference_calendar": "BTC_COMPLETED_UTC_DAILY_BARS",
           "reference_window_bars": 31,
-          "reference_window_end": "2026-11-04",
-          "reference_window_start": "2026-10-05",
+          "reference_window_end": "2026-11-05",
+          "reference_window_start": "2026-10-06",
           "status": "PROSPECTIVE_SHADOW_ONLY_NOT_APPROVED",
           "universe_n": 81
         },
         "not_approved": true,
-        "observed_snapshots": 71,
+        "observed_snapshots": 72,
         "orders_generated": 0,
         "promotion_allowed": false,
         "real_capital_used": 0,
@@ -1067,7 +1067,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_m1_m2/STATUS.json",
-      "sha256": "6dd765e13be9ec150a6328226bff5bc8d16941b19c2dc74b5b0ad6cbbdb24adb"
+      "sha256": "322249324b08d00e55fa617cc1b05102537850db608f7bc481f19a496b6eb4dc"
     },
     "m1_m2_economics": {
       "data": {
@@ -1206,315 +1206,52 @@
     },
     "m1_m2_tradable_v1": {
       "data": {
-        "data_as_of": "2026-11-04",
+        "backfill_performed": false,
+        "data_as_of": "2026-11-05",
         "engine_feed": false,
-        "idempotent": true,
         "latest_economics": {
-          "btc_nav_gross": 0.9573163988335829,
-          "btc_nav_net_modelled": 0.9563600387947883,
+          "btc_nav_gross": 0.9048033722495766,
+          "btc_nav_net_modelled": 0.9038994727768,
           "cost_status": "MODEL_10BPS_ONE_WAY_TRADES_NO_FUNDING_OR_TAX_NOT_OBSERVED_FEES",
-          "cutoff": "2026-11-04",
-          "eligibility_decisions": {
-            "A7A5": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "APEPE": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "ASTER": {
-              "bars": 31,
-              "close": 0.7043,
-              "eligible": true,
-              "latest_daily_quote_volume": 6383544.390815,
-              "median_daily_quote_volume": 6528235.603492,
-              "reason": "PASS"
-            },
-            "BDX": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "BGB": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "BSV": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "BTC": {
-              "bars": 31,
-              "close": 80504.01,
-              "eligible": true,
-              "latest_daily_quote_volume": 1747282788.7987144,
-              "median_daily_quote_volume": 1072807983.5695615,
-              "reason": "PASS"
-            },
-            "BTW": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "CARDS": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "DRV": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "ETH": {
-              "bars": 31,
-              "close": 2424.61,
-              "eligible": true,
-              "latest_daily_quote_volume": 808913396.214774,
-              "median_daily_quote_volume": 546450311.289366,
-              "reason": "PASS"
-            },
-            "FLR": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "FLUID": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "GHO": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "GRASS": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "GT": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "HASH": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "HTX": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "HYPE": {
-              "bars": 31,
-              "close": 83.81,
-              "eligible": true,
-              "latest_daily_quote_volume": 41579222.20044,
-              "median_daily_quote_volume": 29902328.228235,
-              "reason": "PASS"
-            },
-            "KAIA": {
-              "bars": 31,
-              "close": 0.0347,
-              "eligible": true,
-              "latest_daily_quote_volume": 617027.57774,
-              "median_daily_quote_volume": 1244160.5902200001,
-              "reason": "PASS"
-            },
-            "KCS": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "KITE": {
-              "bars": 31,
-              "close": 0.1194,
-              "eligible": true,
-              "latest_daily_quote_volume": 689387.61648,
-              "median_daily_quote_volume": 1198454.919005,
-              "reason": "PASS"
-            },
-            "KMNO": {
-              "bars": 31,
-              "close": 0.0368,
-              "eligible": false,
-              "latest_daily_quote_volume": 1313963.36085,
-              "median_daily_quote_volume": 996463.9930049999,
-              "reason": "LOW_LIQUIDITY"
-            },
-            "KOGE": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "LEO": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "MORPHO": {
-              "bars": 31,
-              "close": 2.249,
-              "eligible": true,
-              "latest_daily_quote_volume": 2345670.70335,
-              "median_daily_quote_volume": 2428218.856105,
-              "reason": "PASS"
-            },
-            "NEXO": {
-              "bars": 31,
-              "close": 0.772,
-              "eligible": false,
-              "latest_daily_quote_volume": 738852.6552,
-              "median_daily_quote_volume": 401676.280535,
-              "reason": "LOW_LIQUIDITY"
-            },
-            "NFT": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "NIGHT": {
-              "bars": 31,
-              "close": 0.04338,
-              "eligible": true,
-              "latest_daily_quote_volume": 2894813.30218,
-              "median_daily_quote_volume": 2671462.0239500003,
-              "reason": "PASS"
-            },
-            "OKB": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "OP": {
-              "bars": 31,
-              "close": 0.1103,
-              "eligible": true,
-              "latest_daily_quote_volume": 2950873.006217,
-              "median_daily_quote_volume": 4693904.9675475005,
-              "reason": "PASS"
-            },
-            "PEPE": {
-              "bars": 31,
-              "close": 4.97e-06,
-              "eligible": true,
-              "latest_daily_quote_volume": 73052621.86519505,
-              "median_daily_quote_volume": 35096454.80814383,
-              "reason": "PASS"
-            },
-            "PI": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "PIEVERSE": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "POL": {
-              "bars": 31,
-              "close": 0.09615,
-              "eligible": true,
-              "latest_daily_quote_volume": 5580016.972235,
-              "median_daily_quote_volume": 3935115.4273555,
-              "reason": "PASS"
-            },
-            "REUSD": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "SPX": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "USDGO": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "USX": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "USYC": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "XAUT": {
-              "bars": 31,
-              "close": 4050.62,
-              "eligible": true,
-              "latest_daily_quote_volume": 31140843.909186,
-              "median_daily_quote_volume": 19757222.666277,
-              "reason": "PASS"
-            },
-            "XDC": {
-              "eligible": false,
-              "reason": "NO_ACTIVE_EXACT_SPOT_MARKET"
-            },
-            "ZRO": {
-              "bars": 31,
-              "close": 1.825,
-              "eligible": true,
-              "latest_daily_quote_volume": 9449010.47925,
-              "median_daily_quote_volume": 10792424.870269999,
-              "reason": "PASS"
-            }
-          },
-          "event": "REBALANCE",
+          "cutoff": "2026-11-05",
+          "eligibility_decisions": {},
+          "event": "HOLD",
           "evidence": {
-            "original_snapshot_sha256": "1b6d24bc99826b0cd00d96cf7ea63e4865241e4403534da4b5bba6c553a5abf3",
-            "raw_sources_sha256": "985bb33ffea9dd38473fe82499671a4199d41e2b4d4cf2c1f89aa314a9fb500d",
-            "signal_bytes_sha256": "137da39d7d867fd4b792dc7c47da1cdb22512e4e19b7671d575c5b37fe958651"
+            "original_snapshot_sha256": "49c2def179eb09988cdd590c0c2bb3c5ec0501624cf0ec79c64e7790b121e0fa",
+            "raw_sources_sha256": "8e0518ab102aaf93eb3612a0b29620e47dbf39e2fd2d419379699008cd39d171",
+            "signal_bytes_sha256": "a5baa6bf0f2238185f766d3adfcaec9773a5c9020e837d7e8590d3af9f5036d5"
           },
           "excess_vs_btc_net_pp": {
-            "M1_TRADABLE_V1": -9.480582604874533,
-            "M2_TRADABLE_V1": -13.850812676855096
+            "M1_TRADABLE_V1": -8.968282655874349,
+            "M2_TRADABLE_V1": -13.92070196679539
           },
           "execution_status": "SAME_CLOSE_PAPER_MODEL_NOT_OBSERVED_EXECUTABLE_FILL",
           "nav_gross": {
-            "M1_TRADABLE_V1": 0.8641470564361329,
-            "M2_TRADABLE_V1": 0.8208018141166267
+            "M1_TRADABLE_V1": 0.8166670277056983,
+            "M2_TRADABLE_V1": 0.7674506148649789
           },
           "nav_net_modelled": {
-            "M1_TRADABLE_V1": 0.8615542127460429,
-            "M2_TRADABLE_V1": 0.8178519120262373
+            "M1_TRADABLE_V1": 0.8142166462180566,
+            "M2_TRADABLE_V1": 0.7646924531088461
           },
-          "observed_at_utc": "2026-11-05T00:48:15.272370+00:00",
+          "observed_at_utc": "2026-11-06T03:02:48.307666+00:00",
           "prices": {
-            "ASTER": 0.7043,
-            "BTC": 80504.01,
-            "CVX": 1.953,
-            "ENA": 0.181,
-            "ETH": 2424.61,
-            "ETHFI": 0.5917,
-            "HYPE": 83.81,
-            "KAIA": 0.0347,
-            "KITE": 0.1194,
-            "MORPHO": 2.249,
-            "NIGHT": 0.04338,
-            "OP": 0.1103,
-            "PEPE": 4.97e-06,
-            "POL": 0.09615,
-            "PUMP": 0.004249,
-            "TIA": 0.4541,
-            "XAUT": 4050.62,
-            "ZRO": 1.825
+            "ASTER": 0.6871,
+            "BTC": 76088.01,
+            "ETH": 2238.01,
+            "HYPE": 76.64,
+            "KAIA": 0.0317,
+            "KITE": 0.1119,
+            "MORPHO": 2.079,
+            "NIGHT": 0.03885,
+            "OP": 0.1013,
+            "PEPE": 4.8e-06,
+            "POL": 0.09265,
+            "XAUT": 4074.03,
+            "ZRO": 1.593
           },
-          "return_observations": 14,
-          "selected_at_rebalance": {
-            "M1_TRADABLE_V1": [
-              "PEPE",
-              "HYPE",
-              "XAUT",
-              "ASTER",
-              "BTC",
-              "POL",
-              "ETH",
-              "NIGHT",
-              "KITE",
-              "MORPHO"
-            ],
-            "M2_TRADABLE_V1": [
-              "PEPE",
-              "HYPE",
-              "XAUT",
-              "NIGHT",
-              "ZRO",
-              "POL",
-              "ASTER",
-              "KAIA",
-              "OP",
-              "MORPHO"
-            ]
-          },
+          "return_observations": 15,
+          "selected_at_rebalance": {},
           "state_after_close": {
             "books": {
               "M1_TRADABLE_V1": {
@@ -1584,7 +1321,7 @@
             },
             "btc_net_quantity": 1.1879657159870525e-05,
             "btc_quantity": 1.1891536817030393e-05,
-            "last_cutoff": "2026-11-04",
+            "last_cutoff": "2026-11-05",
             "registry": {
               "A7A5": {
                 "last_assessed_cutoff": "2026-11-04",
@@ -1817,35 +1554,37 @@
                 "reason": "PASS"
               }
             },
-            "return_observations": 14
+            "return_observations": 15
           },
           "total_return_gross": {
-            "M1_TRADABLE_V1": -0.13585294356386712,
-            "M2_TRADABLE_V1": -0.17919818588337333
+            "M1_TRADABLE_V1": -0.18333297229430168,
+            "M2_TRADABLE_V1": -0.2325493851350211
           },
           "total_return_net_modelled": {
-            "M1_TRADABLE_V1": -0.13844578725395706,
-            "M2_TRADABLE_V1": -0.1821480879737627
+            "M1_TRADABLE_V1": -0.18578335378194344,
+            "M2_TRADABLE_V1": -0.23530754689115385
           },
           "trade_costs_this_close": {
-            "M1_TRADABLE_V1": 0.0006899333035003346,
-            "M2_TRADABLE_V1": 0.0009824046991306153
+            "M1_TRADABLE_V1": 0.0,
+            "M2_TRADABLE_V1": 0.0
           }
         },
+        "legacy_pnl_inherited": false,
+        "new_economic_rows": 1,
         "not_approved": true,
         "orders": 0,
         "policy_id": "MOMENTUM_TRADABLE_SPOT_V1_20261021",
         "promotion_allowed": false,
         "real_capital": 0,
         "research_only": true,
-        "return_observations": 14,
+        "return_observations": 15,
         "schema": "gate_btc.momentum_tradable_status.v1",
         "shadow_only": true,
         "status": "ACTIVE_PROSPECTIVE_TRADABLE_SHADOW"
       },
       "exists": true,
       "path": "runtime/ledgers/momentum_tradable_v1/STATUS.json",
-      "sha256": "8e158915780567270d04c39ae442d92820eab7a5ab6748d46a5472703e269b90"
+      "sha256": "31430d516fa49aba04a0df97c058026a9ab2c6e491275d63899cc06b0e14c38b"
     },
     "m3_economics": {
       "epoch_lifecycle": {
@@ -2089,7 +1828,7 @@
     "prl50": {
       "data": {
         "authorization_id": "PRL50_20261031_USER_20261006",
-        "can_append": false,
+        "can_append": true,
         "completed_valid_cycles": 0,
         "current_epoch": "monthly_20261031",
         "current_epoch_snapshot_count": 5,
@@ -2111,12 +1850,12 @@
         "schema": "gate_btc.prl_alt_next_epoch_status.v1",
         "shadow_only": true,
         "snapshot_count": 10,
-        "status": "ACTIVE_PROSPECTIVE_ARCHIVE",
-        "updated_at_utc": "2026-11-05T23:54:03.437007+00:00"
+        "status": "NEEDS_CURRENT_SOURCE",
+        "updated_at_utc": "2026-11-06T02:36:05.893076+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/prl50_position/STATUS.json",
-      "sha256": "3ca92a6fef2e40396c86955d270e761f137676ca32109e95d8cb04c09d6d727f"
+      "sha256": "5c68188a48494ccd58dade48ed8d877f4a66a3c97d726a028f950a7ec1f47184"
     },
     "reporting_state": {
       "data": {
@@ -10618,7 +10357,7 @@
     },
     "xagent_spot_continuous_v1": {
       "data": {
-        "as_of_utc": "2026-11-06T02:31:05.126720+00:00",
+        "as_of_utc": "2026-11-06T02:36:41.858784+00:00",
         "canonical_580_untouched": true,
         "checkpoint": 60,
         "contract_sha256": "d2cdb0cd567213d24d4e32c6d27f3435a8bf1bd32e7288861cf5fc3b7bea4d2c",
@@ -10633,7 +10372,7 @@
         ],
         "missed_window_count": 4,
         "missed_windows_have_economic_credit": false,
-        "new_decision": "2026-11-06.json",
+        "new_decision": null,
         "next_decision_window_start_utc": "2026-11-07T02:00:00+00:00",
         "paired_outcome_count": 3,
         "parent_handoff_unchanged": true,
@@ -10656,7 +10395,7 @@
       },
       "exists": true,
       "path": "runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json",
-      "sha256": "7ce66e77542b2dc217d9c7552f43cf5ed0cabe7887e04a760ac64e65ed7e9f6b"
+      "sha256": "81f059880461033fc527eb50d69cbeae4f56fa90cc170d92cdde639b73a83a65"
     }
   }
 }
