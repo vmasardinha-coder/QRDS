@@ -9,22 +9,23 @@
     "O portao reprovou, entao congelar um contrato agora so criaria um segundo artefato REPROVADO sem serie nenhuma por tras.",
     "Se o dono do repositorio decidir ancorar apesar deste resultado, isso e decisao dele e tem de ser registrada como tal, nunca derivada deste arquivo."
   ],
-
   "hipotese_avaliada": {
     "origem": "Proposta pelo dono do repositorio em 2026-11-06, na conversa da rotina diaria.",
     "enunciado_literal": "BTC um dia acima de 3%: ficar vendido. Um dia abaixo de -3%: ficar comprado.",
     "limiar": "+/- 3,0% no retorno fechamento-a-fechamento do BTC em um dia",
     "limiar_prespecificado_pelo_dono": true,
     "varredura_de_limiares_executada": false,
-    "_nota_varredura": "Nenhum outro limiar foi testado. Varrer limiares e garimpar; o limiar testado foi o unico fornecido."
+    "_nota_varredura": "Nenhum outro limiar foi testado. Varrer limiares e garimpar; o limiar testado foi o unico fornecido.",
+    "gatilhos_testados": [
+      "retorno diario do BTC",
+      "mediana transversal do universo"
+    ]
   },
-
   "_atencao_selecao_retrospectiva": [
     "A hipotese nasceu de observar o resultado ja realizado do V11 e do V13, o que e selecao retrospectiva.",
     "Por isso ela foi avaliada contra o painel historico e contra os criterios da V14 ANTES de qualquer ancora, e nao sobre a amostra que a gerou.",
     "O resultado abaixo e o motivo pelo qual ela nao ancora."
   ],
-
   "panel": {
     "source": "data.binance.vision — arquivo publico mensal, sem chave",
     "instrument": "BTCUSDT perpetuo USDT margem em USDT (futures/um), klines 1d",
@@ -35,24 +36,27 @@
     "_nota_janela": "A janela primaria e a mesma do portao historico da V14, para o resultado sair comparavel.",
     "convencao_de_execucao": "sinal no fechamento de D, posicao da abertura de D+1 a abertura de D+2 — a mesma do motor congelado (signal_close_then_next_daily_open)"
   },
-
   "custo_de_referencia": {
     "V11_bps_por_perna": 8.0,
     "V13_bps_por_perna": 11.6,
-    "ida_e_volta_V11_pct": 0.160,
+    "ida_e_volta_V11_pct": 0.16,
     "ida_e_volta_V13_pct": 0.232,
     "fonte": "medido no ledger, custo dividido por giro, dia a dia — nao estimado"
   },
-
   "resultados": {
     "base_incondicional_retorno_dia_seguinte_pct": 0.0596,
     "perna_vendida_apos_alta": {
       "condicao": "retorno do BTC em D > +3%",
       "n_eventos_janela_primaria": 219,
       "retorno_medio_da_posicao_pct": 0.0602,
-      "t": 0.30,
+      "t": 0.3,
       "p_permutacao": 0.758,
-      "janela_robustez": { "n_eventos": 244, "retorno_medio_da_posicao_pct": -0.0163, "t": -0.08, "p_permutacao": 0.935 },
+      "janela_robustez": {
+        "n_eventos": 244,
+        "retorno_medio_da_posicao_pct": -0.0163,
+        "t": -0.08,
+        "p_permutacao": 0.935
+      },
       "leitura": "Nenhum sinal. Indistinguivel de zero nas duas janelas."
     },
     "perna_comprada_apos_queda": {
@@ -63,12 +67,16 @@
       "pct_eventos_positivos": 55,
       "t": 1.32,
       "p_permutacao": 0.061,
-      "janela_robustez": { "n_eventos": 220, "retorno_medio_da_posicao_pct": 0.4039, "t": 1.44, "p_permutacao": 0.052 },
+      "janela_robustez": {
+        "n_eventos": 220,
+        "retorno_medio_da_posicao_pct": 0.4039,
+        "t": 1.44,
+        "p_permutacao": 0.052
+      },
       "leitura_a_favor": "Mediana praticamente igual a media e 55% de eventos positivos: o efeito esta no centro da distribuicao, nao em poucos dias extremos. Isso o distingue favoravelmente do V11 e do V13, onde poucos dias carregam tudo.",
       "leitura_contra": "t de 1,3 nao estabelece nada, e foram dois testes (as duas pernas), o que leva p corrigido a cerca de 0,12."
     }
   },
-
   "criteria": [
     {
       "criterio": "sinal presente na perna vendida (shortar apos alta de 3%)",
@@ -94,11 +102,15 @@
       "criterio": "margem sobre o custo de execucao medido",
       "observado": "+0,216% liquido na media cheia, mas -0,027% retirando 2% dos eventos; a perna vendida nao cobre custo em nenhuma variante",
       "resultado": "REPROVA"
+    },
+    {
+      "criterio": "gatilho 2 (mediana do universo) — concentracao e replicacao",
+      "observado": "perna vendida: media +0,2919% mas mediana -0,1489% e -0,1106% sem 2% dos eventos. perna comprada: +0,3808% (t=+1,48) caindo a +0,0732% sem 2% dos eventos, abaixo do custo de 0,160%, e +0,7094% na metade 1 contra +0,0004% na metade 2",
+      "resultado": "REPROVA"
     }
   ],
-  "criterios_reprovados": 5,
-  "criterios_avaliados": 5,
-
+  "criterios_reprovados": 6,
+  "criterios_avaliados": 6,
   "_o_que_este_resultado_significa": [
     "A metade 'shortar na alta' da hipotese nao tem sinal mensuravel. Isso e um resultado limpo e negativo.",
     "A metade 'comprar na queda' tem uma tendencia central robusta — mediana igual a media, 55% positivos — mas ela nao replica fora da amostra e nao sobra margem sobre o custo depois do criterio de concentracao.",
@@ -111,15 +123,15 @@
     "Nao se aplica ao V11 nem ao V13 e nao autoriza mudanca nenhuma neles.",
     "Nao e evidencia sobre o diagnostico separado de que o sinal transversal do V11 e do V13 tem deriva proxima de zero; esse e outro registro."
   ],
-
   "limitacoes": [
     "Amostra de 2021 a 2026, com deriva incondicional positiva (+0,0596%/dia). A perna comprada se beneficia disso por construcao.",
     "Teste sobre o BTC isolado, nao sobre a cesta do motor.",
     "Retornos diarios tem cauda gorda; o teste de permutacao mitiga mas nao elimina.",
     "Dias de evento se agrupam em regimes de volatilidade e nao sao independentes entre si.",
-    "O corte das metades foi feito no ponto medio em numero de dias, definido antes de olhar o resultado das metades."
+    "O corte das metades foi feito no ponto medio em numero de dias, definido antes de olhar o resultado das metades.",
+    "Na comparacao de metades do gatilho 2 o universo triplicou: 145 nomes/dia na primeira metade contra 457 na segunda. A diferenca entre as metades nao e so de regime, e tambem de composicao do universo.",
+    "O gatilho 2 foi medido sobre a cesta equiponderada do universo inteiro, que nao e a carteira de 10+10 nomes de nenhum motor; e um teste do sinal, nao de uma implementacao."
   ],
-
   "governance": {
     "RESEARCH_ONLY": true,
     "SHADOW_ONLY": true,
@@ -136,5 +148,77 @@
     "applies_to_v14": false,
     "parametros_congelados_tocados": 0,
     "bytes_de_ledger_tocados": 0
-  }
+  },
+  "_emenda_2026_11_06": [
+    "Este arquivo foi emendado no mesmo dia para incluir um SEGUNDO gatilho, pedido pelo dono do repositorio: a mediana transversal do universo em lugar do BTC, mantido o limiar de +/- 3%.",
+    "Nenhum resultado anterior foi alterado. O veredito segue REPROVADO.",
+    "Contagem de testes acumulada: 4 (dois gatilhos x duas pernas). Melhor p bruto 0,029; corrigido por quatro testes, cerca de 0,12.",
+    "Nenhum outro gatilho, limiar ou janela sera testado sem nova prespecificacao do dono: a partir daqui qualquer achado seria garimpagem."
+  ],
+  "panel_gatilho_2": {
+    "source": "data.binance.vision — arquivo publico mensal, sem chave, RETEM DESLISTADOS",
+    "instrument": "perpetuos USDT margem em USDT (futures/um), klines 1d",
+    "symbols": 922,
+    "dias": 2129,
+    "start": "2021-01-01",
+    "end": "2026-10-31",
+    "arquivos_mensais_baixados": 22635,
+    "universo": "ponto-no-tempo: todo simbolo com fechamento do dia anterior contiguo valido; minimo de 30 nomes no dia",
+    "winsorizacao": "+/- 50%/dia, o mesmo estimador do portao da V14",
+    "retorno_da_posicao": "cesta equiponderada, abertura D+1 -> abertura D+2",
+    "_definicoes_prespecificadas": "universo, winsorizacao, estatistica de gatilho e convencao de execucao foram fixadas por escrito antes de qualquer numero ser visto"
+  },
+  "resultados_gatilho_2_mediana_do_universo": {
+    "mediana_do_universo_media_pct_dia": -0.4782,
+    "_nota_base": "O perpetuo tipico perde cerca de meio por cento por dia nesta amostra sem vies de sobrevivencia. Ficar liquido comprado em altcoin tem base negativa antes de qualquer sinal.",
+    "base_incondicional_cesta_pct": -0.0132,
+    "perna_vendida_apos_alta": {
+      "condicao": "mediana do universo em D > +3%",
+      "n_eventos": 288,
+      "media_pct": 0.2919,
+      "mediana_pct": -0.1489,
+      "pct_positivos": 48,
+      "t": 1.03,
+      "p_permutacao": 0.204,
+      "sem_2pct_melhores_pct": -0.1106,
+      "metade_1": {
+        "n": 159,
+        "media_pct": 0.5569,
+        "t": 1.24
+      },
+      "metade_2": {
+        "n": 129,
+        "media_pct": -0.0349,
+        "t": -0.11
+      },
+      "leitura": "A media e artefato de cauda: mediana negativa, 48% de positivos, e abaixo de zero ao retirar 2% dos eventos. Sem sinal."
+    },
+    "perna_comprada_apos_queda": {
+      "condicao": "mediana do universo em D < -3%",
+      "n_eventos": 397,
+      "media_pct": 0.3808,
+      "mediana_pct": 0.6716,
+      "pct_positivos": 56,
+      "t": 1.48,
+      "p_permutacao": 0.042,
+      "sem_2pct_melhores_pct": 0.0732,
+      "metade_1": {
+        "n": 213,
+        "media_pct": 0.7094,
+        "t": 1.82
+      },
+      "metade_2": {
+        "n": 184,
+        "media_pct": 0.0004,
+        "t": 0.0
+      },
+      "retorno_da_MEDIANA_do_universo_nos_mesmos_dias_pct": -0.0497,
+      "leitura": "Tendencia central melhor que a do gatilho BTC, mas cai nos mesmos dois criterios: abaixo do custo ao retirar 2% dos eventos, e zero exato na segunda metade."
+    }
+  },
+  "_achados_que_valem_mais_que_o_veredito": [
+    "Os dois gatilhos falham pela MESMA data: 'comprar na queda' e forte em 2021-2023 e exatamente nulo em 2024-2026, com BTC e com mediana do universo. Isso indica propriedade do periodo — o regime de colapso e repique de 2021-22 — e nao do gatilho. Trocar o gatilho nao ataca o problema.",
+    "Nos dias de queda da mediana, a cesta equiponderada rende +0,3808% enquanto a MEDIANA do universo rende -0,0497%. O ganho pos-queda vem de uma minoria de nomes repicando com violencia, nao do nome tipico: e a mesma concentracao do V11 e do V13, vista na transversal em vez de no tempo. Uma cesta que capture isso precisa estar em tudo, o que e o oposto de selecionar 10 nomes.",
+    "Nenhum dos quatro testes passou, o que e preferivel a um passar no quarto teste: ali nao haveria como distinguir achado de garimpagem."
+  ]
 }
