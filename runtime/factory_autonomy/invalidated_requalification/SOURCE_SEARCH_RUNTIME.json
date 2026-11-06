@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-11-06T10:47:44.841531Z",
+  "generated_at_utc": "2026-11-06T11:02:13.947905Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2941,
-        "sample_sha256": "bb96e6ef579c9e8176c8846f82e096c3d2be7835458a5a5f1a53699e8f6ae8b2",
+        "sample_sha256": "ff875ad82cb843c1319b80a279aceaee06eb10e54f5a9c9b14c19729c5949896",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -1118,14 +1118,29 @@
         ]
       },
       {
+        "query": "\"mini índice futuro\" 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+%C3%ADndice+futuro%22+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WIN B3\" OHLC 5min extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
+      },
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "status": "SEARCH_ERROR_FAIL_CLOSED",
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WINFUT%22+volume+timestamp+extension%3Acsv&per_page=30"
+      },
+      {
         "query": "\"mini indice\" intraday B3 extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
       },
       {
         "query": "\"WIN continuous\" futures Brazil extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
+        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+continuous%22+futures+Brazil+extension%3Acsv&per_page=30"
       }
     ],
     "reachable_official_probe_count": 6,
