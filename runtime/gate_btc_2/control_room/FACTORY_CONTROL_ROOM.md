@@ -1,22 +1,22 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-11-06T21:33:01.081226+00:00`
+Generated: `2026-11-06T22:10:07.210220+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **29**
-- Latest ledger: **2026-11-05**
-- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-11-05`)
-- Triggered cells: **15**
+- Ledger sessions: **30**
+- Latest ledger: **2026-11-06**
+- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-11-06`)
+- Triggered cells: **21**
 - Cells at 60/60: **0**
 - Trigger range: **0–10 / 60**
 
 ## Latest prospective session states
-- `NO_SIGNAL`: **4**
-- `TRIGGER`: **1**
-- `WARMUP_PENDING`: **575**
+- `NO_SIGNAL`: **5**
+- `TRIGGER`: **5**
+- `WARMUP_PENDING`: **570**
 
 ## 3D family states
 - `CONTINUE_EXPERIMENTAL_SHADOW`: **580**
@@ -26,7 +26,7 @@ Generated: `2026-11-06T21:33:01.081226+00:00`
 
 ## Source
 - Historical binding snapshot: `FORWARD_SOURCE_BOUND` / `WINV26`
-- Latest physically observed symbol: `WINZ26` (session `2026-11-05`; source QA=None)
+- Latest physically observed symbol: `WINZ26` (session `2026-11-06`; source QA=None)
 - Waiting source semantics: **0**
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (43 records; admitted=False)
 
@@ -38,14 +38,14 @@ Generated: `2026-11-06T21:33:01.081226+00:00`
 
 | Lookback | Families | Prior feature observations | Additional prior observations |
 |---|---:|---:|---:|
-| 10 | 5 | 20 to 20 | 0 to 0 |
-| 20 | 5 | 20 to 20 | 0 to 0 |
-| 60 | 6 | 20 to 20 | 40 to 40 |
-| 80 | 10 | 20 to 20 | 60 to 60 |
-| 120 | 26 | 20 to 20 | 100 to 100 |
-| 160 | 16 | 20 to 20 | 140 to 140 |
-| 200 | 256 | 13 to 20 | 180 to 187 |
-| 252 | 256 | 13 to 20 | 232 to 239 |
+| 10 | 5 | 21 to 21 | 0 to 0 |
+| 20 | 5 | 21 to 21 | 0 to 0 |
+| 60 | 6 | 21 to 21 | 39 to 39 |
+| 80 | 10 | 21 to 21 | 59 to 59 |
+| 120 | 26 | 21 to 21 | 99 to 99 |
+| 160 | 16 | 21 to 21 | 139 to 139 |
+| 200 | 256 | 14 to 21 | 179 to 186 |
+| 252 | 256 | 14 to 21 | 231 to 238 |
 
 Coverage is not a signal. A later eligible session, its current feature, nonzero MAD and the frozen trigger remain required.
 
