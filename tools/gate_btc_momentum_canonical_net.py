@@ -27,7 +27,7 @@ def load_verified(epoch,scope):
     original=read(epoch/"LEDGER.json"); ledger=copy.deepcopy(original)
     if scope=="M1_M2_HOLD_20260928":
         if original.get("epoch_id")!="hold_20260928":raise ValueError("WRONG_M1M2_EPOCH")
-    elif scope=="M3_AFTER_GAP_2026_10_12":
+    elif scope in ("M3_AFTER_GAP_2026_10_12", "M3_PRICE_GAP_20261104"):
         from tools.gate_btc_momentum_m3_economics import validate, verify_contract
         contract=read(epoch/"CONTRACT.json");verify_contract(contract)
         validate(original,read(epoch/"ACTIVATION.json"),contract)
@@ -48,8 +48,11 @@ def load_verified(epoch,scope):
 
 def calculate(ledger,prices,model):
     verify_model(model)
+    return calculate_bound(ledger,prices,model["first_activation_cutoff"],model["one_way_total_cost_bps"]/10000)
+
+def calculate_bound(ledger,prices,first,rate):
+    """Shared accounting kernel; each caller must bind its own admission and clock."""
     if len(ledger["rows"])!=len(prices):raise ValueError("PRICE_ROW_COUNT")
-    first=model["first_activation_cutoff"]; rate=model["one_way_total_cost_bps"]/10000
     selected=[(r,p) for r,p in zip(ledger["rows"],prices) if r["cutoff"]>=first]
     if not selected:return []
     if selected[0][0]["cutoff"]!=first:raise ValueError("MISSING_NET_ACTIVATION_NO_LATE_BACKFILL")
