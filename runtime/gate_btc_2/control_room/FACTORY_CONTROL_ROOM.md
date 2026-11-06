@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-11-06T06:51:29.020834+00:00`
+Generated: `2026-11-06T10:48:46.342987+00:00`
 
 ## Funnel
 - Reclassified: **2560**
@@ -31,8 +31,8 @@ Generated: `2026-11-06T06:51:29.020834+00:00`
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (46 records; admitted=False)
 
 ## External prospective lanes
-- `F-XMM-INVENTORY`: **328** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-11-06T06:50:10.405134Z`
-- `F-XVOL-SURFACE`: **328** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-11-06T06:50:10.363993Z`
+- `F-XMM-INVENTORY`: **329** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-11-06T10:47:27.242724Z`
+- `F-XVOL-SURFACE`: **329** records · `PROSPECTIVE_FEATURE_HISTORY_ACCUMULATING` · latest `2026-11-06T10:47:27.213356Z`
 
 ## Frozen prior-feature coverage
 
