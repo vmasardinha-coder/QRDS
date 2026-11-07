@@ -5,34 +5,24 @@
   "inception_date": "2026-08-06",
   "cash": 0.0,
   "positions": {
-    "AMD": {
-      "qty": 9.282856508518643,
-      "avg_cost": 484.1810386355124,
-      "high_water": 645.86
-    },
-    "MU": {
-      "qty": 4.97433390985713,
-      "avg_cost": 888.1746316401104,
-      "high_water": 1097.39
-    },
     "TGT": {
-      "qty": 28.057218643871714,
+      "qty": 24.88274754584086,
       "avg_cost": 155.55083359691778,
       "high_water": 159.83
     },
     "MRK": {
-      "qty": 30.12854414413581,
+      "qty": 26.747175546927753,
       "avg_cost": 146.8241641733671,
       "high_water": 150.91
     },
     "PANW": {
-      "qty": 11.723657854319708,
-      "avg_cost": 391.72789171151805,
+      "qty": 12.490005322609601,
+      "avg_cost": 387.00951526380953,
       "high_water": 401.7
     },
     "KLAC": {
-      "qty": 27.87025637012854,
-      "avg_cost": 165.29224543175053,
+      "qty": 30.279121532092166,
+      "avg_cost": 162.47381167696193,
       "high_water": 167.43
     },
     "ADI": {
@@ -50,17 +40,27 @@
       "avg_cost": 104.562255,
       "high_water": 104.562255
     },
-    "DE": {
-      "qty": 6.3505438838926835,
-      "avg_cost": 667.9338,
-      "high_water": 667.9338
+    "CAT": {
+      "qty": 7.098890930687023,
+      "avg_cost": 553.9168199999999,
+      "high_water": 553.9168199999999
+    },
+    "COP": {
+      "qty": 29.0139522727415,
+      "avg_cost": 135.52773,
+      "high_water": 135.52773
+    },
+    "XOM": {
+      "qty": 23.008074126420585,
+      "avg_cost": 165.38265,
+      "high_water": 165.38265
     }
   },
   "benchmark": {
     "symbol": "SPY",
     "inception_price": 769.7899780273438
   },
-  "last_rebalance": "2026-11-03",
+  "last_rebalance": "2026-11-07",
   "last_regime": "risk_on",
   "history": [
     {
@@ -477,6 +477,11 @@
       "date": "2026-11-05",
       "nav": 43460.43,
       "benchmark_nav": 48997.13
+    },
+    {
+      "date": "2026-11-07",
+      "nav": 39293.59,
+      "benchmark_nav": 47610.39
     }
   ],
   "trades": [
@@ -1466,12 +1471,96 @@
       "qty": 6.35054388,
       "price": 667.9338,
       "value": 4241.74
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "AMD",
+      "side": "sell",
+      "qty": 9.28285651,
+      "price": 404.1978,
+      "value": 3752.11,
+      "reason": "stop: queda 37.4% > 8x sigma (35.2%); carencia ate 2026-12-07"
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "MU",
+      "side": "sell",
+      "qty": 4.97433391,
+      "price": 656.061805,
+      "value": 3263.47,
+      "reason": "stop: queda 40.2% > 8x sigma (33.6%); carencia ate 2026-12-07"
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "DE",
+      "side": "sell",
+      "qty": 6.35054388,
+      "price": 662.978345,
+      "value": 4210.27
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "MRK",
+      "side": "sell",
+      "qty": 3.3813686,
+      "price": 146.86653,
+      "value": 496.61
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "TGT",
+      "side": "sell",
+      "qty": 3.1744711,
+      "price": 157.871025,
+      "value": 501.16
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "CAT",
+      "side": "buy",
+      "qty": 7.09889093,
+      "price": 553.91682,
+      "value": 3932.2
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "COP",
+      "side": "buy",
+      "qty": 29.01395227,
+      "price": 135.52773,
+      "value": 3932.2
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "KLAC",
+      "side": "buy",
+      "qty": 2.40886516,
+      "price": 129.8649,
+      "value": 312.83
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "PANW",
+      "side": "buy",
+      "qty": 0.76634747,
+      "price": 314.827335,
+      "value": 241.27
+    },
+    {
+      "date": "2026-11-07",
+      "symbol": "XOM",
+      "side": "buy",
+      "qty": 23.00807413,
+      "price": 165.38265,
+      "value": 3805.14
     }
   ],
   "cooldown": {
     "AMAT": "2026-11-22",
     "LRCX": "2026-11-23",
-    "INTC": "2026-12-01"
+    "INTC": "2026-12-01",
+    "AMD": "2026-12-07",
+    "MU": "2026-12-07"
   },
   "decision_log": [
     {
@@ -31725,6 +31814,1955 @@
           "WFC": "2026-11-03",
           "WMT": "2026-11-03",
           "XOM": "2026-11-03"
+        },
+        "execution_model": "LAST_AVAILABLE_CLOSE_PAPER_NOT_OBSERVED_FILL",
+        "same_day_benchmark_session": false
+      }
+    },
+    {
+      "date": "2026-11-07",
+      "regime": "risk_on",
+      "hurdle": "SPY",
+      "hurdle_score": 0.151,
+      "rebalance_trigger": "desvio de peso em CAT: 0.0% vs alvo 10.0%",
+      "eligible_count": 36,
+      "selected": [
+        {
+          "symbol": "PANW",
+          "score": 0.8906,
+          "weight": 0.1
+        },
+        {
+          "symbol": "TXN",
+          "score": 0.8134,
+          "weight": 0.1
+        },
+        {
+          "symbol": "ADI",
+          "score": 0.7878,
+          "weight": 0.1
+        },
+        {
+          "symbol": "MRK",
+          "score": 0.7027,
+          "weight": 0.1
+        },
+        {
+          "symbol": "TGT",
+          "score": 0.6773,
+          "weight": 0.1
+        },
+        {
+          "symbol": "KLAC",
+          "score": 0.6492,
+          "weight": 0.1
+        },
+        {
+          "symbol": "CSCO",
+          "score": 0.6232,
+          "weight": 0.1
+        },
+        {
+          "symbol": "CAT",
+          "score": 0.4862,
+          "weight": 0.1
+        },
+        {
+          "symbol": "COP",
+          "score": 0.477,
+          "weight": 0.1
+        },
+        {
+          "symbol": "XOM",
+          "score": 0.4373,
+          "weight": 0.1
+        }
+      ],
+      "rejected": [
+        {
+          "symbol": "ABT",
+          "reason": "nao bate o benchmark (-21.5% <= +15.1%)"
+        },
+        {
+          "symbol": "ACN",
+          "reason": "nao bate o benchmark (-19.0% <= +15.1%)"
+        },
+        {
+          "symbol": "ADBE",
+          "reason": "nao bate o benchmark (-30.6% <= +15.1%)"
+        },
+        {
+          "symbol": "AMT",
+          "reason": "nao bate o benchmark (-7.9% <= +15.1%)"
+        },
+        {
+          "symbol": "AMZN",
+          "reason": "nao bate o benchmark (+4.3% <= +15.1%)"
+        },
+        {
+          "symbol": "AVGO",
+          "reason": "nao bate o benchmark (+7.0% <= +15.1%)"
+        },
+        {
+          "symbol": "AXP",
+          "reason": "nao bate o benchmark (-15.6% <= +15.1%)"
+        },
+        {
+          "symbol": "BA",
+          "reason": "nao bate o benchmark (-4.9% <= +15.1%)"
+        },
+        {
+          "symbol": "BAC",
+          "reason": "nao bate o benchmark (-0.0% <= +15.1%)"
+        },
+        {
+          "symbol": "BKNG",
+          "reason": "nao bate o benchmark (-21.9% <= +15.1%)"
+        },
+        {
+          "symbol": "BLK",
+          "reason": "nao bate o benchmark (+0.9% <= +15.1%)"
+        },
+        {
+          "symbol": "CL",
+          "reason": "nao bate o benchmark (+13.9% <= +15.1%)"
+        },
+        {
+          "symbol": "COST",
+          "reason": "nao bate o benchmark (+0.2% <= +15.1%)"
+        },
+        {
+          "symbol": "CRM",
+          "reason": "nao bate o benchmark (-11.7% <= +15.1%)"
+        },
+        {
+          "symbol": "DHR",
+          "reason": "nao bate o benchmark (+2.2% <= +15.1%)"
+        },
+        {
+          "symbol": "DIS",
+          "reason": "nao bate o benchmark (-6.0% <= +15.1%)"
+        },
+        {
+          "symbol": "DUK",
+          "reason": "nao bate o benchmark (-6.7% <= +15.1%)"
+        },
+        {
+          "symbol": "ETN",
+          "reason": "nao bate o benchmark (+14.2% <= +15.1%)"
+        },
+        {
+          "symbol": "GE",
+          "reason": "nao bate o benchmark (-0.2% <= +15.1%)"
+        },
+        {
+          "symbol": "GS",
+          "reason": "nao bate o benchmark (+12.2% <= +15.1%)"
+        },
+        {
+          "symbol": "HD",
+          "reason": "nao bate o benchmark (-25.4% <= +15.1%)"
+        },
+        {
+          "symbol": "HON",
+          "reason": "nao bate o benchmark (-47.0% <= +15.1%)"
+        },
+        {
+          "symbol": "IBM",
+          "reason": "nao bate o benchmark (-26.7% <= +15.1%)"
+        },
+        {
+          "symbol": "ICE",
+          "reason": "nao bate o benchmark (+3.8% <= +15.1%)"
+        },
+        {
+          "symbol": "INTU",
+          "reason": "nao bate o benchmark (-55.0% <= +15.1%)"
+        },
+        {
+          "symbol": "ISRG",
+          "reason": "nao bate o benchmark (-23.1% <= +15.1%)"
+        },
+        {
+          "symbol": "JPM",
+          "reason": "nao bate o benchmark (+6.6% <= +15.1%)"
+        },
+        {
+          "symbol": "LMT",
+          "reason": "nao bate o benchmark (+2.9% <= +15.1%)"
+        },
+        {
+          "symbol": "LOW",
+          "reason": "nao bate o benchmark (-23.6% <= +15.1%)"
+        },
+        {
+          "symbol": "MA",
+          "reason": "nao bate o benchmark (+3.1% <= +15.1%)"
+        },
+        {
+          "symbol": "MCD",
+          "reason": "nao bate o benchmark (-22.8% <= +15.1%)"
+        },
+        {
+          "symbol": "MDLZ",
+          "reason": "nao bate o benchmark (+5.9% <= +15.1%)"
+        },
+        {
+          "symbol": "META",
+          "reason": "nao bate o benchmark (+15.0% <= +15.1%)"
+        },
+        {
+          "symbol": "MSFT",
+          "reason": "nao bate o benchmark (+3.0% <= +15.1%)"
+        },
+        {
+          "symbol": "NEE",
+          "reason": "nao bate o benchmark (-5.7% <= +15.1%)"
+        },
+        {
+          "symbol": "NFLX",
+          "reason": "nao bate o benchmark (-36.2% <= +15.1%)"
+        },
+        {
+          "symbol": "NKE",
+          "reason": "nao bate o benchmark (-43.9% <= +15.1%)"
+        },
+        {
+          "symbol": "NOW",
+          "reason": "nao bate o benchmark (-22.3% <= +15.1%)"
+        },
+        {
+          "symbol": "ORCL",
+          "reason": "nao bate o benchmark (-42.2% <= +15.1%)"
+        },
+        {
+          "symbol": "PEP",
+          "reason": "nao bate o benchmark (-13.4% <= +15.1%)"
+        },
+        {
+          "symbol": "PG",
+          "reason": "nao bate o benchmark (+0.4% <= +15.1%)"
+        },
+        {
+          "symbol": "PGR",
+          "reason": "nao bate o benchmark (+2.2% <= +15.1%)"
+        },
+        {
+          "symbol": "PLD",
+          "reason": "nao bate o benchmark (+2.7% <= +15.1%)"
+        },
+        {
+          "symbol": "QCOM",
+          "reason": "nao bate o benchmark (+2.5% <= +15.1%)"
+        },
+        {
+          "symbol": "RTX",
+          "reason": "nao bate o benchmark (+2.6% <= +15.1%)"
+        },
+        {
+          "symbol": "SCHW",
+          "reason": "nao bate o benchmark (+1.9% <= +15.1%)"
+        },
+        {
+          "symbol": "SHW",
+          "reason": "nao bate o benchmark (-8.2% <= +15.1%)"
+        },
+        {
+          "symbol": "SO",
+          "reason": "nao bate o benchmark (-7.9% <= +15.1%)"
+        },
+        {
+          "symbol": "SPGI",
+          "reason": "nao bate o benchmark (-19.3% <= +15.1%)"
+        },
+        {
+          "symbol": "SYK",
+          "reason": "nao bate o benchmark (-24.1% <= +15.1%)"
+        },
+        {
+          "symbol": "TJX",
+          "reason": "nao bate o benchmark (-2.3% <= +15.1%)"
+        },
+        {
+          "symbol": "TMUS",
+          "reason": "nao bate o benchmark (-18.7% <= +15.1%)"
+        },
+        {
+          "symbol": "TSLA",
+          "reason": "nao bate o benchmark (-15.0% <= +15.1%)"
+        },
+        {
+          "symbol": "UBER",
+          "reason": "nao bate o benchmark (-27.7% <= +15.1%)"
+        },
+        {
+          "symbol": "UNH",
+          "reason": "nao bate o benchmark (+13.6% <= +15.1%)"
+        },
+        {
+          "symbol": "UPS",
+          "reason": "nao bate o benchmark (-1.0% <= +15.1%)"
+        },
+        {
+          "symbol": "V",
+          "reason": "nao bate o benchmark (+9.3% <= +15.1%)"
+        },
+        {
+          "symbol": "WFC",
+          "reason": "nao bate o benchmark (-7.9% <= +15.1%)"
+        },
+        {
+          "symbol": "WMT",
+          "reason": "nao bate o benchmark (+5.8% <= +15.1%)"
+        }
+      ],
+      "stops": [
+        {
+          "symbol": "AMD",
+          "reason": "stop: queda 37.4% > 8x sigma (35.2%); carencia ate 2026-12-07"
+        },
+        {
+          "symbol": "MU",
+          "reason": "stop: queda 40.2% > 8x sigma (33.6%); carencia ate 2026-12-07"
+        }
+      ],
+      "cooldowns": {
+        "AMAT": "2026-11-22",
+        "LRCX": "2026-11-23",
+        "INTC": "2026-12-01",
+        "AMD": "2026-12-07",
+        "MU": "2026-12-07"
+      },
+      "data_failures": [],
+      "sources": {
+        "nasdaq": 101
+      },
+      "source_failures": {},
+      "source_missing": {},
+      "note": "",
+      "cash_weight": 0.0,
+      "market_data_market": "EUA",
+      "market_data_evidence": {
+        "AAPL": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AAPL",
+          "captured_at_utc": "2026-11-07T00:55:56.995041+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "76a03364709277fef72dacfe372eca7dec13479836b10c9bbd1a76031befa328",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 344.17,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ABBV": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ABBV",
+          "captured_at_utc": "2026-11-07T00:56:59.714215+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b80edb19c218d0c88c855b101d8318ef30a6edf67fcc70c34fba9fcc4db7b84e",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 288.24,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ABT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ABT",
+          "captured_at_utc": "2026-11-07T00:58:31.860840+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "761ea76e118513cd15ce328889c00fdb44bfe51ff6c0301652a748b6717b4ef4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 113.6,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ACN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ACN",
+          "captured_at_utc": "2026-11-07T00:59:09.720336+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "665d1e6a2fdde3407f64497bc6609661d64a5dff10769844d344566f7f064a44",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 265.16,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ADBE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ADBE",
+          "captured_at_utc": "2026-11-07T00:57:29.326118+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "39b1b09328efa0bed76cd05391ebbaffdd41b019b6dc28a0c78bd33d571053d5",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 246.44,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ADI": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ADI",
+          "captured_at_utc": "2026-11-07T00:59:24.320636+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "36d1add0ced7424fdaa56dda2e4b4170515f996e6cc2628abfd6ea27ec2330c7",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 361.01,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AMAT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AMAT",
+          "captured_at_utc": "2026-11-07T00:59:17.928686+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "02c3ad98eced732d3de4d782d43fdee8bd6425818bd9f7e6f5d7e0a810e50a1e",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 319.25,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AMD": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AMD",
+          "captured_at_utc": "2026-11-07T00:57:06.295592+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7735e2c9ed1e1b9912e95b8098ae27a24bf96dcab1de9a49743ed96a70259bbe",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 404.4,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AMGN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AMGN",
+          "captured_at_utc": "2026-11-07T00:57:44.516748+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b5becba80b74f49fa31876d14a853e842a59fd935df380e66794e3a20351d566",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 460.28,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AMT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AMT",
+          "captured_at_utc": "2026-11-07T01:01:01.126792+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7c9c0145dee81036a941cb5ef34d0aa3fc215840252192a7a75d09023f385131",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 193.99,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AMZN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AMZN",
+          "captured_at_utc": "2026-11-07T00:56:09.390735+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "abf75d02e4302d6c5aa4310efa5c5ba4b7e0a9b39d1e12a82223dd8d757c3d42",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 260.21,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ANET": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ANET",
+          "captured_at_utc": "2026-11-07T00:59:32.435499+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ba7eb8ce6e1912bb3c13f1bdbc34a67ea3a29e8c890bdb5874bed729448ed0aa",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 159.16,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AVGO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AVGO",
+          "captured_at_utc": "2026-11-07T00:56:18.807992+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4c517c3c9dd453b51c8d39efa3404dfe0f6b71762345feae2e33d953c052b930",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 291.53,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "AXP": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "AXP",
+          "captured_at_utc": "2026-11-07T00:58:15.917326+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b2a3e0691e4a03d89b58618834110176521a03443c9ded1b6e2b044566c90e5d",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 324.97,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "BA": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "BA",
+          "captured_at_utc": "2026-11-07T00:59:43.913589+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "5f72c5490fe09ac6222f4beea32bafdf0c3491ad63294a88a894d997d4665d8e",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 172.5,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "BAC": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "BAC",
+          "captured_at_utc": "2026-11-07T00:57:20.863791+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "874f0ffab69db3a812e2927e50a86b4885fa176a4e11d53cc1f507582401b1c7",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 49.76,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "BKNG": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "BKNG",
+          "captured_at_utc": "2026-11-07T01:00:13.555442+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "91414fc00a263bfbbc870ecc12cae7b241fe33686778bea14780f4e4ad714cb2",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 168.72,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "BLK": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "BLK",
+          "captured_at_utc": "2026-11-07T00:58:07.723083+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "c1549ab7265553b72a15e293f51d63d841b3264c9f7b4fdb56f9d373bec3f365",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 1170.67,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "BMY": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "BMY",
+          "captured_at_utc": "2026-11-07T00:58:40.173499+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "73530fa0e93f6aa9bcc009ce3b7636d878c8ea3bf092ad3fb4c7e51fd378f028",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 63.13,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "C": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "C",
+          "captured_at_utc": "2026-11-07T00:58:23.171018+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "866acd43ed62a4f206d96f8cd7ef13a4e45ffbec09128c605b8ce3b4787de11b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 118.45,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "CAT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "CAT",
+          "captured_at_utc": "2026-11-07T00:57:47.602465+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "8dde316955e42808c73643b70111751d941bb3172b2080168d4d9f69060370e4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 553.64,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "CL": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "CL",
+          "captured_at_utc": "2026-11-07T01:00:20.869687+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "6601c8e706654fb306661252e249951dabf0ccb4568a5ddbc3a2eef832531a8b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 98.69,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "COP": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "COP",
+          "captured_at_utc": "2026-11-07T01:00:35.349865+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "f7cadabb4804c7e22aa10bf84e3ab430eeca61558630f7d0f67cc34255a2b630",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 135.46,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "COST": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "COST",
+          "captured_at_utc": "2026-11-07T00:56:51.508512+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2a137d60218e603ddebbc306b0de56582448c34d971e84825cd30d6ca4d00e29",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 1065.59,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "CRM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "CRM",
+          "captured_at_utc": "2026-11-07T00:57:01.844757+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d2157adcbed729367543e98c24add42e37b515cb944e6a4a68953c39c2ab7c05",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 222.41,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "CSCO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "CSCO",
+          "captured_at_utc": "2026-11-07T00:57:26.149807+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "8e3c77a9e7aa8c2aa2cfae70ed8b7c4fede81eb6cc024e6f41b6fd450bde48de",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 95.72,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "CVX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "CVX",
+          "captured_at_utc": "2026-11-07T01:00:31.286799+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "44d07e43c676bdd02486faf8ab69ec9307470d84111f0a85bb296828c5102dd2",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 212.93,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "DE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "DE",
+          "captured_at_utc": "2026-11-07T00:59:53.260394+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "23ba6297fd687bb32e262a2d7df72151ff316cd7f6f4c16c324e6f3168377c13",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 663.31,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "DHR": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "DHR",
+          "captured_at_utc": "2026-11-07T00:58:36.020782+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "cc26d9928aeadfe7fbb3ff797881312d9acf8a3ce3a82b3a999446f31a940a5b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 226.34,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "DIS": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "DIS",
+          "captured_at_utc": "2026-11-07T00:57:23.968843+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "6bb823c40f20ecd3d2aade679811e9934345d19b11c88b4fe46fa19782949f35",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 117.22,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "DUK": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "DUK",
+          "captured_at_utc": "2026-11-07T01:00:47.660933+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "f24088ca0e8578d8dd14187c33171eb22ac4f053d3285509e4b963631257dff4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 130.08,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ELV": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ELV",
+          "captured_at_utc": "2026-11-07T00:58:57.091566+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ca2cd58a9f520faa06cc1043f3f6b8ce5d72896238d9e4826b858c78765996fd",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 432.0,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "EOG": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "EOG",
+          "captured_at_utc": "2026-11-07T01:00:38.403901+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "72d859a7d2e1c0ba68feb11f170284b63e7af0223fa582242c38da55fc85bcd6",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 144.89,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ETN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ETN",
+          "captured_at_utc": "2026-11-07T00:59:58.498890+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "6182ab951b9d3920207fd88862ce3419988d4e48235b058dc88e9fb21ed6ab5b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 327.02,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "GE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "GE",
+          "captured_at_utc": "2026-11-07T00:57:50.638377+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "f9f5270cfd41a6857eb588a4393d2f96bd2c29a1a598681ddf161217b811b726",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 314.73,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "GILD": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "GILD",
+          "captured_at_utc": "2026-11-07T00:58:44.514000+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "54e44d76f91279c15e4a1bfcc0a7a4c593bb2afa697a6a6c36fbee808dd0bf7c",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 167.57,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "GOOGL": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "GOOGL",
+          "captured_at_utc": "2026-11-07T00:56:06.252746+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "25399f3745e5af7664cb471004be17ceef49d53c670ed441b989f3534a060ca4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 282.57,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "GS": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "GS",
+          "captured_at_utc": "2026-11-07T00:58:05.517193+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "79695ff7228984635f01c204670c01aa7ad29c761a92d8767e9c48e3349191c9",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 868.95,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "HD": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "HD",
+          "captured_at_utc": "2026-11-07T00:56:47.016564+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4ccdb16f70911aa07594100b8cd45d2fdaa3d1d6866b2ab0894840bfc83565b0",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 349.94,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "HON": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "HON",
+          "captured_at_utc": "2026-11-07T00:59:39.632359+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "0f643f3c7af979b735a46820706057d38bdc98772c84127f7039cefbe81668f3",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 215.78,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "IBM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "IBM",
+          "captured_at_utc": "2026-11-07T00:59:05.698432+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "ed7e4bf0bed780ef8658ca8fe0c104a1fe531645579d25358935b50e6213b929",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 247.11,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ICE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ICE",
+          "captured_at_utc": "2026-11-07T00:58:28.743100+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "33ad8f3bc876ddbc37c5c01966a80db003156d243fd196c77b9b4eedc03d1fca",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 174.0,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "INTC": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "INTC",
+          "captured_at_utc": "2026-11-07T00:57:36.084884+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "878c90340b88d50577bf4db896b943786aa7d3418ed90c5da3ea80b429f3c778",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 52.25,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "INTU": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "INTU",
+          "captured_at_utc": "2026-11-07T00:59:00.246773+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "caf67b8b5c41b3969d73a4a4763d2776ada8bef1fc64c1e12627a13bfa28c78e",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 354.84,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ISRG": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ISRG",
+          "captured_at_utc": "2026-11-07T00:58:50.930355+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "3f3f835d3d435773220c6a8ddd00c4f9095f7418b074fb56820bc8e4e72a724c",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 468.52,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "JNJ": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "JNJ",
+          "captured_at_utc": "2026-11-07T00:56:37.624843+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "1d798b2f0b75c4aadb4d28b98bcf14e3c81259c1d7e01030773971ec529de506",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 272.32,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "JPM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "JPM",
+          "captured_at_utc": "2026-11-07T00:56:22.883593+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "8e07ab0eb73f2f10beada924d6da6d2b869646b62f464bd8410dfdd0697fe391",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 337.34,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "KLAC": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "KLAC",
+          "captured_at_utc": "2026-11-07T00:59:21.068302+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "900e180339bca11bee111e82f5707a9e30d4b083c368473048f327c2ef9aba42",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 129.8,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "KO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "KO",
+          "captured_at_utc": "2026-11-07T00:57:11.551095+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "fceb6c99f10e360b0d69c5ac574192791a9264eca295f00e002e085c294a4982",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 95.73,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "LIN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "LIN",
+          "captured_at_utc": "2026-11-07T01:00:52.843994+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d47c77245920cf0a99644363dfc16290472efe5dd71be5aed93755aea56fe34b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 521.23,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "LLY": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "LLY",
+          "captured_at_utc": "2026-11-07T00:56:35.305665+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "49fa335cf528796d002b1350ff0073ab1f5379d231d276838ef272588546adec",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 1364.73,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "LMT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "LMT",
+          "captured_at_utc": "2026-11-07T00:59:47.144461+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "fa48d23d0772b7046a5d602dc48bd0c154d9a3c5ef5763d1f8bb83d83723afea",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 576.16,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "LOW": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "LOW",
+          "captured_at_utc": "2026-11-07T01:00:00.707473+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4395103dfc858219884e46d577944a136142c1c691663da837ab1e777b26c921",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 227.24,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "LRCX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "LRCX",
+          "captured_at_utc": "2026-11-07T00:59:14.904578+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "dc1c386831c019d9decfe86b8c47ba5432196a133879c9474528baee616e6d72",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 185.2,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MA": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MA",
+          "captured_at_utc": "2026-11-07T00:56:43.845020+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "562672af3745018bfd11fb4818433413b5f508081ddfcdf3973ec4d9738afee4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 655.92,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MCD": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MCD",
+          "captured_at_utc": "2026-11-07T01:00:10.418787+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "a5ff2d4b742b7275a2e4f7cd8b0b6e5cf120c127c30409e7f9ac51ff0a252369",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 278.04,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MDLZ": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MDLZ",
+          "captured_at_utc": "2026-11-07T01:00:23.989972+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b3b103961023e29317d40c93a8465cb38ca6d9a67f453c273096c709753e5da4",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 66.82,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "META": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "META",
+          "captured_at_utc": "2026-11-07T00:56:11.624818+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "be59d44f4f96993fb923a9fee891415b22ae05e6e75f9e8f5698d0fafd5c0a2e",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 605.08,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MO",
+          "captured_at_utc": "2026-11-07T01:00:28.033902+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "1283a713d5251e578a41193063bb4ca72fb4fcf638a4c9deb73f2f861774abdb",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 77.58,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MRK": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MRK",
+          "captured_at_utc": "2026-11-07T00:56:55.605432+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "5d112879629b7955d5a4518cd82d3eb8898e1bb2ddb5f5ac6d380dd9a3312832",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 146.94,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MS": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MS",
+          "captured_at_utc": "2026-11-07T00:58:02.287750+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "021090a49a8e6616e35b84cb32ed99dd9ca31d6372b65450d951c3f06c2b661f",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 182.44,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MSFT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MSFT",
+          "captured_at_utc": "2026-11-07T00:56:01.030345+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e190e805588a93e0803f8bad9e88c14f9ef457376e50cd6e6a94b11ccbbd5f0b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 535.93,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "MU": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "MU",
+          "captured_at_utc": "2026-11-07T00:59:12.894323+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "0e9a6ac7ab73218b16b2afbc95f1478a9a149ac47a620aa773d0abca1751e52f",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 656.39,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "NEE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "NEE",
+          "captured_at_utc": "2026-11-07T01:00:45.541289+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2b93b2bc0ac0dd9c8537238c335c34d3d13adc700323c6e8fad91781e54d5fa9",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 88.25,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "NFLX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "NFLX",
+          "captured_at_utc": "2026-11-07T00:57:03.996385+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e6edeb0f7dffc4cb6114a2c5093233940e006117d346b44ad902683718617388",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 65.56,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "NKE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "NKE",
+          "captured_at_utc": "2026-11-07T00:57:57.002556+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "8e32ff290670e0ef1077a72592b370768ce1b9980f5aae663a3c1b2260f80ee6",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 39.56,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "NOW": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "NOW",
+          "captured_at_utc": "2026-11-07T00:59:02.553224+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "b7ff6821de85e92db8f1aae45042ea1466992e0294b50910fdf0753ee0ecdeb3",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 102.36,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "NVDA": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "NVDA",
+          "captured_at_utc": "2026-11-07T00:56:04.155488+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "85660744e5eb511a6185e12b91aa43ff464b44cfa822ce2e44953ca993697273",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 181.6,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "ORCL": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "ORCL",
+          "captured_at_utc": "2026-11-07T00:57:09.359541+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "c384518d8914a3b92989860cae32deeaf084290b0f48d6fa67ab7125d6265d1a",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 115.16,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PANW": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PANW",
+          "captured_at_utc": "2026-11-07T00:59:28.356449+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "f05c9375493c2bdcb1bc9a0f585d91a9cfaaade46b2db43f87e15b3c0734627c",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 314.67,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PEP": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PEP",
+          "captured_at_utc": "2026-11-07T00:57:14.693194+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "065ad8fcb1a56a5dad68c9a432ae2b8459aa48906b5018695dedf6ce1ae17905",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 142.71,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PFE": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PFE",
+          "captured_at_utc": "2026-11-07T00:58:42.363800+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "461919000c87e3c44c23350a8c263654b040dfc384ccd851edaed1b706cfe707",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 29.88,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PG": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PG",
+          "captured_at_utc": "2026-11-07T00:56:39.730312+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "e5c89dfa655ca57af90ffd93b991f25843aaebffe6eb7db69c937b32e8998480",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 167.1,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PGR": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PGR",
+          "captured_at_utc": "2026-11-07T00:58:26.511005+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "79df4e9bce8bcabc5c582dae8466a9663863504ac340d36cfb984d631c19072b",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 233.18,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PLD": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PLD",
+          "captured_at_utc": "2026-11-07T01:01:03.349324+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "279d488346882a58bdfbe002ca922ebe4c8667644a5e515b1b0b57fe4ba0be79",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 128.55,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "PM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "PM",
+          "captured_at_utc": "2026-11-07T00:57:52.743174+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2e763d9ff8f778db4df9fc19d9fe5e99488e00e3729caea9bbd7ec1ab73349f6",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 201.5,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "QCOM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "QCOM",
+          "captured_at_utc": "2026-11-07T00:57:39.281787+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "7d97b0f51dba69a1fae039a3c8f591761f79913002cf8edfed57649eed6e4706",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 156.75,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "RTX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "RTX",
+          "captured_at_utc": "2026-11-07T00:59:49.246092+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "8abe38e93ed4c819a886ebb5cf619ec2e29457c5520b3ff38ed3d98202f27e75",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 191.88,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SBUX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SBUX",
+          "captured_at_utc": "2026-11-07T01:00:06.194904+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "65ba981114f42b4e84924f6dbed5deadfb95d9b71fb2f45fa0409bc316dc60a8",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 106.16,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SCHW": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SCHW",
+          "captured_at_utc": "2026-11-07T00:58:11.805933+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "5b7bcda2cb54a11305b97ec048d38aaea1694654351ffb9fed9e3ec995314155",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 92.58,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SHW": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SHW",
+          "captured_at_utc": "2026-11-07T01:00:55.862700+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4ff57e3a8308ebfb13861c4192091a162681545966c796034e9b340827dfec56",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 349.01,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SLB": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SLB",
+          "captured_at_utc": "2026-11-07T01:00:42.536270+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "0a57728be767ecb668aa2d1e95b6ac772f9ff3205709fb063e435e003f3b07b5",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 49.64,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SO",
+          "captured_at_utc": "2026-11-07T01:00:50.792663+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "39c6a9cc4e3d22050bd78486a1c5509006c69f51fb381156e05cfeb8f528fe82",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 93.34,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SPGI": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SPGI",
+          "captured_at_utc": "2026-11-07T00:58:20.091552+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "0125b0812277350c18fdae553bff9e0fc10bbbdbeb199cfea109f2d27ba1d92a",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 472.41,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "SPY": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SPY",
+          "captured_at_utc": "2026-11-07T00:55:52.830968+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "f662fa2e30f93d6256d8fb1497faf123cfb73a0d7d181c06dc06f329727732de",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 733.0,
+          "included_in_valuation": false,
+          "is_benchmark": true
+        },
+        "SYK": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "SYK",
+          "captured_at_utc": "2026-11-07T00:58:54.026025+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "1e16dc129cf338cb200715d0392a3d56414537e07adba3f42226ea70d9855557",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 335.08,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TGT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TGT",
+          "captured_at_utc": "2026-11-07T01:00:03.871713+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "38540bc800554e638f1de305905cee93b5673ce2bac66b369193b21d44f1cdc5",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 157.95,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TJX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TJX",
+          "captured_at_utc": "2026-11-07T01:00:17.804775+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "1931a1b5c584194c972435c0ada4ff85e1fe39277bcafc38e132f9737c300701",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 138.59,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TMO": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TMO",
+          "captured_at_utc": "2026-11-07T00:57:32.620578+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "d51db22b1c3490de97f8d708ba27c53f1e15c8b3f3f5fe9dc755355d0c5ca781",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 676.94,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TMUS": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TMUS",
+          "captured_at_utc": "2026-11-07T01:00:58.869373+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "21dd060c619fe6796a27464d3b6f964b206025ae46f03e7cae92b0c5f62d1cfb",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 160.59,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TSLA": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TSLA",
+          "captured_at_utc": "2026-11-07T00:56:15.701164+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "71281e172a3220f6dfa48aa1f9aaedf7eebfb800f15e417beb5b807cbeaad926",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 343.69,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "TXN": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "TXN",
+          "captured_at_utc": "2026-11-07T00:57:41.482553+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "c14440e3d217060bacdcc792d16cc122c5b4bfd7ec53338f34ede64dc7c9c51d",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 278.15,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "UBER": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "UBER",
+          "captured_at_utc": "2026-11-07T00:59:35.533301+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4891ee73e6ba921cf5b8386bf7764cd878e33b7ed633cb916ef5467cc24df7e0",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 68.78,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "UNH": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "UNH",
+          "captured_at_utc": "2026-11-07T00:56:28.074653+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "753c57c0f0d4f0251268cc005f75153c2c57410b860eb3b83262b4552761c62f",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 395.72,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "UNP": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "UNP",
+          "captured_at_utc": "2026-11-07T00:59:41.777715+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "75f87f256cb38d45a1d82d4357c52b81e240897c41262ee7d91e28076ee01029",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 297.95,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "UPS": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "UPS",
+          "captured_at_utc": "2026-11-07T00:59:55.380024+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "4d7ca89186afab442e3c17db252e97eefe2db2ef82e4af79e9f10b18d4b520c1",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 111.04,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "V": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "V",
+          "captured_at_utc": "2026-11-07T00:56:24.995847+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "686504fc2a17560657abe6dacd3677f37ebd8783ebef8d0c1e25acb59dd821b1",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 422.59,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "VRTX": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "VRTX",
+          "captured_at_utc": "2026-11-07T00:58:47.736312+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2595fb92907e2ead5cbaa30ddf0930c371d986e2f02e7730a2fe28a48cf99d32",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 542.5,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "WFC": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "WFC",
+          "captured_at_utc": "2026-11-07T00:58:00.108445+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "2a9611fb4d9cc74430357e02549db88fc1a924526e4983587c77a448fe5d0fba",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 84.8,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "WMT": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "WMT",
+          "captured_at_utc": "2026-11-07T00:57:16.820311+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "9ea955e6fcc6a87c3c1fcc9946fc189c07e23675c1a23153878fb429a7a61d2c",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 127.72,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        },
+        "XOM": {
+          "schema": "trading_agent.equity_series_evidence.v1",
+          "provider": "nasdaq",
+          "symbol": "XOM",
+          "captured_at_utc": "2026-11-07T00:56:31.212782+00:00",
+          "point_count": 549,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "050e4e8e931f7d17a7ef3956a3fec91c99d01ffdf8f2ad5c65f1595fcf3048b3",
+          "first_market_date": "2024-08-29",
+          "last_market_date": "2026-11-05",
+          "last_close": 165.3,
+          "included_in_valuation": true,
+          "is_benchmark": false
+        }
+      },
+      "paper_execution_context": {
+        "run_date": "2026-11-07",
+        "benchmark_market_date": "2026-11-05",
+        "valuation_market_dates": {
+          "AAPL": "2026-11-05",
+          "ABBV": "2026-11-05",
+          "ABT": "2026-11-05",
+          "ACN": "2026-11-05",
+          "ADBE": "2026-11-05",
+          "ADI": "2026-11-05",
+          "AMAT": "2026-11-05",
+          "AMD": "2026-11-05",
+          "AMGN": "2026-11-05",
+          "AMT": "2026-11-05",
+          "AMZN": "2026-11-05",
+          "ANET": "2026-11-05",
+          "AVGO": "2026-11-05",
+          "AXP": "2026-11-05",
+          "BA": "2026-11-05",
+          "BAC": "2026-11-05",
+          "BKNG": "2026-11-05",
+          "BLK": "2026-11-05",
+          "BMY": "2026-11-05",
+          "C": "2026-11-05",
+          "CAT": "2026-11-05",
+          "CL": "2026-11-05",
+          "COP": "2026-11-05",
+          "COST": "2026-11-05",
+          "CRM": "2026-11-05",
+          "CSCO": "2026-11-05",
+          "CVX": "2026-11-05",
+          "DE": "2026-11-05",
+          "DHR": "2026-11-05",
+          "DIS": "2026-11-05",
+          "DUK": "2026-11-05",
+          "ELV": "2026-11-05",
+          "EOG": "2026-11-05",
+          "ETN": "2026-11-05",
+          "GE": "2026-11-05",
+          "GILD": "2026-11-05",
+          "GOOGL": "2026-11-05",
+          "GS": "2026-11-05",
+          "HD": "2026-11-05",
+          "HON": "2026-11-05",
+          "IBM": "2026-11-05",
+          "ICE": "2026-11-05",
+          "INTC": "2026-11-05",
+          "INTU": "2026-11-05",
+          "ISRG": "2026-11-05",
+          "JNJ": "2026-11-05",
+          "JPM": "2026-11-05",
+          "KLAC": "2026-11-05",
+          "KO": "2026-11-05",
+          "LIN": "2026-11-05",
+          "LLY": "2026-11-05",
+          "LMT": "2026-11-05",
+          "LOW": "2026-11-05",
+          "LRCX": "2026-11-05",
+          "MA": "2026-11-05",
+          "MCD": "2026-11-05",
+          "MDLZ": "2026-11-05",
+          "META": "2026-11-05",
+          "MO": "2026-11-05",
+          "MRK": "2026-11-05",
+          "MS": "2026-11-05",
+          "MSFT": "2026-11-05",
+          "MU": "2026-11-05",
+          "NEE": "2026-11-05",
+          "NFLX": "2026-11-05",
+          "NKE": "2026-11-05",
+          "NOW": "2026-11-05",
+          "NVDA": "2026-11-05",
+          "ORCL": "2026-11-05",
+          "PANW": "2026-11-05",
+          "PEP": "2026-11-05",
+          "PFE": "2026-11-05",
+          "PG": "2026-11-05",
+          "PGR": "2026-11-05",
+          "PLD": "2026-11-05",
+          "PM": "2026-11-05",
+          "QCOM": "2026-11-05",
+          "RTX": "2026-11-05",
+          "SBUX": "2026-11-05",
+          "SCHW": "2026-11-05",
+          "SHW": "2026-11-05",
+          "SLB": "2026-11-05",
+          "SO": "2026-11-05",
+          "SPGI": "2026-11-05",
+          "SYK": "2026-11-05",
+          "TGT": "2026-11-05",
+          "TJX": "2026-11-05",
+          "TMO": "2026-11-05",
+          "TMUS": "2026-11-05",
+          "TSLA": "2026-11-05",
+          "TXN": "2026-11-05",
+          "UBER": "2026-11-05",
+          "UNH": "2026-11-05",
+          "UNP": "2026-11-05",
+          "UPS": "2026-11-05",
+          "V": "2026-11-05",
+          "VRTX": "2026-11-05",
+          "WFC": "2026-11-05",
+          "WMT": "2026-11-05",
+          "XOM": "2026-11-05"
         },
         "execution_model": "LAST_AVAILABLE_CLOSE_PAPER_NOT_OBSERVED_FILL",
         "same_day_benchmark_session": false
