@@ -1,0 +1,81 @@
+{
+  "schema": "gate_btc.delta_pure_signal_grid_result.v1",
+  "evaluated_at_utc": "2026-11-07",
+  "pergunta": "A selecao tem conteudo e a maquina de saida a destroi, ou a selecao nao tem deriva mensuravel?",
+  "origem": "Hipotese do dono do repositorio, 2026-11-07: 'a selecao e boa, a estrategia e coerente, so que o timing de execucao e da medicao e errado'.",
+  "metodo": {
+    "script": "migration/reporting/delta_pure_signal_grid_20261107.py",
+    "o_que_faz": "Para cada (execution_date, symbol, side) de SELECTIONS_HISTORY, calcula o retorno da posicao SEM stop, SEM trailing, SEM alvo e SEM cooldown, variando lag de entrada (0,1,2,3) e permanencia h (1,2,3,5,10,20 dias).",
+    "lag_0": "entrada e saida no fechamento; sinal e execucao no mesmo instante, fisicamente impossivel — serve para medir quanto do resultado o atraso de um dia consome",
+    "lag_1": "reproduz a convencao congelada: entrada na abertura de D+1",
+    "unidade": "cesta equiponderada por dia de selecao, com sinal",
+    "painel": "data.binance.vision, perpetuos USDT, 20 de 20 simbolos do V11 e 73 de 75 do V13",
+    "definicoes_prespecificadas": "grade de lag x horizonte, unidade de observacao, custo e tratamento de sinal fixados por escrito antes de qualquer numero ser visto",
+    "grade_inteira_reportada": true,
+    "_por_que_a_grade_inteira": "Varrer prazos e garimpar. A leitura legitima e a do padrao da grade; nenhuma celula e resultado."
+  },
+  "resultado_V11_50_50": {
+    "dias_de_selecao": 85,
+    "de": "2026-08-14",
+    "a": "2026-11-06",
+    "custo_ida_volta_pct": 0.16,
+    "bruto_lag1_h1_pct": 0.019,
+    "t_lag1_h1": 0.1,
+    "erro_padrao_lag1_h1": 0.183,
+    "bruto_lag0_h1_pct": 0.004,
+    "bruto_lag1_h5_pct": -0.041,
+    "t_lag1_h5": -0.1,
+    "bruto_lag1_h20_pct": -1.692,
+    "bruto_lag3_h3_pct": -0.159
+  },
+  "resultado_V13_50_50": {
+    "dias_de_selecao": 44,
+    "de": "2026-09-24",
+    "a": "2026-11-06",
+    "custo_ida_volta_pct": 0.232,
+    "bruto_lag1_h1_pct": 0.287,
+    "t_lag1_h1": 0.75,
+    "erro_padrao_lag1_h1": 0.382,
+    "bruto_lag0_h1_pct": 0.02,
+    "bruto_lag1_h5_pct": -1.244,
+    "t_lag1_h5": -1.38,
+    "bruto_lag1_h10_pct": -3.06,
+    "bruto_lag3_h3_pct": -1.041
+  },
+  "conclusoes": [
+    "Nao e a maquina de saida: removendo stop, trailing, alvo e cooldown por completo, a cesta rende +0,019% (V11) e +0,287% (V13) por dia, com t de 0,10 e 0,75. Nao ha ganho guardado embaixo do stop.",
+    "Nao e o atraso de um dia: lag=0, o melhor caso concebivel, rende MENOS que lag=1 nos dois motores (+0,004% contra +0,019% no V11; +0,020% contra +0,287% no V13). Zerar o lag nao recupera retorno porque nao ha retorno a recuperar.",
+    "Atrasos maiores pioram, entao o motor ja esta no melhor ponto dessa dimensao.",
+    "O que existe e decaimento: ~zero em h=1 a h=3 e claramente negativo em h=5 a h=20. A selecao identifica algo que se desfaz, nao algo que persiste.",
+    "A parte da hipotese sobre o MECANISMO esta certa e medida (entrada com tres camadas de atraso, saida intradiaria). A INFERENCIA nao se sustenta: o que esta zerado e o sinal, nao a execucao.",
+    "Isso explica por que todas as variantes testadas pioraram: elas mexiam na acao, e a restricao e o sinal.",
+    "Nenhum trabalho de execucao sobre este escore resolve. Uma sucessora precisa de um SINAL diferente, nao outro gatilho, prazo ou regra de saida sobre o mesmo escore."
+  ],
+  "limitacoes": [
+    "85 e 44 dias de selecao: amostra pequena.",
+    "As cestas se sobrepoem no tempo, entao os erros padrao sao otimistas e os t sao limites superiores de significancia, nao estimativas.",
+    "O painel e Binance e o V11 precifica na OKX; a base entre venues faz destes numeros uma aproximacao, nao a aritmetica do proprio motor.",
+    "Faltam CASHCAT e DGAI no painel (73 de 75 simbolos do V13).",
+    "A cesta crua nao inclui funding, que no bruto do motor esta dentro (+0,37% no V13, -0,21% no V11)."
+  ],
+  "_armadilha_nomeada": [
+    "A celula h=20 do V11 e -1,692%; inverter o sinal dela daria +1,692% bruto contra 0,160% de custo.",
+    "E uma celula de vinte e quatro, com t em torno de 1, na mesma familia de hipotese que reprovou em 6 de 6 criterios em 2026-11-06.",
+    "A grade inteira foi reportada justamente para que nenhuma celula seja tratada como achado. Testa-la exigiria prespecificacao e amostra diferente desta, que e a que a gerou."
+  ],
+  "governance": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "promotion_allowed": false,
+    "anchor_fixed_by_this_result": false,
+    "applies_to_v11": false,
+    "applies_to_v13": false,
+    "applies_to_v14": false,
+    "parametros_congelados_tocados": 0,
+    "bytes_de_ledger_tocados": 0,
+    "_nota": "Este resultado e diagnostico. Nao autoriza mudanca em nenhum parametro congelado do V11 ou do V13."
+  }
+}
