@@ -1,0 +1,32 @@
+{
+  "APXUSD": {
+    "source": "Kraken APXUSD/USD",
+    "closed_utc_rows": 176,
+    "first": "2026-04-20",
+    "last": "2026-10-12",
+    "admitted": false,
+    "reason": "fewer than 200 closed daily rows"
+  },
+  "USYC": {
+    "source": "Deribit USYC_USDC",
+    "instrument_active": true,
+    "daily_rows": 734,
+    "UTC_bucket_offset_seconds": 28800,
+    "admitted": false,
+    "reason": "daily chart buckets begin at 08:00 UTC; must obtain or aggregate exact UTC days, not relabel timestamps",
+    "hourly_candidate": {
+      "rows": 4800,
+      "complete_utc_days": 200,
+      "physical_ohlc": "PASS",
+      "raw_quote_cost": "nonnegative finite",
+      "admitted": false,
+      "remaining": "verify cost semantics and bind exact product/coin_id before implementing adapter"
+    }
+  },
+  "sha256": {
+    "USYC_deribit.json": "5019e47c1e6685ba3fa817797176484f2454c5f73822daa570c8ad95dd21c1b1",
+    "USYC_deribit_daily.json": "d95550f68c76d7043be8511267fa6fa5a1296572bf9028ce9c3dfa51d8ed0d4d",
+    "APXUSD_kraken_pairs.json": "ff4a3fd0ccbc73b1cfa07f1925d24fa81e11a71b403175183339182907039d5a",
+    "APXUSD_kraken_daily.json": "14e1d0c00ff5cd4307ea1c45f1b4c7dfea5feea30b4311fa3f3109fd7abc8b59"
+  }
+}

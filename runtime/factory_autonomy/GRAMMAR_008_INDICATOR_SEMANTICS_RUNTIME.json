@@ -1,0 +1,28 @@
+{
+  "schema":"qrds.factory.grammar_008.indicator_semantics.v1",
+  "status":"FROZEN_BEFORE_FIRST_GRAMMAR_008_MARKET_DATA_READ",
+  "freeze_date":"2026-09-21",
+  "prereg":"GRAMMAR_008_FREQTRADE_INDUSTRIAL_PREREG_20260921.json",
+  "market_data_read_at_freeze":false,
+  "outcomes_read_at_freeze":false,
+  "economics_read_at_freeze":false,
+  "definitions":{
+    "SMA":{"formula":"arithmetic mean of the immediately preceding n completed closes including t","minimum_periods":"n"},
+    "POPULATION_SD":{"formula":"sqrt(sum((x-mean)^2)/n) over the same n closes used by SMA","ddof":0},
+    "EMA":{"alpha":"2/(n+1)","seed":"first EMA value equals SMA of first n available completed closes; subsequent EMA_t=alpha*x_t+(1-alpha)*EMA_(t-1)","minimum_periods":"n"},
+    "TEMA":{"formula":"3*EMA1-3*EMA2+EMA3; EMA2 applies the same frozen EMA operator to the valid EMA1 sequence; EMA3 applies it to valid EMA2","signal_requires_all_three_valid":true},
+    "RSI14":{"method":"WILDER","seed":"first average gain/loss = arithmetic mean of gains/losses over first 14 close-to-close changes","recurrence":"avg_t=(13*avg_(t-1)+current_gain_or_loss)/14","value":"100 when avg_loss=0 and avg_gain>0; 50 when both zero; otherwise 100-100/(1+avg_gain/avg_loss)","signal_requires_valid":true},
+    "CANDLE_BODY":{"body":"abs(close-open)","bullish":"close>open","bearish":"close<open","upper_shadow":"high-max(open,close)","lower_shadow":"min(open,close)-low"}
+  },
+  "candidate_semantic_dispositions":{
+    "BULLISH_ENGULFING":"EXECUTABLE_AS_PREREGISTERED",
+    "HAMMER":"EXECUTABLE_AS_PREREGISTERED",
+    "PIERCING_LINE":"EXECUTABLE_AS_PREREGISTERED",
+    "MORNING_STAR":"INELIGIBLE_FAIL_CLOSED_UNDERSPECIFIED_LARGE_FIRST_BODY"
+  },
+  "morning_star_reason":"The frozen prereg uses the qualitative term 'large first body' without an ex-ante numeric threshold. No threshold may be invented after registration, even before reading outcomes, because that would amend a registered candidate rather than clarify a standard operator.",
+  "executable_candidate_count":22,
+  "registered_candidate_count":24,
+  "scientific_credit":0,
+  "safety":{"RESEARCH_ONLY":true,"SHADOW_ONLY":true,"NOT_APPROVED":true,"ENGINE_FEED":false,"ORDERS":0,"REAL_CAPITAL":0,"NO_RETUNE":true,"NO_BACKFILL":true,"NO_COUNTER_RESET":true,"FAIL_CLOSED":true}
+}

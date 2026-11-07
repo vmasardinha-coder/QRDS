@@ -1,0 +1,151 @@
+{
+  "schema": "gate_btc.factory.xregime_01_finite_batch_prereg.v1",
+  "family_id": "H-XREGIME-01",
+  "batch_id": "XREGIME01_BATCH_A_BTC_ETH_GATE",
+  "freeze_date": "2026-09-22",
+  "status": "FROZEN_BEFORE_BATCH_OUTCOME_READ",
+  "purpose": "Test a finite, causal BTC benchmark-state gate over fixed ETH target signals without importing Freqtrade performance or winner parameters.",
+  "parent_prereg": "tools/gate_btc_factory/CROSS_ASSET_REGIME_GATE_PREREG.v1.json",
+  "scientific_boundary": {
+    "batch_outcomes_read_before_freeze": false,
+    "external_performance_imported": false,
+    "external_winner_parameters_imported": false,
+    "historical_result_role": "TRIAGE_ONLY_ZERO_PROMOTION_AUTHORITY",
+    "prospective_confirmation_required_for_any_promotion": true,
+    "no_grid_extension_after_outcome": true,
+    "future_new_forms_require_new_prereg_and_zero_inherited_credit": true
+  },
+  "market_data": {
+    "provider": "Coinbase Exchange public REST",
+    "products": ["BTC-USD", "ETH-USD"],
+    "granularity_seconds": 3600,
+    "download_start_utc": "2022-01-01T00:00:00Z",
+    "download_end_exclusive_utc": "2026-09-21T00:00:00Z",
+    "warmup_only_before": "2023-01-01T00:00:00Z",
+    "missing_bar_policy": "INELIGIBLE_NO_IMPUTATION",
+    "duplicate_timestamp_policy": "FAIL_CLOSED",
+    "alignment": "exact completed hourly timestamps only; no future-bar forward fill",
+    "decision_time": "completed hourly close t",
+    "execution": "enter at next available hourly open t+1 and exit at the hourly open 24 completed bars later",
+    "shorting": false,
+    "leverage": false,
+    "compounding": false
+  },
+  "asset_selection_rationale": {
+    "benchmark": "BTC-USD is the preregistered benchmark role from the parent family.",
+    "target": "ETH-USD is fixed as the single Batch A target because it is already present in the Factory Coinbase hourly contract and avoids selecting targets from the externally observed positive/negative replication list.",
+    "external_replication_list_used_for_target_selection": false
+  },
+  "partitions": {
+    "discovery": {"start": "2023-01-01T00:00:00Z", "end_inclusive": "2024-12-31T23:00:00Z"},
+    "validation": {"start": "2025-01-08T00:00:00Z", "end_inclusive": "2025-12-31T23:00:00Z"},
+    "holdout": {"start": "2026-01-08T00:00:00Z", "end_inclusive": "2026-09-20T23:00:00Z"},
+    "boundary_embargo_hours": 168,
+    "validation_unread_until_discovery_gate": true,
+    "holdout_unread_until_validation_gate": true
+  },
+  "benchmark_states": [
+    {
+      "state_id": "BTC_TREND_168H",
+      "definition": "BTC close_t > SMA168(BTC close)_t",
+      "positive_state": true
+    },
+    {
+      "state_id": "BTC_RETURN_24H",
+      "definition": "BTC close_t / BTC close_t_minus_24h - 1 > 0",
+      "positive_state": true
+    },
+    {
+      "state_id": "BTC_LOW_VOL_24H_VS_720H_MEDIAN",
+      "definition": "RV24_t <= median of prior 720 completed RV24 observations; RV24 is sample standard deviation of the prior 24 hourly BTC log returns and the threshold window excludes RV24_t",
+      "positive_state": true
+    },
+    {
+      "state_id": "BTC_DRAWDOWN_720H_GT_MINUS10PCT",
+      "definition": "BTC close_t / max(BTC close over completed t-719..t) - 1 >= -0.10",
+      "positive_state": true
+    }
+  ],
+  "target_signals": [
+    {
+      "signal_id": "ETH_TREND_TRANSITION_72H",
+      "definition": "ETH close_t > SMA72_t and ETH close_t_minus_1 <= SMA72_t_minus_1"
+    },
+    {
+      "signal_id": "ETH_TREND_STATE_72H",
+      "definition": "ETH close_t > SMA72_t"
+    },
+    {
+      "signal_id": "ETH_MOMENTUM_24H",
+      "definition": "ETH close_t / ETH close_t_minus_24h - 1 > 0"
+    }
+  ],
+  "interaction": {
+    "form": "GATE",
+    "candidate_rule": "target signal true AND benchmark positive state true",
+    "baseline_rule": "same target signal with no BTC gate",
+    "holding_period_hours": 24,
+    "overlap_policy": "while a position/event is open, additional entries for that candidate are ignored",
+    "same_bar_execution": false
+  },
+  "candidate_construction": {
+    "benchmark_state_count": 4,
+    "target_signal_count": 3,
+    "interaction_form_count": 1,
+    "candidate_count": 12,
+    "formula": "4 benchmark states x 3 ETH target signals x 1 gate form"
+  },
+  "costs": {
+    "primary_bps_per_side": 20,
+    "stress_bps_per_side": 40,
+    "applied_on_entry_and_exit": true,
+    "no_cost_optimization": true,
+    "rationale": "Reuse the already-frozen Coinbase hourly Factory cost convention from Grammar 008; no new cost fit."
+  },
+  "metrics": {
+    "effect": "mean(net_trade_return_primary) / sample_sd(net_trade_return_primary)",
+    "mean_net_primary": true,
+    "mean_net_stress": true,
+    "incremental_vs_ungated_baseline_required": true
+  },
+  "decision_rule": {
+    "minimum_trades": {"discovery": 20, "validation": 10, "holdout": 10},
+    "discovery_pass": "gated effect > 0 AND gated mean_net_primary > 0 AND gated mean_net_stress >= 0 AND gated mean_net_primary > ungated baseline mean_net_primary AND gated effect >= ungated baseline effect",
+    "validation_pass": "discovery_pass AND validation gated effect > 0 AND validation gated mean_net_primary > 0 AND validation gated mean_net_stress >= 0 AND validation gated mean_net_primary > validation ungated baseline mean_net_primary AND validation gated effect >= validation ungated baseline effect",
+    "holdout_pass": "validation_pass AND holdout gated effect > 0 AND holdout gated mean_net_primary > 0 AND holdout gated mean_net_stress >= 0 AND holdout gated mean_net_primary > holdout ungated baseline mean_net_primary AND holdout gated effect >= holdout ungated baseline effect",
+    "historical_triage_pass": "holdout_pass",
+    "historical_survivor_credit": 0,
+    "prospective_credit": 0,
+    "promotion_authority": false,
+    "zero_variance": "INELIGIBLE_FAIL_CLOSED",
+    "no_retune_after_any_partition": true
+  },
+  "multiple_testing": {
+    "family_search_space": "all 12 candidates are one frozen family batch",
+    "discovery_may_forward": "all candidates independently satisfying the frozen discovery gate",
+    "validation_reselection": false,
+    "holdout_reselection": false,
+    "parameter_or_asset_extension": false
+  },
+  "prohibitions": [
+    "NO_GRID_EXTENSION_AFTER_OUTCOME",
+    "NO_PARAMETER_SELECTION_AFTER_OUTCOME",
+    "NO_ASSET_DROPPING_AFTER_OUTCOME",
+    "NO_PARTITION_REFIT",
+    "NO_COST_RETUNE",
+    "NO_BACKFILL_AS_PROSPECTIVE_CREDIT",
+    "NO_EXTERNAL_WINNER_PARAMETER_IMPORT",
+    "NO_HISTORICAL_AUTO_PROMOTION"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "FAIL_CLOSED": true
+  },
+  "next_gate": "POST_MERGE_HISTORICAL_EVALUATOR_IMPLEMENTATION_WITH_PR_TARGET_BLINDNESS"
+}

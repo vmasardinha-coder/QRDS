@@ -1,0 +1,89 @@
+{
+  "mode": "OUTCOME_BLIND_HANDOFF_ONLY",
+  "request_count": 3,
+  "requests": [
+    {
+      "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "728dc88d691b573e87a0f150881d7ab1de5b58e1f4527b360334c0387fe74b1c",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Published Brazilian central-bank market-expectation revisions may transmit macro expectation information to strictly subsequent B3 returns.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "required_new_data": [
+        "BCB Focus expectations statistics",
+        "official publication timing",
+        "B3 market data",
+        "exchange calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "62943307741a3db2ca63d7491bd42988fb5fc34c4f5f10790b022259fb7fdc86",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Lagged Brazilian investment-fund subscriptions and redemptions, observed only after official publication, may transmit institutional flow pressure to subsequent B3 returns.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "required_new_data": [
+        "CVM daily fund reports",
+        "fund classification",
+        "official publication timing",
+        "B3 prices",
+        "exchange calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    },
+    {
+      "channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
+      "cost_applicability_required": true,
+      "economics_read": false,
+      "grammar_signature": "dd9f1f0501b336b9a629d4b55980c0ceafff57c02d8f181d02ec9fc66e0f20b3",
+      "may_allocate_existing_h_id": false,
+      "may_modify_existing_grammar": false,
+      "may_receive_retroactive_credit": false,
+      "mechanism": "Officially published lagged foreign-investor movement aggregates may transmit capital-flow pressure to strictly later B3 observations.",
+      "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "required_new_data": [
+        "B3 foreign investor movement data",
+        "official publication timing",
+        "B3 index/security prices",
+        "exchange calendar"
+      ],
+      "source_qualification_required": true,
+      "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+    }
+  ],
+  "safety": {
+    "engine_feed": false,
+    "fail_closed": true,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.grammar_scout_handoff.v1"
+}

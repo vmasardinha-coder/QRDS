@@ -1,0 +1,94 @@
+{
+  "authentication_supplied": false,
+  "binance": {
+    "complete_required_capabilities_pass": false,
+    "funding": {
+      "http_status": 451,
+      "schema_ok": false,
+      "timestamp_present": false,
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT"
+    },
+    "ohlcv": {
+      "http_status": 451,
+      "schema_ok": false,
+      "timestamp_present": false,
+      "url": "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=2"
+    },
+    "open_interest": {
+      "http_status": 451,
+      "schema_ok": false,
+      "timestamp_present": false,
+      "url": "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT"
+    },
+    "public_liquidation_stream": {
+      "error": null,
+      "event_read_during_probe": false,
+      "event_required_during_probe": false,
+      "transport_connected": true,
+      "url": "wss://fstream.binance.com/ws/btcusdt@forceOrder"
+    },
+    "rest_capabilities_pass": false
+  },
+  "channel_id": "CRYPTO_VOL_LIQUIDATION_STRESS",
+  "complete_preregistered_route": true,
+  "composite": {
+    "allowed_only_preregistered_sources": true,
+    "new_source_added": false,
+    "okx_rest_plus_binance_liquidation_transport_pass": true
+  },
+  "direction_defined": false,
+  "economic_outcomes_read": false,
+  "generated_at_utc": "2026-09-23T11:03:17.134780Z",
+  "grammar_signature": "fc39959718b106564ff15db9cda660aa42e9a9c1c247aa87c576aca4efaa3bee",
+  "historical_backfill_started": false,
+  "liquidation_event_payload_read": false,
+  "lookbacks_defined": false,
+  "namespace": "PF::fc39959718b10656",
+  "new_stress_proxy_invented": false,
+  "next_gate": "SEPARATE_CHILD_PREREGISTRATION_BEFORE_ANY_SIGNAL_OR_OUTCOME_READ",
+  "okx": {
+    "funding": {
+      "http_status": 200,
+      "schema_ok": true,
+      "timestamp_present": true,
+      "url": "https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP"
+    },
+    "liquidation_substitute_claimed": false,
+    "ohlcv": {
+      "http_status": 200,
+      "schema_ok": true,
+      "timestamp_present": true,
+      "url": "https://www.okx.com/api/v5/market/candles?instId=BTC-USDT-SWAP&bar=1H&limit=2"
+    },
+    "open_interest": {
+      "http_status": 200,
+      "schema_ok": true,
+      "timestamp_present": true,
+      "url": "https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=BTC-USDT-SWAP"
+    },
+    "rest_capabilities_pass": true
+  },
+  "preregistered_source_candidates": [
+    "BINANCE_USDS_M_PUBLIC_MARKET_DATA",
+    "OKX_PUBLIC_MARKET_DATA"
+  ],
+  "qualification": {
+    "reason": "PREREGISTERED_COMPOSITE_OKX_REST_PLUS_BINANCE_FORCE_ORDER_TRANSPORT_QUALIFIED",
+    "status": "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION"
+  },
+  "qualification_route": "PREREGISTERED_COMPOSITE",
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
+  "signal_formula_defined": false,
+  "thresholds_defined": false
+}

@@ -1,0 +1,657 @@
+{
+  "action_counts": {
+    "SEMANTIC_SCOPE_REVIEW": 13,
+    "SOURCE_RECOVERY_CANDIDATE": 6,
+    "UNMAPPED_FAILURE": 0,
+    "WAIT_FOR_HISTORY": 0
+  },
+  "advisory_only": true,
+  "attempted_symbols": 150,
+  "coverage_pct": 87.33333333333333,
+  "data_as_of": "2026-10-19",
+  "denominator_changed": false,
+  "failed_symbols": 19,
+  "feeds_frozen_engine": false,
+  "interpretation": {
+    "SEMANTIC_SCOPE_REVIEW": "Name/symbol has a conservative RWA/tokenized/cash-like flag; review only, no automatic exclusion.",
+    "SOURCE_RECOVERY_CANDIDATE": "No conservative semantic flag and no explicit short-history result; candidate for independent source-redundancy investigation only.",
+    "UNMAPPED_FAILURE": "Failure symbol was not found in the same point-in-time universe and must be investigated fail-closed.",
+    "WAIT_FOR_HISTORY": "Observed source returned fewer than 200 rows; no methodology action implied."
+  },
+  "loaded_symbols": 131,
+  "methodology_changes": 0,
+  "not_approved": true,
+  "orders_generated": 0,
+  "promotion_allowed": false,
+  "qualified_source_extension_selected_count": 31,
+  "real_capital_used": 0,
+  "research_only": true,
+  "rows": [
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "blackrock-usd-institutional-digital-liquidity-fund",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 47,
+      "name": "BlackRock USD Institutional Digital Liquidity Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "BUIDL"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "spiko-amundi-overnight-swap-fund-eur",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 60,
+      "name": "Spiko Amundi Overnight Swap Fund (EUR)",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "EURSAFO"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "blockchain-capital",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 79,
+      "name": "Blockchain Capital",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "BCAP"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "open-usd",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 85,
+      "name": "Open USD",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "CASHLIKE_OR_STABLE_SYMBOL_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "OUSD"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "superstate-short-duration-us-government-securities-fund-ustb",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 89,
+      "name": "Invesco Short Duration US Government Securities Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "USTB"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "pearl-2",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 94,
+      "name": "Pearl",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "PRL"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "janus-henderson-anemoy-aaa-clo-fund",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 104,
+      "name": "Janus Henderson Anemoy AAA CLO Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "JAAA"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "kinesis-gold",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 110,
+      "name": "Kinesis Gold",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "KAU"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "eutbl",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 112,
+      "name": "Spiko EU T-Bills Money Market Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "EUTBL"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "ylds",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 113,
+      "name": "YLDS",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "YLDS"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "sofiusd",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 130,
+      "name": "SoFiUSD",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "SOFID"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "janus-henderson-anemoy-treasury-fund",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 138,
+      "name": "Janus Henderson Anemoy Treasury Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "JTRSY"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "ousg",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 139,
+      "name": "Ondo Short-Term U.S. Government Bond Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "OUSG"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "apxusd",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 142,
+      "name": "apxUSD",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "CASHLIKE_OR_STABLE_SYMBOL_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "APXUSD"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "olympus",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 148,
+      "name": "Olympus",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "OHM"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "usdai",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 154,
+      "name": "USDai",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "CASHLIKE_OR_STABLE_SYMBOL_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "USDAI"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "safo",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 164,
+      "name": "Spiko Amundi Overnight Swap Fund",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "SAFO"
+    },
+    {
+      "action_class": "SOURCE_RECOVERY_CANDIDATE",
+      "coin_id": "grx-chain",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 177,
+      "name": "GRX Chain",
+      "observed_history_rows": null,
+      "semantic_flags": [],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "GRX"
+    },
+    {
+      "action_class": "SEMANTIC_SCOPE_REVIEW",
+      "coin_id": "kinesis-silver",
+      "failure_reason": "okx: RuntimeError: OKX returned no candles",
+      "market_cap_rank": 181,
+      "name": "Kinesis Silver",
+      "observed_history_rows": null,
+      "semantic_flags": [
+        "RWA_OR_TOKENIZED_NAME_PATTERN"
+      ],
+      "source_attempts": [
+        {
+          "error_type": "RuntimeError",
+          "message": "CDD unavailable: HTTP 404",
+          "source": "cdd",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "Binance kline failed: HTTP 400",
+          "source": "binance",
+          "status": "ERROR"
+        },
+        {
+          "error_type": "RuntimeError",
+          "message": "OKX returned no candles",
+          "source": "okx",
+          "status": "ERROR"
+        }
+      ],
+      "source_attempts_available": true,
+      "symbol": "KAG"
+    }
+  ],
+  "schema": "gate_btc.v2a_failure_diagnostic.v1",
+  "shadow_only": true,
+  "snapshot_id": "2026-10-19-run-39371465480",
+  "source_failures_sha256": "bb6145798c948a9b727a87e66fb41ad0ea1d15d9c92e542c5013ff9ffc595d46",
+  "source_manifest_sha256": "57b5345777b4096342e19b62568cf294073338ec7473ab96253a4fc9331ca15d",
+  "source_order_changed": false,
+  "source_run_id": "39371465480",
+  "source_substitution_performed": true,
+  "source_universe_sha256": "d47cf8f7b5eb0a6d4170a8e528f06ccdf940bc4bf41113379544444f2e99f3cd",
+  "status": "PASS_ADVISORY_DIAGNOSTIC",
+  "universe_changed": false
+}
