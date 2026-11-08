@@ -1,25 +1,25 @@
-# Relatorio diario do agente — 2026-11-07
+# Relatorio diario do agente — 2026-11-08
 
 _Paper trading 100% autonomo com precos reais de mercado. Nenhum dinheiro real esta a ser negociado. Premios de opcoes da carteira de estruturadas sao modelados (Black-Scholes com volatilidade GARCH)._
 
-![Historico das carteiras](2026-11-07-grafico.svg)
+![Historico das carteiras](2026-11-08-grafico.svg)
 
-_Grafico do historico (base 100 no inicio de cada carteira): `2026-11-07-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
+_Grafico do historico (base 100 no inicio de cada carteira): `2026-11-08-grafico.svg` — o mais recente fica sempre em `GRAFICO_ATUAL.svg`._
 
 ## Acoes EUA (objetivo: bater o S&P 500)
 
 | Indicador | Valor |
 |---|---|
 | NAV | $39,556.74 |
-| Retorno entre registros | -8.98% |
-| Intervalo observado | 2026-11-05 → 2026-11-07 (2 dia(s) corridos) |
+| Retorno do dia | +0.00% |
+| Intervalo observado | 2026-11-07 → 2026-11-08 (1 dia(s) corridos) |
 | Retorno desde inicio (2026-08-06) | -20.89% |
 | Benchmark SPY | -4.48% |
 | **Alfa vs SPY** | **-16.40%** |
 | Caixa | $242.77 |
 | Regime | risco ligado |
 
-> Rodada 2026-11-07; ultima sessao do benchmark: 2026-11-06.
+> Rodada 2026-11-08; ultima sessao do benchmark: 2026-11-06.
 > Operacoes paper marcadas pelo ultimo fechamento disponivel; nao sao fills observados nem comprovam negociacao nessa data da rodada.
 > A variacao entre rodadas pode incorporar uma sessao anterior; nao representa necessariamente um pregao da data do relatorio.
 
@@ -37,123 +37,118 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-11-07-grafico
 | ADI | 10.5512 | $363.56 | $3,835.98 | 9.7% |
 | XOM | 23.0081 | $165.87 | $3,816.35 | 9.6% |
 
-### Movimentacoes de hoje
-| Ativo | Operacao | Qtd | Preco | Valor | Motivo |
-|---|---|---|---|---|---|
-| CAT | VENDA | 7.09889 | $558.35 | $3,963.67 | rebalanceio |
-| KLAC | VENDA | 1.71329 | $138.42 | $237.16 | rebalanceio |
-| ANET | COMPRA | 23.1621 | $170.89 | $3,958.06 | rebalanceio |
+_Sem movimentacoes hoje._
 
 <details>
 <summary>Rasto de decisao (auditoria)</summary>
 
-- **Gatilho:** desvio de peso em ANET: 0.0% vs alvo 10.0%
+- **Gatilho:** nenhum (sem motivo para negociar)
 - **Obstaculo (SPY):** momentum de +14.2% — so entram ativos acima disto
 - **Candidatos elegiveis:** 34
 - **Fontes usadas:** nasdaq: 101
 - Evidencia das series EUA (somente auditoria):
-- AAPL: fonte nasdaq; fechamento 342.37 em 2026-11-06; 550 pontos; SHA256 12abac4d2383535f5374a477eae520645e5dd0ae0e4f186d1ed8ad7bed86e9ed; status RECORDED
-- ABBV: fonte nasdaq; fechamento 291.31 em 2026-11-06; 550 pontos; SHA256 2b9e946fcca54f2b1d946113b25ebcf46ab0ab8819619185a0b9825b518cdb56; status RECORDED
-- ABT: fonte nasdaq; fechamento 109.93 em 2026-11-06; 550 pontos; SHA256 5b6daa6d00ebac59e3a1b76bcb1d70bd5a19cdb57d6903589057729914112f24; status RECORDED
-- ACN: fonte nasdaq; fechamento 260.5 em 2026-11-06; 550 pontos; SHA256 417a76410a0b9a13579fede2caad391684e058c892d2a9a5d021be9ac7c804e7; status RECORDED
-- ADBE: fonte nasdaq; fechamento 239.3 em 2026-11-06; 550 pontos; SHA256 e9815b34491b5b6b8363b590845f1e34448eb409a124db82c143d7e56303d06d; status RECORDED
-- ADI: fonte nasdaq; fechamento 363.56 em 2026-11-06; 550 pontos; SHA256 04bf2e8f4792e9df9053c11858bd7c8b7b47ac906a44e8d2c36b2c8282840172; status RECORDED
-- AMAT: fonte nasdaq; fechamento 332.715 em 2026-11-06; 550 pontos; SHA256 0de692373feda4676b5f951703dc284d9f5914a5f6d05f31be81c3a3b7821ffa; status RECORDED
-- AMD: fonte nasdaq; fechamento 449.04 em 2026-11-06; 550 pontos; SHA256 06af0fdb684dbe5a95a02a35fe6243b007b02f2c576d02b9977b69a0993d6dc6; status RECORDED
-- AMGN: fonte nasdaq; fechamento 460.42 em 2026-11-06; 550 pontos; SHA256 c1602f4bda026e3c59712fb56d921293d0e8dae9c1c43b53cf6349ded40acba2; status RECORDED
-- AMT: fonte nasdaq; fechamento 188.79 em 2026-11-06; 550 pontos; SHA256 71643af070ed4950fc77eb7e990f0461473b3da16cc3baec6a3c932488ee41f5; status RECORDED
-- AMZN: fonte nasdaq; fechamento 259.3 em 2026-11-06; 550 pontos; SHA256 c210fd9428051e945662db9eda8b7adefecda259e8c91bd77e3aa269cc21db81; status RECORDED
-- ANET: fonte nasdaq; fechamento 170.8 em 2026-11-06; 550 pontos; SHA256 d33e0c85fdee5bec1449bd50e9bfbb7c1620e1a7faa4da49682c3bb42b7a9b1c; status RECORDED
-- AVGO: fonte nasdaq; fechamento 293.69 em 2026-11-06; 550 pontos; SHA256 9418cb805aeb82deffa49591c6aa745caac4d8e7ff89c0014f938c07b5e6a9a6; status RECORDED
-- AXP: fonte nasdaq; fechamento 320.99 em 2026-11-06; 550 pontos; SHA256 74c122e6bae52ef1bcf833c4ba588a3f37ead7f880f2a5145fd85607350843d8; status RECORDED
-- BA: fonte nasdaq; fechamento 173.4 em 2026-11-06; 550 pontos; SHA256 9fae3729001cffa97d144c85e97287243cb66049bd556a4219691bc02dce1292; status RECORDED
-- BAC: fonte nasdaq; fechamento 49.42 em 2026-11-06; 550 pontos; SHA256 0113f4f96c44cc3217aafd71a18f5122e8cce8ca5cfbaca6d5da14ca3bb981be; status RECORDED
-- BKNG: fonte nasdaq; fechamento 160.665 em 2026-11-06; 550 pontos; SHA256 89ffae2b779729734796d6146e66f3c8858fcf4fec166af105a31b5725bf5f2e; status RECORDED
-- BLK: fonte nasdaq; fechamento 1178.87 em 2026-11-06; 550 pontos; SHA256 1cded7ba9b89b64dca9428a336810a684576d14949c9852ebdce4176f414af9e; status RECORDED
-- BMY: fonte nasdaq; fechamento 62.14 em 2026-11-06; 550 pontos; SHA256 cc608e4d0a2ce5b8b709f9dd15d6e32237468d617b7140480ea29f34963a513c; status RECORDED
-- C: fonte nasdaq; fechamento 119.05 em 2026-11-06; 550 pontos; SHA256 c83f36c949541337dd721bc042a4800d47ea5a36cda38484d5f543dc2c466bd9; status RECORDED
-- CAT: fonte nasdaq; fechamento 558.63 em 2026-11-06; 550 pontos; SHA256 4dbc7c4d29f5639e4bd82738750f7d716b990c59e4e8f1976292dee17667472e; status RECORDED
-- CL: fonte nasdaq; fechamento 96.56 em 2026-11-06; 550 pontos; SHA256 1a30d42c72c7947653381c2d35337091b860dd56c660c0ddf9bb772e031eb72b; status RECORDED
-- COP: fonte nasdaq; fechamento 136.27 em 2026-11-06; 550 pontos; SHA256 7466c541e83cd75f2f88f20c6d60decfe2fc294a45538f997552bbd9e7ef8447; status RECORDED
-- COST: fonte nasdaq; fechamento 1053.56 em 2026-11-06; 550 pontos; SHA256 5df5121dadac96dcbb5c0d818502341855a8ce00dc685bed45340eadc3379518; status RECORDED
-- CRM: fonte nasdaq; fechamento 213.65 em 2026-11-06; 550 pontos; SHA256 3b9c0a7112c40db09c520dbc5cf8b3a2d552ddc00d60c3f085a2ba69877dcbf3; status RECORDED
-- CSCO: fonte nasdaq; fechamento 93.85 em 2026-11-06; 550 pontos; SHA256 84e0c9f495f4df7698c333997101b0dc0e471627a1ac9390d2e26702c92fc09e; status RECORDED
-- CVX: fonte nasdaq; fechamento 212.61 em 2026-11-06; 550 pontos; SHA256 0b8c02517d709076cda851d3c998c6bd068698ba9493883fc7e3ebb622444d6b; status RECORDED
-- DE: fonte nasdaq; fechamento 671.65 em 2026-11-06; 550 pontos; SHA256 f40d3a7970f805186196d66501b588b3c431e9e8899734c31cc74a4415376dee; status RECORDED
-- DHR: fonte nasdaq; fechamento 230.25 em 2026-11-06; 550 pontos; SHA256 f7d067a81aade9e21cf6b7c1638763d4c3f2d02c02dfe259bfce1a7f16c8276c; status RECORDED
-- DIS: fonte nasdaq; fechamento 116.75 em 2026-11-06; 550 pontos; SHA256 31e84591dfecb39c74d4d77a2f0b637938be74ee07050197a3ae270567736fd8; status RECORDED
-- DUK: fonte nasdaq; fechamento 127.78 em 2026-11-06; 550 pontos; SHA256 29ea016c1183bca7228350eaace9e4529f21526d4f05a057c67d03bc4a61ec68; status RECORDED
-- ELV: fonte nasdaq; fechamento 425.62 em 2026-11-06; 550 pontos; SHA256 af82d6f9cabbacb7de12a60c9bfe793bc324a357938b58506edf25a3dd994829; status RECORDED
-- EOG: fonte nasdaq; fechamento 147.13 em 2026-11-06; 550 pontos; SHA256 25fa2fd658500c6cd30328c8e4d9eab3ff2e7de693f4d11592e31079e6e3c3ef; status RECORDED
-- ETN: fonte nasdaq; fechamento 341.72 em 2026-11-06; 550 pontos; SHA256 442eae9610ac592e01659e37e46f37ad6d73aade7299ed5f2d19a7844b75b2e9; status RECORDED
-- GE: fonte nasdaq; fechamento 323.24 em 2026-11-06; 550 pontos; SHA256 eee12063c0f1a1f7b37b5faa5ad9bac8fc480697d991d66bff13053c70dc866b; status RECORDED
-- GILD: fonte nasdaq; fechamento 166.89 em 2026-11-06; 550 pontos; SHA256 110a45392137171330f10a326a62616cc47298adffe8103b5ce97ebe3999916e; status RECORDED
-- GOOGL: fonte nasdaq; fechamento 284.78 em 2026-11-06; 550 pontos; SHA256 7fea18ce5f554132062cda07face330d8a120baa8c4ded4f373d589947ec57ff; status RECORDED
-- GS: fonte nasdaq; fechamento 865.82 em 2026-11-06; 550 pontos; SHA256 c8bb6833f1920068031a6375b3ec8f02cb84f8bea2937cd07014ae44b14d9ef9; status RECORDED
-- HD: fonte nasdaq; fechamento 343.47 em 2026-11-06; 550 pontos; SHA256 7005f2e13d186421adfbc50b7a2e06db0bd3d04418151cdafb3f5c31f681281a; status RECORDED
-- HON: fonte nasdaq; fechamento 220.05 em 2026-11-06; 550 pontos; SHA256 1eebe8275266b6cb5ebb0af35ccf81c388a5acff57e13f97957566e89cbe901f; status RECORDED
-- IBM: fonte nasdaq; fechamento 245.0 em 2026-11-06; 550 pontos; SHA256 aefdb986e37e9c2b82e044c24165a56674fa357b3b85802cca7d9fd03dc7e37c; status RECORDED
-- ICE: fonte nasdaq; fechamento 172.27 em 2026-11-06; 550 pontos; SHA256 8dc27a6b1b977ec0ad2569130224535d40ceb14ae86742a2b0cfd2d760c4c100; status RECORDED
-- INTC: fonte nasdaq; fechamento 56.28 em 2026-11-06; 550 pontos; SHA256 718fdc26724f710abc35e34e1288ae4ccaa45df225b56a99a30514c01359fb98; status RECORDED
-- INTU: fonte nasdaq; fechamento 341.5 em 2026-11-06; 550 pontos; SHA256 e1c0b9b0ef293c7e42a0bde7b2021229042bc118f19d6c4bc8b578ba99405b23; status RECORDED
-- ISRG: fonte nasdaq; fechamento 452.8 em 2026-11-06; 550 pontos; SHA256 3919675c27a13fdb5efe2511acd83c0146aa407174565c6a7de38ece614a38cf; status RECORDED
-- JNJ: fonte nasdaq; fechamento 276.22 em 2026-11-06; 550 pontos; SHA256 39d90ee19b278d710208cefcd46db8a95ba8d122161e35992a24e5f1f5f474bd; status RECORDED
-- JPM: fonte nasdaq; fechamento 334.49 em 2026-11-06; 550 pontos; SHA256 eae8db48ccf09aaa9964b383c8187f1f76513d746ff889270444a3b5826ce265; status RECORDED
-- KLAC: fonte nasdaq; fechamento 138.49 em 2026-11-06; 550 pontos; SHA256 72a9607d2195cf1c14505a5a2538a8648a422065259ff0fa2beb09a5607e0b05; status RECORDED
-- KO: fonte nasdaq; fechamento 95.67 em 2026-11-06; 550 pontos; SHA256 865023c984315bfad06c0100089340dfda4067f0727be5ba2e69780d8ca515d4; status RECORDED
-- LIN: fonte nasdaq; fechamento 515.25 em 2026-11-06; 550 pontos; SHA256 bba708fea5d1e342564614363224f2b0ae8b85572a74310fbfdf2e9ee172f292; status RECORDED
-- LLY: fonte nasdaq; fechamento 1354.0 em 2026-11-06; 550 pontos; SHA256 e28bf40b22b22db7216d7501f324f92ad7da1f9f50bf06ce9ddc471246a27734; status RECORDED
-- LMT: fonte nasdaq; fechamento 567.08 em 2026-11-06; 550 pontos; SHA256 bed92172cc2ffb42ea33eea5bdcae0bbf7a3de4f402b9252a07bb5d5b6fa4e19; status RECORDED
-- LOW: fonte nasdaq; fechamento 224.55 em 2026-11-06; 550 pontos; SHA256 2b9a5ec4ac5a406e964b10eb5b45c3f59948a2477e546813c6c9ccf8a8643e11; status RECORDED
-- LRCX: fonte nasdaq; fechamento 200.44 em 2026-11-06; 550 pontos; SHA256 ae23799ddcf01183c568d925ac22748a59bb7e9134c9c77a4c99d020d8c6bc38; status RECORDED
-- MA: fonte nasdaq; fechamento 652.7 em 2026-11-06; 550 pontos; SHA256 17f0b707001bd27745437ef759c380e8a41ca259de8bd8f443df26f815905eaf; status RECORDED
-- MCD: fonte nasdaq; fechamento 276.52 em 2026-11-06; 550 pontos; SHA256 eb2626bc237ca3378d45ae73f7b066ba99a82b3106504b741c5bc679c8f43251; status RECORDED
-- MDLZ: fonte nasdaq; fechamento 66.02 em 2026-11-06; 550 pontos; SHA256 5f57c06d701b1ae1af922fcb216e0d7496aa74d10988981790c4c08c03c815f4; status RECORDED
-- META: fonte nasdaq; fechamento 610.15 em 2026-11-06; 550 pontos; SHA256 803b397cd6d68514d821321f412e5397228347b46d5a19ed89aafbf1fb6e051c; status RECORDED
-- MO: fonte nasdaq; fechamento 76.12 em 2026-11-06; 550 pontos; SHA256 42c79584c3cf6faf6df65d6ee27201368c02c9b7122fb5ed3a7add11148a73ac; status RECORDED
-- MRK: fonte nasdaq; fechamento 146.73 em 2026-11-06; 550 pontos; SHA256 6749267c22052f45ef54dc065fc993c63441da0430b69f7b5e2ab4993a3a2177; status RECORDED
-- MS: fonte nasdaq; fechamento 181.44 em 2026-11-06; 550 pontos; SHA256 13d3d331aa45c19f065977bc5de2269029b79fdb47e5005bfa295764f0045a8f; status RECORDED
-- MSFT: fonte nasdaq; fechamento 530.61 em 2026-11-06; 550 pontos; SHA256 390927e73c6aa7f771c337f276bcd82d46db83c3b29e30f5fd7027c10e499d7a; status RECORDED
-- MU: fonte nasdaq; fechamento 690.0 em 2026-11-06; 550 pontos; SHA256 513274643cb342779f2cd36ec130962e5a5d4d382e7a69df4d57848b4b22dd58; status RECORDED
-- NEE: fonte nasdaq; fechamento 86.95 em 2026-11-06; 550 pontos; SHA256 7af2c7ca9a9b5f6831829e3fb4f5aee57ca8bccc924685ac2025775373f5102c; status RECORDED
-- NFLX: fonte nasdaq; fechamento 63.41 em 2026-11-06; 550 pontos; SHA256 9217608d3dafc746cbfcbba56e36cd0275d944f37d15a65615ad4c873c4da6f4; status RECORDED
-- NKE: fonte nasdaq; fechamento 38.59 em 2026-11-06; 550 pontos; SHA256 6f3112aa61aec02ed96a254c8f1faa20533c9bfc4e26dbe6a15d4a98bbf9904c; status RECORDED
-- NOW: fonte nasdaq; fechamento 101.97 em 2026-11-06; 550 pontos; SHA256 1f70fafbb6afde31b58bc815826b3327d61b948373156094a24fbe65d0253387; status RECORDED
-- NVDA: fonte nasdaq; fechamento 186.64 em 2026-11-06; 550 pontos; SHA256 84f17978c714faf27ccd7b7372be482abd785439fa478a6874cc611d6f7ecdae; status RECORDED
-- ORCL: fonte nasdaq; fechamento 116.1 em 2026-11-06; 550 pontos; SHA256 8dd954cfd8d555dc28c769f8274aa301b3bb816d00b1825c604b13ba8e3da5a4; status RECORDED
-- PANW: fonte nasdaq; fechamento 313.84 em 2026-11-06; 550 pontos; SHA256 a0a49f2149f55258c7e93a306a5a8239d46172cbedcbd3dec27a2bba9d842e3c; status RECORDED
-- PEP: fonte nasdaq; fechamento 141.34 em 2026-11-06; 550 pontos; SHA256 07b527f3131ce39102307f18a413ae5f31b754d0e3ad754f2ff3492f90a4b20a; status RECORDED
-- PFE: fonte nasdaq; fechamento 29.39 em 2026-11-06; 550 pontos; SHA256 10d98a44a5d9d6ee1f0a2b26b941eb40ca637f11ebcc1b357ea7ef88e2a8aeb6; status RECORDED
-- PG: fonte nasdaq; fechamento 165.4 em 2026-11-06; 550 pontos; SHA256 39caa24b4ddc944cfc38ddaffafd999195d3a3095deb158b063cc5105b3a9357; status RECORDED
-- PGR: fonte nasdaq; fechamento 227.77 em 2026-11-06; 550 pontos; SHA256 917025631eeb75da5b75d5db2612b529542855b8e01b277b5b129dc8c58bc59e; status RECORDED
-- PLD: fonte nasdaq; fechamento 126.96 em 2026-11-06; 550 pontos; SHA256 c9b0c10ebe13563038c84788e72146dc3f6dd1e14b5002449267e91d7a1ab188; status RECORDED
-- PM: fonte nasdaq; fechamento 197.88 em 2026-11-06; 550 pontos; SHA256 e08e5bc9a6972056b1c1d7d7672d4c3137ff77fcfdb352658ecfa608d95cfaf9; status RECORDED
-- QCOM: fonte nasdaq; fechamento 165.41 em 2026-11-06; 550 pontos; SHA256 d1bfcbec120d74be3f0b4a0f911bcdca611aa4097dd27de1c255a45320088208; status RECORDED
-- RTX: fonte nasdaq; fechamento 189.53 em 2026-11-06; 550 pontos; SHA256 2d939efe3ac81a9e0232d7d301667f5105146624dbec39b7b536d7df20ad07b6; status RECORDED
-- SBUX: fonte nasdaq; fechamento 105.41 em 2026-11-06; 550 pontos; SHA256 d092c804e8d9af751c198fdb913c08381752587f3a38c806c897e3fedae3ab13; status RECORDED
-- SCHW: fonte nasdaq; fechamento 91.49 em 2026-11-06; 550 pontos; SHA256 2baa35e21fee09d91c616aaec5a8b17434326b12623e773b5d49dc11b191831d; status RECORDED
-- SHW: fonte nasdaq; fechamento 344.1 em 2026-11-06; 550 pontos; SHA256 ab3deb4c0e47f6d96871d5eeef8561e60c5d3a3f41500056b580a12552cd0f9e; status RECORDED
-- SLB: fonte nasdaq; fechamento 49.92 em 2026-11-06; 550 pontos; SHA256 3a4822d7ebc50be749a7e519687ec3533ece841d83efca52b571662d297bec94; status RECORDED
-- SO: fonte nasdaq; fechamento 92.34 em 2026-11-06; 550 pontos; SHA256 2953d263412e291c95262c38e550adda523377c3bcdbf016e792ada51bad2200; status RECORDED
-- SPGI: fonte nasdaq; fechamento 467.8 em 2026-11-06; 550 pontos; SHA256 b86cf763ec512fff99ec25aab30f7a1533cd66b806b7fd6342350fd5aa692130; status RECORDED
-- SPY: fonte nasdaq; fechamento 735.29 em 2026-11-06; 550 pontos; SHA256 a99b78426c259dc179d3449639d40d74c3db9b06f85c149859254f9b554a45fb; status RECORDED
-- SYK: fonte nasdaq; fechamento 325.87 em 2026-11-06; 550 pontos; SHA256 cd1c18068dd4d94065e0a5732955905c7cc4a6d924228288f5720762bbbd6d33; status RECORDED
-- TGT: fonte nasdaq; fechamento 158.41 em 2026-11-06; 550 pontos; SHA256 22aa848ab387e793b2b2d542de06dbc0bbdae2807ac03d18aa73a02a25e3370d; status RECORDED
-- TJX: fonte nasdaq; fechamento 135.3 em 2026-11-06; 550 pontos; SHA256 88a1c1ea12f67d2613fc4b51f5576de0369703db51358ebfd567704079ac1fe3; status RECORDED
-- TMO: fonte nasdaq; fechamento 694.76 em 2026-11-06; 550 pontos; SHA256 313434553122c8fc38a400a45d840e4689c4836c7082d98b01fd88c40b7dee9a; status RECORDED
-- TMUS: fonte nasdaq; fechamento 162.01 em 2026-11-06; 550 pontos; SHA256 a629baac7a23565fc25626a195661970df25ab5f782a6d288c7ff9f1f99a34a6; status RECORDED
-- TSLA: fonte nasdaq; fechamento 358.22 em 2026-11-06; 550 pontos; SHA256 0572d9fed740f14b2a4cc8a047ff8aec9aa28b8dfa7d1505eae8bbf3de24ddae; status RECORDED
-- TXN: fonte nasdaq; fechamento 277.36 em 2026-11-06; 550 pontos; SHA256 06ef57c23405faedae988bd85cf851c28a5d70488247c3338fa54e7dad2836f9; status RECORDED
-- UBER: fonte nasdaq; fechamento 68.59 em 2026-11-06; 550 pontos; SHA256 3bda118c6a865d676b6dcc92381badda8449f474fd921e025a2970fc613ad01f; status RECORDED
-- UNH: fonte nasdaq; fechamento 394.15 em 2026-11-06; 550 pontos; SHA256 342dcc427be5492e892054537f7d616f75653d26e8fa19ef844774f06f289ad7; status RECORDED
-- UNP: fonte nasdaq; fechamento 290.16 em 2026-11-06; 550 pontos; SHA256 bc93c06b4d32785836187ee67a3e5a06fc595f98617f8021ff3baec08ada32e2; status RECORDED
-- UPS: fonte nasdaq; fechamento 108.3 em 2026-11-06; 550 pontos; SHA256 38c8477bac4ebc14c79fd51870c373e0288a91525614bcb3094688c48962bcb1; status RECORDED
-- V: fonte nasdaq; fechamento 422.65 em 2026-11-06; 550 pontos; SHA256 4db0f9aa3288902850c231918244f8035a5172becd2ec49281e27262befc6bb9; status RECORDED
-- VRTX: fonte nasdaq; fechamento 547.09 em 2026-11-06; 550 pontos; SHA256 f1e3c9548cc9507e9692319e39ae408a113bb9668efe14263215e48fadacad31; status RECORDED
-- WFC: fonte nasdaq; fechamento 83.94 em 2026-11-06; 550 pontos; SHA256 c48c867ef718dbb574a10d1e4454cecb8aa85d3ace4c57eff1356af40da61399; status RECORDED
-- WMT: fonte nasdaq; fechamento 125.52 em 2026-11-06; 550 pontos; SHA256 1adba869f8df22b30740e55fb89b8209cafee332e14a83a35eacade43fa8dce6; status RECORDED
-- XOM: fonte nasdaq; fechamento 165.87 em 2026-11-06; 550 pontos; SHA256 12e453849f963e9a9ebed84d5f9d212fad84cac2943a1b667d9cc61ef6b8a5f2; status RECORDED
-- Rodada 2026-11-07; ultima sessao do benchmark: 2026-11-06.
+- AAPL: fonte nasdaq; fechamento 342.37 em 2026-11-06; 549 pontos; SHA256 1b86297867d53dbdd1c7074469c708770147850b364bd74c97969eb5c280e758; status RECORDED
+- ABBV: fonte nasdaq; fechamento 291.31 em 2026-11-06; 549 pontos; SHA256 44f611f209a0eb7ee5a7ce0211c6086aeba5714540953944f1f43b18f4f0aac5; status RECORDED
+- ABT: fonte nasdaq; fechamento 109.93 em 2026-11-06; 549 pontos; SHA256 4316cc3ddac87dd93fab9d3089cc1ca84bd747bdefc8a9e5516a074ae5016d88; status RECORDED
+- ACN: fonte nasdaq; fechamento 260.5 em 2026-11-06; 549 pontos; SHA256 8944086fd34ea0aefce91d15988efe620daef2d5337a9c5b1085fb9d2cceb14f; status RECORDED
+- ADBE: fonte nasdaq; fechamento 239.3 em 2026-11-06; 549 pontos; SHA256 f1b7818c7026a5244aa6fb43da90b0ca1ea50906cde05643e2a6470089dea549; status RECORDED
+- ADI: fonte nasdaq; fechamento 363.56 em 2026-11-06; 549 pontos; SHA256 8ac5de30d2c16598c3e4f18eacb21a2565672d24c0710fa41b9db9019094d3ba; status RECORDED
+- AMAT: fonte nasdaq; fechamento 332.715 em 2026-11-06; 549 pontos; SHA256 f67d7166952b9b854fc698f65a2c0097ef0e8b2758f49b7576271396e0b6cd2d; status RECORDED
+- AMD: fonte nasdaq; fechamento 449.04 em 2026-11-06; 549 pontos; SHA256 23fd886a9018ba08739b76fa9a7d1c5b6661aec750748bcfbb29802c10c01e1f; status RECORDED
+- AMGN: fonte nasdaq; fechamento 460.42 em 2026-11-06; 549 pontos; SHA256 8c37c49446e8a4edefa960c07dce6cdd846c8d87f77dc73adab15fbdb5c76d15; status RECORDED
+- AMT: fonte nasdaq; fechamento 188.79 em 2026-11-06; 549 pontos; SHA256 b65a8740e4ae492ba9185be684af431427b2f61d0a2ac011a7139c32c4154116; status RECORDED
+- AMZN: fonte nasdaq; fechamento 259.3 em 2026-11-06; 549 pontos; SHA256 fddd211e7ad7c700ca9ddf992105f203c2c6f854b8fe866c1804a5255d7c3032; status RECORDED
+- ANET: fonte nasdaq; fechamento 170.8 em 2026-11-06; 549 pontos; SHA256 b8299fc4b553b2f1a971d109707869c771c1246ac43b494ebeb5da763632eabd; status RECORDED
+- AVGO: fonte nasdaq; fechamento 293.69 em 2026-11-06; 549 pontos; SHA256 c61b66c53d37b011b8ac557280689e523b0e60be0f01c970639b961d75578808; status RECORDED
+- AXP: fonte nasdaq; fechamento 320.99 em 2026-11-06; 549 pontos; SHA256 49e49c41a8fa0d6de5c5ea3b7db881095b9dc077d1e63982f07edcc453fad06a; status RECORDED
+- BA: fonte nasdaq; fechamento 173.4 em 2026-11-06; 549 pontos; SHA256 7ff532d595425bdd2548612c1806b2c5632eb7adb0f12efd051b53c9c9ac13b5; status RECORDED
+- BAC: fonte nasdaq; fechamento 49.42 em 2026-11-06; 549 pontos; SHA256 d7d388d53b8ed326d773cae9e85c1540b038ae41b8a2da92491b178428ef71bd; status RECORDED
+- BKNG: fonte nasdaq; fechamento 160.665 em 2026-11-06; 549 pontos; SHA256 001b6204bf8f2489ebce8fee5869140a0eed121fae80d66c9b97f2f28985570e; status RECORDED
+- BLK: fonte nasdaq; fechamento 1178.87 em 2026-11-06; 549 pontos; SHA256 f4c03200058c99a20a1e25dc7cec098578ac5de5cf63c3c0f0fd4c1d27fdb0a5; status RECORDED
+- BMY: fonte nasdaq; fechamento 62.14 em 2026-11-06; 549 pontos; SHA256 c23b6eddc4ecb12d2b8cd507b461996b7dbdfc632951499357fd514140d8d945; status RECORDED
+- C: fonte nasdaq; fechamento 119.05 em 2026-11-06; 549 pontos; SHA256 cd9cd3dae0809432245002d827a85d21e591aac67c36abf9e57b3ba844ed2f37; status RECORDED
+- CAT: fonte nasdaq; fechamento 558.63 em 2026-11-06; 549 pontos; SHA256 9586c62e0839a428976ca31269975356658cc09e940dd8f382d28e6df4817f5e; status RECORDED
+- CL: fonte nasdaq; fechamento 96.56 em 2026-11-06; 549 pontos; SHA256 f878e6e9d0ff89bae60ac53f47c42da18d870476ff73e2577493b46345ec7fde; status RECORDED
+- COP: fonte nasdaq; fechamento 136.27 em 2026-11-06; 549 pontos; SHA256 82dcd9241271bef0879352cc8aa4c9a798406e1d2d76c45db6a01c1290e65f10; status RECORDED
+- COST: fonte nasdaq; fechamento 1053.56 em 2026-11-06; 549 pontos; SHA256 815227bd274060bc24ebba67d8120ef407f47d802eed0abd2ad8b635c72b0acc; status RECORDED
+- CRM: fonte nasdaq; fechamento 213.65 em 2026-11-06; 549 pontos; SHA256 17335fc1dcddb787ffbab53d2efa952934580eecca1b5d26371027d978af1e2b; status RECORDED
+- CSCO: fonte nasdaq; fechamento 93.85 em 2026-11-06; 549 pontos; SHA256 41e60f3f971e26190fcd5c116e7b911b29d957c44136820e329a531625b0d3c0; status RECORDED
+- CVX: fonte nasdaq; fechamento 212.61 em 2026-11-06; 549 pontos; SHA256 893f3344bd85cff3b8520620c8a8567d089db68e5e8e2a1fa1fe0f361d225592; status RECORDED
+- DE: fonte nasdaq; fechamento 671.65 em 2026-11-06; 549 pontos; SHA256 229dd84b64aada00ccbbf5ccb822f45e67b2fbcd76cff31113ae23c8a73a6909; status RECORDED
+- DHR: fonte nasdaq; fechamento 230.25 em 2026-11-06; 549 pontos; SHA256 1f85428129ce4767295cd1d66725f395738c857708fa69f6e4646f94eb0c8796; status RECORDED
+- DIS: fonte nasdaq; fechamento 116.75 em 2026-11-06; 549 pontos; SHA256 c57beb0b359e63e5a4bce0faa69df1b924a7246e533977f42dd6aa8881f6dd29; status RECORDED
+- DUK: fonte nasdaq; fechamento 127.78 em 2026-11-06; 549 pontos; SHA256 ff4d27d834dc6828448d79e0c6060af4eed8af1bde403af4e12c7cdbf8059f84; status RECORDED
+- ELV: fonte nasdaq; fechamento 425.62 em 2026-11-06; 549 pontos; SHA256 2326d79e9b7d7b1894b49cb474178e0c656e3b73ee68e5ae69154f456858dc9c; status RECORDED
+- EOG: fonte nasdaq; fechamento 147.13 em 2026-11-06; 549 pontos; SHA256 9f00821cd9b86730d8cd6b5320ebe1148d97800c9b3224a8a3daacda9da36335; status RECORDED
+- ETN: fonte nasdaq; fechamento 341.72 em 2026-11-06; 549 pontos; SHA256 c23bb95bb374dc382756aeee1f93653e2cac53c9017398a6c119839c5a285f9d; status RECORDED
+- GE: fonte nasdaq; fechamento 323.24 em 2026-11-06; 549 pontos; SHA256 796997920592c2f559d3f431d2f191ade9afc087cbe687d8e705872f6e3cc6f5; status RECORDED
+- GILD: fonte nasdaq; fechamento 166.89 em 2026-11-06; 549 pontos; SHA256 0249071fd2abf64fc119744803a22ce858ee599628006ef7fd68d3f28e314a13; status RECORDED
+- GOOGL: fonte nasdaq; fechamento 284.78 em 2026-11-06; 549 pontos; SHA256 56f1b9dd01e44ef72910369c06e75314f347ae27414ae7acef5df86e238e63b3; status RECORDED
+- GS: fonte nasdaq; fechamento 865.82 em 2026-11-06; 549 pontos; SHA256 3b2a877200300729b36f93230b67f65edada1b218cd26ebe7464025a1371f617; status RECORDED
+- HD: fonte nasdaq; fechamento 343.47 em 2026-11-06; 549 pontos; SHA256 a3db0e739ba3ced9e0678f14c069c345108dd4aecf5431dde708717a6389964a; status RECORDED
+- HON: fonte nasdaq; fechamento 220.05 em 2026-11-06; 549 pontos; SHA256 6bf176d88c7942c3d78bd9764b372f57e73f2a2eb7d95127a73da14ee625c92c; status RECORDED
+- IBM: fonte nasdaq; fechamento 245.0 em 2026-11-06; 549 pontos; SHA256 65203ba4357ddbabd65223a6e8197538769368f71a2c17c38a98e7118819960e; status RECORDED
+- ICE: fonte nasdaq; fechamento 172.27 em 2026-11-06; 549 pontos; SHA256 8e5c0de606cb46102e73e5f78eb71747e7eec935596a139f4533b3de9d564ba2; status RECORDED
+- INTC: fonte nasdaq; fechamento 56.28 em 2026-11-06; 549 pontos; SHA256 f742ce14264055b0b24a8e54660210dcec918b242e8a26999b262ee6a7997043; status RECORDED
+- INTU: fonte nasdaq; fechamento 341.5 em 2026-11-06; 549 pontos; SHA256 20ebc2ebecc66663a949288647948b1232e9ce56a21c1271f3f3292a372f2fb9; status RECORDED
+- ISRG: fonte nasdaq; fechamento 452.8 em 2026-11-06; 549 pontos; SHA256 627a078ca3b63d855df10f8b2175d97e5e3659a7f738284e3b41cbe0aaf5d519; status RECORDED
+- JNJ: fonte nasdaq; fechamento 276.22 em 2026-11-06; 549 pontos; SHA256 f117f79a3a63e2263bbaf53be87730da4e271b57e9e36c259e82bcdf368c7ff5; status RECORDED
+- JPM: fonte nasdaq; fechamento 334.49 em 2026-11-06; 549 pontos; SHA256 6f20481f1eaa247f1ffbf553825e215632b6932fc17ece4c20f5f7c4787f8b09; status RECORDED
+- KLAC: fonte nasdaq; fechamento 138.49 em 2026-11-06; 549 pontos; SHA256 283350cabefe028334629df17830bc533305f29bb0bec21bd1d5a7b60fdb7745; status RECORDED
+- KO: fonte nasdaq; fechamento 95.67 em 2026-11-06; 549 pontos; SHA256 bdc5fdd962666908f1944a4b99c90cba2e3817f36452eb13923c7e8f98578db2; status RECORDED
+- LIN: fonte nasdaq; fechamento 515.25 em 2026-11-06; 549 pontos; SHA256 8633330568bc5677aba8f85225b7ae0ff81696622d7db948c6d57491be9869c8; status RECORDED
+- LLY: fonte nasdaq; fechamento 1354.0 em 2026-11-06; 549 pontos; SHA256 eede5a6b8eaaef2551d2c01ea8830f144f61b46534b7aa9138b0af030d73fc0b; status RECORDED
+- LMT: fonte nasdaq; fechamento 567.08 em 2026-11-06; 549 pontos; SHA256 55f9faf86ea16f010f27020b0803e3955b2d782056ee7f97fb104badbddcd327; status RECORDED
+- LOW: fonte nasdaq; fechamento 224.55 em 2026-11-06; 549 pontos; SHA256 5a459d61f3bda0ae0c5b5f299af691b07bb6ef0339a0b0f3b3e132dfb2d060f6; status RECORDED
+- LRCX: fonte nasdaq; fechamento 200.44 em 2026-11-06; 549 pontos; SHA256 4942e624e8f478f019f8f9cd4a660e9926e331619ee325dc2f32885edee21cba; status RECORDED
+- MA: fonte nasdaq; fechamento 652.7 em 2026-11-06; 549 pontos; SHA256 cb834a7d656e736307fb8e635467d0197531e669d5977f07b96fd4ed39272064; status RECORDED
+- MCD: fonte nasdaq; fechamento 276.52 em 2026-11-06; 549 pontos; SHA256 aa45fb70692f0ecc56a10239dd853539d4aac25c0501859164dffec9e6dcbf9a; status RECORDED
+- MDLZ: fonte nasdaq; fechamento 66.02 em 2026-11-06; 549 pontos; SHA256 d6d639f32356cd3de5bf6c2a6826010c4ff6bf5fa884890d1d90efab741bee03; status RECORDED
+- META: fonte nasdaq; fechamento 610.15 em 2026-11-06; 549 pontos; SHA256 88de45ddabe29210232fa8be7e714620c05a61644edc84a4657476b34a28ca1d; status RECORDED
+- MO: fonte nasdaq; fechamento 76.12 em 2026-11-06; 549 pontos; SHA256 7342957174dd1259037eb6e6fca42d91917e0abff02388cd2a12075ecac9cef5; status RECORDED
+- MRK: fonte nasdaq; fechamento 146.73 em 2026-11-06; 549 pontos; SHA256 708fe6f663c3fbae4ee4ff13a3a01f022a8350b5058455224a73c170d4fa1b51; status RECORDED
+- MS: fonte nasdaq; fechamento 181.44 em 2026-11-06; 549 pontos; SHA256 6fdae626958a8187a4a88463e9abed32421142b3bf62c5648eb809990158899a; status RECORDED
+- MSFT: fonte nasdaq; fechamento 530.61 em 2026-11-06; 549 pontos; SHA256 6590106573cff7ae34de41ae0ea0a9973ef86600b80779adfe4c96af7b2b2aeb; status RECORDED
+- MU: fonte nasdaq; fechamento 690.0 em 2026-11-06; 549 pontos; SHA256 f5026fe448f8037f6e66f66ddb79ab14d55b52c45ca339f9d96218ff3016ff58; status RECORDED
+- NEE: fonte nasdaq; fechamento 86.95 em 2026-11-06; 549 pontos; SHA256 537d250d46a70e5c78a8beebc90b51ea82166d71de2f851737f3a0432f201ed7; status RECORDED
+- NFLX: fonte nasdaq; fechamento 63.41 em 2026-11-06; 549 pontos; SHA256 9f26e77e1a0cee17c2dae837d1c1c7c92ad47ff676e1edf3fb2c4b83ada3eabf; status RECORDED
+- NKE: fonte nasdaq; fechamento 38.59 em 2026-11-06; 549 pontos; SHA256 fa88e33933e8e2e586d7e79461653de517762ad1a3f54693e0c4cd5f3e7b867c; status RECORDED
+- NOW: fonte nasdaq; fechamento 101.97 em 2026-11-06; 549 pontos; SHA256 200902ae416ae8ce3dbe7ae5479182afd6ea91b49b7c1da0159f7fbf3a675f01; status RECORDED
+- NVDA: fonte nasdaq; fechamento 186.64 em 2026-11-06; 549 pontos; SHA256 724172d3827c43eeb5c1cb5bf85c2b9cde80ea019a4de37b039901a95c574d63; status RECORDED
+- ORCL: fonte nasdaq; fechamento 116.1 em 2026-11-06; 549 pontos; SHA256 832532a973257867f86d8fc0c4591e98f06a98deeacb2871605b7e445c6c8965; status RECORDED
+- PANW: fonte nasdaq; fechamento 313.84 em 2026-11-06; 549 pontos; SHA256 80767a148756df13c7895aa055c9bacd6c817fa23f9d58e7641dc28c4b039680; status RECORDED
+- PEP: fonte nasdaq; fechamento 141.34 em 2026-11-06; 549 pontos; SHA256 392d561b46b5ddf85102c71043523becb83a94537e1c065cbb66a888ce5b379e; status RECORDED
+- PFE: fonte nasdaq; fechamento 29.39 em 2026-11-06; 549 pontos; SHA256 1f61597dd013cbe7d0a2c1d6bbaaf0c559cebbe3f8c56c9e3d2bc0878a2a859b; status RECORDED
+- PG: fonte nasdaq; fechamento 165.4 em 2026-11-06; 549 pontos; SHA256 5d37ead5394477deb9176b7f0f284be25d5ca5d1910bf21461cf5f9b0ff5f61e; status RECORDED
+- PGR: fonte nasdaq; fechamento 227.77 em 2026-11-06; 549 pontos; SHA256 ce2c9d5f64dcd703cec5fb2cf6147a7dc8ac0b8bd50acc99bb661227aa5e9c63; status RECORDED
+- PLD: fonte nasdaq; fechamento 126.96 em 2026-11-06; 549 pontos; SHA256 544ba47ee55e55c64e2d6916efe83878561ecdc603ac9eb2b74d632041fe9f33; status RECORDED
+- PM: fonte nasdaq; fechamento 197.88 em 2026-11-06; 549 pontos; SHA256 de66337b09d4060afc505553eac27d0f9a2baee1657baba79d080ec241ef3ee3; status RECORDED
+- QCOM: fonte nasdaq; fechamento 165.41 em 2026-11-06; 549 pontos; SHA256 eaa7660aca908227d253496f7b65ca7b6c50ac1dbab08952262b498d2cc4153b; status RECORDED
+- RTX: fonte nasdaq; fechamento 189.53 em 2026-11-06; 549 pontos; SHA256 6c512b820bf08adaccb1934060eff1f9513f7bbaf71cc7d471cd3c7bbe16d6b3; status RECORDED
+- SBUX: fonte nasdaq; fechamento 105.41 em 2026-11-06; 549 pontos; SHA256 629b77f11d7d0651328f2bea89791fe1a52abb97ac18ae4f2168eee796b7e46c; status RECORDED
+- SCHW: fonte nasdaq; fechamento 91.49 em 2026-11-06; 549 pontos; SHA256 a6d688e32e3c65c8ab648c017514f7f1628d85611973b75b0bacf35684572971; status RECORDED
+- SHW: fonte nasdaq; fechamento 344.1 em 2026-11-06; 549 pontos; SHA256 aff36070868281319d420817785c893adaec68dd8f191e6fd4408c05f54a3d93; status RECORDED
+- SLB: fonte nasdaq; fechamento 49.92 em 2026-11-06; 549 pontos; SHA256 5089f30f3f3026c910ab19ec7f99a1e0a699968f5c47e34e086d883859d482cf; status RECORDED
+- SO: fonte nasdaq; fechamento 92.34 em 2026-11-06; 549 pontos; SHA256 ae8d29b013c332ff841c24f402b5b93c81df0d6f73f3c8febfddd559ab090c60; status RECORDED
+- SPGI: fonte nasdaq; fechamento 467.8 em 2026-11-06; 549 pontos; SHA256 b0caaba2c668bcd11db8856e7112c8cc25d2b0578c9976d788e011a3ecfa12f6; status RECORDED
+- SPY: fonte nasdaq; fechamento 735.29 em 2026-11-06; 549 pontos; SHA256 655e52288881da03b82e7cce5d1f1b845346632ce0394c070125f36ff74dc11c; status RECORDED
+- SYK: fonte nasdaq; fechamento 325.87 em 2026-11-06; 549 pontos; SHA256 ebac7d8741a76ab5877d9de883ded48efdb00c94c2f17391afbfcee69a4793fd; status RECORDED
+- TGT: fonte nasdaq; fechamento 158.41 em 2026-11-06; 549 pontos; SHA256 134a36dad389001f5f9e6251a39d2bcd2177b1e215e78663e76b21c2be9da58d; status RECORDED
+- TJX: fonte nasdaq; fechamento 135.3 em 2026-11-06; 549 pontos; SHA256 e796f39fb1aab22bf289b9e4d64242f94b30a34d906f867778db3dde104f9d41; status RECORDED
+- TMO: fonte nasdaq; fechamento 694.76 em 2026-11-06; 549 pontos; SHA256 c062e716c0541791e97abe18029bd1b8de5ec7c4960a1a65774d67011cb9d37e; status RECORDED
+- TMUS: fonte nasdaq; fechamento 162.01 em 2026-11-06; 549 pontos; SHA256 423e588d991c8703a7c0419b375d93a6d283ef503403f754ead43cd4b3dfeb4c; status RECORDED
+- TSLA: fonte nasdaq; fechamento 358.22 em 2026-11-06; 549 pontos; SHA256 cdcba40a18dbcacb32beeee93e219d9de4ab5fa436df604cf4c6d305b40bc8ab; status RECORDED
+- TXN: fonte nasdaq; fechamento 277.36 em 2026-11-06; 549 pontos; SHA256 9765f68e334b0b887c101aaefa1e7b047cb48d9de167fd27811230e4b04e96c2; status RECORDED
+- UBER: fonte nasdaq; fechamento 68.59 em 2026-11-06; 549 pontos; SHA256 1d2b55d2072c920df5e6c8bb8c28d6575a0122b96878cf0473068339dc8bb727; status RECORDED
+- UNH: fonte nasdaq; fechamento 394.15 em 2026-11-06; 549 pontos; SHA256 3635a9e4286419d1ca65d07555e2da1b4b66c4204f7b72ac92bbe50d9f471451; status RECORDED
+- UNP: fonte nasdaq; fechamento 290.16 em 2026-11-06; 549 pontos; SHA256 43e7555b435ae61811c2f3f0c68d5560ed8f6ee9fe2b8d65a9f777a47488f8fb; status RECORDED
+- UPS: fonte nasdaq; fechamento 108.3 em 2026-11-06; 549 pontos; SHA256 a7a00d5784071636ec425754740342b87c688f1c2957db7e239772096b48c5d0; status RECORDED
+- V: fonte nasdaq; fechamento 422.65 em 2026-11-06; 549 pontos; SHA256 6796070853728ae109b8effeee43011b7180a80eec237bce7c4bc177dfe2f0d1; status RECORDED
+- VRTX: fonte nasdaq; fechamento 547.09 em 2026-11-06; 549 pontos; SHA256 d335deea7f4a2b00a27ed183ab50293092be18e0ed24633fb2704b5fc664ffed; status RECORDED
+- WFC: fonte nasdaq; fechamento 83.94 em 2026-11-06; 549 pontos; SHA256 c7d780bc80c4090e1158f93a9c473825b511e98a218ef1daf2e44e40cd8123c8; status RECORDED
+- WMT: fonte nasdaq; fechamento 125.52 em 2026-11-06; 549 pontos; SHA256 7c1409d1781c8b8a1b65137b6af63ee7e7fffa85e62a1e201f5e56a6d2ad963e; status RECORDED
+- XOM: fonte nasdaq; fechamento 165.87 em 2026-11-06; 549 pontos; SHA256 25ebd4753408dfbb2fa3d537b2298a08626d507d5adf1caa216dffec07422162; status RECORDED
+- Rodada 2026-11-08; ultima sessao do benchmark: 2026-11-06.
 - Operacoes paper marcadas pelo ultimo fechamento disponivel; nao sao fills observados nem comprovam negociacao nessa data da rodada.
 - A variacao entre rodadas pode incorporar uma sessao anterior; nao representa necessariamente um pregao da data do relatorio.
 - **Em carencia por stop:** AMAT (ate 2026-11-22), LRCX (ate 2026-11-23), INTC (ate 2026-12-01), AMD (ate 2026-12-07), MU (ate 2026-12-07)
@@ -176,22 +171,22 @@ _Grafico do historico (base 100 no inicio de cada carteira): `2026-11-07-grafico
 
 | Indicador | Valor |
 |---|---|
-| NAV | $51,240.57 |
-| Retorno entre registros | -3.92% |
-| Intervalo observado | 2026-11-05 → 2026-11-07 (2 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | +2.48% |
-| Benchmark BTC | +17.73% |
-| **Alfa vs BTC** | **-15.25%** |
+| NAV | $50,765.76 |
+| Retorno do dia | -0.93% |
+| Intervalo observado | 2026-11-07 → 2026-11-08 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | +1.53% |
+| Benchmark BTC | +17.38% |
+| **Alfa vs BTC** | **-15.85%** |
 | Caixa | $2,484.20 |
 | Regime | risco ligado |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BTC | 0.324675 | $75,838.43 | $24,622.82 | 48.1% |
-| ZEC | 6.5719 | $1,292.85 | $8,496.48 | 16.6% |
-| STX | 23363.7 | $0.34 | $8,023.09 | 15.7% |
-| QNT | 38.6791 | $196.85 | $7,613.98 | 14.9% |
+| BTC | 0.324675 | $75,613.24 | $24,549.71 | 48.4% |
+| ZEC | 6.5719 | $1,249.80 | $8,213.56 | 16.2% |
+| STX | 23363.7 | $0.34 | $7,960.01 | 15.7% |
+| QNT | 38.6791 | $195.41 | $7,558.28 | 14.9% |
 
 _Sem movimentacoes hoje._
 
@@ -199,8 +194,8 @@ _Sem movimentacoes hoje._
 <summary>Rasto de decisao (auditoria)</summary>
 
 - **Gatilho:** nenhum (sem motivo para negociar)
-- **Obstaculo (BTC):** momentum de +4.9% — so entram ativos acima disto
-- **Candidatos elegiveis:** 19
+- **Obstaculo (BTC):** momentum de +5.0% — so entram ativos acima disto
+- **Candidatos elegiveis:** 17
 - **Fontes usadas:** binance: 31, coinbase: 119, nasdaq: 101
 - **Fonte coinbase nao tem 31 ativos** (servidos pela fonte seguinte)
 - **Nota:** teto de 15% por alt deixou 5.0% em caixa
@@ -208,14 +203,14 @@ _Sem movimentacoes hoje._
 | Rejeitado | Motivo |
 |---|---|
 | 1INCH | liquidez baixa (0.1M < 1M) |
-| ADA | nao bate o benchmark (-13.6% <= +4.9%) |
-| ALGO | nao bate o benchmark (-3.5% <= +4.9%) |
+| ADA | nao bate o benchmark (-15.4% <= +5.0%) |
+| ALGO | nao bate o benchmark (-0.8% <= +5.0%) |
 | ALICE | liquidez baixa (0.0M < 1M) |
 | AMP | liquidez baixa (0.3M < 1M) |
 | ANKR | liquidez baixa (0.1M < 1M) |
-| APE | liquidez baixa (0.5M < 1M) |
+| APE | liquidez baixa (0.4M < 1M) |
 | API3 | liquidez baixa (0.1M < 1M) |
-| _(+110 outros)_ | |
+| _(+112 outros)_ | |
 
 </details>
 
@@ -224,8 +219,8 @@ _Sem movimentacoes hoje._
 | Indicador | Valor |
 |---|---|
 | NAV | R$ 47,616.39 |
-| Retorno entre registros | +0.43% |
-| Intervalo observado | 2026-11-05 → 2026-11-07 (2 dia(s) corridos) |
+| Retorno do dia | +0.00% |
+| Intervalo observado | 2026-11-07 → 2026-11-08 (1 dia(s) corridos) |
 | Retorno desde inicio (2026-08-06) | -4.77% |
 | Benchmark IBOV | -4.01% |
 | Benchmark CDI | +3.22% |
@@ -327,24 +322,24 @@ _Sem movimentacoes hoje._
 
 | Indicador | Valor |
 |---|---|
-| NAV | R$ 47,486.29 |
-| Retorno entre registros | +1.87% |
-| Intervalo observado | 2026-11-05 → 2026-11-07 (2 dia(s) corridos) |
-| Retorno desde inicio (2026-08-06) | -5.03% |
+| NAV | R$ 47,533.83 |
+| Retorno do dia | +0.10% |
+| Intervalo observado | 2026-11-07 → 2026-11-08 (1 dia(s) corridos) |
+| Retorno desde inicio (2026-08-06) | -4.93% |
 | Benchmark IBOV | -4.01% |
 | Benchmark CDI | +3.22% |
-| **Alfa vs objetivo (CDI)** | **-8.25%** |
-| Alfa vs IBOV (comparador informativo) | -1.01% |
+| **Alfa vs objetivo (CDI)** | **-8.16%** |
+| Alfa vs IBOV (comparador informativo) | -0.92% |
 | Caixa | R$ 1,253.75 |
 
 ### Posicoes
 | Ativo | Qtd | Preco | Valor | Peso |
 |---|---|---|---|---|
-| BOVA11 | 290.34 | R$ 165.93 | R$ 48,176.08 | 101.5% |
+| BOVA11 | 290.34 | R$ 165.93 | R$ 48,176.08 | 101.4% |
 
-> Conciliacao do NAV: ativos R$ 48,176.08 + caixa R$ 1,253.75 - obrigacao da call R$ 1,943.53 = R$ 47,486.29.
+> Conciliacao do NAV: ativos R$ 48,176.08 + caixa R$ 1,253.75 - obrigacao da call R$ 1,895.99 = R$ 47,533.83.
 
-> Call vendida (premio modelado): strike R$ 169.76, vence 2026-12-05, premio R$ 8.5788/un, valor atual da obrigacao R$ 1,943.53
+> Call vendida (premio modelado): strike R$ 169.76, vence 2026-12-05, premio R$ 8.5788/un, valor atual da obrigacao R$ 1,896.00
 
 > Volatilidade usada na call (GARCH(1,1)): 41.9% a.a. | realizada 30d: 54.0% a.a. | CDI: 0.0508% a.d.
 
