@@ -10,7 +10,7 @@
       "collection_health": "RED_STALE",
       "freshness": "STALE",
       "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "FAILED_CURRENT_SOURCE_RETRYABLE"
+      "source_status": "FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL"
     },
     "b3_h1": {
       "collection_health": "RED_STALE",
@@ -37,10 +37,10 @@
       "source_status": "ACTIVE"
     },
     "daily_delivery_pointer": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "CURRENT"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "LATE_MISSING_OR_INVALID"
     },
     "delta": {
       "collection_health": "RED_STALE",
@@ -82,7 +82,7 @@
       "collection_health": "RED_STALE",
       "freshness": "STALE",
       "scientific_state": "PRESERVED_NOT_CURRENT",
-      "source_status": "NEEDS_CURRENT_SOURCE"
+      "source_status": "FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL"
     },
     "qos_monthly": {
       "collection_health": "GREEN_PROTOCOL_WAITING",
@@ -91,10 +91,10 @@
       "source_status": "ACTIVE_CALENDAR_GATED"
     },
     "qos_three_track": {
-      "collection_health": "GREEN",
-      "freshness": "FRESH",
-      "scientific_state": "ACTIVE_SHADOW_EVIDENCE",
-      "source_status": "ACTIVE_PROSPECTIVE_THREE_TRACK"
+      "collection_health": "RED_STALE",
+      "freshness": "STALE",
+      "scientific_state": "PRESERVED_NOT_CURRENT",
+      "source_status": "FAILED_QOS_DELIVERY"
     },
     "system12": {
       "collection_health": "AMBER",
@@ -121,7 +121,7 @@
       "source_status": "PROSPECTIVE_ORCHESTRATOR_ACTIVE"
     }
   },
-  "generated_at_utc": "2026-11-08T10:48:15.758199+00:00",
+  "generated_at_utc": "2026-11-09T11:49:06.844478+00:00",
   "interpretation": "A collection/delivery defect is component-scoped and does not retroactively invalidate previously admitted scientific evidence. No stale, missing, failed or blocked component is promoted to GREEN.",
   "not_approved": true,
   "operational_authorization": "NOT_APPROVED",
@@ -130,9 +130,11 @@
   "red_collection_components": [
     "alt_trail",
     "b3_h1",
+    "daily_delivery_pointer",
     "delta",
     "lock25_50",
     "prl50",
+    "qos_three_track",
     "v16b1"
   ],
   "reference_data_date": "2026-11-07",
@@ -140,5 +142,5 @@
   "schema": "gate_btc.health_dimensions.v1",
   "scientific_integrity": "PRESERVED_FAIL_CLOSED",
   "shadow_only": true,
-  "status_sha256": "68350d768c353db1c33dfa7a237909d6dedb28a142952f1091ced4c316d8ea9a"
+  "status_sha256": "01a1eb59a71af58742b7281ef6f055381b8a25d742ca1f6ab0004dbcf1652856"
 }
