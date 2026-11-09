@@ -56,6 +56,40 @@ class RecentSourceTests(unittest.TestCase):
         with zipfile.ZipFile(data,'w') as z:z.writestr('2026-10-21_NEGOCIOSAVISTA.TXT',text)
         front,volumes=s.choose_wdo(data.getvalue())
         self.assertEqual(front,'WDOX26');self.assertEqual(volumes,{'WDOX26':100.,'WDOZ26':50.})
+
+    def test_target_without_opening_wdo_records_zero_credit_source_failure_once(self):
+        date = '2026-11-05'
+        schedule = s.source_schedule({})
+        csv = ('CodigoInstrumento;AcaoAtualizacao;QuantidadeNegociada;HoraFechamento;TipoSessaoPregao\n'
+               'WDOZ26;0;100;16:32:21;1\nWDOF27;0;100;16:34:46;1\n')
+        raw = io.BytesIO()
+        with zipfile.ZipFile(raw, 'w') as archive:
+            archive.writestr('05-11-2026_NEGOCIOSAVISTA.txt', csv)
+        source = {'sha256': collector.sha256_bytes(raw.getvalue()), 'bytes': len(raw.getvalue()),
+                  'state': 'SOURCE_CAPTURED', 'http_status': 200, 'url': 'https://example.invalid/source'}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            collector, 'fetch_raw', return_value=(raw.getvalue(), source),
+        ), patch.object(collector, 'process_zip') as process:
+            receipt = Path(tmp) / 'source_failures' / f'{date}.json'
+            with self.assertRaisesRegex(RuntimeError, 'H31_WARMUP_NO_WDO_EXECUTIONS'):
+                collector.fetch_official_session(date, schedule)
+            self.assertFalse(receipt.exists())
+            with self.assertRaisesRegex(RuntimeError, 'H31_TARGET_NO_WDO_EXECUTIONS'):
+                collector.fetch_official_session(date, schedule, target_failure=receipt)
+            original = receipt.read_bytes()
+            row = json.loads(original)
+            self.assertEqual(row['date'], date)
+            self.assertEqual(row['classification'], 'TRUE_PROCESSING_FAILURE')
+            self.assertEqual(row['front_contracts'], schedule[date])
+            self.assertEqual(row['source'], source)
+            self.assertFalse(row['scientifically_qualified'])
+            self.assertEqual(row['eligible_observation_increment'], 0)
+            source['sha256'] = 'a' * 64
+            with self.assertRaisesRegex(RuntimeError, 'H31_TARGET_NO_WDO_EXECUTIONS'):
+                collector.fetch_official_session(date, schedule, target_failure=receipt)
+            self.assertEqual(receipt.read_bytes(), original)
+            process.assert_not_called()
+
     def test_future_target_cannot_download_or_credit_before_its_session(self):
         contract={'first_eligible_date':'2026-08-25'}
         with tempfile.TemporaryDirectory() as d, patch.object(collector,'datetime') as clock, patch.object(collector,'trailing') as warmup, patch.object(collector,'fetch_official_session') as fetch:
