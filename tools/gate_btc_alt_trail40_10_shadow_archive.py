@@ -47,6 +47,29 @@ def read_csv(path):
         return list(csv.DictReader(handle))
 
 
+
+MONTHLY_AUTHORIZATIONS = {
+    "ALT_TRAIL40_10_20260930_USER_20260928",
+    "ALT_TRAIL40_10_20261031_USER_20261006",
+}
+
+
+def is_monthly(contract):
+    return contract.get("authorization_id") in MONTHLY_AUTHORIZATIONS
+
+
+def is_month_end(day):
+    return day.month != (day + timedelta(days=1)).month
+
+
+def require_monthly_signal(signals, day):
+    require(is_month_end(day), "ALT_SIGNAL_NOT_MONTH_END")
+    for signal in signals.values():
+        require(signal["signal_date"] == day.isoformat(), "ALT_MONTH_END_SIGNAL_DATE_MISMATCH")
+        require(signal["execution_eligible_from"] == (day + timedelta(days=1)).isoformat(),
+                "ALT_MONTH_END_EXECUTION_DATE_MISMATCH")
+
+
 def validate_contract(contract):
     require(contract["schema"] == "gate_btc.alt_trail40_10_shadow_contract.v1", "bad contract schema")
     require(contract["candidate_name"] == "ALT_TRAIL40_10_CLOSE_LAG1_V1", "candidate drift")
@@ -237,13 +260,14 @@ def append(contract_path, ledger_dir, current_portfolios, master_daily, snapshot
         require(date.fromisoformat(signal["signal_date"]) >= first_signal, f"pre-freeze signal still active for {strategy}; mid-cycle initialization prohibited")
         require(date.fromisoformat(signal["execution_eligible_from"]) > date.fromisoformat(signal["signal_date"]), "non-lagged signal")
 
-    if contract.get("authorization_id") == "ALT_TRAIL40_10_20260930_USER_20260928":
-        if previous is None or snapshot_day.month != (snapshot_day + timedelta(days=1)).month:
-            require(all(signal["signal_date"] == snapshot_id for signal in observed.values()), "monthly signal date mismatch")
+    if is_monthly(contract):
+        if previous is None or is_month_end(snapshot_day):
+            require_monthly_signal(observed, snapshot_day)
             signals = observed
         else:
             signals = previous["signals"]
-            require(all(signal["signal_date"] <= snapshot_id for signal in signals.values()), "future frozen signal")
+            frozen_day = date(snapshot_day.year, snapshot_day.month, 1) - timedelta(days=1)
+            require_monthly_signal(signals, frozen_day)
     else:
         signals = observed
 

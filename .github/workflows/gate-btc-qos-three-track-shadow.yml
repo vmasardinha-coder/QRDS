@@ -11,6 +11,8 @@ on:
       - tools/gate_btc_qos_interruption_20260928.json
       - tools/gate_btc_qos_prospective_three_track.py
       - tools/gate_btc_qos_covered_delivery.py
+      - tools/gate_btc_qos_daily_handoff.py
+      - tests/test_gate_btc_qos_daily_handoff.py
       - tools/gate_btc_qos_locked_mexc.py
       - tools/gate_btc_2_v2a_ake_mexc_qualification_runner.py
       - tools/gate_btc_qos_source_epoch_20261031.json
@@ -69,7 +71,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install numpy pandas pytest requests
-      - run: python -m pytest -q tests/test_gate_btc_qos_prospective_three_track.py tests/test_gate_btc_qos_covered_delivery.py tests/test_gate_btc_qos_locked_mexc.py
+      - run: python -m pytest -q tests/test_gate_btc_qos_prospective_three_track.py tests/test_gate_btc_qos_covered_delivery.py tests/test_gate_btc_qos_locked_mexc.py tests/test_gate_btc_qos_daily_handoff.py
 
   append-prospective-evidence:
     needs: contract-tests
@@ -115,18 +117,13 @@ jobs:
           p=[j for j in js if j['name']=='daily-research-collection']
           assert len(p)==1 and p[0]['conclusion']=='success'
           PY
-          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts" --jq ".artifacts[] | select(.expired == false and .name == \"gate-btc-daily-research-${SOURCE_RUN_ID}\") | .id")
           test -n "$artifact_id"
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > artifact.zip
           mkdir -p source_artifact
           unzip -q artifact.zip -d source_artifact
-          python - <<'PY'
-          import json
-          d=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json',encoding='utf-8-sig'))
-          assert d['status'] in ['PASS','PASS_WITH_DATA_WARNINGS'] and d['components']['v2a']['status']=='PASS'
-          assert d['research_only'] and d['operational_status']=='NOT_APPROVED'
-          assert d['orders_generated']==d['real_capital_used']==d['methodology_changes']==0
-          PY
+          python -m tools.gate_btc_qos_daily_handoff verify \
+            --artifact-root source_artifact --run-id "$SOURCE_RUN_ID"
           echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
       - name: Deliver frozen cohort prices and unchanged three-track evaluation
         id: process

@@ -12,6 +12,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - tools/gate_btc_qos_daily_handoff.py
+      - tests/test_gate_btc_qos_daily_handoff.py
+      - tools/gate_btc_prl_alt_next_epoch.py
+      - tests/test_gate_btc_prl_alt_next_epoch.py
       - tools/gate_btc_prl_alt_same_source_recovery.py
       - tools/gate_btc_reporting_operational_overlay.py
       - .github/workflows/gate-btc-prl50-position-shadow.yml
@@ -152,13 +156,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
-          EVENT_RUN_ID: ${{ github.event.workflow_run.name == 'GATE BTC Daily Research Collection' && github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
-          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
-          if [[ -z "$SOURCE_RUN_ID" ]]; then
-            SOURCE_RUN_ID=$(python -c 'import json; from datetime import datetime, timedelta, timezone; p=json.load(open("runtime_repo/runtime/data_quality/v2a/STATUS.json")); assert p["latest_source_data_as_of"] == (datetime.now(timezone.utc).date()-timedelta(days=1)).isoformat(), "V2A_RUNTIME_SOURCE_NOT_CURRENT"; print(p["latest_source_run_id"])')
+          QOS_RUN_ID=$(python -m tools.gate_btc_qos_daily_handoff resolve \
+            --qos-root runtime_repo/runtime/ledgers/qos_three_track)
+          if [[ -n "$MANUAL_RUN_ID" && "$MANUAL_RUN_ID" != "$QOS_RUN_ID" ]]; then
+            echo "MANUAL_DAILY_RUN_DIFFERS_FROM_SEALED_QOS"
+            exit 1
           fi
+          SOURCE_RUN_ID="$QOS_RUN_ID"
           test -n "$SOURCE_RUN_ID"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
           gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/jobs?per_page=100" > source_jobs.json
@@ -196,45 +202,17 @@ jobs:
           set -euo pipefail
           mkdir -p source_artifact extracted/v2a
           artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false) | select(.name | startswith("gate-btc-daily-research-")) | .id' | head -1)
+            --jq ".artifacts[] | select(.expired == false and .name == \"gate-btc-daily-research-${SOURCE_RUN_ID}\") | .id")
           test -n "$artifact_id"
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
           unzip -q artifact.zip -d source_artifact
-          if [[ ! -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json ]]; then
-            echo "eligible=false" >> "$GITHUB_OUTPUT"
-            echo "PRL50_POSITION=FAILED_MISSING_DAILY_HANDOFF"
-            exit 1
-          fi
-          echo "eligible=true" >> "$GITHUB_OUTPUT"
-          test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          python -m tools.gate_btc_qos_daily_handoff verify \
+            --artifact-root source_artifact --run-id "$SOURCE_RUN_ID" \
+            --qos-root runtime_repo/runtime/ledgers/qos_three_track
           unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
-          test -f extracted/v2a/outputs/v2a_run_manifest.json
-          test -f extracted/v2a/outputs/qos_v2a_current_portfolios.csv
-          test -f extracted/v2a/data/processed/qos_v2a_master_daily.csv
-
-      - name: Verify Daily Research safety and resolve snapshot
-        if: steps.daily_source.outputs.eligible == 'true'
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          m=json.load(open('source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json', encoding='utf-8-sig'))
-          assert m['status'] in {'PASS','PASS_WITH_DATA_WARNINGS'}
-          assert m['research_only'] is True
-          assert m['operational_status'] == 'NOT_APPROVED'
-          assert m['orders_generated'] == 0 and m['real_capital_used'] == 0
-          assert m['methodology_changes'] == 0
-          assert m['components']['v2a']['status'] == 'PASS'
-          v=json.load(open('extracted/v2a/outputs/v2a_run_manifest.json', encoding='utf-8-sig'))
-          assert v['operational_status'] == 'NOT_APPROVED'
-          assert v['technical_status'] == 'PASS'
-          assert v['real_orders'] == 0 and v['capital_used'] == 0
-          assert v['evidence_status'] == 'RESEARCH_ONLY_NOT_PROMOTED'
-          assert v['lookahead_guard'] == 'signals execute on next daily bar'
-          print(v['data_as_of'])
-          open('snapshot_id.txt','w',encoding='utf-8').write(v['data_as_of'])
-          PY
-          echo "PRL50_SNAPSHOT_ID=$(cat snapshot_id.txt)" >> "$GITHUB_ENV"
+          PRL50_SNAPSHOT_ID=$(python -c 'import json; print(json.load(open("extracted/v2a/outputs/v2a_run_manifest.json", encoding="utf-8-sig"))["data_as_of"])')
+          echo "PRL50_SNAPSHOT_ID=$PRL50_SNAPSHOT_ID" >> "$GITHUB_ENV"
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
 
       - name: Recover selected same-source exact closes from sealed QOS evidence
         if: steps.daily_source.outputs.eligible == 'true'

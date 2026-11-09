@@ -51,7 +51,7 @@ def seal_interrupted(root, lane, at):
         archive.write_json(marker,payload)
     return True
 
-def publish(root,lane,status,at,target=None):
+def publish(root,lane,status,at,target=None,alt_path_error=None):
     contract,auth,archive=config(lane)
     old=root/'epochs'/OLD_EPOCH
     new=root/'epochs'/NEXT_EPOCH
@@ -80,9 +80,16 @@ def publish(root,lane,status,at,target=None):
                                              for c in economics.get('cycles',[]))
         result['economic_result_valid']=result['completed_valid_cycles']>0
     if lane=='alt':
-        evaluation=archive.load_json(new/'EVALUATION.json') if (new/'EVALUATION.json').exists() else {}
-        result['economic_result_valid']=bool(evaluation.get('completed_journeys',[]))
-        result.update(armed_completed_journeys=evaluation.get('armed_completed_journeys',0),
+        evaluation = {}
+        if not alt_path_error and status != 'FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL':
+            if (new/'EVALUATION.json').exists():
+                candidate = archive.load_json(new/'EVALUATION.json')
+                if (candidate.get('as_of') == result['latest_snapshot_date']
+                        and candidate.get('evaluation_sha256') == alt_eval.payload_sha(candidate, 'evaluation_sha256')):
+                    evaluation = candidate
+        result['economic_result_valid']=bool(evaluation.get('completed_journeys',0))
+        result.update(alt_path_error=alt_path_error,
+                      armed_completed_journeys=evaluation.get('armed_completed_journeys',0),
                       gate_eligible=evaluation.get('gate_eligible',False),
                       earliest_calendar_gate_date=(NEXT+timedelta(days=120)).isoformat())
     archive.write_json(root/'STATUS.json',result)
@@ -105,10 +112,16 @@ def plan(root,lane,at=None):
     if complete<NEXT:
         return publish(root,lane,'WAITING_NEXT_APPROVED_MONTH_END',at,NEXT.isoformat())
     archive.initialize(contract,new)
-    if lane=='alt':
-        alt_eval.evaluate(contract,new)
     paths=archive.snapshot_paths(new)
     wanted=date.fromisoformat(paths[-1].stem)+timedelta(days=1) if paths else NEXT
+    if lane=='alt' and paths:
+        loaded_contract, _, rows = alt_eval.load_chain(contract, new)
+        try:
+            alt_eval.validate_monthly_path(loaded_contract, rows)
+        except alt_eval.InvalidMonthlyPath as exc:
+            blocked = ('FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL' if wanted < complete
+                       else 'BLOCKED_INVALID_ALT_MONTHLY_PATH_NO_BACKFILL')
+            return publish(root,lane,blocked,at,wanted.isoformat(),alt_path_error=str(exc))
     if wanted>complete:
         return publish(root,lane,'ACTIVE_PROSPECTIVE_ARCHIVE',at,wanted.isoformat())
     if wanted<complete:

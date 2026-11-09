@@ -7,8 +7,13 @@ import json
 import math
 import random
 import statistics
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
+
+if __package__:
+    from tools import gate_btc_alt_trail40_10_shadow_archive as archive
+else:
+    import gate_btc_alt_trail40_10_shadow_archive as archive
 
 CANDIDATE = "ALT_TRAIL40_10_CLOSE_LAG1_V1"
 STRATEGIES = ("QOS_Moderada", "QOS_Ultra")
@@ -75,6 +80,48 @@ def load_chain(contract_path, ledger_dir):
         previous_sha = row["row_sha256"]
         rows.append(row)
     return contract, anchor, rows
+
+
+
+class InvalidMonthlyPath(RuntimeError):
+    """A sealed path exists but is ineligible for economic credit."""
+
+
+def validate_monthly_path(contract, rows):
+    if not archive.is_monthly(contract):
+        return
+    previous_day = None
+    frozen = None
+    outgoing = set()
+    for row in rows:
+        day = date.fromisoformat(row["snapshot_date"])
+        try:
+            require(set(row["signals"]) == set(STRATEGIES), "ALT_MONTHLY_STRATEGIES_MISSING")
+            if previous_day is None:
+                require(day.isoformat() == contract["first_eligible_signal_date"], "ALT_FIRST_SIGNAL_DRIFT")
+            else:
+                require(day == previous_day + timedelta(days=1), "ALT_MONTHLY_DAILY_GAP")
+            if archive.is_month_end(day):
+                archive.require_monthly_signal(row["signals"], day)
+                outgoing = {pick["asset"] for sig in (frozen or {}).values() for pick in sig["picks"]}
+                frozen = row["signals"]
+            else:
+                require(frozen is not None and row["signals"] == frozen, "ALT_INTRAMONTH_SIGNAL_CHANGED")
+
+            required = outgoing | {
+                pick["asset"] for sig in frozen.values()
+                if sig["execution_eligible_from"] <= day.isoformat() for pick in sig["picks"]
+            }
+            prices = row.get("selected_alt_closes", {})
+            missing = sorted(asset for asset in required
+                             if asset not in prices or not math.isfinite(float(prices[asset]))
+                             or float(prices[asset]) <= 0)
+            require(not missing, "ALT_MISSING_FROZEN_CLOSES:" + ",".join(missing))
+            if not archive.is_month_end(day):
+                outgoing = set()
+        except RuntimeError as exc:
+            raise InvalidMonthlyPath(f"{exc}:{day}") from exc
+        previous_day = day
 
 
 def unique_cycles(rows, strategy):
@@ -319,6 +366,7 @@ def build_evaluation(contract, rows, trades):
 
 def evaluate(contract_path, ledger_dir):
     contract, anchor, rows = load_chain(contract_path, ledger_dir)
+    validate_monthly_path(contract, rows)
     if not rows:
         result = build_evaluation(contract, rows, [])
         write_json(Path(ledger_dir) / "EVALUATION.json", result)
