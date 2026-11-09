@@ -42,13 +42,17 @@ def classify(text: str) -> tuple[bool, str | None]:
     return False, None
 
 
-def write_gap(path: Path, *, stream: str, date: str, reason: str, source_status: dict | None = None) -> None:
+def write_gap(
+    path: Path, *, stream: str, date: str, reason: str,
+    source_status: dict | None = None, classification: str = "ORDINARY_SOURCE_GAP",
+    front_contracts: dict | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema": "gate_btc.b3.operational_gap.v1",
         "stream": stream,
         "date": date,
-        "classification": "ORDINARY_SOURCE_GAP",
+        "classification": classification,
         "reason": reason,
         "scientifically_qualified": False,
         "eligible_observation_increment": 0,
@@ -68,7 +72,19 @@ def write_gap(path: Path, *, stream: str, date: str, reason: str, source_status:
             "sha256": src.get("sha256"),
             "bytes": src.get("bytes"),
         }
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if front_contracts is not None:
+        payload["front_contracts"] = front_contracts
+        if source_status:
+            payload["source"]["url"] = src.get("url")
+    body = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    if classification == "TRUE_PROCESSING_FAILURE":
+        try:
+            with path.open("x", encoding="utf-8") as receipt:
+                receipt.write(body)
+        except FileExistsError:
+            pass
+    else:
+        path.write_text(body, encoding="utf-8")
 
 
 def h1(args: argparse.Namespace) -> int:
