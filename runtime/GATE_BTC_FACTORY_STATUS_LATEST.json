@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-10T23:28:22.885950+00:00",
+  "generated_at_utc": "2026-11-11T00:37:31.489992+00:00",
   "methodology_changed": false,
   "policy": {
     "fresh_track_status_overrides_stale_aggregate_hint": true,
@@ -31,13 +31,14 @@
   "tracks": {
     "alt_trail": {
       "data": {
+        "alt_path_error": "ALT_INTRAMONTH_SIGNAL_CHANGED:2026-11-01",
         "armed_completed_journeys": 0,
         "authorization_id": "ALT_TRAIL40_10_20261031_USER_20261006",
         "can_append": false,
         "current_epoch": "monthly_20261031",
         "current_epoch_snapshot_count": 7,
         "earliest_calendar_gate_date": "2027-02-28",
-        "economic_result_valid": true,
+        "economic_result_valid": false,
         "engine_feed": false,
         "first_eligible_execution_date": "2026-11-01",
         "first_eligible_signal_date": "2026-10-31",
@@ -57,11 +58,11 @@
         "shadow_only": true,
         "snapshot_count": 12,
         "status": "FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL",
-        "updated_at_utc": "2026-11-10T22:36:43.094684+00:00"
+        "updated_at_utc": "2026-11-11T00:31:17.591443+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/alt_trail40_10/STATUS.json",
-      "sha256": "a1e05ae313f8b910a746e1873055ea5fb1c28c9e16a181fc966097920ac9b64a"
+      "sha256": "ddf02800027f0573db1a69f17e97bfb985c5876d6d41f166ca45110713ef4309"
     },
     "bull_replay": {
       "data": {
@@ -906,12 +907,12 @@
     "h31_prospective": {
       "data": {
         "clock_started": true,
-        "eligible_observations": 8,
+        "eligible_observations": 9,
         "engine_feed": false,
         "freeze_rule_hash_sha256": "b9e60d46a39a60c2e1d440b18a4a6a98883849f1de2b4c3d0ab06a48e849bfbd",
         "h1_economics_read": false,
-        "last_event_hash": "19ee2fa043a39d75ee75e40a8cfbe4db09d79bcde505d6a37a2cb7f255229154",
-        "latest_date": "2026-11-09",
+        "last_event_hash": "cf5dd194ce9524eaa809e33677b69170c4560380bdb9beae5a74b73a826090ee",
+        "latest_date": "2026-11-10",
         "not_approved": true,
         "orders": 0,
         "partial_prospective_economics_exposed": false,
@@ -921,7 +922,7 @@
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_prospective/STATUS.json",
-      "sha256": "bfda0134adba97582c24020ed598a250b821b837579d9d689a2e75e3df1bac52"
+      "sha256": "d8b5f857219dbef803dc46811406f632ca161446f6dde8a6c3951efd9c425882"
     },
     "h31_shadow_paper": {
       "data": {
@@ -932,11 +933,11 @@
         "H1_ECONOMICS_READ": false,
         "H31_MT5_PARITY_OBSERVATIONS": 0,
         "H31_MT5_READY": false,
-        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 0,
+        "H31_PROSPECTIVE_ELIGIBLE_OBSERVATIONS": 9,
         "H31_PROSPECTIVE_STATUS": "ACTIVE_PROSPECTIVE",
         "H31_SHADOW_PAPER_STATUS": "ACTIVE",
-        "H31_SHADOW_SESSIONS": 0,
-        "H31_SHADOW_SIMULATED_TRADES": 0,
+        "H31_SHADOW_SESSIONS": 9,
+        "H31_SHADOW_SIMULATED_TRADES": 4,
         "NO_BACKFILL": true,
         "NO_RETUNE": true,
         "ORDERS": 0,
@@ -945,28 +946,28 @@
         "SHADOW_CREDIT_TO_CANONICAL": 0,
         "average_MAE_bps": null,
         "average_MFE_bps": null,
-        "cumulative_gross_bps": 0.0,
-        "cumulative_reference_net_bps": 0.0,
-        "cumulative_stress_net_bps": 0.0,
+        "cumulative_gross_bps": -32.12619498452529,
+        "cumulative_reference_net_bps": -40.12619498452529,
+        "cumulative_stress_net_bps": -44.12619498452529,
         "factory_feedback_allowed": false,
-        "gross_expectancy_bps": null,
-        "losses": 0,
-        "max_drawdown_bps": null,
-        "metrics_sample_status": "NOT_ENOUGH_OBSERVATIONS",
-        "profit_factor": null,
-        "reference_net_expectancy_bps": null,
+        "gross_expectancy_bps": -8.031548746131323,
+        "losses": 2,
+        "max_drawdown_bps": 70.30686489829674,
+        "metrics_sample_status": "ENOUGH_FOR_BASIC_DISPERSION",
+        "profit_factor": 0.4292705976497411,
+        "reference_net_expectancy_bps": -10.031548746131323,
         "schema": "gate_btc.b3.h31.shadow_paper_status.v1",
-        "sessions_observed": 0,
-        "simulated_trades": 0,
-        "stress_net_expectancy_bps": null,
-        "triggered_sessions": 0,
-        "volatility": null,
-        "win_rate": null,
-        "wins": 0
+        "sessions_observed": 9,
+        "simulated_trades": 4,
+        "stress_net_expectancy_bps": -11.031548746131323,
+        "triggered_sessions": 4,
+        "volatility": 26.051723871317176,
+        "win_rate": 0.5,
+        "wins": 2
       },
       "exists": true,
       "path": "runtime/ledgers/b3_h31_shadow_paper/STATUS.json",
-      "sha256": "0ec9e1db2dd66e01daf0e9c9475335a175ac3a73b6b0d4d7baef46b46024e7ee"
+      "sha256": "6acade140f7f0c8c03a0540709f53cc44b739739383f6e852c9c1b5b2f366746"
     },
     "lock25_50": {
       "data": {
@@ -1866,11 +1867,11 @@
         "shadow_only": true,
         "snapshot_count": 12,
         "status": "FAILED_MISSING_CONFIRMED_DAILY_CLOSE_NO_BACKFILL",
-        "updated_at_utc": "2026-11-10T22:36:52.953478+00:00"
+        "updated_at_utc": "2026-11-11T00:31:05.871634+00:00"
       },
       "exists": true,
       "path": "runtime/ledgers/prl50_position/STATUS.json",
-      "sha256": "4794cabadf75cf7ba40400f8d0f0604d7985909bd67deeea3121671e98839e94"
+      "sha256": "ecc02fbadba906e7feb44b9d41d36f2b60485aca3f613b2f012dfbeb2fbd9ce5"
     },
     "reporting_state": {
       "data": {
@@ -10147,7 +10148,7 @@
     },
     "xagent_spot_continuous_v1": {
       "data": {
-        "as_of_utc": "2026-11-10T11:01:58.756361+00:00",
+        "as_of_utc": "2026-11-11T00:37:06.431240+00:00",
         "canonical_580_untouched": true,
         "checkpoint": 60,
         "contract_sha256": "d2cdb0cd567213d24d4e32c6d27f3435a8bf1bd32e7288861cf5fc3b7bea4d2c",
@@ -10186,7 +10187,7 @@
       },
       "exists": true,
       "path": "runtime/factory_autonomy/xagent_economics/F-XAGENT-DISAGREE-SPOT-CONTINUOUS-V1/STATUS.json",
-      "sha256": "f06eaaad31eecb07c4b788091ece2017b4e5786684713678e7e413e23ada8031"
+      "sha256": "aa5a34aed4244e12a74180acf774e1df6f9d43fdf694e93dcae88e9b25f6eed9"
     }
   }
 }
