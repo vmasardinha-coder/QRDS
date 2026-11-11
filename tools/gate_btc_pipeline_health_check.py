@@ -31,7 +31,8 @@ import sys
 from datetime import date, timedelta
 
 BRANCH = "origin/gate-btc-runtime"
-REPO = "/home/user/QRDS"
+REPO = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                      capture_output=True, text=True).stdout.strip() or "."
 
 
 def show(path: str) -> str | None:
