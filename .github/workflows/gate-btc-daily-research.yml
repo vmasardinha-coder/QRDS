@@ -15,6 +15,9 @@ on:
       - .github/workflows/gate-btc-daily-research.yml
       - .github/workflows/gate-btc-daily-fallback.yml
       - tools/gate_btc_daily_research.py
+      - tools/gate_btc_qos_daily_handoff.py
+      - tools/gate_btc_prl_alt_same_source_recovery.py
+      - tests/test_gate_btc_qos_daily_handoff.py
       - tools/gate_btc_shadow_delivery.py
       - tools/gate_btc_2_v2a_registry_prospective_pit.py
       - tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json
@@ -177,6 +180,7 @@ jobs:
         run: >-
           python -m unittest -v
           tests/test_gate_btc_daily_research.py
+          tests/test_gate_btc_qos_daily_handoff.py
           tests/test_gate_btc_shadow_delivery.py
           tests/test_gate_btc_lock_valuation_sidecar.py
           tests/test_gate_btc_v2a_coingecko_api_key.py
@@ -278,6 +282,11 @@ jobs:
           --public-data
           --data-cutoff "$GATE_BTC_DATA_CUTOFF"
           --output-dir artifacts/qos_daily
+      - name: Publish independently qualified V2A evidence for QOS, PRL and ALT
+        continue-on-error: true
+        run: >-
+          python -m tools.gate_btc_qos_daily_handoff build
+          --artifact-root artifacts --cutoff "$GATE_BTC_DATA_CUTOFF" --run-id "$GITHUB_RUN_ID"
       - name: Freeze exact active-holding LOCK valuation closes
         id: lock_valuation
         continue-on-error: true

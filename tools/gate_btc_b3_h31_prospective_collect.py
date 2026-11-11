@@ -13,6 +13,7 @@ from statistics import median
 import pandas as pd
 import requests
 
+from gate_btc_b3_gap_classifier import write_gap
 from gate_btc_b3_h1_daily import fetch_raw, load_schedule, structural_qa
 from gate_btc_b3_h1_parser import process_zip
 from gate_btc_h31_source_preflight import source_preflight
@@ -148,7 +149,9 @@ def session_ret30(m5: pd.DataFrame, root: str) -> float:
     return (c30 / o - 1.0) * 10000.0
 
 
-def fetch_official_session(session_date: str, schedule: dict[str, dict[str, str]]) -> tuple[pd.DataFrame, dict]:
+def fetch_official_session(
+    session_date: str, schedule: dict[str, dict[str, str]], *, target_failure: Path | None = None,
+) -> tuple[pd.DataFrame, dict]:
     if session_date not in schedule:
         raise RuntimeError(f'NO_FROZEN_FRONT_SCHEDULE_FOR_DATE {session_date}')
     raw, source = fetch_raw(session_date)
@@ -156,7 +159,18 @@ def fetch_official_session(session_date: str, schedule: dict[str, dict[str, str]
         raise RuntimeError(f"SOURCE_NOT_READY {session_date} {source.get('state')}")
     front = dict(schedule[session_date])
     if front.get('WDO_candidates'):
-        selected, volumes = choose_wdo(raw)
+        try:
+            selected, _ = choose_wdo(raw)
+        except RuntimeError as exc:
+            if target_failure is None or str(exc) != 'H31_WARMUP_NO_WDO_EXECUTIONS':
+                raise
+            reason = 'H31_TARGET_NO_WDO_EXECUTIONS'
+            write_gap(
+                target_failure, stream='H31', date=session_date, reason=reason,
+                classification='TRUE_PROCESSING_FAILURE', front_contracts=front,
+                source_status={'source': source},
+            )
+            raise RuntimeError(f'{reason} target={session_date}') from exc
         if selected not in front['WDO_candidates']:
             raise RuntimeError('H31_TARGET_WDO_CANDIDATE_MISMATCH')
         front['WDO'] = selected
@@ -231,7 +245,9 @@ def compute_event(target_date: str, contract: dict, ledger_dir: Path) -> tuple[d
     if scale <= 0:
         raise RuntimeError('NONPOSITIVE_TRAILING_SCALE')
 
-    m5, evidence = fetch_official_session(target_date, schedule)
+    m5, evidence = fetch_official_session(
+        target_date, schedule, target_failure=ledger_dir / 'source_failures' / f'{target_date}.json',
+    )
     wdo_ret30 = session_ret30(m5, 'WDO')
     z = wdo_ret30 / scale
     trigger = abs(z) >= float(contract['rule']['trigger_abs_z_gte'])
