@@ -244,12 +244,18 @@ def process(root, config, zip_path, runid, at, loaders=None):
         core.capture(zip_path,core.contract(CONTRACT),day,runid)
         seal(frozen,Path(zip_path).read_bytes())
     effective=frozen if frozen.exists() else zip_path
+    upstream_sha=sha(Path(effective).read_bytes())
+    submitted_sha=upstream_sha if effective==zip_path else sha(Path(zip_path).read_bytes())
     original_append=core.append_path
     original_capture=core.capture
     def covered_append(state,cd,master,target,rid):
         ds=pd.Timestamp(target).date().isoformat()
-        frame=cover(state,master,ds,root/'source_evidence',sha(Path(effective).read_bytes()),at,loaders)
         existing=Path(cd)/'snapshots'/f'{ds}.json'
+        sealed=root/'source_evidence'/state['signal_date']/ds/'PRICES.json'
+        if not existing.exists() and (submitted_sha!=upstream_sha or
+                (sealed.exists() and core.load(sealed).get('source_run_zip_sha256')!=upstream_sha)):
+            raise ValueError('SEALED_QOS_SOURCE_BUNDLE_MISMATCH')
+        frame=cover(state,master,ds,root/'source_evidence',upstream_sha,at,loaders)
         if existing.exists():rid=core.load(existing)['source_run_id']
         return original_append(state,cd,frame,target,rid)
     with tempfile.TemporaryDirectory() as td:
