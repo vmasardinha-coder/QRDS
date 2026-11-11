@@ -22,10 +22,33 @@ class V2ADataLedgerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); manifest,universe,quality,failures=self.fixture(root); args=self.args(root,manifest,universe,quality,failures); self.assertEqual(append(args),0); frozen=(root/"ledger/STATUS.json").read_bytes(); self.assertEqual(append(args),0); self.assertEqual((root/"ledger/STATUS.json").read_bytes(),frozen); universe.write_text(universe.read_text()+"ethereum,ETH,Ethereum,2,True,False,False\n")
             with self.assertRaisesRegex(RuntimeError,"immutable V2A point-in-time source bytes changed"): append(args)
-    def test_inconsistent_quality_counts_fail_closed(self):
+    def test_inconsistent_quality_counts_refuse_the_day_without_blocking_downstream(self):
+        # A recusa continua inteira: o dia NAO e gravado e o contador nao anda.
+        # O que ela deixou de fazer e matar o job e levar com ela o append do
+        # close do LOCK25/50 e o commit do runtime -- o alcance que travou o V11
+        # em 86 observacoes a partir de 2026-11-08. A recusa fica registrada em
+        # refusals/ para seguir investigavel.
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); manifest,universe,quality,failures=self.fixture(root); failures.write_text("symbol,reason\nAAA,okx: RuntimeError: OKX returned no candles\n")
-            with self.assertRaisesRegex(RuntimeError,"failure rows differ"): append(self.args(root,manifest,universe,quality,failures))
+            self.assertEqual(append(self.args(root,manifest,universe,quality,failures)),0)
+            self.assertFalse((root/"ledger/snapshots/2026-08-06-run-123.json").exists())
+            self.assertFalse((root/"ledger/STATUS.json").exists())
+            refusal=json.loads((root/"ledger/refusals/2026-08-06-run-123.json").read_text())
+            self.assertEqual(refusal["result"],"REFUSED_INCONSISTENT_SOURCE_COUNTS")
+            self.assertIn("V2A failure rows differ from failed count",refusal["reasons"])
+            self.assertFalse(refusal["day_recorded"]); self.assertFalse(refusal["guard_relaxed"])
+
+    def test_counting_refusal_does_not_leak_into_governance_or_backfill_guards(self):
+        # Governanca e a proibicao de backfill seguem levantando excecao: o
+        # afrouxamento e so do alcance das checagens de contagem do coletor.
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); manifest,universe,quality,failures=self.fixture(root)
+            manifest.write_text(json.dumps({**json.loads(manifest.read_text()),"operational_status":"APPROVED"}),encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError,"operational status changed"): append(self.args(root,manifest,universe,quality,failures))
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); manifest,universe,quality,failures=self.fixture(root)
+            quality.write_text("data_as_of,attempted_symbols,loaded_symbols,failed_symbols,coverage_ratio,data_quality_status,survivorship_bias_present\n2026-08-06,3,1,2,0.3333333333333333,PASS,False\n",encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError,"survivorship-bias warning"): append(self.args(root,manifest,universe,quality,failures))
     def test_retrospective_backfill_is_prohibited(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); manifest,universe,quality,failures=self.fixture(root,"2026-08-06"); self.assertEqual(append(self.args(root,manifest,universe,quality,failures,"2026-08-06","9")),0); manifest,universe,quality,failures=self.fixture(root,"2026-08-05")

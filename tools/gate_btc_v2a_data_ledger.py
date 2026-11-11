@@ -70,8 +70,39 @@ def append(args:argparse.Namespace)->int:
     source_day=str(manifest.get("data_as_of","")); iso_day(source_day,"V2A data_as_of"); require(manifest.get("technical_status")=="PASS","V2A technical status must be PASS"); require(manifest.get("evidence_status")=="RESEARCH_ONLY_NOT_PROMOTED","V2A evidence boundary changed"); require(manifest.get("operational_status")=="NOT_APPROVED","V2A operational status changed"); require(manifest.get("real_orders")==0,"V2A real orders must remain zero"); require(manifest.get("capital_used")==0,"V2A real capital must remain zero"); require(args.source_run_id.isdigit(),"source_run_id must be a GitHub Actions numeric run ID")
     expected_id=f"{source_day}-run-{args.source_run_id}"; require(args.snapshot_id==expected_id,f"snapshot_id must equal {expected_id}")
     quality=quality_rows[0]; attempted=int(quality["attempted_symbols"]); loaded=int(quality["loaded_symbols"]); failed=int(quality["failed_symbols"]); coverage=float(quality["coverage_ratio"])
-    require(quality["data_as_of"]==source_day,"V2A quality data_as_of differs from manifest"); require(attempted==int(manifest.get("attempted_symbols",-1)),"V2A attempted count differs from manifest"); require(loaded==int(manifest.get("loaded_symbols",-1)),"V2A loaded count differs from manifest"); require(failed==int(manifest.get("failed_symbols",-1)),"V2A failed count differs from manifest"); require(failed==len(failure_rows),"V2A failure rows differ from failed count"); require(attempted==loaded+failed,"V2A attempted != loaded + failed"); require(math.isclose(coverage,float(manifest.get("coverage_ratio",-1)),rel_tol=0.0,abs_tol=1e-12),"V2A coverage differs from manifest"); require(quality["survivorship_bias_present"].strip().lower()=="true","V2A historical survivorship-bias warning unexpectedly absent")
+    require(quality["survivorship_bias_present"].strip().lower()=="true","V2A historical survivorship-bias warning unexpectedly absent")
     ledger_dir=args.ledger_dir; record_path=ledger_dir/"snapshots"/f"{args.snapshot_id}.json"; source_hashes={"manifest_sha256":sha256_bytes(args.manifest.read_bytes()),"universe_sha256":sha256_bytes(universe_raw),"quality_sha256":sha256_bytes(quality_raw),"failures_sha256":sha256_bytes(failures_raw)}
+    # Coerencia das contagens que o COLETOR declara sobre si mesmo: manifesto
+    # contra data_quality_summary.csv contra download_failures.csv. Um dia que
+    # falhe aqui NAO e gravado -- a recusa continua inteira e nenhuma guarda foi
+    # afrouxada. O que mudou e o alcance dela: antes a recusa levantava excecao,
+    # matava o job append-prospective-ledgers e levava com ela o append do close
+    # do LOCK25/50 e o commit do runtime. Em 2026-11-08 isso aconteceu com
+    # "V2A attempted != loaded + failed", o lock25_50 parou em 2026-11-06, o
+    # sidecar de valuacao passou a recusar por falta de contiguidade e, por rodar
+    # com continue-on-error, deixou a coleta VERDE enquanto o handoff e o ponteiro
+    # eram pulados. Sem ponteiro novo o monitor do V11 concluiu UP_TO_DATE e a
+    # sombra travou em 86 observacoes, sem nada vermelho em lugar nenhum.
+    # Um registro auxiliar de qualidade de dados nao pode ter esse alcance.
+    # Agora a recusa e gravada em refusals/<snapshot_id>.json, impressa como
+    # REFUSED_INCONSISTENT_SOURCE_COUNTS, e o processo sai com 0 para que o resto
+    # da cadeia siga. ATENCAO: isso faz a run fechar verde neste caso; a recusa
+    # fica visivel no diretorio refusals/ e na checagem diaria de saude
+    # (migration/reporting/delta_pipeline_health_check.py), nao no semaforo.
+    # Governanca, hashes, snapshot_id e a proibicao de backfill seguem levantando.
+    coherence=[(quality["data_as_of"]==source_day,"V2A quality data_as_of differs from manifest"),
+               (attempted==int(manifest.get("attempted_symbols",-1)),"V2A attempted count differs from manifest"),
+               (loaded==int(manifest.get("loaded_symbols",-1)),"V2A loaded count differs from manifest"),
+               (failed==int(manifest.get("failed_symbols",-1)),"V2A failed count differs from manifest"),
+               (failed==len(failure_rows),"V2A failure rows differ from failed count"),
+               (attempted==loaded+failed,"V2A attempted != loaded + failed"),
+               (math.isclose(coverage,float(manifest.get("coverage_ratio",-1)),rel_tol=0.0,abs_tol=1e-12),"V2A coverage differs from manifest")]
+    reasons=[message for ok,message in coherence if not ok]
+    if reasons:
+        require(not record_path.exists(),f"V2A snapshot already recorded but its source counts are now incoherent: {args.snapshot_id}")
+        refusal={"schema":"gate_btc.v2a_point_in_time_data_refusal.v1","result":"REFUSED_INCONSISTENT_SOURCE_COUNTS","snapshot_id":args.snapshot_id,"source_data_as_of":source_day,"source_run_id":args.source_run_id,"reasons":sorted(reasons),"declared":{"manifest_attempted":manifest.get("attempted_symbols"),"manifest_loaded":manifest.get("loaded_symbols"),"manifest_failed":manifest.get("failed_symbols"),"manifest_coverage_ratio":manifest.get("coverage_ratio"),"quality_attempted":attempted,"quality_loaded":loaded,"quality_failed":failed,"quality_coverage_ratio":coverage,"failure_row_count":len(failure_rows)},"source_hashes":source_hashes,"day_recorded":False,"guard_relaxed":False,"blocks_downstream":False,"retrospective_reconstruction":False,"research_only":True,"shadow_only":True,"not_approved":True,"orders_generated":0,"real_capital_used":0,"promotion_allowed":False}
+        refusal["refusal_sha256"]=canonical_sha(refusal,"refusal_sha256"); write_immutable_bytes(ledger_dir/"refusals"/f"{args.snapshot_id}.json",(json.dumps(refusal,indent=2,sort_keys=True,ensure_ascii=False)+"\n").encode("utf-8"))
+        print(json.dumps({"result":"REFUSED_INCONSISTENT_SOURCE_COUNTS","snapshot_id":args.snapshot_id,"reasons":sorted(reasons),"day_recorded":False,"counter_incremented":False,"guard_relaxed":False,"investigate":"o manifesto do coletor V2A, nao a guarda","feeds_frozen_engine":False},indent=2)); return 0
     if record_path.exists():
         existing=load_json(record_path); validate_record(record_path,existing,ledger_dir); require(existing.get("source_hashes")==source_hashes,"immutable V2A point-in-time source bytes changed"); require(existing.get("source_run_id")==args.source_run_id,"existing V2A source run ID mismatch"); print(json.dumps({"result":"IDENTICAL_ALREADY_RECORDED","snapshot_id":args.snapshot_id,"sequence":existing.get("sequence"),"coverage_ratio":existing.get("coverage_ratio"),"counter_incremented":False,"feeds_frozen_engine":False},indent=2)); return 0
     records=validated_records(ledger_dir); previous=records[-1][2] if records else None
