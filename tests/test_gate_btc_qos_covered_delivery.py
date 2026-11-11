@@ -136,6 +136,56 @@ class CoveredDeliveryTests(unittest.TestCase):
         self.assertEqual(marker,(cycle/'BLOCKED.json').read_bytes())
         self.assertEqual(q.core.load(cycle/'BLOCKED.json')['economic_credit'],0)
 
+    def october_gap(self):
+        q.disposition(self.root,self.config)
+        cycle=self.root/'cycles/2026-10-31'
+        state=fixtures.state()
+        state['signal_date']='2026-10-31'
+        state['state_sha256']=q.core.sharow(state)
+        q.core.write(cycle/'SIGNAL_STATE.json',state)
+        q.core.write(cycle/'STATUS.json',{'status':'WAITING_CYCLE_COMPLETION'})
+        row={'snapshot_date':'2026-11-07','signal_date':'2026-10-31'}
+        row['row_sha256']=q.core.sharow(row)
+        q.core.write(cycle/'path/snapshots/2026-11-07.json',row)
+        q.core.write(self.root/'STATUS.json',{'status':'FAILED_QOS_DELIVERY',
+                    'latest_snapshot_date':'2026-11-07'})
+        return cycle
+
+    def test_november_gap_stops_retries_without_new_rows_or_counter_reset(self):
+        cycle=self.october_gap()
+        before={p:p.read_bytes() for p in cycle.rglob('*') if p.is_file()}
+        need,state=q.plan(self.root,self.config,datetime(2026,11,11,12,tzinfo=timezone.utc))
+        self.assertFalse(need)
+        self.assertEqual(state['status'],'WAITING_NEXT_APPROVED_MONTH_END')
+        self.assertEqual(state['next_signal_date'],'2026-11-30')
+        self.assertEqual(state['latest_snapshot_date'],'2026-11-07')
+        self.assertEqual(state['cycles'][-1]['status'],'CLOSED_INTERRUPTED_NO_ECONOMIC_RESULT')
+        self.assertEqual(before,{p:p.read_bytes() for p in before})
+        self.assertFalse((self.root/'retry_budget.json').exists())
+        self.assertFalse((self.root/'RESULT_LEDGER.json').exists())
+        marker=q.core.load(cycle/'BLOCKED.json')
+        self.assertEqual(marker['missing_cutoff'],'2026-11-08')
+        self.assertEqual(marker['economic_credit'],0)
+        self.assertEqual(marker['scientific_credit'],0)
+        sealed=(cycle/'BLOCKED.json').read_bytes()
+        q.plan(self.root,self.config,datetime(2026,11,12,12,tzinfo=timezone.utc))
+        self.assertEqual(sealed,(cycle/'BLOCKED.json').read_bytes())
+        self.assertTrue(q.plan(self.root,self.config,datetime(2026,12,1,12,tzinfo=timezone.utc))[0])
+
+    def test_current_expected_cutoff_can_still_arrive(self):
+        cycle=self.october_gap()
+        need,_=q.plan(self.root,self.config,datetime(2026,11,9,12,tzinfo=timezone.utc))
+        self.assertTrue(need)
+        self.assertFalse((cycle/'BLOCKED.json').exists())
+
+    def test_changed_interrupted_october_proof_is_detected(self):
+        cycle=self.october_gap()
+        now=datetime(2026,11,11,12,tzinfo=timezone.utc)
+        q.plan(self.root,self.config,now)
+        (cycle/'STATUS.json').write_text('{}')
+        with self.assertRaisesRegex(ValueError,'INTERRUPTED_CYCLE_CHANGED'):
+            q.plan(self.root,self.config,now)
+
     def test_source_epoch_remaps_only_prequalified_symbols_after_signal_date(self):
         from unittest.mock import patch
         state=fixtures.state()
