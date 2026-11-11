@@ -1,6 +1,6 @@
 {
   "schema": "qrds.factory.invalidated_source_qualification_search.v1",
-  "generated_at_utc": "2026-11-11T09:15:17.732827Z",
+  "generated_at_utc": "2026-11-11T14:09:55.920280Z",
   "status": "ACTIVE_SEARCHING_QUALIFICATION",
   "cadence_hours": 2,
   "root_cause_classification": "SOURCE_DATA_GAP",
@@ -212,7 +212,7 @@
         "content_type": "text/html",
         "content_length": null,
         "sample_bytes": 2753,
-        "sample_sha256": "0aff1e6987a25f0608ab74f0e1b0e48ee5cf9d2ac64c8a51301287200f5e460f",
+        "sample_sha256": "982206a4a8a9eedc794af4b18da836ce2af63914b8632723ff0874953dcaa987",
         "zip_magic": false,
         "win_identity_hint": false,
         "csv_schema_hint": false,
@@ -221,9 +221,9 @@
     ],
     "mt5_read_only_source_evidence": {
       "status": "MT5_WIN_IDENTITY_SURFACE_DISCOVERED_REVIEW_REQUIRED",
-      "source_packet_sha256": "5d06f8c23633ad35a12548d219c89f233e847e6b2ef1b54afc91513c84bddcab",
+      "source_packet_sha256": "2979548b8bf2901301e880e6fbf9986822bb1f2e999fc4e5104d10401d44ee2c",
       "source_identity_semantics": "MT5_BROKER_TERMINAL_READ_ONLY_CAPTURE",
-      "matching_record_count": 12,
+      "matching_record_count": 5,
       "matching_records": [
         {
           "symbol": "WING23",
@@ -231,14 +231,6 @@
           "path": "GTW_BMF\\WING23",
           "earliest_observation_utc": "2022-12-27T09:00:00Z",
           "latest_observation_utc": "2023-02-15T17:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WING26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WING26",
-          "earliest_observation_utc": "2025-12-22T11:45:00Z",
-          "latest_observation_utc": "2026-02-18T17:55:00Z",
           "captured_bar_count": 4096
         },
         {
@@ -250,14 +242,6 @@
           "captured_bar_count": 2905
         },
         {
-          "symbol": "WINJ26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINJ26",
-          "earliest_observation_utc": "2026-02-24T09:15:00Z",
-          "latest_observation_utc": "2026-04-15T16:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
           "symbol": "WINJ27",
           "description": "IBOVESPA MINI",
           "path": "BVMF-Derivatives\\WINJ27",
@@ -266,51 +250,11 @@
           "captured_bar_count": 256
         },
         {
-          "symbol": "WINM26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINM26",
-          "earliest_observation_utc": "2026-04-24T18:30:00Z",
-          "latest_observation_utc": "2026-06-17T16:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WINQ26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINQ26",
-          "earliest_observation_utc": "2026-06-23T15:15:00Z",
-          "latest_observation_utc": "2026-08-12T16:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WINV25",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINV25",
-          "earliest_observation_utc": "2025-08-26T14:20:00Z",
-          "latest_observation_utc": "2025-10-15T16:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WINV26",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINV26",
-          "earliest_observation_utc": "2026-08-24T09:05:00Z",
-          "latest_observation_utc": "2026-10-14T16:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
           "symbol": "WINZ22",
           "description": "IBOVESPA MINI",
           "path": "GTW_BMF\\WINZ22",
           "earliest_observation_utc": "2022-10-21T13:45:00Z",
           "latest_observation_utc": "2022-12-14T17:55:00Z",
-          "captured_bar_count": 4096
-        },
-        {
-          "symbol": "WINZ25",
-          "description": "IBOVESPA MINI",
-          "path": "BVMF-Derivatives\\WINZ25",
-          "earliest_observation_utc": "2025-10-28T09:30:00Z",
-          "latest_observation_utc": "2025-12-17T17:55:00Z",
           "captured_bar_count": 4096
         },
         {
@@ -329,6 +273,105 @@
       "next_requirement": "PROVE_BROKER_SYMBOL_MAPPING_HISTORY_SESSION_TIMEZONE_PUBLICATION_REVISION_AND_PIT_BEFORE_SOURCE_GATE"
     },
     "independent_free_github_candidates": [
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "repository": "igorsterner/TongueSwitcher",
+        "path": "resources/frequency_sorted_islands/1.csv",
+        "html_url": "https://github.com/igorsterner/TongueSwitcher/blob/a1ad4a293b01a1f420ee078b51233454b5462dc1/resources/frequency_sorted_islands/1.csv",
+        "search_priority": 4,
+        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
+        "independent_of_invalidated_source": true,
+        "free_auditable_candidate": true,
+        "identity_qa_pass": false,
+        "schema_qa_pass": false,
+        "publication_semantics_proven": false,
+        "revision_semantics_proven": false,
+        "point_in_time_valid": false,
+        "status": "DISCOVERY_IRRELEVANT_IDENTITY_NOT_PROVEN",
+        "resource_sha": "b1da2aa38bdd74455d0a5df51f16dcaa60ff6ec3",
+        "sample_bytes": 65536,
+        "deficiencies": [
+          "IDENTITY_NOT_PROVEN",
+          "INTRADAY_SCHEMA_NOT_PROVEN",
+          "PUBLICATION_SEMANTICS_NOT_PROVEN",
+          "REVISION_SEMANTICS_NOT_PROVEN",
+          "PIT_NOT_PROVEN"
+        ]
+      },
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "repository": "is-shah/Beyond-Cookies",
+        "path": "subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
+        "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/bb534a3aec5ef9e21464e257edb3ecfed1253ad4/subcode_for_analysis/Split_disclosure_output/Partially_Ambiguous.csv",
+        "search_priority": 4,
+        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
+        "independent_of_invalidated_source": true,
+        "free_auditable_candidate": true,
+        "identity_qa_pass": false,
+        "schema_qa_pass": false,
+        "publication_semantics_proven": false,
+        "revision_semantics_proven": false,
+        "point_in_time_valid": false,
+        "status": "DISCOVERY_IRRELEVANT_IDENTITY_NOT_PROVEN",
+        "resource_sha": "5d31b04b80c322ae28010add54ffe7d681eaca6b",
+        "sample_bytes": 65536,
+        "deficiencies": [
+          "IDENTITY_NOT_PROVEN",
+          "INTRADAY_SCHEMA_NOT_PROVEN",
+          "PUBLICATION_SEMANTICS_NOT_PROVEN",
+          "REVISION_SEMANTICS_NOT_PROVEN",
+          "PIT_NOT_PROVEN"
+        ]
+      },
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "repository": "is-shah/Beyond-Cookies",
+        "path": "subcode_for_analysis/Split_disclosure_output/class_4.csv",
+        "html_url": "https://github.com/is-shah/Beyond-Cookies/blob/bb534a3aec5ef9e21464e257edb3ecfed1253ad4/subcode_for_analysis/Split_disclosure_output/class_4.csv",
+        "search_priority": 4,
+        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
+        "independent_of_invalidated_source": true,
+        "free_auditable_candidate": true,
+        "identity_qa_pass": false,
+        "schema_qa_pass": false,
+        "publication_semantics_proven": false,
+        "revision_semantics_proven": false,
+        "point_in_time_valid": false,
+        "status": "DISCOVERY_IRRELEVANT_IDENTITY_NOT_PROVEN",
+        "resource_sha": "a37fb01ee45dda28bc3c704d8bf56aeed1062690",
+        "sample_bytes": 65536,
+        "deficiencies": [
+          "IDENTITY_NOT_PROVEN",
+          "INTRADAY_SCHEMA_NOT_PROVEN",
+          "PUBLICATION_SEMANTICS_NOT_PROVEN",
+          "REVISION_SEMANTICS_NOT_PROVEN",
+          "PIT_NOT_PROVEN"
+        ]
+      },
+      {
+        "query": "\"WINFUT\" volume timestamp extension:csv",
+        "repository": "lei20191116/AlignmentSys",
+        "path": "twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
+        "html_url": "https://github.com/lei20191116/AlignmentSys/blob/e6882b08810e755af90be9ff1d305670595c54dc/twitter爬虫/Scweet/newoutputs/bitcoin_2012-8-1_2012-8-14.csv",
+        "search_priority": 4,
+        "provenance_class": "INDEPENDENT_PUBLIC_REPOSITORY",
+        "independent_of_invalidated_source": true,
+        "free_auditable_candidate": true,
+        "identity_qa_pass": false,
+        "schema_qa_pass": true,
+        "publication_semantics_proven": false,
+        "revision_semantics_proven": false,
+        "point_in_time_valid": false,
+        "status": "DISCOVERY_IRRELEVANT_IDENTITY_NOT_PROVEN",
+        "resource_sha": "9ebc754c98047e1522eeb944db9e3cc24128d552",
+        "sample_bytes": 65536,
+        "deficiencies": [
+          "IDENTITY_NOT_PROVEN",
+          "PUBLICATION_SEMANTICS_NOT_PROVEN",
+          "REVISION_SEMANTICS_NOT_PROVEN",
+          "PIT_NOT_PROVEN"
+        ]
+      },
       {
         "query": "filename:WINFUT extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
@@ -375,11 +418,6 @@
         "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WIN+B3%22+OHLC+5min+extension%3Acsv&per_page=30"
       },
       {
-        "query": "\"WINFUT\" volume timestamp extension:csv",
-        "status": "SEARCH_ERROR_FAIL_CLOSED",
-        "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22WINFUT%22+volume+timestamp+extension%3Acsv&per_page=30"
-      },
-      {
         "query": "\"mini indice\" intraday B3 extension:csv",
         "status": "SEARCH_ERROR_FAIL_CLOSED",
         "error": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.github.com/search/code?q=%22mini+indice%22+intraday+B3+extension%3Acsv&per_page=30"
@@ -393,9 +431,9 @@
     "reachable_official_probe_count": 6,
     "official_payload_probe_count": 1,
     "schema_identity_candidate_count": 0,
-    "irrelevant_identity_candidate_count": 0,
+    "irrelevant_identity_candidate_count": 4,
     "github_query_count": 12,
-    "github_candidate_count": 0,
+    "github_candidate_count": 4,
     "github_per_query": 30,
     "original_invalidated_source_excluded_from_independent_candidates": true
   },
