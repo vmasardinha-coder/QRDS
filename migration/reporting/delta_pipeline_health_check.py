@@ -122,6 +122,25 @@ def main() -> int:
         linhas.append(f"V13        : data_as_of {v13['data_as_of']}  ({v13.get('observed_days')} de 60)"
                       f"   [pipeline independente do ponteiro]")
 
+    # Recusas do ledger de qualidade do V2A. Desde 2026-11-11 uma contagem
+    # incoerente do coletor deixa de derrubar o job: o dia nao e gravado, a
+    # recusa vai para refusals/ e a run fecha VERDE. Como ela saiu do semaforo,
+    # tem de aparecer aqui -- e este e o unico lugar onde aparece.
+    r = subprocess.run(["git", "-C", REPO, "ls-tree", "-r", "--name-only", BRANCH,
+                        "runtime/data_quality/v2a/refusals/"],
+                       capture_output=True, text=True)
+    refusals = sorted(x.rsplit("/", 1)[-1][:-5] for x in r.stdout.split() if x.endswith(".json"))
+    if refusals:
+        linhas.append(f"recusas V2A: {len(refusals)}, a ultima em {refusals[-1]}")
+        problemas.append(
+            f"DIA RECUSADO PELO LEDGER DE QUALIDADE DO V2A: {len(refusals)} no total, a mais "
+            f"recente {refusals[-1]}. O dia NAO foi gravado e a guarda nao foi afrouxada, mas "
+            f"a run fecha verde nesse caso, entao este e o unico alarme. Leia "
+            f"runtime/data_quality/v2a/refusals/{refusals[-1]}.json e investigue o manifesto "
+            f"do coletor V2A, nao a guarda.")
+    else:
+        linhas.append("recusas V2A: nenhuma")
+
     v12_raw = show("runtime/ledgers/delta_v12_engine/STATUS.json")
     if v12_raw:
         v12 = json.loads(v12_raw)
