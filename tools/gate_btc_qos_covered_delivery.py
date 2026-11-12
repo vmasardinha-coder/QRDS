@@ -88,10 +88,19 @@ def disposition(root, config):
 
 def archive_expired_gap(root, at):
     """Close an irrecoverable daily gap without changing any scientific row."""
-    policy=epoch_policy()
-    cycle=root/'cycles'/'2026-09-30'
+    captured=sorted((root/'cycles').glob('*/SIGNAL_STATE.json'))
+    if not captured:
+        return
+    cycle=captured[-1].parent
     marker=cycle/'BLOCKED.json'
     if marker.exists():
+        record=core.load(marker)
+        if record.get('original_files_sha256'):
+            if record.get('blocked_sha256')!=core.sharow(record):
+                raise ValueError('INTERRUPTED_CYCLE_MARKER_CHANGED')
+            for name,digest in record['original_files_sha256'].items():
+                if sha((cycle/name).read_bytes())!=digest:
+                    raise ValueError('INTERRUPTED_CYCLE_CHANGED:'+name)
         return
     status_path=root/'STATUS.json'
     if not status_path.exists() or not (cycle/'SIGNAL_STATE.json').exists():
@@ -100,9 +109,6 @@ def archive_expired_gap(root, at):
     snaps=sorted((cycle/'path'/'snapshots').glob('*.json'))
     if not snaps or (cycle/'FINAL_RESULT.json').exists():
         return
-    last=core.load(snaps[-1])
-    if last.get('snapshot_date')!=snaps[-1].stem or last.get('row_sha256')!=core.sharow(last):
-        raise ValueError('LAST_QOS_SNAPSHOT_SEAL_INVALID')
     latest=snaps[-1].stem
     gap=(date.fromisoformat(latest)+timedelta(days=1)).isoformat()
     current=(at.date()-timedelta(days=1)).isoformat()
@@ -110,10 +116,13 @@ def archive_expired_gap(root, at):
     # it, no append can bridge that missing row under the frozen contract.
     if gap>=current:
         return
+    last=core.load(snaps[-1])
+    if last.get('snapshot_date')!=latest or last.get('row_sha256')!=core.sharow(last):
+        raise ValueError('LAST_QOS_SNAPSHOT_SEAL_INVALID')
     if prior.get('latest_snapshot_date')!=latest:
         raise ValueError('QOS_STATUS_AND_SEALED_PATH_DISAGREE')
     signal=core.load(cycle/'SIGNAL_STATE.json')
-    original={str(p.relative_to(cycle)):sha(p.read_bytes())
+    original={p.relative_to(cycle).as_posix():sha(p.read_bytes())
               for p in sorted(cycle.rglob('*')) if p.is_file() and p!=marker}
     record={**SAFE,'schema':'gate-btc.qos-prospective-three-track.blocked.v1',
             'status':'CLOSED_INTERRUPTED_NO_ECONOMIC_RESULT',
@@ -121,7 +130,7 @@ def archive_expired_gap(root, at):
             'missing_cutoff':gap,'last_valid_path_date':latest,
             'original_files_sha256':original,'economic_credit':0,
             'scientific_credit':0,'backfill_performed':False,
-            'next_source_epoch_signal_date':policy['effective_signal_date']}
+            'next_source_epoch_signal_date':core.nme(signal['signal_date']).date().isoformat()}
     record['blocked_sha256']=core.sharow(record)
     seal(marker,packed(record))
 
@@ -290,9 +299,12 @@ def plan(root,config,at):
         return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at)
     newer=[p.parent for p in (root/'cycles').glob('*/SIGNAL_STATE.json') if p.parent.name>=config['next_signal_date']]
     interrupted=[p for p in newer if (p/'BLOCKED.json').exists()]
-    if interrupted and day<epoch_policy()['effective_signal_date']:
+    calendar=signal_calendar(root,config)
+    latest=calendar['latest_captured_signal_date']
+    latest_interrupted=any(p.name==latest for p in interrupted)
+    if latest_interrupted and day<calendar['next_signal_date']:
         return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at,
-                            next_signal_date=epoch_policy()['effective_signal_date'],
+                            next_signal_date=calendar['next_signal_date'],
                             interrupted_cycle_economic_credit=0)
     if newer and all((p/'FINAL_RESULT.json').exists() for p in newer) and pd.Timestamp(day)!=core.me(day):
         return False,status(root,config,'WAITING_NEXT_APPROVED_MONTH_END',at,
