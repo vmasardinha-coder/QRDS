@@ -1,21 +1,21 @@
 # GATE BTC 2.0 — Factory Control Room
 
-Generated: `2026-11-12T20:11:01.020246+00:00`
+Generated: `2026-11-12T22:10:19.309287+00:00`
 
 ## Funnel
 - Reclassified: **2560**
 - Experimental shadow eligible: **580**
 - Active: **580**
-- Ledger sessions: **33**
-- Latest ledger: **2026-11-11**
-- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-11-11`)
+- Ledger sessions: **34**
+- Latest ledger: **2026-11-12**
+- Latest collector: **SESSION_CAPTURED_ZERO_CREDIT** (`2026-11-12`)
 - Triggered cells: **30**
 - Cells at 60/60: **0**
-- Trigger range: **0–11 / 60**
+- Trigger range: **0–12 / 60**
 
 ## Latest prospective session states
-- `NO_SIGNAL`: **7**
-- `TRIGGER`: **3**
+- `NO_SIGNAL`: **4**
+- `TRIGGER`: **6**
 - `WARMUP_PENDING`: **570**
 
 ## 3D family states
@@ -26,7 +26,7 @@ Generated: `2026-11-12T20:11:01.020246+00:00`
 
 ## Source
 - Historical binding snapshot: `FORWARD_SOURCE_BOUND` / `WINV26`
-- Latest physically observed symbol: `WINZ26` (session `2026-11-11`; source QA=None)
+- Latest physically observed symbol: `WINZ26` (session `2026-11-12`; source QA=None)
 - Waiting source semantics: **0**
 - Discovery candidate inventory (separate authority): `AVAILABLE_SOURCE_CANDIDATE` (46 records; admitted=False)
 
@@ -38,14 +38,14 @@ Generated: `2026-11-12T20:11:01.020246+00:00`
 
 | Lookback | Families | Prior feature observations | Additional prior observations |
 |---|---:|---:|---:|
-| 10 | 5 | 24 to 24 | 0 to 0 |
-| 20 | 5 | 24 to 24 | 0 to 0 |
-| 60 | 6 | 24 to 24 | 36 to 36 |
-| 80 | 10 | 24 to 24 | 56 to 56 |
-| 120 | 26 | 24 to 24 | 96 to 96 |
-| 160 | 16 | 24 to 24 | 136 to 136 |
-| 200 | 256 | 17 to 24 | 176 to 183 |
-| 252 | 256 | 17 to 24 | 228 to 235 |
+| 10 | 5 | 25 to 25 | 0 to 0 |
+| 20 | 5 | 25 to 25 | 0 to 0 |
+| 60 | 6 | 25 to 25 | 35 to 35 |
+| 80 | 10 | 25 to 25 | 55 to 55 |
+| 120 | 26 | 25 to 25 | 95 to 95 |
+| 160 | 16 | 25 to 25 | 135 to 135 |
+| 200 | 256 | 18 to 25 | 175 to 182 |
+| 252 | 256 | 18 to 25 | 227 to 234 |
 
 Coverage is not a signal. A later eligible session, its current feature, nonzero MAD and the frozen trigger remain required.
 
