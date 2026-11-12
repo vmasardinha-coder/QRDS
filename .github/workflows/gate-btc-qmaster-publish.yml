@@ -7,6 +7,8 @@ on:
       - "tools/gate_btc_qmaster_export.py"
       - "tools/gate_btc_qmaster_publication_guard.py"
       - "tests/test_gate_btc_qmaster_publication_guard.py"
+      - "tools/gate_btc_qmaster_reporting_cache.py"
+      - "tests/test_gate_btc_qmaster_reporting_cache.py"
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
@@ -19,6 +21,8 @@ on:
       - "tools/gate_btc_qmaster_export.py"
       - "tools/gate_btc_qmaster_publication_guard.py"
       - "tests/test_gate_btc_qmaster_publication_guard.py"
+      - "tools/gate_btc_qmaster_reporting_cache.py"
+      - "tests/test_gate_btc_qmaster_reporting_cache.py"
   workflow_dispatch:
     inputs:
       run_id:
@@ -48,7 +52,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m unittest -v tests.test_gate_btc_qmaster_publication_guard
+      - run: python -m unittest -v tests.test_gate_btc_qmaster_publication_guard tests.test_gate_btc_qmaster_reporting_cache
   publish-qmaster:
     needs: validate-publication
     # Sem exigir a run inteira verde. A conclusao da run de coleta carrega jobs
