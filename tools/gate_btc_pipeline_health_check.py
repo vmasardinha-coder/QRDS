@@ -5,21 +5,20 @@ Existe porque em 2026-11-08 uma run ficou VERMELHA, ninguem viu, e o V11 travou
 em 86 observacoes por dias com todo o resto reportando verde. A entrega diaria
 lia apenas os ledgers Delta e nao enxergava a cadeia que os alimenta.
 
-Cobre as partes (a) e (b) do passo 2 da rotina, que saem do proprio branch
-runtime e nao precisam da API do GitHub:
+ENCERRAMENTO DO V11, decidido pelo dono do repositorio em 2026-11-12. O vao de
+8 a 11 de novembro foi ACEITO. O V11 fica em 86 observacoes com data_as_of
+2026-11-07, pelos mesmos motivos registrados para o V12: os dias faltantes nunca
+foram observados e a unica via de fabrica-los -- re-coletar com cutoff fixado --
+usaria o universo point-in-time de hoje, que e o vies que destruiu o portao da
+V14. A tentativa de recuperar pelo passo 17 do workflow foi feita e barrada por
+uma guarda correta ("Gateway source close moved backwards"): o gateway_dynamics
+ja estava quatro dias a frente do artefato que o replay traria, e gravar aquele
+close andaria para tras num ledger append-only.
 
-  (a) o ponteiro publicado (GATE_BTC_LATEST_ELIGIBLE_RUN.json) contra o
-      data_as_of do ledger do V11 -- se o cutoff nao estiver a frente, o
-      handoff esta quebrado e o V11 nao avanca, por mais verde que a coleta
-      pareca;
-  (b) o ultimo snapshot do lock25_50 -- o sidecar de valuacao exige
-      cutoff == ultimo snapshot do lock + 1 dia (tools/
-      gate_btc_lock_valuation_sidecar.py, _active_context). Se o lock atrasa,
-      o sidecar recusa e, por rodar com continue-on-error, derruba o handoff
-      em silencio.
-
-As partes (c) e (d) -- runs vermelhas do Prospective Ledgers e passos skipped
-do handoff na coleta -- precisam da API do GitHub e ficam fora deste script.
+Consequencia disso, que este script passa a afirmar em vez de alarmar: o monitor
+exige exatamente a proxima data (ultima do ledger + 1 dia) e levanta MonitorError
+se o cutoff for posterior. Com o ledger parado em 2026-11-07, NENHUM cutoff
+futuro serve. O V11 nao volta a andar, e isso e o esperado, nao uma falha.
 
 So leitura: nao escreve nada, nao toca ledger, nao faz rede.
 """
@@ -34,11 +33,23 @@ BRANCH = "origin/gate-btc-runtime"
 REPO = subprocess.run(["git", "rev-parse", "--show-toplevel"],
                       capture_output=True, text=True).stdout.strip() or "."
 
+# Estado congelado das series encerradas. Mudanca em qualquer um e anomalia grave.
+ENCERRADAS = {
+    "delta_paper_monitor": ("2026-11-07", 86, "V11", "vao de 8-11 nov aceito em 2026-11-12"),
+    "delta_v12_engine": ("2026-09-19", 12, "V12", "lacuna de 20-21 set, encerrada em 2026-09-22"),
+}
+
 
 def show(path: str) -> str | None:
     r = subprocess.run(["git", "-C", REPO, "show", f"{BRANCH}:{path}"],
                        capture_output=True, text=True)
     return r.stdout if r.returncode == 0 else None
+
+
+def tree(path: str) -> list[str]:
+    r = subprocess.run(["git", "-C", REPO, "ls-tree", "-r", "--name-only", BRANCH, path],
+                       capture_output=True, text=True)
+    return sorted(x.rsplit("/", 1)[-1][:-5] for x in r.stdout.split() if x.endswith(".json"))
 
 
 def iso(value: str) -> date:
@@ -49,90 +60,47 @@ def main() -> int:
     problemas: list[str] = []
     linhas: list[str] = []
 
-    v11_raw = show("runtime/ledgers/delta_paper_monitor/STATUS.json")
-    ptr_raw = show("runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json")
-    if v11_raw is None or ptr_raw is None:
-        print("FALHA DE LEITURA: ledger do V11 ou ponteiro inacessivel no branch runtime")
-        return 2
-
-    v11 = json.loads(v11_raw)
-    ptr = json.loads(ptr_raw)
-    v11_asof = iso(v11["data_as_of"])
-    v11_obs = v11.get("observed_days")
-    cutoff = iso(ptr["data_cutoff"])
-
-    linhas.append(f"V11        : data_as_of {v11_asof}  ({v11_obs} observacoes)")
-    linhas.append(f"ponteiro   : data_cutoff {cutoff}  publicado {ptr.get('published_at_utc','?')[:19]}")
-    linhas.append(f"             run_id {ptr.get('run_id','?')}")
-
-    # (a) o ponteiro tem de estar a frente do ledger para haver o que contabilizar
-    if cutoff <= v11_asof:
-        problemas.append(
-            f"HANDOFF QUEBRADO: o ponteiro esta em {cutoff} e o ledger do V11 em "
-            f"{v11_asof}. Sem cutoff novo o monitor conclui UP_TO_DATE e NAO contabiliza "
-            f"nada. O V11 nao avanca hoje, por mais verde que a coleta pareca.")
-    else:
-        linhas.append(f"             -> ponteiro a frente do ledger: ha fechamento a contabilizar")
-
-    # regra de contiguidade do monitor: ele so aceita exatamente a proxima data.
-    # Compara contra o ponteiro E contra o cutoff que a coleta de hoje resolveria,
-    # porque o segundo e o que decide se o dia faltante ainda e alcancavel.
-    esperado = v11_asof + timedelta(days=1)
-    natural = date.today() - timedelta(days=1)
-    if cutoff > esperado:
-        problemas.append(
-            f"V11 TRAVADO: o monitor exige exatamente {esperado} (ultima data do ledger "
-            f"+ 1 dia) e levanta MonitorError se o cutoff for posterior. O ponteiro esta "
-            f"em {cutoff}, adiante disso, entao ele vai recusar em vez de pular o dia.")
-    if natural > esperado:
-        problemas.append(
-            f"DIA FALTANTE FORA DO ALCANCE DA ROTINA NORMAL: o V11 precisa de {esperado} "
-            f"e a coleta agendada resolve {natural} (ultimo fechamento UTC completo). "
-            f"Nenhuma execucao normal vai produzir {esperado}, entao o V11 fica parado "
-            f"em {v11_obs} observacoes ate que aquele dia seja contabilizado a partir de "
-            f"artefato congelado na epoca. Dias no vao: "
-            f"{(natural - esperado).days + 1}. NAO re-coletar com cutoff fixado: isso "
-            f"usaria o universo point-in-time de hoje, que e o vies que destruiu o portao "
-            f"da V14.")
-
-    # (b) o lock25_50 governa o sidecar, que governa o handoff
-    r = subprocess.run(["git", "-C", REPO, "ls-tree", "-r", "--name-only", BRANCH,
-                        "runtime/ledgers/lock25_50/snapshots/"],
-                       capture_output=True, text=True)
-    snaps = sorted(x.rsplit("/", 1)[-1][:-5] for x in r.stdout.split() if x.endswith(".json"))
-    if not snaps:
-        problemas.append("lock25_50 sem snapshots legiveis no branch runtime")
-    else:
-        lock = iso(snaps[-1])
-        linhas.append(f"lock25_50  : ultimo snapshot {lock}")
-        prox = lock + timedelta(days=1)
-        hoje_cutoff = date.today() - timedelta(days=1)
-        if prox != hoje_cutoff:
+    # ---- series encerradas: so confirmamos que nao se moveram ----
+    for ledger, (asof, obs, nome, motivo) in ENCERRADAS.items():
+        raw = show(f"runtime/ledgers/{ledger}/STATUS.json")
+        if raw is None:
+            problemas.append(f"{nome}: ledger ilegivel no branch runtime")
+            continue
+        d = json.loads(raw)
+        if str(d.get("data_as_of")) != asof or d.get("observed_days") != obs:
             problemas.append(
-                f"SIDECAR VAI RECUSAR: o lock25_50 esta em {lock}, entao o sidecar de "
-                f"valuacao so aceita cutoff {prox}. A coleta de hoje resolve "
-                f"{hoje_cutoff}. Ele vai levantar excecao e, por rodar com "
-                f"continue-on-error, a run fecha VERDE enquanto handoff, delivery "
-                f"request e ponteiro sao pulados.")
+                f"ANOMALIA GRAVE: o ledger do {nome} MUDOU -- data_as_of "
+                f"{d.get('data_as_of')}, observed_days {d.get('observed_days')}. "
+                f"Ele esta ENCERRADO e deve permanecer em {asof} com {obs}. "
+                f"Um ledger encerrado que anda significa que algo escreveu nele.")
         else:
-            linhas.append(f"             -> casa com o cutoff de hoje ({hoje_cutoff}): sidecar deve passar")
+            linhas.append(f"{nome:10} : {asof}, {obs} observacoes, ENCERRADA ({motivo})")
 
-    v13_raw = show("runtime/ledgers/delta_v13_engine/STATUS.json")
-    if v13_raw:
-        v13 = json.loads(v13_raw)
-        linhas.append(f"V13        : data_as_of {v13['data_as_of']}  ({v13.get('observed_days')} de 60)"
-                      f"   [pipeline independente do ponteiro]")
+    # ---- V13: a unica serie que ainda conta, e ela nao depende do ponteiro ----
+    raw = show("runtime/ledgers/delta_v13_engine/STATUS.json")
+    if raw is None:
+        problemas.append("V13: ledger ilegivel no branch runtime")
+    else:
+        d = json.loads(raw)
+        asof, obs = iso(d["data_as_of"]), d.get("observed_days")
+        linhas.append(f"V13        : {asof}, {obs} de 60")
+        atraso = (date.today() - timedelta(days=1) - asof).days
+        if atraso >= 2:
+            problemas.append(
+                f"V13 ATRASADO: data_as_of {asof}, e o ultimo fechamento UTC completo "
+                f"e {date.today() - timedelta(days=1)} -- {atraso} dias de atraso. "
+                f"Esta e a unica serie que ainda conta; se ela parar, para tudo. "
+                f"O motor dela roda encadeado na pinagem de precos, nao por "
+                f"agendamento, entao atraso de algumas horas e normal e dois dias nao.")
+        if d.get("promotion_allowed") is not False:
+            problemas.append(f"V13 promotion_allowed={d.get('promotion_allowed')}, tem de ser false")
 
-    # Recusas do ledger de qualidade do V2A. Desde 2026-11-11 uma contagem
-    # incoerente do coletor deixa de derrubar o job: o dia nao e gravado, a
-    # recusa vai para refusals/ e a run fecha VERDE. Como ela saiu do semaforo,
-    # tem de aparecer aqui -- e este e o unico lugar onde aparece.
-    r = subprocess.run(["git", "-C", REPO, "ls-tree", "-r", "--name-only", BRANCH,
-                        "runtime/data_quality/v2a/refusals/"],
-                       capture_output=True, text=True)
-    refusals = sorted(x.rsplit("/", 1)[-1][:-5] for x in r.stdout.split() if x.endswith(".json"))
+    # ---- recusas do ledger de qualidade do V2A ----
+    # Desde 2026-11-11 uma contagem incoerente do coletor nao derruba mais o job:
+    # o dia nao e gravado, a recusa vai para refusals/ e a run fecha VERDE. Como
+    # ela saiu do semaforo, este e o unico lugar onde aparece.
+    refusals = tree("runtime/data_quality/v2a/refusals/")
     if refusals:
-        linhas.append(f"recusas V2A: {len(refusals)}, a ultima em {refusals[-1]}")
         problemas.append(
             f"DIA RECUSADO PELO LEDGER DE QUALIDADE DO V2A: {len(refusals)} no total, a mais "
             f"recente {refusals[-1]}. O dia NAO foi gravado e a guarda nao foi afrouxada, mas "
@@ -142,37 +110,42 @@ def main() -> int:
     else:
         linhas.append("recusas V2A: nenhuma")
 
-    v12_raw = show("runtime/ledgers/delta_v12_engine/STATUS.json")
-    if v12_raw:
-        v12 = json.loads(v12_raw)
-        if str(v12.get("data_as_of")) != "2026-09-19" or v12.get("observed_days") != 12:
-            problemas.append(
-                f"ANOMALIA GRAVE: o ledger do V12 mudou -- data_as_of "
-                f"{v12.get('data_as_of')}, observed_days {v12.get('observed_days')}. "
-                f"Ele esta ENCERRADO e deve permanecer em 2026-09-19 com 12.")
+    # ---- a cadeia de handoff: informativa agora, porque o V11 esta encerrado ----
+    ptr_raw = show("runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json")
+    locks = tree("runtime/ledgers/lock25_50/snapshots/")
+    if ptr_raw and locks:
+        cutoff = iso(json.loads(ptr_raw)["data_cutoff"])
+        lock = iso(locks[-1])
+        hoje_cutoff = date.today() - timedelta(days=1)
+        linhas.append(f"ponteiro   : cutoff {cutoff}   lock25_50: {lock}")
+        if lock + timedelta(days=1) != hoje_cutoff:
+            linhas.append(
+                f"             -> cadeia de handoff PARADA (o sidecar exige cutoff "
+                f"{lock + timedelta(days=1)}, a coleta resolve {hoje_cutoff}). "
+                f"Conhecido e aceito: nao bloqueia mais nenhuma serie que conte, "
+                f"porque o V11 esta encerrado e o V13 nao depende do ponteiro. "
+                f"O lock25_50 tambem para de avancar enquanto isso durar.")
         else:
-            linhas.append("V12        : 2026-09-19, 12 observacoes, intocado")
+            linhas.append("             -> cadeia de handoff saudavel")
 
     print("=" * 72)
-    print("SAUDE DO PIPELINE  (partes a e b do passo 2 da rotina)")
+    print("SAUDE DO PIPELINE")
     print("=" * 72)
     for l in linhas:
         print("  " + l)
     print()
     if problemas:
-        print(f"!! {len(problemas)} PROBLEMA(S) -- isto vira o destaque da entrega, acima das cotas:")
+        print(f"!! {len(problemas)} PROBLEMA(S) -- destaque da entrega, acima das cotas:")
         for p in problemas:
             print()
             for i, seg in enumerate(p.split(". ")):
                 print(("   - " if i == 0 else "     ") + seg.strip() + ("." if not seg.endswith(".") else ""))
     else:
-        print("   Sem problema nas partes a e b.")
+        print("   Sem problema. V13 andando, series encerradas intocadas, sem recusa no V2A.")
     print()
-    print("   Ainda a checar pela API do GitHub (partes c e d):")
-    print("   c) runs de gate-btc-prospective-ledgers.yml com conclusion failure,")
-    print("      inclusive run_attempt > 1; sucesso em menos de 2 min e no-op.")
-    print("   d) na ultima run de gate-btc-daily-research.yml, se os passos de")
-    print("      handoff, delivery request e pointer estao 'skipped'.")
+    print("   O que este script NAO ve (precisa da API do GitHub):")
+    print("   - runs de gate-btc-delta-v13-engine.yml que falharam;")
+    print("   - passos 'skipped' por continue-on-error em qualquer workflow.")
     print("   Regra: conclusion mente quando ha continue-on-error; vale o outcome.")
     return 1 if problemas else 0
 
