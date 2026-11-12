@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -24,6 +25,33 @@ def top5_positive_share(gross):
     pos = sorted((x for x in gross if x > 0), reverse=True)
     total = sum(pos)
     return 1.0 if total <= 0 else sum(pos[:5]) / total
+
+
+def load_verified_records(ledger: Path) -> list[dict]:
+    records = []
+    for path in sorted(ledger.glob('*.json')):
+        rec = load(path)
+        if rec.get('schema') != 'gate_btc_2.factory_item3c_forward_session.v1' or rec.get('session') != path.stem:
+            raise RuntimeError('FORWARD_RECORD_IDENTITY_MISMATCH:' + path.name)
+        sealed = dict(rec); expected = sealed.pop('record_sha256', None)
+        actual = hashlib.sha256(json.dumps(sealed, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
+        if not expected or expected != actual:
+            raise RuntimeError('FORWARD_RECORD_HASH_MISMATCH:' + path.name)
+        for key in ('historical_credit', 'retroactive_credit', 'survivor_credit', 'orders', 'real_capital'):
+            if rec.get(key) != 0:
+                raise RuntimeError('FORWARD_RECORD_AUTHORITY_MISMATCH:' + path.name)
+        if rec.get('engine_feed') is not False or rec.get('promotion_authority') is not False or rec.get('no_backfill') is not True or rec.get('no_retune') is not True:
+            raise RuntimeError('FORWARD_RECORD_SAFETY_MISMATCH:' + path.name)
+        families = rec.get('family_observations', [])
+        ids = [x['family_id'] for x in families]
+        if len(ids) != len(set(ids)) or len(ids) != rec['active_family_count']:
+            raise RuntimeError('FORWARD_FAMILY_POPULATION_MISMATCH:' + path.name)
+        for family in families:
+            horizons = [x['horizon_minutes'] for x in family.get('outcomes', [])]
+            if len(horizons) != len(set(horizons)):
+                raise RuntimeError('FORWARD_DUPLICATE_HORIZON:' + path.name)
+        records.append(rec)
+    return records
 
 
 def collect_trigger_outcomes(records: list[dict]) -> dict[str, dict[int, list[dict]]]:
@@ -166,12 +194,7 @@ def main() -> int:
         dump(Path(args.out), result); return 0
     manifest = load(manifest_path)
     ledger = root / prereg["population"]["ledger_root"]
-    records = []
-    if ledger.exists():
-        for path in sorted(ledger.glob("*.json")):
-            rec = load(path)
-            if rec.get("schema") == "gate_btc_2.factory_item3c_forward_session.v1" and rec.get("session") == path.stem and rec.get("record_sha256"):
-                records.append(rec)
+    records = load_verified_records(ledger) if ledger.exists() else []
     result = adjudicate(manifest, records, prereg)
     dump(Path(args.out), result)
     print(json.dumps({"status": result["status"], "population": result["population_count"], "sessions": result["ledger_session_count"], "states": result["family_state_counts"]}, sort_keys=True))
