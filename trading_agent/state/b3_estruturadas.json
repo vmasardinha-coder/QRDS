@@ -3,7 +3,7 @@
   "currency": "BRL",
   "initial_capital": 50000.0,
   "inception_date": "2026-08-06",
-  "cash": 1255.0188550208527,
+  "cash": 1255.6562539969407,
   "positions": {
     "BOVA11": {
       "qty": 290.33975761074475,
@@ -544,6 +544,12 @@
       "nav": 48479.87,
       "benchmark_nav": 48801.06,
       "benchmark2_nav": 51664.1
+    },
+    {
+      "date": "2026-11-12",
+      "nav": 48810.34,
+      "benchmark_nav": 49007.12,
+      "benchmark2_nav": 51690.34
     }
   ],
   "trades": [
@@ -3451,7 +3457,63 @@
           "last_close": 171336.9844
         }
       }
+    },
+    {
+      "date": "2026-11-12",
+      "regime": "-",
+      "hurdle": "CDI",
+      "rebalance_trigger": "nenhum (call em curso)",
+      "vol_source": "GARCH(1,1)",
+      "sigma": 0.2958,
+      "vol_realized": 0.5444,
+      "short_call": {
+        "strike": 169.76,
+        "expiry": "2026-12-05",
+        "qty": 290.33975761074475,
+        "premium_unit": 8.5788,
+        "sold_on": "2026-11-05",
+        "sigma": 0.5303
+      },
+      "data_failures": [],
+      "selected": [
+        {
+          "symbol": "BOVA11",
+          "weight": 1.0
+        }
+      ],
+      "rejected": [],
+      "stops": [],
+      "cooldowns": {},
+      "note": "",
+      "market_data_evidence": {
+        "BOVA11": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "cotahist",
+          "symbol": "BOVA11",
+          "captured_at_utc": "2026-11-12T02:46:04.704506+00:00",
+          "point_count": 465,
+          "status": "RECORDED",
+          "series_scope": "LIVE_PROVIDER_SERIES",
+          "series_sha256": "bb7cc8abe0a90f060d855e7f9bda3a21a483338faa0e60c9bd93519b20229ed6",
+          "first_market_date": "2025-01-02",
+          "last_market_date": "2026-11-11",
+          "last_close": 169.2
+        },
+        "^BVSP": {
+          "schema": "trading_agent.b3_series_evidence.v1",
+          "provider": "brapi",
+          "symbol": "^BVSP",
+          "captured_at_utc": "2026-11-12T02:46:06.009461+00:00",
+          "point_count": 122,
+          "status": "RECORDED",
+          "series_scope": "LIVE_SOURCE_WITH_VERIFIED_INDEX_CACHE",
+          "series_sha256": "e9ffbef65bed8d37b4fe2e81a9e9157ca65a407a35d522cd2fb6cbcefd7ce9c0",
+          "first_market_date": "2026-05-20",
+          "last_market_date": "2026-11-11",
+          "last_close": 172060.4375
+        }
+      }
     }
   ],
-  "last_accrual_date": "2026-11-09"
+  "last_accrual_date": "2026-11-10"
 }
