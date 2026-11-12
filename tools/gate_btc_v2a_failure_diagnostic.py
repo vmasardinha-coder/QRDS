@@ -141,17 +141,35 @@ def build_diagnostic(universe_rows: list[dict[str, str]], failure_rows: list[dic
     attempted = int(manifest.get("attempted_symbols", 0))
     loaded = int(manifest.get("loaded_symbols", 0))
     failed = int(manifest.get("failed_symbols", len(failure_rows)))
-    if failed != len(failure_rows):
-        raise RuntimeError(f"failure row count differs from manifest: {len(failure_rows)} != {failed}")
-    if attempted != loaded + failed:
-        raise RuntimeError(f"attempted != loaded + failed: {attempted} != {loaded} + {failed}")
+    # As contagens que o coletor declara sobre si mesmo sao REGISTRADAS aqui, nao
+    # levantadas. Este passo e advisory -- a propria saida diz advisory_only: true
+    # e o status diz PASS_ADVISORY_DIAGNOSTIC -- e derrubar o job por uma soma
+    # incoerente do manifesto dava a um diagnostico o poder de parar a cadeia que
+    # escreve os ledgers congelados. Foi o que aconteceu em 2026-11-12: a guarda do
+    # ledger de qualidade (gate_btc_v2a_data_ledger.py) ja recusava o dia sem
+    # matar o job, e este diagnostico matou, levando com ele a recuperacao de
+    # closes do LOCK e o append do close -- os passos 17 e 18. O dia continua NAO
+    # creditado: quem decide isso e a guarda do ledger, que segue intacta.
+    incoherences = [
+        message
+        for ok, message in (
+            (failed == len(failure_rows),
+             f"failure row count differs from manifest: {len(failure_rows)} != {failed}"),
+            (attempted == loaded + failed,
+             f"attempted != loaded + failed: {attempted} != {loaded} + {failed}"),
+        )
+        if not ok
+    ]
     extension_count = int(manifest.get("qualified_source_extension", 0))
     if extension_count < 0 or extension_count > loaded:
         raise RuntimeError("qualified source extension count exceeds loaded evidence")
 
     return {
         "schema": "gate_btc.v2a_failure_diagnostic.v1",
-        "status": "PASS_ADVISORY_DIAGNOSTIC",
+        "status": ("PASS_ADVISORY_DIAGNOSTIC" if not incoherences
+                   else "ADVISORY_DIAGNOSTIC_WITH_INCOHERENT_SOURCE_COUNTS"),
+        "source_count_incoherences": incoherences,
+        "source_counts_coherent": not incoherences,
         "data_as_of": manifest.get("data_as_of"),
         "attempted_symbols": attempted,
         "loaded_symbols": loaded,

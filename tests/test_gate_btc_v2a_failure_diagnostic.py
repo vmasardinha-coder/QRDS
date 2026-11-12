@@ -69,12 +69,59 @@ class V2AFailureDiagnosticTests(unittest.TestCase):
         self.assertIn("CASHLIKE_OR_STABLE_SYMBOL_PATTERN", row["semantic_flags"])
         self.assertFalse(report["universe_changed"])
 
-    def test_manifest_count_mismatch_fails_closed(self):
+    def test_manifest_count_mismatch_is_recorded_not_raised(self):
+        # Este passo e advisory. Uma soma incoerente do manifesto do coletor passa
+        # a ser REGISTRADA na saida em vez de derrubar o job: em 2026-11-12 o raise
+        # daqui matou a cadeia depois de a guarda do ledger de qualidade ja ter
+        # recusado o dia sem mata-la, e levou com ele os passos 17 e 18 -- a
+        # recuperacao de closes do LOCK e o append do close. Nada aqui credita o
+        # dia: quem decide isso e gate_btc_v2a_data_ledger.py, que segue intacto.
         universe = [{"symbol": "KAS", "id": "kaspa", "name": "Kaspa", "market_cap_rank": "80"}]
         failures = [{"symbol": "KAS", "reason": "okx: RuntimeError: OKX returned no candles"}]
         bad_manifest = {"data_as_of": "2026-08-06", "attempted_symbols": 3, "loaded_symbols": 1, "failed_symbols": 1}
-        with self.assertRaisesRegex(RuntimeError, "attempted != loaded \\+ failed"):
-            build_diagnostic(universe, failures, bad_manifest)
+        report = build_diagnostic(universe, failures, bad_manifest)
+        self.assertEqual(report["status"], "ADVISORY_DIAGNOSTIC_WITH_INCOHERENT_SOURCE_COUNTS")
+        self.assertFalse(report["source_counts_coherent"])
+        self.assertIn("attempted != loaded + failed: 3 != 1 + 1",
+                      report["source_count_incoherences"])
+        # o diagnostico segue advisory e nao muda nada a jusante
+        self.assertTrue(report["advisory_only"])
+        self.assertFalse(report["universe_changed"])
+        self.assertFalse(report["denominator_changed"])
+        self.assertFalse(report["feeds_frozen_engine"])
+        self.assertEqual(report["methodology_changes"], 0)
+
+    def test_real_2026_11_08_counts_do_not_block_the_chain(self):
+        # As contagens reais que travaram o V11: 150 != 128 + 21.
+        universe = [{"symbol": "KAS", "id": "kaspa", "name": "Kaspa", "market_cap_rank": "80"}]
+        failures = [{"symbol": "KAS", "reason": "okx: RuntimeError: OKX returned no candles"}]
+        manifest = {"data_as_of": "2026-11-07", "attempted_symbols": 150,
+                    "loaded_symbols": 128, "failed_symbols": 21}
+        report = build_diagnostic(universe, failures, manifest)
+        self.assertEqual(report["status"], "ADVISORY_DIAGNOSTIC_WITH_INCOHERENT_SOURCE_COUNTS")
+        self.assertIn("attempted != loaded + failed: 150 != 128 + 21",
+                      report["source_count_incoherences"])
+        self.assertIn("failure row count differs from manifest: 1 != 21",
+                      report["source_count_incoherences"])
+
+    def test_coherent_counts_keep_the_clean_advisory_status(self):
+        universe = [{"symbol": "KAS", "id": "kaspa", "name": "Kaspa", "market_cap_rank": "80"}]
+        failures = [{"symbol": "KAS", "reason": "okx: RuntimeError: OKX returned no candles"}]
+        manifest = {"data_as_of": "2026-08-06", "attempted_symbols": 2,
+                    "loaded_symbols": 1, "failed_symbols": 1}
+        report = build_diagnostic(universe, failures, manifest)
+        self.assertEqual(report["status"], "PASS_ADVISORY_DIAGNOSTIC")
+        self.assertTrue(report["source_counts_coherent"])
+        self.assertEqual(report["source_count_incoherences"], [])
+
+    def test_qualified_source_extension_overreach_still_raises(self):
+        # O afrouxamento e so das contagens que o coletor declara sobre si mesmo.
+        universe = [{"symbol": "KAS", "id": "kaspa", "name": "Kaspa", "market_cap_rank": "80"}]
+        failures = [{"symbol": "KAS", "reason": "okx: RuntimeError: OKX returned no candles"}]
+        manifest = {"data_as_of": "2026-08-06", "attempted_symbols": 2, "loaded_symbols": 1,
+                    "failed_symbols": 1, "qualified_source_extension": 9}
+        with self.assertRaisesRegex(RuntimeError, "qualified source extension"):
+            build_diagnostic(universe, failures, manifest)
 
 
 if __name__ == "__main__":
