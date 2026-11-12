@@ -1,0 +1,1384 @@
+{
+  "schema": "gate_btc.portal_export_audit.v1",
+  "status": "PASS",
+  "source_sha256": "d8badaecfe53cbda26237de0590405a078556c7a8806bda579bda725276377bf",
+  "exported_at": "2026-11-12T02:30:17.390Z",
+  "books": 23,
+  "rows": 974,
+  "interval_returns_verified": true,
+  "combined_nav_verified": true,
+  "gaps": 51,
+  "snapshot_same_date_books": 14,
+  "snapshot_different_start_books": 9,
+  "source_unchanged": true,
+  "estimated_missing_rows": 0,
+  "orders": 0,
+  "real_capital": 0,
+  "views": [
+    {
+      "key": "A_100",
+      "name": "A - Ingênuo (Top 100)",
+      "cutoff": "2026-11-10",
+      "rows": 92,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": -31.564068254991962,
+        "btc_snapshot_pct": 17.05609657446874,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -48.620164829460705,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 92,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -31.56,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -45.56
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -31.56
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -51.98,
+          "navLiquidoEstimado": 960.4165885773953,
+          "diferencaVsBrutoPp": -20.42,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "A_300",
+      "name": "A - Ingênuo (Top 300)",
+      "cutoff": "2026-11-10",
+      "rows": 89,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-31",
+          "end": "2026-11-02",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-02",
+          "end": "2026-11-06",
+          "missing_days": 3
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": -29.333327167934875,
+        "btc_snapshot_pct": 17.062621548035793,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -46.39594871597067,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 89,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -29.33,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -43.33
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -29.33
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -63.21,
+          "navLiquidoEstimado": 735.8584304971066,
+          "diferencaVsBrutoPp": -33.87,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "B_100",
+      "name": "B - Critérios (Top 100)",
+      "cutoff": "2026-11-10",
+      "rows": 92,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 10.679966727115575,
+        "btc_snapshot_pct": 17.05609657446874,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -6.376129847353164,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 92,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 10.68,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -3.31
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 10.68
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 3.68,
+          "navLiquidoEstimado": 2073.677274553268,
+          "diferencaVsBrutoPp": -7,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "B_300",
+      "name": "B - Critérios (Top 300)",
+      "cutoff": "2026-11-10",
+      "rows": 89,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-31",
+          "end": "2026-11-02",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-02",
+          "end": "2026-11-06",
+          "missing_days": 3
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 6.495064856876742,
+        "btc_snapshot_pct": 17.062621548035793,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -10.567556691159051,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 89,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 6.5,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -7.5
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 6.5
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 0.62,
+          "navLiquidoEstimado": 2012.389891526092,
+          "diferencaVsBrutoPp": -5.88,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "C_100",
+      "name": "C - Vol-Weighted (Top 100)",
+      "cutoff": "2026-11-10",
+      "rows": 92,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 5.335902465575004,
+        "btc_snapshot_pct": 17.05609657446874,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -11.720194108893736,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 92,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 5.34,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -8.66
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 5.34
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -3.94,
+          "navLiquidoEstimado": 1921.1362146480365,
+          "diferencaVsBrutoPp": -9.28,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "C_300",
+      "name": "C - Vol-Weighted (Top 300)",
+      "cutoff": "2026-11-10",
+      "rows": 89,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-31",
+          "end": "2026-11-02",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-02",
+          "end": "2026-11-06",
+          "missing_days": 3
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 22.791135780991745,
+        "btc_snapshot_pct": 17.062621548035793,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": 5.728514232955952,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 89,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 22.79,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": 8.8
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 22.79
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 7.19,
+          "navLiquidoEstimado": 2143.723342605832,
+          "diferencaVsBrutoPp": -15.6,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "D_100",
+      "name": "D - RSI Guard (Top 100)",
+      "cutoff": "2026-11-10",
+      "rows": 92,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 20.505012778829702,
+        "btc_snapshot_pct": 17.05609657446874,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": 3.4489162043609625,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 92,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 20.51,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": 6.51
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 20.51
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 10.02,
+          "navLiquidoEstimado": 2200.4372566511365,
+          "diferencaVsBrutoPp": -10.48,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "D_300",
+      "name": "D - RSI Guard (Top 300)",
+      "cutoff": "2026-11-10",
+      "rows": 89,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-31",
+          "end": "2026-11-02",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-02",
+          "end": "2026-11-06",
+          "missing_days": 3
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 16.85899552148293,
+        "btc_snapshot_pct": 17.062621548035793,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -0.2036260265528611,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 89,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 16.86,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": 2.87
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 16.86
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 6.75,
+          "navLiquidoEstimado": 2134.9096794671527,
+          "diferencaVsBrutoPp": -10.11,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "G_100",
+      "name": "G - Rotação Setorial (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 4,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-08",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-08",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -5.4974261928531165,
+        "btc_snapshot_pct": -2.8059843393062334,
+        "difference_snapshot_pp": -2.691441853546883,
+        "reference_only_difference_pp": -2.691441853546883,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-08",
+        "fim": "2026-11-11",
+        "dias": 4,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -5.5,
+        "btcPct": -0.97,
+        "alphaVsBtcPct": -4.52
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -6.2
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -7.71,
+          "navLiquidoEstimado": 1845.8179797319822,
+          "diferencaVsBrutoPp": -1.51,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-08",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "incluiLiquidacaoCestaAberta": false,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "G_300",
+      "name": "G - Rotação Setorial (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 4,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-08",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-08",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -4.999042813280841,
+        "btc_snapshot_pct": -2.809945728961716,
+        "difference_snapshot_pp": -2.1890970843191253,
+        "reference_only_difference_pp": -2.1890970843191253,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-08",
+        "fim": "2026-11-11",
+        "dias": 4,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -5,
+        "btcPct": -0.97,
+        "alphaVsBtcPct": -4.03
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -5.86
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -8.48,
+          "navLiquidoEstimado": 1830.3725286277909,
+          "diferencaVsBrutoPp": -2.62,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-08",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "incluiLiquidacaoCestaAberta": false,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "G_COMBINED",
+      "name": "G - Combined 50/50 (Top100+Top300)",
+      "cutoff": "2026-11-11",
+      "rows": 4,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-08",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-08",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -5.248448313866594,
+        "btc_snapshot_pct": -2.8059843393062334,
+        "difference_snapshot_pp": -2.4424639745603605,
+        "reference_only_difference_pp": -2.4424639745603605,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-08",
+        "fim": "2026-11-11",
+        "dias": 4,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -5.25,
+        "btcPct": -0.97,
+        "alphaVsBtcPct": -4.28
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -6.03
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -8.1,
+          "navLiquidoEstimado": 1838.0952541798865,
+          "diferencaVsBrutoPp": -2.06,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-09",
+          "modelo": {
+            "tipo": "COMPOSTO_50_50_ESTIMATIVAS_LIQUIDACAO",
+            "moeda": "USD",
+            "roundTripBpsPorUniverso": {
+              "100": 50,
+              "300": 90
+            },
+            "incluiLiquidacaoCestaAberta": true,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "G7_100",
+      "name": "G7 - Rotação Setorial semanal (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -5.296297397776739,
+        "btc_snapshot_pct": -2.884209415241712,
+        "difference_snapshot_pp": -2.4120879825350268,
+        "reference_only_difference_pp": -2.4120879825350268,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -5.3,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": -3.01
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -5.3
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -5.53,
+          "navLiquidoEstimado": 1889.3388669143537,
+          "diferencaVsBrutoPp": -0.24,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "G7_300",
+      "name": "G7 - Rotação Setorial semanal (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -4.074987464077095,
+        "btc_snapshot_pct": -2.8881676166349957,
+        "difference_snapshot_pp": -1.1868198474420995,
+        "reference_only_difference_pp": -1.1868198474420995,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -4.07,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": -1.79
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -4.07
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -4.51,
+          "navLiquidoEstimado": 1909.866999590225,
+          "diferencaVsBrutoPp": -0.43,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7C_100",
+      "name": "GR7 dial contínuo (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -3.1069427039454256,
+        "btc_snapshot_pct": -2.884209415241712,
+        "difference_snapshot_pp": -0.22273328870371367,
+        "reference_only_difference_pp": -0.22273328870371367,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -3.11,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": -0.82
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -3.11
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -3.35,
+          "navLiquidoEstimado": 1933.0419217575818,
+          "diferencaVsBrutoPp": -0.24,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7D_100",
+      "name": "GR7 dial em degraus (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -1.3528090058017694,
+        "btc_snapshot_pct": -2.884209415241712,
+        "difference_snapshot_pp": 1.5314004094399425,
+        "reference_only_difference_pp": 1.5314004094399425,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -1.35,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": 0.93
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -1.35
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -1.6,
+          "navLiquidoEstimado": 1968.0692484095266,
+          "diferencaVsBrutoPp": -0.24,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7F_100",
+      "name": "GR7 50/50 fixo (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": 0.7657099533089351,
+        "btc_snapshot_pct": -2.884209415241712,
+        "difference_snapshot_pp": 3.649919368550647,
+        "reference_only_difference_pp": 3.649919368550647,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 0.77,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": 3.05
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 0.77
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 0.52,
+          "navLiquidoEstimado": 2010.374295427691,
+          "diferencaVsBrutoPp": -0.25,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7C_300",
+      "name": "GR7 dial contínuo (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -1.2783482352216713,
+        "btc_snapshot_pct": -2.8881676166349957,
+        "difference_snapshot_pp": 1.6098193814133244,
+        "reference_only_difference_pp": 1.6098193814133244,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -1.28,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": 1.01
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -1.28
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -1.72,
+          "navLiquidoEstimado": 1965.655640298809,
+          "diferencaVsBrutoPp": -0.44,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7D_300",
+      "name": "GR7 dial em degraus (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": 0.26770200864918436,
+        "btc_snapshot_pct": -2.8881676166349957,
+        "difference_snapshot_pp": 3.15586962528418,
+        "reference_only_difference_pp": 3.15586962528418,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 0.27,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": 2.55
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 0.27
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -0.18,
+          "navLiquidoEstimado": 1996.42907718153,
+          "diferencaVsBrutoPp": -0.45,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "GR7F_300",
+      "name": "GR7 50/50 fixo (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 5,
+      "gaps": [],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-11-07",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-11-07",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": 0.26770200864918436,
+        "btc_snapshot_pct": -2.8881676166349957,
+        "difference_snapshot_pp": 3.15586962528418,
+        "reference_only_difference_pp": 3.15586962528418,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-11-07",
+        "fim": "2026-11-11",
+        "dias": 5,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 0.27,
+        "btcPct": -2.29,
+        "alphaVsBtcPct": 2.55
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 0.27
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -0.18,
+          "navLiquidoEstimado": 1996.42907718153,
+          "diferencaVsBrutoPp": -0.45,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-11-07",
+          "modelo": {
+            "tipo": "GIRO_REAL_CESTA",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "H_100",
+      "name": "H - Benchmark Externo (Top 100)",
+      "cutoff": "2026-11-10",
+      "rows": 92,
+      "gaps": [
+        {
+          "start": "2026-08-15",
+          "end": "2026-08-17",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-09-04",
+          "end": "2026-09-07",
+          "missing_days": 2
+        },
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SNAPSHOT_START_DIFFERS_FROM_LEDGER",
+        "strategy_start": "2026-08-05",
+        "strategy_end": "2026-11-10",
+        "btc_start": "2026-08-06",
+        "btc_end": "2026-11-10",
+        "gross_ledger_pct": 12.080548821562974,
+        "btc_snapshot_pct": 17.05609657446874,
+        "difference_snapshot_pp": null,
+        "reference_only_difference_pp": -4.975547752905765,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-08-05",
+        "fim": "2026-11-10",
+        "dias": 92,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 12.08,
+        "btcPct": 13.99,
+        "alphaVsBtcPct": -1.91
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 12.08
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": 2.07,
+          "navLiquidoEstimado": 2041.3237072348797,
+          "diferencaVsBrutoPp": -10.01,
+          "dataDoRegistro": "2026-11-10",
+          "campoLiquidoGravadoDesde": "2026-08-05",
+          "modelo": {
+            "tipo": "GIRO_REAL_SNAPSHOT",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "I_100",
+      "name": "I - Campeões (Top 100)",
+      "cutoff": "2026-11-11",
+      "rows": 20,
+      "gaps": [
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-04",
+          "missing_days": 2
+        }
+      ],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-10-21",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-10-21",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -21.37128612586646,
+        "btc_snapshot_pct": -11.284937747833524,
+        "difference_snapshot_pp": -10.086348378032937,
+        "reference_only_difference_pp": -10.086348378032937,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-10-21",
+        "fim": "2026-11-11",
+        "dias": 20,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -21.37,
+        "btcPct": -11.91,
+        "alphaVsBtcPct": -9.46
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -21.37
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -21.71,
+          "navLiquidoEstimado": 782.8715626752754,
+          "diferencaVsBrutoPp": -0.34,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-10-21",
+          "modelo": {
+            "tipo": "GIRO_REAL_TRADES",
+            "moeda": "USD",
+            "roundTripBps": 50,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "I_300",
+      "name": "I - Campeões (Top 300)",
+      "cutoff": "2026-11-11",
+      "rows": 17,
+      "gaps": [
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-31",
+          "end": "2026-11-02",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-02",
+          "end": "2026-11-06",
+          "missing_days": 3
+        }
+      ],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-10-21",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-10-21",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": -26.247847806162216,
+        "btc_snapshot_pct": -11.288553556147473,
+        "difference_snapshot_pp": -14.959294250014743,
+        "reference_only_difference_pp": -14.959294250014743,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-10-21",
+        "fim": "2026-11-11",
+        "dias": 17,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": -26.25,
+        "btcPct": -11.91,
+        "alphaVsBtcPct": -14.34
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": -26.25
+        },
+        "liquidoEstimadoModelo": {
+          "retornoDesdeInicioRealPct": -27.18,
+          "navLiquidoEstimado": 728.2143707733152,
+          "diferencaVsBrutoPp": -0.93,
+          "dataDoRegistro": "2026-11-11",
+          "campoLiquidoGravadoDesde": "2026-10-21",
+          "modelo": {
+            "tipo": "GIRO_REAL_TRADES",
+            "moeda": "USD",
+            "roundTripBps": 90,
+            "custosObservados": false
+          }
+        },
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "ESTIMADO pelo modelo de custos do portal (giro real: 50 bps ida e volta no Top 100, 90 bps no Top 300; não é saldo realizado nem custo observado)"
+      }
+    },
+    {
+      "key": "watchlist",
+      "name": "Watchlist - Tese Institucional (buy-and-hold)",
+      "cutoff": "2026-11-11",
+      "rows": 69,
+      "gaps": [
+        {
+          "start": "2026-10-16",
+          "end": "2026-10-18",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-10-27",
+          "end": "2026-10-29",
+          "missing_days": 1
+        },
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-03",
+          "missing_days": 1
+        }
+      ],
+      "comparison": {
+        "status": "SAME_DATES_SNAPSHOT_REFERENCE",
+        "strategy_start": "2026-09-01",
+        "strategy_end": "2026-11-11",
+        "btc_start": "2026-09-01",
+        "btc_end": "2026-11-11",
+        "gross_ledger_pct": 3.888196372624142,
+        "btc_snapshot_pct": -6.586628762881364,
+        "difference_snapshot_pp": 10.474825135505505,
+        "reference_only_difference_pp": 10.474825135505505,
+        "timing_note": "Provider snapshot reference; exact execution timestamps and fills are not established."
+      },
+      "utc_reference": {
+        "inicio": "2026-09-01",
+        "fim": "2026-11-11",
+        "dias": 69,
+        "base": "navMarkToMarket do último registro / navMarkToMarket do 1º registro do ledger - 1",
+        "estrategiaPct": 3.89,
+        "btcPct": -4.37,
+        "alphaVsBtcPct": 8.26
+      },
+      "costs": {
+        "bruto": {
+          "retornoDesdeInicioRealPct": 110.49
+        },
+        "liquidoEstimadoModelo": null,
+        "custosObservados": "N/D — simulação, sem execução real",
+        "liquidoStatus": "N/D — sem modelo de custos definido e vinculado a este ledger"
+      }
+    }
+  ]
+}
