@@ -1,11 +1,19 @@
 name: GATE BTC Delta Isolated Source Retention
 
 on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Optional exact Daily Research run id
+        required: false
+        type: string
   pull_request:
     branches: [main]
     paths:
       - .github/workflows/gate-btc-delta-isolated-source.yml
       - tools/gate_btc_delta_isolated_source.py
+      - tools/gate_btc_delta_sealed_delivery.py
+      - tests/test_gate_btc_delta_sealed_delivery.py
       - tools/gate_btc_delta_paper_monitor.py
       - tests/test_gate_btc_delta_isolated_source.py
   workflow_run:
@@ -19,7 +27,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate-btc-delta-isolated-source-${{ github.event.workflow_run.id || github.ref }}
+  group: gate-btc-delta-paper-monitor-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -31,12 +39,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest -v tests.test_gate_btc_delta_isolated_source
+      - run: python -m unittest -v tests.test_gate_btc_delta_isolated_source tests.test_gate_btc_delta_sealed_delivery
 
   preserve-independent-source:
     needs: contract-tests
     if: >-
-      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
        (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
@@ -55,7 +63,7 @@ jobs:
       - name: Resolve latest completed main Daily collection for today's UTC close
         env:
           GH_TOKEN: ${{ github.token }}
-          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+          EVENT_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
           if test -n "$EVENT_RUN_ID"; then
@@ -138,18 +146,29 @@ jobs:
           --runtime-dir runtime_repo/runtime/delta_independent_sources
           --source-run-id "$SOURCE_RUN_ID"
           --expected-close "$EXPECTED_CLOSE"
-      - name: Commit source archive only, without changing scientific ledger
+      - name: Deliver exact previously captured closes through the unchanged monitor
+        if: steps.source.outputs.available == 'true'
+        run: |
+          python -m tools.gate_btc_delta_sealed_delivery \
+            --contract migration/reporting/delta_paper_monitor_contract.json \
+            --archive runtime_repo/runtime/delta_independent_sources/snapshots \
+            --runtime runtime_repo/runtime/ledgers/delta_paper_monitor \
+            --target "$EXPECTED_CLOSE"
+          python tools/gate_btc_delta_paper_report.py \
+            --runtime-dir runtime_repo/runtime/ledgers/delta_paper_monitor --allow-missing
+      - name: Publish sealed source and verified delivery
         if: steps.source.outputs.available == 'true'
         working-directory: runtime_repo
         run: |
           set -euo pipefail
           git config user.name gate-btc-research-bot
           git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/ledgers/delta_paper_monitor
           git add runtime/delta_independent_sources
           git add -f runtime/delta_independent_sources/snapshots/*.zip
           git ls-files --error-unmatch runtime/delta_independent_sources/snapshots/*.zip >/dev/null
           git diff --cached --quiet && exit 0
-          git commit -m "Preserve independent Delta source ${EXPECTED_CLOSE}"
+          git commit -m "Preserve and deliver exact Delta source ${EXPECTED_CLOSE}"
           for attempt in 1 2 3; do
             git fetch origin gate-btc-runtime
             if ! git rebase origin/gate-btc-runtime; then git rebase --abort || true; exit 1; fi
