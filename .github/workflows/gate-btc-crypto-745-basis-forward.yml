@@ -9,6 +9,8 @@ on:
     paths:
       - tools/gate_btc_factory/crypto_745_basis_forward_capture.py
       - tests/test_gate_btc_crypto_745_basis_forward_capture.py
+      - tools/gate_btc_factory/crypto_745_basis_checkpoint_binding.py
+      - tests/test_gate_btc_crypto_745_basis_checkpoint_binding.py
       - .github/workflows/gate-btc-crypto-745-basis-forward.yml
       - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json
   push:
@@ -16,6 +18,8 @@ on:
     paths:
       - tools/gate_btc_factory/crypto_745_basis_forward_capture.py
       - tests/test_gate_btc_crypto_745_basis_forward_capture.py
+      - tools/gate_btc_factory/crypto_745_basis_checkpoint_binding.py
+      - tests/test_gate_btc_crypto_745_basis_checkpoint_binding.py
       - .github/workflows/gate-btc-crypto-745-basis-forward.yml
       - tools/gate_btc_factory/crypto_challenger_prereg/CRYPTO_SPOT_PERP_BASIS_FUNDING_PREREG.v1.json
 
@@ -48,7 +52,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: python -m py_compile tools/gate_btc_factory/crypto_745_basis_forward_capture.py
-      - run: python -m unittest -v tests.test_gate_btc_crypto_745_basis_forward_capture
+      - run: python -m unittest -v tests.test_gate_btc_crypto_745_basis_forward_capture tests.test_gate_btc_crypto_745_basis_checkpoint_binding
 
   observe-funding-window:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -146,6 +150,18 @@ jobs:
           assert d['safety']['ORDERS']==0 and d['safety']['REAL_CAPITAL']==0
           print('BASIS_FORWARD_ELIGIBLE='+str(d['eligible_unique_observation_count']))
           print('BASIS_CHECKPOINT_READY='+str(d['checkpoint_ready_for_dataset_binding']))
+          PY
+          source_ref=$(git -C runtime_repo rev-parse HEAD)
+          PYTHONPATH=source_repo python source_repo/tools/gate_btc_factory/crypto_745_basis_checkpoint_binding.py \
+            --root "$ROOT" --source-ref "$source_ref" \
+            --out "$ROOT/checkpoint_n60/BINDING.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('runtime_repo/runtime/factory_sources/crypto_challenger_745/forward/basis_funding/checkpoint_n60/BINDING.json')
+          d=json.loads(p.read_bytes())
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('\nOriginal Basis N60 binding: '+d['status']+'; causal proof '+str(d['causally_admissible_count'])+'/60. Economics remain unread.\n')
           PY
           cd runtime_repo
           git config user.name gate-btc-research-bot
