@@ -6,6 +6,8 @@ on:
     paths:
       - tools/gate_btc_b3_gap_classifier.py
       - tools/gate_btc_b3_h31_prospective_collect.py
+      - tools/gate_btc_h31_fixed_checkpoint.py
+      - tests/test_gate_btc_h31_fixed_checkpoint.py
       - tools/gate_btc_h31_source_preflight.py
       - tools/gate_btc_h31_target_session.py
       - tests/test_gate_btc_h31_target_session.py
@@ -22,6 +24,8 @@ on:
     paths:
       - "tools/gate_btc_b3_h31_source_binding_contract_v1.json"
       - "tools/gate_btc_b3_h31_prospective_collect.py"
+      - "tools/gate_btc_h31_fixed_checkpoint.py"
+      - "tests/test_gate_btc_h31_fixed_checkpoint.py"
       - "tools/gate_btc_h31_source_preflight.py"
       - "tools/gate_btc_h31_target_session.py"
       - "tests/test_gate_btc_h31_target_session.py"
@@ -60,6 +64,7 @@ jobs:
       - run: pip install requests pandas numpy
       - name: Validate H31 frozen source binding
         run: |
+          python -m unittest -v tests.test_gate_btc_h31_fixed_checkpoint
           python tools/gate_btc_b3_h31_prospective_collect.py --validate-contract-only
           python tools/gate_btc_b3_h31_prospective_guard.py --status-out /tmp/H31_PREBIND_STATUS.json
           python -m unittest -v tests/test_gate_btc_b3_gap_classifier_source.py tests/test_gate_btc_b3_gap_classifier_schedule.py
@@ -184,6 +189,20 @@ jobs:
             assert g['eligible_observation_increment'] == 0
             assert g['synthetic_backfill'] is False
           PY
+      - name: Freeze original H31 N10 checkpoint after integrity validation
+        if: steps.target.outputs.eligible == 'true'
+        run: |
+          count=$(python -c "import json; print(json.load(open('runtime_repo/runtime/ledgers/b3_h31_prospective/STATUS.json'))['eligible_observations'])")
+          if [ "$count" -lt 10 ]; then
+            echo "H31_CHECKPOINT=WAIT_N10_NO_PARTIAL_ECONOMICS"
+            exit 0
+          fi
+          python tools/gate_btc_h31_fixed_checkpoint.py \
+            --root runtime_repo/runtime/ledgers/b3_h31_prospective \
+            --freeze tools/gate_btc_b3_h31_prospective_freeze.json \
+            --checkpoint 10 \
+            --out runtime_repo/runtime/ledgers/b3_h31_prospective/checkpoints/N10.json
+
       - name: Publish append-only H31 runtime evidence
         if: steps.target.outputs.eligible == 'true'
         working-directory: runtime_repo
