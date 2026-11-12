@@ -37,4 +37,24 @@ class SourceBridgeTests(unittest.TestCase):
   session=Session();session.candle[0]+=86400000
   with self.assertRaisesRegex(ValueError,'MISSING_OR_INVALID'):p.fetch_okx_leo_utc_close(session,'LEO',CUT)
 
+
+ def test_each_qualified_source_uses_its_actual_observation_clock(self):
+  from datetime import timedelta
+  import pandas as pd
+  current=[AT]
+  later=AT+timedelta(minutes=16)
+  def primary(session,symbol):
+   if symbol=='BTC':
+    current[0]=later
+    return pd.DataFrame([dict(date=CUT,symbol='BTC',close_usd=70000)])
+   raise ValueError('PRIMARY_MISSING')
+  def qualified(session,symbol,cutoff,observed_at):
+   self.assertEqual(observed_at,later)
+   return 1.1,dict(symbol=symbol,coin_id='re-protocol-reusd',cutoff=cutoff,source='physical')
+  with tempfile.TemporaryDirectory() as directory, patch.object(p,'fetch_qualified_economic_close',side_effect=qualified):
+   root=Path(directory)
+   manifest=p.collect({'cutoff':CUT},None,root/'sources',root/'out.zip',
+      clock=lambda:current[0],loaders=[('primary',primary)],assets=['BTC','REUSD'])
+   self.assertEqual(manifest['price_count'],2)
+
 if __name__=='__main__':unittest.main()

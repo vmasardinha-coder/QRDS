@@ -234,7 +234,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
         else:
             if economic_coin_id(symbol, cutoff) is not None:
                 try:
-                    value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,at)
+                    value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,clock())
                     prices.append({'date':cutoff,'symbol':symbol,'close_usd':value,
                                    'source':'pit150_qualified_'+evidence['source']})
                     qualified_evidence.append(evidence)
