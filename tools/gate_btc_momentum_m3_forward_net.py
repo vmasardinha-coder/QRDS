@@ -78,7 +78,22 @@ def run(runtime,binding=None,at=None):
     else:
         ledger,prices=net.load_verified(epoch,'M3_PRICE_GAP_20261104')
         first=ledger['rows'][0]['cutoff']
-        if first!=binding['first_activation_cutoff']:raise ValueError('GROSS_ACTIVATION_NOT_BOUND_FIRST_CUTOFF')
+        if first!=binding['first_activation_cutoff']:
+            # A later valid gross activation cannot rewrite the pre-admitted net start.
+            status.update(status='BLOCKED_BOUND_GROSS_ACTIVATION_MISSED',
+                data_as_of=ledger['rows'][-1]['cutoff'],
+                expected_gross_activation_cutoff=binding['first_activation_cutoff'],
+                actual_gross_activation_cutoff=first,net_returns_available=False,
+                next_action='PRESERVE_FIXED_BINDING_NO_BACKFILL_NO_REBIND')
+            net.immutable(out/'MISSED_BOUND_ACTIVATION.json',{
+                **SAFE,'binding_sha256':seal,
+                'expected_gross_activation_cutoff':binding['first_activation_cutoff'],
+                'actual_gross_activation_cutoff':first,
+                'reason':'GROSS_ACTIVATION_NOT_BOUND_FIRST_CUTOFF',
+                'new_net_epoch_authorized':False})
+            out.mkdir(parents=True,exist_ok=True)
+            (out/'STATUS.json').write_bytes(net.packed(status))
+            return status
         if ledger['rows'][-1]['cutoff']!=(at.date()-timedelta(days=1)).isoformat():
             raise ValueError('CURRENT_GROSS_CLOSE_REQUIRED')
         rows=net.calculate_bound(ledger,prices,binding['first_activation_cutoff'],0.001)
