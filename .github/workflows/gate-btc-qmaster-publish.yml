@@ -1,6 +1,14 @@
 name: GATE BTC QMASTER Publisher
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/gate-btc-qmaster-publish.yml"
+      - "tools/gate_btc_qmaster_export.py"
+      - "tools/gate_btc_qmaster_publication_guard.py"
+      - "tests/test_gate_btc_qmaster_publication_guard.py"
+      - "tools/gate_btc_qmaster_reporting_cache.py"
+      - "tests/test_gate_btc_qmaster_reporting_cache.py"
   workflow_run:
     workflows: ["GATE BTC Daily Research Collection"]
     types: [completed]
@@ -11,6 +19,10 @@ on:
     paths:
       - ".github/workflows/gate-btc-qmaster-publish.yml"
       - "tools/gate_btc_qmaster_export.py"
+      - "tools/gate_btc_qmaster_publication_guard.py"
+      - "tests/test_gate_btc_qmaster_publication_guard.py"
+      - "tools/gate_btc_qmaster_reporting_cache.py"
+      - "tests/test_gate_btc_qmaster_reporting_cache.py"
   workflow_dispatch:
     inputs:
       run_id:
@@ -31,7 +43,18 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
+  validate-publication:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest -v tests.test_gate_btc_qmaster_publication_guard tests.test_gate_btc_qmaster_reporting_cache
   publish-qmaster:
+    needs: validate-publication
     # Sem exigir a run inteira verde. A conclusao da run de coleta carrega jobs
     # irmaos com outros datasets -- entre eles o prospective-v2a-pit, que roda sem
     # needs e falha sozinho. Exigir a run verde aqui deixava a publicacao sem
@@ -62,24 +85,20 @@ jobs:
       - name: Resolve source run id
         id: source
         env:
+          GH_TOKEN: ${{ github.token }}
           MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
           WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
           run_id="${MANUAL_RUN_ID:-${WORKFLOW_RUN_ID:-}}"
           if [ -z "$run_id" ]; then
-            test -s runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/gate-btc-daily-research.yml/runs?branch=main&status=completed&per_page=30" > completed_daily_runs.json
             run_id="$(python - <<'PY'
           import json
-          p='runtime_repo/runtime/GATE_BTC_LATEST_ELIGIBLE_RUN.json'
-          s=json.load(open(p,encoding='utf-8'))
-          assert s['workflow_name']=='GATE BTC Daily Research Collection'
-          assert s['branch']=='main'
-          assert s['research_only'] is True
-          assert s['operational_status']=='NOT_APPROVED'
-          assert s['orders_generated']==0
-          assert s['real_capital_used']==0
-          print(int(s['run_id']))
+          rows=json.load(open('completed_daily_runs.json'))['workflow_runs']
+          candidates=[r for r in rows if r['head_branch']=='main' and r['event'] in {'schedule','workflow_dispatch'}]
+          assert candidates, 'NO_COMPLETED_DAILY_COLLECTION'
+          print(max(candidates, key=lambda r:r['created_at'])['id'])
           PY
           )"
           fi
@@ -146,6 +165,19 @@ jobs:
           print(json.dumps(state, indent=2, sort_keys=True))
           PY
 
+      - name: Bind source run provenance
+        env:
+          SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('qmaster_out/GATE_BTC_QMASTER_LATEST.txt')
+          d=json.loads(p.read_text())
+          d['source_run_id']=os.environ['SOURCE_RUN_ID']
+          p.write_text(json.dumps(d,indent=2,sort_keys=True)+'\n')
+          PY
+
       - name: Upload canonical QMASTER artifact
         uses: actions/upload-artifact@v4
         with:
@@ -161,6 +193,12 @@ jobs:
           set -euo pipefail
           git -C runtime_repo config user.name "gate-btc-actions"
           git -C runtime_repo config user.email "gate-btc-actions@users.noreply.github.com"
+          action=$(python source_repo/tools/gate_btc_qmaster_publication_guard.py \
+            --candidate qmaster_out/GATE_BTC_QMASTER_LATEST.txt \
+            --candidate-csv qmaster_out/GATE_BTC_QMASTER_LATEST.csv \
+            --published runtime_repo/runtime/GATE_BTC_QMASTER_LATEST.txt)
+          echo "QMASTER_PUBLICATION=$action"
+          if [ "$action" != "ADVANCE" ]; then exit 0; fi
           mkdir -p runtime_repo/runtime/qmaster
           cp qmaster_out/GATE_BTC_QMASTER_LATEST.txt runtime_repo/runtime/GATE_BTC_QMASTER_LATEST.txt
           cp qmaster_out/GATE_BTC_QMASTER_LATEST.csv runtime_repo/runtime/GATE_BTC_QMASTER_LATEST.csv
@@ -172,13 +210,20 @@ jobs:
             exit 0
           fi
           git -C runtime_repo commit -m "Publish canonical QMASTER sidecar"
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             git -C runtime_repo fetch origin gate-btc-runtime
+            git -C runtime_repo show origin/gate-btc-runtime:runtime/GATE_BTC_QMASTER_LATEST.txt > latest_remote_qmaster.json
+            action=$(python source_repo/tools/gate_btc_qmaster_publication_guard.py \
+              --candidate qmaster_out/GATE_BTC_QMASTER_LATEST.txt \
+              --candidate-csv qmaster_out/GATE_BTC_QMASTER_LATEST.csv \
+              --published latest_remote_qmaster.json)
+            echo "QMASTER_RETRY_PUBLICATION=$action"
+            if [ "$action" != "ADVANCE" ]; then exit 0; fi
             if ! git -C runtime_repo rebase origin/gate-btc-runtime; then
               git -C runtime_repo rebase --abort || true
               exit 1
             fi
             if git -C runtime_repo push origin HEAD:gate-btc-runtime; then exit 0; fi
-            sleep $((attempt * 2))
+            sleep $((attempt * 3))
           done
           exit 1

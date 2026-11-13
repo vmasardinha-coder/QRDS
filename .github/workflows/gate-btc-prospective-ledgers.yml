@@ -69,6 +69,7 @@ jobs:
           tests/test_gate_btc_prospective_ledgers.py
           tests/test_gate_btc_universe_ledger.py
           tests/test_gate_btc_v2a_data_ledger.py
+          tests/test_gate_btc_v2a_isolated_source.py
           tests/test_gate_btc_v2a_failure_diagnostic.py
           tests/test_gate_btc_pit150_source_crosswalk.py
           tests/test_gate_btc_lock_valuation_sidecar.py
@@ -487,6 +488,122 @@ jobs:
             fi
             if git push origin HEAD:gate-btc-runtime; then
               echo "GATEWAY_ISOLATED=APPENDED source_run_id=${SOURCE_RUN_ID} snapshot=${GATEWAY_SNAPSHOT_ID} LOCK_CREDIT=0"
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+
+  append-v2a-with-lock-gap:
+    needs: contract-tests
+    concurrency:
+      group: gate-btc-v2a-quality-publication
+      cancel-in-progress: false
+    # Independent current V2A quality; no LOCK valuation dependency.
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve exactly one eligible source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RUN_ID: ${{ inputs.run_id || '' }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          SOURCE_RUN_ID="${MANUAL_RUN_ID:-$EVENT_RUN_ID}"
+          test -n "$SOURCE_RUN_ID"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source_run.json
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/jobs?per_page=100" > source_jobs.json
+          python - <<'PY'
+          import json
+          run=json.load(open('source_run.json', encoding='utf-8'))
+          jobs=json.load(open('source_jobs.json', encoding='utf-8'))['jobs']
+          producer=[j for j in jobs if j['name']=='daily-research-collection']
+          assert run['name']=='GATE BTC Daily Research Collection'
+          assert run['head_branch']=='main' and run['event'] in {'schedule','workflow_dispatch'}
+          assert run['status']=='completed' and len(producer)==1
+          assert producer[0]['status']=='completed' and producer[0]['conclusion']=='success'
+          PY
+          echo "SOURCE_RUN_ID=$SOURCE_RUN_ID" >> "$GITHUB_ENV"
+      - name: Download same-run daily artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source_artifact extracted/v2a
+          artifact_id=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" --jq '.artifacts[] | select(.expired == false) | select(.name == "gate-btc-daily-research-" + env.SOURCE_RUN_ID) | .id' | head -1)
+          test -n "$artifact_id"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > artifact.zip
+          unzip -q artifact.zip -d source_artifact
+          if test -f source_artifact/daily_handoff/GATE_BTC_DAILY_RESEARCH_MANIFEST.json; then
+            echo "isolated=false" >> "$GITHUB_OUTPUT"
+            echo "V2A_ISOLATED=NOOP_FULL_HANDOFF_PRESENT"
+            exit 0
+          fi
+          test -f source_artifact/qos_daily/qos_v2a_outputs.zip
+          unzip -q source_artifact/qos_daily/qos_v2a_outputs.zip -d extracted/v2a
+          python tools/gate_btc_v2a_isolated_source.py --root extracted/v2a
+          echo "isolated=true" >> "$GITHUB_OUTPUT"
+      - name: Check out immutable runtime branch
+        if: steps.source.outputs.isolated == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gate-btc-runtime
+          path: runtime_repo
+          fetch-depth: 0
+      - name: Append independent V2A quality
+        if: steps.source.outputs.isolated == 'true'
+        run: |
+          set -euo pipefail
+          cutoff=$(python tools/gate_btc_v2a_isolated_source.py --root extracted/v2a)
+          export V2A_DATA_SNAPSHOT_ID="${cutoff}-run-${SOURCE_RUN_ID}"
+          echo "V2A_DATA_SNAPSHOT_ID=$V2A_DATA_SNAPSHOT_ID" >> "$GITHUB_ENV"
+          python tools/gate_btc_v2a_data_ledger.py append \
+            --manifest extracted/v2a/outputs/v2a_run_manifest.json \
+            --universe-csv extracted/v2a/data/raw/coingecko_current_universe_v04.csv \
+            --quality-csv extracted/v2a/outputs/data_quality_summary.csv \
+            --failures-csv extracted/v2a/outputs/download_failures_v2a.csv \
+            --snapshot-id "$V2A_DATA_SNAPSHOT_ID" --source-run-id "$SOURCE_RUN_ID" \
+            --ledger-dir runtime_repo/runtime/data_quality/v2a
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          p=Path("runtime_repo/runtime/data_quality/v2a/snapshots")/(os.environ["V2A_DATA_SNAPSHOT_ID"]+".json")
+          if not p.is_file():
+              raise SystemExit("V2A source refused; no successful publication claim")
+          PY
+      - name: Publish V2A quality only with fail-closed rebase
+        if: steps.source.outputs.isolated == 'true'
+        working-directory: runtime_repo
+        run: |
+          set -euo pipefail
+          git config user.name gate-btc-research-bot
+          git config user.email gate-btc-research-bot@users.noreply.github.com
+          git add runtime/data_quality/v2a
+          git diff --cached --quiet && exit 0
+          git commit -m "Append independent V2A quality ${V2A_DATA_SNAPSHOT_ID} (LOCK gap unchanged)"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin gate-btc-runtime
+            if ! git rebase origin/gate-btc-runtime; then
+              git rebase --abort || true
+              echo "V2A_ISOLATED=RUNTIME_REBASE_CONFLICT_FAIL_CLOSED"
+              exit 1
+            fi
+            if git push origin HEAD:gate-btc-runtime; then
+              echo "V2A_ISOLATED=APPENDED source_run_id=${SOURCE_RUN_ID} snapshot=${V2A_DATA_SNAPSHOT_ID} LOCK_CREDIT=0"
               exit 0
             fi
             sleep $((attempt * 2))

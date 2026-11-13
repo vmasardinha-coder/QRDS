@@ -51,6 +51,14 @@ class RecordingSession:
         return response
 
 
+    def post(self,*args,**kwargs):
+        response=self.session.post(*args,**kwargs)
+        self.records.append({'method':'POST','url':response.url,'http_status':response.status_code,
+            'request_json':kwargs.get('json'),'available_at_utc':self.clock().isoformat(),
+            'raw_sha256':sha(response.content),'raw_utf8':response.content.decode('utf-8')})
+        return response
+
+
 class PublicMarketSession:
     """Route the unchanged Spot kline loader to Binance's public-data service."""
     def __init__(self,session):self.session=session
@@ -90,6 +98,48 @@ def fetch_okx_okb_utc_close(session, symbol, cutoff):
     return pd.DataFrame([{'date': cutoff, 'symbol': symbol, 'close_usd': matches[0]}])
 
 
+def fetch_okx_leo_utc_close(session, symbol, cutoff):
+    # LEO-USDT is already pinned as QUALIFIED_EXACT_SOURCE in the registry.
+    # Revalidate the live spot identity and accept only its confirmed UTC bar.
+    if symbol != 'LEO' or cutoff < '2026-11-11':
+        raise ValueError('OKX_LEO_ROUTE_NOT_EFFECTIVE')
+    import pandas as pd
+    registry = load_json(ROOT/'tools/gate_btc_2_v2a_complete_qualified_source_registry_v1.json')
+    def entries(obj):
+        if isinstance(obj, dict):
+            if obj.get('symbol') == 'LEO': yield obj
+            for value in obj.values(): yield from entries(value)
+        elif isinstance(obj, list):
+            for value in obj: yield from entries(value)
+    matches = list(entries(registry))
+    if len(matches) != 1 or any(matches[0].get(k) != value for k,value in {
+            'coin_id':'leo-token','source_identity':'OKX_SPOT','source_symbol':'LEO-USDT',
+            'qualification':'QUALIFIED_EXACT_SOURCE','source_admitted':True,'qa_pass':True}.items()):
+        raise ValueError('OKX_LEO_FROZEN_REGISTRY_MISMATCH')
+    response = session.get('https://www.okx.com/api/v5/public/instruments',
+        params={'instType':'SPOT','instId':'LEO-USDT'},timeout=20)
+    response.raise_for_status(); identity=response.json(); rows=identity.get('data',[])
+    if identity.get('code')!='0' or len(rows)!=1 or any(rows[0].get(k)!=value for k,value in {
+            'instId':'LEO-USDT','instType':'SPOT','baseCcy':'LEO','quoteCcy':'USDT','state':'live'}.items()):
+        raise ValueError('OKX_LEO_CURRENT_SPOT_IDENTITY_MISMATCH')
+    response=session.get('https://www.okx.com/api/v5/market/candles',
+        params={'instId':'LEO-USDT','bar':'1Dutc','limit':'10'},timeout=20)
+    response.raise_for_status(); payload=response.json()
+    if payload.get('code')!='0' or not isinstance(payload.get('data'),list):
+        raise ValueError('OKX_INVALID_CANDLE_RESPONSE')
+    values=[]
+    for row in payload['data']:
+        if not isinstance(row,list) or len(row)<9: raise ValueError('OKX_INVALID_CANDLE_ROW')
+        stamp=datetime.fromtimestamp(int(row[0])/1000,timezone.utc)
+        if stamp.hour or stamp.minute or stamp.second: raise ValueError('OKX_NON_UTC_DAILY_BAR')
+        if stamp.date().isoformat()==cutoff:
+            if str(row[8])!='1': raise ValueError('OKX_CANDLE_NOT_CONFIRMED')
+            values.append(float(row[4]))
+    if len(values)!=1 or not math.isfinite(values[0]) or values[0]<=0:
+        raise ValueError('OKX_MISSING_OR_INVALID_CONFIRMED_CLOSE')
+    return pd.DataFrame([{'date':cutoff,'symbol':symbol,'close_usd':values[0]}])
+
+
 class MissingRequiredPrices(ValueError):
     def __init__(self,failures,evidence_path):
         super().__init__('MISSING_REQUIRED_PRICES: '+','.join(sorted(failures)))
@@ -108,6 +158,13 @@ ECONOMIC_QUALIFIED_IDENTITIES = {
 # XDC already has an exact PIT route; extend only the economic mark bridge.
 ECONOMIC_SOURCE_AMENDMENTS = {
     'XDC': {'coin_id': 'xdce-crowd-sale', 'effective_cutoff': '2026-10-27'},
+    'A7A5': {'coin_id': 'a7a5', 'effective_cutoff': '2026-11-11'},
+    'GHO': {'coin_id': 'gho', 'effective_cutoff': '2026-11-11'},
+    'HASH': {'coin_id': 'hash-2', 'effective_cutoff': '2026-11-11'},
+    'REUSD': {'coin_id': 're-protocol-reusd', 'effective_cutoff': '2026-11-11'},
+    'USDGO': {'coin_id': 'usdgo', 'effective_cutoff': '2026-11-11'},
+    'USX': {'coin_id': 'usx', 'effective_cutoff': '2026-11-11'},
+    'USYC': {'coin_id': 'hashnote-usyc', 'effective_cutoff': '2026-11-11'},
 }
 
 def economic_coin_id(symbol, cutoff):
@@ -165,6 +222,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
     prices=[];failures={};attempts=[];qualified_evidence=[]
     for symbol in required:
         alternatives = loaders + ([('okx_okb_utc_confirmed', lambda s,sym: fetch_okx_okb_utc_close(s,sym,cutoff))] if symbol == 'OKB' else [])
+        if symbol == 'LEO' and cutoff >= '2026-11-11':
+            alternatives += [('okx_leo_utc_confirmed', lambda s,sym: fetch_okx_leo_utc_close(s,sym,cutoff))]
         for name,loader in alternatives:
             try:
                 frame=loader(session,symbol);value=choose_quote(frame,symbol,cutoff)
@@ -175,7 +234,7 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
         else:
             if economic_coin_id(symbol, cutoff) is not None:
                 try:
-                    value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,at)
+                    value,evidence=fetch_qualified_economic_close(session,symbol,cutoff,clock())
                     prices.append({'date':cutoff,'symbol':symbol,'close_usd':value,
                                    'source':'pit150_qualified_'+evidence['source']})
                     qualified_evidence.append(evidence)
@@ -199,7 +258,8 @@ def collect(snapshot,state,root,output_zip,clock=now,loaders=None,session=None, 
     manifest={'schema':'gate_btc.momentum_required_prices.v1','cutoff':cutoff,'required_assets':required,
               'price_count':len(prices),'prices':prices,'available_at_utc':clock().isoformat(),
               'prices_zip_sha256':sha(content),'raw_archive_sha256':sha(raw),
-              'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
+              'source_priority':[name for name,_ in loaders]+['okx_okb_utc_confirmed'],'okx_policy':'OKB_OR_PINNED_LEO_ONLY_CONFIRMED_1DUTC_SPOT_CLOSE_NO_BACKFILL',
+              'leo_source_amendment':{'effective_cutoff':'2026-11-11','source_pair':'LEO-USDT','registry_identity_revalidated':True} if 'LEO' in required and cutoff >= '2026-11-11' else None,
               'qualified_fallback_policy':'PINNED_PIT_IDENTITIES_AFTER_PRIMARY_FAILURE_ONLY_TEMPORAL_AMENDMENTS_NO_BACKFILL',
               'economic_source_amendments':{s:ECONOMIC_SOURCE_AMENDMENTS[s] for s in required if s in ECONOMIC_SOURCE_AMENDMENTS and cutoff>=ECONOMIC_SOURCE_AMENDMENTS[s]['effective_cutoff']},
               'qualified_source_evidence':qualified_evidence,
