@@ -55,4 +55,30 @@ class ForwardNetTests(unittest.TestCase):
   l,p=self.fixture();rows=net.calculate_bound(l,p,'2026-11-06',.001);rows[0]['source_evidence']['source_available_at_utc']='2026-11-06T07:00:00+00:00'
   with tempfile.TemporaryDirectory() as d:
    with self.assertRaisesRegex(ValueError,'NOT_CURRENT'):forward.append_current(Path(d),rows[:1],'seal',datetime(2026,11,7,tzinfo=timezone.utc))
+
+ def test_later_gross_start_is_visible_blocked_without_rebinding_or_returns(self):
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as d:
+   runtime=Path(d);epoch=runtime/'runtime/ledgers'/self.c['gross_epoch']
+   net.immutable(epoch/'ACTIVATION.json',self.a)
+   net.immutable(epoch/'LEDGER.json',{'frozen_gross':'untouched'})
+   out=runtime/'runtime/ledgers/momentum_m3_forward_net'/forward.SERIES
+   forward.admit(out,self.c,self.at)
+   admission=(out/'ADMISSION.json').read_bytes();binding=(out/'BINDING.json').read_bytes()
+   gross=(epoch/'LEDGER.json').read_bytes()
+   late={'rows':[{'cutoff':'2026-11-11'}]}
+   with patch.object(net,'load_verified',return_value=(late,[])):
+    at=datetime(2026,11,12,12,tzinfo=timezone.utc)
+    one=forward.run(runtime,self.c,at);two=forward.run(runtime,self.c,at)
+   self.assertEqual(one,two)
+   self.assertEqual(one['status'],'BLOCKED_BOUND_GROSS_ACTIVATION_MISSED')
+   self.assertEqual(one['return_observations'],0)
+   self.assertEqual(one['first_activation_cutoff'],'2026-11-06')
+   self.assertEqual(one['actual_gross_activation_cutoff'],'2026-11-11')
+   self.assertFalse(one['net_returns_available'])
+   self.assertFalse(list(out.glob('observations/*.json')))
+   self.assertEqual((out/'ADMISSION.json').read_bytes(),admission)
+   self.assertEqual((out/'BINDING.json').read_bytes(),binding)
+   self.assertEqual((epoch/'LEDGER.json').read_bytes(),gross)
+
 if __name__=='__main__':unittest.main()
