@@ -1,0 +1,61 @@
+{
+  "HISTORY.json_sha256": "d2c81fa99f32f5ad6deb0cca40d1ed5192f965895e74e43932cf635c22408512",
+  "STATE.json_sha256": "fb3060018ae264a8f5192df973787e5eee21b6c8b44a7b9b69e0bf2389b93e1b",
+  "backfill_performed": false,
+  "economic_rows_appended": 0,
+  "engine_feed": false,
+  "gaps": [
+    {
+      "from": "2026-09-04",
+      "missing_closes": 1,
+      "to": "2026-09-06"
+    },
+    {
+      "from": "2026-09-10",
+      "missing_closes": 1,
+      "to": "2026-09-12"
+    },
+    {
+      "from": "2026-09-13",
+      "missing_closes": 12,
+      "to": "2026-09-26"
+    }
+  ],
+  "historical_rows_preserved": 8,
+  "last_economic_cutoff": "2026-09-13",
+  "next_action": "EXPLICIT_INTERRUPTION_DISPOSITION_NO_BACKFILL_NO_SILENT_BRIDGE",
+  "not_approved": true,
+  "orders": 0,
+  "real_capital": 0,
+  "requested_cutoff": "2026-09-26",
+  "research_only": true,
+  "schema": "gate_btc.momentum_economic_delivery.v1",
+  "shadow_only": true,
+  "status": "BLOCKED_GAP_DISPOSITION_REQUIRED",
+  "updated_at_utc": "2026-09-27T21:00:30.986725+00:00",
+  "weighting_audit": {
+    "contract_rule": "EQUAL_WEIGHT_AT_7_CLOSE_REBALANCE_THEN_HOLD",
+    "current_implementation": "DAILY_EQUAL_WEIGHT_MEAN_RETURN",
+    "engine_changed": false,
+    "historical_rewrite_performed": false,
+    "minimal_counterexample": {
+      "current_daily_equal_weight_total_return": 0.125,
+      "two_assets_prices": [
+        [
+          100,
+          100
+        ],
+        [
+          200,
+          100
+        ],
+        [
+          100,
+          100
+        ]
+      ],
+      "weekly_hold_total_return": 0.0
+    },
+    "status": "ENGINE_HOLD_ACCOUNTING_REVIEW_REQUIRED"
+  }
+}

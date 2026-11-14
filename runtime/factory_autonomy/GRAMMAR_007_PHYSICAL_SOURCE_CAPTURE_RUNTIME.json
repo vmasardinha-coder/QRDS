@@ -1,0 +1,278 @@
+{
+  "candidate_ranked": false,
+  "captured_at_utc": "2026-09-20T23:42:03.107982+00:00",
+  "economics_read": false,
+  "features_materialized": false,
+  "historical_backfill_credit": 0,
+  "historical_testing_started": false,
+  "next_gate": "PIT_SEMANTICS_AND_TARGET_SOURCE_QUALIFICATION",
+  "outcomes_read": false,
+  "prospective_credit": 0,
+  "safety": {
+    "ENGINE_FEED": false,
+    "FAIL_CLOSED": true,
+    "H1_H31_ISOLATED": true,
+    "NOT_APPROVED": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "NO_LATE_SEAL": true,
+    "NO_RETUNE": true,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true
+  },
+  "schema": "qrds.factory.grammar_007.physical_source_capture.v1",
+  "scientific_credit": 0,
+  "sources": {
+    "B3_COTAHIST_OFFICIAL": {
+      "attempts": [
+        {
+          "body_read": false,
+          "content_length": 89056788,
+          "content_type": "application/x-zip-compressed",
+          "etag": "\"9096c04557adc1:0\"",
+          "http_status": 200,
+          "last_modified": "Wed, 31 Dec 2025 03:26:37 GMT",
+          "reachable": true,
+          "url": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2025.ZIP"
+        },
+        {
+          "body_read": false,
+          "content_length": 79261198,
+          "content_type": "application/x-zip-compressed",
+          "etag": "\"a9189698315bdb1:0\"",
+          "http_status": 200,
+          "last_modified": "Tue, 31 Dec 2024 03:10:50 GMT",
+          "reachable": true,
+          "url": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2024.ZIP"
+        }
+      ],
+      "physical_capture_pass": true,
+      "pit_admission_pass": false,
+      "status": "TARGET_PHYSICAL_CAPTURE_REACHABLE_UNPARSED",
+      "target_bytes_parsed": false,
+      "target_bytes_read": false,
+      "target_outcomes_read": false
+    },
+    "BCB_OLINDA_EXPECTATIVASMERCADOANUAIS": {
+      "exact_historical_intraday_publication_timestamp_proven": false,
+      "ipca_sample": {
+        "byte_count": 1217,
+        "content_type": "application/json;charset=UTF-8;odata.metadata=minimal",
+        "etag": null,
+        "fields": [
+          "Data",
+          "DataReferencia",
+          "DesvioPadrao",
+          "Indicador",
+          "IndicadorDetalhe",
+          "Maximo",
+          "Media",
+          "Mediana",
+          "Minimo",
+          "baseCalculo",
+          "numeroRespondentes"
+        ],
+        "http_status": 200,
+        "json_valid": true,
+        "last_modified": null,
+        "reachable": true,
+        "row_count": 5,
+        "sha256": "5324ef832a45c37104f184e9cbb301be41463bdd335a66485289ff48ba846e13",
+        "url": "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?$format=json&$top=5&$filter=Indicador%20eq%20%27IPCA%27"
+      },
+      "metadata": {
+        "byte_count": 9494,
+        "content_type": "application/xml",
+        "etag": null,
+        "http_status": 200,
+        "last_modified": null,
+        "reachable": true,
+        "sha256": "11d878877403dc8a99666686fc666b005fd04201e224dc65ff77faad28cccfc1",
+        "url": "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/$metadata"
+      },
+      "observed_fields": [
+        "Data",
+        "DataReferencia",
+        "DesvioPadrao",
+        "Indicador",
+        "IndicadorDetalhe",
+        "Maximo",
+        "Media",
+        "Mediana",
+        "Minimo",
+        "baseCalculo",
+        "numeroRespondentes"
+      ],
+      "official_publication_cadence_documented": true,
+      "physical_capture_pass": true,
+      "pit_admission_pass": false,
+      "required_fields": [
+        "Data",
+        "DataReferencia",
+        "Indicador",
+        "Mediana",
+        "baseCalculo"
+      ],
+      "schema_pass": true,
+      "selic_sample": {
+        "byte_count": 1225,
+        "content_type": "application/json;charset=UTF-8;odata.metadata=minimal",
+        "etag": null,
+        "fields": [
+          "Data",
+          "DataReferencia",
+          "DesvioPadrao",
+          "Indicador",
+          "IndicadorDetalhe",
+          "Maximo",
+          "Media",
+          "Mediana",
+          "Minimo",
+          "baseCalculo",
+          "numeroRespondentes"
+        ],
+        "http_status": 200,
+        "json_valid": true,
+        "last_modified": null,
+        "reachable": true,
+        "row_count": 5,
+        "sha256": "35bec9bde28a2590c9b1c81f79c0f81d3baad325221d6f44282ff864316c1443",
+        "url": "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?$format=json&$top=5&$filter=Indicador%20eq%20%27Selic%27"
+      },
+      "status": "PHYSICAL_CAPTURE_PASS_PIT_TIMESTAMP_STILL_UNPROVEN"
+    },
+    "CVM_FI_INF_DIARIO_PLUS_DELIVERY_AND_CLASS_REGISTRY": {
+      "availability_mapping_requires_delivery_join": true,
+      "class_registry_meta": {
+        "byte_count": 2222,
+        "content_type": "application/zip",
+        "csv_headers": {
+          "meta_registro_classe.txt": "-----------------------",
+          "meta_registro_fundo.txt": "-----------------------",
+          "meta_registro_subclasse.txt": "-----------------------"
+        },
+        "etag": "\"6aae0e17-8ae\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 04:22:47 GMT",
+        "members": [
+          "meta_registro_classe.txt",
+          "meta_registro_fundo.txt",
+          "meta_registro_subclasse.txt"
+        ],
+        "reachable": true,
+        "sha256": "a786ababfb82bfab142c82b285a413fb239bd80f96e5c4a2b325c08ca9d826f7",
+        "url": "https://dados.cvm.gov.br/dados/FI/CAD/META/meta_registro_fundo_classe.zip",
+        "zip_valid": true
+      },
+      "class_registry_sample": {
+        "byte_count": 6783685,
+        "content_type": "application/zip",
+        "csv_headers": {
+          "registro_classe.csv": "ID_Registro_Fundo;ID_Registro_Classe;CNPJ_Classe;Codigo_CVM;Data_Registro;Data_Constituicao;Data_Inicio;Tipo_Classe;Denominacao_Social;Situacao;Data_Inicio_Situacao;Classificacao;Indicador_Desempenho;Classe_Cotas;Classificacao_Anbima;Tributacao_Longo_Prazo;Entidade_Investimento;Permitido_Aplicacao_CemPorCento_Exterior;Classe_ESG;Forma_Condominio;Exclusivo;Publico_Alvo;Patrimonio_Liquido;Data_Patrimonio_Liquido;CNPJ_Auditor;Auditor;CNPJ_Custodiante;Custodiante;CNPJ_Controlador;Controlador",
+          "registro_fundo.csv": "ID_Registro_Fundo;CNPJ_Fundo;Codigo_CVM;Data_Registro;Data_Constituicao;Tipo_Fundo;Denominacao_Social;Data_Cancelamento;Situacao;Data_Inicio_Situacao;Data_Adaptacao_RCVM175;Data_Inicio_Exercicio_Social;Data_Fim_Exercicio_Social;Patrimonio_Liquido;Data_Patrimonio_Liquido;Diretor;CNPJ_Administrador;Administrador;Tipo_Pessoa_Gestor;CPF_CNPJ_Gestor;Gestor",
+          "registro_subclasse.csv": "ID_Registro_Classe;ID_Subclasse;Codigo_CVM;Data_Constituicao;Data_Inicio;Denominacao_Social;Situacao;Data_Inicio_Situacao;Forma_Condominio;Exclusivo;Publico_Alvo;Previdenciario;Exclusivo_INR;Exclusivo_Previdencia_Complementar"
+        },
+        "etag": "\"6aae0e17-6782c5\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 04:22:47 GMT",
+        "members": [
+          "registro_classe.csv",
+          "registro_fundo.csv",
+          "registro_subclasse.csv"
+        ],
+        "reachable": true,
+        "sha256": "1933c5c35732ac709c14337d3b8415cb617a88ec955cc7f743a579f37e88eef1",
+        "url": "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip",
+        "zip_valid": true
+      },
+      "delivery_meta": {
+        "byte_count": 1829,
+        "content_type": "text/plain",
+        "etag": "\"6aaeafe8-725\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 15:53:12 GMT",
+        "reachable": true,
+        "sha256": "5fede4eb89b96089078c2c357e3dc02f8259630d80932a79fdbea00e079747f0",
+        "url": "https://dados.cvm.gov.br/dados/FI/DOC/ENTREGA/META/meta_fi_entrega_documento.txt"
+      },
+      "delivery_meta_tokens": {
+        "present": {
+          "DT_COMPTC": false,
+          "DT_ENTREGA": false
+        },
+        "required_tokens": [
+          "DT_ENTREGA",
+          "DT_COMPTC"
+        ]
+      },
+      "delivery_sample": {
+        "byte_count": 10260855,
+        "content_type": "application/zip",
+        "csv_headers": {
+          "fi_entrega_documento_202609.csv": "Tipo_Fundo_Classe;CNPJ_Fundo_Classe;ID_Subclasse;Tipo_Documento;Data_Inicio_Competencia;Data_Fim_Competencia;ID_Documento;Data_Hora_Entrega;Tipo_Apresentacao;Ativo;Sistema_Origem",
+          "fi_entrega_documento_diario_202609.csv": "Tipo_Fundo_Classe;CNPJ_Fundo_Classe;ID_Subclasse;Tipo_Documento;Data_Inicio_Competencia;Data_Fim_Competencia;ID_Documento;Data_Hora_Entrega;Tipo_Apresentacao;Ativo;Sistema_Origem"
+        },
+        "etag": "\"6aae10cb-9c9177\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 04:34:19 GMT",
+        "members": [
+          "fi_entrega_documento_202609.csv",
+          "fi_entrega_documento_diario_202609.csv"
+        ],
+        "reachable": true,
+        "sha256": "d08d0e80e002be499f6c3ce787c8630f1a665ce648dcd9dd82cc0ad1c6dc5f64",
+        "url": "https://dados.cvm.gov.br/dados/FI/DOC/ENTREGA/DADOS/fi_entrega_documento_202609.zip",
+        "zip_valid": true
+      },
+      "inf_diario_meta": {
+        "byte_count": 1891,
+        "content_type": "text/plain",
+        "etag": "\"6aae5489-763\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 09:23:21 GMT",
+        "reachable": true,
+        "sha256": "c1df999f4f20353dbe0d92c33aa683c4631e969ae6706f98589a87e2a2e712f9",
+        "url": "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/META/meta_inf_diario_fi.txt"
+      },
+      "inf_diario_meta_tokens": {
+        "present": {
+          "CAPTC_DIA": true,
+          "DT_COMPTC": true,
+          "RESG_DIA": true,
+          "VL_PATRIM_LIQ": true
+        },
+        "required_tokens": [
+          "DT_COMPTC",
+          "CAPTC_DIA",
+          "RESG_DIA",
+          "VL_PATRIM_LIQ"
+        ]
+      },
+      "inf_diario_sample": {
+        "byte_count": 6599753,
+        "content_type": "application/zip",
+        "csv_headers": {
+          "inf_diario_fi_202609.csv": "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST"
+        },
+        "etag": "\"6aae0766-64b449\"",
+        "http_status": 200,
+        "last_modified": "Sat, 19 Sep 2026 03:54:14 GMT",
+        "members": [
+          "inf_diario_fi_202609.csv"
+        ],
+        "reachable": true,
+        "sha256": "a186a4b6b39a7bd40279332f971d9af32cb1b62f7e5ff92848548b469f582d17",
+        "url": "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_202609.zip",
+        "zip_valid": true
+      },
+      "physical_capture_pass": true,
+      "pit_admission_pass": false,
+      "revision_semantics_documented": true,
+      "status": "PHYSICAL_CAPTURE_PASS_PIT_JOIN_NOT_YET_MATERIALIZED"
+    }
+  },
+  "stage": "PHYSICAL_SOURCE_CAPTURE_ONLY",
+  "status": "PHYSICAL_SOURCES_CAPTURED_NO_OUTCOME_READ"
+}

@@ -1,0 +1,127 @@
+{
+  "schema": "qrds.factory.grammar_source_cost_external_evidence.v1",
+  "outcome_blind": true,
+  "economics_read": false,
+  "review_date": "2026-10-18",
+  "review_scope": "SOURCE_METADATA_AND_PUBLICATION_PROVENANCE_ONLY",
+  "evidence": [
+    {
+      "id": "BCB_METADATA",
+      "source": "BCB",
+      "official_url": "https://olinda.bcb.gov.br/olinda/servico/leiloes_selic/versao/v1/odata/$metadata",
+      "facts": [
+        "HTTP200 public metadata captured. Swap type contains id, dataMovimento, dataLiquidacao, edital, tipoPublico, prazo, quantidadeOfertada, quantidadeAceita, datavencimento, tipoOferta, cotacao, taxaLinear."
+      ],
+      "limitations": [
+        "No announcement/result publication timestamp or explicit USD-notional field in this type. Movement date and quantities do not prove the frozen publication-order/notional feature."
+      ],
+      "capture_name": "BCB_METADATA.raw"
+    },
+    {
+      "id": "BCB_ENTITIES",
+      "source": "BCB",
+      "official_url": "https://olinda.bcb.gov.br/olinda/servico/leiloes_selic/versao/v1/odata/?$format=json",
+      "facts": [
+        "Official public service lists swap-auction resource and function."
+      ],
+      "limitations": [
+        "Resource existence alone does not qualify all fields or publication history."
+      ],
+      "capture_name": "BCB_ENTITIES.raw"
+    },
+    {
+      "id": "BCB_SWAP_PAGE",
+      "source": "BCB",
+      "official_url": "https://www.bcb.gov.br/estabilidadefinanceira/swapcambial",
+      "facts": [
+        "Official catalog links public auction results; current site page is a JavaScript shell in the captured HTTP response."
+      ],
+      "limitations": [
+        "Captured page does not establish original paired communication availability times."
+      ],
+      "capture_name": "BCB_SWAP_PAGE.raw"
+    },
+    {
+      "id": "BCB_RESULT_COMMUNICATION",
+      "source": "BCB",
+      "official_url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=45561&tipo=Comunicado",
+      "facts": [
+        "Official indexed communication identifies swap auction results, accepted contract quantities and USD amounts."
+      ],
+      "limitations": [
+        "Examined indexed text gives document date; it does not establish original publication time or an immutable release-time history. Indexed content and current HTTP shell are distinct evidence layers."
+      ]
+    },
+    {
+      "id": "BCB_ANNOUNCEMENT_COMMUNICATION",
+      "source": "BCB",
+      "official_url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=45433&tipo=Comunicado",
+      "facts": [
+        "Official communication describes an auction timetable and states result release follows BCB computation."
+      ],
+      "limitations": [
+        "Auction timetable is not actual result-publication time; no matched original publication-time pair is proven by this example."
+      ]
+    },
+    {
+      "id": "B3_OPTIONS_CATALOG",
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/dados-disponiveis/",
+      "facts": [
+        "Catalog describes a specialized volatility-surface channel; regulatory free data are separately enumerated."
+      ],
+      "limitations": [
+        "Catalog does not prove a free repeatable exact per-call/per-put frozen chain snapshot with contemporaneous index and publication timestamps."
+      ],
+      "capture_name": "B3_OPTIONS_CATALOG.raw"
+    },
+    {
+      "id": "B3_CONTRACT",
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/up2data/contratacao-e-acesso/",
+      "facts": [
+        "Access instructions describe commercial policy, contractual enrollment and subsequent delivery of credentials."
+      ],
+      "limitations": [
+        "Commercial access and free sample downloads do not establish the preregistered ongoing free source."
+      ],
+      "capture_name": "B3_CONTRACT.raw"
+    },
+    {
+      "id": "B3_COMMERCIAL_POLICY",
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/data/files/EA/77/E5/06/DF8DF91094DCD8F9AC094EA8/UP2DATA_Politica_Comercial_2.4.5%202.pdf",
+      "facts": [
+        "Policy identifies volatility surface as a specialized channel and contains access/use pricing rules."
+      ],
+      "limitations": [
+        "No paid subscription or trial has been requested or used. A fee-based channel cannot be presumed free."
+      ]
+    },
+    {
+      "id": "B3_INDEX_ANNOUNCEMENT",
+      "source": "B3",
+      "official_url": "https://www.b3.com.br/pt_br/noticias/previa-do-ibovespa-b3.htm",
+      "facts": [
+        "Official notice identifies preview/effective dates, selected weights, and links a complete composition file."
+      ],
+      "limitations": [
+        "Captured notice does not prove an original publication time and immutable full consecutive-announcement versions."
+      ],
+      "capture_name": "B3_INDEX_ANNOUNCEMENT.raw"
+    },
+    {
+      "id": "B3_BDI_PREVIEW_METADATA",
+      "source": "B3",
+      "official_url": "https://arquivos.b3.com.br/bdi/download/bdi/2025-04-11/BDI_02_20250411.pdf",
+      "facts": [
+        "Preview section identifies a portfolio period and all constituent weights, with weights tied to an opening date."
+      ],
+      "limitations": [
+        "A later bulletin repeating an earlier preview is not proof of the earlier announcement's release time; current or evolved weights cannot replace the frozen originally announced weights. No target-return section was analyzed."
+      ]
+    }
+  ],
+  "decision": "EVIDENCE_ONLY_NO_OUTCOME_OR_ECONOMICS_READ",
+  "universal_source_nonexistence_claim": false
+}

@@ -1,0 +1,520 @@
+{
+  "schema": "qrds.factory.crypto_grammar_scout.v1",
+  "generated_at_utc": "2026-09-23T10:58:53.630192Z",
+  "mode": "IDEATION_ONLY_NO_ECONOMICS",
+  "scope": "CRYPTO_NEW_MECHANISMS_ISOLATED_FROM_EXISTING_INCUMBENTS",
+  "incumbents_read_only": [
+    "DELTA",
+    "QOS",
+    "MOMENTUM",
+    "GATEWAY",
+    "V16"
+  ],
+  "history_used_for_selection": false,
+  "evaluation_data_policy": "FORWARD_OR_INDEPENDENT_UNSEEN_ONLY_AFTER_SEPARATE_PREREGISTRATION",
+  "proposals": [
+    {
+      "proposal_id": "540e8915e90fd22e",
+      "channel_id": "CRYPTO_SPOT_PERP_BASIS_FUNDING",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Spot/perpetual basis and funding dislocations may contain causal information about positioning and subsequent cross-sectional returns.",
+      "required_new_data": [
+        "spot OHLCV",
+        "perpetual OHLCV",
+        "funding history",
+        "instrument metadata"
+      ],
+      "official_free_source_candidates": [
+        "Binance public market data",
+        "OKX public market data"
+      ],
+      "literature_evidence": [],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=crypto+spot+perpetual+basis+funding+predictive+return&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location",
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=perpetual+futures+funding+basis+crypto&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "6d05e59f2c3d6fb1",
+      "channel_id": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Price discovery may rotate across venues; lagged cross-venue dislocations can define falsifiable lead-lag hypotheses.",
+      "required_new_data": [
+        "multi-venue synchronized OHLCV",
+        "venue clocks",
+        "symbol mappings"
+      ],
+      "official_free_source_candidates": [
+        "Binance",
+        "OKX",
+        "Coinbase"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2799345028",
+          "doi": "https://doi.org/10.1016/j.irfa.2018.09.003",
+          "title": "RETRACTED: Cryptocurrencies as a financial asset: A systematic analysis",
+          "publication_year": 2018,
+          "source": "International Review of Financial Analysis"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2809373714",
+          "doi": "https://doi.org/10.1016/j.jfineco.2019.07.001",
+          "title": "Trading and arbitrage in cryptocurrency markets",
+          "publication_year": 2019,
+          "source": "Journal of Financial Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3159427954",
+          "doi": "https://doi.org/10.1016/j.frl.2021.102097",
+          "title": "Is non-fungible token pricing driven by cryptocurrencies?",
+          "publication_year": 2021,
+          "source": "Finance research letters"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2513607014",
+          "doi": "https://doi.org/10.1371/journal.pone.0161197",
+          "title": "Predicting Fluctuations in Cryptocurrency Transactions Based on User Comments and Replies",
+          "publication_year": 2016,
+          "source": "PLoS ONE"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3015481177",
+          "doi": "https://doi.org/10.1007/s10479-020-03575-y",
+          "title": "Prediction of cryptocurrency returns using machine learning",
+          "publication_year": 2020,
+          "source": "Annals of Operations Research"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+cross+exchange+information+leadership&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "d47e5546c1c45c6c",
+      "channel_id": "CRYPTO_DISPERSION_BREADTH_REGIME",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Cross-sectional breadth and dispersion may condition the payoff of momentum, reversal, and allocation rules without retuning incumbents.",
+      "required_new_data": [
+        "broad spot universe OHLCV",
+        "stable universe membership",
+        "delisting metadata"
+      ],
+      "official_free_source_candidates": [
+        "Binance",
+        "OKX"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2975308768",
+          "doi": "https://doi.org/10.1257/089533003321164967",
+          "title": "From Efficient Markets Theory to Behavioral Finance",
+          "publication_year": 2003,
+          "source": "The Journal of Economic Perspectives"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3036839042",
+          "doi": "https://doi.org/10.1016/j.ribaf.2020.101284",
+          "title": "Uncertainty and herding behavior: evidence from cryptocurrencies",
+          "publication_year": 2020,
+          "source": "Research in International Business and Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7115170424",
+          "doi": "https://doi.org/10.1186/s40854-025-00866-w",
+          "title": "Algorithmic crypto trading using information-driven bars, triple barrier labeling and deep learning",
+          "publication_year": 2025,
+          "source": "Financial Innovation"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4414395269",
+          "doi": "https://doi.org/10.63125/wv0bqx68",
+          "title": "ARTIFICIAL INTELLIGENCE BASED MODELS FOR SECURE DATA ANALYTICS AND PRIVACY-PRESERVING DATA SHARING IN U.S. HEALTHCARE AND HOSPITAL NETWORKS",
+          "publication_year": 2025,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W7212605891",
+          "doi": "https://doi.org/10.2139/ssrn.7460370",
+          "title": "Clustering Investor Relative Performance and Crypto-Asset Return Dynamics",
+          "publication_year": 2026,
+          "source": "SSRN Electronic Journal"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=cryptocurrency+dispersion+breadth+market+regime&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "1ffa366d842dd10a",
+      "channel_id": "CRYPTO_VOL_LIQUIDATION_STRESS",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Observable volatility and liquidation-stress states may define preregistered protection or tactical challenger families.",
+      "required_new_data": [
+        "OHLCV",
+        "open interest",
+        "public liquidation or stress proxy",
+        "funding"
+      ],
+      "official_free_source_candidates": [
+        "Binance",
+        "OKX"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W3126113144",
+          "doi": "https://doi.org/10.1257/jep.23.1.77",
+          "title": "Deciphering the Liquidity and Credit Crunch 2007–2008",
+          "publication_year": 2009,
+          "source": "The Journal of Economic Perspectives"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4387740959",
+          "doi": "https://doi.org/10.24294/jipd.v7i3.2223",
+          "title": "Understanding the risks associated with wallets, depository services, trading, lending, and borrowing in the crypto space",
+          "publication_year": 2023,
+          "source": "Journal of Infrastructure Policy and Development"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4301603710",
+          "doi": "https://doi.org/10.5089/9798400221675.063",
+          "title": "Regulating the Crypto Ecosystem",
+          "publication_year": 2022,
+          "source": "Fintech Notes"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4312272303",
+          "doi": "https://doi.org/10.5089/9781513520315.063",
+          "title": "Regulation of Crypto Assets",
+          "publication_year": 2020,
+          "source": "Fintech Notes"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2799345028",
+          "doi": "https://doi.org/10.1016/j.irfa.2018.09.003",
+          "title": "RETRACTED: Cryptocurrencies as a financial asset: A systematic analysis",
+          "publication_year": 2018,
+          "source": "International Review of Financial Analysis"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+liquidation+cascades+volatility+predictive&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "afd93e05cd4d2f85",
+      "channel_id": "CRYPTO_TERM_STRUCTURE_CARRY",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Differences across dated futures and perpetual funding may define carry/term-structure challengers separate from existing Delta/QOS/Momentum incumbents.",
+      "required_new_data": [
+        "dated futures prices",
+        "perpetual prices",
+        "funding",
+        "expiry metadata"
+      ],
+      "official_free_source_candidates": [
+        "Binance",
+        "OKX"
+      ],
+      "literature_evidence": [],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=crypto+futures+term+structure+carry+momentum&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location",
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+futures+basis+term+structure&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "6c241d6c4a1d0674",
+      "channel_id": "CRYPTO_ONCHAIN_EXCHANGE_FLOW",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Lagged exchange-directed and exchange-originating on-chain flows may represent inventory transfer pressure distinct from price-only and order-book channels.",
+      "required_new_data": [
+        "timestamped exchange inflow/outflow or netflow metrics",
+        "BTC spot reference prices",
+        "metric availability timestamps"
+      ],
+      "official_free_source_candidates": [
+        "Coin Metrics Community API",
+        "public blockchain data"
+      ],
+      "literature_evidence": [],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+exchange+inflow+outflow+returns+on-chain+predictive&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location",
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=cryptocurrency+exchange+netflow+price+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "75757026c35b55aa",
+      "channel_id": "CRYPTO_STABLECOIN_LIQUIDITY_IMPULSE",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Changes in observable stablecoin liquidity and transfer activity may proxy crypto-native purchasing power independently of BTC price trend.",
+      "required_new_data": [
+        "stablecoin circulating supply",
+        "stablecoin transfer or exchange-flow aggregates",
+        "BTC spot reference prices",
+        "availability timestamps"
+      ],
+      "official_free_source_candidates": [
+        "public issuer attestations",
+        "DefiLlama public stablecoin data"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2974453635",
+          "doi": "https://doi.org/10.1007/s40812-019-00138-6",
+          "title": "Cryptocurrencies: market analysis and perspectives",
+          "publication_year": 2019,
+          "source": "Journal of Industrial and Business Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3168528884",
+          "doi": "https://doi.org/10.1016/j.techfore.2021.120851",
+          "title": "The impact of transparent money flows: Effects of stablecoin transfers on the returns and trading volume of Bitcoin",
+          "publication_year": 2021,
+          "source": "Technological Forecasting and Social Change"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3011605097",
+          "doi": "https://doi.org/10.1016/j.intfin.2020.101188",
+          "title": "The predictive power of public Twitter sentiment for forecasting cryptocurrency prices",
+          "publication_year": 2020,
+          "source": "Journal of International Financial Markets Institutions and Money"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3200616364",
+          "doi": "https://doi.org/10.1016/j.jempfin.2021.09.002",
+          "title": "On the stability of stablecoins",
+          "publication_year": 2021,
+          "source": "Journal of Empirical Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2985545178",
+          "doi": "https://doi.org/10.1093/rfs/hhz131",
+          "title": "Initial Coin Offerings: Financing Growth with Cryptocurrency Token Sales",
+          "publication_year": 2019,
+          "source": "Review of Financial Studies"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=stablecoin+supply+liquidity+bitcoin+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "ccf8f764e6080773",
+      "channel_id": "CRYPTO_MACRO_LIQUIDITY_RATES",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Lagged public macro-liquidity, rates and dollar states may provide an evidence channel distinct from crypto-native market microstructure.",
+      "required_new_data": [
+        "policy rates",
+        "Treasury yields",
+        "USD index or broad dollar proxy",
+        "BTC spot reference prices",
+        "publication timestamps"
+      ],
+      "official_free_source_candidates": [
+        "FRED",
+        "Federal Reserve",
+        "US Treasury"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W3126113144",
+          "doi": "https://doi.org/10.1257/jep.23.1.77",
+          "title": "Deciphering the Liquidity and Credit Crunch 2007–2008",
+          "publication_year": 2009,
+          "source": "The Journal of Economic Perspectives"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2809373714",
+          "doi": "https://doi.org/10.1016/j.jfineco.2019.07.001",
+          "title": "Trading and arbitrage in cryptocurrency markets",
+          "publication_year": 2019,
+          "source": "Journal of Financial Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3007374507",
+          "doi": "https://doi.org/10.1016/j.dss.2016.12.001",
+          "title": "The technology and economic determinants of cryptocurrency exchange rates: The case of Bitcoin",
+          "publication_year": 2016,
+          "source": "Decision Support Systems"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2799345028",
+          "doi": "https://doi.org/10.1016/j.irfa.2018.09.003",
+          "title": "RETRACTED: Cryptocurrencies as a financial asset: A systematic analysis",
+          "publication_year": 2018,
+          "source": "International Review of Financial Analysis"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3124360645",
+          "doi": "https://doi.org/10.1016/j.frl.2017.12.006",
+          "title": "RETRACTED: Datestamping the Bitcoin and Ethereum bubbles",
+          "publication_year": 2017,
+          "source": "Finance research letters"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+macro+liquidity+interest+rates+dollar+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "17f77b7aad0a4ff3",
+      "channel_id": "CRYPTO_MINER_HASHRATE_STRESS",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Lagged mining-network and miner-economics stress may capture forced-supply or network-security states that are structurally different from trading-venue signals.",
+      "required_new_data": [
+        "hashrate or difficulty",
+        "miner revenue or fee metrics",
+        "BTC spot reference prices",
+        "metric availability timestamps"
+      ],
+      "official_free_source_candidates": [
+        "public Bitcoin blockchain data",
+        "Coin Metrics Community API",
+        "mempool.space public data"
+      ],
+      "literature_evidence": [],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+miner+stress+hash+rate+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location",
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=bitcoin+miner+revenue+hashprice+price+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "81386e6fc8642659",
+      "channel_id": "CRYPTO_SPOT_PARTICIPATION_FLOW",
+      "status": "DUPLICATE_CHANNEL_SUPPRESSED",
+      "mechanism": "Lagged spot participation and taker-volume composition may define a venue-flow channel without reusing order-book depth geometry from F-XMM-INVENTORY.",
+      "required_new_data": [
+        "spot OHLCV",
+        "taker buy/sell or aggressor volume when public",
+        "venue metadata",
+        "synchronized timestamps"
+      ],
+      "official_free_source_candidates": [
+        "Binance public market data",
+        "OKX public market data"
+      ],
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2797713121",
+          "doi": "https://doi.org/10.1016/j.ribaf.2018.12.001",
+          "title": "The economic value of Bitcoin: A portfolio analysis of currencies, gold, oil and stocks",
+          "publication_year": 2018,
+          "source": "Research in International Business and Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3041395050",
+          "doi": "https://doi.org/10.1016/j.jfs.2020.100776",
+          "title": "Price discovery in Bitcoin: The impact of unregulated markets",
+          "publication_year": 2020,
+          "source": "Journal of Financial Stability"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2891382925",
+          "doi": "https://doi.org/10.4324/9781315211909",
+          "title": "Bitcoin and Beyond",
+          "publication_year": 2017,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W4378698932",
+          "doi": "https://doi.org/10.1108/ajeb-05-2022-0051",
+          "title": "High-frequency CSI300 futures trading volume predicting through the neural network",
+          "publication_year": 2023,
+          "source": "Asian Journal of Economics and Banking"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3199240652",
+          "doi": "https://doi.org/10.1016/j.finmar.2022.100764",
+          "title": "Net buying pressure and the information in bitcoin option trades",
+          "publication_year": 2022,
+          "source": "Journal of Financial Markets"
+        }
+      ],
+      "research_errors": [
+        "HTTPError:429 Client Error: Too Many Requests for url: https://api.openalex.org/works?search=cryptocurrency+volume+imbalance+participation+price+returns&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Cprimary_location"
+      ],
+      "history_used_for_selection": false,
+      "requires_separate_preregistration": true,
+      "requires_forward_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_modify_incumbent": false,
+      "may_test_threshold_grid": false
+    }
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true
+  }
+}

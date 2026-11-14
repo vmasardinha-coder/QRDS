@@ -1,0 +1,103 @@
+{
+  "schema": "qrds.factory.grammar_semantic_prereg.v1",
+  "authorization": "USER_CONTINUE_2026-09-19",
+  "scope": "XAWINWDO_REGIME_006_GRAMMAR_SCOUT_ONLY",
+  "frozen_before_source_cost": true,
+  "outcome_blind": true,
+  "economics_read": false,
+  "historical_testing_started": false,
+  "selection_policy": "MINIMAL_CAUSAL_ONE_INTERVAL_NO_THRESHOLD_NO_GRID_NO_PERFORMANCE_SELECTION",
+  "families": [
+    {
+      "family_id": "XAGRAMMAR_12FCBCB3731A",
+      "grammar_signature": "12fcbcb3731a5ee40c2b1066b8e2627a9bb2ddb69bca9c827e01130e0237a141",
+      "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Two-component sign-preserving vector observed before the target B3 session: previous completed business-day simple return of USD/BRL and previous completed market/publication-day simple return of WTI crude oil spot/reference; no thresholding, weighting optimization or outcome-based component selection.",
+        "window": "Only observations whose official timestamp is complete before the target B3 regular session opens; same-session or later observations are forbidden.",
+        "lookback": "Exactly one completed return observation per component; if either component is unavailable causally, the observation is ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the feature is fully observable."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_3823D2BDF6CD",
+      "grammar_signature": "3823d2bdf6cddc5dee2c4bbfba21862c2d31961e5ec0068ac83c9d9e62472e4e",
+      "channel_id": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "One-session change in the DI1 front-curve slope, where slope is the official settlement annualized rate of the second-nearest eligible DI1 expiry minus the nearest eligible DI1 expiry; expiries are selected mechanically by calendar order, never by realized performance or liquidity ranking.",
+        "window": "Use only official B3 DI1 settlement values from sessions completed before the target B3 session opens.",
+        "lookback": "Two completed B3 sessions are required to compute the one-session slope change; missing required settlements make the observation ineligible rather than imputed.",
+        "target": "Ibovespa simple close-to-close return for the next eligible B3 regular session after the slope-change feature is fully observable."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_62FFE168F205",
+      "grammar_signature": "62ffe168f205da241327911323a03fc8a0664553688559868c301c51e64addf3",
+      "channel_id": "B3_AUCTION_IMBALANCE_OPEN_CLOSE_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Closing-auction price-discovery displacement for Ibovespa constituent securities, defined as official closing-auction price divided by the last eligible continuous-trading price immediately before the closing auction minus one; no threshold or ranked subset is permitted.",
+        "window": "The completed B3 closing auction of the session immediately preceding the target session; only official prices timestamped within that auction and the immediately preceding continuous-trading endpoint may be used.",
+        "lookback": "Exactly one completed closing auction and its immediately preceding continuous-trading endpoint.",
+        "target": "Same-security simple return from the next eligible B3 regular-session open to that session close."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_846E12566757",
+      "grammar_signature": "846e1256675729b65cee6498f109dded1970e086210a8173d8e4c921ad906759",
+      "channel_id": "B3_ADR_CROSS_LISTING_PRICE_DISCOVERY",
+      "frozen_semantics": {
+        "feature": "For each mechanically identifier-matched Brazilian ADR/underlying pair, the FX-adjusted ADR simple return observed from the B3 underlying regular close until the US primary-market close on the same date; pair inclusion is based only on contemporaneous B3/CVM/SEC identifiers and cross-listing status, with no performance ranking.",
+        "window": "The cross-market interval beginning at the completed B3 underlying close and ending at the subsequent US primary-market close, using only timestamps available before the next B3 open.",
+        "lookback": "Exactly one completed cross-market interval per matched pair; missing ADR, FX or calendar observations make that pair-date ineligible rather than imputed.",
+        "target": "Same-underlying next eligible B3 opening gap, defined as next B3 regular-session open divided by the prior B3 regular close minus one."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_8CAF61E121A1",
+      "grammar_signature": "8caf61e121a192ed4cf390b173636b3500b054efe3a5e0d9c280887ebc4664f3",
+      "channel_id": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
+      "frozen_semantics": {
+        "feature": "Simple return of the nearest unexpired standard B3 Ibovespa futures contract (IND), selected mechanically by expiry calendar, during the futures trading interval that is fully observable before Ibovespa cash continuous trading begins on the same B3 session; no contract ranking or thresholding is permitted.",
+        "window": "From the first eligible IND futures observation of the target B3 session through the final eligible futures observation strictly before Ibovespa cash continuous trading begins.",
+        "lookback": "Exactly the current session's completed pre-cash futures interval; no prior-session optimization or rolling window.",
+        "target": "Ibovespa simple return from the cash continuous-trading open to 30 minutes after that open on the same eligible B3 session."
+      }
+    },
+    {
+      "family_id": "XAGRAMMAR_F587F5854A51",
+      "grammar_signature": "f587f5854a5176fe38fc1dda1457bb218d5ea7890be21488743482d4f2699f85",
+      "channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+      "frozen_semantics": {
+        "feature": "Binary presence plus official CVM disclosure category for a timestamped issuer disclosure; disclosure text sentiment, future-price labels and outcome-derived category regrouping are forbidden.",
+        "window": "Disclosures officially timestamped after the affected security's previous eligible B3 regular close and no later than 30 minutes before the next eligible B3 regular open; later disclosures roll prospectively to the following eligible session.",
+        "lookback": "Exactly one intersession disclosure window; multiple disclosures for the same issuer within the window remain separate timestamped events and are not selected by outcome.",
+        "target": "Absolute simple return magnitude of the affected B3 security from the next eligible regular-session open to that session close."
+      }
+    }
+  ],
+  "prohibitions": [
+    "NO_OUTCOME_READ",
+    "NO_ECONOMICS_READ",
+    "NO_RETUNE",
+    "NO_BACKFILL",
+    "NO_THRESHOLD_GRID",
+    "NO_WINDOW_GRID",
+    "NO_LOOKBACK_GRID",
+    "NO_TARGET_GRID",
+    "NO_PERFORMANCE_BASED_SOURCE_SELECTION",
+    "NO_COUNTER_RESET"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "NO_COUNTER_RESET": true,
+    "FAIL_CLOSED": true,
+    "H1_H31_UNTOUCHED": true
+  }
+}

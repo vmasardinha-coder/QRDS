@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "family_id": "H-XREGIME-01",
+  "family_name": "cross_asset_regime_gate",
+  "status": "REGISTERED_FOR_FACTORY_RESEARCH",
+  "research_only": true,
+  "shadow_only": true,
+  "engine_weight": 0,
+  "auto_promote": false,
+  "external_source_system": "freqtrade",
+  "external_evidence_role": "hypothesis_provenance_only",
+  "external_performance_imported": false,
+  "winning_external_parameters_seeded": false,
+  "core_hypothesis": "The state of a benchmark crypto asset can condition the forward return distribution of a target asset signal, so a cross-asset regime feature may improve discrimination relative to the target signal alone.",
+  "scope": {
+    "benchmark_role": "reference_market_state",
+    "target_role": "conditioned_signal_asset",
+    "initial_target_signal_class": "trend_state_or_transition",
+    "candidate_benchmark_assets": ["BTC"],
+    "candidate_target_assets": "crypto_universe_subject_to_existing_factory_data_and_liquidity_rules"
+  },
+  "search_contract": {
+    "parameter_source": "factory_only",
+    "external_best_parameters_forbidden_as_defaults": true,
+    "benchmark_state_families": [
+      "trend_relative_to_lagged_or_rolling_reference",
+      "return_state",
+      "volatility_state",
+      "drawdown_state"
+    ],
+    "target_signal_families": [
+      "trend_transition",
+      "trend_state",
+      "momentum_state"
+    ],
+    "interaction_forms": [
+      "gate",
+      "conditional_feature",
+      "joint_state"
+    ]
+  },
+  "required_validation": [
+    "point_in_time_alignment",
+    "no_forward_fill_from_future_closed_benchmark_bar",
+    "leakage_audit",
+    "walk_forward",
+    "costs_and_slippage",
+    "subperiod_stability",
+    "cross_asset_replication",
+    "multiple_hypothesis_control",
+    "non_overlapping_or_dependency_aware_event_accounting",
+    "shadow_validation_before_any_promotion"
+  ],
+  "external_provenance": {
+    "source_branch": "research/freqtrade-family-tests",
+    "source_conclusion_commit": "b61337d2e5a41c5375e854ed7e15cbe0aafd9246",
+    "observed_replications": ["XRP", "ETH", "DOGE"],
+    "observed_mixed_or_negative_cases": ["AVAX", "LINK", "DOT", "SOL", "ADA", "LTC"],
+    "interpretation": "Evidence supports a candidate cross-asset conditioning hypothesis, not a universal BTC gate and not a production-ready strategy."
+  },
+  "promotion_boundary": {
+    "candidate_on_registration": true,
+    "survivor_on_registration": false,
+    "may_modify_existing_factory_families": false,
+    "requires_independent_factory_validation": true,
+    "requires_separate_promotion_decision": true
+  }
+}

@@ -1,0 +1,902 @@
+{
+  "schema": "qrds.factory.grammar_scout.v2",
+  "generated_at_utc": "2026-10-07T17:57:08.400575Z",
+  "mode": "IDEATION_ONLY_NO_ECONOMICS",
+  "history_used_for": "DEDUPLICATION_AND_COVERAGE_ONLY",
+  "history_used_for_selection": false,
+  "b3_adr_scope_required": true,
+  "evaluation_data_policy": "FORWARD_OR_INDEPENDENT_UNSEEN_ONLY_AFTER_SEPARATE_PREREGISTRATION",
+  "root_cause_audit_dependency": "NONE_CAN_RUN_IN_PARALLEL",
+  "mt5_auxiliary_source": {
+    "readiness": "READY_SHADOW_DATA_ONLY",
+    "available": true,
+    "packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+    "record_count": 43
+  },
+  "mt5_unavailable_blocks_scout": false,
+  "proposals": [
+    {
+      "proposal_id": "f5cdf1f2a3507403",
+      "channel_id": "B3_ADR_CROSS_LISTING_PRICE_DISCOVERY",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Cross-listed Brazilian shares and US ADRs can transmit information across distinct market clocks.",
+      "required_new_data": [
+        "B3 underlying",
+        "US ADR",
+        "FX timing",
+        "exchange calendars"
+      ],
+      "official_free_source_candidates": [
+        "B3",
+        "CVM",
+        "SEC EDGAR",
+        "BCB"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4250486300",
+          "doi": "https://doi.org/10.22161/ijaers.76.2",
+          "title": "Exploratory Study on the behavior of the Brazilian Financial Market using Google Trends",
+          "publication_year": 2020,
+          "source": "International Journal of Advanced Engineering Research and Science"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7203753418",
+          "doi": "https://doi.org/10.2139/ssrn.7315358",
+          "title": "From Mandate to Regulated Voluntarism:: IFRS S1/S2 Regulatory Reversal, Concurrent Events, and Capital-Market Identification in Brazil",
+          "publication_year": 2026,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7120296195",
+          "doi": null,
+          "title": "Effects of centralization on the Brazilian equity lending market",
+          "publication_year": 2024,
+          "source": "LA Referencia (Red Federada de Repositorios Institucionales de Publicaciones Científicas)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2129302590",
+          "doi": null,
+          "title": "An Overview of Brazilian Corporate Governance",
+          "publication_year": 2008,
+          "source": "Scholarship @ Cornell Law (Cornell University)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4391427388",
+          "doi": "https://doi.org/10.7867/1980-4431.2023v28n3p56-73",
+          "title": "Governance and sustainability in brazilian electricity companies",
+          "publication_year": 2024,
+          "source": "Revista de Negócios"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2145296134",
+          "doi": "https://doi.org/10.67929/ecgi-fin-206-2008",
+          "title": "The Corporate Governance of Privately Controlled Brazilian Firms",
+          "publication_year": 2008,
+          "source": null
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "5aca9ab1f6f3310d",
+      "channel_id": "B3_INDEX_FUTURES_CASH_PRICE_DISCOVERY",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Index futures and cash may incorporate common information at different speeds.",
+      "required_new_data": [
+        "B3 index futures",
+        "B3 cash index",
+        "auction/calendar metadata"
+      ],
+      "official_free_source_candidates": [
+        "B3",
+        "CVM"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4387106080",
+          "doi": "https://doi.org/10.1002/fut.22463",
+          "title": "Dynamic connectedness between energy markets and the Brazilian cash market: An empirical analysis pre‐ and post‐COVID‐19",
+          "publication_year": 2023,
+          "source": "Journal of Futures Markets"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4378085594",
+          "doi": "https://doi.org/10.7769/gesec.v14i5.2180",
+          "title": "Analysis of the relationship between futures market instruments and the spot market",
+          "publication_year": 2023,
+          "source": "Revista de Gestão e Secretariado (Management and Administrative Professional Review)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2563072972",
+          "doi": "https://doi.org/10.1111/agec.12324",
+          "title": "Revisiting the determinants of futures contracts success: the role of market participants",
+          "publication_year": 2016,
+          "source": "Agricultural Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4401596057",
+          "doi": "https://doi.org/10.47328/ufvbbt.2024.373",
+          "title": "The role of public information in the Brazilian live cattle market",
+          "publication_year": 2024,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W2767340680",
+          "doi": null,
+          "title": "Base Metals Inventories and their Influence on Futures Markets",
+          "publication_year": 2016,
+          "source": "City Research Online (City University London)"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "39912c769ec16f0a",
+      "channel_id": "B3_CROSS_ASSET_FX_COMMODITY_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Brazilian equities, BRL and commodity-linked assets may exhibit clock-respecting information transmission.",
+      "required_new_data": [
+        "B3 equities/futures",
+        "BRL",
+        "commodity reference"
+      ],
+      "official_free_source_candidates": [
+        "B3",
+        "BCB",
+        "CFTC",
+        "EIA",
+        "FRED"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4318200268",
+          "doi": "https://doi.org/10.5539/ijef.v15n1p65",
+          "title": "Determinants of Corn and Soybean Futures Prices Traded on the Brazilian Stock Exchange: An ARDL Approach",
+          "publication_year": 2022,
+          "source": "International Journal of Economics and Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W839234873",
+          "doi": null,
+          "title": "Efficiency, Risk Premiums and Information Diffusion in Futures Markets: International Evidence",
+          "publication_year": 2015,
+          "source": "Otago University Research Archive (University of Otago)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3021993446",
+          "doi": "https://doi.org/10.1093/rof/rfx039",
+          "title": "Futures Trading and the Excess Co-movement of Commodity Prices",
+          "publication_year": 2017,
+          "source": "European Finance Review"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2524455718",
+          "doi": "https://doi.org/10.1016/j.iref.2018.11.002",
+          "title": "The role of emerging economies in the global price formation process of commodities: Evidence from Brazilian and U.S. coffee markets",
+          "publication_year": 2018,
+          "source": "International Review of Economics & Finance"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "64c45a92724365f2",
+      "channel_id": "B3_TERM_STRUCTURE_DI_FUTURES_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Lagged changes in the B3 DI futures curve may transmit monetary-policy and discount-rate information to later equity/index returns.",
+      "required_new_data": [
+        "B3 DI futures expiry curve",
+        "B3 equity/index series",
+        "BCB policy calendar"
+      ],
+      "official_free_source_candidates": [
+        "B3",
+        "BCB"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2108724904",
+          "doi": "https://doi.org/10.1111/1467-8489.00077",
+          "title": "Commodity futures markets: a survey",
+          "publication_year": 1999,
+          "source": "Australian Journal of Agricultural and Resource Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4416371248",
+          "doi": "https://doi.org/10.5120/ijca2025925919",
+          "title": "Assessing Dynamic Hedge Effectiveness and Statistical Arbitrage with Conventional and Deep Learning Models in Equity Futures",
+          "publication_year": 2025,
+          "source": "International Journal of Computer Applications"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2900911882",
+          "doi": "https://doi.org/10.12660/rbfin.v16n3.2018.73938",
+          "title": "Monetary Policy and Long-Term Real Interest Rates in Brazil",
+          "publication_year": 2018,
+          "source": "Brazilian Review of Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W1992193293",
+          "doi": "https://doi.org/10.1016/j.gloenvcha.2015.01.004",
+          "title": "The roads ahead: Narratives for shared socioeconomic pathways describing world futures in the 21st century",
+          "publication_year": 2015,
+          "source": "Global Environmental Change"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7119810699",
+          "doi": "https://doi.org/10.1038/s44183-025-00179-6",
+          "title": "Reimagining coral reef futures",
+          "publication_year": 2026,
+          "source": "npj Ocean Sustainability"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3021993446",
+          "doi": "https://doi.org/10.1093/rof/rfx039",
+          "title": "Futures Trading and the Excess Co-movement of Commodity Prices",
+          "publication_year": 2017,
+          "source": "European Finance Review"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7204894664",
+          "doi": "https://doi.org/10.2139/ssrn.7371419",
+          "title": "Intraday Response of the Term Structure to US Macroeconomic Shocks: Evidence from the B3 DI Futures Market",
+          "publication_year": 2026,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4318200268",
+          "doi": "https://doi.org/10.5539/ijef.v15n1p65",
+          "title": "Determinants of Corn and Soybean Futures Prices Traded on the Brazilian Stock Exchange: An ARDL Approach",
+          "publication_year": 2022,
+          "source": "International Journal of Economics and Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3203004644",
+          "doi": "https://doi.org/10.11606/d.96.2021.tde-24092021-153351",
+          "title": "The effects of the central bank intervention auctions on the foreign exchange futures market: evidence from Brazil",
+          "publication_year": 2021,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W7211973183",
+          "doi": "https://doi.org/10.2139/ssrn.7403718",
+          "title": "Intraday Reaction of Index Futures to US Macroeconomic Surprises: An Event Study and ARMA-GARCH-X Modeling on B3",
+          "publication_year": 2026,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2911769949",
+          "doi": "https://doi.org/10.1088/2515-7620/ab06de",
+          "title": "Determinants of energy futures—a scenario discovery method applied to cost and carbon emission futures for South American electricity infrastructure",
+          "publication_year": 2019,
+          "source": "Environmental Research Communications"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4416790979",
+          "doi": "https://doi.org/10.22158/jepf.v11n4p44",
+          "title": "Research on the Factors Affecting Soybean Futures Price in China",
+          "publication_year": 2025,
+          "source": "Journal of Economics and Public Finance"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "bc0db4447c2c5fcb",
+      "channel_id": "B3_OPTIONS_IMPLIED_STATE_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Option-implied state variables observable before the target session may contain forward-looking information distinct from underlying returns.",
+      "required_new_data": [
+        "B3 listed option chain",
+        "underlying B3 asset",
+        "expiry/strike metadata"
+      ],
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4289878352",
+          "doi": "https://doi.org/10.17771/pucrio.acad.60040",
+          "title": "IMPLIED VOLATILITY AS A PREDICTOR OF STOCK RETURNS: A BRAZILIAN EMPIRICAL EXPERIENCE",
+          "publication_year": 2022,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W2168189040",
+          "doi": "https://doi.org/10.5539/ibr.v8n1p173",
+          "title": "Skewness of the Volatility Smile and Stock Returns in Brazil",
+          "publication_year": 2014,
+          "source": "International Business Research"
+        },
+        {
+          "openalex_id": "https://openalex.org/W1503900316",
+          "doi": "https://doi.org/10.1590/s1413-80502007000300001",
+          "title": "Stock returns and volatility: the Brazilian case",
+          "publication_year": 2007,
+          "source": "Portuguese National Funding Agency for Science, Research and Technology (RCAAP Project by FCT)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2036830561",
+          "doi": "https://doi.org/10.15728/bbr.2010.7.1.3",
+          "title": "Does implied volatility contain information about future volatility? Evidence from the Petrobras options market",
+          "publication_year": 2010,
+          "source": "Brazilian Business Review"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3109367599",
+          "doi": "https://doi.org/10.1590/1808-057x202009890",
+          "title": "Study on the relationship between the IVol-BR and the future returns of the Brazilian stock market,",
+          "publication_year": 2020,
+          "source": "Revista Contabilidade & Finanças"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2116774994",
+          "doi": "https://doi.org/10.5539/ijef.v6n12p119",
+          "title": "Long Memory Property and Structural Breaks in Volatility: Evidence from Turkey and Brazil",
+          "publication_year": 2014,
+          "source": "International Journal of Economics and Finance"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2134224071",
+          "doi": null,
+          "title": "Which market drives credit spreads in tranquil and crisis periods? An analysis of the contribution to price discovery of bonds, CDS, stocks and options",
+          "publication_year": 2012,
+          "source": "Munich Personal RePEc Archive (Ludwig Maximilian University of Munich)"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "0b27c30bca108731",
+      "channel_id": "B3_AUCTION_IMBALANCE_OPEN_CLOSE_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Opening and closing auction states may concentrate price discovery and transmit information only to subsequent eligible observations.",
+      "required_new_data": [
+        "B3 auction trades/quotes or official auction fields",
+        "B3 calendar"
+      ],
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W2980215312",
+          "doi": "https://doi.org/10.1016/j.eswa.2019.113008",
+          "title": "Predicting auction price of vehicle license plate with deep recurrent neural network",
+          "publication_year": 2019,
+          "source": "Expert Systems with Applications"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4287117563",
+          "doi": "https://doi.org/10.48550/arxiv.2106.09503",
+          "title": "The Parity Ray Regularizer for Pacing in Auction Markets",
+          "publication_year": 2021,
+          "source": "arXiv (Cornell University)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W1782496319",
+          "doi": "https://doi.org/10.2139/ssrn.1919522",
+          "title": "Liquidity Measures, Liquidity Drivers and Expected Returns on an Early Call Auction Market",
+          "publication_year": 2011,
+          "source": "SSRN Electronic Journal"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "285ca7a1c2a3a4d7",
+      "channel_id": "B3_SECURITIES_LENDING_SHORT_PRESSURE",
+      "status": "INSUFFICIENT_EXTERNAL_EVIDENCE_FAIL_CLOSED",
+      "mechanism": "Lagged securities-lending utilization or fee pressure may proxy short-demand constraints and be tested against strictly subsequent returns.",
+      "required_new_data": [
+        "B3 securities lending aggregates",
+        "B3 underlying prices"
+      ],
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "914e5f33ce0a66fc",
+      "channel_id": "CVM_CORPORATE_EVENT_DELAYED_TRANSMISSION",
+      "status": "INSUFFICIENT_EXTERNAL_EVIDENCE_FAIL_CLOSED",
+      "mechanism": "Timestamped corporate disclosures can define ex-ante event grammars whose post-publication response is evaluated only after the public timestamp.",
+      "required_new_data": [
+        "CVM timestamped disclosures",
+        "B3 underlying prices",
+        "exchange calendar"
+      ],
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "0c542f87ca711055",
+      "channel_id": "BCB_MACRO_SURPRISE_B3_TRANSMISSION",
+      "status": "INSUFFICIENT_EXTERNAL_EVIDENCE_FAIL_CLOSED",
+      "mechanism": "Pre-scheduled BCB releases and decisions can define clock-auditable event windows for strictly subsequent B3 responses.",
+      "required_new_data": [
+        "BCB release calendar/value",
+        "B3 market data"
+      ],
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "b41155c8a3fe6f06",
+      "channel_id": "BCB_FOCUS_EXPECTATIONS_REVISION_B3_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Published Brazilian central-bank market-expectation revisions may transmit macro expectation information to strictly subsequent B3 returns.",
+      "required_new_data": [
+        "BCB Focus expectations statistics",
+        "official publication timing",
+        "B3 market data",
+        "exchange calendar"
+      ],
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4413129230",
+          "doi": "https://doi.org/10.3390/jrfm18080451",
+          "title": "Influence of Macroeconomic Variables on the Brazilian Stock Market",
+          "publication_year": 2025,
+          "source": "Journal of risk and financial management"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4409587868",
+          "doi": "https://doi.org/10.20944/preprints202504.1128.v1",
+          "title": "Influence of Macroeconomic Variables on the Brazilian Stock Market",
+          "publication_year": 2025,
+          "source": "Preprints.org"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3123784558",
+          "doi": "https://doi.org/10.15728/bbr.2008.5.1.1",
+          "title": "The Empirical Relationship Between Stock Returns, Return Volatility and Trading Volume in the Brazilian Stock Market",
+          "publication_year": 2008,
+          "source": "Brazilian Business Review"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4394952620",
+          "doi": "https://doi.org/10.1108/jefas-08-2021-0168",
+          "title": "Stock splits and reverse splits in the Brazilian capital market",
+          "publication_year": 2024,
+          "source": "Journal of Economics Finance and Administrative Science"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4414275586",
+          "doi": "https://doi.org/10.11606/d.12.2025.tde-03092025-154744",
+          "title": "Semantic similarity and the communication reform of the Central Bank of Brazil",
+          "publication_year": 2025,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W2496763974",
+          "doi": "https://doi.org/10.14482/pege.40.8806",
+          "title": "Stock returns, macroeconomic variables and expectations: Evidence from Brazil",
+          "publication_year": 2016,
+          "source": "Revista científica Pensamiento y Gestión"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7168069245",
+          "doi": null,
+          "title": "Mean Shifts Across Political Regimes and Crises in S&P 500 and Ibovespa Returns",
+          "publication_year": 2026,
+          "source": "DSpace repository (University of Tartu)"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "98577f0f7c6fed44",
+      "channel_id": "B3_INDEX_REBALANCE_ANNOUNCEMENT_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Published B3 index preview and rebalance announcements may create predictable mechanical-flow information before later implementation dates.",
+      "required_new_data": [
+        "B3 index preview/final portfolio files",
+        "announcement/effective dates",
+        "B3 security prices",
+        "exchange calendar"
+      ],
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W7211973183",
+          "doi": "https://doi.org/10.2139/ssrn.7403718",
+          "title": "Intraday Reaction of Index Futures to US Macroeconomic Surprises: An Event Study and ARMA-GARCH-X Modeling on B3",
+          "publication_year": 2026,
+          "source": "SSRN Electronic Journal"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "aeebe9ecc9704d97",
+      "channel_id": "BCB_FX_SWAP_AUCTION_B3_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Preannounced Brazilian central-bank FX-swap auctions and result communications define public auction events that may transmit policy and currency information to subsequent BRL and B3 observations.",
+      "required_new_data": [
+        "BCB FX-swap auction announcements/results",
+        "official event timing",
+        "BRL market data",
+        "B3 market data",
+        "calendars"
+      ],
+      "official_free_source_candidates": [
+        "BCB",
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4293251139",
+          "doi": "https://doi.org/10.12660/bre.v41n12021.82360",
+          "title": "A Macroeconomic Perspective on Brazilian FX Swaps",
+          "publication_year": 2022,
+          "source": "Brazilian Review of Econometrics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3203004644",
+          "doi": "https://doi.org/10.11606/d.96.2021.tde-24092021-153351",
+          "title": "The effects of the central bank intervention auctions on the foreign exchange futures market: evidence from Brazil",
+          "publication_year": 2021,
+          "source": null
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "734fb1c80979aa28",
+      "channel_id": "CVM_FUND_FLOW_B3_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Lagged Brazilian investment-fund subscriptions and redemptions, observed only after official publication, may transmit institutional flow pressure to subsequent B3 returns.",
+      "required_new_data": [
+        "CVM daily fund reports",
+        "fund classification",
+        "official publication timing",
+        "B3 prices",
+        "exchange calendar"
+      ],
+      "official_free_source_candidates": [
+        "CVM",
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W4254251351",
+          "doi": "https://doi.org/10.17771/pucrio.acad.46917",
+          "title": "AGGREGATE BRAZILIAN MUTUAL FUND STOCKHOLDINGS AND ASSET RETURNS",
+          "publication_year": 2019,
+          "source": null
+        },
+        {
+          "openalex_id": "https://openalex.org/W2811197736",
+          "doi": "https://doi.org/10.1108/rausp-04-2018-001",
+          "title": "Book-to-Market Ratio, return on equity and Brazilian Stock Returns",
+          "publication_year": 2018,
+          "source": "RAUSP Management Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4406154792",
+          "doi": "https://doi.org/10.1108/jefas-12-2023-0280",
+          "title": "Investor sentiment and equity mutual fund performance in Brazil",
+          "publication_year": 2025,
+          "source": "Journal of Economics Finance and Administrative Science"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2996736682",
+          "doi": "https://doi.org/10.1590/1808-057x201909440",
+          "title": "Is the effect the same every January? Seasonality and Brazilian equity fund flows",
+          "publication_year": 2019,
+          "source": "Revista Contabilidade & Finanças"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2156930908",
+          "doi": "https://doi.org/10.2139/ssrn.1575510",
+          "title": "The Growth and Size of the Brazilian Mutual Fund Industry",
+          "publication_year": 2010,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2112038316",
+          "doi": "https://doi.org/10.1787/5kg3krd7v2d8-en",
+          "title": "Raising Investment in Brazil",
+          "publication_year": 2011,
+          "source": "OECD Economics Department working papers"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2955399151",
+          "doi": "https://doi.org/10.5089/9781475586084.001",
+          "title": "Brazilian Market Portfolio",
+          "publication_year": 2017,
+          "source": "IMF Working Paper"
+        },
+        {
+          "openalex_id": "https://openalex.org/W7151254570",
+          "doi": "https://doi.org/10.33094/ijaefa.v23i1.2431",
+          "title": "Adoption of Short Selling in Stock Portfolios: Performance of Brazilian Investment Funds Long Only Vs. Long/Short",
+          "publication_year": 2026,
+          "source": "International Journal of Applied Economics Finance and Accounting"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    },
+    {
+      "proposal_id": "e0dadddf1a908500",
+      "channel_id": "B3_FOREIGN_INVESTOR_FLOW_TRANSMISSION",
+      "status": "SCOUTED_NOT_PREREGISTERED",
+      "mechanism": "Officially published lagged foreign-investor movement aggregates may transmit capital-flow pressure to strictly later B3 observations.",
+      "required_new_data": [
+        "B3 foreign investor movement data",
+        "official publication timing",
+        "B3 index/security prices",
+        "exchange calendar"
+      ],
+      "official_free_source_candidates": [
+        "B3"
+      ],
+      "auxiliary_mt5_source_available": true,
+      "auxiliary_mt5_packet_sha256": "f0a6d5d47391920a2716617e74c22efb3d4275dd311e2eed70a65787b0fba88a",
+      "auxiliary_mt5_record_count": 43,
+      "mt5_is_primary_truth": false,
+      "literature_evidence": [
+        {
+          "openalex_id": "https://openalex.org/W3025098145",
+          "doi": "https://doi.org/10.1590/1808-057x201909530",
+          "title": "The effect of foreign investment flow on commonality in liquidity on the Brazilian stock market",
+          "publication_year": 2020,
+          "source": "Revista Contabilidade & Finanças"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4236991820",
+          "doi": "https://doi.org/10.2139/ssrn.1980213",
+          "title": "Pessimistic Foreign Investors and Turmoil in Emerging Markets: The Case of Brazil in 2002",
+          "publication_year": 2012,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4294567998",
+          "doi": "https://doi.org/10.1108/rege-07-2021-0145",
+          "title": "Brazilian stock market performance and investor sentiment on Twitter",
+          "publication_year": 2022,
+          "source": "Revista de Gestão"
+        },
+        {
+          "openalex_id": "https://openalex.org/W1500018023",
+          "doi": "https://doi.org/10.1080/09603107.2010.498342",
+          "title": "Stock returns and foreign investment in Brazil",
+          "publication_year": 2010,
+          "source": "Applied Financial Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4394411014",
+          "doi": "https://doi.org/10.6084/m9.figshare.14286714",
+          "title": "FOREIGN CAPITAL FLOWS OF PORTFOLIO INVESTMENT IN STOCKS, INTERNATIONAL CRISES AND IBOVESPA",
+          "publication_year": 2021,
+          "source": "Figshare"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2179011207",
+          "doi": "https://doi.org/10.1590/0101-416145456tlj",
+          "title": "Foreign portfolio capital flows and stock returns: a study of Brazilian listed firms",
+          "publication_year": 2015,
+          "source": "Estudos Econômicos (São Paulo)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W4302379183",
+          "doi": null,
+          "title": "Foreign portfolio capital flows and stock returns : a study of Brazilian listed firms",
+          "publication_year": 2015,
+          "source": "LA Referencia (Red Federada de Repositorios Institucionales de Publicaciones Científicas)"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3125548293",
+          "doi": "https://doi.org/10.2139/ssrn.2591908",
+          "title": "Foreign Portfolio Capital Flows and Stock Returns: A Study of Brazilian Listed Firms",
+          "publication_year": 2015,
+          "source": "SSRN Electronic Journal"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2024953370",
+          "doi": "https://doi.org/10.1080/09603100210134550",
+          "title": "The random walk hypothesis and the behaviour of foreign capital portfolio flows: the Brazilian stock market case",
+          "publication_year": 2003,
+          "source": "Applied Financial Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W3122657128",
+          "doi": null,
+          "title": "The Random Walk Hypothesis and the Behavior of Foreign Capital Portfolio Flows: the Brazilian Stock Market Case",
+          "publication_year": 2002,
+          "source": "RePEc: Research Papers in Economics"
+        },
+        {
+          "openalex_id": "https://openalex.org/W2899596238",
+          "doi": "https://doi.org/10.1002/ijfe.1695",
+          "title": "Do foreign portfolio capital flows affect domestic investment? Evidence from Brazil",
+          "publication_year": 2018,
+          "source": "International Journal of Finance & Economics"
+        }
+      ],
+      "research_errors": [],
+      "historical_token_overlap": [],
+      "historical_overlap_is_exclusion_input_not_performance_feedback": true,
+      "requires_new_or_independent_unseen_data": true,
+      "economics_read": false,
+      "may_allocate_family_id": false,
+      "may_change_existing_grammar": false,
+      "may_test_threshold_grid": false
+    }
+  ],
+  "safety": {
+    "research_only": true,
+    "shadow_only": true,
+    "not_approved": true,
+    "engine_feed": false,
+    "orders": 0,
+    "real_capital": 0,
+    "no_retune": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "fail_closed": true,
+    "h1_economics_read": false
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "prereg_id": "GATE_BTC_V16D_RISK_PREREG_20260909",
+  "family_governance": "GATE_BTC_V16_FAMILY_GOVERNANCE_20260815",
+  "status": "PREREGISTERED_RESEARCH_CHALLENGER_NOT_LIVE",
+  "created_at_utc": "2026-09-09T15:57:00Z",
+  "role": "RISK_ENGINE_CHALLENGER",
+  "base_selection_candidate": "GATE_BTC_V16B_CAUSAL_SHORT_LIQ10_VOL20_FREEZE_20260811",
+  "hypothesis": "Keep the frozen V16B cross-sectional selection unchanged and add a single causal portfolio-level de-risking rule so exposure falls when realized portfolio volatility rises, without changing rankings, asset membership, signal cadence or using future outcomes for tuning.",
+  "selection_layer_frozen": {
+    "features": 18,
+    "model": "HistGradientBoostingClassifier",
+    "score": "P(top10pct)-P(bottom10pct)",
+    "liquidity_threshold_usd_per_day": 10000000,
+    "signal_entry_cadence": "THURSDAY_SIGNAL_FRIDAY_ENTRY_WEEKLY",
+    "long_count": 10,
+    "short_count": 10,
+    "shortability_gate": "UNCHANGED_FROM_V16B",
+    "executability_gate": "UNCHANGED_FROM_V16B",
+    "turnover_cost_bps": 15,
+    "funding_evidence": "ACTUAL_BINANCE_USDM_AS_IN_V16B"
+  },
+  "risk_change_only": {
+    "name": "CAUSAL_PORTFOLIO_VOLATILITY_TARGETING_DELEVER_ONLY",
+    "lookback_trading_days": 20,
+    "return_frequency": "DAILY_CLOSE_TO_CLOSE",
+    "annualization_days": 365,
+    "target_annualized_volatility": 0.15,
+    "gross_exposure_cap": 1.0,
+    "leverage_above_baseline_allowed": false,
+    "scale_rule": "gross_scale=min(1.0,target_vol/max(realized_vol,1e-12))",
+    "weight_application": "MULTIPLY_ALL_FROZEN_V16B_WEIGHTS_BY_THE_SAME_NONNEGATIVE_SCALE",
+    "weight_signs_must_follow_selection": true,
+    "asset_membership_must_not_change": true,
+    "long_short_count_unchanged": true,
+    "no_asset_replacement_for_risk_fit": true,
+    "missing_input_policy": "FAIL_CLOSED_NO_SIGNAL_CREDIT",
+    "minimum_complete_lookback_days": 20
+  },
+  "causal_evidence": {
+    "all_risk_inputs_available_by_signal_close": true,
+    "future_v16b_results_may_be_used_for_parameter_selection": false,
+    "external_delta_may_be_used_for_parameter_selection": false,
+    "historical_backfill_counts_as_live": false,
+    "prospective_ledger_must_be_independent": true,
+    "first_live_credit_before_complete_signal_entry_result_seal": false
+  },
+  "evaluation": {
+    "primary_comparison": "V16D versus V16B on identical eligible future signal dates and identical selections before risk scaling",
+    "metrics": [
+      "net_return",
+      "volatility",
+      "max_drawdown",
+      "Sharpe_when_meaningful",
+      "Sortino_when_meaningful",
+      "Calmar_when_meaningful",
+      "BTC_beta",
+      "gross_exposure",
+      "net_exposure",
+      "turnover",
+      "fees",
+      "funding",
+      "risk_scale"
+    ],
+    "formal_checkpoints_completed_cycles": [13, 26, 52],
+    "winner_rule": "NO_SINGLE_METRIC_WINNER; require materially improved drawdown/volatility control without material deterioration in net risk-adjusted performance or evidence integrity"
+  },
+  "forbidden": [
+    "changing V16B rankings, score model, features, universe, liquidity threshold, cadence or asset count",
+    "using future V16B/V16C returns to retune lookback or target volatility",
+    "using external Delta returns or holdings for tuning",
+    "adding leverage above frozen baseline gross exposure",
+    "calling V16D live before an independent causal prospective ledger exists",
+    "merging or allocating capital without separate approval"
+  ],
+  "safety": {
+    "RESEARCH_ONLY": true,
+    "SHADOW_ONLY": true,
+    "NOT_APPROVED": true,
+    "ENGINE_FEED": false,
+    "ORDERS": 0,
+    "REAL_CAPITAL": 0,
+    "NO_RETUNE": true,
+    "NO_BACKFILL": true,
+    "FAIL_CLOSED": true
+  }
+}

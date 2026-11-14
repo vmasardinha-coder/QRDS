@@ -1,0 +1,77 @@
+{
+  "channel_id": "CRYPTO_SPOT_PARTICIPATION_FLOW",
+  "direction_defined": false,
+  "economic_outcomes_read": false,
+  "economic_parameters_defined": false,
+  "generated_at_utc": "2026-09-23T01:13:43.521956Z",
+  "grammar_signature": "06c2f268bcaf92121b084621b11225fb817f395bf2dadacb9cc0bc6da24e4574",
+  "historical_backfill_started": false,
+  "lookbacks_defined": false,
+  "namespace": "PF::06c2f268bcaf9212",
+  "next_gate": "SEPARATE_CHILD_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+  "primary": {
+    "authentication_required": false,
+    "closed_row_used": true,
+    "economic_outcomes_read": false,
+    "endpoint": "https://data-api.binance.vision/api/v3/klines",
+    "instrument": "BTCUSDT",
+    "market": "SPOT",
+    "observables_present": [
+      "open_time",
+      "close_time",
+      "volume",
+      "quote_asset_volume",
+      "number_of_trades",
+      "taker_buy_base_asset_volume",
+      "taker_buy_quote_asset_volume"
+    ],
+    "sample_metadata": {
+      "close_time": 1790125979999,
+      "nonnegative_volume_fields": true,
+      "number_of_trades": 3006,
+      "open_time": 1790125920000,
+      "taker_buy_not_greater_than_total": true
+    },
+    "status": "PASS",
+    "venue": "BINANCE"
+  },
+  "return_horizon_defined": false,
+  "safety": {
+    "canonical_580_untouched": true,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_retune": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "gate_btc_2.pf_source_qualification_runtime.v1",
+  "status": "SOURCE_QUALIFIED_AWAITING_SEPARATE_CHILD_PREREGISTRATION",
+  "thresholds_defined": false,
+  "validation": {
+    "authentication_required": false,
+    "documented_public_history_window": "LAST_3_MONTHS",
+    "economic_outcomes_read": false,
+    "endpoint": "https://www.okx.com/api/v5/market/history-trades",
+    "instrument": "BTC-USDT",
+    "market": "SPOT",
+    "observables_present": [
+      "px",
+      "side",
+      "sz",
+      "tradeId",
+      "ts"
+    ],
+    "sample_metadata": {
+      "rows": 5,
+      "timestamps_parse": true
+    },
+    "status": "PASS",
+    "taker_side_semantics_observed": [
+      "buy"
+    ],
+    "venue": "OKX"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "canonical_frontier_mutated": false,
+  "canonical_generation": "H2730-H2739",
+  "canonical_status": "WAITING_OFFICIAL_TICK_SOURCE",
+  "family_ids_allocated": [],
+  "historical_credit": 0,
+  "namespace": "PF::74003c5993737852",
+  "next_gate": "SOURCE_QUALIFICATION_THEN_SEPARATE_CHILD_PREREGISTRATION",
+  "promotion_authority": false,
+  "retroactive_credit": 0,
+  "safety": {
+    "canonical_frontier_untouched": true,
+    "economics_read": false,
+    "engine_feed": false,
+    "h1_h31_untouched": true,
+    "no_backfill": true,
+    "no_counter_reset": true,
+    "no_retune": true,
+    "not_approved": true,
+    "orders": 0,
+    "real_capital": 0,
+    "research_only": true,
+    "shadow_only": true
+  },
+  "schema": "qrds.factory.parallel_frontier.v1",
+  "scout_count": 109,
+  "selected": {
+    "channel_id": "CRYPTO_CROSS_VENUE_PRICE_DISCOVERY",
+    "cost_applicability_required": true,
+    "economics_read": false,
+    "grammar_signature": "74003c5993737852c6c3cd6e7f4d5f820d6e4ffd36328f7b002455fddf4da06e",
+    "may_allocate_existing_h_id": false,
+    "may_modify_existing_grammar": false,
+    "may_receive_retroactive_credit": false,
+    "mechanism": "Price discovery may rotate across venues; lagged cross-venue dislocations can define falsifiable lead-lag hypotheses.",
+    "next_gate": "SEPARATE_PREREGISTRATION_BEFORE_ANY_OUTCOME_READ",
+    "official_free_source_candidates": [
+      "Binance",
+      "OKX",
+      "Coinbase"
+    ],
+    "required_new_data": [
+      "multi-venue synchronized OHLCV",
+      "venue clocks",
+      "symbol mappings"
+    ],
+    "source_qualification_required": true,
+    "status": "ELIGIBLE_FOR_SEPARATE_PREREGISTRATION_GATE"
+  },
+  "selection_policy": "FIRST_NOVEL_GRAMMAR_SIGNATURE_ASCENDING_OUTCOME_BLIND_ACROSS_APPEND_ONLY_SCOUT_HISTORY",
+  "status": "PARALLEL_FRONTIER_PREREGISTERED_AWAITING_SOURCE_QUALIFICATION"
+}
