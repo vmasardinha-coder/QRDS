@@ -1,6 +1,6 @@
 # GATE BTC 2.0 — Factory Research Backlog
 
-Generated: `2026-11-13T03:28:29.245510+00:00`
+Generated: `2026-11-14T03:24:28.440162+00:00`
 
 - Registered hypothesis documents: **2**
 - Registered families: **5**
